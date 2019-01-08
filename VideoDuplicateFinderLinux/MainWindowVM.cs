@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using DuplicateFinderEngine;
@@ -220,49 +220,18 @@ namespace VideoDuplicateFinderLinux
             return null;
         });
         public ReactiveCommand ClearLogCommand => ReactiveCommand.Create(() => { LogItems.Clear(); });
-        public ReactiveCommand CopyLogCommand => ReactiveCommand.Create(() =>
+        public ReactiveCommand SaveLogCommand => ReactiveCommand.CreateFromTask(async () =>
         {
-            var sb = new StringBuilder();
+	        var result = await new SaveFileDialog().ShowAsync(Application.Current.MainWindow);
+			if (string.IsNullOrEmpty(result)) return;
+			var sb = new StringBuilder();
             foreach (var l in LogItems)
                 sb.AppendLine(l.ToString());
-            var tempFileName = Path.GetTempFileName();
-            File.WriteAllText(tempFileName, sb.ToString());
-            try
-            {
-                var errorBuilder = new StringBuilder();
-                var outputBuilder = new StringBuilder();
-                var arguments = $"-c \"cat {tempFileName} | xclip\"";
-                using (var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "bash",
-                        Arguments = arguments,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = false,
-                    }
-                })
-                {
-                    process.Start();
-                    process.OutputDataReceived += (sender, args) => { outputBuilder.AppendLine(args.Data); };
-                    process.BeginOutputReadLine();
-                    process.ErrorDataReceived += (sender, args) => { errorBuilder.AppendLine(args.Data); };
-                    process.BeginErrorReadLine();
-                    if (!process.WaitForExit(500))
-                        Logger.Instance.Info($@"Process timed out. Command line: bash {arguments}.
-Output: {outputBuilder}
-Error: {errorBuilder}");
-                    if (process.ExitCode != 0)
-                        Logger.Instance.Info($@"Could not execute process. Command line: bash {arguments}.
-Output: {outputBuilder}
-Error: {errorBuilder}");
-                }
-            }
-            finally
-            {
-                File.Delete(tempFileName);
+            try {
+	            File.WriteAllText(result, sb.ToString());
+			}
+            catch (Exception e) {
+	            Logger.Instance.Info(e.Message);
             }
         });
 

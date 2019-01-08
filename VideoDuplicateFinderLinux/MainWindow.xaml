@@ -266,9 +266,9 @@
                             <TextBlock VerticalAlignment="Center" Text="Clear Log" />
                         </MenuItem.Header>
                     </MenuItem>
-                    <MenuItem Command="{Binding CopyLogCommand}">
+                    <MenuItem Command="{Binding SaveLogCommand}">
                         <MenuItem.Header>
-                            <TextBlock VerticalAlignment="Center" Text="Copy Log To Clipboard" />
+                            <TextBlock VerticalAlignment="Center" Text="Save Log To File" />
                         </MenuItem.Header>
                     </MenuItem>
                 </Menu>
