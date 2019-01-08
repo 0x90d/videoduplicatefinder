@@ -9,12 +9,13 @@ namespace VideoDuplicateFinderConsole {
 		private readonly ScanEngine engine = new ScanEngine();
 		readonly string Outputfolder;
 		public Scanner(List<string> include, List<string> exclude, bool recursive, string outputfolder,
-			bool quiet, float? percent) {
+			bool quiet, bool includeImages, float? percent) {
 			foreach (var s in include)
 				engine.Settings.IncludeList.Add(s);
 			foreach (var s in exclude)
 				engine.Settings.IncludeList.Add(s);
 			engine.Settings.IncludeSubDirectories = recursive;
+			engine.Settings.IncludeImages = includeImages;
 			Outputfolder = string.IsNullOrEmpty(outputfolder) ? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) : outputfolder;
 			if (percent.HasValue)
 				engine.Settings.Percent = percent.Value;

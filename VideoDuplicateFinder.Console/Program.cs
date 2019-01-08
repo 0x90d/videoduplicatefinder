@@ -22,6 +22,7 @@ namespace VideoDuplicateFinderConsole {
 			static readonly char PATHS_SEP = Path.PathSeparator;
 
 			bool isRecursive;
+			bool includeImages;
 			float? percent;
 			string outputFolder;
 			bool isQuiet;
@@ -85,7 +86,8 @@ namespace VideoDuplicateFinderConsole {
 			}
 
 			void StartScan() {
-				var engine = new Scanner(includeFolders, excludeFolders, isRecursive, outputFolder, isQuiet, percent);
+				var engine = new Scanner(includeFolders, excludeFolders, isRecursive, outputFolder,
+					isQuiet, includeImages, percent);
 				engine.StartSearch();
 			}
 
@@ -105,6 +107,7 @@ namespace VideoDuplicateFinderConsole {
 				new HelpInfo("-e", Properties.Resources.CmdPath,Properties.Resources.CmdDescription_ExcludeFolder),
 				new HelpInfo("-r", string.Empty,Properties.Resources.CmdDescription_Recursive),
 				new HelpInfo("-q", string.Empty,Properties.Resources.CmdDescription_Quiet),
+				new HelpInfo("-j", string.Empty,Properties.Resources.CmdDescription_IncludeImages),
 				new HelpInfo("-p", Properties.Resources.CmdFloat,Properties.Resources.CmdDescription_Percent),
 				new HelpInfo("-o", Properties.Resources.CmdPath,Properties.Resources.CmdDescription_Output),
 			};
@@ -130,6 +133,10 @@ namespace VideoDuplicateFinderConsole {
 
 						case "-q":
 							isQuiet = true;
+							break;
+
+						case "-j":
+							includeImages = true;
 							break;
 
 						case "-p":

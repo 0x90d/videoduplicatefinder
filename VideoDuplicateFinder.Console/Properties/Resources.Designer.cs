@@ -88,6 +88,15 @@ namespace VideoDuplicateFinderConsole.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to include images.
+        /// </summary>
+        internal static string CmdDescription_IncludeImages {
+            get {
+                return ResourceManager.GetString("CmdDescription_IncludeImages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Path where the output html file will be saved.
         /// </summary>
         internal static string CmdDescription_Output {

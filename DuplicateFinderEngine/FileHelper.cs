@@ -5,12 +5,17 @@ using System.Threading.Tasks;
 
 namespace DuplicateFinderEngine {
 	public static class FileHelper {
+
+		public static readonly List<string> ImageExtensions = new List<string>() {
+			".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"
+		};
+
 		// '' <summary>
 		// '' This method starts at the specified directory.
 		// '' It traverses all subdirectories.
 		// '' It returns a List of those directories.
 		// '' </summary>
-		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool recursive, List<string> excludeFolders) {
+		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool recursive, bool includeImages, List<string> excludeFolders) {
 			var result = new List<string>();
 			var stack = new System.Collections.Concurrent.ConcurrentStack<string>();
 			stack.Push(initial);
@@ -49,6 +54,9 @@ namespace DuplicateFinderEngine {
 						result.AddRange(Directory.GetFiles(dir, "*.m2t"));
 						result.AddRange(Directory.GetFiles(dir, "*.m2ts"));
 						result.AddRange(Directory.GetFiles(dir, "*.vob"));
+						if (includeImages)
+							foreach (var s in ImageExtensions)
+								result.AddRange(Directory.GetFiles(dir, $"*{s}"));
 					}
 
 					if (!skip && recursive) {
@@ -86,7 +94,7 @@ namespace DuplicateFinderEngine {
 					string temppath = Path.Combine(pDest, name + ext);
 					var counter = 0;
 					while (File.Exists(temppath)) {
-						temppath = Path.Combine(pDest, name + '_' + counter + ext );
+						temppath = Path.Combine(pDest, name + '_' + counter + ext);
 						counter++;
 					}
 					File.Copy(s, temppath, pOverwriteDest);

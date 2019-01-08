@@ -6,7 +6,6 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -381,7 +380,6 @@ namespace VideoDuplicateFinderLinux
                         Logger.Instance.Info(string.Format(Properties.Resources.FailedToDeleteFileReasonStacktrace,
                             dub.Path, ex.Message, ex.StackTrace));
                     }
-                dub.Checked = false;
                 Duplicates.RemoveAt(i);
             }
             //Hide groups with just one item left
@@ -389,7 +387,6 @@ namespace VideoDuplicateFinderLinux
             {
                 var first = Duplicates[i];
                 if (Duplicates.Any(s => s.GroupId == first.GroupId && s.Path != first.Path)) continue;
-                first.Checked = false;
                 Duplicates.RemoveAt(i);
             }
         }

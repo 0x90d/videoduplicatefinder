@@ -12,6 +12,7 @@ namespace DuplicateFinderEngine {
 		public bool IgnoreReadOnlyFolders;
 
 		public bool IncludeSubDirectories = true;
+		public bool IncludeImages = true;
 
 		public byte Threshhold = 5;
 		public float Percent = 96f;

@@ -20,8 +20,8 @@ namespace VideoDuplicateFinderWindows {
 		public MainWindow host;
 		public ScanEngine Scanner { get; } = new ScanEngine();
 
-		public FastObservableCollection<DuplicateItemViewModel> Duplicates { get; } =
-			new FastObservableCollection<DuplicateItemViewModel>();
+		public ObservableCollection<DuplicateItemViewModel> Duplicates { get; } =
+			new ObservableCollection<DuplicateItemViewModel>();
 
 		public ObservableCollection<LogItem> LogItems { get; } = new ObservableCollection<LogItem>();
 		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
@@ -102,7 +102,6 @@ namespace VideoDuplicateFinderWindows {
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
 			host.TreeViewDuplicates.ItemsSource = null;
-			Duplicates.SuspendCollectionChangeNotification();
 			//Status bar information
 			TotalGroups = Scanner.Duplicates.GroupBy(a => a.GroupId).Count();
 			TotalSize = Scanner.Duplicates.Sum(a => a.SizeLong);
@@ -118,8 +117,7 @@ namespace VideoDuplicateFinderWindows {
 				dup.BitrateBest = !others.Any(a => a.BitRateKbs > dup.BitRateKbs);
 				Duplicates.Add(dup);
 			}
-
-			Duplicates.ResumeCollectionChangeNotification();
+			
 			//We no longer need the core duplicates
 			Scanner.Duplicates.Clear();
 			//Group results by GroupID
@@ -371,7 +369,6 @@ namespace VideoDuplicateFinderWindows {
 
 		public DelegateCommand CheckWhenIdenticalCommand =>
 			new DelegateCommand(a => {
-				Duplicates.SuspendCollectionChangeNotification();
 				var blackListGroupID = new HashSet<Guid>();
 				foreach (var first in Duplicates) {
 					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
@@ -383,11 +380,9 @@ namespace VideoDuplicateFinderWindows {
 					first.Checked = false;
 					blackListGroupID.Add(first.GroupId);
 				}
-				Duplicates.ResumeCollectionChangeNotification();
 			}, a => Duplicates.Count > 0);
 		public DelegateCommand CheckWhenIdenticalButSizeCommand =>
 			new DelegateCommand(a => {
-				Duplicates.SuspendCollectionChangeNotification();
 				var blackListGroupID = new HashSet<Guid>();
 				foreach (var first in Duplicates) {
 					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
@@ -402,11 +397,9 @@ namespace VideoDuplicateFinderWindows {
 					}
 					blackListGroupID.Add(first.GroupId);
 				}
-				Duplicates.ResumeCollectionChangeNotification();
 			}, a => Duplicates.Count > 0);
 		public DelegateCommand CheckLowestQualityCommand =>
 			new DelegateCommand(a => {
-				Duplicates.SuspendCollectionChangeNotification();
 				var blackListGroupID = new HashSet<Guid>();
 				foreach (var first in Duplicates) {
 					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
@@ -455,13 +448,10 @@ namespace VideoDuplicateFinderWindows {
 
 					blackListGroupID.Add(first.GroupId);
 				}
-				Duplicates.ResumeCollectionChangeNotification();
 			}, a => Duplicates.Count > 0);
 		public DelegateCommand ClearSelectionCommand => new DelegateCommand(a => {
-			Duplicates.SuspendCollectionChangeNotification();
 			for (var i = 0; i < Duplicates.Count; i++)
 				Duplicates[i].Checked = false;
-			Duplicates.ResumeCollectionChangeNotification();
 		}, a => Duplicates.Count > 0);
 		public DelegateCommand ExpandAllGroupsCommand => new DelegateCommand(a => {
 			host.TreeViewDuplicates.ToggleExpander(true);
@@ -520,15 +510,12 @@ namespace VideoDuplicateFinderWindows {
 						return;
 					TotalSizeRemoved += dub.SizeLong;
 				}
-
-				dub.Checked = false;
 				Duplicates.RemoveAt(i);
 			}
 			//Hide groups with just one item left
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
 				var first = Duplicates[i];
 				if (Duplicates.Any(s => s.GroupId == first.GroupId && s.Path != first.Path)) continue;
-				first.Checked = false;
 				Duplicates.RemoveAt(i);
 			}
 

@@ -70,7 +70,8 @@ namespace DuplicateFinderEngine {
 			var hasLoadedData = FileList.Count > 0;
 			var st = Stopwatch.StartNew();
 			foreach (var item in Settings.IncludeList) {
-				foreach (var f in FileHelper.GetFilesRecursive(item, Settings.IgnoreReadOnlyFolders, Settings.IncludeSubDirectories, Settings.BlackList.ToList())) {
+				foreach (var f in FileHelper.GetFilesRecursive(item, Settings.IgnoreReadOnlyFolders, 
+					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					var vf = new VideoFileEntry(f);
 					if (!hasLoadedData || !FileList.Any(a => a.Path.Equals(vf.Path)))
 						FileList.Add(vf);
@@ -147,7 +148,7 @@ namespace DuplicateFinderEngine {
 						Thread.Sleep(500);
 					}
 
-					if (FileList[i].mediaInfo == null) {
+					if (FileList[i].mediaInfo == null && !FileList[i].IsImage) {
 						var ffProbe = new FFProbeWrapper.FFProbeWrapper();
 						var info = ffProbe.GetMediaInfo(FileList[i].Path);
 						if (info == null) return;
@@ -156,14 +157,8 @@ namespace DuplicateFinderEngine {
 					}
 
 					if (FileList[i].grayBytes == null) {
-						FileList[i].grayBytes = new List<byte[]>(positionList.Count);
-						var images = GetVideoThumbnailAsBitmaps(FileList[i], positionList);
-						if (images == null) return;
-						for (var k = 0; k < positionList.Count; k++) {
-							FileList[i].grayBytes.Add(images[k]);
-						}
-
-						images.Clear();
+						FileList[i].grayBytes = FileList[i].IsImage ? GetImageAsBitmaps(FileList[i], positionList.Count) : GetVideoThumbnailAsBitmaps(FileList[i], positionList);
+						if (FileList[i].grayBytes == null) return;
 					}
 
 
@@ -210,42 +205,42 @@ namespace DuplicateFinderEngine {
 							if (duplicateCounter != itm.grayBytes.Count) continue;
 
 
-						lock (AddDuplicateLock) {
-							var firstInList = false;
-							var secondInList = false;
-							var groupId = Guid.NewGuid();
-							foreach (var v in Duplicates) {
-								if (v.Path == itm.Path) {
-									groupId = v.GroupId;
-									firstInList = true;
+							lock (AddDuplicateLock) {
+								var firstInList = false;
+								var secondInList = false;
+								var groupId = Guid.NewGuid();
+								foreach (var v in Duplicates) {
+									if (v.Path == itm.Path) {
+										groupId = v.GroupId;
+										firstInList = true;
+									}
+									else if (v.Path == FileList[i].Path) {
+										secondInList = true;
+									}
 								}
-								else if (v.Path == FileList[i].Path) {
-									secondInList = true;
+								if (!firstInList) {
+									var origDup = new DuplicateItem(itm) {
+										GroupId = groupId
+									};
+									var origImages = itm.IsImage ? GetImageThumbnail(origDup, positionList.Count) : GetVideoThumbnail(origDup, positionList);
+									if (origImages == null) continue;
+									origDup.Thumbnail = origImages;
+									Duplicates.Add(origDup);
 								}
-							}
-							if (!firstInList) {
-								var origDup = new DuplicateItem(itm) {
-									GroupId = groupId
-								};
-								var origImages = GetVideoThumbnail(origDup, positionList);
-								if (origImages == null) continue;
-								origDup.Thumbnail = origImages;
-								Duplicates.Add(origDup);
+
+								if (!secondInList) {
+									var dup = new DuplicateItem(FileList[i]) {
+										GroupId = groupId
+									};
+									var images = FileList[i].IsImage ? GetImageThumbnail(dup, positionList.Count) : GetVideoThumbnail(dup, positionList);
+									if (images == null) continue;
+									dup.Thumbnail = images;
+									Duplicates.Add(dup);
+								}
 							}
 
-							if (!secondInList) {
-								var dup = new DuplicateItem(FileList[i]) {
-									GroupId = groupId
-								};
-								var images = GetVideoThumbnail(dup, positionList);
-								if (images == null) continue;
-								dup.Thumbnail = images;
-								Duplicates.Add(dup);
-							}
-						}
-
-						//we found a matching source then duplicate was added no need to go deeper
-						break;
+							//we found a matching source then duplicate was added no need to go deeper
+							break;
 						}
 						processedFiles++;
 						//report progress
@@ -259,7 +254,7 @@ namespace DuplicateFinderEngine {
 							});
 
 					});
-				
+
 				st.Stop();
 				Logger.Instance.Info(string.Format(Properties.Resources.DuplicatesCheckFinishedIn, st.Elapsed));
 			}
@@ -281,7 +276,6 @@ namespace DuplicateFinderEngine {
 			var images = new List<Image>();
 			try {
 				for (var i = 0; i < positions.Count; i++) {
-
 					var b = ffMpeg.GetVideoThumbnail(videoFile.Path, Convert.ToSingle(videoFile.Duration.TotalSeconds * positionList[i]), false);
 					if (b == null || b.Length == 0) return null;
 					using (var byteStream = new MemoryStream(b)) {
@@ -294,6 +288,36 @@ namespace DuplicateFinderEngine {
 				//Logger.Instance.Info($"File: {videoFile.Path}, {ex.Message}");
 				//Trace.TraceError(ex.Message);
 				return null;
+			}
+			return images;
+		}
+		private List<Image> GetImageThumbnail(DuplicateItem videoFile, int count) {
+			var images = new List<Image>();
+			for (var i = 0; i < count; i++) {
+				var bitmapImage = Image.FromFile(videoFile.Path);
+
+				//Fill some missing data now when we have the information
+				videoFile.FrameSize = $"{bitmapImage.Width}x{bitmapImage.Height}";
+				videoFile.FrameSizeInt = bitmapImage.Width + bitmapImage.Height;
+
+				double resizeFactor = 1;
+				if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
+					double widthFactor = Convert.ToDouble(bitmapImage.Width) / 100;
+					double heightFactor = Convert.ToDouble(bitmapImage.Height) / 100;
+					resizeFactor = Math.Max(widthFactor, heightFactor);
+
+				}
+				int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
+				int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
+				var newImage = new Bitmap(width, height);
+				using (var g = Graphics.FromImage(newImage)) {
+					g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+					g.DrawImage(bitmapImage, 0, 0, newImage.Width, newImage.Height);
+				}
+
+				bitmapImage.Dispose();
+
+				images.Add(newImage);
 			}
 			return images;
 		}
@@ -322,9 +346,27 @@ namespace DuplicateFinderEngine {
 
 		}
 
+		private List<byte[]> GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
+			var images = new List<byte[]>();
+			for (var i = 0; i < count; i++) {
+
+				using (var byteStream = File.OpenRead(videoFile.Path)) {
+					using (var bitmapImage = Image.FromStream(byteStream)) {
+						var b = new Bitmap(16, 16);
+						using (var g = Graphics.FromImage(b)) {
+							g.DrawImage(bitmapImage, 0, 0, 16, 16);
+						}
+						var d = ExtensionMethods.GetGrayScaleValues(b);
+						if (d == null) return null;
+						images.Add(d);
+					}
+				}
+			}
+			return images;
+		}
+
 
 		private static class ExtensionMethods {
-			//TODO: This is fast but has also its own 'problems' (black pixels)
 			public static unsafe byte[] GetGrayScaleValues(Bitmap original, double darkProcent = 75) {
 				// Lock the bitmap's bits.  
 				var rect = new Rectangle(0, 0, original.Width, original.Height);

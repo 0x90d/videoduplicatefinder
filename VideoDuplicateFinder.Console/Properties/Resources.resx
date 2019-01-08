@@ -177,4 +177,7 @@
   <data name="CmdException_MissingArgs" xml:space="preserve">
     <value>Missing arguments</value>
   </data>
+  <data name="CmdDescription_IncludeImages" xml:space="preserve">
+    <value>include images</value>
+  </data>
 </root>
