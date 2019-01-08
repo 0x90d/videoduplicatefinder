@@ -474,14 +474,19 @@ namespace VideoDuplicateFinderWindows {
 		public DelegateCommand CopySelectionCommand => new DelegateCommand(a => {
 			var ofd = new System.Windows.Forms.FolderBrowserDialog();
 			if (ofd.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-			CopyDuplicates(ofd.SelectedPath);
+			CopyDuplicates(ofd.SelectedPath, false);
+		}, a => Duplicates.Count > 0);
+		public DelegateCommand MoveSelectionCommand => new DelegateCommand(a => {
+			var ofd = new System.Windows.Forms.FolderBrowserDialog();
+			if (ofd.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+			CopyDuplicates(ofd.SelectedPath, true);
 		}, a => Duplicates.Count > 0);
 
-		async void CopyDuplicates(string targetFolder) {
+		async void CopyDuplicates(string targetFolder, bool move) {
 			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.CopyingFiles;
 			IsBusy = true;
 			var t =  new System.Threading.Tasks.Task<int>(() => {
-				FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), targetFolder, true,
+				FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), targetFolder, true, move,
 					out int errors);
 				return errors;
 			});

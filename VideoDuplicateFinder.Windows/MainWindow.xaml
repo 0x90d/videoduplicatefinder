@@ -296,7 +296,9 @@
                                 <MenuItem Command="{Binding DeleteSelectedCommand}" Header="{x:Static properties:Resources.ToRecycleBin}" />
                                 <Separator/>
                                 <MenuItem Command="{Binding RemoveSelectionFromListCommand}" Header="{x:Static properties:Resources.FromListKeepFiles}" />
+                                <Separator/>
                                 <MenuItem Command="{Binding CopySelectionCommand}" Header="{x:Static properties:Resources.CopyToFolderKeepFiles}" />
+                                <MenuItem Command="{Binding MoveSelectionCommand}" Header="{x:Static properties:Resources.MoveToFolder}" />
                             </MenuItem>
                             <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
                             <MenuItem>

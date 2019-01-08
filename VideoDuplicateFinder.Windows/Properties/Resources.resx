@@ -232,4 +232,7 @@
   <data name="ClearSelection" xml:space="preserve">
     <value>Clear Selection</value>
   </data>
+  <data name="MoveToFolder" xml:space="preserve">
+    <value>Move To Folder</value>
+  </data>
 </root>

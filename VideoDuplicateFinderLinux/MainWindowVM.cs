@@ -397,11 +397,19 @@ namespace VideoDuplicateFinderLinux
                 Title = Properties.Resources.SelectFolder
             }.ShowAsync(Application.Current.MainWindow);
             if (string.IsNullOrEmpty(result)) return;
-            FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), result, true,
+            FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), result, true, false,
                 out _);
         });
+        public ReactiveCommand MoveSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
+	        var result = await new OpenFolderDialog {
+		        Title = Properties.Resources.SelectFolder
+	        }.ShowAsync(Application.Current.MainWindow);
+	        if (string.IsNullOrEmpty(result)) return;
+		FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), result, true, true,
+		        out _);
+        });
 
-        public ReactiveCommand SaveToHtmlCommand => ReactiveCommand.CreateFromTask(async (a) =>
+		public ReactiveCommand SaveToHtmlCommand => ReactiveCommand.CreateFromTask(async (a) =>
         {
             if (Scanner == null || Duplicates.Count == 0) return;
             var ofd = new SaveFileDialog

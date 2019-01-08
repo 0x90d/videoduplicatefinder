@@ -268,6 +268,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Move To Folder.
+        /// </summary>
+        public static string MoveToFolder {
+            get {
+                return ResourceManager.GetString("MoveToFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open In Folder.
         /// </summary>
         public static string OpenInFolder {

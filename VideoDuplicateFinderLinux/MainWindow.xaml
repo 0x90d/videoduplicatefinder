@@ -211,6 +211,11 @@
                                     <TextBlock VerticalAlignment="Center" Text="Copy To Folder (Keep Files)" />
                                 </MenuItem.Header>
                             </MenuItem>
+                            <MenuItem Command="{Binding MoveSelectionCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Move To Folder" />
+                                </MenuItem.Header>
+                            </MenuItem>
                         </MenuItem>
                         <Separator />
                         <MenuItem Command="{Binding SaveToHtmlCommand}">

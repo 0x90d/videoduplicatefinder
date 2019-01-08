@@ -82,8 +82,9 @@ namespace DuplicateFinderEngine {
 		/// <param name="pSource"></param>
 		/// <param name="pDest"></param>
 		/// <param name="pOverwriteDest"></param>
+		/// <param name="pMove"></param>
 		/// <param name="errors"></param>
-		public static void CopyFile(IEnumerable<string> pSource, string pDest, bool pOverwriteDest, out int errors) {
+		public static void CopyFile(IEnumerable<string> pSource, string pDest, bool pOverwriteDest, bool pMove, out int errors) {
 			string destDirectory = Path.GetDirectoryName(pDest);
 			Directory.CreateDirectory(destDirectory);
 			errors = 0;
@@ -97,7 +98,16 @@ namespace DuplicateFinderEngine {
 						temppath = Path.Combine(pDest, name + '_' + counter + ext);
 						counter++;
 					}
-					File.Copy(s, temppath, pOverwriteDest);
+
+					if (pMove) {
+						if (pOverwriteDest && File.Exists(temppath)) {
+							File.Copy(s, temppath, true);
+							File.Delete(s);
+						}
+						File.Move(s, temppath);
+					}
+					else
+						File.Copy(s, temppath, pOverwriteDest);
 				}
 				catch (Exception e) {
 					Logger.Instance.Info(string.Format(Properties.Resources.FailedToCopyToReason, pSource, pDest, e.Message));
