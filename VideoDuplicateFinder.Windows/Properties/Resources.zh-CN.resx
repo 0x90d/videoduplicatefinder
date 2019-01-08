@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+		Microsoft ResX Schema
+
+		Version 1.3
+
+		The primary goals of this format is to allow a simple XML format 
+		that is mostly human readable. The generation and parsing of the 
+		various data types are done through the TypeConverter classes 
+		associated with the data types.
+
+		Example:
+
+		... ado.net/XML headers & schema ...
+		<resheader name="resmimetype">text/microsoft-resx</resheader>
+		<resheader name="version">1.3</resheader>
+		<resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+		<resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+		<data name="Name1">this is my long string</data>
+		<data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+		<data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+			[base64 mime encoded serialized .NET Framework object]
+		</data>
+		<data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+			[base64 mime encoded string representing a byte array form of the .NET Framework object]
+		</data>
+
+		There are any number of "resheader" rows that contain simple 
+		name/value pairs.
+
+		Each data row contains a name, and value. The row also contains a 
+		type or mimetype. Type corresponds to a .NET class that support 
+		text/value conversion through the TypeConverter architecture. 
+		Classes that don't support this are serialized and stored with the 
+		mimetype set.
+
+		The mimetype is used for serialized objects, and tells the 
+		ResXResourceReader how to depersist the object. This is currently not 
+		extensible. For a given mimetype the value must be set accordingly:
+
+		Note - application/x-microsoft.net.object.binary.base64 is the format 
+		that the ResXResourceWriter will generate, however the reader can 
+		read any of the formats listed below.
+
+		mimetype: application/x-microsoft.net.object.binary.base64
+		value   : The object must be serialized with 
+			: System.Serialization.Formatters.Binary.BinaryFormatter
+			: and then encoded with base64 encoding.
+
+		mimetype: application/x-microsoft.net.object.soap.base64
+		value   : The object must be serialized with 
+			: System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+			: and then encoded with base64 encoding.
+
+		mimetype: application/x-microsoft.net.object.bytearray.base64
+		value   : The object must be serialized into a byte array 
+			: using a System.ComponentModel.TypeConverter
+			: and then encoded with base64 encoding.
+	-->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CopyingFiles" xml:space="preserve">
+    <value>复制文件......</value>
+  </data>
+  <data name="FailedToCopySomeFilesPleaseCheckLog" xml:space="preserve">
+    <value>无法复制某些文件。请检查日志！</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="DeleteAllCheckedItemsFromDISKToRecycleBinIfPossible" xml:space="preserve">
+    <value>从DISK中删除所有选中的项目（如果可能，回收箱）？</value>
+  </data>
+  <data name="Confirmation" xml:space="preserve">
+    <value>确认</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="EnumeratingInputFolders" xml:space="preserve">
+    <value>枚举输入文件夹...</value>
+  </data>
+  <data name="OpenInFolder" xml:space="preserve">
+    <value>打开文件夹</value>
+  </data>
+  <data name="ToRecycleBin" xml:space="preserve">
+    <value>回收箱</value>
+  </data>
+  <data name="FromListKeepFiles" xml:space="preserve">
+    <value>从列表（保留文件）</value>
+  </data>
+  <data name="ExpandAll" xml:space="preserve">
+    <value>展开全部</value>
+  </data>
+  <data name="CollapseAll" xml:space="preserve">
+    <value>全部收缩</value>
+  </data>
+  <data name="Groups" xml:space="preserve">
+    <value>组</value>
+  </data>
+  <data name="DeleteChecked" xml:space="preserve">
+    <value>删除已选中</value>
+  </data>
+  <data name="DuplicatesInList" xml:space="preserve">
+    <value>列表中的重复：</value>
+  </data>
+  <data name="TotalDuplicates" xml:space="preserve">
+    <value>完全重复：</value>
+  </data>
+  <data name="TotalDuplicateGroups" xml:space="preserve">
+    <value>重复组总数：</value>
+  </data>
+  <data name="TotalSize" xml:space="preserve">
+    <value>总尺寸：</value>
+  </data>
+  <data name="TotalSizeRemoved" xml:space="preserve">
+    <value>总尺寸已删除：</value>
+  </data>
+  <data name="Log" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="ClearLog" xml:space="preserve">
+    <value>清除日志</value>
+  </data>
+  <data name="CopyLogToClipboard" xml:space="preserve">
+    <value>将日志复制到剪贴板</value>
+  </data>
+  <data name="PleaseWait" xml:space="preserve">
+    <value>请耐心等待...</value>
+  </data>
+  <data name="Scanner" xml:space="preserve">
+    <value>扫描器</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="Resume" xml:space="preserve">
+    <value>恢复</value>
+  </data>
+  <data name="Pause" xml:space="preserve">
+    <value>暂停</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="IgnoreReadOnlyFolders" xml:space="preserve">
+    <value>忽略只读文件夹</value>
+  </data>
+  <data name="IncludeSubDirectories" xml:space="preserve">
+    <value>包括子目录</value>
+  </data>
+  <data name="SearchDirectories" xml:space="preserve">
+    <value>搜索目录</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>加</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>去掉</value>
+  </data>
+  <data name="ExcludeDirectories" xml:space="preserve">
+    <value>排除目录</value>
+  </data>
+  <data name="Selection" xml:space="preserve">
+    <value>选择</value>
+  </data>
+  <data name="Select100IdenticalKeepFirst" xml:space="preserve">
+    <value>选择100％相同（保持第一）</value>
+  </data>
+  <data name="Select100IdenticalExceptSizeKeepSmallest" xml:space="preserve">
+    <value>选择100％相同的尺寸（保持最小）</value>
+  </data>
+  <data name="SelectLowestDurationLowestQualityKeepLongestBestQuality" xml:space="preserve">
+    <value>选择最短持续时间/最低质量（保持最长/最佳质量）</value>
+  </data>
+  <data name="DeleteSelection" xml:space="preserve">
+    <value>删除选择</value>
+  </data>
+  <data name="CopyToFolderKeepFiles" xml:space="preserve">
+    <value>复制到文件夹（保留文件）</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="ToHtml" xml:space="preserve">
+    <value>致Html</value>
+  </data>
+  <data name="Filter" xml:space="preserve">
+    <value>过滤</value>
+  </data>
+  <data name="Path" xml:space="preserve">
+    <value>路径：</value>
+  </data>
+</root>

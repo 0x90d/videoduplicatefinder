@@ -1,0 +1,279 @@
+﻿<Window
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:VideoDuplicateFinderLinux"
+    xmlns:mvvm="clr-namespace:VideoDuplicateFinderLinux.MVVM.Converters"
+    Title="Video Duplicate Finder 2.0 - Cross-platform"
+    Width="900"
+    Height="750"
+    WindowStartupLocation="CenterScreen">
+    <Window.DataContext>
+        <local:MainWindowVM />
+    </Window.DataContext>
+    <Window.Resources>
+        <mvvm:NegateBoolConverter x:Key="NegateBool" />
+    </Window.Resources>
+    <TabControl>
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Text="Scanner" />
+            </TabItem.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="150" />
+                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Menu Grid.Row="0" Background="#F0F0F0">
+                    <MenuItem VerticalAlignment="Center" Command="{Binding StartScanCommand}">
+                        <MenuItem.Header>
+                            <TextBlock VerticalAlignment="Center" Text="Start" />
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem Command="{Binding ResumeScanCommand}" IsVisible="{Binding IsScanning}">
+                        <MenuItem.Header>
+                            <TextBlock VerticalAlignment="Center" Text="Resume" />
+                        </MenuItem.Header>
+                    </MenuItem>
+
+                    <MenuItem Command="{Binding PauseScanCommand}" IsVisible="{Binding IsScanning}">
+                        <MenuItem.Header>
+                            <TextBlock VerticalAlignment="Center" Text="Pause" />
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem Command="{Binding StopScanCommand}" IsVisible="{Binding IsScanning}">
+                        <MenuItem.Header>
+                            <TextBlock VerticalAlignment="Center" Text="Stop" />
+                        </MenuItem.Header>
+                    </MenuItem>
+                </Menu>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <StackPanel
+                        Grid.ColumnSpan="2"
+                        IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}"
+                        Orientation="Horizontal">
+                        <CheckBox
+                            Margin="5,5,0,0"
+                            VerticalAlignment="Center"
+                            Content="Ignore Read Only Folders"
+                            IsChecked="{Binding IgnoreReadOnlyFolders}"
+                            IsThreeState="False" />
+                        <CheckBox
+                            Margin="15,5,0,0"
+                            VerticalAlignment="Center"
+                            Content="Include Sub Directories"
+                            IsChecked="{Binding IncludeSubDirectories}"
+                            IsThreeState="False" />
+                        <TextBlock
+                            Margin="15,5,0,0"
+                            VerticalAlignment="Center"
+                            Text="Percent:" />
+                        <NumericUpDown
+                            Margin="5,5,0,0"
+                            VerticalAlignment="Center"
+                            Maximum="100"
+                            Minimum="1"
+                            Value="{Binding Percent}" />
+                    </StackPanel>
+
+                    <Grid
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Margin="10"
+                        IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock FontWeight="Bold" Text="Search Directories" />
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Menu Grid.Row="0" Background="#F0F0F0">
+                                <MenuItem Command="{Binding AddIncludesToListCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Add" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Remove" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                            </Menu>
+                            <ListBox
+                                Name="ListboxIncludelist"
+                                Grid.Row="1"
+                                Items="{Binding Includes}" />
+                        </Grid>
+
+                    </Grid>
+
+                    <Grid
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="10"
+                        IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock FontWeight="Bold" Text="Exclude Directories" />
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Menu Grid.Row="0" Background="#F0F0F0">
+                                <MenuItem Command="{Binding AddBlacklistToListCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Add" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Remove" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                            </Menu>
+                            <ListBox
+                                Name="ListboxBlacklist"
+                                Grid.Row="1"
+                                Items="{Binding Blacklists}" />
+                        </Grid>
+                    </Grid>
+
+                </Grid>
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Menu Grid.Row="0" Background="#F0F0F0">
+                        <MenuItem VerticalAlignment="Center">
+                            <MenuItem.Header>
+                                <TextBlock VerticalAlignment="Center" Text="Selection" />
+                            </MenuItem.Header>
+                            <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Select 100% Identical (Keep First)" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Select 100% Identical Except Size (Keep Smallest)" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding CheckLowestQualityCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Select Lowest Duration / Lowest Quality (Keep longest / Best Quality)" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding ClearSelectionCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Clear Selection" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </MenuItem>
+                        <MenuItem VerticalAlignment="Center">
+                            <MenuItem.Header>
+                                <TextBlock VerticalAlignment="Center" Text="Delete Selection" />
+                            </MenuItem.Header>
+                            <MenuItem Command="{Binding DeleteSelectionCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Delete permanently" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <Separator />
+                            <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="From List (Keep Files)" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding CopySelectionCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Copy To Folder (Keep Files)" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Command="{Binding SaveToHtmlCommand}">
+                            <MenuItem.Header>
+                                <TextBlock VerticalAlignment="Center" Text="Save To HTML" />
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </Menu>
+                    <ListBox
+                        Name="TreeViewDuplicates"
+                        Grid.Row="1"
+                        Items="{Binding Duplicates}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type local:DuplicateItemViewModel}">
+                                <local:DuplicateViewModel HorizontalContentAlignment="Stretch" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+
+                <Grid Grid.Row="3">
+                    <StackPanel Orientation="Horizontal">
+                        <ProgressBar
+                            Name="PbScanProgress"
+                            MinWidth="100"
+                            Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
+                            Value="{Binding ScanProgressValue, Mode=OneWay}" />
+                        <TextBlock Margin="10,0,0,0" Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                        <Separator />
+                        <TextBlock Margin="10,0,0,0" Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                        <Separator />
+                        <TextBlock Margin="10,0,0,0" Text="{Binding ScanProgressText, Mode=OneWay}" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </TabItem>
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Text="Log" />
+            </TabItem.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <Menu Grid.Row="0" Background="#F0F0F0">
+                    <MenuItem Command="{Binding ClearLogCommand}">
+                        <MenuItem.Header>
+                            <TextBlock VerticalAlignment="Center" Text="Clear Log" />
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem Command="{Binding CopyLogCommand}">
+                        <MenuItem.Header>
+                            <TextBlock VerticalAlignment="Center" Text="Copy Log To Clipboard" />
+                        </MenuItem.Header>
+                    </MenuItem>
+                </Menu>
+
+            </Grid>
+        </TabItem>
+    </TabControl>
+
+</Window>

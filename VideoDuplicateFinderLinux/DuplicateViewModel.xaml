@@ -1,0 +1,99 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="100" />
+        </Grid.ColumnDefinitions>
+
+        <CheckBox
+            Grid.Column="0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsChecked="{Binding Checked}" />
+
+        <Image
+            Grid.Column="1"
+            Margin="10,0,0,0"
+            Source="{Binding Thumbnail}" />
+
+
+        <TextBlock
+            Grid.Column="2"
+            Margin="10"
+            Text="{Binding Path}"
+            TextWrapping="Wrap" />
+
+        <Grid Grid.Column="3">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="2"
+                Text="{Binding Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="1"
+                Margin="2"
+                Text="{Binding FrameSize}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="2"
+                Margin="2"
+                Text="{Binding Size}"
+                TextWrapping="Wrap" />
+
+        </Grid>
+        <Grid Grid.Column="4">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="2"
+                Text="{Binding Format, Mode=OneWay}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="1"
+                Margin="2"
+                Text="{Binding Fps, Mode=OneWay, StringFormat=\{0\} fps}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="2"
+                Margin="2"
+                Text="{Binding BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
+                TextWrapping="Wrap" />
+        </Grid>
+
+        <Grid Grid.Column="5">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="2"
+                Text="{Binding AudioFormat}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="1"
+                Margin="2"
+                Text="{Binding AudioChannel}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="2"
+                Margin="2"
+                Text="{Binding AudioSampleRate}"
+                TextWrapping="Wrap" />
+        </Grid>
+    </Grid>
+</UserControl>

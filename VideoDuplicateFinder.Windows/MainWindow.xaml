@@ -1,0 +1,468 @@
+<Window
+    x:Class="VideoDuplicateFinderWindows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ContentData="clr-namespace:VideoDuplicateFinderWindows.Data"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:VideoDuplicateFinderWindows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="clr-namespace:VideoDuplicateFinderWindows.MVVM"
+    xmlns:viewModels="clr-namespace:VideoDuplicateFinderWindows.ViewModels"
+    xmlns:duplicateFinderEngine="clr-namespace:DuplicateFinderEngine;assembly=DuplicateFinderEngine"
+    xmlns:properties="clr-namespace:VideoDuplicateFinder.Windows.Properties"
+    Title="Video Duplicate Finder 2.0"
+    Width="900"
+    Closing="Window_Closing"
+    Height="750"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <Window.DataContext>
+        <local:MainWindowVM />
+    </Window.DataContext>
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <mvvm:SizeToStringConverter x:Key="SizeToStringConverter" />
+        <mvvm:NegateBooleanConverter x:Key="NegateBool" />
+        <mvvm:InvertBooleanToVisibilityConverter x:Key="InvertBooleanToVisibilityConverter"/>
+        <DataTemplate DataType="{x:Type duplicateFinderEngine:LogItem}">
+            <Grid IsSharedSizeScope="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition SharedSizeGroup="Index" Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding DateTime}" Grid.Column="0"
+                           FontWeight="Bold" Margin="5,0,5,0"/>
+                <TextBlock Text="{Binding Message}" Grid.Column="1"
+                           TextWrapping="Wrap"/>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo  />
+    </Window.TaskbarItemInfo>
+    <Grid>
+        <TabControl>
+            <TabItem Header="{x:Static properties:Resources.Scanner}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="150" />
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Menu Grid.Row="0">
+                        <MenuItem Command="{Binding StartScanCommand}"  VerticalAlignment="Center" 
+                      Visibility="{Binding IsScanning, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
+                            <MenuItem.Header>
+                                <TextBlock Text="{x:Static properties:Resources.Start}" VerticalAlignment="Center"/>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Fill="Green" Data="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                                    </Canvas>
+                                </Viewbox>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem
+                Command="{Binding ResumeScanCommand}"
+         
+                Visibility="{Binding IsPaused, Converter={StaticResource BoolToVis}}">
+                            <MenuItem.Header>
+                                <TextBlock Text="{x:Static properties:Resources.Resume}" VerticalAlignment="Center"/>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Fill="Green" Data="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                                    </Canvas>
+                                </Viewbox>
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Command="{Binding PauseScanCommand}" 
+                      Visibility="{Binding IsPaused, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
+                            <MenuItem.Header>
+                                <TextBlock Text="{x:Static properties:Resources.Pause}" VerticalAlignment="Center"/>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Fill="Blue" Data="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                                    </Canvas>
+                                </Viewbox>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Command="{Binding StopScanCommand}"
+                      Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" >
+                            <MenuItem.Header>
+                                <TextBlock Text="{x:Static properties:Resources.Stop}" VerticalAlignment="Center"/>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Fill="Red" Data="M18,18H6V6H18V18Z" />
+                                    </Canvas>
+                                </Viewbox>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </Menu>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <StackPanel
+                Grid.ColumnSpan="2"
+                IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}"
+                Orientation="Horizontal">
+                            <CheckBox
+                    Margin="5,5,0,0"
+                    VerticalAlignment="Center"
+                    Content="{x:Static properties:Resources.IgnoreReadOnlyFolders}"
+                    IsChecked="{Binding IgnoreReadOnlyFolders}" />
+                            <CheckBox
+                    Margin="5,5,0,0"
+                    VerticalAlignment="Center"
+                    Content="{x:Static properties:Resources.IncludeSubDirectories}"
+                    IsChecked="{Binding IncludeSubDirectories}" />
+
+                            <!--<StackPanel Orientation="Horizontal">
+                    <StackPanel Margin="5,10,0,5" Orientation="Horizontal">
+                        <Label Content="Threshold:" />
+                        <e:ByteEditBox
+                            CommitTriggers="All"
+                            Maximum="5"
+                            Minimum="0"
+                            Value="{Binding Threshhold}" />
+                    </StackPanel>
+                    <StackPanel Margin="5,10,0,5" Orientation="Horizontal">
+                        <Label Content="Percent:" />
+                        <theme:NumericUpDownFloat
+                           MaxValue="100"
+                            Width="55"
+                            Value="{Binding Percent, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                    <StackPanel Margin="5,10,0,5" Orientation="Horizontal">
+                        <Label Content="Thumbnails:" />
+                        <theme:NumericUpDown
+                           MaxValue="5"
+                            Width="55"
+                            MinValue="1"
+                            Value="{Binding ThumbnailCount, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                </StackPanel>-->
+                        </StackPanel>
+                        <GroupBox
+                Grid.Row="1"
+                Grid.Column="0"
+                Header="{x:Static properties:Resources.SearchDirectories}"
+                IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Menu Grid.Row="0">
+                                    <MenuItem Command="{Binding AddIncludesToListCommand}"  >
+                                        <MenuItem.Header>
+                                            <TextBlock Text="{x:Static properties:Resources.Add}" VerticalAlignment="Center"/>
+                                        </MenuItem.Header>
+                                        <MenuItem.Icon>
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Fill="Green" Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                                                </Canvas>
+                                            </Viewbox>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem
+                            Command="{Binding RemoveIncludesFromListCommand}"
+                            CommandParameter="{Binding ElementName=ListboxIncludelist}"
+                           >
+                                        <MenuItem.Header>
+                                            <TextBlock Text="{x:Static properties:Resources.Remove}" VerticalAlignment="Center"/>
+                                        </MenuItem.Header>
+                                        <MenuItem.Icon>
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Fill="Red" Data="M19,13H5V11H19V13Z" />
+                                                </Canvas>
+                                            </Viewbox>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </Menu>
+                                <ListBox
+                        Name="ListboxIncludelist"
+                        Grid.Row="1"
+                        ItemsSource="{Binding Includes}" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox
+                Grid.Row="1"
+                Grid.Column="1"
+                Header="{x:Static properties:Resources.ExcludeDirectories}"
+                IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Menu Grid.Row="0">
+                                    <MenuItem Command="{Binding AddBlacklistToListCommand}" >
+                                        <MenuItem.Header>
+                                            <TextBlock Text="{x:Static properties:Resources.Add}" VerticalAlignment="Center"/>
+                                        </MenuItem.Header>
+                                        <MenuItem.Icon>
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Fill="Green" Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                                                </Canvas>
+                                            </Viewbox>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem
+                            Command="{Binding RemoveBlacklistFromListCommand}"
+                            CommandParameter="{Binding ElementName=ListboxBlacklist}"
+                          >
+                                        <MenuItem.Header>
+                                            <TextBlock Text="{x:Static properties:Resources.Remove}" VerticalAlignment="Center"/>
+                                        </MenuItem.Header>
+                                        <MenuItem.Icon>
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Fill="Red" Data="M19,13H5V11H19V13Z" />
+                                                </Canvas>
+                                            </Viewbox>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </Menu>
+                                <ListBox
+                        Name="ListboxBlacklist"
+                        Grid.Row="1"
+                        ItemsSource="{Binding Blacklists}" />
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Menu Grid.Row="0" IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
+                            <MenuItem >
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="{x:Static properties:Resources.Selection}"/>
+                                        <Path VerticalAlignment="Center" Margin="4,2,0,0" Fill="Black" Data="M 0 0 L 6 6 L 12 0 Z"/>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="Black" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </MenuItem.Icon>
+                                <MenuItem Command="{Binding CheckWhenIdenticalCommand}" Header="{x:Static properties:Resources.Select100IdenticalKeepFirst}" />
+                                <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}" Header="{x:Static properties:Resources.Select100IdenticalExceptSizeKeepSmallest}" />
+                                <MenuItem Command="{Binding CheckLowestQualityCommand}" Header="{x:Static properties:Resources.SelectLowestDurationLowestQualityKeepLongestBestQuality}" />
+                                <Separator/>
+                                <MenuItem Command="{Binding ClearSelectionCommand}" Header="{x:Static properties:Resources.ClearSelection}" />
+                            </MenuItem>
+                            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+                            <MenuItem>
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="{x:Static properties:Resources.DeleteSelection}"/>
+                                        <Path VerticalAlignment="Center" Margin="4,2,0,0" Fill="Black" Data="M 0 0 L 6 6 L 12 0 Z"/>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </MenuItem.Icon>
+                                <MenuItem Command="{Binding DeleteSelectedCommand}" Header="{x:Static properties:Resources.ToRecycleBin}" />
+                                <Separator/>
+                                <MenuItem Command="{Binding RemoveSelectionFromListCommand}" Header="{x:Static properties:Resources.FromListKeepFiles}" />
+                                <MenuItem Command="{Binding CopySelectionCommand}" Header="{x:Static properties:Resources.CopyToFolderKeepFiles}" />
+                            </MenuItem>
+                            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+                            <MenuItem>
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="{x:Static properties:Resources.Save}"/>
+                                        <Path VerticalAlignment="Center" Margin="4,2,0,0" Fill="Black" Data="M 0 0 L 6 6 L 12 0 Z"/>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" Fill="Black" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </MenuItem.Icon>
+                                <MenuItem Command="{Binding SaveToHtmlCommand}" Header="{x:Static properties:Resources.ToHtml}" />
+                            </MenuItem>
+                            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+                            <MenuItem Header="{x:Static properties:Resources.Filter}" x:Name="ToggleBtnFilter" IsCheckable="True"/>
+                        </Menu>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="{Binding ElementName=ToggleBtnFilter, Path=IsChecked, Converter={StaticResource BoolToVis}}">
+<TextBlock Text="{x:Static properties:Resources.Path}"/>
+<TextBox Margin="5,0,0,0" Text="{Binding FilterByPath, UpdateSourceTrigger=PropertyChanged}" MinWidth="100"/>
+                        </StackPanel>
+                        <ListView
+                Name="TreeViewDuplicates"
+                Grid.Row="2"
+                PreviewKeyDown="TreeViewDuplicates_PreviewKeyDown"
+                VirtualizingStackPanel.IsVirtualizing="True">
+                            <ListView.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.ContainerStyle>
+                                        <Style TargetType="{x:Type GroupItem}">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate>
+                                                        <Expander IsExpanded="True">
+                                                            <Expander.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Label ContentStringFormat="Duplicate Group - {0} items" Content="{Binding ItemCount}"/>
+                                                                </StackPanel>
+                                                            </Expander.Header>
+                                                            <ItemsPresenter />
+                                                        </Expander>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </GroupStyle.ContainerStyle>
+                                </GroupStyle>
+                            </ListView.GroupStyle>
+                            <ListView.Resources>
+                                <DataTemplate DataType="{x:Type ContentData:DuplicateItemViewModel}">
+                                    <viewModels:DuplicateViewModel HorizontalContentAlignment="Stretch" />
+                                </DataTemplate>
+                            </ListView.Resources>
+                            <ListView.ContextMenu>
+                                <ContextMenu DataContext="{Binding DataContext, Source={mvvm:RootObject}}">
+                                    <MenuItem Command="{Binding OpenInFolderCommand}"  Header="{x:Static properties:Resources.OpenInFolder}" />
+                                    <MenuItem Header="{x:Static properties:Resources.DeleteChecked}">
+                                        <MenuItem.Icon>
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Fill="Red" Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                                                </Canvas>
+                                            </Viewbox>
+                                        </MenuItem.Icon>
+                                        <MenuItem Command="{Binding DeleteSelectedCommand}" Header="{x:Static properties:Resources.ToRecycleBin}" />
+                                        <MenuItem Command="{Binding RemoveSelectionFromListCommand}" Header="{x:Static properties:Resources.FromListKeepFiles}" />
+                                    </MenuItem>
+                                    <MenuItem Header="{x:Static properties:Resources.Groups}">
+                                        <MenuItem Header="{x:Static properties:Resources.ExpandAll}" Command="{Binding ExpandAllGroupsCommand}"/>
+                                        <MenuItem Header="{x:Static properties:Resources.CollapseAll}" Command="{Binding CollapseAllGroupsCommand}"/>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </ListView.ContextMenu>
+                        </ListView>
+                        <StatusBar Grid.Row="3" >
+                            <StatusBarItem Content="{x:Static properties:Resources.DuplicatesInList}" />
+                            <StatusBarItem Content="{Binding Duplicates.Count}" />
+                            <Separator />
+                            <StatusBarItem Content="{x:Static properties:Resources.TotalDuplicates}" />
+                            <StatusBarItem Content="{Binding TotalDuplicates}" />
+                            <Separator />
+                            <StatusBarItem Content="{x:Static properties:Resources.TotalDuplicateGroups}" />
+                            <StatusBarItem Content="{Binding TotalGroups}" />
+                            <Separator />
+                            <StatusBarItem Content="{x:Static properties:Resources.TotalSize}" />
+                            <StatusBarItem Content="{Binding TotalSize, Converter={StaticResource SizeToStringConverter}}" />
+                            <Separator />
+                            <StatusBarItem Content="{x:Static properties:Resources.TotalSizeRemoved}" />
+                            <StatusBarItem Content="{Binding TotalSizeRemoved, Converter={StaticResource SizeToStringConverter}}" />
+                        </StatusBar>
+                    </Grid>
+
+                    <StatusBar Grid.Row="3">
+                        <StackPanel Orientation="Horizontal">
+                            <ProgressBar
+                    Name="PbScanProgress"
+                    Width="150"
+                    Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
+                    Value="{Binding ScanProgressValue, Mode=OneWay}" />
+                            <TextBlock Margin="10,0,0,0" Text="{Binding TimeElapsed, Mode=OneWay, StringFormat={}Elapsed time: {0:hh}:{0:mm}:{0:ss}}" />
+                            <Separator />
+                            <TextBlock Margin="10,0,0,0" Text="{Binding RemainingTime, Mode=OneWay, StringFormat={}Remaining time: ~{0:hh}:{0:mm}:{0:ss}}" />
+                            <Separator />
+                            <TextBlock
+                    Margin="10,0,0,0"
+                    Text="{Binding ScanProgressText, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </StatusBar>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{x:Static properties:Resources.Log}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+              
+                <Menu Grid.Row="0">
+                        <MenuItem Header="{x:Static properties:Resources.ClearLog}" Command="{Binding ClearLogCommand}"/>
+                        <MenuItem Header="{x:Static properties:Resources.CopyLogToClipboard}" Command="{Binding CopyLogCommand}"/>
+                    </Menu>
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding LogItems}">
+                    <ItemsControl.Template>
+                        <ControlTemplate>
+                            <ScrollViewer CanContentScroll="True">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ItemsControl.Template>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel IsItemsHost="True"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Grid x:Name="BusyIndicator"
+              Background="Silver"
+              Opacity="0.8"
+              Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar
+                    MaxWidth="200"
+                    BorderBrush="LimeGreen"
+                    BorderThickness="10"
+                    IsIndeterminate="True"/>
+                <Label
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Center"
+                    Content="{x:Static properties:Resources.PleaseWait}"
+                    FontSize="14"
+                    FontWeight="ExtraBold" />
+                <Label
+                    Content="{Binding IsBusyText}"
+                    Name="LblBusyIndicator"
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="14" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
