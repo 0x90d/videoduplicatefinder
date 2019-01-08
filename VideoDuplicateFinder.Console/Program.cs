@@ -54,7 +54,7 @@ namespace VideoDuplicateFinderConsole {
 			}
 
 
-			void PrintHelp() {
+			static void PrintHelp() {
 				Console.WriteLine(Properties.Resources.CmdUsageHeader);
 				Console.WriteLine();
 				foreach (var info in helpInfos) {
@@ -66,7 +66,7 @@ namespace VideoDuplicateFinderConsole {
 				Console.WriteLine();
 			}
 
-			void EnsureFFFilesExist() {
+			static void EnsureFFFilesExist() {
 				if (!File.Exists(Utils.FfprobePath) && !File.Exists(Utils.FfprobePath + ".exe")) {
 					throw new ParseException(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 						? string.Format(Properties.Resources.CmdException_FFprobeMissingWindows, Utils.FFprobeExecutableName)
