@@ -1,8 +1,9 @@
-﻿<Window
+<Window
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:VideoDuplicateFinderLinux"
     xmlns:mvvm="clr-namespace:VideoDuplicateFinderLinux.MVVM.Converters"
+    xmlns:duplicateFinderEngine="clr-namespace:DuplicateFinderEngine;assembly=DuplicateFinderEngine"
     Title="Video Duplicate Finder 2.0 - Cross-platform"
     Width="900"
     Height="750"
@@ -271,7 +272,24 @@
                         </MenuItem.Header>
                     </MenuItem>
                 </Menu>
-
+                <ListBox
+                    Grid.Row="1"
+                    Items="{Binding LogItems}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type duplicateFinderEngine:LogItem}">
+                            <Grid >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition SharedSizeGroup="Index" Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding DateTime}" Grid.Column="0"
+                                           FontWeight="Bold" Margin="5,0,5,0"/>
+                                <TextBlock Text="{Binding Message}" Grid.Column="1"
+                                           TextWrapping="Wrap"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </Grid>
         </TabItem>
     </TabControl>
