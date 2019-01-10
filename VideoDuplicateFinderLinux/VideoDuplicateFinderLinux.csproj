@@ -14,9 +14,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Remove="DuplicateViewModel.xaml" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Avalonia" Version="0.7.1-build1097-beta" />
     <PackageReference Include="Avalonia.Desktop" Version="0.7.1-build1097-beta" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.7.1-build1097-beta" />
@@ -47,7 +44,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Update="ViewModels\DuplicateViewModel.xaml">
+    <EmbeddedResource Update="DuplicateViewModel.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Properties\Resources.resx">
@@ -56,7 +53,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Update="ViewModels\DuplicateViewModel.xaml">
+    <None Update="DuplicateViewModel.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>
