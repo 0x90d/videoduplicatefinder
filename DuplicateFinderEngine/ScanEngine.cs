@@ -7,9 +7,9 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
+using ProtoBuf;
 
 namespace DuplicateFinderEngine {
 	public class ScanEngine {
@@ -86,14 +86,16 @@ namespace DuplicateFinderEngine {
 			var path = new FileInfo(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
 				"ScannedFiles.db"));
 			if (path.Exists && path.Length == 0) //invalid data
+			{
 				path.Delete();
-			else if (!path.Exists)
+				return;
+			}
+			if (!path.Exists)
 				return;
 			Logger.Instance.Info(Properties.Resources.FoundPreviouslyScannedFilesImporting);
 			var st = Stopwatch.StartNew();
-			var bf = new BinaryFormatter();
-			using (var stream = new FileStream(path.FullName, FileMode.Open)) {
-				FileList = (List<VideoFileEntry>)bf.Deserialize(stream);
+			using (var file = new FileStream(path.FullName, FileMode.Open)) {
+				FileList = Serializer.Deserialize<List<VideoFileEntry>>(file);
 			}
 			//Cleanup deleted files
 			for (int i = FileList.Count - 1; i >= 0; i--) {
@@ -106,10 +108,9 @@ namespace DuplicateFinderEngine {
 		}
 		private void SaveScannedFileList() {
 			Logger.Instance.Info(string.Format(Properties.Resources.SaveScannedFilesToDisk0N0Files, FileList.Count));
-			var bf = new BinaryFormatter();
 			using (var stream = new FileStream(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
 				"ScannedFiles.db"), FileMode.OpenOrCreate)) {
-				bf.Serialize(stream, FileList);
+				Serializer.Serialize(stream, FileList);
 			}
 		}
 
@@ -367,6 +368,7 @@ namespace DuplicateFinderEngine {
 
 
 		private static class ExtensionMethods {
+			//TODO: Find a way to get the bytes directly from file without creating a new bitmap for it
 			public static unsafe byte[] GetGrayScaleValues(Bitmap original, double darkProcent = 75) {
 				// Lock the bitmap's bits.  
 				var rect = new Rectangle(0, 0, original.Width, original.Height);

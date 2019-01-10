@@ -1,12 +1,13 @@
 using System;
 using DuplicateFinderEngine.FFProbeWrapper;
 using System.Collections.Generic;
+using ProtoBuf;
 
 namespace DuplicateFinderEngine.Data
 {
-    [Serializable]
-    public class VideoFileEntry
-    {
+    [ProtoContract]
+    public class VideoFileEntry {
+	    protected VideoFileEntry() {}
         public VideoFileEntry(string file)
         {
             Path = file;
@@ -15,10 +16,15 @@ namespace DuplicateFinderEngine.Data
             var extension = fi.Extension;
             IsImage = FileHelper.ImageExtensions.Find(a => a.Equals(extension, StringComparison.OrdinalIgnoreCase)) != null;
         }
-        public string Path;
-        public string Folder;
-        public List<byte[]> grayBytes;
-        public MediaInfo mediaInfo;
-        public readonly bool IsImage;
+        [ProtoMember(1)]
+		public string Path;
+		[ProtoMember(2)]
+		public string Folder;
+		[ProtoMember(3)]
+		public List<byte[]> grayBytes;
+		[ProtoMember(4)]
+		public MediaInfo mediaInfo;
+		[ProtoMember(5)]
+		public readonly bool IsImage;
     }
 }

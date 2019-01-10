@@ -1,31 +1,32 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Xml.XPath;
+using ProtoBuf;
 
 namespace DuplicateFinderEngine.FFProbeWrapper
 {
-    [Serializable]
+    [ProtoContract]
     [SuppressMessage("ReSharper", "ConvertToAutoPropertyWithPrivateSetter")]
     [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
     public sealed class MediaInfo
     {
-        private StreamInfo[] streams;
-        public StreamInfo[] Streams => streams;
+	    [ProtoMember(1)]
+		public StreamInfo[] Streams { get; }
 
-        private TimeSpan duration;
-        public TimeSpan Duration => duration;
+		[ProtoMember(2)]
+		public TimeSpan Duration { get; }
 
-        
-        public MediaInfo(XPathDocument ffProbeResult)
+		public MediaInfo() { }
+		public MediaInfo(XPathDocument ffProbeResult)
         {
             var xpathNavigator = ffProbeResult.CreateNavigator();
             //Duration
             var durationValue = xpathNavigator.SelectSingleNode("/ffprobe/format/@duration")?.Value;
             if (!string.IsNullOrEmpty(durationValue) && TimeSpan.TryParse(durationValue, out var result))
-                duration = result;
+                Duration = result;
             else
-                duration = TimeSpan.Zero;
+                Duration = TimeSpan.Zero;
             //Streams
             var list = new List<StreamInfo>();
             var xpathNodeIterator = xpathNavigator.Select("/ffprobe/streams/stream/@index");
@@ -34,34 +35,33 @@ namespace DuplicateFinderEngine.FFProbeWrapper
                 var xpathNavigator2 = xpathNodeIterator.Current;
                 list.Add(new StreamInfo(xpathNavigator, xpathNavigator2.Value));
             }
-            streams = list.ToArray();
+            Streams = list.ToArray();
         }
 
 
-        [Serializable]
-        [SuppressMessage("ReSharper", "ConvertToAutoPropertyWithPrivateSetter")]
-        [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
+        [ProtoContract]
         public class StreamInfo
         {
 
             private string XPathPrefix => "/ffprobe/streams/stream[@index=\"" + Index + "\"]";
-            internal StreamInfo(XPathNavigator xpathNavigator, string _index)
+            public StreamInfo() { }
+			internal StreamInfo(XPathNavigator xpathNavigator, string _index)
             {
-                index = _index;
-                codecName = xpathNavigator.SelectSingleNode(XPathPrefix + "/@codec_name")?.Value;
-                codecLongName = xpathNavigator.SelectSingleNode(XPathPrefix + "/@codec_long_name")?.Value;
-                codecType = xpathNavigator.SelectSingleNode(XPathPrefix + "/@codec_type")?.Value;
-                pixelFormat = xpathNavigator.SelectSingleNode(XPathPrefix + "/@pix_fmt")?.Value;
-                width = ParseInt(xpathNavigator.SelectSingleNode(XPathPrefix + "/@width")?.Value);
-                height = ParseInt(xpathNavigator.SelectSingleNode(XPathPrefix + "/@height")?.Value);
-                sampleRate = ParseInt(xpathNavigator.SelectSingleNode(XPathPrefix + "/@sample_rate")?.Value);
-                channelLayout = xpathNavigator.SelectSingleNode(XPathPrefix + "/@channel_layout")?.Value;
-                bitRate = ParseLong(xpathNavigator.SelectSingleNode(XPathPrefix + "/@bit_rate")?.Value);
+                Index = _index;
+                CodecName = xpathNavigator.SelectSingleNode(XPathPrefix + "/@codec_name")?.Value;
+                CodecLongName = xpathNavigator.SelectSingleNode(XPathPrefix + "/@codec_long_name")?.Value;
+                CodecType = xpathNavigator.SelectSingleNode(XPathPrefix + "/@codec_type")?.Value;
+                PixelFormat = xpathNavigator.SelectSingleNode(XPathPrefix + "/@pix_fmt")?.Value;
+                Width = ParseInt(xpathNavigator.SelectSingleNode(XPathPrefix + "/@width")?.Value);
+                Height = ParseInt(xpathNavigator.SelectSingleNode(XPathPrefix + "/@height")?.Value);
+                SampleRate = ParseInt(xpathNavigator.SelectSingleNode(XPathPrefix + "/@sample_rate")?.Value);
+                ChannelLayout = xpathNavigator.SelectSingleNode(XPathPrefix + "/@channel_layout")?.Value;
+                BitRate = ParseLong(xpathNavigator.SelectSingleNode(XPathPrefix + "/@bit_rate")?.Value);
 
                 var attrValue = xpathNavigator.SelectSingleNode(XPathPrefix + "/@r_frame_rate")?.Value;
                 if (string.IsNullOrEmpty(attrValue))
                 {
-                    frameRate = -1f;
+                    FrameRate = -1f;
                 }
                 else
                 {
@@ -71,50 +71,51 @@ namespace DuplicateFinderEngine.FFProbeWrapper
                     });
                     if (array.Length != 2)
                     {
-                        frameRate = -1f;
+                        FrameRate = -1f;
                     }
                     else
                     {
                         var num = ParseInt(array[0]);
                         var num2 = ParseInt(array[1]);
-                        frameRate = (num > 0 && num2 > 0) ? num / (float)num2 : -1f;
+                        FrameRate = (num > 0 && num2 > 0) ? num / (float)num2 : -1f;
                     }
                 }
             }
 
-            private string index;
-            public string Index => index;
-            private string codecName;
-            public string CodecName => codecName;
+            [ProtoMember(1)]
+			public string Index { get; }
 
-            private string codecLongName;
-            public string CodecLongName => codecLongName;
+			[ProtoMember(2)]
+			public string CodecName { get; }
 
-            private string codecType;
-            public string CodecType => codecType;
+			[ProtoMember(3)]
+			public string CodecLongName { get; }
 
-            private string pixelFormat;
-            public string PixelFormat => pixelFormat;
+			[ProtoMember(4)]
+			public string CodecType { get; }
 
-            private int width;
-            public int Width => width;
+			[ProtoMember(5)]
+			public string PixelFormat { get; }
 
-            private int height;
-            public int Height => height;
+			[ProtoMember(6)]
+			public int Width { get; }
 
-            private int sampleRate;
-            public int SampleRate => sampleRate;
+			[ProtoMember(7)]
+			public int Height { get; }
 
-            private string channelLayout;
-            public string ChannelLayout => channelLayout;
+			[ProtoMember(8)]
+			public int SampleRate { get; }
 
-            private long bitRate;
-            public long BitRate => bitRate;
+			[ProtoMember(9)]
+			public string ChannelLayout { get; }
 
-            private float frameRate;
-            public float FrameRate => frameRate;
+			[ProtoMember(10)]
+			public long BitRate { get; }
 
-            private static int ParseInt(string s)
+			[ProtoMember(11)]
+			public float FrameRate { get; }
+
+			private static int ParseInt(string s)
             {
                 if (!string.IsNullOrEmpty(s) && int.TryParse(s, out var result))
                 {

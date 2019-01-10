@@ -250,6 +250,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Include Images.
+        /// </summary>
+        public static string IncludeImages {
+            get {
+                return ResourceManager.GetString("IncludeImages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Include Sub Directories.
         /// </summary>
         public static string IncludeSubDirectories {

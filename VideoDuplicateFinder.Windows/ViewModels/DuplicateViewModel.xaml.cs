@@ -12,8 +12,12 @@ namespace VideoDuplicateFinderWindows.ViewModels
         }
         private void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2)
-                System.Diagnostics.Process.Start(((DuplicateItemViewModel)DataContext).Path);
+	        if (e.ClickCount == 2) {
+		        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+			        FileName = ((DuplicateItemViewModel)DataContext).Path,
+			        UseShellExecute = true
+		        });
+	        }
         }
 
 	}

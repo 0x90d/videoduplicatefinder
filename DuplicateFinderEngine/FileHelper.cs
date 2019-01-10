@@ -104,7 +104,8 @@ namespace DuplicateFinderEngine {
 							File.Copy(s, temppath, true);
 							File.Delete(s);
 						}
-						File.Move(s, temppath);
+						else
+							File.Move(s, temppath);
 					}
 					else
 						File.Copy(s, temppath, pOverwriteDest);

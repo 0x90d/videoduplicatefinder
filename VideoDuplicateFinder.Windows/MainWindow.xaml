@@ -132,6 +132,11 @@
                     VerticalAlignment="Center"
                     Content="{x:Static properties:Resources.IncludeSubDirectories}"
                     IsChecked="{Binding IncludeSubDirectories}" />
+                            <CheckBox
+                                Margin="5,5,0,0"
+                                VerticalAlignment="Center"
+                                Content="{x:Static properties:Resources.IncludeImages}"
+                                IsChecked="{Binding IncludeImages}" />
 
                             <!--<StackPanel Orientation="Horizontal">
                     <StackPanel Margin="5,10,0,5" Orientation="Horizontal">

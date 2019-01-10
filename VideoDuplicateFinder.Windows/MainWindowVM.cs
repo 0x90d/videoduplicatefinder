@@ -255,6 +255,14 @@ namespace VideoDuplicateFinderWindows {
 				OnPropertyChanged(nameof(IncludeSubDirectories));
 			}
 		}
+		public bool IncludeImages {
+			get => Scanner.Settings.IncludeImages;
+			set {
+				if (value == Scanner.Settings.IncludeImages) return;
+				Scanner.Settings.IncludeImages = value;
+				OnPropertyChanged(nameof(IncludeImages));
+			}
+		}
 		public bool IgnoreReadOnlyFolders {
 			get => Scanner.Settings.IgnoreReadOnlyFolders;
 			set {
@@ -542,6 +550,7 @@ namespace VideoDuplicateFinderWindows {
 				new XElement("Excludes", excludes),
 				new XElement("Percent", Percent),
 				new XElement("IncludeSubDirectories", IncludeSubDirectories),
+				new XElement("IncludeImages", IncludeImages),
 				new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders)
 				)
 			);
@@ -560,6 +569,9 @@ namespace VideoDuplicateFinderWindows {
 			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
 			if (node?.Value != null)
 				IncludeSubDirectories = bool.Parse(node.Value);
+			node = xDoc.Descendants("IncludeImages").SingleOrDefault();
+			if (node?.Value != null)
+				IncludeImages = bool.Parse(node.Value);
 			node = xDoc.Descendants("IgnoreReadOnlyFolders").SingleOrDefault();
 			if (node?.Value != null)
 				IgnoreReadOnlyFolders = bool.Parse(node.Value);

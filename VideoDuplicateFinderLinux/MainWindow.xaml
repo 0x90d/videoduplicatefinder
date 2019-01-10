@@ -1,9 +1,9 @@
 <Window
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:duplicateFinderEngine="clr-namespace:DuplicateFinderEngine;assembly=DuplicateFinderEngine"
     xmlns:local="clr-namespace:VideoDuplicateFinderLinux"
     xmlns:mvvm="clr-namespace:VideoDuplicateFinderLinux.MVVM.Converters"
-    xmlns:duplicateFinderEngine="clr-namespace:DuplicateFinderEngine;assembly=DuplicateFinderEngine"
     Title="Video Duplicate Finder 2.0 - Cross-platform"
     Width="900"
     Height="750"
@@ -32,23 +32,63 @@
                 <Menu Grid.Row="0" Background="#F0F0F0">
                     <MenuItem VerticalAlignment="Center" Command="{Binding StartScanCommand}">
                         <MenuItem.Header>
-                            <TextBlock VerticalAlignment="Center" Text="Start" />
+                            <StackPanel Orientation="Horizontal">
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Start" />
+                            </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
                     <MenuItem Command="{Binding ResumeScanCommand}" IsVisible="{Binding IsScanning}">
                         <MenuItem.Header>
-                            <TextBlock VerticalAlignment="Center" Text="Resume" />
+                            <StackPanel Orientation="Horizontal">
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Resume" />
+                            </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
 
                     <MenuItem Command="{Binding PauseScanCommand}" IsVisible="{Binding IsScanning}">
                         <MenuItem.Header>
-                            <TextBlock VerticalAlignment="Center" Text="Pause" />
+                            <StackPanel Orientation="Horizontal">
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Data="M14,19H18V5H14M6,19H10V5H6V19Z" Fill="Blue" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Pause" />
+                            </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
                     <MenuItem Command="{Binding StopScanCommand}" IsVisible="{Binding IsScanning}">
                         <MenuItem.Header>
-                            <TextBlock VerticalAlignment="Center" Text="Stop" />
+                            <StackPanel Orientation="Horizontal">
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Data="M18,18H6V6H18V18Z" Fill="Red" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Stop" />
+                            </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
                 </Menu>
@@ -77,6 +117,12 @@
                             VerticalAlignment="Center"
                             Content="Include Sub Directories"
                             IsChecked="{Binding IncludeSubDirectories}"
+                            IsThreeState="False" />
+                        <CheckBox
+                            Margin="15,5,0,0"
+                            VerticalAlignment="Center"
+                            Content="Include Images"
+                            IsChecked="{Binding IncludeImages}"
                             IsThreeState="False" />
                         <TextBlock
                             Margin="15,5,0,0"
@@ -108,12 +154,32 @@
                             <Menu Grid.Row="0" Background="#F0F0F0">
                                 <MenuItem Command="{Binding AddIncludesToListCommand}">
                                     <MenuItem.Header>
-                                        <TextBlock VerticalAlignment="Center" Text="Add" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Add" />
+                                        </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
                                 <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
                                     <MenuItem.Header>
-                                        <TextBlock VerticalAlignment="Center" Text="Remove" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Remove" />
+                                        </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
                             </Menu>
@@ -143,12 +209,32 @@
                             <Menu Grid.Row="0" Background="#F0F0F0">
                                 <MenuItem Command="{Binding AddBlacklistToListCommand}">
                                     <MenuItem.Header>
-                                        <TextBlock VerticalAlignment="Center" Text="Add" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Add" />
+                                        </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
                                 <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
                                     <MenuItem.Header>
-                                        <TextBlock VerticalAlignment="Center" Text="Remove" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Remove" />
+                                        </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
                             </Menu>
@@ -168,7 +254,22 @@
                     <Menu Grid.Row="0" Background="#F0F0F0">
                         <MenuItem VerticalAlignment="Center">
                             <MenuItem.Header>
-                                <TextBlock VerticalAlignment="Center" Text="Selection" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="Black" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Selection" />
+                                    <Path
+                                        Margin="4,2,0,0"
+                                        VerticalAlignment="Center"
+                                        Data="M 0 0 L 6 6 L 12 0 Z"
+                                        Fill="Black" />
+                                </StackPanel>
                             </MenuItem.Header>
                             <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
                                 <MenuItem.Header>
@@ -193,7 +294,22 @@
                         </MenuItem>
                         <MenuItem VerticalAlignment="Center">
                             <MenuItem.Header>
-                                <TextBlock VerticalAlignment="Center" Text="Delete Selection" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Delete Selection" />
+                                    <Path
+                                        Margin="4,2,0,0"
+                                        VerticalAlignment="Center"
+                                        Data="M 0 0 L 6 6 L 12 0 Z"
+                                        Fill="Black" />
+                                </StackPanel>
                             </MenuItem.Header>
                             <MenuItem Command="{Binding DeleteSelectionCommand}">
                                 <MenuItem.Header>
@@ -220,7 +336,17 @@
                         <Separator />
                         <MenuItem Command="{Binding SaveToHtmlCommand}">
                             <MenuItem.Header>
-                                <TextBlock VerticalAlignment="Center" Text="Save To HTML" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" Fill="Black" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Save To HTML" />
+                                </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
                     </Menu>
@@ -277,20 +403,23 @@
                         </MenuItem.Header>
                     </MenuItem>
                 </Menu>
-                <ListBox
-                    Grid.Row="1"
-                    Items="{Binding LogItems}">
+                <ListBox Grid.Row="1" Items="{Binding LogItems}">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type duplicateFinderEngine:LogItem}">
-                            <Grid >
+                            <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition SharedSizeGroup="Index" Width="Auto"/>
-                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Index" />
+                                    <ColumnDefinition />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding DateTime}" Grid.Column="0"
-                                           FontWeight="Bold" Margin="5,0,5,0"/>
-                                <TextBlock Text="{Binding Message}" Grid.Column="1"
-                                           TextWrapping="Wrap"/>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0,5,0"
+                                    FontWeight="Bold"
+                                    Text="{Binding DateTime}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Text="{Binding Message}"
+                                    TextWrapping="Wrap" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

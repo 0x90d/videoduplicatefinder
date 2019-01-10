@@ -18,6 +18,7 @@
   </PropertyGroup> 
 
   <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="2.4.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.6.0-preview.18571.3" />
   </ItemGroup> 
 

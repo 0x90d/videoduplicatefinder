@@ -235,4 +235,7 @@
   <data name="MoveToFolder" xml:space="preserve">
     <value>Move To Folder</value>
   </data>
+  <data name="IncludeImages" xml:space="preserve">
+    <value>Include Images</value>
+  </data>
 </root>
