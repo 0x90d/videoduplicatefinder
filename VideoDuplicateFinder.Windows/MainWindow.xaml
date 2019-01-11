@@ -419,9 +419,11 @@
                     Width="150"
                     Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
                     Value="{Binding ScanProgressValue, Mode=OneWay}" />
-                            <TextBlock Margin="10,0,0,0" Text="{Binding TimeElapsed, Mode=OneWay, StringFormat={}Elapsed time: {0:hh}:{0:mm}:{0:ss}}" />
+                            <TextBlock Margin="10,0,0,0" Text="{x:Static properties:Resources.ElapsedTime}"/>
+                            <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat={}{0:hh}:{0:mm}:{0:ss}}" />
                             <Separator />
-                            <TextBlock Margin="10,0,0,0" Text="{Binding RemainingTime, Mode=OneWay, StringFormat={}Remaining time: ~{0:hh}:{0:mm}:{0:ss}}" />
+                            <TextBlock Margin="10,0,0,0" Text="{x:Static properties:Resources.RemainingTime}"/>
+                            <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat={}~{0:hh}:{0:mm}:{0:ss}}" />
                             <Separator />
                             <TextBlock
                     Margin="10,0,0,0"

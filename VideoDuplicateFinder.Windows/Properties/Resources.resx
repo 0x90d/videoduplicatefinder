@@ -238,4 +238,10 @@
   <data name="IncludeImages" xml:space="preserve">
     <value>Include Images</value>
   </data>
+  <data name="ElapsedTime" xml:space="preserve">
+    <value>Elapsed time: </value>
+  </data>
+  <data name="RemainingTime" xml:space="preserve">
+    <value>Remaining time: </value>
+  </data>
 </root>

@@ -169,6 +169,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Elapsed time: .
+        /// </summary>
+        public static string ElapsedTime {
+            get {
+                return ResourceManager.GetString("ElapsedTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enumerating input folders....
         /// </summary>
         public static string EnumeratingInputFolders {
@@ -318,6 +327,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string PleaseWait {
             get {
                 return ResourceManager.GetString("PleaseWait", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remaining time: .
+        /// </summary>
+        public static string RemainingTime {
+            get {
+                return ResourceManager.GetString("RemainingTime", resourceCulture);
             }
         }
         
