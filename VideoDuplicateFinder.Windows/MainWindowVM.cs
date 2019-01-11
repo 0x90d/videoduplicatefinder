@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -239,11 +240,14 @@ namespace VideoDuplicateFinderWindows {
 				OnPropertyChanged(nameof(IsPaused));
 			}
 		}
-		public float Percent {
-			get => Scanner.Settings.Percent;
+		public string Percent {
+			get => Scanner.Settings.Percent.ToString(CultureInfo.InvariantCulture);
 			set {
-				if (value == Scanner.Settings.Percent) return;
-				Scanner.Settings.Percent = value;
+				if (!float.TryParse(value, out var val) || val < 1f || val > 100f) {
+					throw new ApplicationException("Invalid floating number");
+				}
+				if (val == Scanner.Settings.Percent) return;
+				Scanner.Settings.Percent = val;
 				OnPropertyChanged(nameof(Percent));
 			}
 		}

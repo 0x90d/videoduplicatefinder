@@ -42,7 +42,17 @@
     </Window.TaskbarItemInfo>
     <Grid>
         <TabControl>
-            <TabItem Header="{x:Static properties:Resources.Scanner}">
+            <TabItem >
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="16" Height="16">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H13C12.59,21.75 12.2,21.44 11.86,21.1C11.53,20.77 11.25,20.4 11,20H6V4H13V9H18V10.18C18.71,10.34 19.39,10.61 20,11V8L14,2M20.31,18.9C21.64,16.79 21,14 18.91,12.68C16.8,11.35 14,12 12.69,14.08C11.35,16.19 12,18.97 14.09,20.3C15.55,21.23 17.41,21.23 18.88,20.32L22,23.39L23.39,22L20.31,18.9M16.5,19A2.5,2.5 0 0,1 14,16.5A2.5,2.5 0 0,1 16.5,14A2.5,2.5 0 0,1 19,16.5A2.5,2.5 0 0,1 16.5,19Z" Fill="Green" />
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Margin="2,0,0,0" Text="{x:Static properties:Resources.Scanner}"/>
+                    </StackPanel>
+                </TabItem.Header>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -138,31 +148,22 @@
                                 Content="{x:Static properties:Resources.IncludeImages}"
                                 IsChecked="{Binding IncludeImages}" />
 
-                            <!--<StackPanel Orientation="Horizontal">
-                    <StackPanel Margin="5,10,0,5" Orientation="Horizontal">
-                        <Label Content="Threshold:" />
-                        <e:ByteEditBox
-                            CommitTriggers="All"
-                            Maximum="5"
-                            Minimum="0"
-                            Value="{Binding Threshhold}" />
-                    </StackPanel>
-                    <StackPanel Margin="5,10,0,5" Orientation="Horizontal">
-                        <Label Content="Percent:" />
-                        <theme:NumericUpDownFloat
-                           MaxValue="100"
-                            Width="55"
-                            Value="{Binding Percent, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <StackPanel Margin="5,10,0,5" Orientation="Horizontal">
-                        <Label Content="Thumbnails:" />
-                        <theme:NumericUpDown
-                           MaxValue="5"
-                            Width="55"
-                            MinValue="1"
-                            Value="{Binding ThumbnailCount, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                </StackPanel>-->
+                            <TextBlock
+                                Margin="15,5,0,0"
+                                VerticalAlignment="Center"
+                                Text="Percent:" />
+                            <TextBox
+                                Margin="5,5,0,0"
+                                MinWidth="35"
+                                VerticalAlignment="Center" >
+                                <TextBox.Text>
+                                    <Binding Path="Percent" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <ExceptionValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                         </StackPanel>
                         <GroupBox
                 Grid.Row="1"
@@ -323,11 +324,22 @@
                                 <MenuItem Command="{Binding SaveToHtmlCommand}" Header="{x:Static properties:Resources.ToHtml}" />
                             </MenuItem>
                             <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
-                            <MenuItem Header="{x:Static properties:Resources.Filter}" x:Name="ToggleBtnFilter" IsCheckable="True"/>
+                            <MenuItem  x:Name="ToggleBtnFilter" IsCheckable="True">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M14,12V19.88C14.04,20.18 13.94,20.5 13.71,20.71C13.32,21.1 12.69,21.1 12.3,20.71L10.29,18.7C10.06,18.47 9.96,18.16 10,17.87V12H9.97L4.21,4.62C3.87,4.19 3.95,3.56 4.38,3.22C4.57,3.08 4.78,3 5,3V3H19V3C19.22,3 19.43,3.08 19.62,3.22C20.05,3.56 20.13,4.19 19.79,4.62L14.03,12H14Z" Fill="Goldenrod" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="{x:Static properties:Resources.Filter}"/>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
                         </Menu>
-                        <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="{Binding ElementName=ToggleBtnFilter, Path=IsChecked, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Margin="5" Grid.Row="1" Orientation="Horizontal" Visibility="{Binding ElementName=ToggleBtnFilter, Path=IsChecked, Converter={StaticResource BoolToVis}}">
 <TextBlock Text="{x:Static properties:Resources.Path}"/>
-<TextBox Margin="5,0,0,0" Text="{Binding FilterByPath, UpdateSourceTrigger=PropertyChanged}" MinWidth="100"/>
+<TextBox Margin="5,0,0,0" Text="{Binding FilterByPath, UpdateSourceTrigger=PropertyChanged}" MinWidth="150"/>
                         </StackPanel>
                         <ListView
                 Name="TreeViewDuplicates"
@@ -419,7 +431,17 @@
                     </StatusBar>
                 </Grid>
             </TabItem>
-            <TabItem Header="{x:Static properties:Resources.Log}">
+            <TabItem >
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="16" Height="16">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z" Fill="Black" />
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Margin="2,0,0,0" Text="{x:Static properties:Resources.Log}"/>
+                    </StackPanel>
+                </TabItem.Header>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -427,8 +449,30 @@
                     </Grid.RowDefinitions>
               
                 <Menu Grid.Row="0">
-                        <MenuItem Header="{x:Static properties:Resources.ClearLog}" Command="{Binding ClearLogCommand}"/>
-                        <MenuItem Header="{x:Static properties:Resources.CopyLogToClipboard}" Command="{Binding CopyLogCommand}"/>
+                        <MenuItem    Command="{Binding ClearLogCommand}">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Data="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z" Fill="Red" />
+                                    </Canvas>
+                                </Viewbox>
+                                    <TextBlock Text="{x:Static properties:Resources.ClearLog}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                        <MenuItem    Command="{Binding CopyLogCommand}">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Viewbox Width="16" Height="16">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Data="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" Fill="Black" />
+                                    </Canvas>
+                                </Viewbox>
+                                    <TextBlock Text="{x:Static properties:Resources.CopyLogToClipboard}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
                     </Menu>
                 <ItemsControl Grid.Row="1" ItemsSource="{Binding LogItems}">
                     <ItemsControl.Template>
