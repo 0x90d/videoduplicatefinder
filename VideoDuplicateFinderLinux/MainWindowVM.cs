@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace VideoDuplicateFinderLinux
@@ -244,9 +245,14 @@ namespace VideoDuplicateFinderLinux
         });
 
 
-        public ReactiveCommand StartScanCommand => ReactiveCommand.Create(() =>
+        public ReactiveCommand StartScanCommand => ReactiveCommand.CreateFromTask(async () =>
         {
-            Duplicates.Clear();
+	        if (!DuplicateFinderEngine.Utils.FfFilesExist) {
+				await MessageBoxService.Show(Properties.Resources.FFmpegFFprobeIsMissing);
+				return;
+			}
+
+			Duplicates.Clear();
             try
             {
                 foreach (var f in new DirectoryInfo(Utils.ThumbnailDirectory).EnumerateFiles())
@@ -372,11 +378,16 @@ namespace VideoDuplicateFinderLinux
         public ReactiveCommand DeleteSelectionCommand => ReactiveCommand.Create(() => { DeleteInternal(true); });
         public ReactiveCommand RemoveSelectionFromListCommand => ReactiveCommand.Create(() => { DeleteInternal(false); });
 
-        void DeleteInternal(bool fromDisk)
+       async void DeleteInternal(bool fromDisk)
         {
             if (Duplicates.Count == 0) return;
-            //TODO: Confirmation prompt?
-            for (var i = Duplicates.Count - 1; i >= 0; i--)
+            var dlgResult = await MessageBoxService.Show(
+	            fromDisk
+		            ? Properties.Resources.ConfirmationDeleteFromDisk
+		            : Properties.Resources.ConfirmationDeleteFromList,
+	            MessageBoxButtons.Yes | MessageBoxButtons.No);
+			if (dlgResult == MessageBoxButtons.No) return;
+			for (var i = Duplicates.Count - 1; i >= 0; i--)
             {
                 var dub = Duplicates[i];
                 if (dub.Checked == false) continue;

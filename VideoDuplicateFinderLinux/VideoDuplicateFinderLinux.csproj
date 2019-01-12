@@ -16,6 +16,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Remove="MessageBoxView.xaml" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="0.7.1-build1097-beta" />
     <PackageReference Include="Avalonia.Desktop" Version="0.7.1-build1097-beta" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.7.1-build1097-beta" />
@@ -39,6 +42,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="MessageBoxView.xaml.cs">
+      <DependentUpon>MessageBoxView.xaml</DependentUpon>
+    </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -47,6 +53,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="DuplicateViewModel.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MessageBoxView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Properties\Resources.resx">

@@ -15,6 +15,8 @@ namespace DuplicateFinderEngine
 
         private static readonly string[] suf = { " B", " KB", " MB", " GB", " TB", " PB", " EB" };
 
+        public static bool FfFilesExist => File.Exists(FfmpegPath) && File.Exists(FfprobePath);
+
         static Utils()
         {
             var currentDir = Path.GetDirectoryName(typeof(FFmpegWrapper.FFmpegWrapper).Assembly.Location);
@@ -49,8 +51,7 @@ namespace DuplicateFinderEngine
                         FfprobePath = files.FirstOrDefault(x => x.Name.StartsWith(FFprobeExecutableName, true, CultureInfo.InvariantCulture))
                         ?.FullName;
                 }
-
-          
+			
         }
 
 
