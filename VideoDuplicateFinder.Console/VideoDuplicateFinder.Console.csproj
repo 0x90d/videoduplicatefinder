@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFrameworks>netcoreapp3.0;netcoreapp2.2</TargetFrameworks>
     <LangVersion>7.2</LangVersion>
     <RootNamespace>VideoDuplicateFinderConsole</RootNamespace>
     <AssemblyName>VideoDuplicateFinderConsole</AssemblyName>
