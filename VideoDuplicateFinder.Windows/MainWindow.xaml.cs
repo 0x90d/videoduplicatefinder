@@ -10,7 +10,6 @@ namespace VideoDuplicateFinderWindows
             InitializeComponent();
             ((MainWindowVM)DataContext).host = this;
             ((MainWindowVM)DataContext).LoadSettings();
-            
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

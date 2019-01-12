@@ -347,7 +347,12 @@ namespace VideoDuplicateFinderWindows {
 				Blacklists.Remove((string)a.SelectedItems[0]);
 		}, a => a?.SelectedItems.Count > 0);
 		public DelegateCommand StartScanCommand => new DelegateCommand(a => {
-			Duplicates.Clear();
+			if (!DuplicateFinderEngine.Utils.FfFilesExist) {
+				MessageBox.Show(
+					VideoDuplicateFinder.Windows.Properties.Resources.FFmpegExeFFprobeExeIsMissing, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+				return;
+			}
+				Duplicates.Clear();
 			IsScanning = true;
 			//Set scan settings
 			Scanner.Settings.IncludeList.Clear();

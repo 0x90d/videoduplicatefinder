@@ -244,4 +244,7 @@
   <data name="RemainingTime" xml:space="preserve">
     <value>Remaining time: </value>
   </data>
+  <data name="FFmpegExeFFprobeExeIsMissing" xml:space="preserve">
+    <value>FFmpeg.exe / FFprobe.exe is missing. Please make sure both are placed in the same directory as this application.</value>
+  </data>
 </root>

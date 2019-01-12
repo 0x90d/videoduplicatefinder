@@ -223,6 +223,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to FFmpeg.exe / FFprobe.exe is missing. Please make sure both are placed in the same directory as this application..
+        /// </summary>
+        public static string FFmpegExeFFprobeExeIsMissing {
+            get {
+                return ResourceManager.GetString("FFmpegExeFFprobeExeIsMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Filter.
         /// </summary>
         public static string Filter {
