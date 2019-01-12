@@ -13,7 +13,16 @@ namespace DuplicateFinderEngine {
 
 		private static readonly string[] suf = { " B", " KB", " MB", " GB", " TB", " PB", " EB" };
 
-		public static bool FfFilesExist => File.Exists(FfmpegPath) && File.Exists(FfprobePath);
+		public static bool FfFilesExist {
+			get {
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+					return File.Exists(FfmpegPath + ".exe") && File.Exists(FfprobePath + ".exe");
+				}
+				else {
+					return File.Exists(FfmpegPath) && File.Exists(FfprobePath);
+				}
+			}
+		}
 
 		static Utils() {
 			var currentDir = Path.GetDirectoryName(typeof(FFmpegWrapper.FFmpegWrapper).Assembly.Location);
