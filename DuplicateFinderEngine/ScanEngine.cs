@@ -70,7 +70,7 @@ namespace DuplicateFinderEngine {
 			var hasLoadedData = FileList.Count > 0;
 			var st = Stopwatch.StartNew();
 			foreach (var item in Settings.IncludeList) {
-				foreach (var f in FileHelper.GetFilesRecursive(item, Settings.IgnoreReadOnlyFolders, 
+				foreach (var f in FileHelper.GetFilesRecursive(item, Settings.IgnoreReadOnlyFolders,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					var vf = new VideoFileEntry(f);
 					if (!hasLoadedData || !FileList.Any(a => a.Path.Equals(vf.Path)))
@@ -295,8 +295,13 @@ namespace DuplicateFinderEngine {
 		private List<Image> GetImageThumbnail(DuplicateItem videoFile, int count) {
 			var images = new List<Image>();
 			for (var i = 0; i < count; i++) {
-				var bitmapImage = Image.FromFile(videoFile.Path);
-
+				Image bitmapImage;
+				try {
+					bitmapImage = Image.FromFile(videoFile.Path);
+				}
+				catch {
+					return null;
+				}
 				//Fill some missing data now when we have the information
 				videoFile.FrameSize = $"{bitmapImage.Width}x{bitmapImage.Height}";
 				videoFile.FrameSizeInt = bitmapImage.Width + bitmapImage.Height;
@@ -350,17 +355,21 @@ namespace DuplicateFinderEngine {
 		private List<byte[]> GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
 			var images = new List<byte[]>();
 			for (var i = 0; i < count; i++) {
-
-				using (var byteStream = File.OpenRead(videoFile.Path)) {
-					using (var bitmapImage = Image.FromStream(byteStream)) {
-						var b = new Bitmap(16, 16);
-						using (var g = Graphics.FromImage(b)) {
-							g.DrawImage(bitmapImage, 0, 0, 16, 16);
+				try {
+					using (var byteStream = File.OpenRead(videoFile.Path)) {
+						using (var bitmapImage = Image.FromStream(byteStream)) {
+							var b = new Bitmap(16, 16);
+							using (var g = Graphics.FromImage(b)) {
+								g.DrawImage(bitmapImage, 0, 0, 16, 16);
+							}
+							var d = ExtensionMethods.GetGrayScaleValues(b);
+							if (d == null) return null;
+							images.Add(d);
 						}
-						var d = ExtensionMethods.GetGrayScaleValues(b);
-						if (d == null) return null;
-						images.Add(d);
 					}
+				}
+				catch {
+					return null;
 				}
 			}
 			return images;
