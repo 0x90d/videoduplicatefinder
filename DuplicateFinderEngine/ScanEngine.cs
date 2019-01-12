@@ -285,9 +285,8 @@ namespace DuplicateFinderEngine {
 					}
 				}
 			}
-			catch (FFmpegWrapper.FFMpegException) {
-				//Logger.Instance.Info($"File: {videoFile.Path}, {ex.Message}");
-				//Trace.TraceError(ex.Message);
+			catch (FFmpegWrapper.FFMpegException ex) {
+				Logger.Instance.Info($"FFMpegException, file: {videoFile.Path}, reason: {ex.Message}");
 				return null;
 			}
 			return images;
@@ -299,7 +298,8 @@ namespace DuplicateFinderEngine {
 				try {
 					bitmapImage = Image.FromFile(videoFile.Path);
 				}
-				catch {
+				catch (Exception ex) {
+					Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}");
 					return null;
 				}
 				//Fill some missing data now when we have the information
@@ -345,7 +345,8 @@ namespace DuplicateFinderEngine {
 					}
 				}
 			}
-			catch (FFmpegWrapper.FFMpegException) {
+			catch (FFmpegWrapper.FFMpegException ex) {
+				Logger.Instance.Info($"FFMpegException, file: {videoFile.Path}, reason: {ex.Message}");
 				return null;
 			}
 			return images;
@@ -368,7 +369,8 @@ namespace DuplicateFinderEngine {
 						}
 					}
 				}
-				catch {
+				catch (Exception ex) {
+					Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}");
 					return null;
 				}
 			}
