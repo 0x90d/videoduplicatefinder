@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Threading;
 
 namespace DuplicateFinderEngine.FFmpegWrapper
 {
@@ -128,12 +127,9 @@ namespace DuplicateFinderEngine.FFmpegWrapper
 
         internal byte[] RunFFmpeg(Media input, Media output, FFmpegSettings settings)
         {
-
-            var text2 = Path.GetTempFileName();
-
             try
             {
-                var arguments = BuildFFmpegCommandlineArgs(input.Filename, input.Format, text2, output.Format, settings);
+                var arguments = BuildFFmpegCommandlineArgs(input.Filename, input.Format, "-", output.Format, settings);
                 var processStartInfo =
                     new ProcessStartInfo(Utils.FfmpegPath, arguments)
                     {
@@ -162,28 +158,26 @@ namespace DuplicateFinderEngine.FFmpegWrapper
                     ffmpegProgress.Seek = settings.Seek;
                     ffmpegProgress.MaxDuration = settings.MaxDuration;
                 }
+				
+	            var ms = new MemoryStream();
+				//start reading here, otherwise the streams fill up and ffmpeg will block forever
+	            var ffmpegLogTask = FFMpegProcess.StandardError.ReadToEndAsync();
+	            var imgDataTask = FFMpegProcess.StandardOutput.BaseStream.CopyToAsync(ms);
 
                 WaitFFMpegProcessForExit();
 
+	            var ffmpegLog = ffmpegLogTask.Result;
+	            imgDataTask.Wait(1000);
+	            output.Bytes = ms.ToArray();
+	            
                 FFMpegProcess?.Close();
                 FFMpegProcess = null;
-                output.Bytes = File.ReadAllBytes(text2);
 
             }
             catch (Exception)
             {
                 EnsureFFMpegProcessStopped();
                 throw;
-            }
-            finally
-            {
-                if (output.Filename == null && File.Exists(text2))
-                {
-                    var fi = new FileInfo(text2);
-                    while (IsFileLocked(fi))
-                        Thread.Sleep(1000);
-                    fi.Delete();
-                }
             }
             return output.Bytes;
         }
