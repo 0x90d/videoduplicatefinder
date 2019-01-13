@@ -79,8 +79,8 @@ namespace VideoDuplicateFinderConsole {
 						:  string.Format(Properties.Resources.CmdException_FFprobeMissingLinux, Utils.FFmpegExecutableName));
 					}
 				if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-					ConsoleHelpers.WriteColored("-- Note: When the app crashes with 'The type initializer for 'Gdip' threw an exception ...' exception you will have to install ", ConsoleColor.DarkGray);
-					ConsoleHelpers.WriteLineColored("libgdiplus", ConsoleColor.Yellow);
+					Console.WriteLine("-- Note: When the app crashes with 'The type initializer for 'Gdip' threw an exception ...' exception you will have to install ");
+					Console.WriteLine("libgdiplus");
 				}
 
 			}
