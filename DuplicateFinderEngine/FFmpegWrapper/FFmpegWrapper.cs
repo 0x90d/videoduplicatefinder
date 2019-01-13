@@ -137,9 +137,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         WorkingDirectory = Path.GetDirectoryName(Utils.FfmpegPath) ?? string.Empty,
-                        RedirectStandardInput = true,
                         RedirectStandardOutput = true,
-                        RedirectStandardError = true
                     };
 
                 if (FFMpegProcess != null)
@@ -161,12 +159,10 @@ namespace DuplicateFinderEngine.FFmpegWrapper
 				
 	            var ms = new MemoryStream();
 				//start reading here, otherwise the streams fill up and ffmpeg will block forever
-	            var ffmpegLogTask = FFMpegProcess.StandardError.ReadToEndAsync();
 	            var imgDataTask = FFMpegProcess.StandardOutput.BaseStream.CopyToAsync(ms);
 
                 WaitFFMpegProcessForExit();
-
-	            var ffmpegLog = ffmpegLogTask.Result;
+				
 	            imgDataTask.Wait(1000);
 	            output.Bytes = ms.ToArray();
 	            
