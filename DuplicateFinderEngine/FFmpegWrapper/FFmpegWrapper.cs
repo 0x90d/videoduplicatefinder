@@ -15,7 +15,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper
             InputFile = inputFile;
             var settings = new FFmpegSettings {
 	            Seek = frameTime,
-	            OutputFormat = grayScale ? "rawvideo" : "mjpeg",
+	            OutputFormat = grayScale ? "rawvideo -pix_fmt gray" : "mjpeg",
 				VideoFrameSize = grayScale ? "-s 16x16" : "-vf scale=100:-1",
             };
 
