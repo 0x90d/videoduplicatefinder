@@ -10,7 +10,6 @@ namespace DuplicateFinderEngine.FFmpegWrapper
     {
         private Process FFMpegProcess;
         private readonly TimeSpan ExecutionTimeout = new TimeSpan(0, 0, 15);
-        public ProcessPriorityClass FFMpegProcessPriority { get; set; } = ProcessPriorityClass.Normal;
         private string InputFile;
         public byte[] GetVideoThumbnail(string inputFile, float? frameTime, bool grayScale)
         {
@@ -47,11 +46,6 @@ namespace DuplicateFinderEngine.FFmpegWrapper
 
         void WaitFFMpegProcessForExit()
         {
-            if (FFMpegProcess == null)
-            {
-                Logger.Instance.Info(Properties.Resources.FFMpegProcessWasAborted);
-                throw new FFMpegException(-1, Properties.Resources.FFMpegProcessWasAborted);
-            }
             if (FFMpegProcess.HasExited)
             {
                 return;
@@ -145,17 +139,11 @@ namespace DuplicateFinderEngine.FFmpegWrapper
                     throw new InvalidOperationException(Properties.Resources.FFMpegProcessIsAlreadyStarted);
                 }
                 FFMpegProcess = Process.Start(processStartInfo);
-                if (FFMpegProcessPriority != ProcessPriorityClass.Normal && FFMpegProcess != null)
-                {
-                    FFMpegProcess.PriorityClass = FFMpegProcessPriority;
-                }
-
-                var ffmpegProgress = new FFMpegProgress();
-                if (settings != null)
-                {
-                    ffmpegProgress.Seek = settings.Seek;
-                    ffmpegProgress.MaxDuration = settings.MaxDuration;
-                }
+                if (FFMpegProcess == null) {
+					Logger.Instance.Info(Properties.Resources.FFMpegProcessWasAborted);
+					throw new FFMpegException(-1, Properties.Resources.FFMpegProcessWasAborted);
+				}
+				
 				
 	            var ms = new MemoryStream();
 				//start reading here, otherwise the streams fill up and ffmpeg will block forever
@@ -177,25 +165,6 @@ namespace DuplicateFinderEngine.FFmpegWrapper
             }
             return output.Bytes;
         }
-
-        static bool IsFileLocked(FileInfo file)
-        {
-            FileStream stream = null;
-
-            try
-            {
-                stream = file.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-            }
-            catch (IOException)
-            {
-                return true;
-            }
-            finally
-            {
-                stream?.Close();
-                stream?.Dispose();
-            }
-            return false;
-        }
+		
     }
 }
