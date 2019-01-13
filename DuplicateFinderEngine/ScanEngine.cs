@@ -20,7 +20,6 @@ namespace DuplicateFinderEngine {
 		public int ScanProgressMaxValue;
 		public int ScanProgressValue;
 		public TimeSpan TimeElapsed;
-		private DateTime startTime;
 		public TimeSpan RemainingTime;
 		private bool _isScanning;
 
@@ -53,7 +52,6 @@ namespace DuplicateFinderEngine {
 			//set properties
 			ScanProgressMaxValue = FileList.Count;
 			//start scan
-			startTime = DateTime.Now;
 			Logger.Instance.Info(Properties.Resources.StartScan);
 			if (!m_cancelationTokenSource.IsCancellationRequested)
 				await Task.Run(() => InternalSearch(m_cancelationTokenSource.Token, m_pauseTokeSource));
@@ -141,12 +139,27 @@ namespace DuplicateFinderEngine {
 		static readonly object AddDuplicateLock = new object();
 		private void InternalSearch(CancellationToken cancelToken, PauseTokenSource pauseTokenSource) {
 			ElapsedTimer.Start();
+			var startTime = DateTime.Now;
 			processedFiles = 0;
+			var lastProgressUpdate = DateTime.MinValue;
+			var progressUpdateItvl = TimeSpan.FromMilliseconds(300);
+
+			void IncrementProgress(Action<TimeSpan> fn) {
+				Interlocked.Increment(ref processedFiles);
+				var pushUpdate = processedFiles == FileList.Count ||
+				                 lastProgressUpdate + progressUpdateItvl < DateTime.Now;
+				if (!pushUpdate) return;
+				lastProgressUpdate = DateTime.Now;
+				var timeRemaining = TimeSpan.FromTicks(DateTime.Now.Subtract(startTime).Ticks *
+					                   (ScanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
+				fn(timeRemaining);
+			}
+
 			try {
 				var st = Stopwatch.StartNew();
 				Parallel.For(0, FileList.Count, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = cancelToken }, i => {
 					while (pauseTokenSource.IsPaused) {
-						Thread.Sleep(500);
+						Thread.Sleep(50);
 					}
 
 					if (FileList[i].mediaInfo == null && !FileList[i].IsImage) {
@@ -161,24 +174,22 @@ namespace DuplicateFinderEngine {
 						FileList[i].grayBytes = FileList[i].IsImage ? GetImageAsBitmaps(FileList[i], positionList.Count) : GetVideoThumbnailAsBitmaps(FileList[i], positionList);
 						if (FileList[i].grayBytes == null) return;
 					}
-
-
+					
 					//report progress
-					Interlocked.Increment(ref processedFiles);
-					var timeRemaining = TimeSpan.FromTicks(DateTime.Now.Subtract(startTime).Ticks * (ScanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
-					Progress?.Invoke(this,
-						new OwnScanProgress {
-							CurrentPosition = processedFiles,
-							CurrentFile = FileList[i].Path,
-							Elapsed = ElapsedTimer.Elapsed,
-							Remaining = timeRemaining
-						});
-
+					IncrementProgress(remaining =>
+						Progress?.Invoke(this,
+							new OwnScanProgress {
+								CurrentPosition = processedFiles,
+								CurrentFile = FileList[i].Path,
+								Elapsed = ElapsedTimer.Elapsed,
+								Remaining = remaining
+							}));
 				});
 				st.Stop();
 				Logger.Instance.Info(string.Format(Properties.Resources.ThumbnailsFinished, st.Elapsed, processedFiles));
 				processedFiles = 0;
 				st.Restart();
+				startTime = DateTime.Now;
 
 				var percentageDifference = 1.0f - Settings.Percent / 100f;
 
@@ -189,7 +200,7 @@ namespace DuplicateFinderEngine {
 					},
 					i => {
 						while (pauseTokenSource.IsPaused) {
-							Thread.Sleep(500);
+							Thread.Sleep(50);
 						}
 						foreach (var itm in FileList) {
 							if (itm == FileList[i]) continue;
@@ -243,17 +254,16 @@ namespace DuplicateFinderEngine {
 							//we found a matching source then duplicate was added no need to go deeper
 							break;
 						}
-						processedFiles++;
-						//report progress
-						var timeRemaining = TimeSpan.FromTicks(DateTime.Now.Subtract(startTime).Ticks * (FileList.Count - (processedFiles + 1)) / (processedFiles + 1));
-						Progress?.Invoke(this,
-							new OwnScanProgress {
-								CurrentPosition = processedFiles,
-								CurrentFile = FileList[i].Path,
-								Elapsed = ElapsedTimer.Elapsed,
-								Remaining = timeRemaining
-							});
 
+						//report progress
+						IncrementProgress(remaining =>
+							Progress?.Invoke(this,
+								new OwnScanProgress {
+									CurrentPosition = processedFiles,
+									CurrentFile = FileList[i].Path,
+									Elapsed = ElapsedTimer.Elapsed,
+									Remaining = remaining
+								}));
 					});
 
 				st.Stop();
