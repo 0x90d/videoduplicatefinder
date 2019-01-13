@@ -309,7 +309,7 @@ namespace DuplicateFinderEngine {
 					bitmapImage = Image.FromFile(videoFile.Path);
 				}
 				catch (Exception ex) {
-					Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}");
+					Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
 					return null;
 				}
 				//Fill some missing data now when we have the information
@@ -377,7 +377,7 @@ private List<byte[]> GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
 			}
 		}
 		catch (Exception ex) {
-			Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}");
+			Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
 			return null;
 		}
 	}
