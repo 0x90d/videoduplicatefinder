@@ -21,19 +21,17 @@ namespace VideoDuplicateFinderConsole {
 			readonly List<string> commandArgs = new List<string>();
 			static readonly char PATHS_SEP = Path.PathSeparator;
 
-			bool isRecursive;
-			bool includeImages;
-			float? percent;
-			string outputFolder;
-			bool isQuiet;
-			readonly List<string> includeFolders = new List<string>();
-			readonly List<string> excludeFolders = new List<string>();
+			readonly ConsoleScanSettings settings = new ConsoleScanSettings();
 
 
 			public int Run(string[] args) {
 				try {
 					ParseCommandLine(args);
-					if (includeFolders.Count == 0)
+					if (settings.CleanupDatabase) {
+						StartCleanup();
+						return 0;
+					}
+					if (settings.IncludeFolders.Count == 0)
 						throw new ParseException(Properties.Resources.CmdException_MissingIncludePath);
 					EnsureFFFilesExist();
 					Console.WriteLine(Environment.NewLine + Environment.NewLine);
@@ -86,9 +84,13 @@ namespace VideoDuplicateFinderConsole {
 			}
 
 			void StartScan() {
-				var engine = new Scanner(includeFolders, excludeFolders, isRecursive, outputFolder,
-					isQuiet, includeImages, percent);
+				var engine = new Scanner(settings);
 				engine.StartSearch();
+			}
+
+			void StartCleanup() {
+				var engine = new Scanner(settings);
+				engine.StartCleanup();
 			}
 
 
@@ -107,6 +109,7 @@ namespace VideoDuplicateFinderConsole {
 				new HelpInfo("-e", Properties.Resources.CmdPath,Properties.Resources.CmdDescription_ExcludeFolder),
 				new HelpInfo("-r", string.Empty,Properties.Resources.CmdDescription_Recursive),
 				new HelpInfo("-q", string.Empty,Properties.Resources.CmdDescription_Quiet),
+				new HelpInfo("-clean", string.Empty,Properties.Resources.CmdDescription_Clean),
 				new HelpInfo("-j", string.Empty,Properties.Resources.CmdDescription_IncludeImages),
 				new HelpInfo("-p", Properties.Resources.CmdFloat,Properties.Resources.CmdDescription_Percent),
 				new HelpInfo("-o", Properties.Resources.CmdPath,Properties.Resources.CmdDescription_Output),
@@ -128,29 +131,33 @@ namespace VideoDuplicateFinderConsole {
 						switch (arg) {
 
 						case "-r":
-							isRecursive = true;
+							settings.IsRecursive = true;
 							break;
 
 						case "-q":
-							isQuiet = true;
+							settings.IsQuiet = true;
 							break;
 
 						case "-j":
-							includeImages = true;
+							settings.IncludeImages = true;
+							break;
+
+						case "-clean":
+							settings.CleanupDatabase = true;
 							break;
 
 						case "-p":
 							if (next == null)
 								throw new ParseException(Properties.Resources.CmdException_MissingPercent);
-							percent = ParseFloat(next);
+							settings.Percent = ParseFloat(next);
 							i++;
 							break;
 
 						case "-o":
 							if (next == null)
 								throw new ParseException(Properties.Resources.CmdException_MissingOutputPath);
-							outputFolder = Path.GetFullPath(next);
-							if (!Directory.Exists(outputFolder))
+							settings.OutputFolder = Path.GetFullPath(next);
+							if (!Directory.Exists(settings.OutputFolder))
 								throw new ParseException(Properties.Resources.CmdException_PathNotExist);
 							i++;
 							break;
@@ -161,8 +168,8 @@ namespace VideoDuplicateFinderConsole {
 							var path = Path.GetFullPath(next);
 							if (!Directory.Exists(path))
 								throw new ParseException(Properties.Resources.CmdException_PathNotExist);
-							if (!includeFolders.Contains(path))
-								includeFolders.Add(path);
+							if (!settings.IncludeFolders.Contains(path))
+								settings.IncludeFolders.Add(path);
 							i++;
 							break;
 
@@ -172,8 +179,8 @@ namespace VideoDuplicateFinderConsole {
 							var expath = Path.GetFullPath(next);
 							if (!Directory.Exists(expath))
 								throw new ParseException(Properties.Resources.CmdException_PathNotExist);
-							if (!excludeFolders.Contains(expath))
-								excludeFolders.Add(expath);
+							if (!settings.ExcludeFolders.Contains(expath))
+								settings.ExcludeFolders.Add(expath);
 							i++;
 							break;
 						}

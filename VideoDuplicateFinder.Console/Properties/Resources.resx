@@ -180,4 +180,7 @@
   <data name="CmdDescription_IncludeImages" xml:space="preserve">
     <value>include images</value>
   </data>
+  <data name="CmdDescription_Clean" xml:space="preserve">
+    <value>Cleanup database</value>
+  </data>
 </root>

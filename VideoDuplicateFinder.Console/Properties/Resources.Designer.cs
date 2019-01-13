@@ -70,6 +70,15 @@ namespace VideoDuplicateFinderConsole.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cleanup database.
+        /// </summary>
+        internal static string CmdDescription_Clean {
+            get {
+                return ResourceManager.GetString("CmdDescription_Clean", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to path to the folder to exclude in scan.
         /// </summary>
         internal static string CmdDescription_ExcludeFolder {

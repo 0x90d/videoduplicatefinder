@@ -7,45 +7,44 @@ using DuplicateFinderEngine;
 namespace VideoDuplicateFinderConsole {
 	class Scanner {
 		private readonly ScanEngine engine = new ScanEngine();
+		readonly ConsoleScanSettings ScanSettings;
 		readonly string Outputfolder;
-		public Scanner(List<string> include, List<string> exclude, bool recursive, string outputfolder,
-			bool quiet, bool includeImages, float? percent) {
-			foreach (var s in include)
+		public Scanner(ConsoleScanSettings settings) {
+			foreach (var s in settings.IncludeFolders)
 				engine.Settings.IncludeList.Add(s);
-			foreach (var s in exclude)
+			foreach (var s in settings.ExcludeFolders)
 				engine.Settings.IncludeList.Add(s);
-			engine.Settings.IncludeSubDirectories = recursive;
-			engine.Settings.IncludeImages = includeImages;
-			Outputfolder = string.IsNullOrEmpty(outputfolder) ? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) : outputfolder;
-			if (percent.HasValue)
-				engine.Settings.Percent = percent.Value;
-			if (!quiet)
+			engine.Settings.IncludeSubDirectories = settings.IsRecursive;
+			engine.Settings.IncludeImages = settings.IncludeImages;
+			Outputfolder = string.IsNullOrEmpty(settings.OutputFolder) ? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) : outputfolder;
+			if (settings.Percent.HasValue)
+				engine.Settings.Percent = settings.Percent.Value;
+			if (!settings.IsQuiet)
 				engine.Progress += Engine_Progress;
 			engine.ScanDone += Engine_ScanDone;
+			engine.DatabaseCleaned += Engine_DatabaseCleaned;
+			ScanSettings = settings;
 		}
 
-		public void StartSearch() {
-			engine.StartSearch();
-		}
+		private static void Engine_DatabaseCleaned(object sender, EventArgs e) => Console.WriteLine("~~~~ Database cleanup completed! ~~~~");
+
+		public void StartSearch() => engine.StartSearch();
+
+		public void StartCleanup() => engine.CleanupDatabase();
 
 		private void Engine_ScanDone(object sender, EventArgs e) {
-			ConsoleHelpers.WriteLineColored("~~~~ Scan done! ~~~~", ConsoleColor.Green);
+			Console.WriteLine("~~~~ Scan done! ~~~~");
 			Console.WriteLine($"Found '{engine.Duplicates.Count}' duplicates");
 			if (engine.Duplicates.Count == 0) return;
 			var targetFile = Utils.SafePathCombine(Outputfolder, "output.html");
 			engine.Duplicates.ToHtmlTable(targetFile);
 			Console.Write("Saved results in: ");
-			ConsoleHelpers.WriteLineColored(targetFile, ConsoleColor.Cyan);
+			Console.WriteLine(targetFile);
 		}
 		private static readonly object _MessageLock = new object();
 		private static void Engine_Progress(object sender, ScanEngine.OwnScanProgress e) {
 			lock (_MessageLock) {
-				Console.Write("Elapsed ");
-				ConsoleHelpers.WriteColored(e.Elapsed.TrimMiliseconds().ToString(), ConsoleColor.Yellow);
-				Console.Write(", remaining ~");
-				ConsoleHelpers.WriteColored(e.Remaining.TrimMiliseconds().ToString(), ConsoleColor.Yellow);
-				Console.Write(", processing ");
-				ConsoleHelpers.WriteLineColored(TruncateWithElipsis(e.CurrentFile), ConsoleColor.Magenta);
+				Console.Write($"Elapsed {e.Elapsed.TrimMiliseconds()}, remaining ~{e.Remaining.TrimMiliseconds()}, processing {TruncateWithElipsis(e.CurrentFile)}");
 			}
 		}
 		private static string TruncateWithElipsis(string s, int length = 60) => (s.Length > length ? "..." + s.Substring(s.Length - length) : s);
