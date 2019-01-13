@@ -135,9 +135,6 @@
   <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
     <value>Fichiers précédemment analysés importés. {0:N0} fichiers dans {1} (les fichiers existants n'existent plus).</value>
   </data>
-  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
-    <value>Trouvé des fichiers précédemment analysés, l'importation ...</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>Liste de fichiers de construction terminée en {0}</value>
   </data>

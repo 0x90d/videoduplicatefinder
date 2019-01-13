@@ -206,7 +206,10 @@ namespace VideoDuplicateFinderLinux
             if (!Includes.Contains(result))
                 Includes.Add(result);
         });
-        public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox =>
+        public ReactiveCommand CleanDatabaseCommand => ReactiveCommand.Create(() => {
+			Scanner.CleanupDatabase();
+        });
+		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox =>
         {
             while (lbox.SelectedItems.Count > 0)
                 Includes.Remove((string)lbox.SelectedItems[0]);

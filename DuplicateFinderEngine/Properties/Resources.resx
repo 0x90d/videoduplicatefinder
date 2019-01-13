@@ -132,8 +132,8 @@
   <data name="SaveScannedFilesToDisk0N0Files" xml:space="preserve">
     <value>Save scanned files to disk ({0:N0} files).</value>
   </data>
-  <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
-    <value>Previously scanned files imported. {0:N0} files in {1} (No longer existing files have been removed).</value>
+  <data name="PreviouslyScannedFilesImported" xml:space="preserve">
+    <value>Previously scanned files imported. {0:N0} files in {1}</value>
   </data>
   <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
     <value>Found previously scanned files, importing...</value>
@@ -188,5 +188,8 @@
   </data>
   <data name="FailedToCopyReasonDirectoryDoesNotExist" xml:space="preserve">
     <value>Failed to copy '{0}', reason: Directory does not exist</value>
+  </data>
+  <data name="DatabaseCleanupHasFinished" xml:space="preserve">
+    <value>Database cleanup has finished in: {0}, {1} entries have been removed</value>
   </data>
 </root>

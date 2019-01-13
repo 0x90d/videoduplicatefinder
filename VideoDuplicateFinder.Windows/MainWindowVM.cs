@@ -84,8 +84,11 @@ namespace VideoDuplicateFinderWindows {
 			Scanner.Progress += Scanner_Progress;
 			Scanner.ScanDone += Scanner_ScanDone;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
+			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 		}
+
+		private void Scanner_DatabaseCleaned(object sender, EventArgs e) => IsBusy = false;
 
 		private void Instance_LogItemAdded(object sender, EventArgs e) => Application.Current.Dispatcher.BeginInvoke(new Action(() => {
 			while (Logger.Instance.LogEntries.Count > 0) {
@@ -321,6 +324,12 @@ namespace VideoDuplicateFinderWindows {
 			if (!Blacklists.Contains(ofd.SelectedPath))
 				Blacklists.Add(ofd.SelectedPath);
 
+		});
+
+		public DelegateCommand CleanDatabaseCommand => new DelegateCommand(a => {
+			IsBusy = true;
+			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.CleaningUp;
+			Scanner.CleanupDatabase();
 		});
 		public DelegateCommand ClearLogCommand => new DelegateCommand(a => { LogItems.Clear(); }, a => LogItems.Count > 0);
 		public DelegateCommand CopyLogCommand => new DelegateCommand(a => {

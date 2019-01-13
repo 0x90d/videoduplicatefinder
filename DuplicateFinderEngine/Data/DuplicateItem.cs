@@ -29,8 +29,8 @@ namespace DuplicateFinderEngine.Data {
 			}
 			var fi = new FileInfo(Path);
 			DateCreated = fi.CreationTimeUtc;
-			SizeLong = fi.Length;
-			Size = Utils.BytesToString(fi.Length);
+			SizeLong = fi.Exists ? fi.Length : -1;
+			Size = Utils.BytesToString(SizeLong);
 			if (file.IsImage)
 				Format = fi.Extension.Substring(1);
 		}

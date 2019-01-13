@@ -135,9 +135,6 @@
   <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
     <value>以前扫描的文件已导入。 {1}中的{0:N0}个文件（不再删除现有文件）。</value>
   </data>
-  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
-    <value>找到以前扫描的文件，导入...</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>{0}中的完成建筑文件列表</value>
   </data>

@@ -247,4 +247,7 @@
   <data name="FFmpegExeFFprobeExeIsMissing" xml:space="preserve">
     <value>FFmpeg.exe / FFprobe.exe is missing. Please make sure both are placed in the same directory as this application.</value>
   </data>
+  <data name="CleaningUp" xml:space="preserve">
+    <value>Cleaning up...</value>
+  </data>
 </root>

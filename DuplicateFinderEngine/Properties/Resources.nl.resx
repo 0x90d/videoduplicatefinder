@@ -135,9 +135,6 @@
   <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
     <value>Eerder gescande bestanden geïmporteerd. {0:N0} bestanden in {1} (niet langer bestaande bestanden zijn verwijderd).</value>
   </data>
-  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
-    <value>Eerder gescande bestanden gevonden, importeren ...</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>Lijst met voltooide bouwbestanden is voltooid in {0}</value>
   </data>

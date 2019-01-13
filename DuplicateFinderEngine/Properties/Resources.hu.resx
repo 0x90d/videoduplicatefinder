@@ -135,9 +135,6 @@
   <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
     <value>Korábban beolvasott fájlok importálása. {0:N0} fájlok az {1} -ban (már nem távolítottak el már létező fájlokat).</value>
   </data>
-  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
-    <value>Korábban szkennelt fájlokat talált, importálva ...</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>{0} befejezte az építési fájllistát</value>
   </data>

@@ -135,9 +135,6 @@
   <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
     <value>Byl importován dříve skenovaný soubor. {0:N0} soubory v {1} (již nebyly odstraněny existující soubory).</value>
   </data>
-  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
-    <value>Nalezené dříve naskenované soubory importující ...</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>Dokončený seznam stavebních souborů v {0}</value>
   </data>

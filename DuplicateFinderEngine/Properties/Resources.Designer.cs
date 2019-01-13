@@ -79,6 +79,15 @@ namespace DuplicateFinderEngine.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Database cleanup has finished in: {0}, {1} entries have been removed.
+        /// </summary>
+        internal static string DatabaseCleanupHasFinished {
+            get {
+                return ResourceManager.GetString("DatabaseCleanupHasFinished", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicates check finished in: {0}.
         /// </summary>
         internal static string DuplicatesCheckFinishedIn {
@@ -178,11 +187,11 @@ namespace DuplicateFinderEngine.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Previously scanned files imported. {0:N0} files in {1} (No longer existing files have been removed)..
+        ///   Looks up a localized string similar to Previously scanned files imported. {0:N0} files in {1}.
         /// </summary>
-        internal static string PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved {
+        internal static string PreviouslyScannedFilesImported {
             get {
-                return ResourceManager.GetString("PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved", resourceCulture);
+                return ResourceManager.GetString("PreviouslyScannedFilesImported", resourceCulture);
             }
         }
         

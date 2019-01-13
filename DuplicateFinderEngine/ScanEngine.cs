@@ -17,6 +17,7 @@ namespace DuplicateFinderEngine {
 		public event EventHandler<OwnScanProgress> Progress;
 		public event EventHandler ScanDone;
 		public event EventHandler FilesEnumerated;
+		public event EventHandler DatabaseCleaned;
 		public int ScanProgressMaxValue;
 		public int ScanProgressValue;
 		public TimeSpan TimeElapsed;
@@ -59,12 +60,17 @@ namespace DuplicateFinderEngine {
 			Logger.Instance.Info(Properties.Resources.ScanDone);
 			_isScanning = false;
 			ScanProgressValue = 0;
-			SaveScannedFileList();
+			DatabaseHelper.SaveDatabase(FileList);
+		}
+
+		public async void CleanupDatabase() {
+			await Task.Run(() => DatabaseHelper.CleanupDatabase(FileList));
+			DatabaseCleaned?.Invoke(this, null);
 		}
 
 		private void InternalBuildFileList() {
-			FileList.Clear();
-			LoadScannedFileList();
+			FileList = DatabaseHelper.LoadDatabase();
+
 			var hasLoadedData = FileList.Count > 0;
 			var st = Stopwatch.StartNew();
 			foreach (var item in Settings.IncludeList) {
@@ -80,37 +86,6 @@ namespace DuplicateFinderEngine {
 			Logger.Instance.Info(string.Format(Properties.Resources.FinishedBuildingFileListIn, st.Elapsed));
 		}
 
-		private void LoadScannedFileList() {
-			var path = new FileInfo(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
-				"ScannedFiles.db"));
-			if (path.Exists && path.Length == 0) //invalid data
-			{
-				path.Delete();
-				return;
-			}
-			if (!path.Exists)
-				return;
-			Logger.Instance.Info(Properties.Resources.FoundPreviouslyScannedFilesImporting);
-			var st = Stopwatch.StartNew();
-			using (var file = new FileStream(path.FullName, FileMode.Open)) {
-				FileList = Serializer.Deserialize<List<VideoFileEntry>>(file);
-			}
-			//Cleanup deleted files
-			for (int i = FileList.Count - 1; i >= 0; i--) {
-				if (!File.Exists(FileList[i].Path))
-					FileList.RemoveAt(i);
-			}
-
-			st.Stop();
-			Logger.Instance.Info(string.Format(Properties.Resources.PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved, FileList.Count, st.Elapsed));
-		}
-		private void SaveScannedFileList() {
-			Logger.Instance.Info(string.Format(Properties.Resources.SaveScannedFilesToDisk0N0Files, FileList.Count));
-			using (var stream = new FileStream(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
-				"ScannedFiles.db"), FileMode.OpenOrCreate)) {
-				Serializer.Serialize(stream, FileList);
-			}
-		}
 
 		public void Pause() {
 			if (!_isScanning || m_pauseTokeSource.IsPaused) return;

@@ -70,6 +70,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cleaning up....
+        /// </summary>
+        public static string CleaningUp {
+            get {
+                return ResourceManager.GetString("CleaningUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Clear Log.
         /// </summary>
         public static string ClearLog {
