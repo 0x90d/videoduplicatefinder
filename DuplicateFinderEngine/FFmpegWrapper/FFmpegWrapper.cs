@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Text;
 
 namespace DuplicateFinderEngine.FFmpegWrapper
 {
@@ -11,37 +10,16 @@ namespace DuplicateFinderEngine.FFmpegWrapper
         private Process FFMpegProcess;
         private readonly TimeSpan ExecutionTimeout = new TimeSpan(0, 0, 15);
         private string InputFile;
-        public byte[] GetVideoThumbnail(string inputFile, float? frameTime, bool grayScale)
+        public byte[] GetVideoThumbnail(string inputFile, float frameTime, bool grayScale)
         {
             InputFile = inputFile;
-            var input = new Media
-            {
-                Filename = inputFile
+            var settings = new FFmpegSettings {
+	            Seek = frameTime,
+	            OutputFormat = grayScale ? "rawvideo" : "mjpeg",
+				VideoFrameSize = grayScale ? "-s 16x16" : "-vf scale=100:-1",
             };
-            var output = new Media
-            {
-                Format = "mjpeg"
-            };
-            var settings = new FFmpegSettings
-            {
-                VideoFrameCount = 1,
-                Seek = frameTime,
-                MaxDuration = 1f,
-            };
-            if (grayScale)
-            {
-                settings.VideoFrameSize = "16x16";
-            }
-            else
-            {
-                settings.ResizeWidth = 100;
-            }
 
-            return RunFFmpeg(input, output, settings);
-        }
-        private static string CommandArgParameter(string arg)
-        {
-            return '"' + arg + '"';
+            return RunFFmpeg(inputFile, settings);
         }
 
         void WaitFFMpegProcessForExit()
@@ -70,60 +48,12 @@ namespace DuplicateFinderEngine.FFmpegWrapper
             }
         }
 
-        static void BuildFFmpegCommandlineArgs(StringBuilder outputArgs, string outputFormat, FFmpegSettings settings)
+        internal byte[] RunFFmpeg(string input,  FFmpegSettings settings)
         {
-            if (settings == null)
+			byte[] data;
+			try
             {
-                return;
-            }
-            if (settings.MaxDuration != null)
-            {
-                outputArgs.AppendFormat(CultureInfo.InvariantCulture, " -t {0}", new object[]
-                {
-                    settings.MaxDuration
-                });
-            }
-            if (outputFormat != null)
-                outputArgs.AppendFormat(" -f {0} ", outputFormat);
-
-            if (settings.ResizeWidth != null)
-                outputArgs.AppendFormat(" -vf scale={0}:-1", settings.ResizeWidth);
-            if (settings.VideoFrameCount != null)
-                outputArgs.AppendFormat(" -vframes {0}", settings.VideoFrameCount);
-            if (settings.VideoFrameSize != null)
-                outputArgs.AppendFormat(" -s {0}", settings.VideoFrameSize);
-
-        }
-
-        static string BuildFFmpegCommandlineArgs(string inputFile, string inputFormat, string outputFile, string outputFormat, FFmpegSettings settings)
-        {
-            var stringBuilder = new StringBuilder();
-
-            if (settings.Seek != null)
-            {
-                stringBuilder.AppendFormat(CultureInfo.InvariantCulture, " -ss {0}", new object[]
-                {
-                    settings.Seek
-                });
-            }
-            if (inputFormat != null)
-            {
-                stringBuilder.Append(" -f " + inputFormat);
-            }
-
-            var stringBuilder2 = new StringBuilder();
-            BuildFFmpegCommandlineArgs(stringBuilder2, outputFormat, settings);
-
-            return
-                $"-y {stringBuilder} -i {CommandArgParameter(inputFile)} {stringBuilder2} {CommandArgParameter(outputFile)}";
-        }
-
-
-        internal byte[] RunFFmpeg(Media input, Media output, FFmpegSettings settings)
-        {
-            try
-            {
-                var arguments = BuildFFmpegCommandlineArgs(input.Filename, input.Format, "-", output.Format, settings);
+                var arguments = $" -y -ss {settings.Seek.ToString(CultureInfo.InvariantCulture)} -i \"{input}\" -t 1 -f {settings.OutputFormat} -vframes 1 {settings.VideoFrameSize} \"-\"";
                 var processStartInfo =
                     new ProcessStartInfo(Utils.FfmpegPath, arguments)
                     {
@@ -152,7 +82,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper
                 WaitFFMpegProcessForExit();
 				
 	            imgDataTask.Wait(1000);
-	            output.Bytes = ms.ToArray();
+	            data = ms.ToArray();
 	            
                 FFMpegProcess?.Close();
                 FFMpegProcess = null;
@@ -163,7 +93,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper
                 EnsureFFMpegProcessStopped();
                 throw;
             }
-            return output.Bytes;
+            return data;
         }
 		
     }

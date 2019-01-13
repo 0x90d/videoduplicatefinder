@@ -147,11 +147,11 @@ namespace DuplicateFinderEngine {
 			void IncrementProgress(Action<TimeSpan> fn) {
 				Interlocked.Increment(ref processedFiles);
 				var pushUpdate = processedFiles == FileList.Count ||
-				                 lastProgressUpdate + progressUpdateItvl < DateTime.Now;
+								 lastProgressUpdate + progressUpdateItvl < DateTime.Now;
 				if (!pushUpdate) return;
 				lastProgressUpdate = DateTime.Now;
 				var timeRemaining = TimeSpan.FromTicks(DateTime.Now.Subtract(startTime).Ticks *
-					                   (ScanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
+									   (ScanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
 				fn(timeRemaining);
 			}
 
@@ -174,7 +174,7 @@ namespace DuplicateFinderEngine {
 						FileList[i].grayBytes = FileList[i].IsImage ? GetImageAsBitmaps(FileList[i], positionList.Count) : GetVideoThumbnailAsBitmaps(FileList[i], positionList);
 						if (FileList[i].grayBytes == null) return;
 					}
-					
+
 					//report progress
 					IncrementProgress(remaining =>
 						Progress?.Invoke(this,
@@ -346,14 +346,11 @@ namespace DuplicateFinderEngine {
 
 					var b = ffMpeg.GetVideoThumbnail(videoFile.Path, Convert.ToSingle(videoFile.mediaInfo.Duration.TotalSeconds * positionList[i]), true);
 					if (b == null || b.Length == 0) return null;
-					using (var byteStream = new MemoryStream(b)) {
-						using (var bitmapImage = Image.FromStream(byteStream)) {
-							var d = ExtensionMethods.GetGrayScaleValues(new Bitmap(bitmapImage));
-							if (d == null) return null;
-							images.Add(d);
-						}
-					}
+					var d = ExtensionMethods.VerifyGrayScaleValues(b);
+					if (d == null) return null;
+					images.Add(d);
 				}
+			
 			}
 			catch (FFmpegWrapper.FFMpegException ex) {
 				Logger.Instance.Info($"FFMpegException, file: {videoFile.Path}, reason: {ex.Message}");
@@ -363,72 +360,89 @@ namespace DuplicateFinderEngine {
 
 		}
 
-		private List<byte[]> GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
-			var images = new List<byte[]>();
-			for (var i = 0; i < count; i++) {
-				try {
-					using (var byteStream = File.OpenRead(videoFile.Path)) {
-						using (var bitmapImage = Image.FromStream(byteStream)) {
-							var b = new Bitmap(16, 16);
-							using (var g = Graphics.FromImage(b)) {
-								g.DrawImage(bitmapImage, 0, 0, 16, 16);
-							}
-							var d = ExtensionMethods.GetGrayScaleValues(b);
-							if (d == null) return null;
-							images.Add(d);
-						}
+private List<byte[]> GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
+	var images = new List<byte[]>();
+	for (var i = 0; i < count; i++) {
+		try {
+			using (var byteStream = File.OpenRead(videoFile.Path)) {
+				using (var bitmapImage = Image.FromStream(byteStream)) {
+					var b = new Bitmap(16, 16);
+					using (var g = Graphics.FromImage(b)) {
+						g.DrawImage(bitmapImage, 0, 0, 16, 16);
 					}
+					var d = ExtensionMethods.GetGrayScaleValues(b);
+					if (d == null) return null;
+					images.Add(d);
 				}
-				catch (Exception ex) {
-					Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}");
-					return null;
-				}
-			}
-			return images;
-		}
-
-
-		private static class ExtensionMethods {
-			//TODO: Find a way to get the bytes directly from file without creating a new bitmap for it
-			public static unsafe byte[] GetGrayScaleValues(Bitmap original, double darkProcent = 75) {
-				// Lock the bitmap's bits.  
-				var rect = new Rectangle(0, 0, original.Width, original.Height);
-				var bmpData = original.LockBits(rect, ImageLockMode.ReadOnly, original.PixelFormat);
-
-				// Get the address of the first line.
-				var ptr = bmpData.Scan0;
-
-				// Declare an array to hold the bytes of the bitmap.
-				var bytes = bmpData.Stride * original.Height;
-				var rgbValues = new byte[bytes];
-				var buffer = new byte[256];
-
-				// Copy the RGB values into the array.
-				fixed (byte* byteArrayPtr = rgbValues) {
-					Buffer.MemoryCopy((void*)ptr, byteArrayPtr, rgbValues.Length, rgbValues.Length);
-				}
-				original.UnlockBits(bmpData);
-
-				int count = 0, all = bmpData.Width * bmpData.Height;
-				var buffercounter = 0;
-				for (var i = 0; i < rgbValues.Length; i += 4) {
-					byte r = rgbValues[i + 2], g = rgbValues[i + 1], b = rgbValues[i];
-					buffer[buffercounter] = r;
-					buffercounter++;
-					var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
-					if (brightness <= 0x40)
-						count++;
-				}
-				return 100d / all * count >= darkProcent ? null : buffer;
-
-			}
-			public static float PercentageDifference2(IReadOnlyList<byte> img1, IReadOnlyList<byte> img2) {
-				float diff = 0;
-				for (var y = 0; y < img1.Count; y++) {
-					diff += (float)Math.Abs(img1[y] - img2[y]) / 255;
-				}
-				return diff / (16 * 16);
 			}
 		}
+		catch (Exception ex) {
+			Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}");
+			return null;
+		}
+	}
+	return images;
+}
+
+
+private static class ExtensionMethods {
+	public static byte[] VerifyGrayScaleValues(byte[] data, double darkProcent = 75) {
+
+		// Declare an array to hold the bytes of the bitmap.
+		var buffer = new byte[256];
+
+		int count = 0;
+		var buffercounter = 0;
+		for (var i = 0; i < data.Length; i += 3) {
+			byte r = data[i + 2], g = data[i + 1], b = data[i];
+			buffer[buffercounter] = r;
+			buffercounter++;
+			var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
+			if (brightness <= 0x40)
+				count++;
+		}
+		return 100d / 256 * count >= darkProcent ? null : buffer;
+
+	}
+	public static unsafe byte[] GetGrayScaleValues(Bitmap original, double darkProcent = 75) {
+		// Lock the bitmap's bits.  
+		var rect = new Rectangle(0, 0, original.Width, original.Height);
+		var bmpData = original.LockBits(rect, ImageLockMode.ReadOnly, original.PixelFormat);
+
+		// Get the address of the first line.
+		var ptr = bmpData.Scan0;
+
+		// Declare an array to hold the bytes of the bitmap.
+		var bytes = bmpData.Stride * original.Height;
+		var rgbValues = new byte[bytes];
+		var buffer = new byte[256];
+
+		// Copy the RGB values into the array.
+		fixed (byte* byteArrayPtr = rgbValues) {
+			Buffer.MemoryCopy((void*)ptr, byteArrayPtr, rgbValues.Length, rgbValues.Length);
+		}
+		original.UnlockBits(bmpData);
+
+		int count = 0, all = bmpData.Width * bmpData.Height;
+		var buffercounter = 0;
+		for (var i = 0; i < rgbValues.Length; i += 4) {
+			byte r = rgbValues[i + 2], g = rgbValues[i + 1], b = rgbValues[i];
+			buffer[buffercounter] = r;
+			buffercounter++;
+			var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
+			if (brightness <= 0x40)
+				count++;
+		}
+		return 100d / all * count >= darkProcent ? null : buffer;
+
+	}
+	public static float PercentageDifference2(IReadOnlyList<byte> img1, IReadOnlyList<byte> img2) {
+		float diff = 0;
+		for (var y = 0; y < img1.Count; y++) {
+			diff += (float)Math.Abs(img1[y] - img2[y]) / 255;
+		}
+		return diff / (16 * 16);
+	}
+}
 	}
 }
