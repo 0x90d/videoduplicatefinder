@@ -95,6 +95,8 @@ namespace VideoDuplicateFinderLinux {
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
+			//Ensure items added before GUI was ready will be shown 
+			Instance_LogItemAdded(null, null);
 		}
 
 		private void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;

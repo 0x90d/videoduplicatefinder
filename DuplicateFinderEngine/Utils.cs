@@ -18,13 +18,12 @@ namespace DuplicateFinderEngine {
 				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 					return File.Exists(FfmpegPath + ".exe") && File.Exists(FfprobePath + ".exe");
 				}
-				else {
-					return File.Exists(FfmpegPath) && File.Exists(FfprobePath);
-				}
+				return File.Exists(FfmpegPath) && File.Exists(FfprobePath);
 			}
 		}
 
 		static Utils() {
+			Logger.Instance.Info("OS: " + RuntimeInformation.OSDescription);
 			var currentDir = Path.GetDirectoryName(typeof(FFmpegWrapper.FFmpegWrapper).Assembly.Location);
 			var pathsEnv = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -60,7 +59,7 @@ namespace DuplicateFinderEngine {
 					
 				}
 		}
-
+		
 
 		/// <summary>
 		/// Trims milliseconds from a timespan making it better compare-able against another timespan
