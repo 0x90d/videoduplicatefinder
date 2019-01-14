@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DuplicateFinderEngine {
 	public static class FileHelper {
-
-		public static readonly List<string> ImageExtensions = new List<string>() {
-			".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"
-		};
+		
+		public static readonly string[] ImageExtensions = new[] { "jpg", "jpeg", "png", "gif", "bmp", "tiff" };
+		public static readonly string[] VideoExtensions = new[] { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob" };
+		public static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 
 		// '' <summary>
 		// '' This method starts at the specified directory.
@@ -16,65 +17,15 @@ namespace DuplicateFinderEngine {
 		// '' It returns a List of those directories.
 		// '' </summary>
 		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool recursive, bool includeImages, List<string> excludeFolders) {
-			var result = new List<string>();
-			var stack = new System.Collections.Concurrent.ConcurrentStack<string>();
-			stack.Push(initial);
-			while (stack.Count > 0) {
-				stack.TryPop(out var dir);
-				try {
-					var skip = false;
-					var DirInfo = new DirectoryInfo(dir);
-
-					if (DirInfo.Attributes.HasFlag(FileAttributes.ReadOnly) && ignoreReadonly) {
-						Logger.Instance.Info(string.Format(Properties.Resources.SkippedReadonly, dir));
-						skip = true;
-					}
-
-					for (var i = 0; i < excludeFolders.Count; i++) {
-						if (!dir.Contains(excludeFolders[i])) continue;
-						Logger.Instance.Info(string.Format(Properties.Resources.SkippedBlacklist, dir));
-						skip = true;
-						break;
-					}
-
-					if (!skip) {
-						result.AddRange(Directory.GetFiles(dir, "*.avi"));
-						result.AddRange(Directory.GetFiles(dir, "*.mkv"));
-						result.AddRange(Directory.GetFiles(dir, "*.flv"));
-						result.AddRange(Directory.GetFiles(dir, "*.mov"));
-						result.AddRange(Directory.GetFiles(dir, "*.mpg"));
-						result.AddRange(Directory.GetFiles(dir, "*.mpeg"));
-						result.AddRange(Directory.GetFiles(dir, "*.wmv"));
-						result.AddRange(Directory.GetFiles(dir, "*.mp4"));
-						result.AddRange(Directory.GetFiles(dir, "*.m4v"));
-						result.AddRange(Directory.GetFiles(dir, "*.asf"));
-						result.AddRange(Directory.GetFiles(dir, "*.f4v"));
-						result.AddRange(Directory.GetFiles(dir, "*.webm"));
-						result.AddRange(Directory.GetFiles(dir, "*.divx"));
-						result.AddRange(Directory.GetFiles(dir, "*.m2t"));
-						result.AddRange(Directory.GetFiles(dir, "*.m2ts"));
-						result.AddRange(Directory.GetFiles(dir, "*.vob"));
-						if (includeImages)
-							foreach (var s in ImageExtensions)
-								result.AddRange(Directory.GetFiles(dir, $"*{s}"));
-					}
-
-					if (!skip && recursive) {
-						Parallel.ForEach(
-						   Directory.GetDirectories(dir), directoryname => stack.Push(directoryname)
-						   );
-					}
-
-				}
-				catch (Exception ex) {
-					// ReSharper disable once RedundantStringFormatCall
-					System.Diagnostics.Trace.TraceError(string.Format(Properties.Resources.SkippedErrorReason, dir, ex.Message));
-				}
-
-			}
-
-			return result;
+			var files = Directory.EnumerateFiles(initial).Where(f => (includeImages ? AllExtensions : VideoExtensions).Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+			if (recursive)
+				files = files.Concat(Directory.EnumerateDirectories(initial)
+					.Where(d => !excludeFolders.Any(x => d.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
+					.Where(d => !ignoreReadonly || (new DirectoryInfo(d).Attributes & FileAttributes.ReadOnly) == 0)
+					.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, recursive, includeImages, excludeFolders)));
+			return files.ToList();
 		}
+
 
 		/// <summary>
 		/// Copies file or folder to target destination and remain the folder structure

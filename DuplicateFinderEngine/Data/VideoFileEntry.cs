@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using DuplicateFinderEngine.FFProbeWrapper;
 using System.Collections.Generic;
 using ProtoBuf;
@@ -14,7 +15,7 @@ namespace DuplicateFinderEngine.Data
             var fi = new System.IO.FileInfo(file);
 			Folder = fi.Directory?.FullName;
             var extension = fi.Extension;
-            IsImage = FileHelper.ImageExtensions.Find(a => a.Equals(extension, StringComparison.OrdinalIgnoreCase)) != null;
+            IsImage = FileHelper.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
         }
         [ProtoMember(1)]
 		public string Path;
