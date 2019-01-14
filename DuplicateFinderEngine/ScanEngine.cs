@@ -30,7 +30,8 @@ namespace DuplicateFinderEngine {
 
 
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
-		private List<VideoFileEntry> FileList = new List<VideoFileEntry>();
+		private Dictionary<string, VideoFileEntry> DatabaseFileList = new Dictionary<string, VideoFileEntry>();
+		private List<VideoFileEntry> ScanFileList = new List<VideoFileEntry>();
 		private int processedFiles;
 		private readonly List<float> positionList = new List<float>();
 
@@ -51,7 +52,7 @@ namespace DuplicateFinderEngine {
 			await Task.Run(() => InternalBuildFileList());
 			FilesEnumerated?.Invoke(this, null);
 			//set properties
-			ScanProgressMaxValue = FileList.Count;
+			ScanProgressMaxValue = ScanFileList.Count;
 			//start scan
 			Logger.Instance.Info(Properties.Resources.StartScan);
 			if (!m_cancelationTokenSource.IsCancellationRequested)
@@ -60,25 +61,27 @@ namespace DuplicateFinderEngine {
 			Logger.Instance.Info(Properties.Resources.ScanDone);
 			_isScanning = false;
 			ScanProgressValue = 0;
-			DatabaseHelper.SaveDatabase(FileList);
+			DatabaseHelper.SaveDatabase(DatabaseFileList);
 		}
 
 		public async void CleanupDatabase() {
-			await Task.Run(() => DatabaseHelper.CleanupDatabase(FileList));
+			await Task.Run(() => DatabaseHelper.CleanupDatabase(DatabaseFileList));
 			DatabaseCleaned?.Invoke(this, null);
 		}
 
 		private void InternalBuildFileList() {
-			FileList = DatabaseHelper.LoadDatabase();
+			ScanFileList.Clear();
+			DatabaseFileList = DatabaseHelper.LoadDatabase();
 
-			var hasLoadedData = FileList.Count > 0;
 			var st = Stopwatch.StartNew();
 			foreach (var item in Settings.IncludeList) {
-				foreach (var f in FileHelper.GetFilesRecursive(item, Settings.IgnoreReadOnlyFolders,
+				foreach (var path in FileHelper.GetFilesRecursive(item, Settings.IgnoreReadOnlyFolders,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
-					var vf = new VideoFileEntry(f);
-					if (!hasLoadedData || !FileList.Any(a => a.Path.Equals(vf.Path)))
-						FileList.Add(vf);
+					if (!DatabaseFileList.TryGetValue(path, out var vf)) {
+						vf = new VideoFileEntry(path);
+						DatabaseFileList.Add(path, vf);
+					}
+					ScanFileList.Add(vf);
 				}
 			}
 
@@ -121,7 +124,7 @@ namespace DuplicateFinderEngine {
 
 			void IncrementProgress(Action<TimeSpan> fn) {
 				Interlocked.Increment(ref processedFiles);
-				var pushUpdate = processedFiles == FileList.Count ||
+				var pushUpdate = processedFiles == ScanProgressMaxValue ||
 								 lastProgressUpdate + progressUpdateItvl < DateTime.Now;
 				if (!pushUpdate) return;
 				lastProgressUpdate = DateTime.Now;
@@ -132,22 +135,25 @@ namespace DuplicateFinderEngine {
 
 			try {
 				var st = Stopwatch.StartNew();
-				Parallel.For(0, FileList.Count, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = cancelToken }, i => {
+				var reScanList = ScanFileList.Where(vf => (vf.mediaInfo == null && !vf.IsImage) || vf.grayBytes == null).ToList();
+				ScanProgressMaxValue = reScanList.Count;
+				Parallel.For(0, reScanList.Count, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = cancelToken }, i => {
 					while (pauseTokenSource.IsPaused) {
 						Thread.Sleep(50);
 					}
+					var entry = reScanList[i];
 
-					if (FileList[i].mediaInfo == null && !FileList[i].IsImage) {
+					if (entry.mediaInfo == null && !entry.IsImage) {
 						var ffProbe = new FFProbeWrapper.FFProbeWrapper();
-						var info = ffProbe.GetMediaInfo(FileList[i].Path);
+						var info = ffProbe.GetMediaInfo(entry.Path);
 						if (info == null) return;
-						FileList[i].mediaInfo = info;
+						entry.mediaInfo = info;
 
 					}
 
-					if (FileList[i].grayBytes == null) {
-						FileList[i].grayBytes = FileList[i].IsImage ? GetImageAsBitmaps(FileList[i], positionList.Count) : GetVideoThumbnailAsBitmaps(FileList[i], positionList);
-						if (FileList[i].grayBytes == null) return;
+					if (entry.grayBytes == null) {
+						entry.grayBytes = entry.IsImage ? GetImageAsBitmaps(entry, positionList.Count) : GetVideoThumbnailAsBitmaps(entry, positionList);
+						if (entry.grayBytes == null) return;
 					}
 
 					//report progress
@@ -155,7 +161,7 @@ namespace DuplicateFinderEngine {
 						Progress?.Invoke(this,
 							new OwnScanProgress {
 								CurrentPosition = processedFiles,
-								CurrentFile = FileList[i].Path,
+								CurrentFile = entry.Path,
 								Elapsed = ElapsedTimer.Elapsed,
 								Remaining = remaining
 							}));
@@ -163,12 +169,13 @@ namespace DuplicateFinderEngine {
 				st.Stop();
 				Logger.Instance.Info(string.Format(Properties.Resources.ThumbnailsFinished, st.Elapsed, processedFiles));
 				processedFiles = 0;
+				ScanProgressMaxValue = ScanFileList.Count;
 				st.Restart();
 				startTime = DateTime.Now;
 
 				var percentageDifference = 1.0f - Settings.Percent / 100f;
 
-				Parallel.For(0, FileList.Count,
+				Parallel.For(0, ScanFileList.Count,
 					new ParallelOptions {
 						MaxDegreeOfParallelism = Environment.ProcessorCount,
 						CancellationToken = cancelToken
@@ -177,14 +184,14 @@ namespace DuplicateFinderEngine {
 						while (pauseTokenSource.IsPaused) {
 							Thread.Sleep(50);
 						}
-						foreach (var itm in FileList) {
-							if (itm == FileList[i]) continue;
+						foreach (var itm in ScanFileList) {
+							if (itm == ScanFileList[i]) continue;
 							if (itm.grayBytes == null || itm.grayBytes.Count == 0) continue;
-							if (FileList[i].grayBytes == null || FileList[i].grayBytes.Count == 0) continue;
-							if (itm.grayBytes.Count != FileList[i].grayBytes.Count) continue;
+							if (ScanFileList[i].grayBytes == null || ScanFileList[i].grayBytes.Count == 0) continue;
+							if (itm.grayBytes.Count != ScanFileList[i].grayBytes.Count) continue;
 							var duplicateCounter = 0;
 							for (var j = 0; j < itm.grayBytes.Count; j++) {
-								if (ExtensionMethods.PercentageDifference2(itm.grayBytes[j], FileList[i].grayBytes[j]) < percentageDifference) {
+								if (ExtensionMethods.PercentageDifference2(itm.grayBytes[j], ScanFileList[i].grayBytes[j]) < percentageDifference) {
 									duplicateCounter++;
 								}
 								else { break; }
@@ -201,7 +208,7 @@ namespace DuplicateFinderEngine {
 										groupId = v.GroupId;
 										firstInList = true;
 									}
-									else if (v.Path == FileList[i].Path) {
+									else if (v.Path == ScanFileList[i].Path) {
 										secondInList = true;
 									}
 								}
@@ -216,10 +223,10 @@ namespace DuplicateFinderEngine {
 								}
 
 								if (!secondInList) {
-									var dup = new DuplicateItem(FileList[i]) {
+									var dup = new DuplicateItem(ScanFileList[i]) {
 										GroupId = groupId
 									};
-									var images = FileList[i].IsImage ? GetImageThumbnail(dup, positionList.Count) : GetVideoThumbnail(dup, positionList);
+									var images = ScanFileList[i].IsImage ? GetImageThumbnail(dup, positionList.Count) : GetVideoThumbnail(dup, positionList);
 									if (images == null) continue;
 									dup.Thumbnail = images;
 									Duplicates.Add(dup);
@@ -235,7 +242,7 @@ namespace DuplicateFinderEngine {
 							Progress?.Invoke(this,
 								new OwnScanProgress {
 									CurrentPosition = processedFiles,
-									CurrentFile = FileList[i].Path,
+									CurrentFile = ScanFileList[i].Path,
 									Elapsed = ElapsedTimer.Elapsed,
 									Remaining = remaining
 								}));
@@ -361,24 +368,11 @@ namespace DuplicateFinderEngine {
 
 
 		private static class ExtensionMethods {
-			public static byte[] VerifyGrayScaleValues(byte[] data, double darkProcent = 75) {
-
-				// Declare an array to hold the bytes of the bitmap.
-				var buffer = new byte[256];
-
-				int count = 0;
-				var buffercounter = 0;
-				for (var i = 0; i < data.Length; i += 3) {
-					byte r = data[i + 2], g = data[i + 1], b = data[i];
-					buffer[buffercounter] = r;
-					buffercounter++;
-					var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
-					if (brightness <= 0x40)
-						count++;
-				}
-				return 100d / 256 * count >= darkProcent ? null : buffer;
-
+			public static byte[] VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
+				var darkPixels = data.Count(b => b <= 0x20);
+				return 100d / data.Length * darkPixels >= darkProcent ? null : data;
 			}
+
 			public static unsafe byte[] GetGrayScaleValues(Bitmap original, double darkProcent = 75) {
 				// Lock the bitmap's bits.  
 				var rect = new Rectangle(0, 0, original.Width, original.Height);

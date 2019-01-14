@@ -1,4 +1,9 @@
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Collections.ObjectModel;
 using VideoDuplicateFinderWindows.Data;
 
 namespace VideoDuplicateFinderWindows
@@ -21,6 +26,17 @@ namespace VideoDuplicateFinderWindows
 			
 				if (e.Key == Key.Space || e.Key == Key.Enter && TreeViewDuplicates.SelectedItem != null) {
 					((DuplicateItemViewModel)TreeViewDuplicates.SelectedItem).Checked = !((DuplicateItemViewModel)TreeViewDuplicates.SelectedItem).Checked;
+			}
+		}
+
+		private void FolderListBox_Drop(object sender, System.Windows.DragEventArgs e) {
+			var existing = (ObservableCollection<string>)((ListBox)sender).ItemsSource;
+			if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
+				var folders = ((string[])e.Data.GetData(DataFormats.FileDrop))
+					.Where(f => (File.GetAttributes(f) & FileAttributes.Directory) > 0)
+					.Where(f => !existing.Contains(f))
+					.ToList();
+				folders.ForEach(f => existing.Add(f));
 			}
 		}
 	}

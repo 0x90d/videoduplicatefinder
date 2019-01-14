@@ -220,6 +220,8 @@
                                 <ListBox
                         Name="ListboxIncludelist"
                         Grid.Row="1"
+                        AllowDrop="true"
+                        Drop="FolderListBox_Drop"
                         ItemsSource="{Binding Includes}" />
                             </Grid>
                         </GroupBox>
@@ -265,6 +267,8 @@
                                 <ListBox
                         Name="ListboxBlacklist"
                         Grid.Row="1"
+                        AllowDrop="true"
+                        Drop="FolderListBox_Drop"
                         ItemsSource="{Binding Blacklists}" />
                             </Grid>
                         </GroupBox>
