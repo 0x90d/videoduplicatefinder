@@ -29,6 +29,7 @@ namespace VideoDuplicateFinderConsole {
 					ParseCommandLine(args);
 					if (settings.CleanupDatabase) {
 						StartCleanup();
+						Console.ReadLine();
 						return 0;
 					}
 					if (settings.IncludeFolders.Count == 0)
@@ -36,6 +37,7 @@ namespace VideoDuplicateFinderConsole {
 					EnsureFFFilesExist();
 					Console.WriteLine(Environment.NewLine + Environment.NewLine);
 					StartScan();
+					Console.ReadLine();
 				}
 				catch (ParseException ex) {
 					PrintHelp();

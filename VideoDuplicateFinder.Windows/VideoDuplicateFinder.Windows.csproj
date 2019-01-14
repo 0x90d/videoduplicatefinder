@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -18,7 +18,8 @@
     <ProjectReference Include="..\DuplicateFinderEngine\DuplicateFinderEngine.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- Shortcut support, commented as it breaks dotnet publish -->
+  <!--<ItemGroup>
     <COMReference Include="IWshRuntimeLibrary">
       <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
       <VersionMajor>1</VersionMajor>
@@ -28,7 +29,7 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <Reference Include="PresentationCore">

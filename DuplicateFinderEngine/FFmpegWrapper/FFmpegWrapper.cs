@@ -53,7 +53,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper
 			byte[] data;
 			try
             {
-                var arguments = $" -y -ss {settings.Seek.ToString(CultureInfo.InvariantCulture)} -i \"{input}\" -t 1 -f {settings.OutputFormat} -vframes 1 {settings.VideoFrameSize} \"-\"";
+                var arguments = $" -hide_banner -loglevel panic -y -ss {settings.Seek.ToString(CultureInfo.InvariantCulture)} -i \"{input}\" -t 1 -f {settings.OutputFormat} -vframes 1 {settings.VideoFrameSize} \"-\"";
                 var processStartInfo =
                     new ProcessStartInfo(Utils.FfmpegPath, arguments)
                     {
@@ -61,6 +61,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         WorkingDirectory = Path.GetDirectoryName(Utils.FfmpegPath) ?? string.Empty,
+						RedirectStandardInput = true, //required to avoid ffmpeg printing to console
                         RedirectStandardOutput = true,
                     };
 
