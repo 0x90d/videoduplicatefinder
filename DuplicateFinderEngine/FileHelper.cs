@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DuplicateFinderEngine {
 	public static class FileHelper {
-		
+
 		public static readonly string[] ImageExtensions = new[] { "jpg", "jpeg", "png", "gif", "bmp", "tiff" };
 		public static readonly string[] VideoExtensions = new[] { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob" };
 		public static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
@@ -17,13 +17,20 @@ namespace DuplicateFinderEngine {
 		// '' It returns a List of those directories.
 		// '' </summary>
 		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool recursive, bool includeImages, List<string> excludeFolders) {
-			var files = Directory.EnumerateFiles(initial).Where(f => (includeImages ? AllExtensions : VideoExtensions).Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
-			if (recursive)
-				files = files.Concat(Directory.EnumerateDirectories(initial)
-					.Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
-					.Where(d => !ignoreReadonly || (new DirectoryInfo(d).Attributes & FileAttributes.ReadOnly) == 0)
-					.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, recursive, includeImages, excludeFolders)));
-			return files.ToList();
+			try {
+				var files = Directory.EnumerateFiles(initial).Where(f => (includeImages ? AllExtensions : VideoExtensions).Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+				if (recursive)
+					files = files.Concat(Directory.EnumerateDirectories(initial)
+						.Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
+						.Where(d => !ignoreReadonly || (new DirectoryInfo(d).Attributes & FileAttributes.ReadOnly) == 0)
+						.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, recursive, includeImages, excludeFolders)));
+				return files.ToList();
+			}
+			catch (Exception ex) {
+				// ReSharper disable once RedundantStringFormatCall
+				Logger.Instance.Info(string.Format(Properties.Resources.SkippedErrorReason, initial, ex.Message));
+				return new List<string>();
+			}
 		}
 
 
