@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
+using Avalonia.Media;
 
 namespace VideoDuplicateFinderLinux {
 	public sealed class MainWindowVM : ReactiveObject {
@@ -170,20 +171,28 @@ namespace VideoDuplicateFinderLinux {
 
 			//In Linux we cannot group, so let's make sure its sorted
 			var l = new SortedSet<DuplicateFinderEngine.Data.DuplicateItem>(Scanner.Duplicates, new DuplicateItemComparer());
-			//We no longer need the core duplicates
-			Scanner.Duplicates.Clear();
-
+			
+			Guid? oldGroup = null;
+			var odd = false;
 			foreach (var itm in l) {
 				var dup = new DuplicateItemViewModel(itm);
 				//Set best property in duplicate group
 				var others = Scanner.Duplicates.Where(a => a.GroupId == dup.GroupId && a.Path != dup.Path).ToList();
-				dup.SizeBest = !others.Any(a => a.SizeLong < dup.SizeLong);
-				dup.FrameSizeBest = !others.Any(a => a.FrameSizeInt > dup.FrameSizeInt);
-				//dup.DurationBest = !others.Any(a => a.Duration.TrimMiliseconds() > dup.Duration.TrimMiliseconds());
-				dup.BitrateBest = !others.Any(a => a.BitRateKbs > dup.BitRateKbs);
+				dup.SizeForeground = others.Any(a => a.SizeLong < dup.SizeLong) ? Brushes.Red : Brushes.Green;
+				dup.FrameSizeForeground = others.Any(a => a.FrameSizeInt > dup.FrameSizeInt) ? Brushes.Red : Brushes.Green;
+				dup.DurationForeground = others.Any(a => a.Duration.TrimMiliseconds() > dup.Duration.TrimMiliseconds()) ? Brushes.Red : Brushes.Green;
+				dup.BitRateForeground = others.Any(a => a.BitRateKbs > dup.BitRateKbs) ? Brushes.Red : Brushes.Green;
+				//Since we cannot group in Linux, let's at least highlight items that belong together
+				if (oldGroup != dup.GroupId) {
+					odd = !odd;
+					oldGroup = dup.GroupId;
+				}
+				dup.BackgroundBrush = odd ? Brushes.Blue : Brushes.Red;
+				
 				Duplicates.Add(dup);
 			}
-
+			//We no longer need the core duplicates
+			Scanner.Duplicates.Clear();
 			//And done
 			IsScanning = false;
 		}

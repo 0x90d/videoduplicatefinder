@@ -1,6 +1,7 @@
-﻿using ReactiveUI;
+using ReactiveUI;
 using System;
 using System.ComponentModel;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 
 namespace VideoDuplicateFinderLinux
@@ -35,53 +36,33 @@ namespace VideoDuplicateFinderLinux
 
         public long SizeLong { get; }
 
+		public IBrush BackgroundBrush { get; set; }
 
+		public IBrush SizeForeground { get; set; }
 
-        bool _SizeBest;
-        public bool SizeBest
-        {
-            get => _SizeBest;
-            set => this.RaiseAndSetIfChanged(ref _SizeBest, value);
-        }
-
-        [DisplayName("Size")]
+		[DisplayName("Size")]
         public string Size { get; }
 
 
 
         public string Folder { get; }
-
-        bool _BitrateBest;
-        public bool BitrateBest
-        {
-            get => _BitrateBest;
-            set => this.RaiseAndSetIfChanged(ref _BitrateBest, value);
-        }
+		
+        public IBrush BitRateForeground { get; set; }
 
         [DisplayName("Group Id")]
         public Guid GroupId { get; set; }
         [DisplayName("Duration")]
         public TimeSpan Duration { get; }
 
-        bool _DurationBest;
-        public bool DurationBest
-        {
-            get => _DurationBest;
-            set => this.RaiseAndSetIfChanged(ref _DurationBest, value);
-        }
+		public IBrush DurationForeground { get; set; }
 
-        [DisplayName("Frame Size")]
+		[DisplayName("Frame Size")]
         public string FrameSize { get; }
         public int FrameSizeInt { get; }
 
-        bool _FrameSizeBest;
-        public bool FrameSizeBest
-        {
-            get => _FrameSizeBest;
-            set => this.RaiseAndSetIfChanged(ref _FrameSizeBest, value);
-        }
+		public IBrush FrameSizeForeground { get; set; }
 
-        [DisplayName("Format")]
+		[DisplayName("Format")]
         public string Format { get; }
 
 
