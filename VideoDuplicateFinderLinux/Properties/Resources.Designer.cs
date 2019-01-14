@@ -79,6 +79,15 @@ namespace VideoDuplicateFinderLinux.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to copy/move some files. Please check log!.
+        /// </summary>
+        internal static string FailedToCopyMoveSomeFilesPleaseCheckLog {
+            get {
+                return ResourceManager.GetString("FailedToCopyMoveSomeFilesPleaseCheckLog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to delete file &apos;{0}&apos;, reason: {1}, Stacktrace {2}.
         /// </summary>
         internal static string FailedToDeleteFileReasonStacktrace {
