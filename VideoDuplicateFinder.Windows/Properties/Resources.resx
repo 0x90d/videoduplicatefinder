@@ -250,4 +250,34 @@
   <data name="CleaningUp" xml:space="preserve">
     <value>Cleaning up...</value>
   </data>
+  <data name="Sort_SizeAscending" xml:space="preserve">
+    <value>Size Ascending</value>
+  </data>
+  <data name="Sort_SizeDescending" xml:space="preserve">
+    <value>Size Descending</value>
+  </data>
+  <data name="Sort_ResolutionAscending" xml:space="preserve">
+    <value>Resolution Ascending</value>
+  </data>
+  <data name="Sort_ResolutionDescending" xml:space="preserve">
+    <value>Resolution Descending</value>
+  </data>
+  <data name="Sort_DurationAscending" xml:space="preserve">
+    <value>Duration Ascending</value>
+  </data>
+  <data name="Sort_DurationDescending" xml:space="preserve">
+    <value>Duration Descending</value>
+  </data>
+  <data name="Sort_DateCreatedAscending" xml:space="preserve">
+    <value>Date Created Ascending</value>
+  </data>
+  <data name="Sort_DateCreatedDescending" xml:space="preserve">
+    <value>Date Created Descending</value>
+  </data>
+  <data name="Sort_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Sort" xml:space="preserve">
+    <value>Sort</value>
+  </data>
 </root>

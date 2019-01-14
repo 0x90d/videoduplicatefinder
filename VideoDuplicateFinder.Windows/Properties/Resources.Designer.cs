@@ -439,6 +439,96 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Sort.
+        /// </summary>
+        public static string Sort {
+            get {
+                return ResourceManager.GetString("Sort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Date Created Ascending.
+        /// </summary>
+        public static string Sort_DateCreatedAscending {
+            get {
+                return ResourceManager.GetString("Sort_DateCreatedAscending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Date Created Descending.
+        /// </summary>
+        public static string Sort_DateCreatedDescending {
+            get {
+                return ResourceManager.GetString("Sort_DateCreatedDescending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Duration Ascending.
+        /// </summary>
+        public static string Sort_DurationAscending {
+            get {
+                return ResourceManager.GetString("Sort_DurationAscending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Duration Descending.
+        /// </summary>
+        public static string Sort_DurationDescending {
+            get {
+                return ResourceManager.GetString("Sort_DurationDescending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to None.
+        /// </summary>
+        public static string Sort_None {
+            get {
+                return ResourceManager.GetString("Sort_None", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resolution Ascending.
+        /// </summary>
+        public static string Sort_ResolutionAscending {
+            get {
+                return ResourceManager.GetString("Sort_ResolutionAscending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resolution Descending.
+        /// </summary>
+        public static string Sort_ResolutionDescending {
+            get {
+                return ResourceManager.GetString("Sort_ResolutionDescending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Size Ascending.
+        /// </summary>
+        public static string Sort_SizeAscending {
+            get {
+                return ResourceManager.GetString("Sort_SizeAscending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Size Descending.
+        /// </summary>
+        public static string Sort_SizeDescending {
+            get {
+                return ResourceManager.GetString("Sort_SizeDescending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Start.
         /// </summary>
         public static string Start {

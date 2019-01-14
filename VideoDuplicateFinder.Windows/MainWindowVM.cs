@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -28,6 +29,17 @@ namespace VideoDuplicateFinderWindows {
 		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Blacklists { get; } = new ObservableCollection<string>();
 		private CollectionView view;
+		public KeyValuePair<string, SortDescription>[] SortOrders { get; } = {
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_None, new SortDescription()),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_SizeAscending, new SortDescription(nameof(DuplicateItemViewModel.SizeLong), ListSortDirection.Ascending)),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_SizeDescending, new SortDescription(nameof(DuplicateItemViewModel.SizeLong), ListSortDirection.Descending)),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_ResolutionAscending, new SortDescription(nameof(DuplicateItemViewModel.FrameSizeInt), ListSortDirection.Ascending)),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_ResolutionDescending, new SortDescription(nameof(DuplicateItemViewModel.FrameSizeInt), ListSortDirection.Descending)),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_DurationAscending, new SortDescription(nameof(DuplicateItemViewModel.Duration), ListSortDirection.Ascending)),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_DurationDescending, new SortDescription(nameof(DuplicateItemViewModel.Duration), ListSortDirection.Descending)),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_DateCreatedAscending, new SortDescription(nameof(DuplicateItemViewModel.DateCreated), ListSortDirection.Ascending)),
+			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_DateCreatedDescending, new SortDescription(nameof(DuplicateItemViewModel.DateCreated), ListSortDirection.Descending)),
+		};
 
 		int _TotalGroups;
 		public int TotalGroups {
@@ -36,6 +48,19 @@ namespace VideoDuplicateFinderWindows {
 				if (value == _TotalGroups) return;
 				_TotalGroups = value;
 				OnPropertyChanged(nameof(TotalGroups));
+			}
+		}
+
+		SortDescription _SortOrder;
+		public SortDescription SortOrder {
+			get => _SortOrder;
+			set {
+				if (value == _SortOrder) return;
+				_SortOrder = value;
+				view.SortDescriptions.Clear();
+				if (!string.IsNullOrEmpty(_SortOrder.PropertyName))
+					view.SortDescriptions.Add(_SortOrder);
+				OnPropertyChanged(nameof(SortOrder));
 			}
 		}
 

@@ -355,8 +355,13 @@
                             </MenuItem>
                         </Menu>
                         <StackPanel Margin="5" Grid.Row="1" Orientation="Horizontal" Visibility="{Binding ElementName=ToggleBtnFilter, Path=IsChecked, Converter={StaticResource BoolToVis}}">
-<TextBlock Text="{x:Static properties:Resources.Path}"/>
+<TextBlock VerticalAlignment="Center" Text="{x:Static properties:Resources.Path}"/>
 <TextBox Margin="5,0,0,0" Text="{Binding FilterByPath, UpdateSourceTrigger=PropertyChanged}" MinWidth="150"/>
+                            <TextBlock  VerticalAlignment="Center"  Margin="5,0,0,0" Text="{x:Static properties:Resources.Sort}"/>
+                            <ComboBox Margin="5,0,0,0"  SelectedValue="{Binding SortOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     ItemsSource="{Binding SortOrders}"
+                                     SelectedValuePath="Value"
+                                     DisplayMemberPath="Key" MinWidth="150"/>
                         </StackPanel>
                         <ListView
                 Name="TreeViewDuplicates"
