@@ -398,14 +398,15 @@ namespace VideoDuplicateFinderLinux
                     try
                     {
                         File.Delete(dub.Path);
-                    }
+					}
                     catch (Exception ex)
                     {
                         Logger.Instance.Info(string.Format(Properties.Resources.FailedToDeleteFileReasonStacktrace,
                             dub.Path, ex.Message, ex.StackTrace));
-                    }
-                Duplicates.RemoveAt(i);
-            }
+						continue;
+					}
+				Duplicates.RemoveAt(i);
+			}
             //Hide groups with just one item left
             for (var i = Duplicates.Count - 1; i >= 0; i--)
             {

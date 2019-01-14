@@ -538,7 +538,7 @@ namespace VideoDuplicateFinderWindows {
 				if (dub.Checked == false) continue;
 				if (alsofromDisk) {
 					if (!FileOperationAPIWrapper.MoveToRecycleBin(dub.Path))
-						return;
+						continue;
 					TotalSizeRemoved += dub.SizeLong;
 				}
 				Duplicates.RemoveAt(i);
