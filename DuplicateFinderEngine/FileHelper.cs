@@ -20,7 +20,7 @@ namespace DuplicateFinderEngine {
 			var files = Directory.EnumerateFiles(initial).Where(f => (includeImages ? AllExtensions : VideoExtensions).Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
 			if (recursive)
 				files = files.Concat(Directory.EnumerateDirectories(initial)
-					.Where(d => !excludeFolders.Any(x => d.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
+					.Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
 					.Where(d => !ignoreReadonly || (new DirectoryInfo(d).Attributes & FileAttributes.ReadOnly) == 0)
 					.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, recursive, includeImages, excludeFolders)));
 			return files.ToList();
