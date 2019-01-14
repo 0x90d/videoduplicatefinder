@@ -27,7 +27,10 @@ namespace VideoDuplicateFinderConsole {
 
 		public void StartSearch() => engine.StartSearch();
 
-		public void StartCleanup() => engine.CleanupDatabase();
+		public void StartCleanup() {
+			engine.CleanupDatabase();
+			Environment.Exit(0);
+		}
 
 		private void Engine_ScanDone(object sender, EventArgs e) {
 			Console.WriteLine();
