@@ -31,13 +31,20 @@ namespace VideoDuplicateFinderWindows
 
 		private void FolderListBox_Drop(object sender, System.Windows.DragEventArgs e) {
 			var existing = (ObservableCollection<string>)((ListBox)sender).ItemsSource;
-			if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
-				var folders = ((string[])e.Data.GetData(DataFormats.FileDrop))
-					.Where(f => (File.GetAttributes(f) & FileAttributes.Directory) > 0)
-					.Where(f => !existing.Contains(f))
-					.ToList();
-				folders.ForEach(f => existing.Add(f));
+			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+			var folders = (string[])e.Data.GetData(DataFormats.FileDrop);
+			if (folders == null) return;
+			for (int i = 0; i < folders.Length; i++) {
+				var ws = new IWshRuntimeLibrary.WshShell();
+				try {
+					var sc = (IWshRuntimeLibrary.IWshShortcut)ws.CreateShortcut(folders[i]);
+					folders[i] = sc.TargetPath;
+				}
+				catch { }
 			}
+			folders.Where(f => (File.GetAttributes(f) & FileAttributes.Directory) > 0)
+				.Where(f => !existing.Contains(f))
+				.ToList().ForEach(f => existing.Add(f));
 		}
 	}
 }
