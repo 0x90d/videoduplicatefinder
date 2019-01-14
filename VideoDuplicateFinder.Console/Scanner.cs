@@ -16,7 +16,7 @@ namespace VideoDuplicateFinderConsole {
 				engine.Settings.IncludeList.Add(s);
 			engine.Settings.IncludeSubDirectories = settings.IsRecursive;
 			engine.Settings.IncludeImages = settings.IncludeImages;
-			Outputfolder = string.IsNullOrEmpty(settings.OutputFolder) ? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) : outputfolder;
+			Outputfolder = string.IsNullOrEmpty(settings.OutputFolder) ? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) : settings.OutputFolder;
 			if (settings.Percent.HasValue)
 				engine.Settings.Percent = settings.Percent.Value;
 			if (!settings.IsQuiet)

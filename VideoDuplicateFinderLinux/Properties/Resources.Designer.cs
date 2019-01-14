@@ -61,6 +61,15 @@ namespace VideoDuplicateFinderLinux.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cleaning database....
+        /// </summary>
+        internal static string CleaningDatabase {
+            get {
+                return ResourceManager.GetString("CleaningDatabase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Are you sure you want to permanently delete the selected files from disk?.
         /// </summary>
         internal static string ConfirmationDeleteFromDisk {
@@ -75,6 +84,15 @@ namespace VideoDuplicateFinderLinux.Properties {
         internal static string ConfirmationDeleteFromList {
             get {
                 return ResourceManager.GetString("ConfirmationDeleteFromList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enumerating files....
+        /// </summary>
+        internal static string EnumeratingFiles {
+            get {
+                return ResourceManager.GetString("EnumeratingFiles", resourceCulture);
             }
         }
         

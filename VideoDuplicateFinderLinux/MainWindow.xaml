@@ -14,433 +14,460 @@
     <Window.Resources>
         <mvvm:NegateBoolConverter x:Key="NegateBool" />
     </Window.Resources>
-    <TabControl>
-        <TabItem>
-            <TabItem.Header>
-                <TextBlock
+    <Grid>
+        <TabControl>
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock
                     VerticalAlignment="Center"
                     FontSize="12"
                     Text="Scanner" />
-            </TabItem.Header>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="150" />
-                    <RowDefinition />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Menu Grid.Row="0" Background="#F0F0F0">
-                    <MenuItem VerticalAlignment="Center" Command="{Binding StartScanCommand}">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
-                                    </Canvas>
-                                </Viewbox>
-                                <TextBlock
+                </TabItem.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="150" />
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Menu Grid.Row="0" Background="#F0F0F0">
+                        <MenuItem VerticalAlignment="Center" Command="{Binding StartScanCommand}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
                                     Margin="5,0,0,0"
                                     VerticalAlignment="Center"
                                     Text="Start" />
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                    <MenuItem Command="{Binding ResumeScanCommand}" IsVisible="{Binding IsScanning}">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
-                                    </Canvas>
-                                </Viewbox>
-                                <TextBlock
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Command="{Binding ResumeScanCommand}" IsVisible="{Binding IsScanning}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
                                     Margin="5,0,0,0"
                                     VerticalAlignment="Center"
                                     Text="Resume" />
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
 
-                    <MenuItem Command="{Binding PauseScanCommand}" IsVisible="{Binding IsScanning}">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M14,19H18V5H14M6,19H10V5H6V19Z" Fill="Blue" />
-                                    </Canvas>
-                                </Viewbox>
-                                <TextBlock
+                        <MenuItem Command="{Binding PauseScanCommand}" IsVisible="{Binding IsScanning}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M14,19H18V5H14M6,19H10V5H6V19Z" Fill="Blue" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
                                     Margin="5,0,0,0"
                                     VerticalAlignment="Center"
                                     Text="Pause" />
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                    <MenuItem Command="{Binding StopScanCommand}" IsVisible="{Binding IsScanning}">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M18,18H6V6H18V18Z" Fill="Red" />
-                                    </Canvas>
-                                </Viewbox>
-                                <TextBlock
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Command="{Binding StopScanCommand}" IsVisible="{Binding IsScanning}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M18,18H6V6H18V18Z" Fill="Red" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
                                     Margin="5,0,0,0"
                                     VerticalAlignment="Center"
                                     Text="Stop" />
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                    <MenuItem Command="{Binding CleanDatabaseCommand}">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="Black" />
-                                    </Canvas>
-                                </Viewbox>
-                                <TextBlock
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Command="{Binding CleanDatabaseCommand}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="Black" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
                                     Margin="5,0,0,0"
                                     VerticalAlignment="Center"
                                     Text="Cleanup Database" />
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                </Menu>
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <StackPanel
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </Menu>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <StackPanel
                         Grid.ColumnSpan="2"
                         IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}"
                         Orientation="Horizontal">
-                        <CheckBox
+                            <CheckBox
                             Margin="5,5,0,0"
                             VerticalAlignment="Center"
                             Content="Ignore Read Only Folders"
                             IsChecked="{Binding IgnoreReadOnlyFolders}"
                             IsThreeState="False" />
-                        <CheckBox
+                            <CheckBox
                             Margin="15,5,0,0"
                             VerticalAlignment="Center"
                             Content="Include Sub Directories"
                             IsChecked="{Binding IncludeSubDirectories}"
                             IsThreeState="False" />
-                        <CheckBox
+                            <CheckBox
                             Margin="15,5,0,0"
                             VerticalAlignment="Center"
                             Content="Include Images"
                             IsChecked="{Binding IncludeImages}"
                             IsThreeState="False" />
-                        <TextBlock
+                            <TextBlock
                             Margin="15,5,0,0"
                             VerticalAlignment="Center"
                             Text="Percent:" />
-                        <NumericUpDown
+                            <NumericUpDown
                             Margin="5,5,0,0"
                             VerticalAlignment="Center"
                             Maximum="100"
                             Minimum="1"
                             Value="{Binding Percent}" />
-                    </StackPanel>
+                        </StackPanel>
 
-                    <Grid
+                        <Grid
                         Grid.Row="1"
                         Grid.Column="0"
                         Margin="10"
                         IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-                        <TextBlock FontWeight="Bold" Text="Search Directories" />
-                        <Grid Grid.Row="1">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <Menu Grid.Row="0" Background="#F0F0F0">
-                                <MenuItem Command="{Binding AddIncludesToListCommand}">
-                                    <MenuItem.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox Width="16" Height="16">
-                                                <Canvas Width="24" Height="24">
-                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
+                            <TextBlock FontWeight="Bold" Text="Search Directories" />
+                            <Grid Grid.Row="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Menu Grid.Row="0" Background="#F0F0F0">
+                                    <MenuItem Command="{Binding AddIncludesToListCommand}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Text="Add" />
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
-                                <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
-                                    <MenuItem.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox Width="16" Height="16">
-                                                <Canvas Width="24" Height="24">
-                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Text="Remove" />
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
-                            </Menu>
-                            <ListBox
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                </Menu>
+                                <ListBox
                                 Name="ListboxIncludelist"
                                 Grid.Row="1"
                                 Items="{Binding Includes}" />
+                            </Grid>
+
                         </Grid>
 
-                    </Grid>
-
-                    <Grid
+                        <Grid
                         Grid.Row="1"
                         Grid.Column="1"
                         Margin="10"
                         IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-                        <TextBlock FontWeight="Bold" Text="Exclude Directories" />
-                        <Grid Grid.Row="1">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <Menu Grid.Row="0" Background="#F0F0F0">
-                                <MenuItem Command="{Binding AddBlacklistToListCommand}">
-                                    <MenuItem.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox Width="16" Height="16">
-                                                <Canvas Width="24" Height="24">
-                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
+                            <TextBlock FontWeight="Bold" Text="Exclude Directories" />
+                            <Grid Grid.Row="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Menu Grid.Row="0" Background="#F0F0F0">
+                                    <MenuItem Command="{Binding AddBlacklistToListCommand}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Text="Add" />
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
-                                <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
-                                    <MenuItem.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox Width="16" Height="16">
-                                                <Canvas Width="24" Height="24">
-                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Text="Remove" />
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
-                            </Menu>
-                            <ListBox
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                </Menu>
+                                <ListBox
                                 Name="ListboxBlacklist"
                                 Grid.Row="1"
                                 Items="{Binding Blacklists}" />
+                            </Grid>
                         </Grid>
-                    </Grid>
 
-                </Grid>
-                <Grid Grid.Row="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <Menu Grid.Row="0" Background="#F0F0F0">
-                        <MenuItem VerticalAlignment="Center">
-                            <MenuItem.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <Viewbox Width="16" Height="16">
-                                        <Canvas Width="24" Height="24">
-                                            <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="Black" />
-                                        </Canvas>
-                                    </Viewbox>
-                                    <TextBlock
+                    </Grid>
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Menu Grid.Row="0" Background="#F0F0F0">
+                            <MenuItem VerticalAlignment="Center">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="Black" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
                                         Margin="5,0,0,0"
                                         VerticalAlignment="Center"
                                         Text="Selection" />
-                                    <Path
+                                        <Path
                                         Margin="4,2,0,0"
                                         VerticalAlignment="Center"
                                         Data="M 0 0 L 6 6 L 12 0 Z"
                                         Fill="Black" />
-                                </StackPanel>
-                            </MenuItem.Header>
-                            <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
-                                <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Select 100% Identical (Keep First)" />
+                                    </StackPanel>
                                 </MenuItem.Header>
+                                <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Select 100% Identical (Keep First)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Select 100% Identical Except Size (Keep Smallest)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding CheckLowestQualityCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Select Lowest Duration / Lowest Quality (Keep longest / Best Quality)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ClearSelectionCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Clear Selection" />
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </MenuItem>
-                            <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}">
+                            <MenuItem VerticalAlignment="Center">
                                 <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Select 100% Identical Except Size (Keep Smallest)" />
-                                </MenuItem.Header>
-                            </MenuItem>
-                            <MenuItem Command="{Binding CheckLowestQualityCommand}">
-                                <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Select Lowest Duration / Lowest Quality (Keep longest / Best Quality)" />
-                                </MenuItem.Header>
-                            </MenuItem>
-                            <MenuItem Command="{Binding ClearSelectionCommand}">
-                                <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Clear Selection" />
-                                </MenuItem.Header>
-                            </MenuItem>
-                        </MenuItem>
-                        <MenuItem VerticalAlignment="Center">
-                            <MenuItem.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <Viewbox Width="16" Height="16">
-                                        <Canvas Width="24" Height="24">
-                                            <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                        </Canvas>
-                                    </Viewbox>
-                                    <TextBlock
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
                                         Margin="5,0,0,0"
                                         VerticalAlignment="Center"
                                         Text="Delete Selection" />
-                                    <Path
+                                        <Path
                                         Margin="4,2,0,0"
                                         VerticalAlignment="Center"
                                         Data="M 0 0 L 6 6 L 12 0 Z"
                                         Fill="Black" />
-                                </StackPanel>
-                            </MenuItem.Header>
-                            <MenuItem Command="{Binding DeleteSelectionCommand}">
-                                <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Delete permanently" />
+                                    </StackPanel>
                                 </MenuItem.Header>
+                                <MenuItem Command="{Binding DeleteSelectionCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Delete permanently" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="From List (Keep Files)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding CopySelectionCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Copy To Folder (Keep Files)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding MoveSelectionCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock VerticalAlignment="Center" Text="Move To Folder" />
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </MenuItem>
                             <Separator />
-                            <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
+                            <MenuItem Command="{Binding SaveToHtmlCommand}">
                                 <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="From List (Keep Files)" />
-                                </MenuItem.Header>
-                            </MenuItem>
-                            <MenuItem Command="{Binding CopySelectionCommand}">
-                                <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Copy To Folder (Keep Files)" />
-                                </MenuItem.Header>
-                            </MenuItem>
-                            <MenuItem Command="{Binding MoveSelectionCommand}">
-                                <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Move To Folder" />
-                                </MenuItem.Header>
-                            </MenuItem>
-                        </MenuItem>
-                        <Separator />
-                        <MenuItem Command="{Binding SaveToHtmlCommand}">
-                            <MenuItem.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <Viewbox Width="16" Height="16">
-                                        <Canvas Width="24" Height="24">
-                                            <Path Data="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" Fill="Black" />
-                                        </Canvas>
-                                    </Viewbox>
-                                    <TextBlock
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" Fill="Black" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
                                         Margin="5,0,0,0"
                                         VerticalAlignment="Center"
                                         Text="Save To HTML" />
-                                </StackPanel>
-                            </MenuItem.Header>
-                        </MenuItem>
-                    </Menu>
-                    <ListBox
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </Menu>
+                        <ListBox
                         Name="TreeViewDuplicates"
                         Grid.Row="1"
                         Items="{Binding Duplicates}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type local:DuplicateItemViewModel}">
-                                <local:DuplicateViewModel HorizontalContentAlignment="Stretch" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Grid>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type local:DuplicateItemViewModel}">
+                                    <local:DuplicateViewModel HorizontalContentAlignment="Stretch" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
 
-                <Grid Grid.Row="3">
-                    <StackPanel Orientation="Horizontal">
-                        <ProgressBar
+                    <Grid Grid.Row="3">
+                        <StackPanel Orientation="Horizontal">
+                            <ProgressBar
                             Name="PbScanProgress"
                             MinWidth="100"
                             Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
                             Value="{Binding ScanProgressValue, Mode=OneWay}" />
-                        <TextBlock Margin="10,0,0,0" Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
-                        <Separator />
-                        <TextBlock Margin="10,0,0,0" Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
-                        <Separator />
-                        <TextBlock Margin="10,0,0,0" Text="{Binding ScanProgressText, Mode=OneWay}" />
-                    </StackPanel>
+                            <TextBlock Margin="10,0,0,0" Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                            <Separator />
+                            <TextBlock Margin="10,0,0,0" Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                            <Separator />
+                            <TextBlock Margin="10,0,0,0" Text="{Binding ScanProgressText, Mode=OneWay}" />
+                        </StackPanel>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </TabItem>
-        <TabItem>
-            <TabItem.Header>
-                <TextBlock
+            </TabItem>
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock
                     VerticalAlignment="Center"
                     FontSize="12"
                     Text="Log" />
-            </TabItem.Header>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
+                </TabItem.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
 
-                <Menu Grid.Row="0" Background="#F0F0F0">
-                    <MenuItem Command="{Binding ClearLogCommand}">
-                        <MenuItem.Header>
-                            <TextBlock VerticalAlignment="Center" Text="Clear Log" />
-                        </MenuItem.Header>
-                    </MenuItem>
-                    <MenuItem Command="{Binding SaveLogCommand}">
-                        <MenuItem.Header>
-                            <TextBlock VerticalAlignment="Center" Text="Save Log To File" />
-                        </MenuItem.Header>
-                    </MenuItem>
-                </Menu>
-                <ListBox Grid.Row="1" Items="{Binding LogItems}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate DataType="{x:Type duplicateFinderEngine:LogItem}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Index" />
-                                    <ColumnDefinition />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
+                    <Menu Grid.Row="0" Background="#F0F0F0">
+                        <MenuItem Command="{Binding ClearLogCommand}">
+                            <MenuItem.Header>
+                                <TextBlock VerticalAlignment="Center" Text="Clear Log" />
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Command="{Binding SaveLogCommand}">
+                            <MenuItem.Header>
+                                <TextBlock VerticalAlignment="Center" Text="Save Log To File" />
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </Menu>
+                    <ListBox Grid.Row="1" Items="{Binding LogItems}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type duplicateFinderEngine:LogItem}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Index" />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
                                     Grid.Column="0"
                                     Margin="5,0,5,0"
                                     FontWeight="Bold"
                                     Text="{Binding DateTime}" />
-                                <TextBlock
+                                    <TextBlock
                                     Grid.Column="1"
                                     Text="{Binding Message}"
                                     TextWrapping="Wrap" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Grid>
-        </TabItem>
-    </TabControl>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Grid x:Name="BusyIndicator"
+              Background="Silver"
+              Opacity="0.8"
+              IsVisible="{Binding IsBusy}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar
+                    MaxWidth="200"
+                    BorderBrush="LimeGreen"
+                    BorderThickness="10"
+                    IsIndeterminate="True"/>
+                <TextBlock
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Center"
+                    Text="Please Wait"
+                    FontSize="14"
+                    FontWeight="ExtraBold" />
+                <TextBlock
+                    Text="{Binding IsBusyText}"
+                    Name="LblBusyIndicator"
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="14" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+   
 
 </Window>

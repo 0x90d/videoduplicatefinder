@@ -138,4 +138,10 @@
   <data name="FailedToCopyMoveSomeFilesPleaseCheckLog" xml:space="preserve">
     <value>Failed to copy/move some files. Please check log!</value>
   </data>
+  <data name="CleaningDatabase" xml:space="preserve">
+    <value>Cleaning database...</value>
+  </data>
+  <data name="EnumeratingFiles" xml:space="preserve">
+    <value>Enumerating files...</value>
+  </data>
 </root>

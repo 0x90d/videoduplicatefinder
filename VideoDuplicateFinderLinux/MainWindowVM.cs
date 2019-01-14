@@ -64,6 +64,16 @@ namespace VideoDuplicateFinderLinux {
 			get => _ScanProgressValue;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressValue, value);
 		}
+		bool _IsBusy;
+		public bool IsBusy {
+			get => _IsBusy;
+			set => this.RaiseAndSetIfChanged(ref _IsBusy, value);
+		}
+		string _BusyText;
+		public string IsBusyText {
+			get => _BusyText;
+			set => this.RaiseAndSetIfChanged(ref _BusyText, value);
+		}
 		int _ScanProgressMaxValue = 100;
 		public int ScanProgressMaxValue {
 			get => _ScanProgressMaxValue;
@@ -81,8 +91,14 @@ namespace VideoDuplicateFinderLinux {
 				dir.Create();
 			Scanner.ScanDone += Scanner_ScanDone;
 			Scanner.Progress += Scanner_Progress;
+			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
+			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 		}
+
+		private void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
+
+		private void Scanner_DatabaseCleaned(object sender, EventArgs e) => IsBusy = false;
 
 		public void SaveSettings() {
 			var path = DuplicateFinderEngine.Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Settings.xml");
@@ -181,6 +197,8 @@ namespace VideoDuplicateFinderLinux {
 				Includes.Add(result);
 		});
 		public ReactiveCommand CleanDatabaseCommand => ReactiveCommand.Create(() => {
+			IsBusy = true;
+			IsBusyText = Properties.Resources.CleaningDatabase;
 			Scanner.CleanupDatabase();
 		});
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
@@ -245,6 +263,8 @@ namespace VideoDuplicateFinderLinux {
 			foreach (var s in Blacklists)
 				Scanner.Settings.BlackList.Add(s);
 			//Start scan
+			IsBusy = true;
+			IsBusyText = Properties.Resources.EnumeratingFiles;
 			Scanner.StartSearch();
 		});
 		public ReactiveCommand CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
