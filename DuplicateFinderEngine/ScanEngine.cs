@@ -361,24 +361,11 @@ namespace DuplicateFinderEngine {
 
 
 		private static class ExtensionMethods {
-			public static byte[] VerifyGrayScaleValues(byte[] data, double darkProcent = 75) {
-
-				// Declare an array to hold the bytes of the bitmap.
-				var buffer = new byte[256];
-
-				int count = 0;
-				var buffercounter = 0;
-				for (var i = 0; i < data.Length; i += 3) {
-					byte r = data[i + 2], g = data[i + 1], b = data[i];
-					buffer[buffercounter] = r;
-					buffercounter++;
-					var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
-					if (brightness <= 0x40)
-						count++;
-				}
-				return 100d / 256 * count >= darkProcent ? null : buffer;
-
+			public static byte[] VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
+				var darkPixels = data.Count(b => b <= 0x20);
+				return 100d / data.Length * darkPixels >= darkProcent ? null : data;
 			}
+
 			public static unsafe byte[] GetGrayScaleValues(Bitmap original, double darkProcent = 75) {
 				// Lock the bitmap's bits.  
 				var rect = new Rectangle(0, 0, original.Width, original.Height);
