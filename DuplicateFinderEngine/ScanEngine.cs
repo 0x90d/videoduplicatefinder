@@ -185,7 +185,7 @@ namespace DuplicateFinderEngine {
 							Thread.Sleep(50);
 						}
 						foreach (var itm in ScanFileList) {
-							if (itm == ScanFileList[i]) continue;
+							if (itm == ScanFileList[i] || itm.IsImage && !ScanFileList[i].IsImage) continue;
 							if (itm.grayBytes == null || itm.grayBytes.Count == 0) continue;
 							if (ScanFileList[i].grayBytes == null || ScanFileList[i].grayBytes.Count == 0) continue;
 							if (itm.grayBytes.Count != ScanFileList[i].grayBytes.Count) continue;
