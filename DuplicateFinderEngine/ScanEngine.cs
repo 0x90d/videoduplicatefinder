@@ -135,7 +135,7 @@ namespace DuplicateFinderEngine {
 
 			try {
 				var st = Stopwatch.StartNew();
-				var reScanList = ScanFileList.Where(vf => vf.mediaInfo == null || vf.grayBytes == null).ToList();
+				var reScanList = ScanFileList.Where(vf => (vf.mediaInfo == null && !vf.IsImage) || vf.grayBytes == null).ToList();
 				ScanProgressMaxValue = reScanList.Count;
 				Parallel.For(0, reScanList.Count, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = cancelToken }, i => {
 					while (pauseTokenSource.IsPaused) {
