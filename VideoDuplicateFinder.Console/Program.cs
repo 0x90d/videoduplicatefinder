@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -18,7 +17,6 @@ namespace VideoDuplicateFinderConsole {
 		
 
 		class VideoDuplicateFinderConsole {
-			readonly List<string> commandArgs = new List<string>();
 			static readonly char PATHS_SEP = Path.PathSeparator;
 
 			readonly ConsoleScanSettings settings = new ConsoleScanSettings();
@@ -188,9 +186,9 @@ namespace VideoDuplicateFinderConsole {
 						}
 					}
 					else
-						commandArgs.Add(arg);
-				
-			}
+						throw new ParseException(string.Format(Properties.Resources.Cmd_UnknownCommand, arg));
+
+				}
 			}
 
 			static float ParseFloat(string s) {

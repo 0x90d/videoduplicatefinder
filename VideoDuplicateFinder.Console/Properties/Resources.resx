@@ -186,4 +186,7 @@
   <data name="Cmd_InvalidArgs" xml:space="preserve">
     <value>One or more of your provided arguments are invalid: {0}</value>
   </data>
+  <data name="Cmd_UnknownCommand" xml:space="preserve">
+    <value>'{0}' is an unknown command</value>
+  </data>
 </root>

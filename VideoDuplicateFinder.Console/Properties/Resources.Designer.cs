@@ -70,6 +70,15 @@ namespace VideoDuplicateFinderConsole.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; is an unknown command.
+        /// </summary>
+        internal static string Cmd_UnknownCommand {
+            get {
+                return ResourceManager.GetString("Cmd_UnknownCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Boolean.
         /// </summary>
         internal static string CmdBoolean {
