@@ -183,4 +183,7 @@
   <data name="CmdDescription_Clean" xml:space="preserve">
     <value>Cleanup database</value>
   </data>
+  <data name="Cmd_InvalidArgs" xml:space="preserve">
+    <value>One or more of your provided arguments are invalid: {0}</value>
+  </data>
 </root>

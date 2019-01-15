@@ -61,6 +61,15 @@ namespace VideoDuplicateFinderConsole.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to One or more of your provided arguments are invalid: {0}.
+        /// </summary>
+        internal static string Cmd_InvalidArgs {
+            get {
+                return ResourceManager.GetString("Cmd_InvalidArgs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Boolean.
         /// </summary>
         internal static string CmdBoolean {

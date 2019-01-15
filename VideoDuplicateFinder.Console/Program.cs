@@ -42,7 +42,7 @@ namespace VideoDuplicateFinderConsole {
 				catch (ParseException ex) {
 					PrintHelp();
 					Console.WriteLine();
-					ConsoleHelpers.WriteException(ex);
+					Console.WriteLine(string.Format(Properties.Resources.Cmd_InvalidArgs, ex.Message));
 					return 1;
 				}
 				catch (Exception ex) {
