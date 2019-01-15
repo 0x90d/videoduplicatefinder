@@ -167,13 +167,19 @@ namespace DuplicateFinderEngine {
 				st.Stop();
 				Logger.Instance.Info(string.Format(Properties.Resources.ThumbnailsFinished, st.Elapsed, processedFiles));
 				processedFiles = 0;
-				ScanProgressMaxValue = ScanFileList.Count;
+				//create new list only matching current scan settings
+				var scanList = new List<VideoFileEntry>(ScanFileList.Where(f => Settings.IncludeList.Any(il => f.Path.StartsWith(il, StringComparison.OrdinalIgnoreCase))));
+				for (int i = scanList.Count - 1; i >= 0; i--) {
+					if (!Settings.IncludeImages && scanList[i].IsImage)
+						scanList.RemoveAt(i);
+				}
+				ScanProgressMaxValue = scanList.Count;
 				st.Restart();
 				startTime = DateTime.Now;
 
 				var percentageDifference = 1.0f - Settings.Percent / 100f;
-
-				Parallel.For(0, ScanFileList.Count,
+				
+				Parallel.For(0, scanList.Count,
 					new ParallelOptions {
 						MaxDegreeOfParallelism = Environment.ProcessorCount,
 						CancellationToken = cancelToken
@@ -182,16 +188,16 @@ namespace DuplicateFinderEngine {
 						while (pauseTokenSource.IsPaused) {
 							Thread.Sleep(50);
 						}
-						foreach (var itm in ScanFileList) {
-							if (itm == ScanFileList[i] || itm.IsImage && !ScanFileList[i].IsImage) continue;
+						foreach (var itm in scanList) {
+							if (itm == scanList[i] || itm.IsImage && !scanList[i].IsImage) continue;
 							if (itm.grayBytes == null || itm.grayBytes.Count == 0) continue;
-							if (ScanFileList[i].grayBytes == null || ScanFileList[i].grayBytes.Count == 0) continue;
-							if (itm.grayBytes.Count != ScanFileList[i].grayBytes.Count) continue;
+							if (scanList[i].grayBytes == null || scanList[i].grayBytes.Count == 0) continue;
+							if (itm.grayBytes.Count != scanList[i].grayBytes.Count) continue;
 							var duplicateCounter = 0;
 							var percent = new float[itm.grayBytes.Count];
 							for (var j = 0; j < itm.grayBytes.Count; j++) {
 								percent[j] = ExtensionMethods.PercentageDifference2(itm.grayBytes[j],
-									ScanFileList[i].grayBytes[j]);
+									scanList[i].grayBytes[j]);
 								if (percent[j] < percentageDifference) {
 									duplicateCounter++;
 								}
@@ -209,7 +215,7 @@ namespace DuplicateFinderEngine {
 										groupId = v.GroupId;
 										firstInList = true;
 									}
-									else if (v.Path == ScanFileList[i].Path) {
+									else if (v.Path == scanList[i].Path) {
 										secondInList = true;
 									}
 								}
@@ -224,10 +230,10 @@ namespace DuplicateFinderEngine {
 								}
 
 								if (!secondInList) {
-									var dup = new DuplicateItem(ScanFileList[i], percent.Average()) {
+									var dup = new DuplicateItem(scanList[i], percent.Average()) {
 										GroupId = groupId
 									};
-									var images = ScanFileList[i].IsImage ? GetImageThumbnail(dup, positionList.Count) : GetVideoThumbnail(dup, positionList);
+									var images = scanList[i].IsImage ? GetImageThumbnail(dup, positionList.Count) : GetVideoThumbnail(dup, positionList);
 									if (images == null) continue;
 									dup.Thumbnail = images;
 									Duplicates.Add(dup);
@@ -243,7 +249,7 @@ namespace DuplicateFinderEngine {
 							Progress?.Invoke(this,
 								new OwnScanProgress {
 									CurrentPosition = processedFiles,
-									CurrentFile = ScanFileList[i].Path,
+									CurrentFile = scanList[i].Path,
 									Elapsed = ElapsedTimer.Elapsed,
 									Remaining = remaining
 								}));
