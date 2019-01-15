@@ -135,6 +135,9 @@ namespace VideoDuplicateFinderLinux {
 				Includes.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Exclude"))
 				Blacklists.Add(n.Value);
+			foreach (var n in xDoc.Descendants("Percent"))
+				if (int.TryParse(n.Value, out var percent))
+					Percent = percent;
 			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
 			if (node?.Value != null)
 				IncludeSubDirectories = bool.Parse(node.Value);
@@ -173,7 +176,7 @@ namespace VideoDuplicateFinderLinux {
 
 			//In Linux we cannot group, so let's make sure its sorted
 			var l = new SortedSet<DuplicateFinderEngine.Data.DuplicateItem>(Scanner.Duplicates, new DuplicateItemComparer());
-			
+
 			Guid? oldGroup = null;
 			var odd = false;
 			foreach (var itm in l) {
@@ -190,7 +193,7 @@ namespace VideoDuplicateFinderLinux {
 					oldGroup = dup.GroupId;
 				}
 				dup.BackgroundBrush = odd ? Brushes.Blue : Brushes.Red;
-				
+
 				Duplicates.Add(dup);
 			}
 			//We no longer need the core duplicates

@@ -611,6 +611,8 @@ namespace VideoDuplicateFinderWindows {
 				Includes.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Exclude"))
 				Blacklists.Add(n.Value);
+			foreach (var n in xDoc.Descendants("Percent"))
+				Percent = n.Value;
 			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
 			if (node?.Value != null)
 				IncludeSubDirectories = bool.Parse(node.Value);
