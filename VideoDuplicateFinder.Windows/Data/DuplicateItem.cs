@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows.Media.Imaging;
 using VideoDuplicateFinderWindows.MVVM;
 
@@ -26,7 +27,8 @@ namespace VideoDuplicateFinderWindows.Data
             DateCreated = file.DateCreated;
             Format = file.Format;
             BitRateKbs = file.BitRateKbs;
-        }
+            Similarity = file.Similarity;
+		}
 
 
         [DisplayName("Path")]
@@ -53,7 +55,7 @@ namespace VideoDuplicateFinderWindows.Data
         [DisplayName("Size")]
         public string Size { get; }
 
-
+		public float Similarity { get; }
 
         public string Folder { get; }
 

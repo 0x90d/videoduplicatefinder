@@ -21,6 +21,7 @@
             <ColumnDefinition Width="100" />
             <ColumnDefinition Width="100" />
             <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="75" />
         </Grid.ColumnDefinitions>
 
         <CheckBox
@@ -163,5 +164,12 @@
                 Text="{Binding AudioSampleRate}"
                 TextWrapping="Wrap" />
         </Grid>
+
+
+        <TextBlock
+            Grid.Column="6"
+            Margin="10"
+            Text="{Binding Similarity, StringFormat={}{0:F2}%}"
+            TextWrapping="Wrap"/>
     </Grid>
 </UserControl>

@@ -188,8 +188,11 @@ namespace DuplicateFinderEngine {
 							if (ScanFileList[i].grayBytes == null || ScanFileList[i].grayBytes.Count == 0) continue;
 							if (itm.grayBytes.Count != ScanFileList[i].grayBytes.Count) continue;
 							var duplicateCounter = 0;
+							var percent = new float[itm.grayBytes.Count];
 							for (var j = 0; j < itm.grayBytes.Count; j++) {
-								if (ExtensionMethods.PercentageDifference2(itm.grayBytes[j], ScanFileList[i].grayBytes[j]) < percentageDifference) {
+								percent[j] = ExtensionMethods.PercentageDifference2(itm.grayBytes[j],
+									ScanFileList[i].grayBytes[j]);
+								if (percent[j] < percentageDifference) {
 									duplicateCounter++;
 								}
 								else { break; }
@@ -211,7 +214,7 @@ namespace DuplicateFinderEngine {
 									}
 								}
 								if (!firstInList) {
-									var origDup = new DuplicateItem(itm) {
+									var origDup = new DuplicateItem(itm, percent.Average()) {
 										GroupId = groupId
 									};
 									var origImages = itm.IsImage ? GetImageThumbnail(origDup, positionList.Count) : GetVideoThumbnail(origDup, positionList);
@@ -221,7 +224,7 @@ namespace DuplicateFinderEngine {
 								}
 
 								if (!secondInList) {
-									var dup = new DuplicateItem(ScanFileList[i]) {
+									var dup = new DuplicateItem(ScanFileList[i], percent.Average()) {
 										GroupId = groupId
 									};
 									var images = ScanFileList[i].IsImage ? GetImageThumbnail(dup, positionList.Count) : GetVideoThumbnail(dup, positionList);

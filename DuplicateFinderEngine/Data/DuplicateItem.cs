@@ -6,7 +6,7 @@ using System.IO;
 
 namespace DuplicateFinderEngine.Data {
 	public class DuplicateItem {
-		public DuplicateItem(VideoFileEntry file) {
+		public DuplicateItem(VideoFileEntry file, float percent) {
 			Path = file.Path;
 			Folder = file.Folder;
 			if (!file.IsImage) {
@@ -33,6 +33,7 @@ namespace DuplicateFinderEngine.Data {
 			Size = Utils.BytesToString(SizeLong);
 			if (file.IsImage)
 				Format = fi.Extension.Substring(1);
+			Similarity = (1f - percent) * 100;
 		}
 
 		[DisplayName("Group Id")]
@@ -44,7 +45,8 @@ namespace DuplicateFinderEngine.Data {
 		public long SizeLong { get; }
 		[DisplayName("Size")]
 		public string Size { get; }
-
+		[DisplayName("Similary Percent")]
+		public float Similarity { get; }
 		public string Folder { get; }
 		[DisplayName("Duration")]
 		public TimeSpan Duration { get; }

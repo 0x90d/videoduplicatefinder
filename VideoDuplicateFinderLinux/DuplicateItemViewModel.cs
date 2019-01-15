@@ -1,6 +1,7 @@
 using ReactiveUI;
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 
@@ -26,7 +27,8 @@ namespace VideoDuplicateFinderLinux
             DateCreated = file.DateCreated;
             Format = file.Format;
             BitRateKbs = file.BitRateKbs;
-        }
+            Similarity = file.Similarity;
+		}
 
 
         [DisplayName("Path")]
@@ -43,9 +45,9 @@ namespace VideoDuplicateFinderLinux
 		[DisplayName("Size")]
         public string Size { get; }
 
+        public float Similarity { get; }
 
-
-        public string Folder { get; }
+		public string Folder { get; }
 		
         public IBrush BitRateForeground { get; set; }
 
