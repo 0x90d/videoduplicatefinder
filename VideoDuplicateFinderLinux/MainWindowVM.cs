@@ -210,6 +210,17 @@ namespace VideoDuplicateFinderLinux {
 			if (!Includes.Contains(result))
 				Includes.Add(result);
 		});
+
+		public ReactiveCommand LatestReleaseCommand => ReactiveCommand.Create(() => {
+			try {
+				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
+					UseShellExecute = true
+				});
+			}
+			catch {
+			}
+		});
 		public ReactiveCommand CleanDatabaseCommand => ReactiveCommand.Create(() => {
 			IsBusy = true;
 			IsBusyText = Properties.Resources.CleaningDatabase;

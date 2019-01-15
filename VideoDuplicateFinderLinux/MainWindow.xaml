@@ -107,6 +107,14 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
+                        <MenuItem Command="{Binding LatestReleaseCommand}">
+                            <MenuItem.Header>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Latest Release" />
+                            </MenuItem.Header>
+                        </MenuItem>
                     </Menu>
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>

@@ -129,6 +129,11 @@
                                 </Viewbox>
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Command="{Binding LatestReleaseCommand}" >
+                            <MenuItem.Header>
+                                <TextBlock Text="Latest Release" VerticalAlignment="Center"/>
+                            </MenuItem.Header>
+                        </MenuItem>
                     </Menu>
 
                     <Grid Grid.Row="1">

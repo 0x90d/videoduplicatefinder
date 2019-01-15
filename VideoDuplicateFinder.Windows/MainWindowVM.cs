@@ -353,6 +353,16 @@ namespace VideoDuplicateFinderWindows {
 
 		});
 
+		public DelegateCommand LatestReleaseCommand => new DelegateCommand(a => {
+			try {
+				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
+					UseShellExecute = true
+				});
+			}
+			catch {
+			}
+		});
 		public DelegateCommand CleanDatabaseCommand => new DelegateCommand(a => {
 			IsBusy = true;
 			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.CleaningUp;
