@@ -8,10 +8,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
 using Avalonia.Media;
+using DynamicData;
+using DynamicData.Binding;
 
 namespace VideoDuplicateFinderLinux {
 	public sealed class MainWindowVM : ReactiveObject {
@@ -20,9 +23,23 @@ namespace VideoDuplicateFinderLinux {
 		public ObservableCollection<LogItem> LogItems { get; } = new ObservableCollection<LogItem>();
 		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Blacklists { get; } = new ObservableCollection<string>();
-		public ObservableCollection<DuplicateItemViewModel> Duplicates { get; } =
-			new ObservableCollection<DuplicateItemViewModel>();
 
+		readonly SourceList<DuplicateItemViewModel> duplicateList =
+			new SourceList<DuplicateItemViewModel>();
+
+		ReadOnlyObservableCollection<DuplicateItemViewModel> duplicates;
+
+		public ReadOnlyObservableCollection<DuplicateItemViewModel> Duplicates {
+			get => duplicates;
+			set => this.RaiseAndSetIfChanged(ref duplicates, value);
+		}
+		//public ObservableCollection<DuplicateItemViewModel> Duplicates { get; } =
+		//	new ObservableCollection<DuplicateItemViewModel>();
+		string _SearchText;
+		public string SearchText {
+			get => _SearchText;
+			set => this.RaiseAndSetIfChanged(ref _SearchText, value);
+		}
 		bool _IsScanning;
 		public bool IsScanning {
 			get => _IsScanning;
@@ -97,6 +114,7 @@ namespace VideoDuplicateFinderLinux {
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown 
 			Instance_LogItemAdded(null, null);
+
 		}
 
 		private void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
@@ -174,12 +192,10 @@ namespace VideoDuplicateFinderLinux {
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
 
-			//In Linux we cannot group, so let's make sure its sorted
-			var l = new SortedSet<DuplicateFinderEngine.Data.DuplicateItem>(Scanner.Duplicates, new DuplicateItemComparer());
 
 			Guid? oldGroup = null;
 			var odd = false;
-			foreach (var itm in l) {
+			foreach (var itm in Scanner.Duplicates) {
 				var dup = new DuplicateItemViewModel(itm);
 				//Set best property in duplicate group
 				var others = Scanner.Duplicates.Where(a => a.GroupId == dup.GroupId && a.Path != dup.Path).ToList();
@@ -194,12 +210,29 @@ namespace VideoDuplicateFinderLinux {
 				}
 				dup.BackgroundBrush = odd ? Brushes.Blue : Brushes.Red;
 
-				Duplicates.Add(dup);
+				duplicateList.Add(dup);
 			}
 			//We no longer need the core duplicates
 			Scanner.Duplicates.Clear();
 			//And done
 			IsScanning = false;
+
+			var dynamicFilter = this.WhenValueChanged(x => x.SearchText)
+					.Select(BuildFilter);
+
+
+			var loader = duplicateList.AsObservableList().Connect()
+			.Filter(dynamicFilter)
+			.Sort(new DuplicateItemComparer())
+			.Bind(out var bindingData)
+			.Subscribe();
+			Duplicates = bindingData;
+		}
+
+		private static Func<DuplicateItemViewModel, bool> BuildFilter(string searchText) {
+			if (string.IsNullOrEmpty(searchText)) return trade => true;
+
+			return t => t.Path.Contains(searchText, StringComparison.OrdinalIgnoreCase);
 		}
 
 		public ReactiveCommand AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -217,7 +250,7 @@ namespace VideoDuplicateFinderLinux {
 					UseShellExecute = true
 				});
 			}
-			catch  {}
+			catch { }
 		});
 		public ReactiveCommand CleanDatabaseCommand => ReactiveCommand.Create(() => {
 			IsBusy = true;
@@ -264,7 +297,7 @@ namespace VideoDuplicateFinderLinux {
 				return;
 			}
 
-			Duplicates.Clear();
+			duplicateList.Clear();
 			try {
 				foreach (var f in new DirectoryInfo(Utils.ThumbnailDirectory).EnumerateFiles())
 					f.Delete();
@@ -292,86 +325,110 @@ namespace VideoDuplicateFinderLinux {
 		});
 		public ReactiveCommand CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
 			var blackListGroupID = new HashSet<Guid>();
-			foreach (var first in Duplicates) {
-				if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
-				var l = Duplicates.Where(d => d.Equals(first) && !d.Path.Equals(first.Path));
-				var dupMods = l as DuplicateItemViewModel[] ?? l.ToArray();
-				if (!dupMods.Any()) continue;
-				foreach (var dup in dupMods)
-					dup.Checked = true;
-				first.Checked = false;
-				blackListGroupID.Add(first.GroupId);
-			}
+			duplicateList.Edit(updater => {
+				foreach (var first in updater) {
+					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
+					var l = updater.Where(d => d.Equals(first) && !d.Path.Equals(first.Path));
+					var dupMods = l as DuplicateItemViewModel[] ?? l.ToArray();
+					if (!dupMods.Any()) continue;
+					foreach (var dup in dupMods)
+						dup.Checked = true;
+					first.Checked = false;
+					blackListGroupID.Add(first.GroupId);
+				}
+			});
+			//foreach (var first in Duplicates) {
+			//	if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
+			//	var l = Duplicates.Where(d => d.Equals(first) && !d.Path.Equals(first.Path));
+			//	var dupMods = l as DuplicateItemViewModel[] ?? l.ToArray();
+			//	if (!dupMods.Any()) continue;
+			//	foreach (var dup in dupMods)
+			//		dup.Checked = true;
+			//	first.Checked = false;
+			//	blackListGroupID.Add(first.GroupId);
+			//}
 		});
 		public ReactiveCommand CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
 			var blackListGroupID = new HashSet<Guid>();
-			foreach (var first in Duplicates) {
-				if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
-				var l = Duplicates.Where(d => d.EqualsButSize(first) && !d.Path.Equals(first.Path));
-				var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
-				if (!dupMods.Any()) continue;
-				dupMods.Add(first);
-				dupMods = dupMods.OrderBy(s => s.SizeLong).ToList();
-				dupMods[0].Checked = false;
-				for (int i = 1; i < dupMods.Count; i++) {
-					dupMods[i].Checked = true;
+			duplicateList.Edit(updater => {
+				foreach (var first in updater) {
+					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
+					var l = updater.Where(d => d.EqualsButSize(first) && !d.Path.Equals(first.Path));
+					var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
+					if (!dupMods.Any()) continue;
+					dupMods.Add(first);
+					dupMods = dupMods.OrderBy(s => s.SizeLong).ToList();
+					dupMods[0].Checked = false;
+					for (int i = 1; i < dupMods.Count; i++) {
+						dupMods[i].Checked = true;
+					}
+
+					blackListGroupID.Add(first.GroupId);
 				}
-				blackListGroupID.Add(first.GroupId);
-			}
+			});
 		});
 		public ReactiveCommand CheckLowestQualityCommand => ReactiveCommand.Create(() => {
 			var blackListGroupID = new HashSet<Guid>();
-			foreach (var first in Duplicates) {
-				if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
-				var l = Duplicates.Where(d => d.EqualsButQuality(first) && !d.Path.Equals(first.Path));
-				var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
-				if (!dupMods.Any()) continue;
-				dupMods.Insert(0, first);
+			duplicateList.Edit(updater => {
+				foreach (var first in updater) {
+					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
+					var l = updater.Where(d => d.EqualsButQuality(first) && !d.Path.Equals(first.Path));
+					var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
+					if (!dupMods.Any()) continue;
+					dupMods.Insert(0, first);
 
-				var keep = dupMods[0];
-				//TODO: Make this order become an option for the user
-				//Duration first
-				for (int i = 1; i < dupMods.Count; i++) {
-					if (dupMods[i].Duration.TrimMiliseconds() > keep.Duration.TrimMiliseconds())
-						keep = dupMods[i];
+					var keep = dupMods[0];
+					//TODO: Make this order become an option for the user
+					//Duration first
+					if (keep.Duration.TotalSeconds != 0)
+						for (int i = 1; i < dupMods.Count; i++) {
+							if (dupMods[i].Duration.TrimMiliseconds() > keep.Duration.TrimMiliseconds())
+								keep = dupMods[i];
+						}
+
+					//resolution next, but only when keep is unchanged
+					if (keep.Path.Equals(dupMods[0].Path))
+						for (int i = 1; i < dupMods.Count; i++) {
+							if (dupMods[i].FrameSizeInt > keep.FrameSizeInt)
+								keep = dupMods[i];
+						}
+
+					//fps next, but only when keep is unchanged
+					if (keep.Path.Equals(dupMods[0].Path))
+						for (int i = 1; i < dupMods.Count; i++) {
+							if (dupMods[i].Fps > keep.Fps)
+								keep = dupMods[i];
+						}
+
+					//Bitrate next, but only when keep is unchanged
+					if (keep.Path.Equals(dupMods[0].Path))
+						for (int i = 1; i < dupMods.Count; i++) {
+							if (dupMods[i].BitRateKbs > keep.BitRateKbs)
+								keep = dupMods[i];
+						}
+
+					//Audio Bitrate next, but only when keep is unchanged
+					if (keep.Path.Equals(dupMods[0].Path))
+						for (int i = 1; i < dupMods.Count; i++) {
+							if (dupMods[i].AudioSampleRate > keep.AudioSampleRate)
+								keep = dupMods[i];
+						}
+
+					keep.Checked = false;
+					for (int i = 0; i < dupMods.Count; i++) {
+						if (!keep.Path.Equals(dupMods[i].Path))
+							dupMods[i].Checked = true;
+					}
+
+					blackListGroupID.Add(first.GroupId);
 				}
-				//resolution next, but only when keep is unchanged
-				if (keep.Path.Equals(dupMods[0].Path))
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].Fps > keep.Fps)
-							keep = dupMods[i];
-					}
-				//fps next, but only when keep is unchanged
-				if (keep.Path.Equals(dupMods[0].Path))
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].Fps > keep.Fps)
-							keep = dupMods[i];
-					}
-				//Bitrate next, but only when keep is unchanged
-				if (keep.Path.Equals(dupMods[0].Path))
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].BitRateKbs > keep.BitRateKbs)
-							keep = dupMods[i];
-					}
-				//Audio Bitrate next, but only when keep is unchanged
-				if (keep.Path.Equals(dupMods[0].Path))
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].AudioSampleRate > keep.AudioSampleRate)
-							keep = dupMods[i];
-					}
-
-				keep.Checked = false;
-				for (int i = 0; i < dupMods.Count; i++) {
-					if (!keep.Path.Equals(dupMods[i].Path))
-						dupMods[i].Checked = true;
-				}
-
-				blackListGroupID.Add(first.GroupId);
-			}
+			});
 		});
 		public ReactiveCommand ClearSelectionCommand => ReactiveCommand.Create(() => {
-			for (var i = 0; i < Duplicates.Count; i++)
-				Duplicates[i].Checked = false;
+			duplicateList.Edit(updater => {
+				for (var i = 0; i < updater.Count; i++)
+					updater[i].Checked = false;
+			});
 		});
 		public ReactiveCommand DeleteSelectionCommand => ReactiveCommand.Create(() => { DeleteInternal(true); });
 		public ReactiveCommand RemoveSelectionFromListCommand => ReactiveCommand.Create(() => { DeleteInternal(false); });
@@ -384,33 +441,38 @@ namespace VideoDuplicateFinderLinux {
 					: Properties.Resources.ConfirmationDeleteFromList,
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult == MessageBoxButtons.No) return;
-			for (var i = Duplicates.Count - 1; i >= 0; i--) {
-				var dub = Duplicates[i];
-				if (dub.Checked == false) continue;
-				if (fromDisk)
-					try {
-						File.Delete(dub.Path);
-					}
-					catch (Exception ex) {
-						Logger.Instance.Info(string.Format(Properties.Resources.FailedToDeleteFileReasonStacktrace,
-							dub.Path, ex.Message, ex.StackTrace));
-						continue;
-					}
-				Duplicates.RemoveAt(i);
-			}
-			//Hide groups with just one item left
-			for (var i = Duplicates.Count - 1; i >= 0; i--) {
-				var first = Duplicates[i];
-				if (Duplicates.Any(s => s.GroupId == first.GroupId && s.Path != first.Path)) continue;
-				Duplicates.RemoveAt(i);
-			}
+			duplicateList.Edit(updater => {
+				for (var i = updater.Count - 1; i >= 0; i--) {
+					var dub = updater[i];
+					if (dub.Checked == false) continue;
+					if (fromDisk)
+						try {
+							File.Delete(dub.Path);
+						}
+						catch (Exception ex) {
+							Logger.Instance.Info(string.Format(
+								Properties.Resources.FailedToDeleteFileReasonStacktrace,
+								dub.Path, ex.Message, ex.StackTrace));
+							continue;
+						}
+
+					updater.RemoveAt(i);
+				}
+
+				//Hide groups with just one item left
+				for (var i = updater.Count - 1; i >= 0; i--) {
+					var first = updater[i];
+					if (updater.Any(s => s.GroupId == first.GroupId && s.Path != first.Path)) continue;
+					updater.RemoveAt(i);
+				}
+			});
 		}
 		public ReactiveCommand CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
 				Title = Properties.Resources.SelectFolder
 			}.ShowAsync(Application.Current.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
-			FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), result, true, false,
+			FileHelper.CopyFile(duplicateList.Items.Where(s => s.Checked).Select(s => s.Path), result, true, false,
 				out var errorCounter);
 			if (errorCounter > 0)
 				await MessageBoxService.Show(Properties.Resources.FailedToCopyMoveSomeFilesPleaseCheckLog);
@@ -420,7 +482,7 @@ namespace VideoDuplicateFinderLinux {
 				Title = Properties.Resources.SelectFolder
 			}.ShowAsync(Application.Current.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
-			FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), result, true, true,
+			FileHelper.CopyFile(duplicateList.Items.Where(s => s.Checked).Select(s => s.Path), result, true, true,
 				out var errorCounter);
 			if (errorCounter > 0)
 				await MessageBoxService.Show(Properties.Resources.FailedToCopyMoveSomeFilesPleaseCheckLog);
@@ -443,7 +505,7 @@ namespace VideoDuplicateFinderLinux {
 			var file = await ofd.ShowAsync(Application.Current.MainWindow);
 			if (string.IsNullOrEmpty(file)) return;
 			try {
-				Duplicates.ToHtmlTable(file);
+				duplicateList.Items.ToList().ToHtmlTable(file);
 			}
 			catch (Exception e) {
 				Logger.Instance.Info(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace);

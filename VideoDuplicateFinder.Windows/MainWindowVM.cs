@@ -148,7 +148,7 @@ namespace VideoDuplicateFinderWindows {
 				dup.BitrateBest = !others.Any(a => a.BitRateKbs > dup.BitRateKbs);
 				Duplicates.Add(dup);
 			}
-			
+
 			//We no longer need the core duplicates
 			Scanner.Duplicates.Clear();
 			//Group results by GroupID
@@ -398,7 +398,7 @@ namespace VideoDuplicateFinderWindows {
 					VideoDuplicateFinder.Windows.Properties.Resources.FFmpegExeFFprobeExeIsMissing, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
 				return;
 			}
-				Duplicates.Clear();
+			Duplicates.Clear();
 			IsScanning = true;
 			//Set scan settings
 			Scanner.Settings.IncludeList.Clear();
@@ -473,15 +473,16 @@ namespace VideoDuplicateFinderWindows {
 
 					var keep = dupMods[0];
 					//TODO: Make this order become an option for the user
-					//Duration first
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].Duration.TrimMiliseconds() > keep.Duration.TrimMiliseconds())
-							keep = dupMods[i];
-					}
+					//Duration first, unless image
+					if (keep.Duration.TotalSeconds != 0)
+						for (int i = 1; i < dupMods.Count; i++) {
+							if (dupMods[i].Duration.TrimMiliseconds() > keep.Duration.TrimMiliseconds())
+								keep = dupMods[i];
+						}
 					//resolution next, but only when keep is unchanged
 					if (keep.Path.Equals(dupMods[0].Path))
 						for (int i = 1; i < dupMods.Count; i++) {
-							if (dupMods[i].Fps > keep.Fps)
+							if (dupMods[i].FrameSizeInt > keep.FrameSizeInt)
 								keep = dupMods[i];
 						}
 					//fps next, but only when keep is unchanged
@@ -548,7 +549,7 @@ namespace VideoDuplicateFinderWindows {
 		async void CopyDuplicates(string targetFolder, bool move) {
 			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.CopyingFiles;
 			IsBusy = true;
-			var t =  new System.Threading.Tasks.Task<int>(() => {
+			var t = new System.Threading.Tasks.Task<int>(() => {
 				FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), targetFolder, true, move,
 					out int errors);
 				return errors;
@@ -557,7 +558,7 @@ namespace VideoDuplicateFinderWindows {
 			var errorCounter = await t;
 			IsBusy = false;
 			if (errorCounter > 0)
-				MessageBox.Show(VideoDuplicateFinder.Windows.Properties.Resources.FailedToCopySomeFilesPleaseCheckLog, 
+				MessageBox.Show(VideoDuplicateFinder.Windows.Properties.Resources.FailedToCopySomeFilesPleaseCheckLog,
 					VideoDuplicateFinder.Windows.Properties.Resources.Warning, MessageBoxButton.OK,
 					MessageBoxImage.Warning);
 		}

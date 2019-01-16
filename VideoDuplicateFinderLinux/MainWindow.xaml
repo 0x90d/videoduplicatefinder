@@ -273,6 +273,7 @@
                     <Grid Grid.Row="2">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition />
                         </Grid.RowDefinitions>
                         <Menu Grid.Row="0" Background="#F0F0F0">
@@ -373,10 +374,15 @@
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
+                            <Separator/>
                         </Menu>
+                        <StackPanel Margin="5" Grid.Row="1" Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="Path"/>
+                            <TextBox Margin="5,0,0,0" Text="{Binding SearchText}" MinWidth="150"/>
+                        </StackPanel>
                         <ListBox
                         Name="TreeViewDuplicates"
-                        Grid.Row="1"
+                        Grid.Row="2"
                         Items="{Binding Duplicates}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type local:DuplicateItemViewModel}">
