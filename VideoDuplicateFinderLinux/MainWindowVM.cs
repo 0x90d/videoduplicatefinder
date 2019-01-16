@@ -210,7 +210,6 @@ namespace VideoDuplicateFinderLinux {
 			if (!Includes.Contains(result))
 				Includes.Add(result);
 		});
-
 		public ReactiveCommand LatestReleaseCommand => ReactiveCommand.Create(() => {
 			try {
 				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
@@ -218,8 +217,7 @@ namespace VideoDuplicateFinderLinux {
 					UseShellExecute = true
 				});
 			}
-			catch {
-			}
+			catch  {}
 		});
 		public ReactiveCommand CleanDatabaseCommand => ReactiveCommand.Create(() => {
 			IsBusy = true;
