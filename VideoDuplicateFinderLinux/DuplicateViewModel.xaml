@@ -30,7 +30,32 @@
             Text="{Binding Path}"
             TextWrapping="Wrap" />
 
-        <Grid Grid.Column="4">
+        <Grid Grid.Column="4" IsVisible="{Binding IsImage}">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="2"
+                Text="{Binding Format, Mode=OneWay}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="1"
+                Margin="2"
+                Foreground="{Binding FrameSizeForeground}"
+                Text="{Binding FrameSize}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="2"
+                Margin="2"
+                Foreground="{Binding SizeForeground}"
+                Text="{Binding Size}"
+                TextWrapping="Wrap" />
+        </Grid>
+
+        <Grid Grid.Column="4" IsVisible="{Binding !IsImage}">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />
@@ -56,7 +81,7 @@
                 TextWrapping="Wrap" />
 
         </Grid>
-        <Grid Grid.Column="5">
+        <Grid Grid.Column="5"  IsVisible="{Binding !IsImage}">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />
@@ -80,7 +105,7 @@
                 TextWrapping="Wrap" />
         </Grid>
 
-        <Grid Grid.Column="6">
+        <Grid Grid.Column="6"  IsVisible="{Binding !IsImage}">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />
