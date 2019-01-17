@@ -1,7 +1,6 @@
 using ReactiveUI;
 using System;
 using System.ComponentModel;
-using System.Globalization;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 
@@ -50,9 +49,7 @@ namespace VideoDuplicateFinderLinux
         public Bitmap Thumbnail { get; set; }
 
         public long SizeLong { get; }
-
-		public IBrush BackgroundBrush { get; set; }
-
+		
 		public IBrush SizeForeground { get; set; }
 
 		[DisplayName("Size")]
