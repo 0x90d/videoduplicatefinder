@@ -192,9 +192,7 @@ namespace VideoDuplicateFinderLinux {
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
 
-
-			Guid? oldGroup = null;
-			var odd = false;
+			var dupGroupHandled = new HashSet<Guid>();
 			foreach (var itm in Scanner.Duplicates) {
 				var dup = new DuplicateItemViewModel(itm);
 				//Set best property in duplicate group
@@ -204,35 +202,35 @@ namespace VideoDuplicateFinderLinux {
 				dup.DurationForeground = others.Any(a => a.Duration.TrimMiliseconds() > dup.Duration.TrimMiliseconds()) ? Brushes.Red : Brushes.Green;
 				dup.BitRateForeground = others.Any(a => a.BitRateKbs > dup.BitRateKbs) ? Brushes.Red : Brushes.Green;
 				//Since we cannot group in Linux, let's at least highlight items that belong together
-				if (oldGroup != dup.GroupId) {
-					odd = !odd;
-					oldGroup = dup.GroupId;
+				if (!dupGroupHandled.Contains(dup.GroupId)) {
+					duplicateList.Add(new DuplicateItemViewModel(Properties.Resources.DuplicateGroup, dup.GroupId));
+					dupGroupHandled.Add(dup.GroupId);
 				}
-				dup.BackgroundBrush = odd ? Brushes.Blue : Brushes.Red;
-
 				duplicateList.Add(dup);
 			}
 			//We no longer need the core duplicates
 			Scanner.Duplicates.Clear();
-			//And done
-			IsScanning = false;
 
 			var dynamicFilter = this.WhenValueChanged(x => x.SearchText)
 					.Select(BuildFilter);
-
 
 			var loader = duplicateList.AsObservableList().Connect()
 			.Filter(dynamicFilter)
 			.Sort(new DuplicateItemComparer())
 			.Bind(out var bindingData)
 			.Subscribe();
+			
+
 			Duplicates = bindingData;
+
+			//And done
+			IsScanning = false;
 		}
 
 		private static Func<DuplicateItemViewModel, bool> BuildFilter(string searchText) {
 			if (string.IsNullOrEmpty(searchText)) return trade => true;
 
-			return t => t.Path.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+			return t =>t.IsGroupHeader == false && t.Path.Contains(searchText, StringComparison.OrdinalIgnoreCase);
 		}
 
 		public ReactiveCommand AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -327,8 +325,9 @@ namespace VideoDuplicateFinderLinux {
 			var blackListGroupID = new HashSet<Guid>();
 			duplicateList.Edit(updater => {
 				foreach (var first in updater) {
+					if (first.IsGroupHeader) continue;
 					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
-					var l = updater.Where(d => d.Equals(first) && !d.Path.Equals(first.Path));
+					var l = updater.Where(d => !d.IsGroupHeader && d.Equals(first) && !d.Path.Equals(first.Path));
 					var dupMods = l as DuplicateItemViewModel[] ?? l.ToArray();
 					if (!dupMods.Any()) continue;
 					foreach (var dup in dupMods)
@@ -352,8 +351,9 @@ namespace VideoDuplicateFinderLinux {
 			var blackListGroupID = new HashSet<Guid>();
 			duplicateList.Edit(updater => {
 				foreach (var first in updater) {
+					if (first.IsGroupHeader) continue;
 					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
-					var l = updater.Where(d => d.EqualsButSize(first) && !d.Path.Equals(first.Path));
+					var l = updater.Where(d => !d.IsGroupHeader && d.EqualsButSize(first) && !d.Path.Equals(first.Path));
 					var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
 					if (!dupMods.Any()) continue;
 					dupMods.Add(first);
@@ -371,8 +371,9 @@ namespace VideoDuplicateFinderLinux {
 			var blackListGroupID = new HashSet<Guid>();
 			duplicateList.Edit(updater => {
 				foreach (var first in updater) {
+					if (first.IsGroupHeader) continue;
 					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
-					var l = updater.Where(d => d.EqualsButQuality(first) && !d.Path.Equals(first.Path));
+					var l = updater.Where(d => !d.IsGroupHeader && d.EqualsButQuality(first) && !d.Path.Equals(first.Path));
 					var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
 					if (!dupMods.Any()) continue;
 					dupMods.Insert(0, first);
@@ -458,7 +459,7 @@ namespace VideoDuplicateFinderLinux {
 				//Hide groups with just one item left
 				for (var i = updater.Count - 1; i >= 0; i--) {
 					var first = updater[i];
-					if (updater.Any(s => s.GroupId == first.GroupId && s.Path != first.Path)) continue;
+					if (updater.Any(s => !s.IsGroupHeader && s.GroupId == first.GroupId && s.Path != first.Path)) continue;
 					updater.RemoveAt(i);
 				}
 			});
@@ -501,7 +502,7 @@ namespace VideoDuplicateFinderLinux {
 			var file = await ofd.ShowAsync(Application.Current.MainWindow);
 			if (string.IsNullOrEmpty(file)) return;
 			try {
-				duplicateList.Items.ToList().ToHtmlTable(file);
+				duplicateList.Items.Where(s => !s.IsGroupHeader).ToList().ToHtmlTable(file);
 			}
 			catch (Exception e) {
 				Logger.Instance.Info(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace);

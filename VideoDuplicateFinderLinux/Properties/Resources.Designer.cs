@@ -88,6 +88,15 @@ namespace VideoDuplicateFinderLinux.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicate Group.
+        /// </summary>
+        internal static string DuplicateGroup {
+            get {
+                return ResourceManager.GetString("DuplicateGroup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enumerating files....
         /// </summary>
         internal static string EnumeratingFiles {

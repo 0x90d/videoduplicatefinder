@@ -7,10 +7,15 @@ namespace VideoDuplicateFinderLinux
     {
         private readonly CaseInsensitiveComparer caseiComp = new CaseInsensitiveComparer();
 
-        public int Compare(DuplicateItemViewModel x, DuplicateItemViewModel y)
-        {
-            var vExt = caseiComp.Compare(x.GroupId, y.GroupId);
-            return vExt != 0 ? vExt : caseiComp.Compare(x.Path, y.Path);
+        public int Compare(DuplicateItemViewModel x, DuplicateItemViewModel y) {
+	        if (x.GroupId == y.GroupId) {
+		        if (x.IsGroupHeader && y.IsGroupHeader) return 0;
+		        if (x.IsGroupHeader) return -1;
+		        if (y.IsGroupHeader) return 1;
+				return caseiComp.Compare(x.Path, y.Path);
+	        }
+	        return caseiComp.Compare(x.GroupId, y.GroupId);
+			
         }
     }
 }

@@ -144,4 +144,7 @@
   <data name="EnumeratingFiles" xml:space="preserve">
     <value>Enumerating files...</value>
   </data>
+  <data name="DuplicateGroup" xml:space="preserve">
+    <value>Duplicate Group</value>
+  </data>
 </root>

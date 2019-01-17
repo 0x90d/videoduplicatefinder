@@ -31,8 +31,20 @@ namespace VideoDuplicateFinderLinux
             IsImage = file.IsImage;
         }
 
+		/*
+		 * There is no grouping in Avalonia yet. This workaround turns a VM into a group header
+		 */
+		public DuplicateItemViewModel(string groupTitle, Guid duplicateGroupGuid) {
+	        IsGroupHeader = true;
+	        GroupHeaderTitle = groupTitle;
+	        GroupId = duplicateGroupGuid;
+		}
+		public string GroupHeaderTitle { get; }
+        public bool IsGroupHeader { get; }
 
-        [DisplayName("Path")]
+
+
+		[DisplayName("Path")]
         public string Path { get; }
 
         public Bitmap Thumbnail { get; set; }
