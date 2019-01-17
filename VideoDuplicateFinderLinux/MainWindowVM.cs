@@ -380,35 +380,31 @@ namespace VideoDuplicateFinderLinux {
 					var keep = dupMods[0];
 					//TODO: Make this order become an option for the user
 					//Duration first
-					if (keep.Duration.TotalSeconds != 0)
+					if (!keep.IsImage && keep.Duration != TimeSpan.Zero)
 						for (int i = 1; i < dupMods.Count; i++) {
 							if (dupMods[i].Duration.TrimMiliseconds() > keep.Duration.TrimMiliseconds())
 								keep = dupMods[i];
 						}
-
 					//resolution next, but only when keep is unchanged
 					if (keep.Path.Equals(dupMods[0].Path))
 						for (int i = 1; i < dupMods.Count; i++) {
 							if (dupMods[i].FrameSizeInt > keep.FrameSizeInt)
 								keep = dupMods[i];
 						}
-
 					//fps next, but only when keep is unchanged
-					if (keep.Path.Equals(dupMods[0].Path))
+					if (keep.Path.Equals(dupMods[0].Path) && !keep.IsImage)
 						for (int i = 1; i < dupMods.Count; i++) {
 							if (dupMods[i].Fps > keep.Fps)
 								keep = dupMods[i];
 						}
-
 					//Bitrate next, but only when keep is unchanged
-					if (keep.Path.Equals(dupMods[0].Path))
+					if (keep.Path.Equals(dupMods[0].Path) && !keep.IsImage)
 						for (int i = 1; i < dupMods.Count; i++) {
 							if (dupMods[i].BitRateKbs > keep.BitRateKbs)
 								keep = dupMods[i];
 						}
-
 					//Audio Bitrate next, but only when keep is unchanged
-					if (keep.Path.Equals(dupMods[0].Path))
+					if (keep.Path.Equals(dupMods[0].Path) && !keep.IsImage)
 						for (int i = 1; i < dupMods.Count; i++) {
 							if (dupMods[i].AudioSampleRate > keep.AudioSampleRate)
 								keep = dupMods[i];

@@ -34,6 +34,7 @@ namespace DuplicateFinderEngine.Data {
 			if (file.IsImage)
 				Format = fi.Extension.Substring(1);
 			Similarity = (1f - percent) * 100;
+			IsImage = file.IsImage;
 		}
 
 		[DisplayName("Group Id")]
@@ -68,6 +69,7 @@ namespace DuplicateFinderEngine.Data {
 		[DisplayName("Created On")]
 		public DateTime DateCreated { get; }
 
+		public bool IsImage { get; }
 
 	}
 }

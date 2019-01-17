@@ -28,7 +28,8 @@ namespace VideoDuplicateFinderLinux
             Format = file.Format;
             BitRateKbs = file.BitRateKbs;
             Similarity = file.Similarity;
-		}
+            IsImage = file.IsImage;
+        }
 
 
         [DisplayName("Path")]
@@ -46,6 +47,8 @@ namespace VideoDuplicateFinderLinux
         public string Size { get; }
 
         public float Similarity { get; }
+
+		public bool IsImage { get; }
 
 		public string Folder { get; }
 		

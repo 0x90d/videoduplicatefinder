@@ -28,7 +28,8 @@ namespace VideoDuplicateFinderWindows.Data
             Format = file.Format;
             BitRateKbs = file.BitRateKbs;
             Similarity = file.Similarity;
-		}
+            IsImage = file.IsImage;
+        }
 
 
         [DisplayName("Path")]
@@ -124,6 +125,7 @@ namespace VideoDuplicateFinderWindows.Data
         [DisplayName("BitRate Kbs")]
         public decimal BitRateKbs { get; }
 
+		public bool IsImage { get; }
 
         [DisplayName("Fps")]
         public float Fps { get; }
