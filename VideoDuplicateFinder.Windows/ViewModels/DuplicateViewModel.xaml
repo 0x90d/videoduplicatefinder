@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="clr-namespace:VideoDuplicateFinderWindows.MVVM"
     MinHeight="100"
     d:DesignHeight="100"
     d:DesignWidth="300"
@@ -13,6 +14,10 @@
             <Setter Property="Background" Value="Silver" />
         </Style>
     </d:DesignerProperties.DesignStyle>
+    <UserControl.Resources>
+        <mvvm:InvertBooleanToVisibilityConverter x:Key="InvertBooleanToVisibilityConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -44,7 +49,58 @@
             TextWrapping="Wrap">
         </TextBlock>
 
-        <Grid Grid.Column="3">
+        <Grid Grid.Column="3" 
+              Visibility="{Binding IsImage, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="2"
+                Text="{Binding Format}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Grid.Row="1"
+                Margin="2"
+                Text="{Binding FrameSize}"
+                TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FrameSizeBest}" Value="True">
+                                <Setter Property="Foreground" Value="Green" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding FrameSizeBest}" Value="False">
+                                <Setter Property="Foreground" Value="Red" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <TextBlock
+                Grid.Row="2"
+                Margin="2"
+                Text="{Binding Size}"
+                TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SizeBest}" Value="True">
+                                <Setter Property="Foreground" Value="Green" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding SizeBest}" Value="False">
+                                <Setter Property="Foreground" Value="Red" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
+
+        <Grid Grid.Column="3" 
+              Visibility="{Binding IsImage, Converter={StaticResource InvertBooleanToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />
@@ -106,7 +162,8 @@
             </TextBlock>
 
         </Grid>
-        <Grid Grid.Column="4">
+        <Grid Grid.Column="4" 
+              Visibility="{Binding IsImage, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />
@@ -115,17 +172,17 @@
             <TextBlock
                 Grid.Row="0"
                 Margin="2"
-                Text="{Binding Format, Mode=OneWay}"
+                Text="{Binding Format}"
                 TextWrapping="Wrap" />
             <TextBlock
                 Grid.Row="1"
                 Margin="2"
-                Text="{Binding Fps, Mode=OneWay, StringFormat={}{0} fps}"
+                Text="{Binding Fps, StringFormat={}{0} fps}"
                 TextWrapping="Wrap" />
             <TextBlock
                 Grid.Row="2"
                 Margin="2"
-                Text="{Binding BitRateKbs, Mode=OneWay, StringFormat={}{0} kbps}"
+                Text="{Binding BitRateKbs, StringFormat={}{0} kbps}"
                 TextWrapping="Wrap" >
                 <TextBlock.Style>
                     <Style TargetType="{x:Type TextBlock}">
@@ -142,7 +199,8 @@
             </TextBlock>
         </Grid>
 
-        <Grid Grid.Column="5">
+        <Grid Grid.Column="5" 
+              Visibility="{Binding IsImage, Converter={StaticResource InvertBooleanToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />

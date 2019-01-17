@@ -280,4 +280,16 @@
   <data name="Sort" xml:space="preserve">
     <value>Sort</value>
   </data>
+  <data name="FileTypeFilter_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="FileTypeFilter_Videos" xml:space="preserve">
+    <value>Videos</value>
+  </data>
+  <data name="FileTypeFilter_Images" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="FileType" xml:space="preserve">
+    <value>File Type</value>
+  </data>
 </root>

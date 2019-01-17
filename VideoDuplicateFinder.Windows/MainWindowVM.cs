@@ -13,6 +13,7 @@ using System.Windows.Data;
 using System.Windows.Shell;
 using System.Xml.Linq;
 using DuplicateFinderEngine;
+using VideoDuplicateFinder.Windows.Data;
 using VideoDuplicateFinderWindows.Data;
 using VideoDuplicateFinderWindows.MVVM;
 
@@ -40,6 +41,11 @@ namespace VideoDuplicateFinderWindows {
 			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_DateCreatedAscending, new SortDescription(nameof(DuplicateItemViewModel.DateCreated), ListSortDirection.Ascending)),
 			new KeyValuePair<string, SortDescription>(VideoDuplicateFinder.Windows.Properties.Resources.Sort_DateCreatedDescending, new SortDescription(nameof(DuplicateItemViewModel.DateCreated), ListSortDirection.Descending)),
 		};
+		public KeyValuePair<string, FileTypeFilter>[] TypeFilters { get; } = {
+			new KeyValuePair<string, FileTypeFilter>(VideoDuplicateFinder.Windows.Properties.Resources.FileTypeFilter_All,  FileTypeFilter.All),
+			new KeyValuePair<string, FileTypeFilter>(VideoDuplicateFinder.Windows.Properties.Resources.FileTypeFilter_Videos,  FileTypeFilter.Videos),
+			new KeyValuePair<string, FileTypeFilter>(VideoDuplicateFinder.Windows.Properties.Resources.FileTypeFilter_Images,  FileTypeFilter.Images),
+		};
 
 		int _TotalGroups;
 		public int TotalGroups {
@@ -61,6 +67,18 @@ namespace VideoDuplicateFinderWindows {
 				if (!string.IsNullOrEmpty(_SortOrder.PropertyName))
 					view.SortDescriptions.Add(_SortOrder);
 				OnPropertyChanged(nameof(SortOrder));
+			}
+		}
+
+		FileTypeFilter _FileType;
+
+		public FileTypeFilter FileType {
+			get => _FileType;
+			set {
+				if (value == _FileType) return;
+				_FileType = value;
+				OnPropertyChanged(nameof(FileType));
+				view.Refresh();
 			}
 		}
 
@@ -167,6 +185,8 @@ namespace VideoDuplicateFinderWindows {
 			var success = true;
 			if (!string.IsNullOrEmpty(FilterByPath))
 				success = data.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase);
+			if (success && FileType != FileTypeFilter.All)
+				success = FileType == FileTypeFilter.Images ? data.IsImage : !data.IsImage;
 			return success;
 		}
 
@@ -355,7 +375,7 @@ namespace VideoDuplicateFinderWindows {
 
 		public DelegateCommand LatestReleaseCommand => new DelegateCommand(a => {
 			try {
-				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+				Process.Start(new ProcessStartInfo {
 					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
 					UseShellExecute = true
 				});
@@ -486,7 +506,7 @@ namespace VideoDuplicateFinderWindows {
 								keep = dupMods[i];
 						}
 					//fps next, but only when keep is unchanged
-						if (keep.Path.Equals(dupMods[0].Path) && !keep.IsImage)
+					if (keep.Path.Equals(dupMods[0].Path) && !keep.IsImage)
 						for (int i = 1; i < dupMods.Count; i++) {
 							if (dupMods[i].Fps > keep.Fps)
 								keep = dupMods[i];

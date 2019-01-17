@@ -360,13 +360,18 @@
                             </MenuItem>
                         </Menu>
                         <StackPanel Margin="5" Grid.Row="1" Orientation="Horizontal" Visibility="{Binding ElementName=ToggleBtnFilter, Path=IsChecked, Converter={StaticResource BoolToVis}}">
-<TextBlock VerticalAlignment="Center" Text="{x:Static properties:Resources.Path}"/>
-<TextBox Margin="5,0,0,0" Text="{Binding FilterByPath, UpdateSourceTrigger=PropertyChanged}" MinWidth="150"/>
+                            <TextBlock VerticalAlignment="Center" Text="{x:Static properties:Resources.Path}"/>
+                            <TextBox Margin="5,0,0,0" Text="{Binding FilterByPath, UpdateSourceTrigger=PropertyChanged}" MinWidth="150"/>
                             <TextBlock  VerticalAlignment="Center"  Margin="5,0,0,0" Text="{x:Static properties:Resources.Sort}"/>
                             <ComboBox Margin="5,0,0,0"  SelectedValue="{Binding SortOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      ItemsSource="{Binding SortOrders}"
                                      SelectedValuePath="Value"
                                      DisplayMemberPath="Key" MinWidth="150"/>
+                            <TextBlock  VerticalAlignment="Center"  Margin="5,0,0,0" Text="{x:Static properties:Resources.FileType}"/>
+                            <ComboBox Margin="5,0,0,0"  SelectedValue="{Binding FileType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      ItemsSource="{Binding TypeFilters}"
+                                      SelectedValuePath="Value"
+                                      DisplayMemberPath="Key" MinWidth="150"/>
                         </StackPanel>
                         <ListView
                 Name="TreeViewDuplicates"
@@ -476,47 +481,47 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition />
                     </Grid.RowDefinitions>
-              
-                <Menu Grid.Row="0">
+
+                    <Menu Grid.Row="0">
                         <MenuItem    Command="{Binding ClearLogCommand}">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z" Fill="Red" />
-                                    </Canvas>
-                                </Viewbox>
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z" Fill="Red" />
+                                        </Canvas>
+                                    </Viewbox>
                                     <TextBlock Text="{x:Static properties:Resources.ClearLog}"/>
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
                         <MenuItem    Command="{Binding CopyLogCommand}">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" Fill="Black" />
-                                    </Canvas>
-                                </Viewbox>
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" Fill="Black" />
+                                        </Canvas>
+                                    </Viewbox>
                                     <TextBlock Text="{x:Static properties:Resources.CopyLogToClipboard}"/>
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
                     </Menu>
-                <ItemsControl Grid.Row="1" ItemsSource="{Binding LogItems}">
-                    <ItemsControl.Template>
-                        <ControlTemplate>
-                            <ScrollViewer CanContentScroll="True">
-                                <ItemsPresenter/>
-                            </ScrollViewer>
-                        </ControlTemplate>
-                    </ItemsControl.Template>
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel IsItemsHost="True"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding LogItems}">
+                        <ItemsControl.Template>
+                            <ControlTemplate>
+                                <ScrollViewer CanContentScroll="True">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel IsItemsHost="True"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
                 </Grid>
             </TabItem>
         </TabControl>
