@@ -17,6 +17,7 @@ namespace DuplicateFinderEngine {
 		public event EventHandler ScanDone;
 		public event EventHandler FilesEnumerated;
 		public event EventHandler DatabaseCleaned;
+		public event EventHandler DatabaseVideosExportedToCSV;
 		public int ScanProgressMaxValue;
 		public int ScanProgressValue;
 		public TimeSpan TimeElapsed;
@@ -67,7 +68,10 @@ namespace DuplicateFinderEngine {
 			await Task.Run(() => DatabaseHelper.CleanupDatabase(DatabaseFileList));
 			DatabaseCleaned?.Invoke(this, null);
 		}
-
+		public async void ExportDatabaseVideosToCSV() {
+			await Task.Run(() => DatabaseHelper.ExportDatabaseVideosToCSV(DatabaseFileList));
+			DatabaseVideosExportedToCSV?.Invoke(this, null);
+		}
 		private void InternalBuildFileList() {
 			ScanFileList.Clear();
 			DatabaseFileList = DatabaseHelper.LoadDatabase();

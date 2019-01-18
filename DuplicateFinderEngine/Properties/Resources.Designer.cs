@@ -88,6 +88,15 @@ namespace DuplicateFinderEngine.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Database videos export to CSV finished in: {0}.
+        /// </summary>
+        internal static string DatabaseVideosExportToCSVFinished {
+            get {
+                return ResourceManager.GetString("DatabaseVideosExportToCSVFinished", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicates check finished in: {0}.
         /// </summary>
         internal static string DuplicatesCheckFinishedIn {

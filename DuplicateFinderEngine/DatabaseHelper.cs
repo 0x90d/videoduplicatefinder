@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -44,6 +45,77 @@ namespace DuplicateFinderEngine {
 			st.Stop();
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseCleanupHasFinished, st.Elapsed, oldCount - videoFiles.Count));
 
+		}
+		public static void ExportDatabaseVideosToCSV(Dictionary<string, VideoFileEntry> videoFiles) {
+
+			if (videoFiles.Count == 0)
+				videoFiles = LoadDatabase();
+
+			var st = Stopwatch.StartNew();
+			DataTable dt = new DataTable();
+			dt.Columns.Add("Directory", typeof(string));
+			dt.Columns.Add("FileName", typeof(string));
+			dt.Columns.Add("Width", typeof(int));
+			dt.Columns.Add("Height", typeof(int));
+			dt.Columns.Add("FrameRate", typeof(long));
+			dt.Columns.Add("BitRate", typeof(long));
+			dt.Columns.Add("CodecName", typeof(string));
+			dt.Columns.Add("CodecLongName", typeof(string));
+			dt.Columns.Add("DurationMinutes", typeof(double));
+			dt.Columns.Add("Duration", typeof(string));
+
+
+			foreach (VideoFileEntry videoFile in videoFiles.Values) {
+
+				if (videoFile.mediaInfo == null)
+					continue;
+
+				int streamIndex = -1;
+				for (int i = 0; i < videoFile.mediaInfo.Streams.Length; i++) {
+					if (videoFile.mediaInfo.Streams[i].CodecType == "video") {
+						streamIndex = i;
+						break;
+					}
+				}
+
+				if (streamIndex == -1)
+					continue;
+
+				var mediaInfoStream = videoFile.mediaInfo.Streams[streamIndex];
+
+				dt.Rows.Add(
+					Path.GetDirectoryName(videoFile.Path),
+					Path.GetFileName(videoFile.Path),
+					mediaInfoStream.Width,
+					mediaInfoStream.Height,
+					Convert.ToInt64(Math.Round(mediaInfoStream.FrameRate)),
+					mediaInfoStream.BitRate,
+					mediaInfoStream.CodecName,
+					mediaInfoStream.CodecLongName,
+					videoFile.mediaInfo.Duration.TotalMinutes,
+					videoFile.mediaInfo.Duration.ToString());
+			}
+
+			StringBuilder sb = new StringBuilder();
+			IEnumerable<string> columnNames = dt.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+			sb.AppendLine(string.Join(",", columnNames));
+			foreach (DataRow row in dt.Rows) {
+				IEnumerable<string> fields = row.ItemArray.Select(field =>
+				{
+					string s = field.ToString().Replace("\"", "\"\"");
+					if (s.Contains(','))
+						s = string.Concat("\"", s, "\"");
+					return s;
+				});
+				sb.AppendLine(string.Join(",", fields));
+			}
+
+			using (StreamWriter outputFile = new StreamWriter(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "VideoFilesExport.csv"))) {
+				outputFile.WriteLine(sb.ToString());
+			}
+
+			st.Stop();
+			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseVideosExportToCSVFinished, st.Elapsed));
 		}
 
 		public static void SaveDatabase(Dictionary<string, VideoFileEntry> videoFiles) {

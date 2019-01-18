@@ -292,4 +292,7 @@
   <data name="FileType" xml:space="preserve">
     <value>File Type</value>
   </data>
+  <data name="ExportingDatabaseVideosToCSV" xml:space="preserve">
+    <value>Exporting database videos to CSV...</value>
+  </data>
 </root>
