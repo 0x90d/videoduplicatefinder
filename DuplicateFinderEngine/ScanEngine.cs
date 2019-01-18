@@ -282,6 +282,10 @@ namespace DuplicateFinderEngine {
 				Logger.Instance.Info($"FFMpegException, file: {videoFile.Path}, reason: {ex.Message}");
 				return null;
 			}
+			catch (Exception ex) {
+				Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
+				return null;
+			}
 			return images;
 		}
 		private static List<Image> GetImageThumbnail(DuplicateItem videoFile, int count) {
