@@ -17,6 +17,12 @@ Get latest package from https://ffmpeg.zeranoe.com/builds/ and extract ffmpeg.ex
 #### Linux user:
 Install latest ffmpeg and ffprobe the usual way and verify PATH environment variable is set. Also make sure you got **libgdiplus** installed.
 
+```
+sudo apt-get update
+sudo apt-get install ffmpeg
+sudo apt-get install libgdiplus
+```
+
 # Screenshots
 ![windows](https://user-images.githubusercontent.com/46010672/50975469-97e5d900-14e5-11e9-9aba-5a843546ac2c.jpg)
 ![linux](https://user-images.githubusercontent.com/46010672/50975476-9e745080-14e5-11e9-8332-b0ac816458f4.jpg)
