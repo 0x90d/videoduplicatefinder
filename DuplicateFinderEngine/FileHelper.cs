@@ -8,7 +8,7 @@ namespace DuplicateFinderEngine {
 	public static class FileHelper {
 
 		public static readonly string[] ImageExtensions = new[] { "jpg", "jpeg", "png", "gif", "bmp", "tiff" };
-		public static readonly string[] VideoExtensions = new[] { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob" };
+		public static readonly string[] VideoExtensions = new[] { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob", "ts" };
 		public static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 
 		// '' <summary>
