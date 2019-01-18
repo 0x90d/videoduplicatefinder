@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -373,8 +374,13 @@ namespace DuplicateFinderEngine {
 
 
 		private static class ExtensionMethods {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public static byte[] VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
-				var darkPixels = data.Count(b => b <= 0x20);
+				int darkPixels = 0;
+				for (int i = 0; i < data.Length; i++) {
+					if (data[i] <= 0x20)
+						darkPixels++;
+				}
 				return 100d / data.Length * darkPixels >= darkProcent ? null : data;
 			}
 
