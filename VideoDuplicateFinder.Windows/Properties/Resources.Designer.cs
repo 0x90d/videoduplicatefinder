@@ -223,6 +223,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Exporting database videos to CSV....
+        /// </summary>
+        public static string ExportingDatabaseVideosToCSV {
+            get {
+                return ResourceManager.GetString("ExportingDatabaseVideosToCSV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to copy some files. Please check log!.
         /// </summary>
         public static string FailedToCopySomeFilesPleaseCheckLog {
