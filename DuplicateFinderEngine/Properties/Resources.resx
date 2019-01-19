@@ -194,5 +194,8 @@
   </data>
   <data name="DatabaseVideosExportToCSVFinished" xml:space="preserve">
     <value>Database videos export to CSV finished in: {0}</value>
+</data>
+  <data name="FFprobeProcessWasAborted" xml:space="preserve">
+    <value>FFprobe process was aborted</value>
   </data>
 </root>

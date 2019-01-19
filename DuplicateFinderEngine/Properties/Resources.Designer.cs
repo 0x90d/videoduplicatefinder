@@ -178,6 +178,15 @@ namespace DuplicateFinderEngine.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to FFprobe process was aborted.
+        /// </summary>
+        internal static string FFprobeProcessWasAborted {
+            get {
+                return ResourceManager.GetString("FFprobeProcessWasAborted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Finished building file list in {0}.
         /// </summary>
         internal static string FinishedBuildingFileListIn {
