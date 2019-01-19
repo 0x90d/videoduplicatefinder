@@ -192,4 +192,7 @@
   <data name="DatabaseCleanupHasFinished" xml:space="preserve">
     <value>Database cleanup has finished in: {0}, {1} entries have been removed</value>
   </data>
+  <data name="FFprobeProcessWasAborted" xml:space="preserve">
+    <value>FFprobe process was aborted</value>
+  </data>
 </root>
