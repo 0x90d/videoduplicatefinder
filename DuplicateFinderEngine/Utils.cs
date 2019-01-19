@@ -27,14 +27,15 @@ namespace DuplicateFinderEngine {
 			var currentDir = Path.GetDirectoryName(typeof(FFmpegWrapper.FFmpegWrapper).Assembly.Location);
 			var pathsEnv = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				if (File.Exists(currentDir + $"\\{FFmpegExecutableName}.exe"))
-					FfmpegPath = currentDir + $"\\{FFmpegExecutableName}";
-				else if (File.Exists(currentDir + $"\\bin\\{FFmpegExecutableName}.exe"))
+				if (File.Exists(currentDir + $"\\bin\\{FFmpegExecutableName}.exe"))
 					FfmpegPath = currentDir + $"\\bin\\{FFmpegExecutableName}";
-				if (File.Exists(currentDir + $"\\{FFprobeExecutableName}.exe"))
-					FfprobePath = currentDir + $"\\{FFprobeExecutableName}";
-				else if (File.Exists(currentDir + $"\\bin\\{FFprobeExecutableName}.exe"))
+				else if (File.Exists(currentDir + $"\\{FFmpegExecutableName}.exe"))
+					FfmpegPath = currentDir + $"\\{FFmpegExecutableName}";
+
+				if (File.Exists(currentDir + $"\\bin\\{FFprobeExecutableName}.exe"))
 					FfprobePath = currentDir + $"\\bin\\{FFprobeExecutableName}";
+				else if (File.Exists(currentDir + $"\\{FFprobeExecutableName}.exe"))
+					FfprobePath = currentDir + $"\\{FFprobeExecutableName}";
 			}
 
 

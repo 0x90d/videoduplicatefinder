@@ -103,6 +103,8 @@
                                 </Viewbox>
                             </MenuItem.Icon>
                         </MenuItem>
+                        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" 
+                                   Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" />
                         <MenuItem Command="{Binding StopScanCommand}"
                       Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}" >
                             <MenuItem.Header>
@@ -116,6 +118,7 @@
                                 </Viewbox>
                             </MenuItem.Icon>
                         </MenuItem>
+                        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
                         <MenuItem Command="{Binding CleanDatabaseCommand}"
                                   Visibility="{Binding IsScanning, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
                             <MenuItem.Header>
@@ -142,6 +145,7 @@
                                 </Viewbox>
                             </MenuItem.Icon>
                         </MenuItem>
+                        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
                         <MenuItem Command="{Binding LatestReleaseCommand}" >
                             <MenuItem.Header>
                                 <TextBlock Text="Latest Release" VerticalAlignment="Center"/>
