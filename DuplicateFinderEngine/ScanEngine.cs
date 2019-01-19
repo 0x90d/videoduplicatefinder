@@ -420,6 +420,7 @@ namespace DuplicateFinderEngine {
 				return 100d / all * count >= darkProcent ? null : buffer;
 
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public static float PercentageDifference2(IReadOnlyList<byte> img1, IReadOnlyList<byte> img2) {
 				float diff = 0;
 				for (var y = 0; y < img1.Count; y++) {
