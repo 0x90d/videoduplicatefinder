@@ -6,20 +6,13 @@ using System.Text;
 namespace DuplicateFinderEngine.FFProbeWrapper {
 	sealed class FFProbeWrapper : IDisposable {
 		private Process FFprobeProcess;
-		public string CustomArgs { get; set; }
 		public TimeSpan ExecutionTimeout => new TimeSpan(0, 0, 15);
 		private string InputFile;
 
 		public MediaInfo GetMediaInfo(string inputFile) {
 			InputFile = inputFile;
 			try {
-				var stringBuilder = new StringBuilder();
-				stringBuilder.Append(" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams");
-				if (!string.IsNullOrEmpty(CustomArgs)) {
-					stringBuilder.Append(CustomArgs);
-				}
-				stringBuilder.AppendFormat(" \"{0}\" ", inputFile);
-				FFprobeProcess = Process.Start(new ProcessStartInfo(Utils.FfprobePath, stringBuilder.ToString()) {
+				FFprobeProcess = Process.Start(new ProcessStartInfo(Utils.FfprobePath, $" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams  \"{inputFile}\"") {
 					WindowStyle = ProcessWindowStyle.Hidden,
 					CreateNoWindow = true,
 					UseShellExecute = false,
