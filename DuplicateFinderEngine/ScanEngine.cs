@@ -215,6 +215,7 @@ namespace DuplicateFinderEngine {
 										firstInList = true;
 									}
 									else if (v.Path == ScanFileList[i].Path) {
+										groupId = v.GroupId;
 										secondInList = true;
 									}
 								}
