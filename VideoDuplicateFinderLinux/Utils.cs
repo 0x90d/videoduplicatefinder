@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using Avalonia.Media.Imaging;
 
@@ -9,6 +9,8 @@ namespace VideoDuplicateFinderLinux
         public static string ThumbnailDirectory => DuplicateFinderEngine.Utils.SafePathCombine(Path.GetDirectoryName(typeof(MainWindow).Assembly.Location), "Thumbnails");
         public static Bitmap JoinImages(List<System.Drawing.Image> pImgList)
         {
+			if(pImgList == null || pImgList.Count == 0) return null;
+
             var file =
                 DuplicateFinderEngine.Utils.SafePathCombine(ThumbnailDirectory, Path.GetRandomFileName() + ".jpeg");
           

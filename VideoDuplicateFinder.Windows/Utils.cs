@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -60,6 +60,7 @@ namespace VideoDuplicateFinderWindows
         }
         public static BitmapImage JoinImages(List<Image> pImgList)
         {
+			if(pImgList.Count == 0) return null;
             if (pImgList.Count == 1)
                 return BitmapToBitmapImage(pImgList[0]);
             var height = pImgList[0].Height;

@@ -48,13 +48,10 @@ namespace DuplicateFinderEngine {
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseCleanupHasFinished, st.Elapsed, oldCount - videoFiles.Count));
 
 		}
-		public static void ExportDatabaseVideosToCSV(Dictionary<string, VideoFileEntry> videoFiles) {
-
-			if (videoFiles.Count == 0)
-				videoFiles = LoadDatabase();
+		public static void ExportDatabaseToCSV(IEnumerable<VideoFileEntry> videoFiles) {
 
 			var st = Stopwatch.StartNew();
-			DataTable dt = new DataTable();
+			var dt = new DataTable();
 			dt.Columns.Add("Directory", typeof(string));
 			dt.Columns.Add("FileName", typeof(string));
 			dt.Columns.Add("Width", typeof(int));
@@ -65,44 +62,36 @@ namespace DuplicateFinderEngine {
 			dt.Columns.Add("CodecLongName", typeof(string));
 			dt.Columns.Add("DurationMinutes", typeof(double));
 			dt.Columns.Add("Duration", typeof(string));
+			dt.Columns.Add("IsImage", typeof(bool));
+			dt.Columns.Add("Excluded", typeof(bool));
+			dt.Columns.Add("Errors", typeof(string));
 
 
-			foreach (VideoFileEntry videoFile in videoFiles.Values) {
+			foreach (var videoFile in videoFiles) {
 
-				if (videoFile.mediaInfo == null)
-					continue;
-
-				int streamIndex = -1;
-				for (int i = 0; i < videoFile.mediaInfo.Streams.Length; i++) {
-					if (videoFile.mediaInfo.Streams[i].CodecType == "video") {
-						streamIndex = i;
-						break;
-					}
-				}
-
-				if (streamIndex == -1)
-					continue;
-
-				var mediaInfoStream = videoFile.mediaInfo.Streams[streamIndex];
+				var mediaInfoStream = videoFile.mediaInfo?.Streams?.FirstOrDefault(s => s.CodecType == "video");
 
 				dt.Rows.Add(
 					Path.GetDirectoryName(videoFile.Path),
 					Path.GetFileName(videoFile.Path),
-					mediaInfoStream.Width,
-					mediaInfoStream.Height,
-					Convert.ToInt64(Math.Round(mediaInfoStream.FrameRate)),
-					mediaInfoStream.BitRate,
-					mediaInfoStream.CodecName,
-					mediaInfoStream.CodecLongName,
+					mediaInfoStream?.Width,
+					mediaInfoStream?.Height,
+					Convert.ToInt64(Math.Round(mediaInfoStream?.FrameRate ?? 0)),
+					mediaInfoStream?.BitRate,
+					mediaInfoStream?.CodecName,
+					mediaInfoStream?.CodecLongName,
 					videoFile.mediaInfo.Duration.TotalMinutes,
-					videoFile.mediaInfo.Duration.ToString());
+					videoFile.mediaInfo.Duration.ToString(),
+					videoFile.IsImage,
+					videoFile.Flags.Has(EntryFlags.ManuallyExcluded),
+					(videoFile.Flags & EntryFlags.AllErrors).ToString());
 			}
 
-			StringBuilder sb = new StringBuilder();
-			IEnumerable<string> columnNames = dt.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+			var sb = new StringBuilder();
+			var columnNames = dt.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
 			sb.AppendLine(string.Join(",", columnNames));
 			foreach (DataRow row in dt.Rows) {
-				IEnumerable<string> fields = row.ItemArray.Select(field =>
+				var fields = row.ItemArray.Select(field =>
 				{
 					string s = field.ToString().Replace("\"", "\"\"");
 					if (s.Contains(','))
@@ -112,7 +101,7 @@ namespace DuplicateFinderEngine {
 				sb.AppendLine(string.Join(",", fields));
 			}
 
-			using (StreamWriter outputFile = new StreamWriter(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "VideoFilesExport.csv"))) {
+			using (var outputFile = new StreamWriter(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "VideoFilesExport.csv"))) {
 				outputFile.WriteLine(sb.ToString());
 			}
 
