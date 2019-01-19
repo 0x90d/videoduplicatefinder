@@ -40,8 +40,10 @@ namespace DuplicateFinderEngine {
 
 			var oldCount = videoFiles.Count;
 			var st = Stopwatch.StartNew();
-			//Cleanup deleted files
-			videoFiles = new Dictionary<string, VideoFileEntry>(videoFiles.Where(kv => File.Exists(kv.Value.Path)));
+
+			videoFiles = new Dictionary<string, VideoFileEntry>(videoFiles.Where(kv => File.Exists(kv.Value.Path) &&
+			                                                                           kv.Value.grayBytes?.Count > 0 &&
+			                                                                           kv.Value.mediaInfo != null));
 			st.Stop();
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseCleanupHasFinished, st.Elapsed, oldCount - videoFiles.Count));
 
