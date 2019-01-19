@@ -295,4 +295,22 @@
   <data name="ExportingDatabaseVideosToCSV" xml:space="preserve">
     <value>Exporting database videos to CSV...</value>
   </data>
+  <data name="Database" xml:space="preserve">
+    <value>Database</value>
+  </data>
+  <data name="CleanupDatabase" xml:space="preserve">
+    <value>Cleanup Database</value>
+  </data>
+  <data name="ExportDatabaseVideosToCSV" xml:space="preserve">
+    <value>Export Database videos to CSV</value>
+  </data>
+  <data name="LatestRelease" xml:space="preserve">
+    <value>Latest Release</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>Percent:</value>
+  </data>
 </root>

@@ -79,6 +79,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cleanup Database.
+        /// </summary>
+        public static string CleanupDatabase {
+            get {
+                return ResourceManager.GetString("CleanupDatabase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Clear Log.
         /// </summary>
         public static string ClearLog {
@@ -138,6 +147,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string CopyToFolderKeepFiles {
             get {
                 return ResourceManager.GetString("CopyToFolderKeepFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Database.
+        /// </summary>
+        public static string Database {
+            get {
+                return ResourceManager.GetString("Database", resourceCulture);
             }
         }
         
@@ -219,6 +237,24 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string ExpandAll {
             get {
                 return ResourceManager.GetString("ExpandAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export.
+        /// </summary>
+        public static string Export {
+            get {
+                return ResourceManager.GetString("Export", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export Database videos to CSV.
+        /// </summary>
+        public static string ExportDatabaseVideosToCSV {
+            get {
+                return ResourceManager.GetString("ExportDatabaseVideosToCSV", resourceCulture);
             }
         }
         
@@ -340,6 +376,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Latest Release.
+        /// </summary>
+        public static string LatestRelease {
+            get {
+                return ResourceManager.GetString("LatestRelease", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Log.
         /// </summary>
         public static string Log {
@@ -381,6 +426,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string Pause {
             get {
                 return ResourceManager.GetString("Pause", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Percent:.
+        /// </summary>
+        public static string Percent {
+            get {
+                return ResourceManager.GetString("Percent", resourceCulture);
             }
         }
         

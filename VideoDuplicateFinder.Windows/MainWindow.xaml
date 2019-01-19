@@ -119,36 +119,46 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
-                        <MenuItem Command="{Binding CleanDatabaseCommand}"
-                                  Visibility="{Binding IsScanning, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
+                        <MenuItem>
                             <MenuItem.Header>
-                                <TextBlock Text="Cleanup Database" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{x:Static properties:Resources.Database}" VerticalAlignment="Center"/>
+                                    <Path VerticalAlignment="Center" Margin="4,2,0,0" Fill="Black" Data="M 0 0 L 6 6 L 12 0 Z"/>
+                                </StackPanel>
                             </MenuItem.Header>
-                            <MenuItem.Icon>
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="Black" />
-                                    </Canvas>
-                                </Viewbox>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Command="{Binding ExportDatabaseVideosToCSVCommand}"
+                            <MenuItem Command="{Binding CleanDatabaseCommand}"
                                   Visibility="{Binding IsScanning, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
-                            <MenuItem.Header>
-                                <TextBlock Text="Export Database videos to CSV" VerticalAlignment="Center"/>
-                            </MenuItem.Header>
-                            <MenuItem.Icon>
-                                <Viewbox Width="16" Height="16">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Data="M14.22,19L17.05,16.17L14.93,14H22V21.07L19.88,19L17.05,21.83L14.22,19M11.39,19L12.39,18H12C7.58,18 4,16.21 4,14V17C4,19.21 7.58,21 12,21C12.47,21 12.93,21 13.38,20.94L11.39,19M17.29,12H20V9C20,10.2 19,11.27 17.29,12M4,9V12C4,14.21 7.58,16 12,16C12.67,16 13.34,15.96 14,15.87L11.07,13C7.09,12.74 4,11.05 4,9M12,3C7.58,3 4,4.79 4,7C4,9.21 7.58,11 12,11C16.42,11 20,9.21 20,7C20,4.79 16.42,3 12,3Z" Fill="Black" />
-                                    </Canvas>
-                                </Viewbox>
-                            </MenuItem.Icon>
+                                <MenuItem.Header>
+                                    <TextBlock Text="{x:Static properties:Resources.CleanupDatabase}" VerticalAlignment="Center"/>
+                                </MenuItem.Header>
+                                <MenuItem.Icon>
+                                    <Viewbox Width="16" Height="16">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="Black" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="{x:Static properties:Resources.Export}">
+                                <MenuItem Command="{Binding ExportDatabaseVideosToCSVCommand}"
+                                          Visibility="{Binding IsScanning, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
+                                    <MenuItem.Header>
+                                        <TextBlock Text="{x:Static properties:Resources.ExportDatabaseVideosToCSV}" VerticalAlignment="Center"/>
+                                    </MenuItem.Header>
+                                    <MenuItem.Icon>
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M14.22,19L17.05,16.17L14.93,14H22V21.07L19.88,19L17.05,21.83L14.22,19M11.39,19L12.39,18H12C7.58,18 4,16.21 4,14V17C4,19.21 7.58,21 12,21C12.47,21 12.93,21 13.38,20.94L11.39,19M17.29,12H20V9C20,10.2 19,11.27 17.29,12M4,9V12C4,14.21 7.58,16 12,16C12.67,16 13.34,15.96 14,15.87L11.07,13C7.09,12.74 4,11.05 4,9M12,3C7.58,3 4,4.79 4,7C4,9.21 7.58,11 12,11C16.42,11 20,9.21 20,7C20,4.79 16.42,3 12,3Z" Fill="Black" />
+                                            </Canvas>
+                                        </Viewbox>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </MenuItem>
                         </MenuItem>
                         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
                         <MenuItem Command="{Binding LatestReleaseCommand}" >
                             <MenuItem.Header>
-                                <TextBlock Text="Latest Release" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Static properties:Resources.LatestRelease}" VerticalAlignment="Center"/>
                             </MenuItem.Header>
                         </MenuItem>
                     </Menu>
@@ -186,7 +196,7 @@
                             <TextBlock
                                 Margin="15,5,0,0"
                                 VerticalAlignment="Center"
-                                Text="Percent:" />
+                                Text="{x:Static properties:Resources.Percent}" />
                             <TextBox
                                 Margin="5,5,0,0"
                                 MinWidth="35"
