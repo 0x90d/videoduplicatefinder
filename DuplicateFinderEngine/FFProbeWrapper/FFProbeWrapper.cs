@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 
 namespace DuplicateFinderEngine.FFProbeWrapper {
 	sealed class FFProbeWrapper : IDisposable {
@@ -66,13 +65,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 			}
 			catch { }
 		}
-
-		private static bool CheckExitCode(int exitCode, string lastErrLine) {
-			if (exitCode != 0)
-				Trace.TraceError(exitCode + Environment.NewLine + lastErrLine);
-
-			return exitCode == 0;
-		}
+		
 
 		public void Dispose() => FFprobeProcess?.Dispose();
 	}
