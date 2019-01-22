@@ -12,7 +12,10 @@ namespace VideoDuplicateFinderWindows.ViewModels {
 		private void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
 			if (e.ClickCount != 2) return;
 			try {
-				System.Diagnostics.Process.Start("explorer.exe", $"/select, \"{((DuplicateItemViewModel)DataContext).Path}\"");
+				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+					FileName = ((DuplicateItemViewModel)DataContext).Path,
+					UseShellExecute = true
+				});
 			}
 			catch (Exception exception) {
 				MessageBox.Show(exception.Message, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
