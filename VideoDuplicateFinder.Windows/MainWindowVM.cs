@@ -126,6 +126,7 @@ namespace VideoDuplicateFinderWindows {
 		public MainWindowVM() {
 			Scanner.Progress += Scanner_Progress;
 			Scanner.ScanDone += Scanner_ScanDone;
+			Scanner.ThumbnailsPopulated += Scanner_ThumbnailsPopulated;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.DatabaseVideosExportedToCSV += Scanner_DatabaseVideosExportedToCSV;
@@ -148,12 +149,8 @@ namespace VideoDuplicateFinderWindows {
 		private void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
 
 		private void Scanner_ScanDone(object sender, EventArgs e) {
-			//Reset properties
-			ScanProgressText = string.Empty;
-			RemainingTime = new TimeSpan();
-			ScanProgressValue = 0;
-			ScanProgressMaxValue = 100;
-			host.TreeViewDuplicates.ItemsSource = null;
+			Scanner.PopulateDuplicateThumbnails();
+
 			//Status bar information
 			TotalGroups = Scanner.Duplicates.GroupBy(a => a.GroupId).Count();
 			TotalSize = Scanner.Duplicates.Sum(a => a.SizeLong);
@@ -169,9 +166,6 @@ namespace VideoDuplicateFinderWindows {
 				dup.BitrateBest = !others.Any(a => a.BitRateKbs > dup.BitRateKbs);
 				Duplicates.Add(dup);
 			}
-
-			//We no longer need the core duplicates
-			Scanner.Duplicates.Clear();
 			//Group results by GroupID
 			view = (CollectionView)CollectionViewSource.GetDefaultView(Duplicates);
 			var groupDescription = new PropertyGroupDescription(nameof(DuplicateItemViewModel.GroupId));
@@ -183,6 +177,15 @@ namespace VideoDuplicateFinderWindows {
 			host.TreeViewDuplicates.ItemsSource = view;
 			IsScanning = false;
 		}
+
+		private void Scanner_ThumbnailsPopulated(object sender, EventArgs e) {
+			//Reset properties
+			ScanProgressText = string.Empty;
+			RemainingTime = new TimeSpan();
+			ScanProgressValue = 0;
+			ScanProgressMaxValue = 100;
+		}
+
 		private bool TextFilter(object obj) {
 			if (!(obj is DuplicateItemViewModel data)) return false;
 			var success = true;
@@ -394,7 +397,12 @@ namespace VideoDuplicateFinderWindows {
 		public DelegateCommand ExportDatabaseVideosToCSVCommand => new DelegateCommand(a => {
 			IsBusy = true;
 			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.ExportingDatabaseVideosToCSV;
-			Scanner.ExportDatabaseVideosToCSV();
+			Scanner.ExportDatabaseVideosToCSV(true, false);
+		});
+		public DelegateCommand ExportDatabaseExcluded => new DelegateCommand(a => {
+			IsBusy = true;
+			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.ExportingDatabaseVideosToCSV;
+			Scanner.ExportDatabaseVideosToCSV(false, true);
 		});
 		public DelegateCommand ClearLogCommand => new DelegateCommand(a => { LogItems.Clear(); }, a => LogItems.Count > 0);
 		public DelegateCommand CopyLogCommand => new DelegateCommand(a => {

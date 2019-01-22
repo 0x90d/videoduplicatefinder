@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -8,6 +8,7 @@
     <SignAssembly>false</SignAssembly>
     <Platforms>AnyCPU</Platforms>
     <AssemblyName>VideoDuplicateFinderWindows</AssemblyName>
+    <StartupObject>VideoDuplicateFinderWindows.Startup</StartupObject>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

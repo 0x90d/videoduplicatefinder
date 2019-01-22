@@ -250,6 +250,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export Excluded to CSV.
+        /// </summary>
+        public static string ExportDatabaseExcluded {
+            get {
+                return ResourceManager.GetString("ExportDatabaseExcluded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export Database videos to CSV.
         /// </summary>
         public static string ExportDatabaseVideosToCSV {
@@ -259,7 +268,7 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Exporting database videos to CSV....
+        ///   Looks up a localized string similar to Exporting database to CSV....
         /// </summary>
         public static string ExportingDatabaseVideosToCSV {
             get {

@@ -70,6 +70,11 @@ namespace DuplicateFinderEngine.Data {
 		public DateTime DateCreated { get; }
 
 		public bool IsImage { get; }
-
+		public event Action ThumbnailUpdated;
+		internal void UpdateThumbnails(List<Image> th) {
+			if(th == null) return;
+			Thumbnail = th;
+			ThumbnailUpdated?.Invoke(); 
+		}
 	}
 }

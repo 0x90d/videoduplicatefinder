@@ -28,6 +28,10 @@ namespace VideoDuplicateFinderLinux
             BitRateKbs = file.BitRateKbs;
             Similarity = file.Similarity;
             IsImage = file.IsImage;
+			file.ThumbnailUpdated += () => {
+				Thumbnail = Utils.JoinImages(file.Thumbnail);
+				//TODO: PropertyChanged(nameof(Thumbnail));
+			};
         }
 
 		/*

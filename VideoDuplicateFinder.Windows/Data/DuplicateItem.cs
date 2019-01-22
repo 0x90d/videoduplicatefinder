@@ -8,7 +8,7 @@ namespace VideoDuplicateFinderWindows.Data
 {
     public class DuplicateItemViewModel : ViewModelBase, IEquatable<DuplicateItemViewModel>
     {
-        public DuplicateItemViewModel(DuplicateFinderEngine.Data.DuplicateItem file)
+		public DuplicateItemViewModel(DuplicateFinderEngine.Data.DuplicateItem file)
         {
             Path = file.Path;
             Folder = file.Folder;
@@ -28,6 +28,10 @@ namespace VideoDuplicateFinderWindows.Data
             BitRateKbs = file.BitRateKbs;
             Similarity = file.Similarity;
             IsImage = file.IsImage;
+			file.ThumbnailUpdated += () => {
+				Thumbnail = Utils.JoinImages(file.Thumbnail);
+				OnPropertyChanged(nameof(Thumbnail));
+			};
         }
 
 
