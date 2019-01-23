@@ -179,10 +179,11 @@ namespace DuplicateFinderEngine {
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						var ffProbe = new FFProbeWrapper.FFProbeWrapper();
 						var info = ffProbe.GetMediaInfo(entry.Path);
-						if (info == null)
+						if (info == null) {
 							entry.Flags.Set(EntryFlags.MetadataError);
-						else
-							entry.mediaInfo = info;
+							return;
+						}
+						entry.mediaInfo = info;
 					}
 
 					if (entry.grayBytes == null) {
