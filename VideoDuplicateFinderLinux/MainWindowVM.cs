@@ -109,12 +109,21 @@ namespace VideoDuplicateFinderLinux {
 				dir.Create();
 			Scanner.ScanDone += Scanner_ScanDone;
 			Scanner.Progress += Scanner_Progress;
+			Scanner.ThumbnailsPopulated += Scanner_ThumbnailsPopulated;
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown 
 			Instance_LogItemAdded(null, null);
 
+		}
+
+		private void Scanner_ThumbnailsPopulated(object sender, EventArgs e) {
+			//Reset properties
+			ScanProgressText = string.Empty;
+			RemainingTime = new TimeSpan();
+			ScanProgressValue = 0;
+			ScanProgressMaxValue = 100;
 		}
 
 		private void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
@@ -186,11 +195,7 @@ namespace VideoDuplicateFinderLinux {
 		}
 
 		private void Scanner_ScanDone(object sender, EventArgs e) {
-			//Reset properties
-			ScanProgressText = string.Empty;
-			RemainingTime = new TimeSpan();
-			ScanProgressValue = 0;
-			ScanProgressMaxValue = 100;
+			Scanner.PopulateDuplicateThumbnails();
 
 			var dupGroupHandled = new HashSet<Guid>();
 			foreach (var itm in Scanner.Duplicates) {
@@ -208,8 +213,6 @@ namespace VideoDuplicateFinderLinux {
 				}
 				duplicateList.Add(dup);
 			}
-			//We no longer need the core duplicates
-			Scanner.Duplicates.Clear();
 
 			var dynamicFilter = this.WhenValueChanged(x => x.SearchText)
 					.Select(BuildFilter);

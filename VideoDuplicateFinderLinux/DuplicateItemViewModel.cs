@@ -29,8 +29,9 @@ namespace VideoDuplicateFinderLinux
             Similarity = file.Similarity;
             IsImage = file.IsImage;
 			file.ThumbnailUpdated += () => {
+				if (IsGroupHeader) return;
 				Thumbnail = Utils.JoinImages(file.Thumbnail);
-				//TODO: PropertyChanged(nameof(Thumbnail));
+				this.RaisePropertyChanged(nameof(Thumbnail));
 			};
         }
 
