@@ -1,6 +1,5 @@
 using DuplicateFinderEngine.Data;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -25,6 +24,7 @@ namespace DuplicateFinderEngine {
 		public TimeSpan TimeElapsed;
 		public TimeSpan RemainingTime;
 		private bool _isScanning;
+		private readonly Stopwatch SearchSW = new Stopwatch();
 
 		public Stopwatch ElapsedTimer = new Stopwatch();
 		private PauseTokenSource m_pauseTokeSource;
@@ -41,6 +41,7 @@ namespace DuplicateFinderEngine {
 			Duplicates.Clear();
 			positionList.Clear();
 			ElapsedTimer.Reset();
+			SearchSW.Reset();
 			for (var i = 0; i < Settings.ThumbnailCount; i++) {
 				positionList.Add(1.0F / (Settings.ThumbnailCount + 1));
 			}
@@ -106,6 +107,7 @@ namespace DuplicateFinderEngine {
 			if (!_isScanning || m_pauseTokeSource.IsPaused) return;
 			Logger.Instance.Info(Properties.Resources.ScanPaused);
 			ElapsedTimer.Stop();
+			SearchSW.Stop();
 			m_pauseTokeSource.IsPaused = true;
 
 		}
@@ -115,6 +117,7 @@ namespace DuplicateFinderEngine {
 			Logger.Instance.Info(Properties.Resources.ScanResumed);
 			m_pauseTokeSource.IsPaused = false;
 			ElapsedTimer.Start();
+			SearchSW.Start();
 			m_pauseTokeSource.IsPaused = false;
 		}
 
@@ -157,7 +160,7 @@ namespace DuplicateFinderEngine {
 
 		private void InternalSearch(CancellationToken cancelToken, PauseTokenSource pauseTokenSource) {
 			ElapsedTimer.Start();
-			var st = Stopwatch.StartNew();
+			SearchSW.Start();;
 			var duplicateDict = new Dictionary<string, DuplicateItem>();
 
 			try {
@@ -196,10 +199,10 @@ namespace DuplicateFinderEngine {
 
 					IncrementProgress(entry.Path);
 				});
-				st.Stop();
-				Logger.Instance.Info(string.Format(Properties.Resources.ThumbnailsFinished, st.Elapsed, processedFiles));
+				SearchSW.Stop();
+				Logger.Instance.Info(string.Format(Properties.Resources.ThumbnailsFinished, SearchSW.Elapsed, processedFiles));
 
-				st.Restart();
+				SearchSW.Restart();
 				var percentageDifference = 1.0f - Settings.Percent / 100f;
 				var dupeScanList = ScanFileList.Where(vf => !vf.Flags.Any(EntryFlags.AllErrors | EntryFlags.ManuallyExcluded)).ToList();
 
@@ -250,8 +253,8 @@ namespace DuplicateFinderEngine {
 					IncrementProgress(baseItem.Path);
 				});
 
-				st.Stop();
-				Logger.Instance.Info(string.Format(Properties.Resources.DuplicatesCheckFinishedIn, st.Elapsed));
+				SearchSW.Stop();
+				Logger.Instance.Info(string.Format(Properties.Resources.DuplicatesCheckFinishedIn, SearchSW.Elapsed));
 				Duplicates = new HashSet<DuplicateItem>(duplicateDict.Values);
 			}
 			catch (OperationCanceledException) {
