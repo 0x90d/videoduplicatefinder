@@ -119,15 +119,14 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
-                        <MenuItem>
+                        <MenuItem IsEnabled="{Binding IsScanning, Mode=OneWay, Converter={StaticResource NegateBool}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{x:Static properties:Resources.Database}" VerticalAlignment="Center"/>
                                     <Path VerticalAlignment="Center" Margin="4,2,0,0" Fill="Black" Data="M 0 0 L 6 6 L 12 0 Z"/>
                                 </StackPanel>
                             </MenuItem.Header>
-                            <MenuItem Command="{Binding CleanDatabaseCommand}"
-                                  Visibility="{Binding IsScanning, Converter={StaticResource InvertBooleanToVisibilityConverter}}" >
+                            <MenuItem Command="{Binding CleanDatabaseCommand}">
                                 <MenuItem.Header>
                                     <TextBlock Text="{x:Static properties:Resources.CleanupDatabase}" VerticalAlignment="Center"/>
                                 </MenuItem.Header>
@@ -139,7 +138,7 @@
                                     </Viewbox>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{x:Static properties:Resources.Export}" Visibility="{Binding IsScanning, Converter={StaticResource InvertBooleanToVisibilityConverter}}">
+                            <MenuItem Header="{x:Static properties:Resources.Export}" >
                                 <MenuItem Command="{Binding ExportDatabaseVideosToCSVCommand}">
                                     <MenuItem.Header>
                                         <TextBlock Text="{x:Static properties:Resources.ExportDatabaseVideosToCSV}" VerticalAlignment="Center"/>
