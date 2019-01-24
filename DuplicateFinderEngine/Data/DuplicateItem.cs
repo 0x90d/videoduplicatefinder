@@ -9,7 +9,7 @@ namespace DuplicateFinderEngine.Data {
 		public DuplicateItem(VideoFileEntry file, float percent) {
 			Path = file.Path;
 			Folder = file.Folder;
-			if (!file.IsImage) {
+			if (!file.IsImage && file.mediaInfo != null) {
 				Duration = file.mediaInfo.Duration;
 
 				for (var i = 0; i < file.mediaInfo.Streams.Length; i++) {
