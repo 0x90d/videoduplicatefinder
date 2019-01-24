@@ -65,7 +65,7 @@ namespace DuplicateFinderEngine {
 
 		public async void PopulateDuplicateThumbnails() {
 			await Task.Run(() => PopulateThumbnails(m_cancelationTokenSource.Token));
-			ThumbnailsPopulated(this, null);
+			ThumbnailsPopulated?.Invoke(this, null);
 		}
 
 		public async void CleanupDatabase() {
