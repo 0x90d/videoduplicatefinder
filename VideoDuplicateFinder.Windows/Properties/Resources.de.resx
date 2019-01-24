@@ -249,4 +249,91 @@
   <data name="Path" xml:space="preserve">
     <value>Pfad:</value>
   </data>
+  <data name="ClearSelection" xml:space="preserve">
+    <value>Auswahl löschen</value>
+  </data>
+  <data name="MoveToFolder" xml:space="preserve">
+    <value>In den Ordner verschieben</value>
+  </data>
+  <data name="IncludeImages" xml:space="preserve">
+    <value>Bilder einschließen</value>
+  </data>
+  <data name="ElapsedTime" xml:space="preserve">
+    <value>Verstrichene Zeit:</value>
+  </data>
+  <data name="RemainingTime" xml:space="preserve">
+    <value>Verbleibende Zeit:</value>
+  </data>
+  <data name="FFmpegExeFFprobeExeIsMissing" xml:space="preserve">
+    <value>FFmpeg.exe / FFprobe.exe fehlt. Stellen Sie sicher, dass sich beide im selben Verzeichnis wie diese Anwendung befinden.</value>
+  </data>
+  <data name="CleaningUp" xml:space="preserve">
+    <value>Aufräumen...</value>
+  </data>
+  <data name="Sort_SizeAscending" xml:space="preserve">
+    <value>Größe aufsteigend</value>
+  </data>
+  <data name="Sort_SizeDescending" xml:space="preserve">
+    <value>Größe absteigend</value>
+  </data>
+  <data name="Sort_ResolutionAscending" xml:space="preserve">
+    <value>Auflösung aufsteigend</value>
+  </data>
+  <data name="Sort_ResolutionDescending" xml:space="preserve">
+    <value>Auflösung absteigend</value>
+  </data>
+  <data name="Sort_DurationAscending" xml:space="preserve">
+    <value>Dauer aufsteigend</value>
+  </data>
+  <data name="Sort_DurationDescending" xml:space="preserve">
+    <value>Dauer absteigend</value>
+  </data>
+  <data name="Sort_DateCreatedAscending" xml:space="preserve">
+    <value>Erstellungsdatum aufsteigend</value>
+  </data>
+  <data name="Sort_DateCreatedDescending" xml:space="preserve">
+    <value>Erstellungsdatum absteigend</value>
+  </data>
+  <data name="Sort_None" xml:space="preserve">
+    <value>Keiner</value>
+  </data>
+  <data name="Sort" xml:space="preserve">
+    <value>Sortieren</value>
+  </data>
+  <data name="FileTypeFilter_All" xml:space="preserve">
+    <value>Alles</value>
+  </data>
+  <data name="FileTypeFilter_Videos" xml:space="preserve">
+    <value>Videos</value>
+  </data>
+  <data name="FileTypeFilter_Images" xml:space="preserve">
+    <value>Bilder</value>
+  </data>
+  <data name="FileType" xml:space="preserve">
+    <value>Dateityp</value>
+  </data>
+  <data name="ExportingDatabaseVideosToCSV" xml:space="preserve">
+    <value>Datenbank nach CSV exportieren ...</value>
+  </data>
+  <data name="Database" xml:space="preserve">
+    <value>Datenbank</value>
+  </data>
+  <data name="CleanupDatabase" xml:space="preserve">
+    <value>Datenbank bereinigen</value>
+  </data>
+  <data name="ExportDatabaseVideosToCSV" xml:space="preserve">
+    <value>Exportieren Sie Datenbankvideos nach CSV</value>
+  </data>
+  <data name="LatestRelease" xml:space="preserve">
+    <value>Neueste Erscheinung</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>Prozent:</value>
+  </data>
+  <data name="ExportDatabaseExcluded" xml:space="preserve">
+    <value>Export nach CSV ausgeschlossen</value>
+  </data>
 </root>

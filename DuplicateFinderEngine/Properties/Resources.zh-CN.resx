@@ -132,9 +132,6 @@
   <data name="SaveScannedFilesToDisk0N0Files" xml:space="preserve">
     <value>将扫描的文件保存到磁盘（{0:N0}文件）。</value>
   </data>
-  <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
-    <value>以前扫描的文件已导入。 {1}中的{0:N0}个文件（不再删除现有文件）。</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>{0}中的完成建筑文件列表</value>
   </data>
@@ -179,5 +176,26 @@
   </data>
   <data name="FFMpegProcessIsAlreadyStarted" xml:space="preserve">
     <value>FFMpeg进程已经启动</value>
+  </data>
+  <data name="PreviouslyScannedFilesImported" xml:space="preserve">
+    <value>以前扫描的文件已导入。 {1}中的{0:N0}个文件</value>
+  </data>
+  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
+    <value>找到以前扫描的文件，导入...</value>
+  </data>
+  <data name="FailedToCopyToReason" xml:space="preserve">
+    <value>无法将“{0}”复制到“{1}”，原因是：{2}</value>
+  </data>
+  <data name="FailedToCopyReasonDirectoryDoesNotExist" xml:space="preserve">
+    <value>无法复制“{0}”，原因：目录不存在</value>
+  </data>
+  <data name="DatabaseCleanupHasFinished" xml:space="preserve">
+    <value>数据库清理已完成：{0}，{1}条目已被删除</value>
+  </data>
+  <data name="DatabaseVideosExportToCSVFinished" xml:space="preserve">
+    <value>数据库视频导出为CSV已完成：{0}</value>
+  </data>
+  <data name="FFprobeProcessWasAborted" xml:space="preserve">
+    <value>FFprobe流程中止</value>
   </data>
 </root>

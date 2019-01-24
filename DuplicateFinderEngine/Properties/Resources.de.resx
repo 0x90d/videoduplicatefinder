@@ -132,9 +132,6 @@
   <data name="SaveScannedFilesToDisk0N0Files" xml:space="preserve">
     <value>Speichern Sie die gescannten Dateien auf der Festplatte ({0:N0} -Dateien).</value>
   </data>
-  <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
-    <value>Zuvor gescannte Dateien wurden importiert. {0:N0} Dateien in {1} (Nicht mehr vorhandene Dateien wurden entfernt).</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>Fertige Gebäudedateiliste in {0}</value>
   </data>
@@ -179,5 +176,26 @@
   </data>
   <data name="FFMpegProcessIsAlreadyStarted" xml:space="preserve">
     <value>Der FFMpeg-Prozess ist bereits gestartet</value>
+  </data>
+  <data name="FFprobeProcessWasAborted" xml:space="preserve">
+    <value>FFprobe-Vorgang wurde abgebrochen</value>
+  </data>
+  <data name="DatabaseVideosExportToCSVFinished" xml:space="preserve">
+    <value>Export von Datenbankvideos in CSV abgeschlossen in: {0}</value>
+  </data>
+  <data name="DatabaseCleanupHasFinished" xml:space="preserve">
+    <value>Die Datenbankbereinigung wurde abgeschlossen in: {0}, {1} Einträge wurden entfernt</value>
+  </data>
+  <data name="FailedToCopyReasonDirectoryDoesNotExist" xml:space="preserve">
+    <value>Fehler beim Kopieren von '{0}', Grund: Verzeichnis ist nicht vorhanden</value>
+  </data>
+  <data name="FailedToCopyToReason" xml:space="preserve">
+    <value>Kopieren von '{0}' nach '{1}' fehlgeschlagen, Grund: {2}</value>
+  </data>
+  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
+    <value>Gefundene gescannte Dateien gefunden, importiert ...</value>
+  </data>
+  <data name="PreviouslyScannedFilesImported" xml:space="preserve">
+    <value>Zuvor gescannte Dateien wurden importiert. {0:N0} Dateien in {1}</value>
   </data>
 </root>

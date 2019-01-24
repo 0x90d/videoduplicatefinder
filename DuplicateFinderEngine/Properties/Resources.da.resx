@@ -132,9 +132,6 @@
   <data name="SaveScannedFilesToDisk0N0Files" xml:space="preserve">
     <value>Gem scannede filer til disk ({0:N0} filer).</value>
   </data>
-  <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
-    <value>Tidligere scannede filer importeret. {0:N0} filer i {1} (ikke længere eksisterende filer er blevet fjernet).</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>Færdigbygget byggeliste i {0}</value>
   </data>

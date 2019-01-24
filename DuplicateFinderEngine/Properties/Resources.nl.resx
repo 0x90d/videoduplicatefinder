@@ -132,9 +132,6 @@
   <data name="SaveScannedFilesToDisk0N0Files" xml:space="preserve">
     <value>Bewaar gescande bestanden op schijf ({0:N0} bestanden).</value>
   </data>
-  <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
-    <value>Eerder gescande bestanden geïmporteerd. {0:N0} bestanden in {1} (niet langer bestaande bestanden zijn verwijderd).</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>Lijst met voltooide bouwbestanden is voltooid in {0}</value>
   </data>

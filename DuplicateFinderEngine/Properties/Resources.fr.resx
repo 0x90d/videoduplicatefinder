@@ -132,9 +132,6 @@
   <data name="SaveScannedFilesToDisk0N0Files" xml:space="preserve">
     <value>Enregistrez les fichiers numérisés sur le disque (fichiers {0:N0}).</value>
   </data>
-  <data name="PreviouslyScannedFilesImportedFilesInNoLongerExistingFilesHaveBeenRemoved" xml:space="preserve">
-    <value>Fichiers précédemment analysés importés. {0:N0} fichiers dans {1} (les fichiers existants n'existent plus).</value>
-  </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
     <value>Liste de fichiers de construction terminée en {0}</value>
   </data>

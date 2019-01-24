@@ -118,63 +118,84 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ThumbnailsFinished" xml:space="preserve">
-    <value>Le miniature sono finite in: {0}, file elaborati: {1:N0}</value>
+    <value>Миниатюры завершены в: {0}, обработанные файлы: {1:N0}</value>
   </data>
   <data name="ScanStopped" xml:space="preserve">
-    <value>Scansione interrotta</value>
+    <value>Сканирование остановлено</value>
   </data>
   <data name="ScanResumed" xml:space="preserve">
-    <value>La scansione è ripresa</value>
+    <value>Сканирование возобновлено</value>
   </data>
   <data name="ScanPaused" xml:space="preserve">
-    <value>Scansione in pausa</value>
+    <value>Сканирование приостановлено</value>
   </data>
   <data name="SaveScannedFilesToDisk0N0Files" xml:space="preserve">
-    <value>Salva i file scansionati su disco ({0:N0} file).</value>
+    <value>Сохранить отсканированные файлы на диск (файлы {0:N0}).</value>
+  </data>
+  <data name="PreviouslyScannedFilesImported" xml:space="preserve">
+    <value>Импортированные ранее отсканированные файлы. {0:N0} файлов в {1}</value>
+  </data>
+  <data name="FoundPreviouslyScannedFilesImporting" xml:space="preserve">
+    <value>Нашли ранее отсканированные файлы, импортировали ...</value>
   </data>
   <data name="FinishedBuildingFileListIn" xml:space="preserve">
-    <value>Elenco dei file di costruzione finito in {0}</value>
+    <value>Завершенный список файлов сборки в {0}</value>
   </data>
   <data name="ScanDone" xml:space="preserve">
-    <value>Scansione completata</value>
+    <value>Сканирование выполнено</value>
   </data>
   <data name="StartScan" xml:space="preserve">
-    <value>Inizia scansione</value>
+    <value>Начать сканирование</value>
   </data>
   <data name="BuildingFileList" xml:space="preserve">
-    <value>Costruire l'elenco dei file ...</value>
+    <value>Создание списка файлов ...</value>
   </data>
   <data name="DuplicatesCheckFinishedIn" xml:space="preserve">
-    <value>Controllo dei duplicati completato in: {0}</value>
+    <value>Проверка дубликатов завершена: {0}</value>
   </data>
   <data name="CancellationExceptionCaught" xml:space="preserve">
-    <value>Eccezione annullata!</value>
+    <value>Исключение отмены поймано!</value>
   </data>
   <data name="SkippedReadonly" xml:space="preserve">
-    <value>Saltato (sola lettura): {0}</value>
+    <value>Пропущено (только чтение): {0}</value>
   </data>
   <data name="SkippedBlacklist" xml:space="preserve">
-    <value>Saltato (lista nera): {0}</value>
+    <value>Пропущено (черный список): {0}</value>
   </data>
   <data name="SkippedErrorReason" xml:space="preserve">
-    <value>Ignorato (errore): {0}, motivo: {1}</value>
+    <value>Пропущено (ошибка): {0}, причина: {1}</value>
   </data>
   <data name="FFProbeException" xml:space="preserve">
-    <value>{0} (codice di uscita: {1})</value>
+    <value>{0} (код выхода: {1})</value>
   </data>
   <data name="FFProbeProcessExceededExecutionTimeout" xml:space="preserve">
-    <value>Il processo FFProbe ha superato il timeout di esecuzione ({0}) ed è stato interrotto, File: {1}</value>
+    <value>Процесс FFProbe превысил тайм-аут выполнения ({0}) и был прерван, файл: {1}</value>
   </data>
   <data name="FFprobeError" xml:space="preserve">
-    <value>Errore FFprobe: {0}, file: {1}</value>
+    <value>Ошибка FFprobe: {0}, файл: {1}</value>
   </data>
   <data name="FFMpegProcessWasAborted" xml:space="preserve">
-    <value>FFMpeg process was aborted</value>
+    <value>Процесс FFMpeg был прерван</value>
   </data>
   <data name="FFMpegTimeoutFile" xml:space="preserve">
-    <value>FFMpeg timeout. File: {0}</value>
+    <value>Тайм-аут FFMpeg. Файл: {0}</value>
   </data>
   <data name="FFMpegProcessIsAlreadyStarted" xml:space="preserve">
-    <value>FFMpeg process is already started</value>
+    <value>Процесс FFMpeg уже запущен</value>
+  </data>
+  <data name="FailedToCopyToReason" xml:space="preserve">
+    <value>Не удалось скопировать «{0}» в «{1}», причина: {2}</value>
+  </data>
+  <data name="FailedToCopyReasonDirectoryDoesNotExist" xml:space="preserve">
+    <value>Не удалось скопировать '{0}', причина: каталог не существует</value>
+  </data>
+  <data name="DatabaseCleanupHasFinished" xml:space="preserve">
+    <value>Очистка базы данных завершена: {0}, {1} записей было удалено</value>
+  </data>
+  <data name="DatabaseVideosExportToCSVFinished" xml:space="preserve">
+    <value>Экспорт видео из базы данных в CSV завершен: {0}</value>
+  </data>
+  <data name="FFprobeProcessWasAborted" xml:space="preserve">
+    <value>FFprobe процесс был прерван</value>
   </data>
 </root>
