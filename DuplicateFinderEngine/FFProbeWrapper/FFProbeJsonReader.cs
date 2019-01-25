@@ -118,7 +118,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 				if (streams[i].ContainsKey("width"))
 					info.Streams[i].Width = (int)streams[i]["width"];
 				if (streams[i].ContainsKey("height"))
-					info.Streams[i].Width = (int)streams[i]["height"];
+					info.Streams[i].Height = (int)streams[i]["height"];
 				if (streams[i].ContainsKey("codec_name"))
 					info.Streams[i].CodecName = (string)streams[i]["codec_name"];
 				if (streams[i].ContainsKey("codec_long_name"))
