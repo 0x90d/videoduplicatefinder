@@ -238,8 +238,12 @@ namespace DuplicateFinderEngine {
 							var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
 
 							if (foundBase && foundComp) {
-								foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
-									dup.GroupId = existingBase.GroupId;
+								//this happens with 4+ identical items:
+								//first, 2+ duplicate groups are found independently, they are merged in this branch
+								if (existingBase.GroupId != existingComp.GroupId) {
+									foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
+										dup.GroupId = existingBase.GroupId;
+								}
 							}
 							else if (foundBase) {
 								duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existingBase.GroupId });
