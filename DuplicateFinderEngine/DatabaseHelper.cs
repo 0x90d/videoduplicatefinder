@@ -36,17 +36,17 @@ namespace DuplicateFinderEngine {
 			return videoFiles;
 		}
 
-		public static void CleanupDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
+		public static Dictionary<string, VideoFileEntry> CleanupDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
 
 			var oldCount = videoFiles.Count;
 			var st = Stopwatch.StartNew();
 
 			videoFiles = new Dictionary<string, VideoFileEntry>(videoFiles.Where(kv => File.Exists(kv.Value.Path) &&
-			                                                                           kv.Value.grayBytes?.Count > 0 &&
-			                                                                           kv.Value.mediaInfo != null));
+			                                                                           !kv.Value.Flags.Any(EntryFlags.MetadataError | EntryFlags.ThumbnailError)));
 			st.Stop();
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseCleanupHasFinished, st.Elapsed, oldCount - videoFiles.Count));
 
+			return videoFiles;
 		}
 		public static void ExportDatabaseToCSV(IEnumerable<VideoFileEntry> videoFiles) {
 
@@ -70,7 +70,7 @@ namespace DuplicateFinderEngine {
 			foreach (var videoFile in videoFiles) {
 
 				var mediaInfoStream = videoFile.mediaInfo?.Streams?.FirstOrDefault(s => s.CodecType == "video");
-
+				
 				dt.Rows.Add(
 					Path.GetDirectoryName(videoFile.Path),
 					Path.GetFileName(videoFile.Path),
@@ -80,8 +80,8 @@ namespace DuplicateFinderEngine {
 					mediaInfoStream?.BitRate,
 					mediaInfoStream?.CodecName,
 					mediaInfoStream?.CodecLongName,
-					videoFile.mediaInfo.Duration.TotalMinutes,
-					videoFile.mediaInfo.Duration.ToString(),
+					videoFile?.mediaInfo?.Duration.TotalMinutes ?? 0,
+					videoFile?.mediaInfo?.Duration.ToString(),
 					videoFile.IsImage,
 					videoFile.Flags.Has(EntryFlags.ManuallyExcluded),
 					(videoFile.Flags & EntryFlags.AllErrors).ToString());
@@ -112,7 +112,7 @@ namespace DuplicateFinderEngine {
 		public static void SaveDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
 			Logger.Instance.Info(string.Format(Properties.Resources.SaveScannedFilesToDisk0N0Files, videoFiles.Count));
 			using (var stream = new FileStream(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
-				"ScannedFiles.db"), FileMode.OpenOrCreate)) {
+				"ScannedFiles.db"), FileMode.Create)) {
 				Serializer.Serialize(stream, videoFiles.Values.ToList());
 			}
 		}

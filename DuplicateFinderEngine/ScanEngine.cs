@@ -70,7 +70,12 @@ namespace DuplicateFinderEngine {
 		}
 
 		public async void CleanupDatabase() {
-			await Task.Run(() => DatabaseHelper.CleanupDatabase(DatabaseFileList));
+			if (DatabaseFileList.Count == 0) DatabaseFileList = DatabaseHelper.LoadDatabase();
+
+			await Task.Run(() => {
+				DatabaseFileList = DatabaseHelper.CleanupDatabase(DatabaseFileList);
+				DatabaseHelper.SaveDatabase(DatabaseFileList);
+			});
 			DatabaseCleaned?.Invoke(this, null);
 		}
 		public async void ExportDatabaseVideosToCSV(bool onlyVideos, bool onlyFlagged) {
@@ -334,9 +339,9 @@ namespace DuplicateFinderEngine {
 				videoFile.FrameSizeInt = bitmapImage.Width + bitmapImage.Height;
 
 				double resizeFactor = 1;
-				if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
-					double widthFactor = Convert.ToDouble(bitmapImage.Width) / 100;
-					double heightFactor = Convert.ToDouble(bitmapImage.Height) / 100;
+				if (bitmapImage.Width > 300 || bitmapImage.Height > 169) {
+					double widthFactor = Convert.ToDouble(bitmapImage.Width) / 300;
+					double heightFactor = Convert.ToDouble(bitmapImage.Height) / 169;
 					resizeFactor = Math.Max(widthFactor, heightFactor);
 
 				}
@@ -344,7 +349,7 @@ namespace DuplicateFinderEngine {
 				int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
 				var newImage = new Bitmap(width, height);
 				using (var g = Graphics.FromImage(newImage)) {
-					g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+					g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
 					g.DrawImage(bitmapImage, 0, 0, newImage.Width, newImage.Height);
 				}
 

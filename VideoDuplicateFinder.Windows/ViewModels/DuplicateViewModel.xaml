@@ -21,11 +21,11 @@
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="160" />
             <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="90" />
             <ColumnDefinition Width="100" />
-            <ColumnDefinition Width="100" />
-            <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="80" />
             <ColumnDefinition Width="75" />
         </Grid.ColumnDefinitions>
 
@@ -37,7 +37,11 @@
 
         <Image
             Grid.Column="1"
-            Margin="10,0,0,0"
+            Margin="10,-10,0,-10"
+            HorizontalAlignment="Center"
+            Stretch="Uniform"
+            Width="160"
+            Height="90"
             MouseLeftButtonDown="Image_MouseLeftButtonDown"
             Source="{Binding Thumbnail}" />
 

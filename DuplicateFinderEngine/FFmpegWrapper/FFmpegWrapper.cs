@@ -12,8 +12,11 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 			InputFile = inputFile;
 			var settings = new FFmpegSettings {
 				Seek = frameTime,
+				//fetching only keyframes is about ~10x faster for hvec videos
+				//but it might be confusing the the user, since the timestamps don't neccessarly match
+				KeyframeOnly = false, //!grayScale,
 				OutputFormat = grayScale ? "rawvideo -pix_fmt gray" : "mjpeg",
-				VideoFrameSize = grayScale ? "-s 16x16" : "-vf scale=100:-1",
+				VideoFrameSize = grayScale ? "-s 16x16" : "-vf scale=300:169:force_original_aspect_ratio=decrease",
 			};
 
 			return RunFFmpeg(inputFile, settings);
@@ -40,7 +43,8 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 		internal byte[] RunFFmpeg(string input, FFmpegSettings settings) {
 			byte[] data;
 			try {
-				var arguments = $" -hide_banner -loglevel panic -y -ss {settings.Seek.ToString(CultureInfo.InvariantCulture)} -i \"{input}\" -t 1 -f {settings.OutputFormat} -vframes 1 {settings.VideoFrameSize} \"-\"";
+				var onlyKeyframes = settings.KeyframeOnly ? " -skip_frame nokey" : "";
+				var arguments = $"-hide_banner -loglevel panic -y -ss {settings.Seek.ToString(CultureInfo.InvariantCulture)}{onlyKeyframes} -i \"{input}\" -f {settings.OutputFormat} -vframes 1 {settings.VideoFrameSize} \"-\"";
 				var processStartInfo =
 					new ProcessStartInfo(Utils.FfmpegPath, arguments) {
 						WindowStyle = ProcessWindowStyle.Hidden,
