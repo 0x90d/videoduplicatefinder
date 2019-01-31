@@ -160,7 +160,7 @@ namespace DuplicateFinderEngine {
 
 		private void InternalSearch(CancellationToken cancelToken, PauseTokenSource pauseTokenSource) {
 			ElapsedTimer.Start();
-			SearchSW.Start();;
+			SearchSW.Start();
 			var duplicateDict = new Dictionary<string, DuplicateItem>();
 
 			try {
@@ -205,7 +205,7 @@ namespace DuplicateFinderEngine {
 				SearchSW.Restart();
 				var percentageDifference = 1.0f - Settings.Percent / 100f;
 				var dupeScanList = ScanFileList.Where(vf => !vf.Flags.Any(EntryFlags.AllErrors | EntryFlags.ManuallyExcluded)).ToList();
-
+				
 				InitProgress(dupeScanList.Count);
 				Parallel.For(0, dupeScanList.Count, parallelOpts, i => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
@@ -439,12 +439,12 @@ namespace DuplicateFinderEngine {
 			}
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public static float PercentageDifference2(byte[] img1, byte[] img2) {
-				if (img1.AsSpan().SequenceEqual(img2.AsSpan())) return 1f;
-				float diff = 0;
+				if(img1.Length != img2.Length) throw new Exception("Images must be of same length");
+				long diff = 0;
 				for (var y = 0; y < img1.Length; y++) {
-					diff += (float)Math.Abs(img1[y] - img2[y]) / 255;
+					diff += Math.Abs(img1[y] - img2[y]);
 				}
-				return diff / (16 * 16);
+				return (float)diff / img1.Length / 256;
 			}
 		}
 	}
