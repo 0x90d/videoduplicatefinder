@@ -205,7 +205,7 @@ namespace DuplicateFinderEngine {
 				SearchSW.Restart();
 				var percentageDifference = 1.0f - Settings.Percent / 100f;
 				var dupeScanList = ScanFileList.Where(vf => !vf.Flags.Any(EntryFlags.AllErrors | EntryFlags.ManuallyExcluded)).ToList();
-				
+
 				InitProgress(dupeScanList.Count);
 				Parallel.For(0, dupeScanList.Count, parallelOpts, i => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
@@ -234,19 +234,23 @@ namespace DuplicateFinderEngine {
 
 						var percSame = percent.Average();
 						lock (duplicateDict) {
-							if (duplicateDict.TryGetValue(baseItem.Path, out var existing)) {
-								if (!duplicateDict.TryGetValue(compItem.Path, out _))
-									duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existing.GroupId });
+							var foundBase = duplicateDict.TryGetValue(baseItem.Path, out var existingBase);
+							var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
+
+							if (foundBase && foundComp) {
+								foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
+									dup.GroupId = existingBase.GroupId;
+							}
+							else if (foundBase) {
+								duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existingBase.GroupId });
+							}
+							else if (foundComp) {
+								duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existingComp.GroupId });
 							}
 							else {
-								if (duplicateDict.TryGetValue(compItem.Path, out existing)) {
-									duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existing.GroupId });
-								}
-								else {
-									var groupId = Guid.NewGuid();
-									duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
-									duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
-								}
+								var groupId = Guid.NewGuid();
+								duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
+								duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
 							}
 						}
 					}
@@ -439,7 +443,7 @@ namespace DuplicateFinderEngine {
 			}
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public static float PercentageDifference2(byte[] img1, byte[] img2) {
-				if(img1.Length != img2.Length) throw new Exception("Images must be of same length");
+				if (img1.Length != img2.Length) throw new Exception("Images must be of same length");
 				long diff = 0;
 				for (var y = 0; y < img1.Length; y++) {
 					diff += Math.Abs(img1[y] - img2[y]);
