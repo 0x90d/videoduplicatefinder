@@ -19,6 +19,7 @@
   </PropertyGroup> 
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsDesktop.App" Version="3.0.0-alpha-27218-3" />
     <PackageReference Include="protobuf-net" Version="2.4.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.6.0-preview.18571.3" />
   </ItemGroup> 
