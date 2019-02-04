@@ -307,6 +307,19 @@ namespace VideoDuplicateFinderWindows {
 				OnPropertyChanged(nameof(Percent));
 			}
 		}
+
+		public string Thumbnails {
+			get => Scanner.Settings.ThumbnailCount.ToString();
+			set {
+				if (!int.TryParse(value, out var val) || val < 1)
+					throw new ApplicationException("Invalid thumbnail number");
+
+				if (val == Scanner.Settings.ThumbnailCount) return;
+				Scanner.Settings.ThumbnailCount = val;
+				OnPropertyChanged(nameof(Thumbnails));
+			}
+
+		}
 		public bool IncludeSubDirectories {
 			get => Scanner.Settings.IncludeSubDirectories;
 			set {
@@ -615,7 +628,7 @@ namespace VideoDuplicateFinderWindows {
 						continue;
 					TotalSizeRemoved += dub.SizeLong;
 				}
-				Duplicates.RemoveAt(i);
+				Duplicates.Remove(dub);
 			}
 			//Hide groups with just one item left
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
@@ -641,6 +654,7 @@ namespace VideoDuplicateFinderWindows {
 				new XElement("Includes", includes),
 				new XElement("Excludes", excludes),
 				new XElement("Percent", Percent),
+				new XElement("Thumbnails", Thumbnails),
 				new XElement("IncludeSubDirectories", IncludeSubDirectories),
 				new XElement("IncludeImages", IncludeImages),
 				new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders)
@@ -660,6 +674,8 @@ namespace VideoDuplicateFinderWindows {
 				Blacklists.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Percent"))
 				Percent = n.Value;
+			foreach (var n in xDoc.Descendants("Thumbnails"))
+				Thumbnails = n.Value;
 			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
 			if (node?.Value != null)
 				IncludeSubDirectories = bool.Parse(node.Value);

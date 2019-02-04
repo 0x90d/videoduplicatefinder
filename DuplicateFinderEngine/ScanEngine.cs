@@ -160,7 +160,7 @@ namespace DuplicateFinderEngine {
 
 		private void InternalSearch(CancellationToken cancelToken, PauseTokenSource pauseTokenSource) {
 			ElapsedTimer.Start();
-			SearchSW.Start();;
+			SearchSW.Start();
 			var duplicateDict = new Dictionary<string, DuplicateItem>();
 
 			try {
@@ -171,7 +171,7 @@ namespace DuplicateFinderEngine {
 
 				var reScanList = ScanFileList
 					.Where(vf => !vf.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.AllErrors))
-					.Where(vf => (vf.mediaInfo == null && !vf.IsImage) || vf.grayBytes == null)
+					.Where(vf => (vf.mediaInfo == null && !vf.IsImage) || vf.grayBytes == null || vf.grayBytes.Count != Settings.ThumbnailCount)
 					.ToList();
 
 				InitProgress(reScanList.Count);

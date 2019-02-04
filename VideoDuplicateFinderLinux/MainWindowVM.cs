@@ -103,6 +103,12 @@ namespace VideoDuplicateFinderLinux {
 			get => _Percent;
 			set => this.RaiseAndSetIfChanged(ref _Percent, value);
 		}
+
+		int _Thumbnails = 1;
+		public int Thumbnails {
+			get => _Thumbnails;
+			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
+		}
 		public MainWindowVM() {
 			var dir = new DirectoryInfo(Utils.ThumbnailDirectory);
 			if (!dir.Exists)
@@ -145,6 +151,7 @@ namespace VideoDuplicateFinderLinux {
 					new XElement("Includes", includes),
 					new XElement("Excludes", excludes),
 					new XElement("Percent", Percent),
+					new XElement("Thumbnails", Thumbnails),
 					new XElement("IncludeSubDirectories", IncludeSubDirectories),
 					new XElement("IncludeImages", IncludeImages),
 					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders)
@@ -165,6 +172,9 @@ namespace VideoDuplicateFinderLinux {
 			foreach (var n in xDoc.Descendants("Percent"))
 				if (int.TryParse(n.Value, out var percent))
 					Percent = percent;
+			foreach (var n in xDoc.Descendants("Thumbnails"))
+				if (int.TryParse(n.Value, out var thumbnails))
+					Thumbnails = thumbnails;
 			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
 			if (node?.Value != null)
 				IncludeSubDirectories = bool.Parse(node.Value);
@@ -313,6 +323,7 @@ namespace VideoDuplicateFinderLinux {
 			Scanner.Settings.IncludeImages = IncludeImages;
 			Scanner.Settings.IgnoreReadOnlyFolders = IgnoreReadOnlyFolders;
 			Scanner.Settings.Percent = Percent;
+			Scanner.Settings.ThumbnailCount = Thumbnails;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

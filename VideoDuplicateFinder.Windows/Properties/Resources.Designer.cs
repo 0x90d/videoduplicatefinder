@@ -655,6 +655,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Thumbnails.
+        /// </summary>
+        public static string Thumbnails {
+            get {
+                return ResourceManager.GetString("Thumbnails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to To Html.
         /// </summary>
         public static string ToHtml {

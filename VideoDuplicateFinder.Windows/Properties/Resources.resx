@@ -336,4 +336,7 @@
   <data name="ExportDatabaseExcluded" xml:space="preserve">
     <value>Export Excluded to CSV</value>
   </data>
+  <data name="Thumbnails" xml:space="preserve">
+    <value>Thumbnails</value>
+  </data>
 </root>

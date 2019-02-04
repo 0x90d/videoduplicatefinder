@@ -158,6 +158,16 @@
                             Maximum="100"
                             Minimum="1"
                             Value="{Binding Percent}" />
+                            <TextBlock
+                                Margin="15,5,0,0"
+                                VerticalAlignment="Center"
+                                Text="Thumbnails:" />
+                            <NumericUpDown
+                                Margin="5,5,0,0"
+                                VerticalAlignment="Center"
+                                Maximum="100"
+                                Minimum="1"
+                                Value="{Binding Thumbnails}" />
                         </StackPanel>
 
                         <Grid

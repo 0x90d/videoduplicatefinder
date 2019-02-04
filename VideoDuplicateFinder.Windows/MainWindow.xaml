@@ -202,7 +202,6 @@
                                 VerticalAlignment="Center"
                                 Content="{x:Static properties:Resources.IncludeImages}"
                                 IsChecked="{Binding IncludeImages}" />
-
                             <TextBlock
                                 Margin="15,5,0,0"
                                 VerticalAlignment="Center"
@@ -213,6 +212,22 @@
                                 VerticalAlignment="Center" >
                                 <TextBox.Text>
                                     <Binding Path="Percent" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <ExceptionValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                            <TextBlock
+                                Margin="15,5,0,0"
+                                VerticalAlignment="Center"
+                                Text="{x:Static properties:Resources.Thumbnails}" />
+                            <TextBox
+                                Margin="5,5,0,0"
+                                MinWidth="35"
+                                VerticalAlignment="Center" >
+                                <TextBox.Text>
+                                    <Binding Path="Thumbnails" UpdateSourceTrigger="PropertyChanged">
                                         <Binding.ValidationRules>
                                             <ExceptionValidationRule />
                                         </Binding.ValidationRules>
