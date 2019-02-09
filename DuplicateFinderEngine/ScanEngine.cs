@@ -224,7 +224,8 @@ namespace DuplicateFinderEngine {
 						var duplicateCounter = 0;
 						var percent = new float[baseItem.grayBytes.Count];
 						for (var j = 0; j < baseItem.grayBytes.Count; j++) {
-							percent[j] = ExtensionMethods.PercentageDifference2(baseItem.grayBytes[j], compItem.grayBytes[j]);
+							Debug.Assert(baseItem.grayBytes[j] == compItem.grayBytes[j], "Images must be of same length");
+							percent[j] = ExtensionMethods.PercentageDifference(baseItem.grayBytes[j], compItem.grayBytes[j]);
 							if (percent[j] < percentageDifference) {
 								duplicateCounter++;
 							}
@@ -438,13 +439,13 @@ namespace DuplicateFinderEngine {
 
 			}
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public static float PercentageDifference2(byte[] img1, byte[] img2) {
+			public static float PercentageDifference(byte[] img1, byte[] img2) {
 				if (img1.AsSpan().SequenceEqual(img2.AsSpan())) return 0f;
-				float diff = 0;
+				long diff = 0;
 				for (var y = 0; y < img1.Length; y++) {
-					diff += (float)Math.Abs(img1[y] - img2[y]) / 255;
+					diff += Math.Abs(img1[y] - img2[y]);
 				}
-				return diff / (16 * 16);
+				return (float)diff / img1.Length / 256;
 			}
 		}
 	}
