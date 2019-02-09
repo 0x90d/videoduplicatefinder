@@ -239,19 +239,27 @@ namespace DuplicateFinderEngine {
 
 						var percSame = percent.Average();
 						lock (duplicateDict) {
-							if (duplicateDict.TryGetValue(baseItem.Path, out var existing)) {
-								if (!duplicateDict.TryGetValue(compItem.Path, out _))
-									duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existing.GroupId });
+							var foundBase = duplicateDict.TryGetValue(baseItem.Path, out var existingBase);
+							var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
+
+							if (foundBase && foundComp) {
+								//this happens with 4+ identical items:
+								//first, 2+ duplicate groups are found independently, they are merged in this branch
+								if (existingBase.GroupId != existingComp.GroupId) {
+									foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
+										dup.GroupId = existingBase.GroupId;
+								}
+							}
+							else if (foundBase) {
+								duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existingBase.GroupId });
+							}
+							else if (foundComp) {
+								duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existingComp.GroupId });
 							}
 							else {
-								if (duplicateDict.TryGetValue(compItem.Path, out existing)) {
-									duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existing.GroupId });
-								}
-								else {
-									var groupId = Guid.NewGuid();
-									duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
-									duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
-								}
+								var groupId = Guid.NewGuid();
+								duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
+								duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
 							}
 						}
 					}
