@@ -339,4 +339,19 @@
   <data name="Thumbnails" xml:space="preserve">
     <value>Thumbnails</value>
   </data>
+  <data name="FileName" xml:space="preserve">
+    <value>File Name</value>
+  </data>
+  <data name="FileAlreadyExists" xml:space="preserve">
+    <value>{0} already exists!</value>
+  </data>
+  <data name="RenameFile" xml:space="preserve">
+    <value>Rename File</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Ok</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
 </root>

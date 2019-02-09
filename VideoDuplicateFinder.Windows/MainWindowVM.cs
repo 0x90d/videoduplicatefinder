@@ -432,6 +432,29 @@ namespace VideoDuplicateFinderWindows {
 				MessageBox.Show(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}, a => host?.TreeViewDuplicates?.SelectedItem != null);
+		public DelegateCommand RenameDuplicateFileCommand => new DelegateCommand(a => {
+			var selItem = (DuplicateItemViewModel)host.TreeViewDuplicates.SelectedItem;
+			var dlg = new StringInputBox {
+				Owner = Application.Current.MainWindow,
+				Message = VideoDuplicateFinder.Windows.Properties.Resources.FileName,
+				Value = Path.GetFileNameWithoutExtension(selItem.Path)
+			};
+			if (dlg.ShowDialog() != true || string.IsNullOrEmpty(dlg.Value)) return;
+			try {
+				var fi = new FileInfo(selItem.Path);
+				Debug.Assert(fi.Directory != null, "fi.Directory != null");
+				var newName = fi.Directory.FullName + "\\" + dlg.Value + fi.Extension;
+				if (File.Exists(newName)) {
+					MessageBox.Show(string.Format(VideoDuplicateFinder.Windows.Properties.Resources.FileAlreadyExists, dlg.Value), VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+					return;
+				}
+				fi.MoveTo(newName);
+				selItem.ChangePath(newName);
+			}
+			catch (Exception e) {
+				MessageBox.Show(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+		}, a => host?.TreeViewDuplicates?.SelectedItem != null);
 		public DelegateCommand<System.Windows.Controls.ListBox> RemoveIncludesFromListCommand => new DelegateCommand<System.Windows.Controls.ListBox>(a => {
 			while (a.SelectedItems.Count > 0)
 				Includes.Remove((string)a.SelectedItems[0]);

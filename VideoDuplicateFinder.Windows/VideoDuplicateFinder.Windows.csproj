@@ -16,6 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="MVVM\StringInputBox.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DuplicateFinderEngine\DuplicateFinderEngine.csproj" />
   </ItemGroup>
 
@@ -51,12 +55,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Update="MVVM\StringInputBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="ViewModels\DuplicateViewModel.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="MVVM\StringInputBox.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

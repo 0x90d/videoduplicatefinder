@@ -34,9 +34,12 @@ namespace VideoDuplicateFinderWindows.Data {
 			};
 		}
 
+		public void ChangePath(string newPath) {
+			Path = newPath;
+			OnPropertyChanged(nameof(Path));
+		}
 
-		[DisplayName("Path")]
-		public string Path { get; }
+		[DisplayName("Path")] public string Path { get; private set; }
 
 		public BitmapImage Thumbnail { get; set; }
 

@@ -460,6 +460,7 @@
                             <ListView.ContextMenu>
                                 <ContextMenu DataContext="{Binding DataContext, Source={mvvm:RootObject}}">
                                     <MenuItem Command="{Binding OpenInFolderCommand}"  Header="{x:Static properties:Resources.OpenInFolder}" />
+                                    <MenuItem Command="{Binding RenameDuplicateFileCommand}"  Header="{x:Static properties:Resources.RenameFile}" />
                                     <MenuItem Header="{x:Static properties:Resources.DeleteChecked}">
                                         <MenuItem.Icon>
                                             <Viewbox Width="16" Height="16">

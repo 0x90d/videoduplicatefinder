@@ -228,7 +228,7 @@ namespace DuplicateFinderEngine {
 						var duplicateCounter = 0;
 						var percent = new float[baseItem.grayBytes.Count];
 						for (var j = 0; j < baseItem.grayBytes.Count; j++) {
-							Debug.Assert(baseItem.grayBytes[j] == compItem.grayBytes[j], "Images must be of same length");
+							Debug.Assert(baseItem.grayBytes[j].Length == compItem.grayBytes[j].Length, "Images must be of same length");
 							percent[j] = ExtensionMethods.PercentageDifference(baseItem.grayBytes[j], compItem.grayBytes[j]);
 							if (percent[j] < percentageDifference) {
 								duplicateCounter++;
