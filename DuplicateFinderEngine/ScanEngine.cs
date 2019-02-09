@@ -70,7 +70,11 @@ namespace DuplicateFinderEngine {
 		}
 
 		public async void CleanupDatabase() {
-			await Task.Run(() => DatabaseHelper.CleanupDatabase(DatabaseFileList));
+			if (DatabaseFileList.Count == 0) DatabaseFileList = DatabaseHelper.LoadDatabase();
+			await Task.Run(() => {
+				DatabaseFileList = DatabaseHelper.CleanupDatabase(DatabaseFileList);
+				DatabaseHelper.SaveDatabase(DatabaseFileList);
+			});
 			DatabaseCleaned?.Invoke(this, null);
 		}
 		public async void ExportDatabaseVideosToCSV(bool onlyVideos, bool onlyFlagged) {

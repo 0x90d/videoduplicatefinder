@@ -36,16 +36,16 @@ namespace DuplicateFinderEngine {
 			return videoFiles;
 		}
 
-		public static void CleanupDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
+		public static Dictionary<string, VideoFileEntry> CleanupDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
 
 			var oldCount = videoFiles.Count;
 			var st = Stopwatch.StartNew();
 
 			videoFiles = new Dictionary<string, VideoFileEntry>(videoFiles.Where(kv => File.Exists(kv.Value.Path) &&
-			                                                                           kv.Value.grayBytes?.Count > 0 &&
-			                                                                           kv.Value.mediaInfo != null));
+																					   !kv.Value.Flags.Any(EntryFlags.MetadataError | EntryFlags.ThumbnailError)));
 			st.Stop();
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseCleanupHasFinished, st.Elapsed, oldCount - videoFiles.Count));
+			return videoFiles;
 
 		}
 		public static void ExportDatabaseToCSV(IEnumerable<VideoFileEntry> videoFiles) {
@@ -80,8 +80,8 @@ namespace DuplicateFinderEngine {
 					mediaInfoStream?.BitRate,
 					mediaInfoStream?.CodecName,
 					mediaInfoStream?.CodecLongName,
-					videoFile.mediaInfo.Duration.TotalMinutes,
-					videoFile.mediaInfo.Duration.ToString(),
+					videoFile?.mediaInfo?.Duration.TotalMinutes ?? 0,
+					videoFile?.mediaInfo?.Duration.ToString(),
 					videoFile.IsImage,
 					videoFile.Flags.Has(EntryFlags.ManuallyExcluded),
 					(videoFile.Flags & EntryFlags.AllErrors).ToString());
