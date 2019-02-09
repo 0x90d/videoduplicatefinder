@@ -67,7 +67,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 
 				WaitFFMpegProcessForExit();
 
-				imgDataTask.Wait(1000);
+				imgDataTask.Wait(ExecutionTimeout);
 				data = ms.ToArray();
 
 				FFMpegProcess?.Close();
