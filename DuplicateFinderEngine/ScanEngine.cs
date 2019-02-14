@@ -452,7 +452,7 @@ namespace DuplicateFinderEngine {
 			}
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public static float PercentageDifference(byte[] img1, byte[] img2) {
-				if (img1.AsSpan().SequenceEqual(img2.AsSpan())) return 0f;
+				Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
 				long diff = 0;
 				for (var y = 0; y < img1.Length; y++) {
 					diff += Math.Abs(img1[y] - img2[y]);

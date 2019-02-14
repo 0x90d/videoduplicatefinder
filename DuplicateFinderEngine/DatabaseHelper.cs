@@ -112,7 +112,7 @@ namespace DuplicateFinderEngine {
 		public static void SaveDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
 			Logger.Instance.Info(string.Format(Properties.Resources.SaveScannedFilesToDisk0N0Files, videoFiles.Count));
 			using (var stream = new FileStream(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
-				"ScannedFiles.db"), FileMode.OpenOrCreate)) {
+				"ScannedFiles.db"), FileMode.Create)) {
 				Serializer.Serialize(stream, videoFiles.Values.ToList());
 			}
 		}
