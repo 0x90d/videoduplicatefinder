@@ -58,24 +58,24 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 					}
 
 					if (currentObject == JsonObjects.Streams) {
-						lastKey = json.GetStringValue();
+						lastKey = json.GetString();
 						streams[currentStream].Add(lastKey, null);
 					}
 					else if (currentObject == JsonObjects.Format) {
-						lastKey = json.GetStringValue();
+						lastKey = json.GetString();
 						format.Add(lastKey, null);
 					}
 					break;
 				case JsonTokenType.String:
 					if (currentObject == JsonObjects.Streams) {
-						streams[currentStream][lastKey] = json.GetStringValue();
+						streams[currentStream][lastKey] = json.GetString();
 					}
 					else if (currentObject == JsonObjects.Format) {
-						format[lastKey] = json.GetStringValue();
+						format[lastKey] = json.GetString();
 					}
 					break;
 				case JsonTokenType.Number:
-					if (!json.TryGetInt32Value(out int valueInteger)) {
+					if (!json.TryGetInt32(out int valueInteger)) {
 #if DEBUG
 						System.Diagnostics.Trace.TraceWarning($"JSON number parse error: \"{lastKey}\" = {System.Text.Encoding.UTF8.GetString(valueSpan.ToArray())}, file = {file}");
 #endif
@@ -91,7 +91,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 					break;
 				case JsonTokenType.True:
 				case JsonTokenType.False:
-					bool valueBool = json.GetBooleanValue();
+					bool valueBool = json.GetBoolean();
 					if (currentObject == JsonObjects.Streams) {
 						streams[currentStream][lastKey] = valueBool;
 					}
