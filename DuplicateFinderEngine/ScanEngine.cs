@@ -21,8 +21,6 @@ namespace DuplicateFinderEngine {
 		public event EventHandler DatabaseVideosExportedToCSV;
 		public int ScanProgressMaxValue;
 		public int ScanProgressValue;
-		public TimeSpan TimeElapsed;
-		public TimeSpan RemainingTime;
 		private bool _isScanning;
 		private readonly Stopwatch SearchSW = new Stopwatch();
 
