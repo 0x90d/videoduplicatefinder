@@ -6,6 +6,13 @@ namespace VideoDuplicateFinderWindows {
 		public StringInputBox() {
 			InitializeComponent();
 			DataContext = this;
+			Loaded += StringInputBox_Loaded;
+		}
+
+		private void StringInputBox_Loaded(object sender, System.Windows.RoutedEventArgs e) {
+			Loaded -= StringInputBox_Loaded;
+			TextBoxInput.Focus();
+			TextBoxInput.SelectAll();
 		}
 
 		public string Message { get; set; }

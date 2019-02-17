@@ -21,7 +21,7 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <Label Content="{Binding Message}"/>
-            <TextBox VerticalContentAlignment="Center" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
+            <TextBox x:Name="TextBoxInput" VerticalContentAlignment="Center" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
         </Grid>
         <Grid Grid.Row="1" Margin="5">
             <Grid.ColumnDefinitions>
