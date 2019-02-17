@@ -7,6 +7,19 @@ namespace VideoDuplicateFinderWindows {
 			InitializeComponent();
 			DataContext = this;
 			Loaded += StringInputBox_Loaded;
+			TextBoxInput.PreviewKeyDown += TextBoxInput_PreviewKeyDown;
+		}
+
+		private void TextBoxInput_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
+			if (e.Key == System.Windows.Input.Key.Enter) {
+				e.Handled = true;
+				Button_Click(null, null);
+			}
+			else if (e.Key == System.Windows.Input.Key.Escape) {
+				e.Handled = true;
+				DialogResult = false;
+				Close();
+			}
 		}
 
 		private void StringInputBox_Loaded(object sender, System.Windows.RoutedEventArgs e) {
