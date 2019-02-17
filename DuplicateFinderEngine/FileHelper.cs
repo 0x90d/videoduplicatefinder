@@ -2,13 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace DuplicateFinderEngine {
 	public static class FileHelper {
 
-		public static readonly string[] ImageExtensions = new[] { "jpg", "jpeg", "png", "gif", "bmp", "tiff" };
-		public static readonly string[] VideoExtensions = new[] { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob", "ts" };
+		public static readonly string[] ImageExtensions = { "jpg", "jpeg", "png", "gif", "bmp", "tiff" };
+		public static readonly string[] VideoExtensions = { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob", "ts" };
 		public static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 
 		// '' <summary>
@@ -23,7 +22,7 @@ namespace DuplicateFinderEngine {
 					files = files.Concat(Directory.EnumerateDirectories(initial)
 						.Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
 						.Where(d => !ignoreReadonly || (new DirectoryInfo(d).Attributes & FileAttributes.ReadOnly) == 0)
-						.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, recursive, includeImages, excludeFolders)));
+						.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, recursive: true, includeImages, excludeFolders)));
 				return files.ToList();
 			}
 			catch (Exception ex) {
