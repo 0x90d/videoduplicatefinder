@@ -22,7 +22,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 		/// <param name="file">The file the JSON output format is about</param>
 		/// <returns><see cref="MediaInfo"/> containing information from FFprobe output</returns>
 		public static MediaInfo Read(byte[] data, string file) {
-			var json = new Utf8JsonReader(data, isFinalBlock: true, state: default);
+			var json = new Utf8JsonReader(data, isFinalBlock: false, state: default);
 
 			var streams = new List<Dictionary<string, object>>();
 			var format = new Dictionary<string, object>();
