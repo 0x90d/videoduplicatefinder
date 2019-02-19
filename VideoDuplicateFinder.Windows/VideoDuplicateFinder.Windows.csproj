@@ -37,24 +37,6 @@
   </ItemGroup>-->
 
   <ItemGroup>
-    <Reference Include="PresentationCore">
-      <HintPath>PresentationCore</HintPath>
-    </Reference>
-    <Reference Include="PresentationFramework">
-      <HintPath>PresentationFramework</HintPath>
-    </Reference>
-    <Reference Include="System">
-      <HintPath>System</HintPath>
-    </Reference>
-    <Reference Include="System.Xaml">
-      <HintPath>System.Xaml</HintPath>
-    </Reference>
-    <Reference Include="WindowsBase">
-      <HintPath>WindowsBase</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Page Update="MVVM\StringInputBox.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
