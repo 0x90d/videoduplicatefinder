@@ -12,7 +12,7 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 FFmpeg and FFprobe is required.
 
 #### Windows user:
-Get latest package from https://ffmpeg.zeranoe.com/builds/ and extract ffmpeg.exe and ffprobe into the same directory where VideoDuplicateFinderWindows.exe is placed in.
+FFmpeg and FFprobe are already included. Otherwise get latest package from https://ffmpeg.zeranoe.com/builds/ and extract ffmpeg.exe and ffprobe into the same directory where VideoDuplicateFinderWindows.exe is placed in.
 
 #### Linux user:
 Install latest ffmpeg and ffprobe the usual way and verify PATH environment variable is set. Also make sure you got **libgdiplus** installed.
