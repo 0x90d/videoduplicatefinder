@@ -80,8 +80,8 @@ namespace DuplicateFinderEngine {
 					mediaInfoStream?.BitRate,
 					mediaInfoStream?.CodecName,
 					mediaInfoStream?.CodecLongName,
-					videoFile?.mediaInfo?.Duration.TotalMinutes ?? 0,
-					videoFile?.mediaInfo?.Duration.ToString(),
+					videoFile.mediaInfo?.Duration.TotalMinutes ?? 0,
+					videoFile.mediaInfo?.Duration.ToString(),
 					videoFile.IsImage,
 					videoFile.Flags.Has(EntryFlags.ManuallyExcluded),
 					(videoFile.Flags & EntryFlags.AllErrors).ToString());

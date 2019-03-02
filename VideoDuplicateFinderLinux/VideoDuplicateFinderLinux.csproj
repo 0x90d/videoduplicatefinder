@@ -26,7 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DuplicateFinderEngine\DuplicateFinderEngine.csproj" />
-  </ItemGroup>
+  </ItemGroup>  
   <ItemGroup>
     <Compile Update="MessageBoxView.xaml.cs">
       <DependentUpon>MessageBoxView.xaml</DependentUpon>
