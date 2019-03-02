@@ -7,6 +7,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 	sealed class FFmpegWrapper : IDisposable {
 		private Process FFMpegProcess;
 		private readonly TimeSpan ExecutionTimeout = new TimeSpan(0, 0, 15);
+		const int MaximumRetries = 3;
 		private string InputFile;
 		public byte[] GetVideoThumbnail(string inputFile, float frameTime, bool grayScale) {
 			InputFile = inputFile;
@@ -19,16 +20,16 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 			return RunFFmpeg(inputFile, settings);
 		}
 
-		void WaitFFMpegProcessForExit() {
-			if (FFMpegProcess.HasExited) return;
+		//void WaitFFMpegProcessForExit() {
+		//	if (FFMpegProcess.HasExited) return;
 
-			var milliseconds = (int)ExecutionTimeout.TotalMilliseconds;
-			if (FFMpegProcess.WaitForExit(milliseconds)) return;
-			EnsureFFMpegProcessStopped();
-			Logger.Instance.Info(string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
-			throw new FFMpegException(-2,
-				string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
-		}
+		//	var milliseconds = (int)ExecutionTimeout.TotalMilliseconds;
+		//	if (FFMpegProcess.WaitForExit(milliseconds)) return;
+		//	EnsureFFMpegProcessStopped();
+		//	Logger.Instance.Info(string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
+		//	throw new FFMpegException(-2,
+		//		string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
+		//}
 		void EnsureFFMpegProcessStopped() {
 			if (FFMpegProcess == null || FFMpegProcess.HasExited) return;
 			try {
@@ -37,7 +38,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 			catch { }
 		}
 
-		internal byte[] RunFFmpeg(string input, FFmpegSettings settings) {
+		private byte[] RunFFmpeg(string input, FFmpegSettings settings) {
 			byte[] data;
 			try {
 				var arguments = $" -hide_banner -loglevel panic -y -ss {settings.Seek.ToString(CultureInfo.InvariantCulture)} -i \"{input}\" -t 1 -f {settings.OutputFormat} -vframes 1 {settings.VideoFrameSize} \"-\"";
@@ -65,7 +66,22 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 				//start reading here, otherwise the streams fill up and ffmpeg will block forever
 				var imgDataTask = FFMpegProcess.StandardOutput.BaseStream.CopyToAsync(ms);
 
-				WaitFFMpegProcessForExit();
+				if (!FFMpegProcess.HasExited) {
+					//Wait for process to exit
+					var milliseconds = (int)ExecutionTimeout.TotalMilliseconds;
+					var numberOfRetries = 0;
+					if (!FFMpegProcess.WaitForExit(milliseconds) && numberOfRetries < MaximumRetries) {
+						numberOfRetries++;
+					}
+
+					if (numberOfRetries == MaximumRetries) {
+						//Give up
+						EnsureFFMpegProcessStopped();
+						Logger.Instance.Info(string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
+						throw new FFMpegException(-2,
+							string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
+					}
+				}
 
 				imgDataTask.Wait(ExecutionTimeout);
 				data = ms.ToArray();
