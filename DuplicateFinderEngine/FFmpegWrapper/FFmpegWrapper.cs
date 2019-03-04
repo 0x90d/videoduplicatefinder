@@ -70,7 +70,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 					//Wait for process to exit
 					var milliseconds = (int)ExecutionTimeout.TotalMilliseconds;
 					var numberOfRetries = 0;
-					if (!FFMpegProcess.WaitForExit(milliseconds) && numberOfRetries < MaximumRetries) {
+					while (!FFMpegProcess.WaitForExit(milliseconds) && numberOfRetries < MaximumRetries) {
 						numberOfRetries++;
 					}
 
