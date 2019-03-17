@@ -31,3 +31,9 @@ sudo apt-get install libgdiplus
 # License
 Video Duplicate Finder is licensed under GPLv3  
 Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licesed under LGPL 2.1 / GPL v2
+
+
+# Compiling
+- Daily .NET Core 3.x SDK builds https://github.com/dotnet/core-setup#daily-builds
+- Visual Studio 2019
+- For Linux: Avalonia
