@@ -52,9 +52,6 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 						RedirectStandardOutput = true,
 					};
 
-				if (FFMpegProcess != null)
-					throw new InvalidOperationException(Properties.Resources.FFMpegProcessIsAlreadyStarted);
-
 				FFMpegProcess = Process.Start(processStartInfo);
 				if (FFMpegProcess == null) {
 					Logger.Instance.Info(Properties.Resources.FFMpegProcessWasAborted);
@@ -89,7 +86,10 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 				FFMpegProcess?.Close();
 
 			}
-			catch (Exception) {
+			catch (Exception e) {
+#if DEBUG
+				Trace.WriteLine(e);
+#endif
 				EnsureFFMpegProcessStopped();
 				throw;
 			}
