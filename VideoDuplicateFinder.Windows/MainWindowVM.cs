@@ -344,22 +344,6 @@ namespace VideoDuplicateFinderWindows {
 				OnPropertyChanged(nameof(IgnoreReadOnlyFolders));
 			}
 		}
-		public bool IgnoreHiddenFolders {
-			get => Scanner.Settings.IgnoreHiddenFolders;
-			set {
-				if (value == Scanner.Settings.IgnoreHiddenFolders) return;
-				Scanner.Settings.IgnoreHiddenFolders = value;
-				OnPropertyChanged(nameof(IgnoreHiddenFolders));
-			}
-		}
-		public bool IgnoreSystemFolders {
-			get => Scanner.Settings.IgnoreSystemFolders;
-			set {
-				if (value == Scanner.Settings.IgnoreSystemFolders) return;
-				Scanner.Settings.IgnoreSystemFolders = value;
-				OnPropertyChanged(nameof(IgnoreSystemFolders));
-			}
-		}
 		public byte Threshhold {
 			get => Scanner.Settings.Threshhold;
 			set {
