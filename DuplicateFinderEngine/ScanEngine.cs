@@ -135,7 +135,7 @@ namespace DuplicateFinderEngine {
 		private int processedFiles;
 		private DateTime startTime = DateTime.Now;
 		private DateTime lastProgressUpdate = DateTime.MinValue;
-		private TimeSpan progressUpdateItvl = TimeSpan.FromMilliseconds(300);
+		private static readonly TimeSpan progressUpdateItvl = TimeSpan.FromMilliseconds(300);
 		private void InitProgress(int count) {
 			startTime = DateTime.Now;
 			ScanProgressMaxValue = count;
