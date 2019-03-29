@@ -19,10 +19,10 @@
     <None Remove="MessageBoxView.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.7.1-build1097-beta" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.7.1-build1097-beta" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.7.1-build1097-beta" />
-    <PackageReference Include="System.Drawing.Common" Version="4.6.0-preview.19073.11" />
+    <PackageReference Include="Avalonia" Version="0.7.1-cibuild0001742-beta" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.7.1-cibuild0001742-beta" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="0.7.1-cibuild0001742-beta" />
+    <PackageReference Include="System.Drawing.Common" Version="4.6.0-preview4.19164.7" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DuplicateFinderEngine\DuplicateFinderEngine.csproj" />
