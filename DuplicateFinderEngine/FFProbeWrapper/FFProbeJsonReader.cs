@@ -24,6 +24,8 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 		public static MediaInfo Read(byte[] data, string file) {
 			var json = new Utf8JsonReader(data, isFinalBlock: false, state: default);
 
+			var text = System.Text.Encoding.UTF8.GetString(data);
+
 			var streams = new List<Dictionary<string, object>>();
 			var format = new Dictionary<string, object>();
 
@@ -111,10 +113,13 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 			if (format.ContainsKey("duration") && TimeSpan.TryParse((string)format["duration"], out var duration))
 				info.Duration = duration;
 
+			var foundBitRate = false;
 			for (int i = 0; i < streams.Count; i++) {
 				info.Streams[i] = new MediaInfo.StreamInfo();
-				if (streams[i].ContainsKey("bit_rate") && long.TryParse((string)streams[i]["bit_rate"], out var bitrate))
+				if (streams[i].ContainsKey("bit_rate") && long.TryParse((string)streams[i]["bit_rate"], out var bitrate)) {
+					foundBitRate = true;
 					info.Streams[i].BitRate = bitrate;
+				}
 				if (streams[i].ContainsKey("width"))
 					info.Streams[i].Width = (int)streams[i]["width"];
 				if (streams[i].ContainsKey("height"))
@@ -145,6 +150,8 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 				}
 
 			}
+			if (!foundBitRate && info.Streams.Length > 0 && format.ContainsKey("bit_rate") && long.TryParse((string)format["bit_rate"], out var formatBitrate))
+				info.Streams[0].BitRate = formatBitrate;
 
 			return info;
 		}
