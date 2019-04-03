@@ -23,8 +23,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 		/// <returns><see cref="MediaInfo"/> containing information from FFprobe output</returns>
 		public static MediaInfo Read(byte[] data, string file) {
 			var json = new Utf8JsonReader(data, isFinalBlock: false, state: default);
-
-			var text = System.Text.Encoding.UTF8.GetString(data);
+			
 
 			var streams = new List<Dictionary<string, object>>();
 			var format = new Dictionary<string, object>();
