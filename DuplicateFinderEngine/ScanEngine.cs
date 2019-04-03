@@ -40,8 +40,10 @@ namespace DuplicateFinderEngine {
 			positionList.Clear();
 			ElapsedTimer.Reset();
 			SearchSW.Reset();
+			float positionCounter = 0f;
 			for (var i = 0; i < Settings.ThumbnailCount; i++) {
-				positionList.Add(1.0F / (Settings.ThumbnailCount + 1));
+				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
+				positionList.Add(positionCounter);
 			}
 			_isScanning = true;
 			m_pauseTokeSource = new PauseTokenSource();
