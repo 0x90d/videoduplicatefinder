@@ -43,22 +43,20 @@ namespace VideoDuplicateFinderWindows
 
         private static BitmapImage BitmapToBitmapImage(Image src)
         {
-            using (var memory = new MemoryStream())
-            {
-                var bmp = new Bitmap(src);
-                bmp.Save(memory, ImageFormat.Jpeg);
-                memory.Position = 0;
+			using var memory = new MemoryStream();
+			var bmp = new Bitmap(src);
+			bmp.Save(memory, ImageFormat.Jpeg);
+			memory.Position = 0;
 
-                var bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.StreamSource = memory;
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.EndInit();
-                bitmapImage.Freeze();
-                return bitmapImage;
-            }
-        }
-        public static BitmapImage JoinImages(List<Image> pImgList)
+			var bitmapImage = new BitmapImage();
+			bitmapImage.BeginInit();
+			bitmapImage.StreamSource = memory;
+			bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+			bitmapImage.EndInit();
+			bitmapImage.Freeze();
+			return bitmapImage;
+		}
+        public static BitmapImage? JoinImages(List<Image> pImgList)
         {
 			if(pImgList.Count == 0) return null;
             if (pImgList.Count == 1)

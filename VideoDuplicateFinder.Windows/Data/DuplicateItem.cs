@@ -11,23 +11,23 @@ namespace VideoDuplicateFinderWindows.Data {
 			Path = file.Path;
 			Folder = file.Folder;
 			Duration = file.Duration;
-			Thumbnail = Utils.JoinImages(file.Thumbnail);
+			Thumbnail = Utils.JoinImages(file.Thumbnail) ?? new BitmapImage();
 			SizeLong = file.SizeLong;
 			Size = file.Size;
-			FrameSize = file.FrameSize;
+			FrameSize = file.FrameSize ?? string.Empty;
 			FrameSizeInt = file.FrameSizeInt;
-			AudioChannel = file.AudioChannel;
-			AudioFormat = file.AudioFormat;
+			AudioChannel = file.AudioChannel ?? string.Empty;
+			AudioFormat = file.AudioFormat ?? string.Empty;
 			AudioSampleRate = file.AudioSampleRate;
 			GroupId = file.GroupId;
 			Fps = file.Fps;
 			DateCreated = file.DateCreated;
-			Format = file.Format;
+			Format = file.Format ?? string.Empty;
 			BitRateKbs = file.BitRateKbs;
 			Similarity = file.Similarity;
 			IsImage = file.IsImage;
 			file.ThumbnailUpdated += () => {
-				Thumbnail = Utils.JoinImages(file.Thumbnail);
+				Thumbnail = Utils.JoinImages(file.Thumbnail) ?? new BitmapImage();
 				Application.Current.Dispatcher.BeginInvoke(new Action(() => {
 					OnPropertyChanged(nameof(Thumbnail));
 				}), System.Windows.Threading.DispatcherPriority.Background);
@@ -157,9 +157,9 @@ namespace VideoDuplicateFinderWindows.Data {
 			return GroupId.Equals(other.GroupId);
 		}
 
-		public override bool Equals(object obj) {
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
+		public override bool Equals(object? obj) {
+			if (obj == null) return false;
+			if (this == null) return true;
 			if (obj.GetType() != GetType()) return false;
 			return Equals((DuplicateItemViewModel)obj);
 		}

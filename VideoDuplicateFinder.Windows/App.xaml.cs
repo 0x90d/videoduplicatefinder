@@ -13,7 +13,7 @@ namespace VideoDuplicateFinderWindows {
 	public static class Startup {
 
 		static void InstallExceptionHandlers() {
-			TaskScheduler.UnobservedTaskException += (s, e) => { ShowException("TaskScheduler.UnobservedTask", e.Exception); e.SetObserved(); };
+			TaskScheduler.UnobservedTaskException += (s, e) => { ShowException("TaskScheduler.UnobservedTask", e.Exception); e!.SetObserved(); };
 
 			if (Debugger.IsAttached) return;
 
@@ -21,7 +21,7 @@ namespace VideoDuplicateFinderWindows {
 			Dispatcher.CurrentDispatcher.UnhandledException += (s, e) => { ShowException("CurrentDispatcher.Unhandled", e.Exception); e.Handled = true; };
 		}
 
-		static void ShowException(string type, Exception ex) {
+		static void ShowException(string type, Exception? ex) {
 			string msg = ex?.ToString() ?? "Unknown exception";
 			MessageBox.Show(msg, $"{type}Exception", MessageBoxButton.OK, MessageBoxImage.Error);
 		}

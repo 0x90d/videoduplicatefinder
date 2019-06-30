@@ -15,7 +15,7 @@ namespace VideoDuplicateFinder.Windows.ViewModels {
 	
 	}
 	class EditDatabaseVM : ViewModelBase {
-		public List<VideoFileEntry> Database { get; private set; }
+		public List<VideoFileEntry>? Database { get; private set; }
 		public DelegateCommand LoadDatabaseCommand => new DelegateCommand(a => {
 			Database = DuplicateFinderEngine.DatabaseHelper.LoadDatabaseAsList();
 			OnPropertyChanged(nameof(Database));

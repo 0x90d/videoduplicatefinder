@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Input;
 
 namespace VideoDuplicateFinderWindows.MVVM
@@ -8,8 +8,10 @@ namespace VideoDuplicateFinderWindows.MVVM
         readonly Action<object> exec;
         readonly Predicate<object> canExec;
 
-        public DelegateCommand(Action<object> exec, Predicate<object> canExec = null)
-        {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+		public DelegateCommand(Action<object> exec, Predicate<object> canExec = null)
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+		{
             this.exec = exec ?? throw new ArgumentNullException(nameof(exec));
             this.canExec = canExec;
         }
@@ -30,8 +32,10 @@ namespace VideoDuplicateFinderWindows.MVVM
         readonly Action<T> exec;
         readonly Predicate<T> canExec;
 
-        public DelegateCommand(Action<T> exec, Predicate<T> canExec = null)
-        {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+		public DelegateCommand(Action<T> exec, Predicate<T> canExec = null)
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+		{
             this.exec = exec ?? throw new ArgumentNullException(nameof(exec));
             this.canExec = canExec;
         }
