@@ -17,6 +17,8 @@ FFmpeg and FFprobe is required.
 
 Latest build: [![Build status](https://ci.appveyor.com/api/projects/status/github/0x90d/videoduplicatefinder?branch=master&svg=true)](https://ci.appveyor.com/project/0x90d/videoduplicatefinder/branch/master/artifacts) (You need to download FFmpeg and FFprobe yourself, see below!)
 
+# Requirements
+
 #### Windows user:
 FFmpeg and FFprobe are already included except for AppVeyor builds. Otherwise get latest package from https://ffmpeg.zeranoe.com/builds/ and extract ffmpeg.exe and ffprobe into the same directory where VideoDuplicateFinderWindows.exe is placed in.
 
