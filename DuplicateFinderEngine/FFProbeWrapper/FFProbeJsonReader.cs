@@ -31,7 +31,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 			var currentStream = -1;
 
 			var currentObject = JsonObjects.None;
-			string lastKey = null;
+			string? lastKey = null;
 
 			while (json.Read()) {
 				JsonTokenType tokenType = json.TokenType;
@@ -60,18 +60,18 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 
 					if (currentObject == JsonObjects.Streams) {
 						lastKey = json.GetString();
-						streams[currentStream].Add(lastKey, null);
+						streams[currentStream].Add(lastKey, new object());
 					}
 					else if (currentObject == JsonObjects.Format) {
 						lastKey = json.GetString();
-						format.Add(lastKey, null);
+						format.Add(lastKey, new object());
 					}
 					break;
 				case JsonTokenType.String:
-					if (currentObject == JsonObjects.Streams) {
+					if (currentObject == JsonObjects.Streams && lastKey != null) {
 						streams[currentStream][lastKey] = json.GetString();
 					}
-					else if (currentObject == JsonObjects.Format) {
+					else if (currentObject == JsonObjects.Format && lastKey != null) {
 						format[lastKey] = json.GetString();
 					}
 					break;
@@ -83,20 +83,20 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 						break;
 					}
 
-					if (currentObject == JsonObjects.Streams) {
+					if (currentObject == JsonObjects.Streams && lastKey != null) {
 						streams[currentStream][lastKey] = valueInteger;
 					}
-					else if (currentObject == JsonObjects.Format) {
+					else if (currentObject == JsonObjects.Format && lastKey != null) {
 						format[lastKey] = valueInteger;
 					}
 					break;
 				case JsonTokenType.True:
 				case JsonTokenType.False:
 					bool valueBool = json.GetBoolean();
-					if (currentObject == JsonObjects.Streams) {
+					if (currentObject == JsonObjects.Streams && lastKey != null) {
 						streams[currentStream][lastKey] = valueBool;
 					}
-					else if (currentObject == JsonObjects.Format) {
+					else if (currentObject == JsonObjects.Format && lastKey != null) {
 						format[lastKey] = valueBool;
 					}
 					break;

@@ -70,6 +70,42 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Audio Channel.
+        /// </summary>
+        public static string AudioChannel {
+            get {
+                return ResourceManager.GetString("AudioChannel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Audio Format.
+        /// </summary>
+        public static string AudioFormat {
+            get {
+                return ResourceManager.GetString("AudioFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Audio Sample Rate.
+        /// </summary>
+        public static string AudioSampleRate {
+            get {
+                return ResourceManager.GetString("AudioSampleRate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bit Rate.
+        /// </summary>
+        public static string BitRate {
+            get {
+                return ResourceManager.GetString("BitRate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancel.
         /// </summary>
         public static string Cancel {
@@ -205,6 +241,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duration.
+        /// </summary>
+        public static string Duration {
+            get {
+                return ResourceManager.GetString("Duration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Elapsed time: .
         /// </summary>
         public static string ElapsedTime {
@@ -313,11 +358,29 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File Format.
+        /// </summary>
+        public static string FileFormat {
+            get {
+                return ResourceManager.GetString("FileFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File Name.
         /// </summary>
         public static string FileName {
             get {
                 return ResourceManager.GetString("FileName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File Size.
+        /// </summary>
+        public static string FileSize {
+            get {
+                return ResourceManager.GetString("FileSize", resourceCulture);
             }
         }
         
@@ -363,6 +426,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string Filter {
             get {
                 return ResourceManager.GetString("Filter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Frames per Second.
+        /// </summary>
+        public static string FramesPerSecond {
+            get {
+                return ResourceManager.GetString("FramesPerSecond", resourceCulture);
             }
         }
         
@@ -417,6 +489,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string LatestRelease {
             get {
                 return ResourceManager.GetString("LatestRelease", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Load Database.
+        /// </summary>
+        public static string LoadDatabase {
+            get {
+                return ResourceManager.GetString("LoadDatabase", resourceCulture);
             }
         }
         
@@ -520,6 +601,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Resolution.
+        /// </summary>
+        public static string Resolution {
+            get {
+                return ResourceManager.GetString("Resolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Resume.
         /// </summary>
         public static string Resume {
@@ -588,6 +678,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string SelectLowestDurationLowestQualityKeepLongestBestQuality {
             get {
                 return ResourceManager.GetString("SelectLowestDurationLowestQualityKeepLongestBestQuality", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Similarity.
+        /// </summary>
+        public static string Similarity {
+            get {
+                return ResourceManager.GetString("Similarity", resourceCulture);
             }
         }
         
@@ -759,6 +858,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         public static string TotalSizeRemoved {
             get {
                 return ResourceManager.GetString("TotalSizeRemoved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Video Format.
+        /// </summary>
+        public static string VideoFormat {
+            get {
+                return ResourceManager.GetString("VideoFormat", resourceCulture);
             }
         }
         

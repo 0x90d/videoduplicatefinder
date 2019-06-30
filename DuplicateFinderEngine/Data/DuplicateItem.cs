@@ -11,7 +11,7 @@ namespace DuplicateFinderEngine.Data {
 			Folder = file.Folder;
 			if (!file.IsImage && file.mediaInfo?.Streams != null) {
 				Duration = file.mediaInfo.Duration;
-				
+
 				for (var i = 0; i < file.mediaInfo.Streams.Length; i++) {
 					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase)) {
 						Format = file.mediaInfo.Streams[i].CodecName;
@@ -25,6 +25,15 @@ namespace DuplicateFinderEngine.Data {
 						AudioChannel = file.mediaInfo.Streams[i].ChannelLayout;
 						AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
 					}
+				}
+
+			}
+			else {
+				//We have only one stream if its an image
+				//Breaking change, existing databases may not have these values
+				if (file.mediaInfo != null) {
+					FrameSize = file.mediaInfo.Streams[0].Width + "x" + file.mediaInfo.Streams[0].Height;
+					FrameSizeInt = file.mediaInfo.Streams[0].Width + file.mediaInfo.Streams[0].Height;
 				}
 			}
 			var fi = new FileInfo(Path);
@@ -52,14 +61,14 @@ namespace DuplicateFinderEngine.Data {
 		[DisplayName("Duration")]
 		public TimeSpan Duration { get; }
 		[DisplayName("Frame Size")]
-		public string FrameSize { get; set; }
+		public string? FrameSize { get; set; }
 		public int FrameSizeInt { get; set; }
 		[DisplayName("Format")]
-		public string Format { get; set; }
+		public string? Format { get; set; }
 		[DisplayName("Audio Format")]
-		public string AudioFormat { get; }
+		public string? AudioFormat { get; }
 		[DisplayName("Audio Channel")]
-		public string AudioChannel { get; }
+		public string? AudioChannel { get; }
 		[DisplayName("Audio Sample Rate")]
 		public int AudioSampleRate { get; }
 		[DisplayName("Bitrate Kbs")]
@@ -71,10 +80,10 @@ namespace DuplicateFinderEngine.Data {
 
 		public bool IsImage { get; }
 		public event Action ThumbnailUpdated;
-		internal void UpdateThumbnails(List<Image> th) {
-			if(th == null) return;
+		internal void UpdateThumbnails(List<Image>? th) {
+			if (th == null) return;
 			Thumbnail = th;
-			ThumbnailUpdated?.Invoke(); 
+			ThumbnailUpdated?.Invoke();
 		}
 	}
 }

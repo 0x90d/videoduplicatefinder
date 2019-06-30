@@ -5,10 +5,10 @@ using System.IO;
 
 namespace DuplicateFinderEngine.FFmpegWrapper {
 	sealed class FFmpegWrapper : IDisposable {
-		private Process FFMpegProcess;
+		private Process? FFMpegProcess;
 		private readonly TimeSpan ExecutionTimeout = new TimeSpan(0, 0, 15);
 		const int MaximumRetries = 3;
-		private string InputFile;
+		private string? InputFile;
 		public byte[] GetVideoThumbnail(string inputFile, float frameTime, bool grayScale) {
 			InputFile = inputFile;
 			var settings = new FFmpegSettings {

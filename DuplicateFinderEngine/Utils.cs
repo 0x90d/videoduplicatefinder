@@ -49,10 +49,10 @@ namespace DuplicateFinderEngine {
 
 						if (string.IsNullOrEmpty(FfmpegPath))
 							FfmpegPath = files.FirstOrDefault(x => x.Name.StartsWith(FFmpegExecutableName, true, CultureInfo.InvariantCulture))
-								?.FullName;
+								?.FullName ?? string.Empty;
 						if (string.IsNullOrEmpty(FfprobePath))
 							FfprobePath = files.FirstOrDefault(x => x.Name.StartsWith(FFprobeExecutableName, true, CultureInfo.InvariantCulture))
-								?.FullName;
+								?.FullName ?? string.Empty;
 					}
 					catch (Exception e) {
 							Console.WriteLine(e);
@@ -101,9 +101,7 @@ namespace DuplicateFinderEngine {
 			if (!Path.IsPathRooted(path2))
 				Path.Combine(path1, path2);
 
-			path2 = path2.TrimStart(Path.DirectorySeparatorChar);
-			path2 = path2.TrimStart(Path.AltDirectorySeparatorChar);
-
+			path2 = path2.TrimStart(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
 			return Path.Combine(path1, path2);
 		}
 	}

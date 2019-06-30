@@ -1,16 +1,15 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             >
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
         <Grid Margin="10" IsVisible="{Binding IsGroupHeader}">
-            <Border Background="#F0F0F0" >
+            <Border Background="#F0F0F0">
                 <TextBlock
-                Margin="10"
-                FontWeight="Bold"
-                Text="{Binding GroupHeaderTitle}"
-                TextWrapping="Wrap" />
+                    Margin="10"
+                    FontWeight="Bold"
+                    Text="{Binding GroupHeaderTitle}"
+                    TextWrapping="Wrap" />
             </Border>
         </Grid>
-        <Grid Margin="10"  IsVisible="{Binding !IsGroupHeader}">
+        <Grid Margin="10" IsVisible="{Binding !IsGroupHeader}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -21,24 +20,27 @@
                 <ColumnDefinition Width="100" />
                 <ColumnDefinition Width="75" />
             </Grid.ColumnDefinitions>
-            <Border Background="{Binding BackgroundBrush}" Width="5" Margin="0,0,5,0"/>
+            <Border
+                Width="5"
+                Margin="0,0,5,0"
+                Background="{Binding BackgroundBrush}" />
             <CheckBox
-            Grid.Column="1"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            IsChecked="{Binding Checked}" />
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsChecked="{Binding Checked}" />
 
             <Image
-            Grid.Column="2"
-            Margin="10,0,0,0"
-            Source="{Binding Thumbnail}" />
+                Grid.Column="2"
+                Margin="10,0,0,0"
+                Source="{Binding Thumbnail}" />
 
 
             <TextBlock
-            Grid.Column="3"
-            Margin="10"
-            Text="{Binding Path}"
-            TextWrapping="Wrap" />
+                Grid.Column="3"
+                Margin="10"
+                Text="{Binding Path}"
+                TextWrapping="Wrap" />
 
             <Grid Grid.Column="4" IsVisible="{Binding IsImage}">
                 <Grid.RowDefinitions>
@@ -47,22 +49,22 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <TextBlock
-                Grid.Row="0"
-                Margin="2"
-                Text="{Binding Format, Mode=OneWay}"
-                TextWrapping="Wrap" />
+                    Grid.Row="0"
+                    Margin="2"
+                    Text="{Binding Format, Mode=OneWay}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="1"
-                Margin="2"
-                Foreground="{Binding FrameSizeForeground}"
-                Text="{Binding FrameSize}"
-                TextWrapping="Wrap" />
+                    Grid.Row="1"
+                    Margin="2"
+                    Foreground="{Binding FrameSizeForeground}"
+                    Text="{Binding FrameSize}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="2"
-                Margin="2"
-                Foreground="{Binding SizeForeground}"
-                Text="{Binding Size}"
-                TextWrapping="Wrap" />
+                    Grid.Row="2"
+                    Margin="2"
+                    Foreground="{Binding SizeForeground}"
+                    Text="{Binding Size}"
+                    TextWrapping="Wrap" />
             </Grid>
 
             <Grid Grid.Column="4" IsVisible="{Binding !IsImage}">
@@ -72,78 +74,78 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <TextBlock
-                Grid.Row="0"
-                Margin="2"
-                Foreground="{Binding DurationForeground}"
-                Text="{Binding Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
-                TextWrapping="Wrap" />
+                    Grid.Row="0"
+                    Margin="2"
+                    Foreground="{Binding DurationForeground}"
+                    Text="{Binding Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="1"
-                Margin="2"
-                Foreground="{Binding FrameSizeForeground}"
-                Text="{Binding FrameSize}"
-                TextWrapping="Wrap" />
+                    Grid.Row="1"
+                    Margin="2"
+                    Foreground="{Binding FrameSizeForeground}"
+                    Text="{Binding FrameSize}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="2"
-                Margin="2"
-                Foreground="{Binding SizeForeground}"
-                Text="{Binding Size}"
-                TextWrapping="Wrap" />
+                    Grid.Row="2"
+                    Margin="2"
+                    Foreground="{Binding SizeForeground}"
+                    Text="{Binding Size}"
+                    TextWrapping="Wrap" />
 
             </Grid>
-            <Grid Grid.Column="5"  IsVisible="{Binding !IsImage}">
+            <Grid Grid.Column="5" IsVisible="{Binding !IsImage}">
                 <Grid.RowDefinitions>
                     <RowDefinition />
                     <RowDefinition />
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <TextBlock
-                Grid.Row="0"
-                Margin="2"
-                Text="{Binding Format, Mode=OneWay}"
-                TextWrapping="Wrap" />
+                    Grid.Row="0"
+                    Margin="2"
+                    Text="{Binding Format, Mode=OneWay}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="1"
-                Margin="2"
-                Text="{Binding Fps, Mode=OneWay, StringFormat=\{0\} fps}"
-                TextWrapping="Wrap" />
+                    Grid.Row="1"
+                    Margin="2"
+                    Text="{Binding Fps, Mode=OneWay, StringFormat=\{0\} fps}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="2"
-                Margin="2"
-                Foreground="{Binding BitRateForeground}"
-                Text="{Binding BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
-                TextWrapping="Wrap" />
+                    Grid.Row="2"
+                    Margin="2"
+                    Foreground="{Binding BitRateForeground}"
+                    Text="{Binding BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
+                    TextWrapping="Wrap" />
             </Grid>
 
-            <Grid Grid.Column="6"  IsVisible="{Binding !IsImage}">
+            <Grid Grid.Column="6" IsVisible="{Binding !IsImage}">
                 <Grid.RowDefinitions>
                     <RowDefinition />
                     <RowDefinition />
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <TextBlock
-                Grid.Row="0"
-                Margin="2"
-                Text="{Binding AudioFormat}"
-                TextWrapping="Wrap" />
+                    Grid.Row="0"
+                    Margin="2"
+                    Text="{Binding AudioFormat}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="1"
-                Margin="2"
-                Text="{Binding AudioChannel}"
-                TextWrapping="Wrap" />
+                    Grid.Row="1"
+                    Margin="2"
+                    Text="{Binding AudioChannel}"
+                    TextWrapping="Wrap" />
                 <TextBlock
-                Grid.Row="2"
-                Margin="2"
-                Text="{Binding AudioSampleRate}"
-                TextWrapping="Wrap" />
+                    Grid.Row="2"
+                    Margin="2"
+                    Text="{Binding AudioSampleRate}"
+                    TextWrapping="Wrap" />
             </Grid>
 
             <TextBlock
-            Grid.Column="7"
-            Margin="10"
-            Text="{Binding Similarity, StringFormat=\{0:F2\}%}"
-            TextWrapping="Wrap" />
+                Grid.Column="7"
+                Margin="10"
+                Text="{Binding Similarity, StringFormat=\{0:F2\}%}"
+                TextWrapping="Wrap" />
         </Grid>
     </Grid>
-    
+
 </UserControl>

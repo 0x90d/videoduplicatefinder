@@ -9,6 +9,8 @@
     <Platforms>AnyCPU</Platforms>
     <AssemblyName>VideoDuplicateFinderWindows</AssemblyName>
     <StartupObject>VideoDuplicateFinderWindows.Startup</StartupObject>
+    <NullableContextOptions>enable</NullableContextOptions>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -16,44 +18,30 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="MVVM\StringInputBox.xaml" />
+    <None Remove="ViewModels\EditDatabaseViewModel.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MahApps.Metro" Version="2.0.0-alpha0391" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DuplicateFinderEngine\DuplicateFinderEngine.csproj" />
   </ItemGroup>
 
-  <!-- Shortcut support, commented as it breaks dotnet publish -->
-  <!--<ItemGroup>
-    <COMReference Include="IWshRuntimeLibrary">
-      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-  </ItemGroup>-->
-
   <ItemGroup>
-    <Page Update="MVVM\StringInputBox.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Update="ViewModels\DuplicateViewModel.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="MVVM\StringInputBox.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Update="ViewModels\EditDatabaseViewModel.xaml.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -25,8 +25,8 @@ namespace DuplicateFinderEngine {
 		private readonly Stopwatch SearchSW = new Stopwatch();
 
 		public Stopwatch ElapsedTimer = new Stopwatch();
-		private PauseTokenSource m_pauseTokeSource;
-		private CancellationTokenSource m_cancelationTokenSource;
+		private PauseTokenSource m_pauseTokeSource = new PauseTokenSource();
+		private CancellationTokenSource m_cancelationTokenSource = new CancellationTokenSource();
 
 
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
@@ -52,12 +52,12 @@ namespace DuplicateFinderEngine {
 			//get files
 			Logger.Instance.Info(Properties.Resources.BuildingFileList);
 			await Task.Run(() => InternalBuildFileList());
-			FilesEnumerated?.Invoke(this, null);
+			FilesEnumerated?.Invoke(this, new EventArgs());
 			//start scan
 			Logger.Instance.Info(Properties.Resources.StartScan);
 			if (!m_cancelationTokenSource.IsCancellationRequested)
 				await Task.Run(() => InternalSearch(m_cancelationTokenSource.Token, m_pauseTokeSource));
-			ScanDone?.Invoke(this, null);
+			ScanDone?.Invoke(this, new EventArgs());
 			Logger.Instance.Info(Properties.Resources.ScanDone);
 			_isScanning = false;
 			ScanProgressValue = 0;
@@ -66,7 +66,7 @@ namespace DuplicateFinderEngine {
 
 		public async void PopulateDuplicateThumbnails() {
 			await Task.Run(() => PopulateThumbnails(m_cancelationTokenSource.Token));
-			ThumbnailsPopulated?.Invoke(this, null);
+			ThumbnailsPopulated?.Invoke(this, new EventArgs());
 		}
 
 		public async void CleanupDatabase() {
@@ -75,7 +75,7 @@ namespace DuplicateFinderEngine {
 				DatabaseFileList = DatabaseHelper.CleanupDatabase(DatabaseFileList);
 				DatabaseHelper.SaveDatabase(DatabaseFileList);
 			});
-			DatabaseCleaned?.Invoke(this, null);
+			DatabaseCleaned?.Invoke(this, new EventArgs());
 		}
 		public async void ExportDatabaseVideosToCSV(bool onlyVideos, bool onlyFlagged) {
 			if (DatabaseFileList.Count == 0) DatabaseFileList = DatabaseHelper.LoadDatabase();
@@ -85,7 +85,7 @@ namespace DuplicateFinderEngine {
 			if (onlyFlagged) db = db.Where(v => v.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.AllErrors));
 
 			await Task.Run(() => DatabaseHelper.ExportDatabaseToCSV(db));
-			DatabaseVideosExportedToCSV?.Invoke(this, null);
+			DatabaseVideosExportedToCSV?.Invoke(this, new EventArgs());
 		}
 		private void InternalBuildFileList() {
 			ScanFileList.Clear();
@@ -300,17 +300,16 @@ namespace DuplicateFinderEngine {
 			public TimeSpan Remaining;
 		}
 
-		private List<Image> GetVideoThumbnail(DuplicateItem videoFile, List<float> positions) {
+		private List<Image>? GetVideoThumbnail(DuplicateItem videoFile, List<float> positions) {
 			var ffMpeg = new FFmpegWrapper.FFmpegWrapper();
 			var images = new List<Image>();
 			try {
 				for (var i = 0; i < positions.Count; i++) {
 					var b = ffMpeg.GetVideoThumbnail(videoFile.Path, Convert.ToSingle(videoFile.Duration.TotalSeconds * positionList[i]), false);
 					if (b == null || b.Length == 0) return null;
-					using (var byteStream = new MemoryStream(b)) {
-						var bitmapImage = Image.FromStream(byteStream);
-						images.Add(bitmapImage);
-					}
+					using var byteStream = new MemoryStream(b);
+					var bitmapImage = Image.FromStream(byteStream);
+					images.Add(bitmapImage);
 				}
 			}
 			catch (FFmpegWrapper.FFMpegException ex) {
@@ -323,7 +322,7 @@ namespace DuplicateFinderEngine {
 			}
 			return images;
 		}
-		private static List<Image> GetImageThumbnail(DuplicateItem videoFile, int count) {
+		private static List<Image>? GetImageThumbnail(DuplicateItem videoFile, int count) {
 			var images = new List<Image>();
 			for (var i = 0; i < count; i++) {
 				Image bitmapImage;
@@ -360,13 +359,13 @@ namespace DuplicateFinderEngine {
 			return images;
 		}
 
-		private (EntryFlags err, List<byte[]>) GetVideoThumbnailAsBitmaps(VideoFileEntry videoFile, List<float> positions) {
+		private (EntryFlags err, List<byte[]>?) GetVideoThumbnailAsBitmaps(VideoFileEntry videoFile, List<float> positions) {
 			var ffMpeg = new FFmpegWrapper.FFmpegWrapper();
 			var images = new List<byte[]>();
 			try {
 				for (var i = 0; i < positions.Count; i++) {
 
-					var b = ffMpeg.GetVideoThumbnail(videoFile.Path, Convert.ToSingle(videoFile.mediaInfo.Duration.TotalSeconds * positionList[i]), true);
+					var b = ffMpeg.GetVideoThumbnail(videoFile.Path, Convert.ToSingle(videoFile.mediaInfo?.Duration.TotalSeconds * positionList[i]), true);
 					if (b == null || b.Length == 0) return (EntryFlags.ThumbnailError, null);
 					var d = ExtensionMethods.VerifyGrayScaleValues(b);
 					if (d == null) return (EntryFlags.TooDark, null);
@@ -382,21 +381,25 @@ namespace DuplicateFinderEngine {
 
 		}
 
-		private static (EntryFlags err, List<byte[]>) GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
+		private static (EntryFlags err, List<byte[]>?) GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
 			var images = new List<byte[]>();
 			for (var i = 0; i < count; i++) {
 				try {
-					using (var byteStream = File.OpenRead(videoFile.Path)) {
-						using (var bitmapImage = Image.FromStream(byteStream)) {
-							var b = new Bitmap(16, 16);
-							using (var g = Graphics.FromImage(b)) {
-								g.DrawImage(bitmapImage, 0, 0, 16, 16);
+					using var byteStream = File.OpenRead(videoFile.Path);
+					using var bitmapImage = Image.FromStream(byteStream);
+					//Set some props while we already loaded the image
+					videoFile.mediaInfo = new FFProbeWrapper.MediaInfo {
+						Streams = new FFProbeWrapper.MediaInfo.StreamInfo[] {
+								new FFProbeWrapper.MediaInfo.StreamInfo { Height = bitmapImage.Height, Width = bitmapImage.Width }
 							}
-							var d = ExtensionMethods.GetGrayScaleValues(b);
-							if (d == null) return (EntryFlags.TooDark, null);
-							images.Add(d);
-						}
+					};
+					var b = new Bitmap(16, 16);
+					using (var g = Graphics.FromImage(b)) {
+						g.DrawImage(bitmapImage, 0, 0, 16, 16);
 					}
+					var d = ExtensionMethods.GetGrayScaleValues(b);
+					if (d == null) return (EntryFlags.TooDark, null);
+					images.Add(d);
 				}
 				catch (Exception ex) {
 					Logger.Instance.Info($"Exception, file: {videoFile.Path}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
@@ -409,7 +412,7 @@ namespace DuplicateFinderEngine {
 
 		private static class ExtensionMethods {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public static byte[] VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
+			public static byte[]? VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
 				int darkPixels = 0;
 				for (int i = 0; i < data.Length; i++) {
 					if (data[i] <= 0x20)
@@ -418,7 +421,7 @@ namespace DuplicateFinderEngine {
 				return 100d / data.Length * darkPixels >= darkProcent ? null : data;
 			}
 
-			public static unsafe byte[] GetGrayScaleValues(Bitmap original, double darkProcent = 80) {
+			public static unsafe byte[]? GetGrayScaleValues(Bitmap original, double darkProcent = 80) {
 				// Lock the bitmap's bits.  
 				var rect = new Rectangle(0, 0, original.Width, original.Height);
 				var bmpData = original.LockBits(rect, ImageLockMode.ReadOnly, original.PixelFormat);

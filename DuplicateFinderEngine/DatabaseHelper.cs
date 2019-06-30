@@ -4,16 +4,15 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using DuplicateFinderEngine.Data;
 using ProtoBuf;
 
 namespace DuplicateFinderEngine {
-	static class DatabaseHelper {
+	public static class DatabaseHelper {
 		public static Dictionary<string, VideoFileEntry> LoadDatabase() {
 			var videoFiles = new Dictionary<string, VideoFileEntry>();
-			var path = new FileInfo(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
+			var path = new FileInfo(Utils.SafePathCombine(FileHelper.CurrentDirectory,
 				"ScannedFiles.db"));
 			if (path.Exists && path.Length == 0) //invalid data
 			{
@@ -29,7 +28,30 @@ namespace DuplicateFinderEngine {
 				videoFiles = Serializer.Deserialize<List<VideoFileEntry>>(file)
 					.ToDictionary(ve => ve.Path, ve => ve);
 			}
-			
+
+			st.Stop();
+			Logger.Instance.Info(string.Format(Properties.Resources.PreviouslyScannedFilesImported, videoFiles.Count, st.Elapsed));
+
+			return videoFiles;
+		}
+		public static List<VideoFileEntry> LoadDatabaseAsList() {
+			var videoFiles = new List<VideoFileEntry>();
+			var path = new FileInfo(Utils.SafePathCombine(FileHelper.CurrentDirectory,
+				"ScannedFiles.db"));
+			if (path.Exists && path.Length == 0) //invalid data
+			{
+				path.Delete();
+				return videoFiles;
+			}
+			if (!path.Exists)
+				return videoFiles;
+			Logger.Instance.Info(Properties.Resources.FoundPreviouslyScannedFilesImporting);
+
+			var st = Stopwatch.StartNew();
+			using (var file = new FileStream(path.FullName, FileMode.Open)) {
+				videoFiles = Serializer.Deserialize<List<VideoFileEntry>>(file);
+			}
+
 			st.Stop();
 			Logger.Instance.Info(string.Format(Properties.Resources.PreviouslyScannedFilesImported, videoFiles.Count, st.Elapsed));
 
@@ -90,10 +112,10 @@ namespace DuplicateFinderEngine {
 			var sb = new StringBuilder();
 			var columnNames = dt.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
 			sb.AppendLine(string.Join(",", columnNames));
-			foreach (DataRow row in dt.Rows) {
-				var fields = row.ItemArray.Select(field =>
-				{
-					string s = field.ToString().Replace("\"", "\"\"");
+			foreach (DataRow? row in dt.Rows) {
+				if (row == null) return;
+				var fields = row.ItemArray.Select(field => {
+					string s = field.ToString()?.Replace("\"", "\"\"") ?? string.Empty;
 					if (s.Contains(','))
 						s = string.Concat("\"", s, "\"");
 					return s;
@@ -101,7 +123,7 @@ namespace DuplicateFinderEngine {
 				sb.AppendLine(string.Join(",", fields));
 			}
 
-			using (var outputFile = new StreamWriter(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "VideoFilesExport.csv"))) {
+			using (var outputFile = new StreamWriter(Utils.SafePathCombine(FileHelper.CurrentDirectory, "VideoFilesExport.csv"))) {
 				outputFile.WriteLine(sb.ToString());
 			}
 
@@ -109,12 +131,12 @@ namespace DuplicateFinderEngine {
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseVideosExportToCSVFinished, st.Elapsed));
 		}
 
-		public static void SaveDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
+		public static void SaveDatabase(Dictionary<string, VideoFileEntry> videoFiles) => SaveDatabase(videoFiles.Values.ToList());
+		public static void SaveDatabase(List<VideoFileEntry> videoFiles) {
 			Logger.Instance.Info(string.Format(Properties.Resources.SaveScannedFilesToDisk0N0Files, videoFiles.Count));
-			using (var stream = new FileStream(Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
-				"ScannedFiles.db"), FileMode.Create)) {
-				Serializer.Serialize(stream, videoFiles.Values.ToList());
-			}
+			using var stream = new FileStream(Utils.SafePathCombine(FileHelper.CurrentDirectory,
+				"ScannedFiles.db"), FileMode.Create);
+			Serializer.Serialize(stream, videoFiles);
 		}
 	}
 }

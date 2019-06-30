@@ -9,7 +9,9 @@ namespace DuplicateFinderEngine {
 		public static readonly string[] ImageExtensions = { "jpg", "jpeg", "png", "gif", "bmp", "tiff" };
 		public static readonly string[] VideoExtensions = { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob", "ts" };
 		public static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
-
+#pragma warning disable CS8601,CS8602 // Dereference of a possibly null reference.
+		public static readonly string CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+#pragma warning restore CS8601,CS8602 // Dereference of a possibly null reference.
 		// '' <summary>
 		// '' This method starts at the specified directory.
 		// '' It traverses all subdirectories.
@@ -42,7 +44,7 @@ namespace DuplicateFinderEngine {
 		/// <param name="pMove"></param>
 		/// <param name="errors"></param>
 		public static void CopyFile(IEnumerable<string> pSource, string pDest, bool pOverwriteDest, bool pMove, out int errors) {
-			string destDirectory = Path.GetDirectoryName(pDest);
+			string destDirectory = Path.GetDirectoryName(pDest) ?? string.Empty;
 			Directory.CreateDirectory(destDirectory);
 			errors = 0;
 			foreach (var s in pSource) {

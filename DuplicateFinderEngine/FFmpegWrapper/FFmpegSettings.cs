@@ -1,13 +1,13 @@
 namespace DuplicateFinderEngine.FFmpegWrapper
 {
-    sealed class FFmpegSettings
+    struct FFmpegSettings
     {
 
         public float Seek;
 		
-        public string VideoFrameSize;
+        public string? VideoFrameSize;
 
-        public string OutputFormat;
+        public string? OutputFormat;
 		
     }
 }

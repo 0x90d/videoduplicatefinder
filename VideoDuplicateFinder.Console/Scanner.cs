@@ -14,13 +14,17 @@ namespace VideoDuplicateFinderConsole {
 				engine.Settings.IncludeList.Add(s);
 			engine.Settings.IncludeSubDirectories = settings.IsRecursive;
 			engine.Settings.IncludeImages = settings.IncludeImages;
+#pragma warning disable CS8601, CS8602 // Possible null reference assignment.
 			Outputfolder = string.IsNullOrEmpty(settings.OutputFolder) ? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) : settings.OutputFolder;
+#pragma warning restore CS8601, CS8602 // Possible null reference assignment.
 			if (settings.Percent.HasValue)
 				engine.Settings.Percent = settings.Percent.Value;
+#pragma warning disable CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate.
 			if (!settings.IsQuiet)
 				engine.Progress += Engine_Progress;
 			engine.ScanDone += Engine_ScanDone;
 			engine.DatabaseCleaned += Engine_DatabaseCleaned;
+#pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate.
 		}
 
 		private static void Engine_DatabaseCleaned(object sender, EventArgs e) => Console.WriteLine("~~~~ Database cleanup completed! ~~~~");

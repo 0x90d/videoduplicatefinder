@@ -6,28 +6,25 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace DuplicateFinderEngine
-{
-    public static class OutputUtils
-    {
-        /// <summary>
-        /// Prints content of collection to html table
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="listOfClassObjects"></param>
-        /// <param name="outputFile"></param>
-        /// <returns></returns>
-        public static void ToHtmlTable<T>(this ICollection<T> listOfClassObjects, string outputFile)
-        {
-            var sb = new StringBuilder();
+namespace DuplicateFinderEngine {
+	public static class OutputUtils {
+		/// <summary>
+		/// Prints content of collection to html table
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="listOfClassObjects"></param>
+		/// <param name="outputFile"></param>
+		/// <returns></returns>
+		public static void ToHtmlTable<T>(this ICollection<T> listOfClassObjects, string outputFile) {
+			var sb = new StringBuilder();
 
-            if (listOfClassObjects == null || !listOfClassObjects.Any()) return;
+			if (listOfClassObjects == null || !listOfClassObjects.Any()) return;
 
 
-            //TODO: Add combobox to select the column the search field applies to, UP for volunteers, someone?
+			//TODO: Add combobox to select the column the search field applies to, UP for volunteers, someone?
 
-            //Some fancy stuff
-            sb.Append(@"<!DOCTYPE html>
+			//Some fancy stuff
+			sb.Append(@"<!DOCTYPE html>
 <html>
 <head>
 <style>
@@ -67,15 +64,17 @@ namespace DuplicateFinderEngine
 
 <input type=""text"" id=""myInput"" onkeyup=""myFunction()"" placeholder=""Search Path..."">
 ");
-            //Add Rows
-            var ret = string.Empty;
-            sb.AppendLine("<table id=\"duplicates\">" +
-               listOfClassObjects.First().GetType().GetProperties().GetDisplayName().ToColumnHeaders() +
-               listOfClassObjects.Aggregate(ret, (current, t) => current + t.ToHtmlTableRow(outputFile)) +
-               "</table>");
+			//Add Rows
+			var ret = string.Empty;
+			sb.AppendLine("<table id=\"duplicates\">" +
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+			   listOfClassObjects.First().GetType().GetProperties().GetDisplayName().ToColumnHeaders() +
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+			   listOfClassObjects.Aggregate(ret, (current, t) => current + t.ToHtmlTableRow(outputFile)) +
+			   "</table>");
 
-            //Table sorting
-            sb.AppendLine(@"<script>
+			//Table sorting
+			sb.AppendLine(@"<script>
 function sortTable(n) {
   var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
   table = document.getElementById(""duplicates"");
@@ -113,8 +112,8 @@ function sortTable(n) {
   }
 }
 </script>");
-            //Search function
-            sb.AppendLine(@"
+			//Search function
+			sb.AppendLine(@"
 <script>
 function myFunction() {
   // Declare variables
@@ -138,111 +137,106 @@ function myFunction() {
 }
 </script>");
 
-            sb.AppendLine(@"
+			sb.AppendLine(@"
 </body>
 </html>");
-            
-            File.WriteAllText(outputFile, sb.ToString());
-        }
+
+			File.WriteAllText(outputFile, sb.ToString());
+		}
 
 
-        public static List<string> GetDisplayName(this IEnumerable<System.Reflection.PropertyInfo> infos)
-        {
-            var displayNames = new List<string>();
-            foreach (var info in infos)
-            {
-                var attribute = info.GetCustomAttributes(typeof(DisplayNameAttribute), true)?
-                    .Cast<DisplayNameAttribute>().ToList();
-                if (attribute == null || attribute.Count == 0)
-                {
-                    continue;
-                }
+		public static List<string> GetDisplayName(this IEnumerable<System.Reflection.PropertyInfo> infos) {
+			var displayNames = new List<string>();
+			foreach (var info in infos) {
+				var attribute = info.GetCustomAttributes(typeof(DisplayNameAttribute), true)?
+					.Cast<DisplayNameAttribute>().ToList();
+				if (attribute == null || attribute.Count == 0) {
+					continue;
+				}
 
-                displayNames.Add(attribute[0].DisplayName);
-            }
+				displayNames.Add(attribute[0].DisplayName);
+			}
 
-            return displayNames;
-        }
-        public static List<System.Reflection.PropertyInfo> GetPropsWithDisplayName(this IEnumerable<System.Reflection.PropertyInfo> infos)
-        {
-            var displayNames = new List<System.Reflection.PropertyInfo>();
-            foreach (var info in infos)
-            {
-                var attribute = info.GetCustomAttributes(typeof(DisplayNameAttribute), true)?
-                    .Cast<DisplayNameAttribute>().ToList();
-                if (attribute == null || attribute.Count == 0)
-                {
-                    continue;
-                }
+			return displayNames;
+		}
+		public static List<System.Reflection.PropertyInfo> GetPropsWithDisplayName(this IEnumerable<System.Reflection.PropertyInfo> infos) {
+			var displayNames = new List<System.Reflection.PropertyInfo>();
+			foreach (var info in infos) {
+				var attribute = info.GetCustomAttributes(typeof(DisplayNameAttribute), true)?
+					.Cast<DisplayNameAttribute>().ToList();
+				if (attribute == null || attribute.Count == 0) {
+					continue;
+				}
 
-                displayNames.Add(info);
-            }
+				displayNames.Add(info);
+			}
 
-            return displayNames;
-        }
+			return displayNames;
+		}
 
-        private static string ToColumnHeaders<T>(this List<T> listOfProperties)
-        {
-            var ret = string.Empty;
+		private static string ToColumnHeaders<T>(this List<T> listOfProperties) {
+			var ret = string.Empty;
 
-            var result = ret;
-            for (var i = 0; i < listOfProperties.Count; i++)
-            {
-                var property = listOfProperties[i];
-                result = result + $"<th onclick=\"sortTable({i})\" style='cursor:pointer'>" + Convert.ToString(property) + "</th>";
-            }
+			var result = ret;
+			for (var i = 0; i < listOfProperties.Count; i++) {
+				var property = listOfProperties[i];
+				result = result + $"<th onclick=\"sortTable({i})\" style='cursor:pointer'>" + Convert.ToString(property) + "</th>";
+			}
 
-            return !listOfProperties.Any()
-                ? ret
-                : "<tr>" +
-                  result +
-                  "</tr>";
-        }
+			return !listOfProperties.Any()
+				? ret
+				: "<tr>" +
+				  result +
+				  "</tr>";
+		}
 
-        private static string ToHtmlTableRow<T>(this T classObject, string outputFile)
-        {
-            var ret = string.Empty;
+		private static string ToHtmlTableRow<T>(this T classObject, string outputFile) {
+			var ret = string.Empty;
 
-            return classObject == null
-                ? ret
-                : "<tr>" +
-                  classObject.GetType()
-                      .GetProperties().GetPropsWithDisplayName()
-                      .Aggregate(ret,
-                          (current, prop) =>
-                              current + "<td>" + prop.PropValueToString(classObject, outputFile) + " </td>") + "</tr>";
-        }
+			return classObject == null
+				? ret
+				: "<tr>" +
+				  classObject.GetType()
+					  .GetProperties().GetPropsWithDisplayName()
+					  .Aggregate(ret,
+						  (current, prop) =>
+							  current + "<td>" + prop.PropValueToString(classObject, outputFile) + " </td>") + "</tr>";
+		}
 
-        private static string PropValueToString(this System.Reflection.PropertyInfo property, object classObject, string outputFile)
-        {
-            switch (property.Name)
-            {
-                case nameof(Data.DuplicateItem.Path):
-                    var prop = Convert.ToString(property.GetValue(classObject, null));
-                    return "<a href=\"file:///" + prop + $"\">{Path.GetFullPath(prop)}</a>";
+		private static string PropValueToString(this System.Reflection.PropertyInfo property, object classObject, string outputFile) {
+#pragma warning disable CS8600, CS8605 // Converting null literal or possible null value to non-nullable type.
+			switch (property.Name) {
+			case nameof(Data.DuplicateItem.Path):
+				var prop = Convert.ToString(property.GetValue(classObject, null));
+#pragma warning disable CS8604 // Possible null reference argument.
+				return "<a href=\"file:///" + prop + $"\">{Path.GetFullPath(prop)}</a>";
+#pragma warning restore CS8604 // Possible null reference argument.
 
-                case nameof(Data.DuplicateItem.Duration):
-                    return ((TimeSpan)property.GetValue(classObject, null)).TrimMiliseconds().ToString();
+			case nameof(Data.DuplicateItem.Duration):
+				return ((TimeSpan)property.GetValue(classObject, null)).TrimMiliseconds().ToString();
 
-                case nameof(Data.DuplicateItem.Thumbnail):
-                    var l = (List<Image>)property.GetValue(classObject, null);
-                    var dir = new DirectoryInfo(Utils.SafePathCombine(Path.GetDirectoryName(outputFile), "thumbnails"));
-                    if (!dir.Exists)
-                        dir.Create();
-                   var propValue = string.Empty;
-                    foreach (var img in l)
-                    {
-                        var imgPath = Utils.SafePathCombine(dir.FullName, Utils.GetRandomNumber() + ".jpeg");
-                        while (File.Exists(imgPath))
-                            imgPath = Utils.SafePathCombine(dir.FullName, Utils.GetRandomNumber() + ".jpeg");
-                        //Create new bitmap to avoid 'A generic error occurred in GDI+,' exception
-                        var bmp = new Bitmap(img);
-                        bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
-                        propValue += $"<img src=\"thumbnails/{Path.GetFileName(imgPath)}\" alt=\"{Path.GetFileName(imgPath)}\" />";
-                    }
-                    return propValue;
-            }
-            return Convert.ToString(property.GetValue(classObject, null)); 
-        }
-    }
+			case nameof(Data.DuplicateItem.Thumbnail):
+				var l = (List<Image>)property.GetValue(classObject, null);
+				if (l == null) return string.Empty;
+#pragma warning disable CS8604 // Possible null reference argument.
+				var dir = new DirectoryInfo(Utils.SafePathCombine(Path.GetDirectoryName(outputFile), "thumbnails"));
+#pragma warning restore CS8604 // Possible null reference argument.
+				if (!dir.Exists)
+					dir.Create();
+				var propValue = string.Empty;
+				foreach (var img in l) {
+					var imgPath = Utils.SafePathCombine(dir.FullName, Utils.GetRandomNumber() + ".jpeg");
+					while (File.Exists(imgPath))
+						imgPath = Utils.SafePathCombine(dir.FullName, Utils.GetRandomNumber() + ".jpeg");
+					//Create new bitmap to avoid 'A generic error occurred in GDI+,' exception
+					var bmp = new Bitmap(img);
+					bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+					propValue += $"<img src=\"thumbnails/{Path.GetFileName(imgPath)}\" alt=\"{Path.GetFileName(imgPath)}\" />";
+				}
+				return propValue;
+			}
+			return Convert.ToString(property.GetValue(classObject, null)) ?? string.Empty;
+#pragma warning restore CS8600, CS8605 // Converting null literal or possible null value to non-nullable type.
+		}
+	}
 }

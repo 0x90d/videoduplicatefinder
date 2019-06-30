@@ -3,9 +3,10 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>preview</LangVersion>
     <RootNamespace>VideoDuplicateFinderConsole</RootNamespace>
     <AssemblyName>VideoDuplicateFinderConsole</AssemblyName>
+    <NullableContextOptions>enable</NullableContextOptions>
   </PropertyGroup>
 
   <ItemGroup>

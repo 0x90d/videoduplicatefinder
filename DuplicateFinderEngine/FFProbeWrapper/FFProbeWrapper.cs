@@ -4,11 +4,11 @@ using System.IO;
 
 namespace DuplicateFinderEngine.FFProbeWrapper {
 	sealed class FFProbeWrapper : IDisposable {
-		private Process FFprobeProcess;
+		private Process? FFprobeProcess;
 		public TimeSpan ExecutionTimeout => new TimeSpan(0, 0, 15);
-		private string InputFile;
+		private string? InputFile;
 
-		public MediaInfo GetMediaInfo(string inputFile) {
+		public MediaInfo? GetMediaInfo(string inputFile) {
 			InputFile = inputFile;
 			try {
 				FFprobeProcess = Process.Start(new ProcessStartInfo(Utils.FfprobePath, $" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams  \"{inputFile}\"") {
@@ -47,7 +47,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 
 
 		private void WaitProcessForExit() {
-			if (FFprobeProcess.HasExited) return;
+			if (FFprobeProcess == null || FFprobeProcess.HasExited) return;
 
 			var milliseconds = (int)ExecutionTimeout.TotalMilliseconds;
 			if (FFprobeProcess.WaitForExit(milliseconds)) return;

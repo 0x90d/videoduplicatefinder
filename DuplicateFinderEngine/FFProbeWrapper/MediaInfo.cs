@@ -2,6 +2,7 @@ using System;
 using ProtoBuf;
 
 namespace DuplicateFinderEngine.FFProbeWrapper {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
 	[ProtoContract]
 	public sealed class MediaInfo {
 		[ProtoMember(1)]
@@ -50,4 +51,5 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 
 		}
 	}
+#pragma warning restore CS8618 // Non-nullable field is uninitialized.
 }

@@ -8,11 +8,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Shell;
 using System.Xml.Linq;
 using DuplicateFinderEngine;
+using MahApps.Metro.Controls.Dialogs;
 using VideoDuplicateFinder.Windows.Data;
 using VideoDuplicateFinderWindows.Data;
 using VideoDuplicateFinderWindows.MVVM;
@@ -124,6 +126,7 @@ namespace VideoDuplicateFinderWindows {
 			}
 		}
 		public MainWindowVM() {
+#pragma warning disable CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate.
 			Scanner.Progress += Scanner_Progress;
 			Scanner.ScanDone += Scanner_ScanDone;
 			Scanner.ThumbnailsPopulated += Scanner_ThumbnailsPopulated;
@@ -131,13 +134,14 @@ namespace VideoDuplicateFinderWindows {
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.DatabaseVideosExportedToCSV += Scanner_DatabaseVideosExportedToCSV;
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
+#pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate.
 			//Ensure items added before GUI was ready will be shown 
-			Instance_LogItemAdded(null, null);
+			Instance_LogItemAdded(this, new EventArgs());
 		}
 
-		private void Scanner_DatabaseCleaned(object sender, EventArgs e) => IsBusy = false;
+		private void Scanner_DatabaseCleaned(object sender, EventArgs e) => CloseMessage();
 
-		private void Scanner_DatabaseVideosExportedToCSV(object sender, EventArgs e) => IsBusy = false;
+		private void Scanner_DatabaseVideosExportedToCSV(object sender, EventArgs e) => CloseMessage();
 
 		private void Instance_LogItemAdded(object sender, EventArgs e) => Application.Current.Dispatcher.BeginInvoke(new Action(() => {
 			while (Logger.Instance.LogEntries.Count > 0) {
@@ -146,7 +150,7 @@ namespace VideoDuplicateFinderWindows {
 			}
 		}));
 
-		private void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
+		private void Scanner_FilesEnumerated(object sender, EventArgs e) => CloseMessage();
 
 		private void Scanner_ScanDone(object sender, EventArgs e) {
 			Scanner.PopulateDuplicateThumbnails();
@@ -266,26 +270,6 @@ namespace VideoDuplicateFinderWindows {
 			}
 		}
 
-		bool _IsBusy;
-		public bool IsBusy {
-			get => _IsBusy;
-			set {
-				if (value == _IsBusy) return;
-				_IsBusy = value;
-				OnPropertyChanged(nameof(IsBusy));
-			}
-		}
-
-		string _IsBusyText;
-		public string IsBusyText {
-			get => _IsBusyText;
-			set {
-				if (value == _IsBusyText) return;
-				_IsBusyText = value;
-				OnPropertyChanged(nameof(IsBusyText));
-			}
-		}
-
 		bool _IsPaused;
 		public bool IsPaused {
 			get => _IsPaused;
@@ -296,26 +280,20 @@ namespace VideoDuplicateFinderWindows {
 				OnPropertyChanged(nameof(IsPaused));
 			}
 		}
-		public string Percent {
-			get => Scanner.Settings.Percent.ToString(CultureInfo.InvariantCulture);
+		public float Percent {
+			get => Scanner.Settings.Percent;
 			set {
-				if (!float.TryParse(value, out var val) || val < 1f || val > 100f) {
-					throw new ApplicationException("Invalid floating number");
-				}
-				if (val == Scanner.Settings.Percent) return;
-				Scanner.Settings.Percent = val;
+				if (value == Scanner.Settings.Percent) return;
+				Scanner.Settings.Percent = value;
 				OnPropertyChanged(nameof(Percent));
 			}
 		}
 
-		public string Thumbnails {
-			get => Scanner.Settings.ThumbnailCount.ToString();
+		public int Thumbnails {
+			get => Scanner.Settings.ThumbnailCount;
 			set {
-				if (!int.TryParse(value, out var val) || val < 1)
-					throw new ApplicationException("Invalid thumbnail number");
-
-				if (val == Scanner.Settings.ThumbnailCount) return;
-				Scanner.Settings.ThumbnailCount = val;
+				if (value == Scanner.Settings.ThumbnailCount) return;
+				Scanner.Settings.ThumbnailCount = value;
 				OnPropertyChanged(nameof(Thumbnails));
 			}
 
@@ -361,6 +339,24 @@ namespace VideoDuplicateFinderWindows {
 			}
 		}
 
+		ProgressDialogController dialogController;
+		readonly MetroDialogSettings mySettings = new MetroDialogSettings() {
+			AnimateShow = false,
+			AnimateHide = false
+		};
+		async void ShowMessage(string message, string title, MessageDialogStyle style) => await host.ShowMessageAsync(title, message, style, settings: mySettings);
+		async Task<bool> ShowProgressMessage(string busyText) {
+			dialogController = await host.ShowProgressAsync(VideoDuplicateFinder.Windows.Properties.Resources.PleaseWait, busyText, settings: mySettings);
+			dialogController.SetIndeterminate();
+			return true;
+		}
+		void CloseMessage() {
+			if (dialogController?.IsOpen == true) {
+				dialogController.CloseAsync();
+			}
+		}
+
+
 		public DelegateCommand AddIncludesToListCommand => new DelegateCommand(a => {
 			var ofd = new System.Windows.Forms.FolderBrowserDialog();
 			if (ofd.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
@@ -386,19 +382,16 @@ namespace VideoDuplicateFinderWindows {
 			catch {
 			}
 		});
-		public DelegateCommand CleanDatabaseCommand => new DelegateCommand(a => {
-			IsBusy = true;
-			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.CleaningUp;
+		public DelegateCommand CleanDatabaseCommand => new DelegateCommand(async a => {
+			await ShowProgressMessage(VideoDuplicateFinder.Windows.Properties.Resources.CleaningUp);
 			Scanner.CleanupDatabase();
 		});
-		public DelegateCommand ExportDatabaseVideosToCSVCommand => new DelegateCommand(a => {
-			IsBusy = true;
-			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.ExportingDatabaseVideosToCSV;
+		public DelegateCommand ExportDatabaseVideosToCSVCommand => new DelegateCommand(async a => {
+			await ShowProgressMessage(VideoDuplicateFinder.Windows.Properties.Resources.ExportingDatabaseVideosToCSV);
 			Scanner.ExportDatabaseVideosToCSV(true, false);
 		});
-		public DelegateCommand ExportDatabaseExcluded => new DelegateCommand(a => {
-			IsBusy = true;
-			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.ExportingDatabaseVideosToCSV;
+		public DelegateCommand ExportDatabaseExcluded => new DelegateCommand(async a => {
+			await ShowProgressMessage(VideoDuplicateFinder.Windows.Properties.Resources.ExportingDatabaseVideosToCSV);
 			Scanner.ExportDatabaseVideosToCSV(false, true);
 		});
 		public DelegateCommand ClearLogCommand => new DelegateCommand(a => { LogItems.Clear(); }, a => LogItems.Count > 0);
@@ -410,33 +403,38 @@ namespace VideoDuplicateFinderWindows {
 		}, a => LogItems.Count > 0);
 		public DelegateCommand OpenInFolderCommand => new DelegateCommand(a => {
 			try {
-				Process.Start("explorer.exe", $"/select, \"{((DuplicateItemViewModel)host.TreeViewDuplicates.SelectedItem).Path}\"");
+				var procInfo = new ProcessStartInfo("explorer.exe", $"/select, \"{((DuplicateItemViewModel)host.TreeViewDuplicates.SelectedItem).Path}\"") {
+					UseShellExecute = true
+				};
+				Process.Start(procInfo);
 			}
 			catch (Exception e) {
-				MessageBox.Show(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+				ShowMessage(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageDialogStyle.Affirmative);
 			}
 		}, a => host?.TreeViewDuplicates?.SelectedItem != null);
-		public DelegateCommand RenameDuplicateFileCommand => new DelegateCommand(a => {
+		public DelegateCommand RenameDuplicateFileCommand => new DelegateCommand(async a => {
 			var selItem = (DuplicateItemViewModel)host.TreeViewDuplicates.SelectedItem;
-			var dlg = new StringInputBox {
-				Owner = Application.Current.MainWindow,
-				Message = VideoDuplicateFinder.Windows.Properties.Resources.FileName,
-				Value = Path.GetFileNameWithoutExtension(selItem.Path)
-			};
-			if (dlg.ShowDialog() != true || string.IsNullOrEmpty(dlg.Value)) return;
+			var dlg = await host.ShowInputAsync(VideoDuplicateFinder.Windows.Properties.Resources.RenameFile,
+				VideoDuplicateFinder.Windows.Properties.Resources.FileName,
+				new MetroDialogSettings {
+					AnimateHide = false,
+					AnimateShow = false,
+					DefaultText = Path.GetFileNameWithoutExtension(selItem.Path)
+			});
+			if (string.IsNullOrEmpty(dlg)) return;
 			try {
 				var fi = new FileInfo(selItem.Path);
 				Debug.Assert(fi.Directory != null, "fi.Directory != null");
-				var newName = fi.Directory.FullName + "\\" + dlg.Value + fi.Extension;
+				var newName = fi.Directory.FullName + "\\" + dlg + fi.Extension;
 				if (File.Exists(newName)) {
-					MessageBox.Show(string.Format(VideoDuplicateFinder.Windows.Properties.Resources.FileAlreadyExists, dlg.Value), VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+					ShowMessage(string.Format(VideoDuplicateFinder.Windows.Properties.Resources.FileAlreadyExists, dlg), VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageDialogStyle.Affirmative);
 					return;
 				}
 				fi.MoveTo(newName);
 				selItem.ChangePath(newName);
 			}
 			catch (Exception e) {
-				MessageBox.Show(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+				ShowMessage(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageDialogStyle.Affirmative);
 			}
 		}, a => host?.TreeViewDuplicates?.SelectedItem != null);
 		public DelegateCommand<System.Windows.Controls.ListBox> RemoveIncludesFromListCommand => new DelegateCommand<System.Windows.Controls.ListBox>(a => {
@@ -448,10 +446,10 @@ namespace VideoDuplicateFinderWindows {
 			while (a.SelectedItems.Count > 0)
 				Blacklists.Remove((string)a.SelectedItems[0]);
 		}, a => a?.SelectedItems.Count > 0);
-		public DelegateCommand StartScanCommand => new DelegateCommand(a => {
+		public DelegateCommand StartScanCommand => new DelegateCommand(async a => {
 			if (!DuplicateFinderEngine.Utils.FfFilesExist) {
-				MessageBox.Show(
-					VideoDuplicateFinder.Windows.Properties.Resources.FFmpegExeFFprobeExeIsMissing, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+				ShowMessage(
+					VideoDuplicateFinder.Windows.Properties.Resources.FFmpegExeFFprobeExeIsMissing, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageDialogStyle.Affirmative);
 				return;
 			}
 			Duplicates.Clear();
@@ -463,8 +461,7 @@ namespace VideoDuplicateFinderWindows {
 			Scanner.Settings.BlackList.Clear();
 			foreach (var s in Blacklists)
 				Scanner.Settings.BlackList.Add(s);
-			IsBusy = true;
-			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.EnumeratingInputFolders;
+			await ShowProgressMessage(VideoDuplicateFinder.Windows.Properties.Resources.EnumeratingInputFolders);
 			//Start scan
 			Scanner.StartSearch();
 		}, a => !IsScanning && !IsPaused);
@@ -586,7 +583,7 @@ namespace VideoDuplicateFinderWindows {
 				Duplicates.ToHtmlTable(ofd.FileName);
 			}
 			catch (Exception e) {
-				MessageBox.Show(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+				ShowMessage(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageDialogStyle.Affirmative);
 			}
 		}, a => Duplicates.Count > 0);
 		public DelegateCommand RemoveSelectionFromListCommand => new DelegateCommand(a => { InternalDelete(false); }, a => Duplicates.Count > 0);
@@ -603,8 +600,7 @@ namespace VideoDuplicateFinderWindows {
 		}, a => Duplicates.Count > 0);
 
 		async void CopyDuplicates(string targetFolder, bool move) {
-			IsBusyText = VideoDuplicateFinder.Windows.Properties.Resources.CopyingFiles;
-			IsBusy = true;
+			await ShowProgressMessage(VideoDuplicateFinder.Windows.Properties.Resources.CopyingFiles);
 			var t = new System.Threading.Tasks.Task<int>(() => {
 				FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), targetFolder, true, move,
 					out int errors);
@@ -612,21 +608,22 @@ namespace VideoDuplicateFinderWindows {
 			});
 			t.Start();
 			var errorCounter = await t;
-			IsBusy = false;
+			await dialogController.CloseAsync();
 			if (errorCounter > 0)
-				MessageBox.Show(VideoDuplicateFinder.Windows.Properties.Resources.FailedToCopySomeFilesPleaseCheckLog,
-					VideoDuplicateFinder.Windows.Properties.Resources.Warning, MessageBoxButton.OK,
-					MessageBoxImage.Warning);
+				ShowMessage(VideoDuplicateFinder.Windows.Properties.Resources.FailedToCopySomeFilesPleaseCheckLog,
+					VideoDuplicateFinder.Windows.Properties.Resources.Warning, MessageDialogStyle.Affirmative);
 		}
-		private void InternalDelete(bool alsofromDisk) {
+		private async void InternalDelete(bool alsofromDisk) {
 			if (Scanner == null || Duplicates.Count == 0) return;
+			//Let user confirm
 			if (alsofromDisk) {
-				var result = MessageBox.Show(VideoDuplicateFinder.Windows.Properties.Resources.DeleteAllCheckedItemsFromDISKToRecycleBinIfPossible,
-					VideoDuplicateFinder.Windows.Properties.Resources.Confirmation, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No;
-				if (result)
+				var result = await host.ShowMessageAsync(VideoDuplicateFinder.Windows.Properties.Resources.DeleteAllCheckedItemsFromDISKToRecycleBinIfPossible,
+					VideoDuplicateFinder.Windows.Properties.Resources.Confirmation, MessageDialogStyle.AffirmativeAndNegative, settings: mySettings);
+				if (result == MessageDialogResult.Negative)
 					return;
 			}
 
+			//Remove duplicates
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
 				var dub = Duplicates[i];
 				if (dub.Checked == false) continue;
@@ -647,11 +644,15 @@ namespace VideoDuplicateFinderWindows {
 		}
 
 		public void SaveSettings() {
+#pragma warning disable CS8604 // Possible null reference argument.
 			var path = DuplicateFinderEngine.Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Settings.xml");
+#pragma warning restore CS8604 // Possible null reference argument.
 			var includes = new object[Includes.Count];
+			//Include directories
 			for (var i = 0; i < Includes.Count; i++) {
 				includes[i] = new XElement("Include", Includes[i]);
 			}
+			//Exclude directories
 			var excludes = new object[Blacklists.Count];
 			for (var i = 0; i < Blacklists.Count; i++) {
 				excludes[i] = new XElement("Exclude", Blacklists[i]);
@@ -660,7 +661,7 @@ namespace VideoDuplicateFinderWindows {
 			var xDoc = new XDocument(new XElement("Settings",
 				new XElement("Includes", includes),
 				new XElement("Excludes", excludes),
-				new XElement("Percent", Percent),
+				new XElement("Percent", Percent.ToString(CultureInfo.InvariantCulture)),
 				new XElement("Thumbnails", Thumbnails),
 				new XElement("IncludeSubDirectories", IncludeSubDirectories),
 				new XElement("IncludeImages", IncludeImages),
@@ -670,7 +671,9 @@ namespace VideoDuplicateFinderWindows {
 			xDoc.Save(path);
 		}
 		public void LoadSettings() {
+#pragma warning disable CS8604 // Possible null reference argument.
 			var path = DuplicateFinderEngine.Utils.SafePathCombine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Settings.xml");
+#pragma warning restore CS8604 // Possible null reference argument.
 			if (!File.Exists(path)) return;
 			Includes.Clear();
 			Blacklists.Clear();
@@ -680,9 +683,9 @@ namespace VideoDuplicateFinderWindows {
 			foreach (var n in xDoc.Descendants("Exclude"))
 				Blacklists.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Percent"))
-				Percent = n.Value;
+				Percent = float.Parse(n.Value);
 			foreach (var n in xDoc.Descendants("Thumbnails"))
-				Thumbnails = n.Value;
+				Thumbnails = int.Parse(n.Value);
 			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
 			if (node?.Value != null)
 				IncludeSubDirectories = bool.Parse(node.Value);

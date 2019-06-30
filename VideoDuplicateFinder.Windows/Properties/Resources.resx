@@ -354,4 +354,40 @@
   <data name="Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Resolution" xml:space="preserve">
+    <value>Resolution</value>
+  </data>
+  <data name="FileSize" xml:space="preserve">
+    <value>File Size</value>
+  </data>
+  <data name="Similarity" xml:space="preserve">
+    <value>Similarity</value>
+  </data>
+  <data name="AudioSampleRate" xml:space="preserve">
+    <value>Audio Sample Rate</value>
+  </data>
+  <data name="AudioChannel" xml:space="preserve">
+    <value>Audio Channel</value>
+  </data>
+  <data name="AudioFormat" xml:space="preserve">
+    <value>Audio Format</value>
+  </data>
+  <data name="BitRate" xml:space="preserve">
+    <value>Bit Rate</value>
+  </data>
+  <data name="FramesPerSecond" xml:space="preserve">
+    <value>Frames per Second</value>
+  </data>
+  <data name="VideoFormat" xml:space="preserve">
+    <value>Video Format</value>
+  </data>
+  <data name="FileFormat" xml:space="preserve">
+    <value>File Format</value>
+  </data>
+  <data name="LoadDatabase" xml:space="preserve">
+    <value>Load Database</value>
+  </data>
 </root>
