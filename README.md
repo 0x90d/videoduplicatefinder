@@ -11,6 +11,12 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 # Requirements
 FFmpeg and FFprobe is required.
 
+# Binaries
+
+[Latest release](https://github.com/0x90d/videoduplicatefinder/releases)
+
+Latest build: [![Build status](https://ci.appveyor.com/api/projects/status/github/0x90d/videoduplicatefinder?branch=master&svg=true)](https://ci.appveyor.com/project/0x90d/videoduplicatefinder/branch/master/artifacts)
+
 #### Windows user:
 FFmpeg and FFprobe are already included. Otherwise get latest package from https://ffmpeg.zeranoe.com/builds/ and extract ffmpeg.exe and ffprobe into the same directory where VideoDuplicateFinderWindows.exe is placed in.
 
