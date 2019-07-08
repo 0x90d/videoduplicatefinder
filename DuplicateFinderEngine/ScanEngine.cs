@@ -368,8 +368,8 @@ namespace DuplicateFinderEngine {
 					var b = ffMpeg.GetVideoThumbnail(videoFile.Path, Convert.ToSingle(videoFile.mediaInfo?.Duration.TotalSeconds * positionList[i]), true);
 					if (b == null || b.Length == 0) return (EntryFlags.ThumbnailError, null);
 					var d = ExtensionMethods.VerifyGrayScaleValues(b);
-					if (d == null) return (EntryFlags.TooDark, null);
-					images.Add(d);
+					if (!d) return (EntryFlags.TooDark, null);
+					images.Add(b);
 				}
 
 			}
@@ -412,13 +412,13 @@ namespace DuplicateFinderEngine {
 
 		private static class ExtensionMethods {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public static byte[]? VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
+			public static bool VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
 				int darkPixels = 0;
 				for (int i = 0; i < data.Length; i++) {
 					if (data[i] <= 0x20)
 						darkPixels++;
 				}
-				return 100d / data.Length * darkPixels >= darkProcent ? null : data;
+				return 100d / data.Length * darkPixels < darkProcent;
 			}
 
 			public static unsafe byte[]? GetGrayScaleValues(Bitmap original, double darkProcent = 80) {
