@@ -30,8 +30,8 @@ namespace DuplicateFinderEngine {
 
 
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
-		private Dictionary<string, VideoFileEntry> DatabaseFileList = new Dictionary<string, VideoFileEntry>();
-		private List<VideoFileEntry> ScanFileList = new List<VideoFileEntry>();
+		private Dictionary<string, FileEntry> DatabaseFileList = new Dictionary<string, FileEntry>();
+		private List<FileEntry> ScanFileList = new List<FileEntry>();
 		private readonly List<float> positionList = new List<float>();
 
 
@@ -80,7 +80,7 @@ namespace DuplicateFinderEngine {
 		public async void ExportDatabaseVideosToCSV(bool onlyVideos, bool onlyFlagged) {
 			if (DatabaseFileList.Count == 0) DatabaseFileList = DatabaseHelper.LoadDatabase();
 
-			var db = DatabaseFileList.Values as IEnumerable<VideoFileEntry>;
+			var db = DatabaseFileList.Values as IEnumerable<FileEntry>;
 			if (onlyVideos) db = db.Where(v => !v.IsImage);
 			if (onlyFlagged) db = db.Where(v => v.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.AllErrors));
 
@@ -96,7 +96,7 @@ namespace DuplicateFinderEngine {
 				foreach (var path in FileHelper.GetFilesRecursive(item, Settings.IgnoreReadOnlyFolders,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					if (!DatabaseFileList.TryGetValue(path, out var vf)) {
-						vf = new VideoFileEntry(path);
+						vf = new FileEntry(path);
 						DatabaseFileList.Add(path, vf);
 					}
 					ScanFileList.Add(vf);
@@ -359,7 +359,7 @@ namespace DuplicateFinderEngine {
 			return images;
 		}
 
-		private (EntryFlags err, List<byte[]>?) GetVideoThumbnailAsBitmaps(VideoFileEntry videoFile, List<float> positions) {
+		private (EntryFlags err, List<byte[]>?) GetVideoThumbnailAsBitmaps(FileEntry videoFile, List<float> positions) {
 			var ffMpeg = new FFmpegWrapper.FFmpegWrapper();
 			var images = new List<byte[]>();
 			try {
@@ -381,7 +381,7 @@ namespace DuplicateFinderEngine {
 
 		}
 
-		private static (EntryFlags err, List<byte[]>?) GetImageAsBitmaps(VideoFileEntry videoFile, int count) {
+		private static (EntryFlags err, List<byte[]>?) GetImageAsBitmaps(FileEntry videoFile, int count) {
 			var images = new List<byte[]>();
 			for (var i = 0; i < count; i++) {
 				try {

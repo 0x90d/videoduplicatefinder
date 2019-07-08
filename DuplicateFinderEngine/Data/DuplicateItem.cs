@@ -6,7 +6,7 @@ using System.IO;
 
 namespace DuplicateFinderEngine.Data {
 	public class DuplicateItem {
-		public DuplicateItem(VideoFileEntry file, float percent) {
+		public DuplicateItem(FileEntry file, float percent) {
 			Path = file.Path;
 			Folder = file.Folder;
 			if (!file.IsImage && file.mediaInfo?.Streams != null) {

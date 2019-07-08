@@ -25,11 +25,11 @@ namespace DuplicateFinderEngine.Data {
 
 
 	[ProtoContract]
-	public class VideoFileEntry {
+	public class FileEntry {
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
-		protected VideoFileEntry() { }
+		protected FileEntry() { }
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
-		public VideoFileEntry(string file) {
+		public FileEntry(string file) {
 			Path = file;
 			var fi = new System.IO.FileInfo(file);
 			Folder = fi.Directory?.FullName ?? string.Empty;

@@ -10,8 +10,8 @@ using ProtoBuf;
 
 namespace DuplicateFinderEngine {
 	public static class DatabaseHelper {
-		public static Dictionary<string, VideoFileEntry> LoadDatabase() {
-			var videoFiles = new Dictionary<string, VideoFileEntry>();
+		public static Dictionary<string, FileEntry> LoadDatabase() {
+			var videoFiles = new Dictionary<string, FileEntry>();
 			var path = new FileInfo(Utils.SafePathCombine(FileHelper.CurrentDirectory,
 				"ScannedFiles.db"));
 			if (path.Exists && path.Length == 0) //invalid data
@@ -25,7 +25,7 @@ namespace DuplicateFinderEngine {
 
 			var st = Stopwatch.StartNew();
 			using (var file = new FileStream(path.FullName, FileMode.Open)) {
-				videoFiles = Serializer.Deserialize<List<VideoFileEntry>>(file)
+				videoFiles = Serializer.Deserialize<List<FileEntry>>(file)
 					.ToDictionary(ve => ve.Path, ve => ve);
 			}
 
@@ -34,8 +34,8 @@ namespace DuplicateFinderEngine {
 
 			return videoFiles;
 		}
-		public static List<VideoFileEntry> LoadDatabaseAsList() {
-			var videoFiles = new List<VideoFileEntry>();
+		public static List<FileEntry> LoadDatabaseAsList() {
+			var videoFiles = new List<FileEntry>();
 			var path = new FileInfo(Utils.SafePathCombine(FileHelper.CurrentDirectory,
 				"ScannedFiles.db"));
 			if (path.Exists && path.Length == 0) //invalid data
@@ -49,7 +49,7 @@ namespace DuplicateFinderEngine {
 
 			var st = Stopwatch.StartNew();
 			using (var file = new FileStream(path.FullName, FileMode.Open)) {
-				videoFiles = Serializer.Deserialize<List<VideoFileEntry>>(file);
+				videoFiles = Serializer.Deserialize<List<FileEntry>>(file);
 			}
 
 			st.Stop();
@@ -58,19 +58,19 @@ namespace DuplicateFinderEngine {
 			return videoFiles;
 		}
 
-		public static Dictionary<string, VideoFileEntry> CleanupDatabase(Dictionary<string, VideoFileEntry> videoFiles) {
+		public static Dictionary<string, FileEntry> CleanupDatabase(Dictionary<string, FileEntry> videoFiles) {
 
 			var oldCount = videoFiles.Count;
 			var st = Stopwatch.StartNew();
 
-			videoFiles = new Dictionary<string, VideoFileEntry>(videoFiles.Where(kv => File.Exists(kv.Value.Path) &&
+			videoFiles = new Dictionary<string, FileEntry>(videoFiles.Where(kv => File.Exists(kv.Value.Path) &&
 																					   !kv.Value.Flags.Any(EntryFlags.MetadataError | EntryFlags.ThumbnailError)));
 			st.Stop();
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseCleanupHasFinished, st.Elapsed, oldCount - videoFiles.Count));
 			return videoFiles;
 
 		}
-		public static void ExportDatabaseToCSV(IEnumerable<VideoFileEntry> videoFiles) {
+		public static void ExportDatabaseToCSV(IEnumerable<FileEntry> videoFiles) {
 
 			var st = Stopwatch.StartNew();
 			var dt = new DataTable();
@@ -131,8 +131,8 @@ namespace DuplicateFinderEngine {
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseVideosExportToCSVFinished, st.Elapsed));
 		}
 
-		public static void SaveDatabase(Dictionary<string, VideoFileEntry> videoFiles) => SaveDatabase(videoFiles.Values.ToList());
-		public static void SaveDatabase(List<VideoFileEntry> videoFiles) {
+		public static void SaveDatabase(Dictionary<string, FileEntry> videoFiles) => SaveDatabase(videoFiles.Values.ToList());
+		public static void SaveDatabase(List<FileEntry> videoFiles) {
 			Logger.Instance.Info(string.Format(Properties.Resources.SaveScannedFilesToDisk0N0Files, videoFiles.Count));
 			using var stream = new FileStream(Utils.SafePathCombine(FileHelper.CurrentDirectory,
 				"ScannedFiles.db"), FileMode.Create);
