@@ -9,9 +9,6 @@ namespace VideoDuplicateFinderConsole {
 		static int Main(string[] args) {
 			Console.OutputEncoding = Encoding.UTF8;
 			var result = new VideoDuplicateFinderConsole().Run(args);
-#if DEBUG
-			Console.ReadLine();
-#endif
 			return result;
 		}
 		
