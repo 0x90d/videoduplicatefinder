@@ -436,7 +436,7 @@ namespace DuplicateFinderEngine {
 
 				// Copy the RGB values into the array.
 				fixed (byte* byteArrayPtr = rgbValues) {
-					Buffer.MemoryCopy((void*)ptr, byteArrayPtr, rgbValues.Length, rgbValues.Length);
+					Unsafe.CopyBlock(byteArrayPtr, (void*)ptr, (uint)rgbValues.Length);
 				}
 				original.UnlockBits(bmpData);
 
