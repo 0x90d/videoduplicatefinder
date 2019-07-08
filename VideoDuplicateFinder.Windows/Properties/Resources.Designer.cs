@@ -664,6 +664,15 @@ namespace VideoDuplicateFinder.Windows.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Select Identical Duration (Keep Smallest).
+        /// </summary>
+        public static string SelectIdenticalLengthKeepSmallest {
+            get {
+                return ResourceManager.GetString("SelectIdenticalLengthKeepSmallest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Selection.
         /// </summary>
         public static string Selection {

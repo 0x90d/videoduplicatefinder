@@ -214,7 +214,7 @@ namespace VideoDuplicateFinderLinux {
 				var others = Scanner.Duplicates.Where(a => a.GroupId == dup.GroupId && a.Path != dup.Path).ToList();
 				dup.SizeForeground = others.Any(a => a.SizeLong < dup.SizeLong) ? Brushes.Red : Brushes.Green;
 				dup.FrameSizeForeground = others.Any(a => a.FrameSizeInt > dup.FrameSizeInt) ? Brushes.Red : Brushes.Green;
-				dup.DurationForeground = others.Any(a => a.Duration.TrimMiliseconds() > dup.Duration.TrimMiliseconds()) ? Brushes.Red : Brushes.Green;
+				dup.DurationForeground = others.Any(a => a.Duration > dup.Duration) ? Brushes.Red : Brushes.Green;
 				dup.BitRateForeground = others.Any(a => a.BitRateKbs > dup.BitRateKbs) ? Brushes.Red : Brushes.Green;
 				//Since we cannot group in Linux, let's at least highlight items that belong together
 				if (!dupGroupHandled.Contains(dup.GroupId)) {

@@ -22,6 +22,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 		/// <param name="file">The file the JSON output format is about</param>
 		/// <returns><see cref="MediaInfo"/> containing information from FFprobe output</returns>
 		public static MediaInfo Read(byte[] data, string file) {
+
 			var json = new Utf8JsonReader(data, isFinalBlock: false, state: default);
 			
 
@@ -60,11 +61,11 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 
 					if (currentObject == JsonObjects.Streams) {
 						lastKey = json.GetString();
-						streams[currentStream].Add(lastKey, new object());
+						streams[currentStream].TryAdd(lastKey, new object());
 					}
 					else if (currentObject == JsonObjects.Format) {
 						lastKey = json.GetString();
-						format.Add(lastKey, new object());
+						format.TryAdd(lastKey, new object());
 					}
 					break;
 				case JsonTokenType.String:
@@ -110,7 +111,16 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 			};
 
 			if (format.ContainsKey("duration") && TimeSpan.TryParse((string)format["duration"], out var duration))
-				info.Duration = duration;
+				/*
+				 * Trim miliseconds here as we would have done it later anyway.
+				 * Reasons are:
+				 * - More user friendly
+				 * - Allows an improved check against equality
+				 * Cons are:
+				 * - Not 100% accurate if you consider a difference of e.g. 2 miliseconds makes a duplicate no longer a duplicate
+				 * - Breaking change at the moment of implementation as it doesn't apply to already scanned files
+				 */
+				info.Duration = duration.TrimMiliseconds();
 
 			var foundBitRate = false;
 			for (int i = 0; i < streams.Count; i++) {

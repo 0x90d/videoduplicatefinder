@@ -382,6 +382,7 @@
                                             <MenuItem Command="{Binding CheckWhenIdenticalCommand}" Header="{x:Static properties:Resources.Select100IdenticalKeepFirst}" />
                                             <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}" Header="{x:Static properties:Resources.Select100IdenticalExceptSizeKeepSmallest}" />
                                             <MenuItem Command="{Binding CheckLowestQualityCommand}" Header="{x:Static properties:Resources.SelectLowestDurationLowestQualityKeepLongestBestQuality}" />
+                                            <MenuItem Command="{Binding CheckWhenLengthIsIdenticalCommand}" Header="{x:Static properties:Resources.SelectIdenticalLengthKeepSmallest}" />
                                             <Separator />
                                             <MenuItem Command="{Binding ClearSelectionCommand}" Header="{x:Static properties:Resources.ClearSelection}" />
                                         </MenuItem>

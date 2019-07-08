@@ -156,6 +156,11 @@ namespace VideoDuplicateFinderWindows.Data {
 			if (ReferenceEquals(this, other)) return true;
 			return GroupId.Equals(other.GroupId);
 		}
+		public bool EqualsOnlyLength(DuplicateItemViewModel other) {
+			if (ReferenceEquals(null, other)) return false;
+			if (ReferenceEquals(this, other)) return true;
+			return GroupId.Equals(other.GroupId) && Duration.Equals(other.Duration);
+		}
 
 		public override bool Equals(object? obj) {
 			if (obj == null) return false;

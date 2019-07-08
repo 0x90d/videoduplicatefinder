@@ -166,7 +166,7 @@ namespace VideoDuplicateFinderWindows {
 				var others = Scanner.Duplicates.Where(a => a.GroupId == dup.GroupId && a.Path != dup.Path).ToList();
 				dup.SizeBest = !others.Any(a => a.SizeLong < dup.SizeLong);
 				dup.FrameSizeBest = !others.Any(a => a.FrameSizeInt > dup.FrameSizeInt);
-				dup.DurationBest = !others.Any(a => a.Duration.TrimMiliseconds() > dup.Duration.TrimMiliseconds());
+				dup.DurationBest = !others.Any(a => a.Duration > dup.Duration);
 				dup.BitrateBest = !others.Any(a => a.BitRateKbs > dup.BitRateKbs);
 				Duplicates.Add(dup);
 			}
@@ -439,12 +439,16 @@ namespace VideoDuplicateFinderWindows {
 		}, a => host?.TreeViewDuplicates?.SelectedItem != null);
 		public DelegateCommand<System.Windows.Controls.ListBox> RemoveIncludesFromListCommand => new DelegateCommand<System.Windows.Controls.ListBox>(a => {
 			while (a.SelectedItems.Count > 0)
+#pragma warning disable CS8600, CS8604 // Converting null literal or possible null value to non-nullable type. / Possible null reference argument.
 				Includes.Remove((string)a.SelectedItems[0]);
+#pragma warning restore CS8604, CS8604 // Converting null literal or possible null value to non-nullable type. / Possible null reference argument.
 
 		}, a => a?.SelectedItems.Count > 0);
 		public DelegateCommand<System.Windows.Controls.ListBox> RemoveBlacklistFromListCommand => new DelegateCommand<System.Windows.Controls.ListBox>(a => {
 			while (a.SelectedItems.Count > 0)
+#pragma warning disable CS8600, CS8604 // Converting null literal or possible null value to non-nullable type. / Possible null reference argument.
 				Blacklists.Remove((string)a.SelectedItems[0]);
+#pragma warning restore CS8604, CS8604 // Converting null literal or possible null value to non-nullable type. / Possible null reference argument.
 		}, a => a?.SelectedItems.Count > 0);
 		public DelegateCommand StartScanCommand => new DelegateCommand(async a => {
 			if (!DuplicateFinderEngine.Utils.FfFilesExist) {
@@ -503,6 +507,23 @@ namespace VideoDuplicateFinderWindows {
 				foreach (var first in Duplicates) {
 					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
 					var l = Duplicates.Where(d => d.EqualsButSize(first) && !d.Path.Equals(first.Path));
+					var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
+					if (!dupMods.Any()) continue;
+					dupMods.Add(first);
+					dupMods = dupMods.OrderBy(s => s.SizeLong).ToList();
+					dupMods[0].Checked = false;
+					for (int i = 1; i < dupMods.Count; i++) {
+						dupMods[i].Checked = true;
+					}
+					blackListGroupID.Add(first.GroupId);
+				}
+			}, a => Duplicates.Count > 0);
+		public DelegateCommand CheckWhenLengthIsIdenticalCommand =>
+			new DelegateCommand(a => {
+				var blackListGroupID = new HashSet<Guid>();
+				foreach (var first in Duplicates) {
+					if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
+					var l = Duplicates.Where(d => d.EqualsOnlyLength(first) && !d.Path.Equals(first.Path));
 					var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
 					if (!dupMods.Any()) continue;
 					dupMods.Add(first);

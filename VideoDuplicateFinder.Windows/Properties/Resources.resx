@@ -390,4 +390,7 @@
   <data name="LoadDatabase" xml:space="preserve">
     <value>Load Database</value>
   </data>
+  <data name="SelectIdenticalLengthKeepSmallest" xml:space="preserve">
+    <value>Select Identical Duration (Keep Smallest)</value>
+  </data>
 </root>
