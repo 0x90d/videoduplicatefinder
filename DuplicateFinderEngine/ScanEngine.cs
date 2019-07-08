@@ -339,8 +339,8 @@ namespace DuplicateFinderEngine {
 
 				double resizeFactor = 1;
 				if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
-					double widthFactor = Convert.ToDouble(bitmapImage.Width) / 100;
-					double heightFactor = Convert.ToDouble(bitmapImage.Height) / 100;
+					double widthFactor = bitmapImage.Width / 100;
+					double heightFactor = bitmapImage.Height / 100;
 					resizeFactor = Math.Max(widthFactor, heightFactor);
 
 				}
