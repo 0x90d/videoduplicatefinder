@@ -101,13 +101,13 @@
     <value>Copier des fichiers ...</value>
   </data>
   <data name="FailedToCopySomeFilesPleaseCheckLog" xml:space="preserve">
-    <value>Échec de la copie de certains fichiers. S'il vous plaît vérifier le journal!</value>
+    <value>Échec de la copie de certains fichiers. Veuillez vérifier le journal!</value>
   </data>
   <data name="Warning" xml:space="preserve">
     <value>Attention</value>
   </data>
   <data name="DeleteAllCheckedItemsFromDISKToRecycleBinIfPossible" xml:space="preserve">
-    <value>Supprimer tous les éléments cochés de la disquette (dans la corbeille si possible)?</value>
+    <value>Supprimer tous les éléments cochés du disque (dans la corbeille si possible)?</value>
   </data>
   <data name="Confirmation" xml:space="preserve">
     <value>Confirmation</value>
@@ -164,13 +164,13 @@
     <value>Copier le journal dans le presse-papier</value>
   </data>
   <data name="PleaseWait" xml:space="preserve">
-    <value>S'il vous plaît, attendez...</value>
+    <value>Veuillez patienter</value>
   </data>
   <data name="Scanner" xml:space="preserve">
     <value>Scanner</value>
   </data>
   <data name="Start" xml:space="preserve">
-    <value>Début</value>
+    <value>Débuter</value>
   </data>
   <data name="Resume" xml:space="preserve">
     <value>CV</value>
@@ -179,7 +179,7 @@
     <value>Pause</value>
   </data>
   <data name="Stop" xml:space="preserve">
-    <value>Arrêtez</value>
+    <value>Arrêter</value>
   </data>
   <data name="IgnoreReadOnlyFolders" xml:space="preserve">
     <value>Ignorer les dossiers en lecture seule</value>
@@ -221,7 +221,7 @@
     <value>sauvegarder</value>
   </data>
   <data name="ToHtml" xml:space="preserve">
-    <value>À html</value>
+    <value>Vers html</value>
   </data>
   <data name="Filter" xml:space="preserve">
     <value>Filtre</value>
