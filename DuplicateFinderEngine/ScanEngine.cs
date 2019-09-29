@@ -51,7 +51,7 @@ namespace DuplicateFinderEngine {
 
 			//get files
 			Logger.Instance.Info(Properties.Resources.BuildingFileList);
-			await Task.Run(() => InternalBuildFileList());
+			await Task.Run(InternalBuildFileList);
 			FilesEnumerated?.Invoke(this, new EventArgs());
 			//start scan
 			Logger.Instance.Info(Properties.Resources.StartScan);
