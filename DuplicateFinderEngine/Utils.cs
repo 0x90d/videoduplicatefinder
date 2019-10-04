@@ -39,26 +39,26 @@ namespace DuplicateFinderEngine {
 			}
 
 
-			if (pathsEnv != null && (string.IsNullOrEmpty(FfprobePath) || string.IsNullOrEmpty(FfmpegPath)))
-				foreach (var path in pathsEnv) {
-					if (!Directory.Exists(path)) {
-						continue;
-					}
-					try {
-						var files = new DirectoryInfo(path).GetFiles();
-
-						if (string.IsNullOrEmpty(FfmpegPath))
-							FfmpegPath = files.FirstOrDefault(x => x.Name.StartsWith(FFmpegExecutableName, true, CultureInfo.InvariantCulture))
-								?.FullName ?? string.Empty;
-						if (string.IsNullOrEmpty(FfprobePath))
-							FfprobePath = files.FirstOrDefault(x => x.Name.StartsWith(FFprobeExecutableName, true, CultureInfo.InvariantCulture))
-								?.FullName ?? string.Empty;
-					}
-					catch (Exception e) {
-							Console.WriteLine(e);
-					}
-					
+			if (pathsEnv == null || (!string.IsNullOrEmpty(FfprobePath) && !string.IsNullOrEmpty(FfmpegPath))) return;
+			foreach (var path in pathsEnv) {
+				if (!Directory.Exists(path)) {
+					continue;
 				}
+				try {
+					var files = new DirectoryInfo(path).GetFiles();
+
+					if (string.IsNullOrEmpty(FfmpegPath))
+						FfmpegPath = files.FirstOrDefault(x => x.Name.StartsWith(FFmpegExecutableName, true, CultureInfo.InvariantCulture))
+							             ?.FullName ?? string.Empty;
+					if (string.IsNullOrEmpty(FfprobePath))
+						FfprobePath = files.FirstOrDefault(x => x.Name.StartsWith(FFprobeExecutableName, true, CultureInfo.InvariantCulture))
+							              ?.FullName ?? string.Empty;
+				}
+				catch (Exception e) {
+					Console.WriteLine(e);
+				}
+					
+			}
 		}
 		
 

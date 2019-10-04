@@ -7,7 +7,25 @@ namespace DuplicateFinderEngine {
 	public static class FileHelper {
 
 		public static readonly string[] ImageExtensions = { "jpg", "jpeg", "png", "gif", "bmp", "tiff" };
-		public static readonly string[] VideoExtensions = { "mp4", "wmv", "avi", "mkv", "flv", "mov", "mpg", "mpeg", "m4v", "asf", "f4v", "webm", "divx", "m2t", "m2ts", "vob", "ts" };
+		public static readonly string[] VideoExtensions = {
+			"mp4",
+			"wmv",
+			"avi",
+			"mkv",
+			"flv",
+			"mov",
+			"mpg",
+			"mpeg",
+			"m4v",
+			"asf",
+			"f4v",
+			"webm",
+			"divx",
+			"m2t",
+			"m2ts",
+			"vob",
+			"ts"
+		};
 		public static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 #pragma warning disable CS8601,CS8602 // Dereference of a possibly null reference.
 		public static readonly string CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);

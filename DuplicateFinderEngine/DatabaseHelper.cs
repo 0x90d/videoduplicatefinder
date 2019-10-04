@@ -63,8 +63,9 @@ namespace DuplicateFinderEngine {
 			var oldCount = videoFiles.Count;
 			var st = Stopwatch.StartNew();
 
-			videoFiles = new Dictionary<string, FileEntry>(videoFiles.Where(kv => File.Exists(kv.Value.Path) &&
-																					   !kv.Value.Flags.Any(EntryFlags.MetadataError | EntryFlags.ThumbnailError)));
+			videoFiles = new Dictionary<string, FileEntry>(videoFiles.Where(kv =>
+				File.Exists(kv.Value.Path) &&
+				!kv.Value.Flags.Any(EntryFlags.MetadataError | EntryFlags.ThumbnailError)));
 			st.Stop();
 			Logger.Instance.Info(string.Format(Properties.Resources.DatabaseCleanupHasFinished, st.Elapsed, oldCount - videoFiles.Count));
 			return videoFiles;
@@ -73,7 +74,7 @@ namespace DuplicateFinderEngine {
 		public static void ExportDatabaseToCSV(IEnumerable<FileEntry> videoFiles) {
 
 			var st = Stopwatch.StartNew();
-			var dt = new DataTable();
+			using var dt = new DataTable();
 			dt.Columns.Add("Directory", typeof(string));
 			dt.Columns.Add("FileName", typeof(string));
 			dt.Columns.Add("Width", typeof(int));

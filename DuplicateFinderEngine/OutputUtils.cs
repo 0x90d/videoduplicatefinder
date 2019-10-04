@@ -150,7 +150,7 @@ function myFunction() {
 			foreach (var info in infos) {
 				var attribute = info.GetCustomAttributes(typeof(DisplayNameAttribute), true)?
 					.Cast<DisplayNameAttribute>().ToList();
-				if (attribute == null || attribute.Count == 0) {
+				if (attribute.Count == 0) {
 					continue;
 				}
 
@@ -164,7 +164,7 @@ function myFunction() {
 			foreach (var info in infos) {
 				var attribute = info.GetCustomAttributes(typeof(DisplayNameAttribute), true)?
 					.Cast<DisplayNameAttribute>().ToList();
-				if (attribute == null || attribute.Count == 0) {
+				if (attribute.Count == 0) {
 					continue;
 				}
 
@@ -229,7 +229,7 @@ function myFunction() {
 					while (File.Exists(imgPath))
 						imgPath = Utils.SafePathCombine(dir.FullName, Utils.GetRandomNumber() + ".jpeg");
 					//Create new bitmap to avoid 'A generic error occurred in GDI+,' exception
-					var bmp = new Bitmap(img);
+					using var bmp = new Bitmap(img);
 					bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
 					propValue += $"<img src=\"thumbnails/{Path.GetFileName(imgPath)}\" alt=\"{Path.GetFileName(imgPath)}\" />";
 				}

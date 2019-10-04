@@ -31,7 +31,7 @@ namespace DuplicateFinderEngine.Data {
 			else {
 				//We have only one stream if its an image
 				//Breaking change, existing databases may not have these values
-				if (file.mediaInfo != null) {
+				if (file.mediaInfo?.Streams?.Length > 0) {
 					FrameSize = file.mediaInfo.Streams[0].Width + "x" + file.mediaInfo.Streams[0].Height;
 					FrameSizeInt = file.mediaInfo.Streams[0].Width + file.mediaInfo.Streams[0].Height;
 				}

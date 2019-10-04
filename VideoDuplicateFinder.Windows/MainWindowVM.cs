@@ -143,7 +143,7 @@ namespace VideoDuplicateFinderWindows {
 
 		private void Scanner_DatabaseVideosExportedToCSV(object sender, EventArgs e) => CloseMessage();
 
-		private void Instance_LogItemAdded(object sender, EventArgs e) => Application.Current.Dispatcher.BeginInvoke(new Action(() => {
+		private void Instance_LogItemAdded(object sender, EventArgs e) => Application.Current.Dispatcher?.BeginInvoke(new Action(() => {
 			while (Logger.Instance.LogEntries.Count > 0) {
 				if (Logger.Instance.LogEntries.TryTake(out var item))
 					LogItems.Add(item);
@@ -604,7 +604,7 @@ namespace VideoDuplicateFinderWindows {
 				Duplicates.ToHtmlTable(ofd.FileName);
 			}
 			catch (Exception e) {
-				ShowMessage(e.Message + Environment.NewLine + Environment.NewLine + e.StackTrace, VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageDialogStyle.Affirmative);
+				ShowMessage(string.Concat(e.Message , Environment.NewLine , Environment.NewLine , e.StackTrace), VideoDuplicateFinder.Windows.Properties.Resources.Error, MessageDialogStyle.Affirmative);
 			}
 		}, a => Duplicates.Count > 0);
 		public DelegateCommand RemoveSelectionFromListCommand => new DelegateCommand(a => { InternalDelete(false); }, a => Duplicates.Count > 0);

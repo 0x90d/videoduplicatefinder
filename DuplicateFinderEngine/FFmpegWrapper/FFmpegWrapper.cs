@@ -20,16 +20,6 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 			return RunFFmpeg(inputFile, settings);
 		}
 
-		//void WaitFFMpegProcessForExit() {
-		//	if (FFMpegProcess.HasExited) return;
-
-		//	var milliseconds = (int)ExecutionTimeout.TotalMilliseconds;
-		//	if (FFMpegProcess.WaitForExit(milliseconds)) return;
-		//	EnsureFFMpegProcessStopped();
-		//	Logger.Instance.Info(string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
-		//	throw new FFMpegException(-2,
-		//		string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
-		//}
 		void EnsureFFMpegProcessStopped() {
 			if (FFMpegProcess == null || FFMpegProcess.HasExited) return;
 			try {
@@ -59,7 +49,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 				}
 
 
-				var ms = new MemoryStream();
+				using var ms = new MemoryStream();
 				//start reading here, otherwise the streams fill up and ffmpeg will block forever
 				var imgDataTask = FFMpegProcess.StandardOutput.BaseStream.CopyToAsync(ms);
 
@@ -87,9 +77,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 
 			}
 			catch (Exception e) {
-#if DEBUG
-				Trace.WriteLine(e);
-#endif
+				Debug.WriteLine(e);
 				EnsureFFMpegProcessStopped();
 				throw;
 			}

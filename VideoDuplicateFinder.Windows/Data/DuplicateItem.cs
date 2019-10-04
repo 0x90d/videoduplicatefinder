@@ -28,7 +28,7 @@ namespace VideoDuplicateFinderWindows.Data {
 			IsImage = file.IsImage;
 			file.ThumbnailUpdated += () => {
 				Thumbnail = Utils.JoinImages(file.Thumbnail) ?? new BitmapImage();
-				Application.Current.Dispatcher.BeginInvoke(new Action(() => {
+				Application.Current.Dispatcher?.BeginInvoke(new Action(() => {
 					OnPropertyChanged(nameof(Thumbnail));
 				}), System.Windows.Threading.DispatcherPriority.Background);
 			};

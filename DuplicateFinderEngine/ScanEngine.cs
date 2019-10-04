@@ -31,7 +31,7 @@ namespace DuplicateFinderEngine {
 
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
 		private Dictionary<string, FileEntry> DatabaseFileList = new Dictionary<string, FileEntry>();
-		private List<FileEntry> ScanFileList = new List<FileEntry>();
+		private readonly List<FileEntry> ScanFileList = new List<FileEntry>();
 		private readonly List<float> positionList = new List<float>();
 
 
@@ -337,10 +337,10 @@ namespace DuplicateFinderEngine {
 				videoFile.FrameSize = $"{bitmapImage.Width}x{bitmapImage.Height}";
 				videoFile.FrameSizeInt = bitmapImage.Width + bitmapImage.Height;
 
-				double resizeFactor = 1;
+				float resizeFactor = 1f;
 				if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
-					double widthFactor = bitmapImage.Width / 100;
-					double heightFactor = bitmapImage.Height / 100;
+					float widthFactor = bitmapImage.Width / 100f;
+					float heightFactor = bitmapImage.Height / 100f;
 					resizeFactor = Math.Max(widthFactor, heightFactor);
 
 				}
@@ -360,7 +360,7 @@ namespace DuplicateFinderEngine {
 		}
 
 		private (EntryFlags err, List<byte[]>?) GetVideoThumbnailAsBitmaps(FileEntry videoFile, List<float> positions) {
-			var ffMpeg = new FFmpegWrapper.FFmpegWrapper();
+			using var ffMpeg = new FFmpegWrapper.FFmpegWrapper();
 			var images = new List<byte[]>();
 			try {
 				for (var i = 0; i < positions.Count; i++) {

@@ -11,7 +11,7 @@ namespace VideoDuplicateFinderConsole {
 			var result = new VideoDuplicateFinderConsole().Run(args);
 			return result;
 		}
-		
+
 
 		class VideoDuplicateFinderConsole {
 			static readonly char PATHS_SEP = Path.PathSeparator;
@@ -66,13 +66,13 @@ namespace VideoDuplicateFinderConsole {
 					throw new ParseException(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 						? string.Format(Properties.Resources.CmdException_FFprobeMissingWindows, Utils.FFprobeExecutableName)
 						: string.Format(Properties.Resources.CmdException_FFprobeMissingLinux, Utils.FFprobeExecutableName));
-					
+
 				}
 				if (!File.Exists(Utils.FfmpegPath) && !File.Exists(Utils.FfmpegPath + ".exe")) {
 					throw new ParseException(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 						? string.Format(Properties.Resources.CmdException_FFprobeMissingWindows, Utils.FFmpegExecutableName)
-						:  string.Format(Properties.Resources.CmdException_FFprobeMissingLinux, Utils.FFmpegExecutableName));
-					}
+						: string.Format(Properties.Resources.CmdException_FFprobeMissingLinux, Utils.FFmpegExecutableName));
+				}
 				if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 					Console.WriteLine("-- Note: When the app crashes with 'The type initializer for 'Gdip' threw an exception ...' exception you will have to install ");
 					Console.WriteLine("libgdiplus");

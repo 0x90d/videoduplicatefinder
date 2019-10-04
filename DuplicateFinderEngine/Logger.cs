@@ -7,7 +7,7 @@ namespace DuplicateFinderEngine
     public sealed class Logger
     {
         private static Logger instance;
-        public static Logger Instance => instance ?? (instance = new Logger());
+        public static Logger Instance => instance ??= new Logger();
         public event EventHandler LogItemAdded;
 
 		public void ClearLog() => LogEntries.Clear();

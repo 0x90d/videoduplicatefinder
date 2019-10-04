@@ -25,7 +25,7 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 					throw new FFProbeException(-1, Properties.Resources.FFprobeProcessWasAborted);
 				}
 
-				var ms = new MemoryStream();
+				using var ms = new MemoryStream();
 				//start reading here, otherwise the streams fill up and ffmpeg will block forever
 				var imgDataTask = FFprobeProcess.StandardOutput.BaseStream.CopyToAsync(ms);
 

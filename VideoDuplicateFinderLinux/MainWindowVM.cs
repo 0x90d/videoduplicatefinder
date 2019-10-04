@@ -185,7 +185,7 @@ namespace VideoDuplicateFinderLinux {
 			if (node?.Value != null)
 				IgnoreReadOnlyFolders = bool.Parse(node.Value);
 		}
-		private void Scanner_Progress(object sender, ScanEngine.OwnScanProgress e) {
+		private void Scanner_Progress(object sender, ScanEngine.OwnScanProgress e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				ScanProgressText = e.CurrentFile;
 				RemainingTime = e.Remaining;
@@ -193,7 +193,6 @@ namespace VideoDuplicateFinderLinux {
 				TimeElapsed = e.Elapsed;
 				ScanProgressMaxValue = Scanner.ScanProgressMaxValue;
 			});
-		}
 
 		private void Instance_LogItemAdded(object sender, EventArgs e) {
 			Dispatcher.UIThread.InvokeAsync(() => {
