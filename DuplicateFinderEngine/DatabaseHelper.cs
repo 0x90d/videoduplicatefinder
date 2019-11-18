@@ -116,7 +116,7 @@ namespace DuplicateFinderEngine {
 			foreach (DataRow? row in dt.Rows) {
 				if (row == null) return;
 				var fields = row.ItemArray.Select(field => {
-					string s = field.ToString()?.Replace("\"", "\"\"") ?? string.Empty;
+					string s = field?.ToString().Replace("\"", "\"\"") ?? string.Empty;
 					if (s.Contains(','))
 						s = string.Concat("\"", s, "\"");
 					return s;

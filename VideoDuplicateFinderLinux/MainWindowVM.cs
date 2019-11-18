@@ -33,8 +33,7 @@ namespace VideoDuplicateFinderLinux {
 			get => duplicates;
 			set => this.RaiseAndSetIfChanged(ref duplicates, value);
 		}
-		//public ObservableCollection<DuplicateItemViewModel> Duplicates { get; } =
-		//	new ObservableCollection<DuplicateItemViewModel>();
+
 		string _SearchText;
 		public string SearchText {
 			get => _SearchText;
@@ -194,14 +193,13 @@ namespace VideoDuplicateFinderLinux {
 				ScanProgressMaxValue = Scanner.ScanProgressMaxValue;
 			});
 
-		private void Instance_LogItemAdded(object sender, EventArgs e) {
+		private void Instance_LogItemAdded(object sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				while (Logger.Instance.LogEntries.Count > 0) {
 					if (Logger.Instance.LogEntries.TryTake(out var item))
 						LogItems.Add(item);
 				}
 			});
-		}
 
 		private void Scanner_ScanDone(object sender, EventArgs e) {
 			Scanner.PopulateDuplicateThumbnails();

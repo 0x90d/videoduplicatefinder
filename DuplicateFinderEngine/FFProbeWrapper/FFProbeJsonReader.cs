@@ -13,9 +13,9 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 
 		// C# no-alloc optimization that directly wraps the data section of the dll (similar to string constants)
 		// https://github.com/dotnet/roslyn/pull/24621
-		static ReadOnlySpan<byte> StreamsKeyword => new byte[7] { 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D, 0x73 }; // = streams
-		static ReadOnlySpan<byte> FormatKeyword => new byte[6] { 0x66, 0x6F, 0x72, 0x6D, 0x61, 0x74 }; // = format
-		static ReadOnlySpan<byte> IndexKeyword => new byte[5] { 0x69, 0x6E, 0x64, 0x65, 0x78 }; // = index
+		static ReadOnlySpan<byte> StreamsKeyword => new byte[] { 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D, 0x73 }; // = streams
+		static ReadOnlySpan<byte> FormatKeyword => new byte[] { 0x66, 0x6F, 0x72, 0x6D, 0x61, 0x74 }; // = format
+		static ReadOnlySpan<byte> IndexKeyword => new byte[] { 0x69, 0x6E, 0x64, 0x65, 0x78 }; // = index
 
 		/// <summary>
 		/// Parses FFprobe JSON output and returns a new <see cref="MediaInfo"/>

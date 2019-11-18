@@ -101,7 +101,7 @@ namespace DuplicateFinderEngine {
 			if (!Path.IsPathRooted(path2))
 				Path.Combine(path1, path2);
 
-			path2 = path2.TrimStart(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
+			path2 = path2.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 			return Path.Combine(path1, path2);
 		}
 	}

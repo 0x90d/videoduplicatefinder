@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace DuplicateFinderEngine.FFProbeWrapper {
 	sealed class FFProbeWrapper : IDisposable {
@@ -10,28 +11,31 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 
 		public MediaInfo? GetMediaInfo(string inputFile) {
 			InputFile = inputFile;
+			var ms = new MemoryStream();
 			try {
-				FFprobeProcess = Process.Start(new ProcessStartInfo(Utils.FfprobePath, $" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams  \"{inputFile}\"") {
-					WindowStyle = ProcessWindowStyle.Hidden,
-					CreateNoWindow = true,
-					UseShellExecute = false,
-					WorkingDirectory = Path.GetDirectoryName(Utils.FfprobePath),
-					RedirectStandardInput = false,
-					RedirectStandardOutput = true,
-				});
+				FFprobeProcess = Process.Start(
+					new ProcessStartInfo(Utils.FfprobePath,
+						$" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams  \"{inputFile}\"") {
+						WindowStyle = ProcessWindowStyle.Hidden,
+						CreateNoWindow = true,
+						UseShellExecute = false,
+						WorkingDirectory = Path.GetDirectoryName(Utils.FfprobePath),
+						RedirectStandardInput = false,
+						RedirectStandardOutput = true,
+					});
 
 				if (FFprobeProcess == null) {
 					Logger.Instance.Info(Properties.Resources.FFMpegProcessWasAborted);
 					throw new FFProbeException(-1, Properties.Resources.FFprobeProcessWasAborted);
 				}
 
-				using var ms = new MemoryStream();
 				//start reading here, otherwise the streams fill up and ffmpeg will block forever
 				var imgDataTask = FFprobeProcess.StandardOutput.BaseStream.CopyToAsync(ms);
 
 				WaitProcessForExit();
 
-				imgDataTask.Wait(1000);
+				if (!imgDataTask.Wait((int)ExecutionTimeout.TotalMilliseconds))
+					throw new TimeoutException("Copying ffprobe output timed out.");
 				var result = FFProbeJsonReader.Read(ms.ToArray(), inputFile);
 				FFprobeProcess?.Close();
 				return result;
@@ -42,9 +46,12 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 				Logger.Instance.Info(string.Format(Properties.Resources.FFprobeError, ex.Message, inputFile));
 				return null;
 			}
+			finally {
+				ms.Dispose();
+			}
 		}
 
-
+		
 
 		private void WaitProcessForExit() {
 			if (FFprobeProcess == null || FFprobeProcess.HasExited) return;

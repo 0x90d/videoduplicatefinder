@@ -30,6 +30,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 
 		private byte[] RunFFmpeg(string input, FFmpegSettings settings) {
 			byte[] data;
+			var ms = new MemoryStream();
 			try {
 				var arguments = $" -hide_banner -loglevel panic -y -ss {settings.Seek.ToString(CultureInfo.InvariantCulture)} -i \"{input}\" -t 1 -f {settings.OutputFormat} -vframes 1 {settings.VideoFrameSize} \"-\"";
 				var processStartInfo =
@@ -48,8 +49,6 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 					throw new FFMpegException(-1, Properties.Resources.FFMpegProcessWasAborted);
 				}
 
-
-				using var ms = new MemoryStream();
 				//start reading here, otherwise the streams fill up and ffmpeg will block forever
 				var imgDataTask = FFMpegProcess.StandardOutput.BaseStream.CopyToAsync(ms);
 
@@ -70,7 +69,9 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 					}
 				}
 
-				imgDataTask.Wait(ExecutionTimeout);
+				if (!imgDataTask.Wait(ExecutionTimeout)) {
+					throw new TimeoutException($"\'{input}\' ffmpeg timed out on retrieving thumbnail");
+				}
 				data = ms.ToArray();
 
 				FFMpegProcess?.Close();
@@ -80,6 +81,9 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 				Debug.WriteLine(e);
 				EnsureFFMpegProcessStopped();
 				throw;
+			}
+			finally {
+				ms.Dispose();
 			}
 			return data;
 		}

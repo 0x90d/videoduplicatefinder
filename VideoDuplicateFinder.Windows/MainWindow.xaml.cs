@@ -9,7 +9,7 @@ using MahApps.Metro.Controls;
 
 namespace VideoDuplicateFinderWindows
 {
-	public partial class MainWindow : MetroWindow {
+	public partial class MainWindow {
 		public MainWindow() {
 			InitializeComponent();
 			((MainWindowVM)DataContext).host = this;
@@ -27,7 +27,7 @@ namespace VideoDuplicateFinderWindows
 			}
 		}
 
-		private void FolderListBox_Drop(object sender, System.Windows.DragEventArgs e) {
+		private void FolderListBox_Drop(object sender, DragEventArgs e) {
 			var existing = (ObservableCollection<string>)((ListBox)sender).ItemsSource;
 			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
 			var folders = (string[])e.Data.GetData(DataFormats.FileDrop);
@@ -52,7 +52,7 @@ namespace VideoDuplicateFinderWindows
 		private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e) {
 			e.Handled = true;
 			var routedArgs = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta) {
-				RoutedEvent = UIElement.MouseWheelEvent
+				RoutedEvent = MouseWheelEvent
 			};
 			TreeViewDuplicates.RaiseEvent(routedArgs);
 		}

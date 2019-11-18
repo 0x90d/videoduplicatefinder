@@ -200,7 +200,7 @@ namespace VideoDuplicateFinderWindows {
 			return success;
 		}
 
-		private void Scanner_Progress(object sender, ScanEngine.OwnScanProgress e) => Application.Current.Dispatcher.BeginInvoke(new Action(() => {
+		private void Scanner_Progress(object sender, ScanEngine.OwnScanProgress e) => Application.Current.Dispatcher?.BeginInvoke(new Action(() => {
 			ScanProgressText = e.CurrentFile;
 			RemainingTime = e.Remaining;
 			ScanProgressValue = e.CurrentPosition;
@@ -622,7 +622,7 @@ namespace VideoDuplicateFinderWindows {
 
 		async void CopyDuplicates(string targetFolder, bool move) {
 			await ShowProgressMessage(VideoDuplicateFinder.Windows.Properties.Resources.CopyingFiles);
-			var t = new System.Threading.Tasks.Task<int>(() => {
+			var t = new Task<int>(() => {
 				FileHelper.CopyFile(Duplicates.Where(s => s.Checked).Select(s => s.Path), targetFolder, true, move,
 					out int errors);
 				return errors;

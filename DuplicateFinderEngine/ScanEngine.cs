@@ -1,5 +1,6 @@
 using DuplicateFinderEngine.Data;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -165,7 +166,7 @@ namespace DuplicateFinderEngine {
 		private void InternalSearch(CancellationToken cancelToken, PauseTokenSource pauseTokenSource) {
 			ElapsedTimer.Start();
 			SearchSW.Start();
-			var duplicateDict = new Dictionary<string, DuplicateItem>();
+			var duplicateDict = new ConcurrentDictionary<string, DuplicateItem>();
 
 			try {
 				var parallelOpts = new ParallelOptions {
@@ -228,7 +229,8 @@ namespace DuplicateFinderEngine {
 						var duplicateCounter = 0;
 						var percent = new float[baseItem.grayBytes.Count];
 						for (var j = 0; j < baseItem.grayBytes.Count; j++) {
-							Debug.Assert(baseItem.grayBytes[j].Length == compItem.grayBytes[j].Length, "Images must be of same length");
+							if (baseItem.grayBytes[j].Length != compItem.grayBytes[j].Length)
+								break;
 							percent[j] = ExtensionMethods.PercentageDifference(baseItem.grayBytes[j], compItem.grayBytes[j]);
 							if (percent[j] < percentageDifference) {
 								duplicateCounter++;
@@ -238,30 +240,30 @@ namespace DuplicateFinderEngine {
 						if (duplicateCounter != baseItem.grayBytes.Count) continue;
 
 						var percSame = percent.Average();
-						lock (duplicateDict) {
-							var foundBase = duplicateDict.TryGetValue(baseItem.Path, out var existingBase);
-							var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
+						//lock (duplicateDict) {
+						var foundBase = duplicateDict.TryGetValue(baseItem.Path, out var existingBase);
+						var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
 
-							if (foundBase && foundComp) {
-								//this happens with 4+ identical items:
-								//first, 2+ duplicate groups are found independently, they are merged in this branch
-								if (existingBase.GroupId != existingComp.GroupId) {
-									foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
-										dup.GroupId = existingBase.GroupId;
-								}
-							}
-							else if (foundBase) {
-								duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existingBase.GroupId });
-							}
-							else if (foundComp) {
-								duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existingComp.GroupId });
-							}
-							else {
-								var groupId = Guid.NewGuid();
-								duplicateDict.Add(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
-								duplicateDict.Add(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
+						if (foundBase && foundComp) {
+							//this happens with 4+ identical items:
+							//first, 2+ duplicate groups are found independently, they are merged in this branch
+							if (existingBase.GroupId != existingComp.GroupId) {
+								foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
+									dup.GroupId = existingBase.GroupId;
 							}
 						}
+						else if (foundBase) {
+							duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existingBase.GroupId });
+						}
+						else if (foundComp) {
+							duplicateDict.TryAdd(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existingComp.GroupId });
+						}
+						else {
+							var groupId = Guid.NewGuid();
+							duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
+							duplicateDict.TryAdd(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
+						}
+						//}
 					}
 					IncrementProgress(baseItem.Path);
 				});
