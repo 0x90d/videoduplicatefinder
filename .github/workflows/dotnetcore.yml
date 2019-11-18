@@ -1,0 +1,17 @@
+name: .NET Core
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.*'
+    - name: Build with dotnet
+      run: dotnet publish -c Release -v q --self-contained -r win-x64 -f netcoreapp3.1
