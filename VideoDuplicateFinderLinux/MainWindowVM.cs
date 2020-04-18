@@ -15,6 +15,7 @@ using System.Xml.Linq;
 using Avalonia.Media;
 using DynamicData;
 using DynamicData.Binding;
+using System.Reactive;
 
 namespace VideoDuplicateFinderLinux {
 	public sealed class MainWindowVM : ReactiveObject {
@@ -243,15 +244,15 @@ namespace VideoDuplicateFinderLinux {
 			return t =>t.IsGroupHeader == false && t.Path.Contains(searchText, StringComparison.OrdinalIgnoreCase);
 		}
 
-		public ReactiveCommand AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
 				Title = Properties.Resources.SelectFolder
-			}.ShowAsync(Application.Current.MainWindow);
+			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			if (!Includes.Contains(result))
 				Includes.Add(result);
 		});
-		public ReactiveCommand LatestReleaseCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.Create(() => {
 			try {
 				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
 					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
@@ -260,7 +261,7 @@ namespace VideoDuplicateFinderLinux {
 			}
 			catch { }
 		});
-		public ReactiveCommand CleanDatabaseCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> CleanDatabaseCommand => ReactiveCommand.Create(() => {
 			IsBusy = true;
 			IsBusyText = Properties.Resources.CleaningDatabase;
 			Scanner.CleanupDatabase();
@@ -270,10 +271,10 @@ namespace VideoDuplicateFinderLinux {
 				Includes.Remove((string)lbox.SelectedItems[0]);
 			return null;
 		});
-		public ReactiveCommand AddBlacklistToListCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> AddBlacklistToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
 				Title = Properties.Resources.SelectFolder
-			}.ShowAsync(Application.Current.MainWindow);
+			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			if (!Blacklists.Contains(result))
 				Blacklists.Add(result);
@@ -283,9 +284,9 @@ namespace VideoDuplicateFinderLinux {
 				Blacklists.Remove((string)lbox.SelectedItems[0]);
 			return null;
 		});
-		public ReactiveCommand ClearLogCommand => ReactiveCommand.Create(() => { LogItems.Clear(); });
-		public ReactiveCommand SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await new SaveFileDialog().ShowAsync(Application.Current.MainWindow);
+		public ReactiveCommand<Unit, Unit> ClearLogCommand => ReactiveCommand.Create(() => { LogItems.Clear(); });
+		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await new SaveFileDialog().ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			var sb = new StringBuilder();
 			foreach (var l in LogItems)
@@ -299,7 +300,7 @@ namespace VideoDuplicateFinderLinux {
 		});
 
 
-		public ReactiveCommand StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (!DuplicateFinderEngine.Utils.FfFilesExist) {
 				await MessageBoxService.Show(Properties.Resources.FFmpegFFprobeIsMissing);
 				return;
@@ -332,7 +333,7 @@ namespace VideoDuplicateFinderLinux {
 			IsBusyText = Properties.Resources.EnumeratingFiles;
 			Scanner.StartSearch();
 		});
-		public ReactiveCommand CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
 			var blackListGroupID = new HashSet<Guid>();
 			duplicateList.Edit(updater => {
 				foreach (var first in updater) {
@@ -358,7 +359,7 @@ namespace VideoDuplicateFinderLinux {
 			//	blackListGroupID.Add(first.GroupId);
 			//}
 		});
-		public ReactiveCommand CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
 			var blackListGroupID = new HashSet<Guid>();
 			duplicateList.Edit(updater => {
 				foreach (var first in updater) {
@@ -378,7 +379,7 @@ namespace VideoDuplicateFinderLinux {
 				}
 			});
 		});
-		public ReactiveCommand CheckLowestQualityCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> CheckLowestQualityCommand => ReactiveCommand.Create(() => {
 			var blackListGroupID = new HashSet<Guid>();
 			duplicateList.Edit(updater => {
 				foreach (var first in updater) {
@@ -432,14 +433,14 @@ namespace VideoDuplicateFinderLinux {
 				}
 			});
 		});
-		public ReactiveCommand ClearSelectionCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> ClearSelectionCommand => ReactiveCommand.Create(() => {
 			duplicateList.Edit(updater => {
 				for (var i = 0; i < updater.Count; i++)
 					updater[i].Checked = false;
 			});
 		});
-		public ReactiveCommand DeleteSelectionCommand => ReactiveCommand.Create(() => { DeleteInternal(true); });
-		public ReactiveCommand RemoveSelectionFromListCommand => ReactiveCommand.Create(() => { DeleteInternal(false); });
+		public ReactiveCommand<Unit, Unit> DeleteSelectionCommand => ReactiveCommand.Create(() => { DeleteInternal(true); });
+		public ReactiveCommand<Unit, Unit> RemoveSelectionFromListCommand => ReactiveCommand.Create(() => { DeleteInternal(false); });
 
 		async void DeleteInternal(bool fromDisk) {
 			if (Duplicates.Count == 0) return;
@@ -475,20 +476,20 @@ namespace VideoDuplicateFinderLinux {
 				}
 			});
 		}
-		public ReactiveCommand CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
 				Title = Properties.Resources.SelectFolder
-			}.ShowAsync(Application.Current.MainWindow);
+			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			FileHelper.CopyFile(duplicateList.Items.Where(s => s.Checked).Select(s => s.Path), result, true, false,
 				out var errorCounter);
 			if (errorCounter > 0)
 				await MessageBoxService.Show(Properties.Resources.FailedToCopyMoveSomeFilesPleaseCheckLog);
 		});
-		public ReactiveCommand MoveSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> MoveSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
 				Title = Properties.Resources.SelectFolder
-			}.ShowAsync(Application.Current.MainWindow);
+			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			FileHelper.CopyFile(duplicateList.Items.Where(s => s.Checked).Select(s => s.Path), result, true, true,
 				out var errorCounter);
@@ -496,7 +497,7 @@ namespace VideoDuplicateFinderLinux {
 				await MessageBoxService.Show(Properties.Resources.FailedToCopyMoveSomeFilesPleaseCheckLog);
 		});
 
-		public ReactiveCommand SaveToHtmlCommand => ReactiveCommand.CreateFromTask(async (a) => {
+		public ReactiveCommand<Unit, Unit> SaveToHtmlCommand => ReactiveCommand.CreateFromTask(async (a) => {
 			if (Scanner == null || Duplicates.Count == 0) return;
 			var ofd = new SaveFileDialog {
 				Title = Properties.Resources.SaveDuplicates,
@@ -510,7 +511,7 @@ namespace VideoDuplicateFinderLinux {
 			   }
 			};
 
-			var file = await ofd.ShowAsync(Application.Current.MainWindow);
+			var file = await ofd.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(file)) return;
 			try {
 				duplicateList.Items.Where(s => !s.IsGroupHeader).ToList().ToHtmlTable(file);

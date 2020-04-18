@@ -33,11 +33,12 @@
 
         <mah:ToggleSwitch
             Grid.Column="0"
+            Width="50"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
-            IsChecked="{Binding Checked, UpdateSourceTrigger=PropertyChanged}"
-            OffLabel=""
-            OnLabel="" />
+         IsOn="{Binding Checked, UpdateSourceTrigger=PropertyChanged}"
+                   OffContent=""
+            OnContent="" />
 
         <Image
             Grid.Column="1"
