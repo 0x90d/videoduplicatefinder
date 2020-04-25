@@ -10,8 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Setup .NET Core
-        shell: pwsh
-        run: |
+      shell: pwsh
+      run: |
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
           ./dotnet-install.ps1 -Channel 3.1
     - name: Build with dotnet
