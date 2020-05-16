@@ -36,13 +36,21 @@
             <Image
                 Grid.Column="2"
                 Margin="10,0,0,0"
-                ToolTip.Tip="Double click to open the file in explorer/shell"
                 Source="{Binding Thumbnail}">
                 <i:Interaction.Behaviors>
                     <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #ThumbnailImage}">
                         <ia:InvokeCommandAction Command="{Binding $parent[ListBox].DataContext.OpenItemInFolderCommand}" CommandParameter="{Binding}" />
                     </ia:EventTriggerBehavior>
                 </i:Interaction.Behaviors>
+                <ToolTip.Tip>
+                        <Border>
+                            <Image Source="{Binding Source}" Stretch="None">
+                                <Image.RenderTransform>
+                                    <ScaleTransform ScaleX="2" ScaleY="2"  />
+                                </Image.RenderTransform>
+                            </Image>
+                        </Border>
+                </ToolTip.Tip>
             </Image>
 
 

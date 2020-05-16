@@ -44,7 +44,19 @@
             Grid.Column="1"
             Margin="10,0,0,0"
             MouseLeftButtonDown="Image_MouseLeftButtonDown"
-            Source="{Binding Thumbnail}" />
+            Source="{Binding Thumbnail}" >
+            <Image.ToolTip>
+                <ToolTip Background="Black" DataContext="{Binding PlacementTarget, RelativeSource={RelativeSource Self}}">
+                    <Border >
+                        <Image Source="{Binding Source}" Stretch="None" ToolTipService.Placement="Top"  >
+                            <Image.LayoutTransform>
+                                    <ScaleTransform x:Name="Scale" ScaleX="2" ScaleY="2"  />
+                            </Image.LayoutTransform>
+                        </Image>
+                    </Border>
+                </ToolTip>
+            </Image.ToolTip>
+        </Image>
 
 
         <TextBlock
