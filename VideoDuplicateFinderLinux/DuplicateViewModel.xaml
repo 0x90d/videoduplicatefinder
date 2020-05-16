@@ -50,6 +50,7 @@
                 Grid.Column="3"
                 Margin="10"
                 Text="{Binding Path}"
+                 ToolTip.Tip="{Binding Path}"
                 TextWrapping="Wrap" />
 
             <Grid Grid.Column="4" IsVisible="{Binding IsImage}">
