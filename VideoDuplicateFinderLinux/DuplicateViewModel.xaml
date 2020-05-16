@@ -1,4 +1,7 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             
+    xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+    xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions">
     <Grid>
         <Grid Margin="10" IsVisible="{Binding IsGroupHeader}">
             <Border Background="#F0F0F0">
@@ -33,7 +36,14 @@
             <Image
                 Grid.Column="2"
                 Margin="10,0,0,0"
-                Source="{Binding Thumbnail}" />
+                ToolTip.Tip="Double click to open the file in explorer/shell"
+                Source="{Binding Thumbnail}">
+                <i:Interaction.Behaviors>
+                    <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #ThumbnailImage}">
+                        <ia:InvokeCommandAction Command="{Binding $parent[ListBox].DataContext.OpenItemInFolderCommand}" CommandParameter="{Binding}" />
+                    </ia:EventTriggerBehavior>
+                </i:Interaction.Behaviors>
+            </Image>
 
 
             <TextBlock

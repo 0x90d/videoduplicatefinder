@@ -16,6 +16,7 @@ using Avalonia.Media;
 using DynamicData;
 using DynamicData.Binding;
 using System.Reactive;
+using System.Diagnostics;
 
 namespace VideoDuplicateFinderLinux {
 	public sealed class MainWindowVM : ReactiveObject {
@@ -283,6 +284,13 @@ namespace VideoDuplicateFinderLinux {
 			while (lbox.SelectedItems.Count > 0)
 				Blacklists.Remove((string)lbox.SelectedItems[0]);
 			return null;
+		});
+		public ReactiveCommand<DuplicateItemViewModel, Unit> OpenItemInFolderCommand => ReactiveCommand.Create< DuplicateItemViewModel>(currentItem => {
+			Process.Start(new ProcessStartInfo {
+				FileName = currentItem.Folder,
+				UseShellExecute = true,
+				Verb = "open"
+			});
 		});
 		public ReactiveCommand<Unit, Unit> ClearLogCommand => ReactiveCommand.Create(() => { LogItems.Clear(); });
 		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {

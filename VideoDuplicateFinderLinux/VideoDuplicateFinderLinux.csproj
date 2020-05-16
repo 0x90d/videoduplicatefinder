@@ -20,9 +20,10 @@
     <None Remove="MessageBoxView.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.9.7" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.9.7" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.9.7" />
+    <PackageReference Include="Avalonia" Version="0.9.10" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.9.10" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="0.9.10" />
+    <PackageReference Include="Avalonia.Xaml.Behaviors" Version="0.9.9" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
   </ItemGroup>
   <ItemGroup>
