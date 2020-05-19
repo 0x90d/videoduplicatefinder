@@ -8,6 +8,9 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -425,16 +428,16 @@ namespace DuplicateFinderEngine {
 
 			public static unsafe byte[]? GetGrayScaleValues(Bitmap original, double darkProcent = 80) {
 				// Lock the bitmap's bits.  
-				var rect = new Rectangle(0, 0, original.Width, original.Height);
-				var bmpData = original.LockBits(rect, ImageLockMode.ReadOnly, original.PixelFormat);
+				Rectangle rect = new Rectangle(0, 0, original.Width, original.Height);
+				BitmapData bmpData = original.LockBits(rect, ImageLockMode.ReadOnly, original.PixelFormat);
 
 				// Get the address of the first line.
-				var ptr = bmpData.Scan0;
+				IntPtr ptr = bmpData.Scan0;
 
 				// Declare an array to hold the bytes of the bitmap.
-				var bytes = bmpData.Stride * original.Height;
-				var rgbValues = new byte[bytes];
-				var buffer = new byte[256];
+				int bytes = bmpData.Stride * original.Height;
+				byte[] rgbValues = new byte[bytes];
+				byte[] buffer = new byte[256];
 
 				// Copy the RGB values into the array.
 				fixed (byte* byteArrayPtr = rgbValues) {
@@ -443,26 +446,40 @@ namespace DuplicateFinderEngine {
 				original.UnlockBits(bmpData);
 
 				int count = 0, all = bmpData.Width * bmpData.Height;
-				var buffercounter = 0;
-				for (var i = 0; i < rgbValues.Length; i += 4) {
+				int buffercounter = 0;
+				for (int i = 0; i < rgbValues.Length; i += 4) {
 					byte r = rgbValues[i + 2], g = rgbValues[i + 1], b = rgbValues[i];
 					buffer[buffercounter] = r;
 					buffercounter++;
-					var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
+					byte brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
 					if (brightness <= 0x20)
 						count++;
 				}
 				return 100d / all * count >= darkProcent ? null : buffer;
-
 			}
+
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public static float PercentageDifference(byte[] img1, byte[] img2) {
+			public static unsafe float PercentageDifference(byte[] img1, byte[] img2) {
 				Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
 				long diff = 0;
-				for (var y = 0; y < img1.Length; y++) {
-					diff += Math.Abs(img1[y] - img2[y]);
+
+				if (Sse2.IsSupported) {
+					Vector128<ushort> vec = Vector128<ushort>.Zero;
+					Span<Vector128<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector128<byte>>(img1);
+					Span<Vector128<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector128<byte>>(img2);
+
+					for (int i = 0; i < vImg1.Length; i++)
+						vec = Sse2.Add(vec, Sse2.SumAbsoluteDifferences(vImg2[i], vImg1[i]));
+
+					for (int i = 0; i < Vector128<ushort>.Count; i++)
+						diff += Math.Abs(vec.GetElement(i));
 				}
-				return (float)diff / img1.Length / 256;
+				else {
+					for (var i = 0; i < img1.Length; i++)
+						diff += Math.Abs(img1[i] - img2[i]);
+				}
+
+				return (float)diff / 512;
 			}
 		}
 	}
