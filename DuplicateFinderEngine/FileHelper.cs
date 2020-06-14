@@ -29,7 +29,9 @@ namespace DuplicateFinderEngine {
 		public static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 #pragma warning disable CS8601,CS8602 // Dereference of a possibly null reference.
 		public static readonly string CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-#pragma warning restore CS8601,CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8601, CS8602 // Dereference of a possibly null reference.
+		public static readonly string DataDirectory = Utils.SafePathCombine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vdf");
+
 		// '' <summary>
 		// '' This method starts at the specified directory.
 		// '' It traverses all subdirectories.

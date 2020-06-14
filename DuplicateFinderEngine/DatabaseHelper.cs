@@ -10,10 +10,11 @@ using ProtoBuf;
 
 namespace DuplicateFinderEngine {
 	public static class DatabaseHelper {
+		private static string _databaseFile = Utils.SafePathCombine(FileHelper.DataDirectory, "ScannedFiles.db");
+
 		public static Dictionary<string, FileEntry> LoadDatabase() {
 			var videoFiles = new Dictionary<string, FileEntry>();
-			var path = new FileInfo(Utils.SafePathCombine(FileHelper.CurrentDirectory,
-				"ScannedFiles.db"));
+			var path = new FileInfo(_databaseFile);
 			if (path.Exists && path.Length == 0) //invalid data
 			{
 				path.Delete();
@@ -36,8 +37,7 @@ namespace DuplicateFinderEngine {
 		}
 		public static List<FileEntry> LoadDatabaseAsList() {
 			var videoFiles = new List<FileEntry>();
-			var path = new FileInfo(Utils.SafePathCombine(FileHelper.CurrentDirectory,
-				"ScannedFiles.db"));
+			var path = new FileInfo(_databaseFile);
 			if (path.Exists && path.Length == 0) //invalid data
 			{
 				path.Delete();
@@ -135,8 +135,8 @@ namespace DuplicateFinderEngine {
 		public static void SaveDatabase(Dictionary<string, FileEntry> videoFiles) => SaveDatabase(videoFiles.Values.ToList());
 		public static void SaveDatabase(List<FileEntry> videoFiles) {
 			Logger.Instance.Info(string.Format(Properties.Resources.SaveScannedFilesToDisk0N0Files, videoFiles.Count));
-			using var stream = new FileStream(Utils.SafePathCombine(FileHelper.CurrentDirectory,
-				"ScannedFiles.db"), FileMode.Create);
+			Directory.CreateDirectory(FileHelper.DataDirectory);
+			using var stream = new FileStream(_databaseFile, FileMode.Create);
 			Serializer.Serialize(stream, videoFiles);
 		}
 	}
