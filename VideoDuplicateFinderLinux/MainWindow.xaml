@@ -1,5 +1,5 @@
 <Window
-    xmlns="https://github.com/avaloniaui"
+    x:Class="VideoDuplicateFinderLinux.MainWindow" xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:duplicateFinderEngine="clr-namespace:DuplicateFinderEngine;assembly=DuplicateFinderEngine"
     xmlns:local="clr-namespace:VideoDuplicateFinderLinux"

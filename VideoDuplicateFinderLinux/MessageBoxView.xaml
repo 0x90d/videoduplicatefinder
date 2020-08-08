@@ -1,6 +1,7 @@
 <Window
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="VideoDuplicateFinderLinux.MessageBoxView"
     xmlns:duplicateFinderEngine="clr-namespace:DuplicateFinderEngine;assembly=DuplicateFinderEngine"
     xmlns:local="clr-namespace:VideoDuplicateFinderLinux"
     xmlns:mvvm="clr-namespace:VideoDuplicateFinderLinux.MVVM.Converters"

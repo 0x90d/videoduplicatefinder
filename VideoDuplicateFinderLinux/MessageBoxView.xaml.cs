@@ -21,7 +21,9 @@ namespace VideoDuplicateFinderLinux {
 
 
 	public class MessageBoxView : Window {
-
+		public MessageBoxView() : this("") {
+			
+		}
 
 		public MessageBoxView(string message, MessageBoxButtons buttons = MessageBoxButtons.Ok, string title = null) {
 
