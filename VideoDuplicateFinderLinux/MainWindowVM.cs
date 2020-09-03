@@ -267,13 +267,6 @@ namespace VideoDuplicateFinderLinux {
 			IsBusyText = Properties.Resources.CleaningDatabase;
 			Scanner.CleanupDatabase();
 		});
-		public ReactiveCommand OpenItemInFolderCommand => ReactiveCommand.Create<DuplicateItemViewModel>(currentItem => {
-			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
-				FileName = currentItem.Folder,
-				UseShellExecute = true,
-				Verb = "open"
-			});
-		});
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
 				Includes.Remove((string)lbox.SelectedItems[0]);
