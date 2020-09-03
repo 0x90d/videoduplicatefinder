@@ -16,33 +16,42 @@
     </Window.Resources>
     <Grid>
         <TabControl>
-            <TabItem>
+            <TabItem Name="TabItemScanner">
                 <TabItem.Header>
-                    <TextBlock
-                    VerticalAlignment="Center"
-                    FontSize="12"
-                    Text="Scanner" />
+                    <StackPanel Orientation="Vertical" Spacing="0">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="Scanner" />
+                        <Border
+                            BorderBrush="Black"
+                            BorderThickness="1"
+                            IsVisible="{Binding ElementName=TabItemScanner, Path=IsSelected}" />
+                    </StackPanel>
                 </TabItem.Header>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="150" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Menu Grid.Row="0" Background="#F0F0F0">
+                    <Menu
+                        Grid.Row="0"
+                        MinHeight="30"
+                        Background="#F0F0F0">
                         <MenuItem VerticalAlignment="Center" Command="{Binding StartScanCommand}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
-                                    <Viewbox Width="16" Height="16">
+                                    <Viewbox Width="20" Height="20">
                                         <Canvas Width="24" Height="24">
                                             <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
                                         </Canvas>
                                     </Viewbox>
                                     <TextBlock
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Text="Start" />
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Start" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
@@ -55,9 +64,9 @@
                                         </Canvas>
                                     </Viewbox>
                                     <TextBlock
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Text="Resume" />
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Resume" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
@@ -71,9 +80,9 @@
                                         </Canvas>
                                     </Viewbox>
                                     <TextBlock
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Text="Pause" />
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Pause" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
@@ -86,9 +95,9 @@
                                         </Canvas>
                                     </Viewbox>
                                     <TextBlock
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Text="Stop" />
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Stop" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
@@ -101,18 +110,18 @@
                                         </Canvas>
                                     </Viewbox>
                                     <TextBlock
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Text="Cleanup Database" />
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Cleanup Database" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
                         <MenuItem Command="{Binding LatestReleaseCommand}">
                             <MenuItem.Header>
-                                    <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Latest Release" />
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Latest Release" />
                             </MenuItem.Header>
                         </MenuItem>
                     </Menu>
@@ -127,37 +136,37 @@
                             <RowDefinition />
                         </Grid.RowDefinitions>
                         <StackPanel
-                        Grid.ColumnSpan="2"
-                        IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}"
-                        Orientation="Horizontal">
+                            Grid.ColumnSpan="2"
+                            IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}"
+                            Orientation="Horizontal">
                             <CheckBox
-                            Margin="5,5,0,0"
-                            VerticalAlignment="Center"
-                            Content="Ignore Read Only Folders"
-                            IsChecked="{Binding IgnoreReadOnlyFolders}"
-                            IsThreeState="False" />
+                                Margin="5,5,0,0"
+                                VerticalAlignment="Center"
+                                Content="Ignore Read Only Folders"
+                                IsChecked="{Binding IgnoreReadOnlyFolders}"
+                                IsThreeState="False" />
                             <CheckBox
-                            Margin="15,5,0,0"
-                            VerticalAlignment="Center"
-                            Content="Include Sub Directories"
-                            IsChecked="{Binding IncludeSubDirectories}"
-                            IsThreeState="False" />
+                                Margin="15,5,0,0"
+                                VerticalAlignment="Center"
+                                Content="Include Sub Directories"
+                                IsChecked="{Binding IncludeSubDirectories}"
+                                IsThreeState="False" />
                             <CheckBox
-                            Margin="15,5,0,0"
-                            VerticalAlignment="Center"
-                            Content="Include Images"
-                            IsChecked="{Binding IncludeImages}"
-                            IsThreeState="False" />
+                                Margin="15,5,0,0"
+                                VerticalAlignment="Center"
+                                Content="Include Images"
+                                IsChecked="{Binding IncludeImages}"
+                                IsThreeState="False" />
                             <TextBlock
-                            Margin="15,5,0,0"
-                            VerticalAlignment="Center"
-                            Text="Percent:" />
+                                Margin="15,5,0,0"
+                                VerticalAlignment="Center"
+                                Text="Percent:" />
                             <NumericUpDown
-                            Margin="5,5,0,0"
-                            VerticalAlignment="Center"
-                            Maximum="100"
-                            Minimum="1"
-                            Value="{Binding Percent}" />
+                                Margin="5,5,0,0"
+                                VerticalAlignment="Center"
+                                Maximum="100"
+                                Minimum="1"
+                                Value="{Binding Percent}" />
                             <TextBlock
                                 Margin="15,5,0,0"
                                 VerticalAlignment="Center"
@@ -169,23 +178,28 @@
                                 Minimum="1"
                                 Value="{Binding Thumbnails}" />
                         </StackPanel>
-
                         <Grid
-                        Grid.Row="1"
-                        Grid.Column="0"
-                        Margin="10"
-                        IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Margin="0,10,5,0"
+                            IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <TextBlock FontWeight="Bold" Text="Search Directories" />
+                            <TextBlock
+                                Margin="5,0,0,2"
+                                FontWeight="Bold"
+                                Text="Search Directories" />
                             <Grid Grid.Row="1">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
-                                <Menu Grid.Row="0" Background="#F0F0F0">
+                                <Menu
+                                    Grid.Row="0"
+                                    MinHeight="30"
+                                    Background="#F0F0F0">
                                     <MenuItem Command="{Binding AddIncludesToListCommand}">
                                         <MenuItem.Header>
                                             <StackPanel Orientation="Horizontal">
@@ -195,9 +209,9 @@
                                                     </Canvas>
                                                 </Viewbox>
                                                 <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="Add" />
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Add" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
@@ -210,37 +224,43 @@
                                                     </Canvas>
                                                 </Viewbox>
                                                 <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="Remove" />
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Remove" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
                                 </Menu>
                                 <ListBox
-                                Name="ListboxIncludelist"
-                                Grid.Row="1"
-                                Items="{Binding Includes}" />
+                                    Name="ListboxIncludelist"
+                                    Grid.Row="1"
+                                    MinHeight="70"
+                                    Items="{Binding Includes}" />
                             </Grid>
-
                         </Grid>
 
                         <Grid
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        Margin="10"
-                        IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="5,10,0,0"
+                            IsEnabled="{Binding IsScanning, Converter={StaticResource NegateBool}}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <TextBlock FontWeight="Bold" Text="Exclude Directories" />
+                            <TextBlock
+                                Margin="5,0,0,2"
+                                FontWeight="Bold"
+                                Text="Exclude Directories" />
                             <Grid Grid.Row="1">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
-                                <Menu Grid.Row="0" Background="#F0F0F0">
+                                <Menu
+                                    Grid.Row="0"
+                                    MinHeight="30"
+                                    Background="#F0F0F0">
                                     <MenuItem Command="{Binding AddBlacklistToListCommand}">
                                         <MenuItem.Header>
                                             <StackPanel Orientation="Horizontal">
@@ -250,9 +270,9 @@
                                                     </Canvas>
                                                 </Viewbox>
                                                 <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="Add" />
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Add" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
@@ -265,17 +285,18 @@
                                                     </Canvas>
                                                 </Viewbox>
                                                 <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="Remove" />
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Remove" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
                                 </Menu>
                                 <ListBox
-                                Name="ListboxBlacklist"
-                                Grid.Row="1"
-                                Items="{Binding Blacklists}" />
+                                    Name="ListboxBlacklist"
+                                    Grid.Row="1"
+                                    Height="70"
+                                    Items="{Binding Blacklists}" />
                             </Grid>
                         </Grid>
 
@@ -286,7 +307,10 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition />
                         </Grid.RowDefinitions>
-                        <Menu Grid.Row="0" Background="#F0F0F0">
+                        <Menu
+                            Grid.Row="0"
+                            MinHeight="30"
+                            Background="#F0F0F0">
                             <MenuItem VerticalAlignment="Center">
                                 <MenuItem.Header>
                                     <StackPanel Orientation="Horizontal">
@@ -296,14 +320,14 @@
                                             </Canvas>
                                         </Viewbox>
                                         <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Selection" />
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Selection" />
                                         <Path
-                                        Margin="4,2,0,0"
-                                        VerticalAlignment="Center"
-                                        Data="M 0 0 L 6 6 L 12 0 Z"
-                                        Fill="Black" />
+                                            Margin="4,2,0,0"
+                                            VerticalAlignment="Center"
+                                            Data="M 0 0 L 6 6 L 12 0 Z"
+                                            Fill="Black" />
                                     </StackPanel>
                                 </MenuItem.Header>
                                 <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
@@ -336,14 +360,14 @@
                                             </Canvas>
                                         </Viewbox>
                                         <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Delete Selection" />
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Delete Selection" />
                                         <Path
-                                        Margin="4,2,0,0"
-                                        VerticalAlignment="Center"
-                                        Data="M 0 0 L 6 6 L 12 0 Z"
-                                        Fill="Black" />
+                                            Margin="4,2,0,0"
+                                            VerticalAlignment="Center"
+                                            Data="M 0 0 L 6 6 L 12 0 Z"
+                                            Fill="Black" />
                                     </StackPanel>
                                 </MenuItem.Header>
                                 <MenuItem Command="{Binding DeleteSelectionCommand}">
@@ -378,22 +402,32 @@
                                             </Canvas>
                                         </Viewbox>
                                         <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Save To HTML" />
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Save To HTML" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <Separator/>
                         </Menu>
-                        <StackPanel Margin="5" Grid.Row="1" Orientation="Horizontal">
-                            <TextBlock VerticalAlignment="Center" Text="Path"/>
-                            <TextBox Margin="5,0,0,0" Text="{Binding SearchText}" MinWidth="150"/>
+                        <StackPanel
+                            Grid.Row="1"
+                            Margin="5"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="0,0,20,0"
+                                VerticalAlignment="Center"
+                                FontWeight="Bold"
+                                Text="Filter:" />
+                            <TextBlock VerticalAlignment="Center" Text="Path" />
+                            <TextBox
+                                MinWidth="150"
+                                Margin="5,0,0,0"
+                                Text="{Binding SearchText}" />
                         </StackPanel>
                         <ListBox
-                        Name="TreeViewDuplicates"
-                        Grid.Row="2"
-                        Items="{Binding Duplicates}">
+                            Name="TreeViewDuplicates"
+                            Grid.Row="2"
+                            Items="{Binding Duplicates}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type local:DuplicateItemViewModel}">
                                     <local:DuplicateViewModel HorizontalContentAlignment="Stretch" />
@@ -405,10 +439,10 @@
                     <Grid Grid.Row="3">
                         <StackPanel Orientation="Horizontal">
                             <ProgressBar
-                            Name="PbScanProgress"
-                            MinWidth="100"
-                            Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
-                            Value="{Binding ScanProgressValue, Mode=OneWay}" />
+                                Name="PbScanProgress"
+                                MinWidth="100"
+                                Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
+                                Value="{Binding ScanProgressValue, Mode=OneWay}" />
                             <TextBlock Margin="10,0,0,0" Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
                             <Separator />
                             <TextBlock Margin="10,0,0,0" Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
@@ -418,12 +452,18 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem>
+            <TabItem Name="TabItemLog">
                 <TabItem.Header>
-                    <TextBlock
-                    VerticalAlignment="Center"
-                    FontSize="12"
-                    Text="Log" />
+                    <StackPanel Orientation="Vertical" Spacing="0">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="Log" />
+                        <Border
+                            BorderBrush="Black"
+                            BorderThickness="1"
+                            IsVisible="{Binding ElementName=TabItemLog, Path=IsSelected}" />
+                    </StackPanel>
                 </TabItem.Header>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -431,7 +471,10 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
 
-                    <Menu Grid.Row="0" Background="#F0F0F0">
+                    <Menu
+                        Grid.Row="0"
+                        MinHeight="30"
+                        Background="#F0F0F0">
                         <MenuItem Command="{Binding ClearLogCommand}">
                             <MenuItem.Header>
                                 <TextBlock VerticalAlignment="Center" Text="Clear Log" />
@@ -452,14 +495,14 @@
                                         <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock
-                                    Grid.Column="0"
-                                    Margin="5,0,5,0"
-                                    FontWeight="Bold"
-                                    Text="{Binding DateTime}" />
+                                        Grid.Column="0"
+                                        Margin="5,0,5,0"
+                                        FontWeight="Bold"
+                                        Text="{Binding DateTime}" />
                                     <TextBlock
-                                    Grid.Column="1"
-                                    Text="{Binding Message}"
-                                    TextWrapping="Wrap" />
+                                        Grid.Column="1"
+                                        Text="{Binding Message}"
+                                        TextWrapping="Wrap" />
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -467,31 +510,32 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Grid x:Name="BusyIndicator"
-              Background="Silver"
-              Opacity="0.8"
-              IsVisible="{Binding IsBusy}">
+        <Grid
+            x:Name="BusyIndicator"
+            Background="Silver"
+            IsVisible="{Binding IsBusy}"
+            Opacity="0.8">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar
                     MaxWidth="200"
                     BorderBrush="LimeGreen"
                     BorderThickness="10"
-                    IsIndeterminate="True"/>
+                    IsIndeterminate="True" />
                 <TextBlock
                     Margin="0,10,0,0"
                     HorizontalAlignment="Center"
-                    Text="Please Wait"
                     FontSize="14"
-                    FontWeight="ExtraBold" />
+                    FontWeight="ExtraBold"
+                    Text="Please Wait" />
                 <TextBlock
-                    Text="{Binding IsBusyText}"
                     Name="LblBusyIndicator"
                     Margin="0,10,0,0"
                     HorizontalAlignment="Center"
-                    FontSize="14" />
+                    FontSize="14"
+                    Text="{Binding IsBusyText}" />
             </StackPanel>
         </Grid>
     </Grid>
-   
+
 
 </Window>

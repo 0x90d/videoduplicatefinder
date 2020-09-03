@@ -213,7 +213,7 @@ namespace VideoDuplicateFinderLinux {
 				dup.FrameSizeForeground = others.Any(a => a.FrameSizeInt > dup.FrameSizeInt) ? Brushes.Red : Brushes.Green;
 				dup.DurationForeground = others.Any(a => a.Duration > dup.Duration) ? Brushes.Red : Brushes.Green;
 				dup.BitRateForeground = others.Any(a => a.BitRateKbs > dup.BitRateKbs) ? Brushes.Red : Brushes.Green;
-				//Since we cannot group in Linux, let's at least highlight items that belong together
+				//Since we cannot group in Avalonia, let's at least highlight items that belong together
 				if (!dupGroupHandled.Contains(dup.GroupId)) {
 					duplicateList.Add(new DuplicateItemViewModel(Properties.Resources.DuplicateGroup, dup.GroupId));
 					dupGroupHandled.Add(dup.GroupId);
@@ -229,7 +229,7 @@ namespace VideoDuplicateFinderLinux {
 			.Sort(new DuplicateItemComparer())
 			.Bind(out var bindingData)
 			.Subscribe();
-			
+
 
 			Duplicates = bindingData;
 
@@ -240,7 +240,7 @@ namespace VideoDuplicateFinderLinux {
 		private static Func<DuplicateItemViewModel, bool> BuildFilter(string searchText) {
 			if (string.IsNullOrEmpty(searchText)) return trade => true;
 
-			return t =>t.IsGroupHeader == false && t.Path.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+			return t => t.IsGroupHeader == false && t.Path.Contains(searchText, StringComparison.OrdinalIgnoreCase);
 		}
 
 		public ReactiveCommand AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -264,6 +264,13 @@ namespace VideoDuplicateFinderLinux {
 			IsBusy = true;
 			IsBusyText = Properties.Resources.CleaningDatabase;
 			Scanner.CleanupDatabase();
+		});
+		public ReactiveCommand OpenItemInFolderCommand => ReactiveCommand.Create<DuplicateItemViewModel>(currentItem => {
+			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+				FileName = currentItem.Folder,
+				UseShellExecute = true,
+				Verb = "open"
+			});
 		});
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
@@ -347,16 +354,6 @@ namespace VideoDuplicateFinderLinux {
 					blackListGroupID.Add(first.GroupId);
 				}
 			});
-			//foreach (var first in Duplicates) {
-			//	if (blackListGroupID.Contains(first.GroupId)) continue; //Dup has been handled already
-			//	var l = Duplicates.Where(d => d.Equals(first) && !d.Path.Equals(first.Path));
-			//	var dupMods = l as DuplicateItemViewModel[] ?? l.ToArray();
-			//	if (!dupMods.Any()) continue;
-			//	foreach (var dup in dupMods)
-			//		dup.Checked = true;
-			//	first.Checked = false;
-			//	blackListGroupID.Add(first.GroupId);
-			//}
 		});
 		public ReactiveCommand CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
 			var blackListGroupID = new HashSet<Guid>();

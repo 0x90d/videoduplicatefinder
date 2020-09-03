@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Markup.Xaml;
 
 namespace VideoDuplicateFinderLinux
@@ -9,5 +9,6 @@ namespace VideoDuplicateFinderLinux
         {
             AvaloniaXamlLoader.Load(this);
         }
-    }
+        
+	}
 }

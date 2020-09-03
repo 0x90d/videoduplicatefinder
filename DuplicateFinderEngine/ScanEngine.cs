@@ -35,6 +35,8 @@ namespace DuplicateFinderEngine {
 		private readonly List<FileEntry> ScanFileList = new List<FileEntry>();
 		private readonly List<float> positionList = new List<float>();
 
+		const int grayByteValueLength = 256;
+
 
 		public async void StartSearch() {
 			Duplicates.Clear();
@@ -166,7 +168,7 @@ namespace DuplicateFinderEngine {
 		private void InternalSearch(CancellationToken cancelToken, PauseTokenSource pauseTokenSource) {
 			ElapsedTimer.Start();
 			SearchSW.Start();
-			var duplicateDict = new ConcurrentDictionary<string, DuplicateItem>();
+			var duplicateDict = new Dictionary<string, DuplicateItem>();
 
 			try {
 				var parallelOpts = new ParallelOptions {
@@ -240,30 +242,30 @@ namespace DuplicateFinderEngine {
 						if (duplicateCounter != baseItem.grayBytes.Count) continue;
 
 						var percSame = percent.Average();
-						//lock (duplicateDict) {
-						var foundBase = duplicateDict.TryGetValue(baseItem.Path, out var existingBase);
-						var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
+						lock (duplicateDict) {
+							var foundBase = duplicateDict.TryGetValue(baseItem.Path, out var existingBase);
+							var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
 
-						if (foundBase && foundComp) {
-							//this happens with 4+ identical items:
-							//first, 2+ duplicate groups are found independently, they are merged in this branch
-							if (existingBase.GroupId != existingComp.GroupId) {
-								foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
-									dup.GroupId = existingBase.GroupId;
+							if (foundBase && foundComp) {
+								//this happens with 4+ identical items:
+								//first, 2+ duplicate groups are found independently, they are merged in this branch
+								if (existingBase.GroupId != existingComp.GroupId) {
+									foreach (var dup in duplicateDict.Values.Where(c => c.GroupId == existingComp.GroupId))
+										dup.GroupId = existingBase.GroupId;
+								}
+							}
+							else if (foundBase) {
+								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existingBase.GroupId });
+							}
+							else if (foundComp) {
+								duplicateDict.TryAdd(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existingComp.GroupId });
+							}
+							else {
+								var groupId = Guid.NewGuid();
+								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
+								duplicateDict.TryAdd(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
 							}
 						}
-						else if (foundBase) {
-							duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = existingBase.GroupId });
-						}
-						else if (foundComp) {
-							duplicateDict.TryAdd(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = existingComp.GroupId });
-						}
-						else {
-							var groupId = Guid.NewGuid();
-							duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame) { GroupId = groupId });
-							duplicateDict.TryAdd(baseItem.Path, new DuplicateItem(baseItem, percSame) { GroupId = groupId });
-						}
-						//}
 					}
 					IncrementProgress(baseItem.Path);
 				});
@@ -295,11 +297,11 @@ namespace DuplicateFinderEngine {
 			}
 		}
 
-		public struct OwnScanProgress {
-			public string CurrentFile;
-			public int CurrentPosition;
-			public TimeSpan Elapsed;
-			public TimeSpan Remaining;
+		public  struct OwnScanProgress {
+			public  string CurrentFile;
+			public  int CurrentPosition;
+			public  TimeSpan Elapsed;
+			public  TimeSpan Remaining;
 		}
 
 		private List<Image>? GetVideoThumbnail(DuplicateItem videoFile, List<float> positions) {
@@ -369,8 +371,8 @@ namespace DuplicateFinderEngine {
 
 					var b = ffMpeg.GetVideoThumbnail(videoFile.Path, Convert.ToSingle(videoFile.mediaInfo?.Duration.TotalSeconds * positionList[i]), true);
 					if (b == null || b.Length == 0) return (EntryFlags.ThumbnailError, null);
-					var d = ExtensionMethods.VerifyGrayScaleValues(b);
-					if (!d) return (EntryFlags.TooDark, null);
+					if (!ExtensionMethods.VerifyGrayScaleValues(b))
+						return (EntryFlags.TooDark, null);
 					images.Add(b);
 				}
 
@@ -459,10 +461,10 @@ namespace DuplicateFinderEngine {
 			public static float PercentageDifference(byte[] img1, byte[] img2) {
 				Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
 				long diff = 0;
-				for (var y = 0; y < img1.Length; y++) {
+				for (var y = 0; y < grayByteValueLength; y++) {
 					diff += Math.Abs(img1[y] - img2[y]);
 				}
-				return (float)diff / img1.Length / 256;
+				return (float)diff / grayByteValueLength / grayByteValueLength;
 			}
 		}
 	}

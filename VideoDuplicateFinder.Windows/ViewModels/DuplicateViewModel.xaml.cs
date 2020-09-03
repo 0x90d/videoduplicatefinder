@@ -6,9 +6,7 @@ using VideoDuplicateFinderWindows.Data;
 
 namespace VideoDuplicateFinderWindows.ViewModels {
 	public partial class DuplicateViewModel : UserControl {
-		public DuplicateViewModel() {
-			InitializeComponent();
-		}
+		public DuplicateViewModel() => InitializeComponent();
 		private void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
 			if (e.ClickCount != 2) return;
 			try {

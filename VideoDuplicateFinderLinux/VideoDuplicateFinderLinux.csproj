@@ -23,6 +23,7 @@
     <PackageReference Include="Avalonia" Version="0.8.0" />
     <PackageReference Include="Avalonia.Desktop" Version="0.8.0" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.8.0" />
+    <PackageReference Include="Avalonia.Xaml.Behaviors" Version="0.8.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.6.0-preview6.19303.8" />
   </ItemGroup>
   <ItemGroup>
@@ -54,5 +55,8 @@
     <None Update="DuplicateViewModel.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Theme\Converters\" />
   </ItemGroup>
 </Project>
