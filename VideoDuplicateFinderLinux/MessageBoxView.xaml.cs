@@ -1,4 +1,5 @@
 using System;
+using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -11,9 +12,9 @@ namespace VideoDuplicateFinderLinux {
 		public static async Task<MessageBoxButtons> Show(string message, MessageBoxButtons buttons = MessageBoxButtons.Ok,
 			string title = null) {
 			var dlg = new MessageBoxView(message, buttons, title) {
-				Owner = Application.Current.MainWindow
+				Owner = ApplicationHelpers.MainWindow
 			};
-			return await dlg.ShowDialog<MessageBoxButtons>(Application.Current.MainWindow);
+			return await dlg.ShowDialog<MessageBoxButtons>(ApplicationHelpers.MainWindow);
 		}
 		
 	}
@@ -80,16 +81,16 @@ namespace VideoDuplicateFinderLinux {
 		}
 		public string Message { get; set; }
 		public string Title { get; set; } = "Video Duplicate Finder";
-		public ReactiveCommand OKCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> OKCommand => ReactiveCommand.Create(() => {
 			host.Close(MessageBoxButtons.Ok);
 		});
-		public ReactiveCommand YesCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> YesCommand => ReactiveCommand.Create(() => {
 			host.Close(MessageBoxButtons.Yes);
 		});
-		public ReactiveCommand NoCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> NoCommand => ReactiveCommand.Create(() => {
 			host.Close(MessageBoxButtons.No);
 		});
-		public ReactiveCommand CancelCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
 			host.Close(MessageBoxButtons.Cancel);
 		});
 	}

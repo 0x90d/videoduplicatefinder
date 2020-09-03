@@ -36,7 +36,9 @@ namespace DuplicateFinderEngine.FFProbeWrapper {
 
 				if (!imgDataTask.Wait((int)ExecutionTimeout.TotalMilliseconds))
 					throw new TimeoutException("Copying ffprobe output timed out.");
-				var result = FFProbeJsonReader.Read(ms.ToArray(), inputFile);
+				if (!ms.TryGetBuffer(out var buf))
+					throw new TimeoutException("Failed to get memory buffer.");
+				var result = FFProbeJsonReader.Read(buf.AsSpan(), inputFile);
 				FFprobeProcess?.Close();
 				return result;
 			}

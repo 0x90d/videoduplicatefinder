@@ -490,6 +490,9 @@
                                             Name="TreeViewDuplicates"
                                             PreviewKeyDown="TreeViewDuplicates_PreviewKeyDown"
                                             VirtualizingStackPanel.IsVirtualizing="True">
+                                            <ListView.InputBindings>
+                                                <KeyBinding Command="{Binding RenameDuplicateFileCommand}" Key="F2"/>
+                                            </ListView.InputBindings>
                                             <ListView.GroupStyle>
                                                 <GroupStyle>
                                                     <GroupStyle.ContainerStyle>
@@ -520,7 +523,7 @@
                                             <ListView.ContextMenu>
                                                 <ContextMenu DataContext="{Binding DataContext, Source={mvvm:RootObject}}">
                                                     <MenuItem Command="{Binding OpenInFolderCommand}" Header="{x:Static properties:Resources.OpenInFolder}" />
-                                                    <MenuItem Command="{Binding RenameDuplicateFileCommand}" Header="{x:Static properties:Resources.RenameFile}" />
+                                                    <MenuItem Command="{Binding RenameDuplicateFileCommand}" Header="{x:Static properties:Resources.RenameFile}" InputGestureText="F2" />
                                                     <MenuItem Header="{x:Static properties:Resources.DeleteChecked}">
                                                         <MenuItem.Icon>
                                                             <Viewbox Width="16" Height="16">

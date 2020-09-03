@@ -1,0 +1,18 @@
+name: Windows 64-bit
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      shell: pwsh
+      run: |
+          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+          ./dotnet-install.ps1 -Channel 3.1
+    - name: Build with dotnet
+      run: dotnet publish -c Release -v q --self-contained -r win-x64 -f netcoreapp3.1
