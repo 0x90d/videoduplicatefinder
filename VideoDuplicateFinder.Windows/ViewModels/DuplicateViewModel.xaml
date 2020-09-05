@@ -10,12 +10,8 @@
     MinHeight="100"
     d:DesignHeight="100"
     d:DesignWidth="300"
+    d:Background="Silver"
     mc:Ignorable="d">
-    <d:DesignerProperties.DesignStyle>
-        <Style TargetType="UserControl">
-            <Setter Property="Background" Value="Silver" />
-        </Style>
-    </d:DesignerProperties.DesignStyle>
     <UserControl.Resources>
         <mvvm:InvertBooleanToVisibilityConverter x:Key="InvertBooleanToVisibilityConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -247,12 +243,21 @@
                 ToolTip="{x:Static properties:Resources.AudioSampleRate}" />
         </Grid>
 
-
-        <TextBlock
-            Grid.Column="6"
+        <Grid Grid.Column="6" >
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBlock  Grid.Row="0"
             Margin="10"
             Text="{Binding Similarity, StringFormat={}{0:F2}%}"
             TextWrapping="Wrap"
             ToolTip="{x:Static properties:Resources.Similarity}" />
+            <TextBlock Grid.Row="1"
+            Margin="10"
+            Text="{Binding DateCreated}"
+            TextWrapping="Wrap"
+            ToolTip="{x:Static properties:Resources.CreationDate}" />
+        </Grid>
     </Grid>
 </UserControl>

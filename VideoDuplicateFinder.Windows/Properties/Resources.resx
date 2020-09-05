@@ -393,4 +393,7 @@
   <data name="SelectIdenticalLengthKeepSmallest" xml:space="preserve">
     <value>Select Identical Duration (Keep Smallest)</value>
   </data>
+  <data name="CreationDate" xml:space="preserve">
+    <value>Creation Date</value>
+  </data>
 </root>

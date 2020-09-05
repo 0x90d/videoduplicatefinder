@@ -160,11 +160,22 @@
                     TextWrapping="Wrap" />
             </Grid>
 
-            <TextBlock
-                Grid.Column="7"
+            <Grid Grid.Column="7">
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock
+                Grid.Row="0"
                 Margin="10"
                 Text="{Binding Similarity, StringFormat=\{0:F2\}%}"
                 TextWrapping="Wrap" />
+                <TextBlock Grid.Row="1"
+            Margin="10"
+            Text="{Binding DateCreated}"
+            TextWrapping="Wrap"
+            ToolTip="{x:Static properties:Resources.CreationDate}" />
+            </Grid>
         </Grid>
     </Grid>
 
