@@ -5,7 +5,7 @@ namespace VideoDuplicateFinderLinux
 {
     public sealed class DuplicateItemComparer : IComparer<DuplicateItemViewModel>
     {
-        private readonly CaseInsensitiveComparer caseiComp = new CaseInsensitiveComparer();
+        static readonly CaseInsensitiveComparer caseiComp = new CaseInsensitiveComparer();
 
         public int Compare(DuplicateItemViewModel x, DuplicateItemViewModel y) {
 	        if (x.GroupId == y.GroupId) {
