@@ -8,9 +8,9 @@
     xmlns:mvvm="clr-namespace:VideoDuplicateFinderWindows.MVVM"
     xmlns:properties="clr-namespace:VideoDuplicateFinder.Windows.Properties"
     MinHeight="100"
+    d:Background="Silver"
     d:DesignHeight="100"
     d:DesignWidth="300"
-    d:Background="Silver"
     mc:Ignorable="d">
     <UserControl.Resources>
         <mvvm:InvertBooleanToVisibilityConverter x:Key="InvertBooleanToVisibilityConverter" />
@@ -32,21 +32,24 @@
             Width="50"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
-         IsOn="{Binding Checked, UpdateSourceTrigger=PropertyChanged}"
-                   OffContent=""
+            IsOn="{Binding Checked, UpdateSourceTrigger=PropertyChanged}"
+            OffContent=""
             OnContent="" />
 
         <Image
             Grid.Column="1"
             Margin="10,0,0,0"
             MouseLeftButtonDown="Image_MouseLeftButtonDown"
-            Source="{Binding Thumbnail}" >
+            Source="{Binding Thumbnail}">
             <Image.ToolTip>
                 <ToolTip Background="Black" DataContext="{Binding PlacementTarget, RelativeSource={RelativeSource Self}}">
-                    <Border >
-                        <Image Source="{Binding Source}" Stretch="None" ToolTipService.Placement="Top"  >
+                    <Border>
+                        <Image
+                            Source="{Binding Source}"
+                            Stretch="None"
+                            ToolTipService.Placement="Top">
                             <Image.LayoutTransform>
-                                    <ScaleTransform x:Name="Scale" ScaleX="2" ScaleY="2"  />
+                                <ScaleTransform x:Name="Scale" ScaleX="2" ScaleY="2" />
                             </Image.LayoutTransform>
                         </Image>
                     </Border>
@@ -243,21 +246,23 @@
                 ToolTip="{x:Static properties:Resources.AudioSampleRate}" />
         </Grid>
 
-        <Grid Grid.Column="6" >
+        <Grid Grid.Column="6">
             <Grid.RowDefinitions>
-                <RowDefinition/>
-                <RowDefinition/>
+                <RowDefinition />
+                <RowDefinition />
             </Grid.RowDefinitions>
-            <TextBlock  Grid.Row="0"
-            Margin="10"
-            Text="{Binding Similarity, StringFormat={}{0:F2}%}"
-            TextWrapping="Wrap"
-            ToolTip="{x:Static properties:Resources.Similarity}" />
-            <TextBlock Grid.Row="1"
-            Margin="10"
-            Text="{Binding DateCreated}"
-            TextWrapping="Wrap"
-            ToolTip="{x:Static properties:Resources.CreationDate}" />
+            <TextBlock
+                Grid.Row="0"
+                Margin="10"
+                Text="{Binding Similarity, StringFormat={}{0:F2}%}"
+                TextWrapping="Wrap"
+                ToolTip="{x:Static properties:Resources.Similarity}" />
+            <TextBlock
+                Grid.Row="1"
+                Margin="10"
+                Text="{Binding DateCreated}"
+                TextWrapping="Wrap"
+                ToolTip="{x:Static properties:Resources.CreationDate}" />
         </Grid>
     </Grid>
 </UserControl>

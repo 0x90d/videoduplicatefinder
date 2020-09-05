@@ -1,5 +1,6 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
     xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions">
     <Grid>
@@ -44,13 +45,13 @@
                     </ia:EventTriggerBehavior>
                 </i:Interaction.Behaviors>
                 <ToolTip.Tip>
-                        <Border>
-                            <Image Source="{Binding Source}" Stretch="None">
-                                <Image.RenderTransform>
-                                    <ScaleTransform ScaleX="2" ScaleY="2"  />
-                                </Image.RenderTransform>
-                            </Image>
-                        </Border>
+                    <Border>
+                        <Image Source="{Binding Source}" Stretch="None">
+                            <Image.RenderTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2" />
+                            </Image.RenderTransform>
+                        </Image>
+                    </Border>
                 </ToolTip.Tip>
             </Image>
 
@@ -59,8 +60,8 @@
                 Grid.Column="3"
                 Margin="10"
                 Text="{Binding Path}"
-                 ToolTip.Tip="{Binding Path}"
-                TextWrapping="Wrap" />
+                TextWrapping="Wrap"
+                ToolTip.Tip="{Binding Path}" />
 
             <Grid Grid.Column="4" IsVisible="{Binding IsImage}">
                 <Grid.RowDefinitions>
@@ -166,15 +167,15 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <TextBlock
-                Grid.Row="0"
-                Margin="10"
-                Text="{Binding Similarity, StringFormat=\{0:F2\}%}"
-                TextWrapping="Wrap" />
-                <TextBlock Grid.Row="1"
-            Margin="10"
-            Text="{Binding DateCreated}"
-            TextWrapping="Wrap"
-            ToolTip="{x:Static properties:Resources.CreationDate}" />
+                    Grid.Row="0"
+                    Margin="10"
+                    Text="{Binding Similarity, StringFormat=\{0:F2\}%}"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    Grid.Row="1"
+                    Margin="10"
+                    Text="{Binding DateCreated}"
+                    TextWrapping="Wrap" />
             </Grid>
         </Grid>
     </Grid>

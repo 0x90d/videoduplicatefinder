@@ -147,7 +147,4 @@
   <data name="DuplicateGroup" xml:space="preserve">
     <value>Duplicate Group</value>
   </data>
-  <data name="CreationDate" xml:space="preserve">
-    <value>Creation Date</value>
-  </data>
 </root>

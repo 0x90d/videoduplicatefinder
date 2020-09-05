@@ -88,15 +88,6 @@ namespace VideoDuplicateFinderLinux.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Creation Date.
-        /// </summary>
-        internal static string CreationDate {
-            get {
-                return ResourceManager.GetString("CreationDate", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Duplicate Group.
         /// </summary>
         internal static string DuplicateGroup {
