@@ -60,7 +60,7 @@ namespace DuplicateFinderEngine.FFmpegWrapper {
 						numberOfRetries++;
 					}
 
-					if (numberOfRetries == MaximumRetries) {
+					if (numberOfRetries >= MaximumRetries) {
 						//Give up
 						EnsureFFMpegProcessStopped();
 						Logger.Instance.Info(string.Format(Properties.Resources.FFMpegTimeoutFile, InputFile));
