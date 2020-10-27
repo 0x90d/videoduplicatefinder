@@ -72,7 +72,6 @@
     <Grid>
         <Controls:HamburgerMenu
             x:Name="HamburgerMenuControl"
-            DataContext=""
             HamburgerWidth="48"
             ItemInvoked="HamburgerMenuControl_ItemInvoked"
             ItemTemplate="{StaticResource MenuItemTemplate}"
@@ -90,7 +89,7 @@
                             </Viewbox>
                         </Controls:HamburgerMenuIconItem.Icon>
                         <Controls:HamburgerMenuIconItem.Tag>
-                            <Grid DataContext="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}">
+                            <Grid DataContext="{Binding DataContext, Source={mvvm:RootObject}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="150" />
@@ -612,7 +611,7 @@
                             </Viewbox>
                         </Controls:HamburgerMenuIconItem.Icon>
                         <Controls:HamburgerMenuIconItem.Tag>
-                            <Grid DataContext="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}">
+                            <Grid DataContext="{Binding DataContext, Source={mvvm:RootObject}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition />
