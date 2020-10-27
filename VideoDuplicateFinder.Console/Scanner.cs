@@ -11,7 +11,7 @@ namespace VideoDuplicateFinderConsole {
 			foreach (var s in settings.IncludeFolders)
 				engine.Settings.IncludeList.Add(s);
 			foreach (var s in settings.ExcludeFolders)
-				engine.Settings.IncludeList.Add(s);
+				engine.Settings.BlackList.Add(s);
 			engine.Settings.IncludeSubDirectories = settings.IsRecursive;
 			engine.Settings.IncludeImages = settings.IncludeImages;
 #pragma warning disable CS8601, CS8602 // Possible null reference assignment.
