@@ -487,6 +487,13 @@ namespace VideoDuplicateFinderWindows {
 			InternalDelete(true);
 		}, a => Duplicates.Count > 0);
 
+		public DelegateCommand CheckAllCommand =>
+			new DelegateCommand(a => {
+				foreach (var duplicates in Duplicates) {
+					duplicates.Checked = true;
+				}
+			}, a => Duplicates.Count > 0);
+
 		public DelegateCommand CheckWhenIdenticalCommand =>
 			new DelegateCommand(a => {
 				var blackListGroupID = new HashSet<Guid>();

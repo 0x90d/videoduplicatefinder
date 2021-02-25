@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -221,6 +221,9 @@
   </data>
   <data name="Selection" xml:space="preserve">
     <value>Selection</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Select All</value>
   </data>
   <data name="Select100IdenticalKeepFirst" xml:space="preserve">
     <value>Select 100% Identical (Keep First)</value>
