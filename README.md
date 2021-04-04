@@ -65,7 +65,7 @@ After running command you should see inside build directory file `output.html` w
 
 ## Examples
 
-This examples assume that you're going to be execute from release folder:
+This example execution should happen from release folder:
 
 ```bash
 ./VideoDuplicateFinderConsole -r -p 50 -i ~/Movies/PhoneBackup -o ~/duplicatedPhoneVideos.html
