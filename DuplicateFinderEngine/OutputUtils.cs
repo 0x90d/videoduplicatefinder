@@ -16,9 +16,21 @@ namespace DuplicateFinderEngine {
 		/// <param name="outputFile"></param>
 		/// <returns></returns>
 		public static void ToHtmlTable<T>(this ICollection<T> listOfClassObjects, string outputFile) {
+			string output = ToHtmlTableString(listOfClassObjects, outputFile);
+			File.WriteAllText(outputFile, output);
+		}
+
+		/// <summary>
+		/// Get contents of collection as html table
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="listOfClassObjects"></param>
+		/// <param name="outputFile"></param>
+		/// <returns>string containing html representation of collection</returns>
+		public static string ToHtmlTableString<T>(this ICollection<T> listOfClassObjects, string outputFile) {
 			var sb = new StringBuilder();
 
-			if (listOfClassObjects == null || !listOfClassObjects.Any()) return;
+			if (listOfClassObjects == null || !listOfClassObjects.Any()) return "";
 
 
 			//TODO: Add combobox to select the column the search field applies to, UP for volunteers, someone?
@@ -141,9 +153,10 @@ function myFunction() {
 </body>
 </html>");
 
-			File.WriteAllText(outputFile, sb.ToString());
+			string output = sb.ToString();
+			return output;
+			
 		}
-
 
 		public static List<string> GetDisplayName(this IEnumerable<System.Reflection.PropertyInfo> infos) {
 			var displayNames = new List<string>();
