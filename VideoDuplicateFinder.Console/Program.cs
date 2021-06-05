@@ -30,18 +30,18 @@ namespace VideoDuplicateFinderConsole {
 					if (settings.IncludeFolders.Count == 0)
 						throw new ParseException(Properties.Resources.CmdException_MissingIncludePath);
 					EnsureFFFilesExist();
-					Console.WriteLine(Environment.NewLine + Environment.NewLine);
+					Console.Error.WriteLine(Environment.NewLine + Environment.NewLine);
 					StartScan();
 					Console.ReadLine();
 				}
 				catch (ParseException ex) {
 					PrintHelp();
-					Console.WriteLine();
-					Console.WriteLine(string.Format(Properties.Resources.Cmd_InvalidArgs, ex.Message));
+					Console.Error.WriteLine();
+					Console.Error.WriteLine(string.Format(Properties.Resources.Cmd_InvalidArgs, ex.Message));
 					return 1;
 				}
 				catch (Exception ex) {
-					Console.WriteLine();
+					Console.Error.WriteLine();
 					ConsoleHelpers.WriteException(ex);
 					return 1;
 				}
@@ -50,15 +50,15 @@ namespace VideoDuplicateFinderConsole {
 
 
 			static void PrintHelp() {
-				Console.WriteLine(Properties.Resources.CmdUsageHeader);
-				Console.WriteLine();
+				Console.Error.WriteLine(Properties.Resources.CmdUsageHeader);
+				Console.Error.WriteLine();
 				foreach (var info in helpInfos) {
 					var arg = info.Option;
 					if (info.Args != null)
 						arg = arg + " " + info.Args;
-					Console.WriteLine("  {0,-12}   {1}", arg, string.Format(info.ArgsDescription, PATHS_SEP));
+					Console.Error.WriteLine("  {0,-12}   {1}", arg, string.Format(info.ArgsDescription, PATHS_SEP));
 				}
-				Console.WriteLine();
+				Console.Error.WriteLine();
 			}
 
 			static void EnsureFFFilesExist() {
@@ -74,8 +74,8 @@ namespace VideoDuplicateFinderConsole {
 						: string.Format(Properties.Resources.CmdException_FFprobeMissingLinux, Utils.FFmpegExecutableName));
 				}
 				if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-					Console.WriteLine("-- Note: When the app crashes with 'The type initializer for 'Gdip' threw an exception ...' exception you will have to install ");
-					Console.WriteLine("libgdiplus");
+					Console.Error.WriteLine("-- Note: When the app crashes with 'The type initializer for 'Gdip' threw an exception ...' exception you will have to install ");
+					Console.Error.WriteLine("libgdiplus");
 				}
 
 			}
