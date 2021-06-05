@@ -124,7 +124,7 @@ namespace VideoDuplicateFinderConsole.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If given, output to json.
+        ///   Looks up a localized string similar to If given, output will be printed as JSON to stdout.
         /// </summary>
         internal static string CmdDescription_json {
             get {

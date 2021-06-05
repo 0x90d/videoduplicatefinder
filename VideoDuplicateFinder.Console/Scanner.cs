@@ -7,7 +7,10 @@ namespace VideoDuplicateFinderConsole {
 	class Scanner {
 		private readonly ScanEngine engine = new ScanEngine();
 		readonly string Outputfolder;
+		readonly ConsoleScanSettings consoleScanSettings;
 		public Scanner(ConsoleScanSettings settings) {
+			consoleScanSettings = settings;
+
 			foreach (var s in settings.IncludeFolders)
 				engine.Settings.IncludeList.Add(s);
 			foreach (var s in settings.ExcludeFolders)
@@ -42,10 +45,17 @@ namespace VideoDuplicateFinderConsole {
 			Console.Error.WriteLine("~~~~ Scan done! ~~~~");
 			Console.Error.WriteLine($"Found '{engine.Duplicates.Count:N0}' duplicates");
 			if (engine.Duplicates.Count == 0) return;
-			var targetFile = Utils.SafePathCombine(Outputfolder, "output.html");
-			engine.Duplicates.ToHtmlTable(targetFile);
-			Console.Error.Write("Saved results in: ");
-			Console.Error.WriteLine(targetFile);
+
+			if (consoleScanSettings.OutputJson) {
+				var jsonOutput = engine.Duplicates.ToJson();
+				Console.Write(jsonOutput);
+			} else {
+				var targetFile = Utils.SafePathCombine(Outputfolder, "output.html");
+				engine.Duplicates.ToHtmlTable(targetFile);
+				Console.Error.Write("Saved results in: ");
+				Console.Error.WriteLine(targetFile);
+			}
+			
 			Environment.Exit(0);
 		}
 		private static readonly object _MessageLock = new object();

@@ -190,6 +190,6 @@
     <value>'{0}' is an unknown command</value>
   </data>
   <data name="CmdDescription_json" xml:space="preserve">
-    <value>If given, output to json</value>
+    <value>If given, output will be printed as JSON to stdout</value>
   </data>
 </root>

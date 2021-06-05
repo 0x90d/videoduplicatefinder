@@ -110,6 +110,7 @@ namespace VideoDuplicateFinderConsole {
 				new HelpInfo("-j", string.Empty,Properties.Resources.CmdDescription_IncludeImages),
 				new HelpInfo("-p", Properties.Resources.CmdFloat,Properties.Resources.CmdDescription_Percent),
 				new HelpInfo("-o", Properties.Resources.CmdPath,Properties.Resources.CmdDescription_Output),
+				new HelpInfo("--json", string.Empty,Properties.Resources.CmdDescription_json),
 			};
 
 
@@ -180,7 +181,12 @@ namespace VideoDuplicateFinderConsole {
 								settings.ExcludeFolders.Add(expath);
 							i++;
 							break;
+						case "--json":
+							settings.OutputJson = true;
+							break;
 						}
+
+						
 					}
 					else
 						throw new ParseException(string.Format(Properties.Resources.Cmd_UnknownCommand, arg));
