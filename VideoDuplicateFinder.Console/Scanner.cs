@@ -27,7 +27,7 @@ namespace VideoDuplicateFinderConsole {
 #pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate.
 		}
 
-		private static void Engine_DatabaseCleaned(object sender, EventArgs e) => Console.WriteLine("~~~~ Database cleanup completed! ~~~~");
+		private static void Engine_DatabaseCleaned(object sender, EventArgs e) => Console.Error.WriteLine("~~~~ Database cleanup completed! ~~~~");
 
 		public void StartSearch() => engine.StartSearch();
 
@@ -37,21 +37,21 @@ namespace VideoDuplicateFinderConsole {
 		}
 
 		private void Engine_ScanDone(object sender, EventArgs e) {
-			Console.WriteLine();
-			Console.WriteLine();
-			Console.WriteLine("~~~~ Scan done! ~~~~");
-			Console.WriteLine($"Found '{engine.Duplicates.Count:N0}' duplicates");
+			Console.Error.WriteLine();
+			Console.Error.WriteLine();
+			Console.Error.WriteLine("~~~~ Scan done! ~~~~");
+			Console.Error.WriteLine($"Found '{engine.Duplicates.Count:N0}' duplicates");
 			if (engine.Duplicates.Count == 0) return;
 			var targetFile = Utils.SafePathCombine(Outputfolder, "output.html");
 			engine.Duplicates.ToHtmlTable(targetFile);
-			Console.Write("Saved results in: ");
-			Console.WriteLine(targetFile);
+			Console.Error.Write("Saved results in: ");
+			Console.Error.WriteLine(targetFile);
 			Environment.Exit(0);
 		}
 		private static readonly object _MessageLock = new object();
 		private static void Engine_Progress(object sender, ScanEngine.OwnScanProgress e) {
 			lock (_MessageLock) {
-				Console.WriteLine($"## Elapsed {e.Elapsed.TrimMiliseconds()}, remaining ~{e.Remaining.TrimMiliseconds()}, processing {TruncateWithElipsis(e.CurrentFile)}");
+				Console.Error.WriteLine($"## Elapsed {e.Elapsed.TrimMiliseconds()}, remaining ~{e.Remaining.TrimMiliseconds()}, processing {TruncateWithElipsis(e.CurrentFile)}");
 			}
 		}
 		private static string TruncateWithElipsis(string s, int length = 60) => (s.Length > length ? "..." + s.Substring(s.Length - length) : s);
