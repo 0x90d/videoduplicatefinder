@@ -189,4 +189,7 @@
   <data name="Cmd_UnknownCommand" xml:space="preserve">
     <value>'{0}' is an unknown command</value>
   </data>
+  <data name="CmdDescription_json" xml:space="preserve">
+    <value>If given, output to json</value>
+  </data>
 </root>

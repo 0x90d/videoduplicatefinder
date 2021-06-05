@@ -124,6 +124,15 @@ namespace VideoDuplicateFinderConsole.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If given, output to json.
+        /// </summary>
+        internal static string CmdDescription_json {
+            get {
+                return ResourceManager.GetString("CmdDescription_json", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Path where the output html file will be saved.
         /// </summary>
         internal static string CmdDescription_Output {
