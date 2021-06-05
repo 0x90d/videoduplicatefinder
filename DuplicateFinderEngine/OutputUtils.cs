@@ -5,9 +5,19 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DuplicateFinderEngine {
 	public static class OutputUtils {
+		public static string ToJson<T>(this ICollection<T> listOfClassObjects) {
+			if (listOfClassObjects == null || !listOfClassObjects.Any()) return "";
+
+			string json = JsonSerializer.Serialize(listOfClassObjects);
+			return json;
+		}
+
+
 		/// <summary>
 		/// Prints content of collection to html table
 		/// </summary>
