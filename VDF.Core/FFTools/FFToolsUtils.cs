@@ -35,6 +35,13 @@ namespace VDF.Core.FFTools {
 					return $"{CoreUtils.CurrentFolder}\\{(tool == FFTool.FFmpeg ? FFmpegExecutableName : FFprobeExecutableName)}.exe";
 			}
 
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				if (File.Exists($"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? FFmpegExecutableName : FFprobeExecutableName)}"))
+					return $"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? FFmpegExecutableName : FFprobeExecutableName)}";
+				if (File.Exists(Path.Combine(CoreUtils.CurrentFolder, tool == FFTool.FFmpeg ? FFmpegExecutableName : FFprobeExecutableName)))
+					return Path.Combine(CoreUtils.CurrentFolder, tool == FFTool.FFmpeg ? FFmpegExecutableName : FFprobeExecutableName);
+			}
+
 			var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
 			if (environmentVariables == null) return null;
 			foreach (var path in environmentVariables) {
