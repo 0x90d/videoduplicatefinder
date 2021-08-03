@@ -119,7 +119,7 @@ namespace VDF.Core {
 		Task BuildFileList() => Task.Run(() => {
 			DatabaseUtils.LoadDatabase();
 			foreach (var path in Settings.IncludeList) {
-				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders,
+				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					var fEntry = new FileEntry(file);
 					if (!DatabaseUtils.Database.Contains(fEntry))

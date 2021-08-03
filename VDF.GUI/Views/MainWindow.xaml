@@ -210,6 +210,12 @@
                                     IsChecked="{Binding GeneratePreviewThumbnails}"
                                     IsThreeState="False"
                                     ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
+                                <CheckBox
+                                    Margin="5,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Exclude hardlinks"
+                                    IsChecked="{Binding IgnoreHardlinks}"
+                                    IsThreeState="False" />
                             </StackPanel>
                             <Grid
                                 Grid.Row="2"

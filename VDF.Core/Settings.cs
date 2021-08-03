@@ -23,6 +23,8 @@ namespace VDF.Core {
 
 		public bool IgnoreReadOnlyFolders;
 
+		public bool IgnoreHardlinks;
+
 		public bool GeneratePreviewThumbnails;
 
 		public bool UseCuda;

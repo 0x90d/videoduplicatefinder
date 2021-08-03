@@ -49,17 +49,23 @@ namespace VDF.Core.Utils {
 			"ts"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
-		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool recursive, bool includeImages, List<string> excludeFolders) {
-			var files = Directory.EnumerateFiles(initial, "*", new EnumerationOptions {
-				IgnoreInaccessible = true
+		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreHardLinks, bool recursive, bool includeImages, List<string> excludeFolders) {
+			var enumerationOptions = new EnumerationOptions {
+				IgnoreInaccessible = true,
+			};
+			if (ignoreReadonly)
+				enumerationOptions.AttributesToSkip |= FileAttributes.ReadOnly;
+			if (ignoreHardLinks)
+				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
-			}).Where(f => (includeImages ? AllExtensions : VideoExtensions).Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+			var files = Directory.EnumerateFiles(initial, "*", enumerationOptions)
+				.Where(f => (includeImages ? AllExtensions : VideoExtensions)
+				.Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+
 			if (recursive)
-				files = files.Concat(Directory.EnumerateDirectories(initial, "*", new EnumerationOptions {
-					IgnoreInaccessible = true
-				}).Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
-				  .Where(d => !ignoreReadonly || (new DirectoryInfo(d).Attributes & FileAttributes.ReadOnly) == 0)
-				  .SelectMany(d => GetFilesRecursive(d, ignoreReadonly, recursive: true, includeImages, excludeFolders)));
+				files = files.Concat(Directory.EnumerateDirectories(initial, "*", enumerationOptions)
+					.Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
+					.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, ignoreHardLinks, recursive: true, includeImages, excludeFolders)));
 			return files.ToList();
 		}
 

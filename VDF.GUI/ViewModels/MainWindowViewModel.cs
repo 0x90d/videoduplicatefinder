@@ -99,6 +99,11 @@ namespace VDF.GUI.ViewModels {
 			get => _IgnoreReadOnlyFolders;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreReadOnlyFolders, value);
 		}
+		bool _IgnoreHardlinks;
+		public bool IgnoreHardlinks {
+			get => _IgnoreHardlinks;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreHardlinks, value);
+		}
 		bool _UseCuda;
 		public bool UseCuda {
 			get => _UseCuda;
@@ -484,6 +489,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IncludeImages = IncludeImages;
 			Scanner.Settings.GeneratePreviewThumbnails = GeneratePreviewThumbnails;
 			Scanner.Settings.IgnoreReadOnlyFolders = IgnoreReadOnlyFolders;
+			Scanner.Settings.IgnoreHardlinks = IgnoreHardlinks;
 			Scanner.Settings.UseCuda = UseCuda;
 			Scanner.Settings.Percent = Percent;
 			Scanner.Settings.ThumbnailCount = Thumbnails;
@@ -685,15 +691,15 @@ namespace VDF.GUI.ViewModels {
 							File.CreateSymbolicLink(dub.ItemInfo.Path, s.ItemInfo.Path);
 						}
 						else if (CoreUtils.IsWindows) {
-								//Try moving files to recycle bin
-								var fs = new FileUtils.SHFILEOPSTRUCT {
-									wFunc = FileUtils.FileOperationType.FO_DELETE,
-									pFrom = dub.ItemInfo.Path + '\0' + '\0',
-									fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
-									FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
-									FileUtils.FileOperationFlags.FOF_NOERRORUI |
-									FileUtils.FileOperationFlags.FOF_SILENT
-								};
+							//Try moving files to recycle bin
+							var fs = new FileUtils.SHFILEOPSTRUCT {
+								wFunc = FileUtils.FileOperationType.FO_DELETE,
+								pFrom = dub.ItemInfo.Path + '\0' + '\0',
+								fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
+								FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
+								FileUtils.FileOperationFlags.FOF_NOERRORUI |
+								FileUtils.FileOperationFlags.FOF_SILENT
+							};
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
 								throw new Exception($"SHFileOperation returned: {result:X}");
