@@ -1,13 +1,5 @@
-CD /D VideoDuplicateFinder.Console
+CD /D VDF.GUI
 dotnet publish -c Release -v q --self-contained -r win-x64 -o "..\Releases\VDF.Windows-x64"
-REM dotnet publish -c Release -v q --self-contained -r win-x86 -o "..\Releases\VDF.Windows-x86"
-dotnet publish -c Release -v q --self-contained -r linux-x64 -o "..\Releases\VDF.Linux-x64"
-CD /D ..
-CD /D VideoDuplicateFinder.Windows
-dotnet publish -c Release -v q --self-contained -r win-x64 -o "..\Releases\VDF.Windows-x64"
-REM dotnet publish -c Release -v q --self-contained -r win-x86 -o "..\Releases\VDF.Windows-x86"
-CD /D ..
-CD /D VideoDuplicateFinderLinux
 dotnet publish -c Release -v q --self-contained -r linux-x64 -o "..\Releases\VDF.Linux-x64"
 CD /D ..
 

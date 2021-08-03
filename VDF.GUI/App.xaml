@@ -1,0 +1,12 @@
+<Application
+    x:Class="VDF.GUI.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:VDF.GUI">
+
+    <Application.Styles>
+        <FluentTheme Mode="Dark" />
+        <StyleInclude Source="resm:Avalonia.Controls.DataGrid.Themes.Fluent.xaml?assembly=Avalonia.Controls.DataGrid" />
+        <StyleInclude Source="/Styles/Styles.xaml" />
+    </Application.Styles>
+</Application>
