@@ -51,7 +51,7 @@ namespace VDF.GUI.ViewModels {
 		ObservableCollection<DuplicateItemViewModel> Duplicates { get; } = new ObservableCollection<DuplicateItemViewModel>();
 		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; } = {
 			new KeyValuePair<string, DataGridSortDescription>("None", null),
-			new KeyValuePair<string, DataGridSortDescription>("Size Ascending", 
+			new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
 			new KeyValuePair<string, DataGridSortDescription>("Size Descending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
@@ -516,8 +516,8 @@ namespace VDF.GUI.ViewModels {
 			var dlg = new ExpressionBuilder();
 			var res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
 			if (!res) return;
-			
-			string  currentExpression =
+
+			string currentExpression =
 							((ExpressionBuilder.ExpressionBuilderVM)dlg.DataContext).ExpressionText;
 
 			var blackListGroupID = new HashSet<Guid>();
@@ -526,9 +526,9 @@ namespace VDF.GUI.ViewModels {
 
 				IEnumerable<DuplicateItemViewModel> l = Duplicates;
 				try {
-						var interpreter = new Interpreter().SetVariable("currentDuplicate", first).
-							ParseAsDelegate<Func<DuplicateItemViewModel, bool>>(currentExpression + " && !arg.ItemInfo.Path.Equals(currentDuplicate.ItemInfo.Path)");
-						l = l.Where(interpreter);
+					var interpreter = new Interpreter().SetVariable("currentDuplicate", first).
+						ParseAsDelegate<Func<DuplicateItemViewModel, bool>>(currentExpression + " && !arg.ItemInfo.Path.Equals(currentDuplicate.ItemInfo.Path)");
+					l = l.Where(interpreter);
 				}
 				catch (ParseException e) {
 					await MessageBoxService.Show($"Failed to parse '{currentExpression}': {e}");
@@ -649,8 +649,18 @@ namespace VDF.GUI.ViewModels {
 				DeleteInternal(false, blackList: true);
 			});
 		});
+		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForSelectedItemsCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(() => {
+				DeleteInternal(false, blackList: false, createSymbolLinksInstead: true);
+			});
+		});
+		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForSelectedItemsAndBlacklistCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(() => {
+				DeleteInternal(false, blackList: true, createSymbolLinksInstead: true);
+			});
+		});
 
-		async void DeleteInternal(bool fromDisk, bool blackList = false) {
+		async void DeleteInternal(bool fromDisk, bool blackList = false, bool createSymbolLinksInstead = false) {
 			if (Duplicates.Count == 0) return;
 			var dlgResult = await MessageBoxService.Show(
 				fromDisk
@@ -664,16 +674,26 @@ namespace VDF.GUI.ViewModels {
 				if (dub.Checked == false) continue;
 				if (fromDisk)
 					try {
-						if (CoreUtils.IsWindows) {
-							//Try moving files to recycle bin
-							var fs = new FileUtils.SHFILEOPSTRUCT {
-								wFunc = FileUtils.FileOperationType.FO_DELETE,
-								pFrom = dub.ItemInfo.Path + '\0' + '\0',
-								fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
-								FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
-								FileUtils.FileOperationFlags.FOF_NOERRORUI |
-								FileUtils.FileOperationFlags.FOF_SILENT
-							};
+
+						if (createSymbolLinksInstead) {
+							DuplicateItemViewModel? fileToKeep = Duplicates.FirstOrDefault(s =>
+							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
+							s.Checked == false);
+							if (fileToKeep == null) {
+								throw new Exception($"Cannot create a symbol link for '{dub.ItemInfo.Path}' because all items in this group are selected/checked");
+							}
+							File.CreateSymbolicLink(dub.ItemInfo.Path, s.ItemInfo.Path);
+						}
+						else if (CoreUtils.IsWindows) {
+								//Try moving files to recycle bin
+								var fs = new FileUtils.SHFILEOPSTRUCT {
+									wFunc = FileUtils.FileOperationType.FO_DELETE,
+									pFrom = dub.ItemInfo.Path + '\0' + '\0',
+									fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
+									FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
+									FileUtils.FileOperationFlags.FOF_NOERRORUI |
+									FileUtils.FileOperationFlags.FOF_SILENT
+								};
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
 								throw new Exception($"SHFileOperation returned: {result:X}");

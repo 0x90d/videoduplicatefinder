@@ -707,6 +707,7 @@
                                                     </StackPanel>
                                                 </MenuItem.Header>
                                             </MenuItem>
+                                            <Separator />
                                             <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
                                                 <MenuItem.Header>
                                                     <StackPanel Orientation="Horizontal">
@@ -734,6 +735,36 @@
                                                             Margin="5,0,0,0"
                                                             VerticalAlignment="Center"
                                                             Text="Remove from list only and exclude from future scans" />
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Text="Remove from list only + create symbol links" />
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsAndBlacklistCommand}"  ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Text="Remove from list only + create symbol links and exclude from future scans" />
                                                     </StackPanel>
                                                 </MenuItem.Header>
                                             </MenuItem>
