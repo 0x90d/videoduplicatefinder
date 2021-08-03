@@ -98,7 +98,7 @@ namespace VDF.Core.Utils {
 				for (int i = 0; i < img1.Length; i++)
 					diff += Math.Abs(img1[i] - img2[i]);
 			}
-			return (float)diff / 512;
+			return (float)diff /  img1.Length / 256;
 		}
 
 	}
