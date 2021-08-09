@@ -585,46 +585,35 @@ namespace VDF.GUI.ViewModels {
 
 		});
 		public ReactiveCommand<Unit, Unit> CheckLowestQualityCommand => ReactiveCommand.Create(() => {
-			var blackListGroupID = new HashSet<Guid>();
+			HashSet<Guid> blackListGroupID = new();
 
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
-				var l = Duplicates.Where(d => d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				IEnumerable<DuplicateItemViewModel> l = Duplicates.Where(d => d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Insert(0, first);
-
-				var keep = dupMods[0];
+				
+				DuplicateItemViewModel keep = dupMods[0];
 				//Duration first
-				if (!keep.ItemInfo.IsImage && keep.ItemInfo.Duration != TimeSpan.Zero)
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].ItemInfo.Duration > keep.ItemInfo.Duration)
-							keep = dupMods[i];
-					}
+				if (!keep.ItemInfo.IsImage)
+					keep = dupMods.OrderByDescending(d => d.ItemInfo.Duration).First();
+				
 				//resolution next, but only when keep is unchanged
 				if (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].ItemInfo.FrameSizeInt > keep.ItemInfo.FrameSizeInt)
-							keep = dupMods[i];
-					}
+					keep = dupMods.OrderByDescending(d => d.ItemInfo.FrameSizeInt).First();
+
 				//fps next, but only when keep is unchanged
-				if (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path) && !keep.ItemInfo.IsImage)
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].ItemInfo.Fps > keep.ItemInfo.Fps)
-							keep = dupMods[i];
-					}
+				if (!keep.ItemInfo.IsImage && keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
+					keep = dupMods.OrderByDescending(d => d.ItemInfo.Fps).First();
+
 				//Bitrate next, but only when keep is unchanged
-				if (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path) && !keep.ItemInfo.IsImage)
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].ItemInfo.BitRateKbs > keep.ItemInfo.BitRateKbs)
-							keep = dupMods[i];
-					}
+				if (!keep.ItemInfo.IsImage && keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
+					keep = dupMods.OrderByDescending(d => d.ItemInfo.BitRateKbs).First();
+
 				//Audio Bitrate next, but only when keep is unchanged
-				if (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path) && !keep.ItemInfo.IsImage)
-					for (int i = 1; i < dupMods.Count; i++) {
-						if (dupMods[i].ItemInfo.AudioSampleRate > keep.ItemInfo.AudioSampleRate)
-							keep = dupMods[i];
-					}
+				if (!keep.ItemInfo.IsImage && keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
+					keep = dupMods.OrderByDescending(d => d.ItemInfo.AudioSampleRate).First();
 
 				keep.Checked = false;
 				for (int i = 0; i < dupMods.Count; i++) {
