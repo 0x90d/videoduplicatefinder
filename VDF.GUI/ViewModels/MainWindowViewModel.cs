@@ -473,7 +473,16 @@ namespace VDF.GUI.ViewModels {
 		});
 
 
-		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (!Scanner.FFmpegExists) {
+				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
+				return;
+			}
+			if (!Scanner.FFprobeExists) {
+				await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
+				return;
+			}
+
 			Duplicates.Clear();
 			try {
 				foreach (var f in new DirectoryInfo(Utils.ImageUtils.ThumbnailDirectory).EnumerateFiles())
@@ -502,7 +511,7 @@ namespace VDF.GUI.ViewModels {
 			//Start scan
 			IsBusy = true;
 			IsBusyText = "Enumerating files...";
-			Scanner.StartSearch();
+				Scanner.StartSearch();
 		});
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();

@@ -14,21 +14,17 @@
 // */
 //
 
-using System;
 using System.Diagnostics;
-using System.IO;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
 	static class FFProbeEngine {
-		static readonly string FFprobePath;
+		public static readonly string FFprobePath;
 		const int TimeoutDuration = 15_000; //15 seconds
 		static FFProbeEngine() {
 #pragma warning disable CS8601 // Possible null reference assignment.
 			FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe);
 #pragma warning restore CS8601 // Possible null reference assignment.
-			if (string.IsNullOrEmpty(FFprobePath))
-				throw new Exception("Cannot find FFprobe");
 		}
 
 		public static  MediaInfo? GetMediaInfo(string file) {

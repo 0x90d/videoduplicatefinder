@@ -3,7 +3,6 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
-    <SelfContained>true</SelfContained>
   </PropertyGroup>
   <!-- MacOS --><!--
   <PropertyGroup>

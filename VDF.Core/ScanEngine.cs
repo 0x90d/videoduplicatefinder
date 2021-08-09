@@ -76,6 +76,9 @@ namespace VDF.Core {
 							});
 		}
 
+		public bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);
+		public bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
+
 		public async void StartSearch() {
 			Prepare();
 			SearchTimer.Start();
@@ -101,6 +104,13 @@ namespace VDF.Core {
 		}
 
 		void Prepare() {
+			//Using VDF.GUI we know fftools exist at this point but VDF.Core might be used in other projects as well
+			if (!FFmpegExists)
+				throw new FFNotFoundException("Cannot find FFmpeg");
+			if (!FFprobeExists)
+				throw new FFNotFoundException("Cannot find FFprobe");
+
+			FfmpegEngine.UseCuda = Settings.UseCuda;
 			Duplicates.Clear();
 			positionList.Clear();
 			ElapsedTimer.Reset();
@@ -112,7 +122,6 @@ namespace VDF.Core {
 				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
 				positionList.Add(positionCounter);
 			}
-			FfmpegEngine.UseCuda = Settings.UseCuda;
 			isScanning = true;
 		}
 

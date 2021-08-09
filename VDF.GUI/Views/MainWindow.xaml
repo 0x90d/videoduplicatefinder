@@ -511,6 +511,9 @@
                                 </ComboBox>
                             </StackPanel>
                             <DataGrid Name="dataGridGrouping" Grid.Row="2">
+                                <DataGrid.KeyBindings>
+                                    <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
+                                </DataGrid.KeyBindings>
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn>
                                         <DataGridTemplateColumn.CellTemplate>

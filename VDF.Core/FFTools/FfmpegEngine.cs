@@ -14,24 +14,18 @@
 // */
 //
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
 	static class FfmpegEngine {
-		static readonly string FFmpegPath;
+		public static readonly string FFmpegPath;
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static bool UseCuda;
 		static FfmpegEngine() {
 #pragma warning disable CS8601 // Possible null reference assignment.
 			FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg);
 #pragma warning restore CS8601 // Possible null reference assignment.
-			if (string.IsNullOrEmpty(FFmpegPath))
-				throw new Exception("Cannot find FFmpeg");
 		}
 
 		public static byte[]? GetThumbnail(FfmpegSettings settings) {
