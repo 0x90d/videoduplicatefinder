@@ -411,6 +411,8 @@ namespace VDF.GUI.ViewModels {
 		});
 		public ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(() => {
 			DuplicateItemViewModel currentItem = GetDataGrid.SelectedItem as DuplicateItemViewModel;
+			if (currentItem == null) return;
+
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
 					UseShellExecute = true
