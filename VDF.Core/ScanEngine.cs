@@ -156,7 +156,7 @@ namespace VDF.Core {
 			return false;
 		}
 		bool InvalidEntryForDuplicateCheck(FileEntry entry) =>
-			InvalidEntry(entry) || entry.mediaInfo == null || (!entry.IsImage && entry.grayBytes?.Count < Settings.ThumbnailCount);
+			InvalidEntry(entry) || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes?.Count < Settings.ThumbnailCount);
 
 		public Task LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
 		public void SaveDatabase() => DatabaseUtils.SaveDatabase();
@@ -172,7 +172,7 @@ namespace VDF.Core {
 					if (InvalidEntry(entry)) return;
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
-						var info = FFProbeEngine.GetMediaInfo(entry.Path);
+						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path);
 						if (info == null) {
 							entry.Flags.Set(EntryFlags.MetadataError);
 							return;
@@ -183,7 +183,7 @@ namespace VDF.Core {
 
 					if (entry.grayBytes == null || (entry.IsImage ? entry.grayBytes.Count == 0 : entry.grayBytes.Count < Settings.ThumbnailCount)) {
 						List<byte[]> grayBytes;
-						var error = entry.IsImage
+						EntryFlags error = entry.IsImage
 							? GetGrayBytesFromImage(entry, out grayBytes)
 							: FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, out grayBytes);
 						if (error > 0)
