@@ -53,7 +53,8 @@ namespace VDF.Core.FFTools {
 						IgnoreInaccessible = true,
 						MatchCasing = MatchCasing.CaseInsensitive
 					});
-					return files.Length == 0 ? null : files[0].FullName;
+					if (files.Length > 0)
+						return files[0].FullName;
 				}
 				catch (Exception e) {
 #if DEBUG
