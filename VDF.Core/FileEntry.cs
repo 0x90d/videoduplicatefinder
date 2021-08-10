@@ -15,10 +15,8 @@
 //
 
 using ProtoBuf;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using VDF.Core.Utils;
 
 namespace VDF.Core {
@@ -31,17 +29,18 @@ namespace VDF.Core {
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
 		public FileEntry(string file) {
 			Path = file;
-			var fi = new System.IO.FileInfo(file);
+			var fi = new FileInfo(file);
 			Folder = fi.Directory?.FullName ?? string.Empty;
 			var extension = fi.Extension;
 			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
+			grayBytes = new Dictionary<double, byte[]?>();
 		}
 		[ProtoMember(1)]
 		public string Path { get; set; }
 		[ProtoMember(2)]
 		public string Folder;
 		[ProtoMember(3)]
-		public List<byte[]>? grayBytes;
+		public Dictionary<double, byte[]?> grayBytes;
 		[ProtoMember(4)]
 		public MediaInfo? mediaInfo;
 		[ProtoMember(5)]
@@ -49,9 +48,14 @@ namespace VDF.Core {
 
 		[ProtoIgnore]
 		public bool IsImage {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.IsImage);
 			protected set => Flags.Set(EntryFlags.IsImage, value);
 		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public double GetGrayBytesIndex(float position) => mediaInfo!.Duration.TotalSeconds * position;
+
 		public override bool Equals(object? obj) =>
 			obj is FileEntry entry &&
 			Path == entry.Path;

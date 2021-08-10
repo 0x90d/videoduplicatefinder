@@ -33,22 +33,22 @@ namespace VDF.Core.FFTools {
 					Arguments = $" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams  \"{file}\"",
 					FileName = FFprobePath,
 					CreateNoWindow = true,
-					RedirectStandardInput = true,
+					RedirectStandardInput = false,
 					WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
 					RedirectStandardOutput = true,
-					RedirectStandardError = true,
+					RedirectStandardError = false,
 					WindowStyle = ProcessWindowStyle.Hidden
 				}
 			};
 			try {
 				process.EnableRaisingEvents = true;
 				process.Start();
+				using var ms = new MemoryStream();
+				process.StandardOutput.BaseStream.CopyTo(ms);
 				if (!process.WaitForExit(TimeoutDuration)) { 
 					Logger.Instance.Info($"FFprobe timed out on file '{file}'");
 					throw new Exception();
 				}
-				using var ms = new MemoryStream();
-				process.StandardOutput.BaseStream.CopyTo(ms);
 				return FFProbeJsonReader.Read(ms.ToArray(), file);
 			}
 			catch (Exception) {

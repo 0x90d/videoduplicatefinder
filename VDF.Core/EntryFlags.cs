@@ -15,6 +15,7 @@
 //
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace VDF.Core {
 	[Flags]
@@ -29,9 +30,13 @@ namespace VDF.Core {
 	}
 
 	public static class EntryFlagExtensions {
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool Any(this EntryFlags f, EntryFlags checkFlags) => (f & checkFlags) > 0;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool Has(this EntryFlags f, EntryFlags checkFlags) => (f & checkFlags) == checkFlags;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Set(this ref EntryFlags f, EntryFlags setFlag) => f |= setFlag;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Set(this ref EntryFlags f, EntryFlags setFlag, bool falseToReset) => f = (f & ~setFlag) | (falseToReset ? setFlag : 0);
 	}
 }

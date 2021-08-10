@@ -293,8 +293,12 @@ namespace VDF.GUI.ViewModels {
 		public async void LoadDatabase() {
 			IsBusy = true;
 			IsBusyText = "Loading database...";
-			await Scanner.LoadDatabase();
+			bool success = await Scanner.LoadDatabase();
 			IsBusy = false;
+			if (!success) {
+				await MessageBoxService.Show("Failed to load database of scanned files. Please see log file in VDF directory");
+				Environment.Exit(-1);
+			}
 		}
 
 		void Scanner_Progress(object sender, ScanProgressChangedEventArgs e) =>
@@ -508,7 +512,7 @@ namespace VDF.GUI.ViewModels {
 			//Start scan
 			IsBusy = true;
 			IsBusyText = "Enumerating files...";
-				Scanner.StartSearch();
+			Scanner.StartSearch();
 		});
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();
@@ -599,12 +603,12 @@ namespace VDF.GUI.ViewModels {
 				var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Insert(0, first);
-				
+
 				DuplicateItemViewModel keep = dupMods[0];
 				//Duration first
 				if (!keep.ItemInfo.IsImage)
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.Duration).First();
-				
+
 				//resolution next, but only when keep is unchanged
 				if (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.FrameSizeInt).First();

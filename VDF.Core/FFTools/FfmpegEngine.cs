@@ -34,7 +34,7 @@ namespace VDF.Core.FFTools {
 					Arguments = $" -hide_banner -loglevel panic -y {(UseCuda ? "-hwaccel cuda" : string.Empty)} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} \"-\"",
 					FileName = FFmpegPath,
 					CreateNoWindow = true,
-					RedirectStandardInput = true,
+					RedirectStandardInput = false,
 					RedirectStandardOutput = true,
 					WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
 					RedirectStandardError = true,
@@ -44,15 +44,15 @@ namespace VDF.Core.FFTools {
 			try {
 				process.EnableRaisingEvents = true;
 				process.Start();
+				using var ms = new MemoryStream();
+				process.StandardOutput.BaseStream.CopyTo(ms);
 				if (!process.WaitForExit(TimeoutDuration)) {
 					Logger.Instance.Info($"FFmpeg timed out on file '{settings.File}'");
 					throw new Exception();
 				}
-				using var ms = new MemoryStream();
-				process.StandardOutput.BaseStream.CopyTo(ms);
 				return ms.ToArray();
 			}
-			catch (Exception) {
+			catch (Exception e) {
 				try {
 					if (process.HasExited == false)
 						process.Kill();
@@ -61,23 +61,30 @@ namespace VDF.Core.FFTools {
 				return null;
 			}
 		}
-		public static EntryFlags GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, out List<byte[]> grayBytes) {
-			grayBytes = new List<byte[]>();
-			for (var i = 0; i < positions.Count; i++) {
+		public static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions) {
+			int tooDarkCounter = 0;
+
+			for (int i = 0; i < positions.Count; i++) {
+				double position = videoFile.GetGrayBytesIndex(positions[i]);
+				if (videoFile.grayBytes.ContainsKey(position))
+					continue;
 
 				var data = GetThumbnail(new FfmpegSettings {
 					File = videoFile.Path,
-					Position = TimeSpan.FromSeconds(videoFile.mediaInfo!.Duration.TotalSeconds * positions[i]),
+					Position = TimeSpan.FromSeconds(position),
 					GrayScale = 1
 				});
-				if (data == null || data.Length == 0)
-					return EntryFlags.ThumbnailError;
+				if (data == null || data.Length == 0) {
+					videoFile.Flags.Set(EntryFlags.ThumbnailError);
+					return;
+				}
 				if (!GrayBytesUtils.VerifyGrayScaleValues(data))
-					return EntryFlags.TooDark;
-				grayBytes.Add(data);
+					tooDarkCounter++;
+				videoFile.grayBytes.Add(position, data);
 			}
+			if (tooDarkCounter == positions.Count)
+				videoFile.Flags.Set(EntryFlags.TooDark);
 
-			return 0;
 		}
 	}
 

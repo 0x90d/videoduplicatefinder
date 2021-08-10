@@ -156,9 +156,9 @@ namespace VDF.Core {
 			return false;
 		}
 		bool InvalidEntryForDuplicateCheck(FileEntry entry) =>
-			InvalidEntry(entry) || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes?.Count < Settings.ThumbnailCount);
+			InvalidEntry(entry) || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes.Count < Settings.ThumbnailCount);
 
-		public Task LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
+		public Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
 		public void SaveDatabase() => DatabaseUtils.SaveDatabase();
 
 		public void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
@@ -181,16 +181,11 @@ namespace VDF.Core {
 						entry.mediaInfo = info;
 					}
 
-					if (entry.grayBytes == null || (entry.IsImage ? entry.grayBytes.Count == 0 : entry.grayBytes.Count < Settings.ThumbnailCount)) {
-						List<byte[]> grayBytes;
-						EntryFlags error = entry.IsImage
-							? GetGrayBytesFromImage(entry, out grayBytes)
-							: FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, out grayBytes);
-						if (error > 0)
-							entry.Flags.Set(error);
-						else
-							entry.grayBytes = grayBytes;
-					}
+					
+					if (entry.IsImage && entry.grayBytes.Count == 0)
+						GetGrayBytesFromImage(entry);
+					else if (!entry.IsImage)
+						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList);
 
 					IncrementProgress(entry.Path);
 				});
@@ -222,15 +217,15 @@ namespace VDF.Core {
 						float[] percent;
 						if (entry.IsImage) {
 							percent = new float[1];
-							percent[0] = GrayBytesUtils.PercentageDifference(entry.grayBytes![0], compItem.grayBytes![0]);
+							percent[0] = GrayBytesUtils.PercentageDifference(entry.grayBytes[0]!, compItem.grayBytes[0]!);
 							if (percent[0] < percentageDifference)
 								duplicateCounter++;
 						}
 						else {
-							percent = new float[entry.grayBytes!.Count];
-							for (var j = 0; j < entry.grayBytes.Count; j++) {
+							percent = new float[positionList.Count];
+							for (var j = 0; j < positionList.Count; j++) {
 								percent[j] =
-									GrayBytesUtils.PercentageDifference(entry.grayBytes[j], compItem.grayBytes![j]);
+									GrayBytesUtils.PercentageDifference(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
 								if (percent[j] < percentageDifference) {
 									duplicateCounter++;
 								}
@@ -239,7 +234,7 @@ namespace VDF.Core {
 						}
 
 
-						if (entry.IsImage && duplicateCounter == 0 || !entry.IsImage && duplicateCounter != entry.grayBytes.Count) {
+						if (entry.IsImage && duplicateCounter == 0 || !entry.IsImage && duplicateCounter != positionList.Count) {
 							IncrementProgress(entry.Path);
 							continue;
 						}
@@ -342,13 +337,13 @@ namespace VDF.Core {
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
-		static EntryFlags GetGrayBytesFromImage(FileEntry videoFile, out List<byte[]> grayBytes) {
-			grayBytes = new List<byte[]>();
+		static void GetGrayBytesFromImage(FileEntry imageFile) {
 			try {
-				using var byteStream = File.OpenRead(videoFile.Path);
+
+				using var byteStream = File.OpenRead(imageFile.Path);
 				using var bitmapImage = Image.FromStream(byteStream);
 				//Set some props while we already loaded the image
-				videoFile.mediaInfo = new MediaInfo {
+				imageFile.mediaInfo = new MediaInfo {
 					Streams = new[] {
 							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
 						}
@@ -359,17 +354,18 @@ namespace VDF.Core {
 				}
 
 				var d = GrayBytesUtils.GetGrayScaleValues(b);
-				if (d == null) return EntryFlags.TooDark;
+				if (d == null) {
+					imageFile.Flags.Set(EntryFlags.TooDark);
+					return;
+				}
 
-				grayBytes.Add(d);
+				imageFile.grayBytes.Add(0, d);
 			}
 			catch (Exception ex) {
 				Logger.Instance.Info(
-					$"Exception, file: {videoFile.Path}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
-				return EntryFlags.ThumbnailError;
+					$"Exception, file: {imageFile.Path}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
+				imageFile.Flags.Set(EntryFlags.ThumbnailError);
 			}
-
-			return 0;
 		}
 
 
