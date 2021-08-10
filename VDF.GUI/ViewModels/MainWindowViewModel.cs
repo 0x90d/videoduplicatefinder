@@ -17,18 +17,12 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Xml.Linq;
-using Avalonia;
 using Avalonia.Collections;
-using Avalonia.Controls.ApplicationLifetimes;
 using DynamicExpresso;
 using DynamicExpresso.Exceptions;
 using JetBrains.Annotations;
@@ -431,6 +425,7 @@ namespace VDF.GUI.ViewModels {
 			if (currentItem == null) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
+			//TODO: Create an input dialog
 			var result = await new SaveFileDialog {
 				Title = "Enter new name",
 				Directory = fi.Directory.FullName
