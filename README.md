@@ -46,7 +46,10 @@ Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licesed und
 
 
 # Building
-- .NET Core 6.x SDK builds
+### Please note
+Master branch is used for v3 which is still in development. If you build in order to use it you should get the code from v2 instead: https://github.com/0x90d/videoduplicatefinder/tree/c19190196588dd2982e269b28ff23abf78e8ff5e
+
+- .NET Core 6.x SDK DAILY builds
 - Visual Studio 2022
 - Avalonia VS Extension is recommended but not required
 
