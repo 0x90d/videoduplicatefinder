@@ -155,18 +155,22 @@ namespace VDF.GUI.ViewModels {
 			get => _ScanProgressMaxValue;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressMaxValue, value);
 		}
-
 		int _Percent = 95;
 		public int Percent {
 			get => _Percent;
 			set => this.RaiseAndSetIfChanged(ref _Percent, value);
 		}
-
 		int _Thumbnails = 1;
 		public int Thumbnails {
 			get => _Thumbnails;
 			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
 		}
+#if DEBUG
+		public bool IsDebug => true;
+#else
+		public bool IsDebug => false;
+#endif
+
 		KeyValuePair<string, FileTypeFilter> _FileType;
 
 		public KeyValuePair<string, FileTypeFilter> FileType {
@@ -371,6 +375,14 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch { }
 		});
+#if DEBUG
+		public ReactiveCommand<Unit, Unit> OpenOwnFolderCommand => ReactiveCommand.Create(() => {
+			Process.Start(new ProcessStartInfo {
+				FileName = CoreUtils.CurrentFolder,
+				UseShellExecute = true,
+			});
+		});
+#endif
 		public ReactiveCommand<Unit, Unit> CleanDatabaseCommand => ReactiveCommand.Create(() => {
 			IsBusy = true;
 			IsBusyText = "Cleaning database...";

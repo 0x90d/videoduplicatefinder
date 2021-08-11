@@ -135,6 +135,14 @@
                                         Text="Latest Release" />
                                 </MenuItem.Header>
                             </MenuItem>
+                            <MenuItem IsVisible="{Binding IsDebug}"  Command="{Binding OpenOwnFolderCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Open Folder" />
+                                </MenuItem.Header>
+                            </MenuItem>
                         </Menu>
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
