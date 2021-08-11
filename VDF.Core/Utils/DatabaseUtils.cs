@@ -22,24 +22,32 @@ using ProtoBuf;
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
 		public static HashSet<FileEntry> Database = new HashSet<FileEntry>();
-		public static void LoadDatabase() {
+		public static bool LoadDatabase() {
 			var databaseFile = new FileInfo(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "ScannedFiles.db"));
 			if (databaseFile.Exists && databaseFile.Length == 0) //invalid data
 			{
 				databaseFile.Delete();
-				return;
+				return true;
 			}
 			if (!databaseFile.Exists)
-				return;
-			Logger.Instance.Info("Found previously scanned files, importing...");
+				return true;
 
+			Logger.Instance.Info("Found previously scanned files, importing...");
 			var st = Stopwatch.StartNew();
-			using (var file = new FileStream(databaseFile.FullName, FileMode.Open)) {
-				Database = Serializer.Deserialize<HashSet<FileEntry>>(file);
+			try {
+				using (var file = new FileStream(databaseFile.FullName, FileMode.Open)) {
+					Database = Serializer.Deserialize<HashSet<FileEntry>>(file);
+				}
+			}
+			catch (ProtoException ex) {
+				Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
+				st.Stop();
+				return false;
 			}
 
 			st.Stop();
 			Logger.Instance.Info($"Previously scanned files imported. {Database.Count:N0} files in {st.Elapsed}");
+			return true;
 		}
 		public static void CleanupDatabase() {
 
