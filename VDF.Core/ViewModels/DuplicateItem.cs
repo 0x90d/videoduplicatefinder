@@ -14,17 +14,16 @@
 // */
 //
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using VDF.Core.Utils;
 
 namespace VDF.Core.ViewModels {
 	[DebuggerDisplay("{" + nameof(Path) + ",nq}")]
 	public class DuplicateItem  {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItem() { }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItem(FileEntry file, float percent, Guid groupID) {
 			Path = file.Path;
 			Folder = file.Folder;
@@ -59,7 +58,7 @@ namespace VDF.Core.ViewModels {
 			DateCreated = fi.CreationTimeUtc;
 			SizeLong = fi.Exists ? fi.Length : -1;
 			if (file.IsImage)
-				Format = fi.Extension.Substring(1);
+				Format = fi.Extension[1..];
 			Similarity = (1f - percent) * 100;
 			IsImage = file.IsImage;
 		}

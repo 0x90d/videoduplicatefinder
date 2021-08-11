@@ -23,9 +23,7 @@ namespace VDF.Core.FFTools {
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static bool UseCuda;
 		static FfmpegEngine() {
-#pragma warning disable CS8601 // Possible null reference assignment.
-			FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg);
-#pragma warning restore CS8601 // Possible null reference assignment.
+			FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 		}
 
 		public static byte[]? GetThumbnail(FfmpegSettings settings) {
@@ -52,7 +50,7 @@ namespace VDF.Core.FFTools {
 				}
 				return ms.ToArray();
 			}
-			catch (Exception e) {
+			catch (Exception) {
 				try {
 					if (process.HasExited == false)
 						process.Kill();

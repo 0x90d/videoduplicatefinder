@@ -20,9 +20,13 @@ using System.Text;
 
 namespace VDF.Core.Utils {
 	public sealed class Logger {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		static Logger instance;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static Logger Instance => instance ??= new Logger();
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public event EventHandler LogItemAdded;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public void ClearLog() => LogEntries.Clear();
 		public override string? ToString() {

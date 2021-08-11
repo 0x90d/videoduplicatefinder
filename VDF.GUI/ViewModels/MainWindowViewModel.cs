@@ -167,9 +167,9 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
 		}
 #if DEBUG
-		public bool IsDebug => true;
+		public static bool IsDebug => true;
 #else
-		public bool IsDebug => false;
+		public static bool IsDebug => false;
 #endif
 
 		KeyValuePair<string, FileTypeFilter> _FileType;
@@ -298,7 +298,7 @@ namespace VDF.GUI.ViewModels {
 		public async void LoadDatabase() {
 			IsBusy = true;
 			IsBusyText = "Loading database...";
-			bool success = await Scanner.LoadDatabase();
+			bool success = await ScanEngine.LoadDatabase();
 			IsBusy = false;
 			if (!success) {
 				await MessageBoxService.Show("Failed to load database of scanned files. Please see log file in VDF directory");
@@ -317,7 +317,7 @@ namespace VDF.GUI.ViewModels {
 
 		void Instance_LogItemAdded(object sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
-				while (Logger.Instance.LogEntries.Count > 0) {
+				while (!Logger.Instance.LogEntries.IsEmpty) {
 					if (Logger.Instance.LogEntries.TryTake(out var item))
 						LogItems.Add(item);
 				}
@@ -342,7 +342,7 @@ namespace VDF.GUI.ViewModels {
 			});
 		}
 		bool TextFilter(object obj) {
-			if (!(obj is DuplicateItemViewModel data)) return false;
+			if (obj is not DuplicateItemViewModel data) return false;
 			var success = true;
 			if (!string.IsNullOrEmpty(FilterByPath)) {
 				success = data.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase);
@@ -357,7 +357,7 @@ namespace VDF.GUI.ViewModels {
 			return success;
 		}
 
-		DataGrid GetDataGrid => ApplicationHelpers.MainWindow.FindControl<DataGrid>("dataGridGrouping");
+		static DataGrid GetDataGrid => ApplicationHelpers.MainWindow.FindControl<DataGrid>("dataGridGrouping");
 
 		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
@@ -367,7 +367,7 @@ namespace VDF.GUI.ViewModels {
 			if (!Includes.Contains(result))
 				Includes.Add(result);
 		});
-		public ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.Create(() => {
 			try {
 				Process.Start(new ProcessStartInfo {
 					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
@@ -376,14 +376,12 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch { }
 		});
-#if DEBUG
-		public ReactiveCommand<Unit, Unit> OpenOwnFolderCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> OpenOwnFolderCommand => ReactiveCommand.Create(() => {
 			Process.Start(new ProcessStartInfo {
 				FileName = CoreUtils.CurrentFolder,
 				UseShellExecute = true,
 			});
 		});
-#endif
 		public ReactiveCommand<Unit, Unit> CleanDatabaseCommand => ReactiveCommand.Create(() => {
 			IsBusy = true;
 			IsBusyText = "Cleaning database...";
@@ -414,10 +412,10 @@ namespace VDF.GUI.ViewModels {
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 
-			if (!Scanner.ExportDataBaseToJson(result, options))
+			if (!ScanEngine.ExportDataBaseToJson(result, options))
 				await MessageBoxService.Show("Exporting database has failed, please see log");
 		}
-		public ReactiveCommand<DuplicateItemViewModel, Unit> OpenItemCommand => ReactiveCommand.Create<DuplicateItemViewModel>(currentItem => {
+		public static ReactiveCommand<DuplicateItemViewModel, Unit> OpenItemCommand => ReactiveCommand.Create<DuplicateItemViewModel>(currentItem => {
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo {
 					FileName = currentItem.ItemInfo.Path,
@@ -432,9 +430,8 @@ namespace VDF.GUI.ViewModels {
 				});
 			}
 		});
-		public ReactiveCommand<Unit, Unit> OpenSelectedItemInFolderCommand => ReactiveCommand.Create(() => {
-			DuplicateItemViewModel currentItem = GetDataGrid.SelectedItem as DuplicateItemViewModel;
-			if (currentItem == null) return;
+		public static ReactiveCommand<Unit, Unit> OpenSelectedItemInFolderCommand => ReactiveCommand.Create(() => {
+			if (GetDataGrid.SelectedItem is not DuplicateItemViewModel currentItem) return;
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
 					UseShellExecute = true
@@ -448,9 +445,8 @@ namespace VDF.GUI.ViewModels {
 				});
 			}
 		});
-		public ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(() => {
-			DuplicateItemViewModel currentItem = GetDataGrid.SelectedItem as DuplicateItemViewModel;
-			if (currentItem == null) return;
+		public static ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(() => {
+			if (GetDataGrid.SelectedItem is not DuplicateItemViewModel currentItem) return;
 
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
@@ -465,9 +461,8 @@ namespace VDF.GUI.ViewModels {
 				});
 			}
 		});
-		public ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
-			DuplicateItemViewModel currentItem = GetDataGrid.SelectedItem as DuplicateItemViewModel;
-			if (currentItem == null) return;
+		public static ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (GetDataGrid.SelectedItem is not DuplicateItemViewModel currentItem) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
 			//TODO: Create an input dialog
@@ -516,11 +511,11 @@ namespace VDF.GUI.ViewModels {
 
 
 		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
-			if (!Scanner.FFmpegExists) {
+			if (!ScanEngine.FFmpegExists) {
 				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
 				return;
 			}
-			if (!Scanner.FFprobeExists) {
+			if (!ScanEngine.FFprobeExists) {
 				await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
 				return;
 			}
@@ -753,7 +748,7 @@ namespace VDF.GUI.ViewModels {
 						continue;
 					}
 				if (blackList)
-					Scanner.BlackListFileEntry(dub.ItemInfo.Path);
+					ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
 				Duplicates.RemoveAt(i);
 			}
 
@@ -764,7 +759,7 @@ namespace VDF.GUI.ViewModels {
 				Duplicates.RemoveAt(i);
 			}
 			if (blackList)
-				Scanner.SaveDatabase();
+				ScanEngine.SaveDatabase();
 		}
 		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
@@ -785,10 +780,10 @@ namespace VDF.GUI.ViewModels {
 			if (errorCounter > 0)
 				await MessageBoxService.Show("Failed to copy/move some files. Please check log!");
 		});
-		public ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {
 			Utils.TreeHelper.ToggleExpander(GetDataGrid, true);
 		});
-		public ReactiveCommand<Unit, Unit> CollapseAllGroupsCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> CollapseAllGroupsCommand => ReactiveCommand.Create(() => {
 			Utils.TreeHelper.ToggleExpander(GetDataGrid, false);
 		});
 

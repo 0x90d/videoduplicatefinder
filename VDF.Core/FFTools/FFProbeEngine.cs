@@ -22,9 +22,7 @@ namespace VDF.Core.FFTools {
 		public static readonly string FFprobePath;
 		const int TimeoutDuration = 15_000; //15 seconds
 		static FFProbeEngine() {
-#pragma warning disable CS8601 // Possible null reference assignment.
-			FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe);
-#pragma warning restore CS8601 // Possible null reference assignment.
+			FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 		}
 
 		public static  MediaInfo? GetMediaInfo(string file) {

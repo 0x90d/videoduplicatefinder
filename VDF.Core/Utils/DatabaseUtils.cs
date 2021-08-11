@@ -14,15 +14,13 @@
 // */
 //
 
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Text.Json;
 using ProtoBuf;
 
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
-		public static HashSet<FileEntry> Database = new HashSet<FileEntry>();
+		public static HashSet<FileEntry> Database = new();
 		public static bool LoadDatabase() {
 			var databaseFile = new FileInfo(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "ScannedFiles.db"));
 			if (databaseFile.Exists && databaseFile.Length == 0) //invalid data
@@ -36,9 +34,8 @@ namespace VDF.Core.Utils {
 			Logger.Instance.Info("Found previously scanned files, importing...");
 			var st = Stopwatch.StartNew();
 			try {
-				using (var file = new FileStream(databaseFile.FullName, FileMode.Open)) {
-					Database = Serializer.Deserialize<HashSet<FileEntry>>(file);
-				}
+				using var file = new FileStream(databaseFile.FullName, FileMode.Open);
+				Database = Serializer.Deserialize<HashSet<FileEntry>>(file);
 			}
 			catch (ProtoException ex) {
 				Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");

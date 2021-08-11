@@ -39,14 +39,14 @@ namespace VDF.Core {
 		public event EventHandler? DatabaseCleaned;
 
 
-		PauseTokenSource pauseTokenSource = new PauseTokenSource();
-		CancellationTokenSource cancelationTokenSource = new CancellationTokenSource();
-		readonly List<float> positionList = new List<float>();
+		PauseTokenSource pauseTokenSource = new();
+		CancellationTokenSource cancelationTokenSource = new();
+		readonly List<float> positionList = new();
 
 		bool isScanning;
 		int scanProgressMaxValue;
-		readonly Stopwatch SearchTimer = new Stopwatch();
-		public Stopwatch ElapsedTimer = new Stopwatch();
+		readonly Stopwatch SearchTimer = new();
+		public Stopwatch ElapsedTimer = new();
 		int processedFiles;
 		DateTime startTime = DateTime.Now;
 		DateTime lastProgressUpdate = DateTime.MinValue;
@@ -77,8 +77,8 @@ namespace VDF.Core {
 							});
 		}
 
-		public bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);
-		public bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
+		public static bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);
+		public static bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
 
 		public async void StartSearch() {
 			Prepare();
@@ -162,10 +162,10 @@ namespace VDF.Core {
 		bool InvalidEntryForDuplicateCheck(FileEntry entry) =>
 			InvalidEntry(entry) || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes.Count < Settings.ThumbnailCount);
 
-		public Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
-		public void SaveDatabase() => DatabaseUtils.SaveDatabase();
+		public static Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
+		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
 
-		public void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
+		public static void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
 
 		void GatherInfos() {
 			try {
@@ -282,7 +282,7 @@ namespace VDF.Core {
 			DatabaseUtils.CleanupDatabase();
 			DatabaseCleaned?.Invoke(this, new EventArgs());
 		}
-		public bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
+		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public async void RetrieveThumbnails() {
 			await Task.Run(() => {
 				var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
