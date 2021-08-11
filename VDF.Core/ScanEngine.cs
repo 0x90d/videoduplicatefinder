@@ -128,6 +128,8 @@ namespace VDF.Core {
 		Task BuildFileList() => Task.Run(() => {
 			DatabaseUtils.LoadDatabase();
 			foreach (var path in Settings.IncludeList) {
+				if (!Directory.Exists(path)) continue;
+
 				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					var fEntry = new FileEntry(file);
