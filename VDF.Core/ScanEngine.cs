@@ -127,7 +127,6 @@ namespace VDF.Core {
 
 		Task BuildFileList() => Task.Run(() => {
 			DatabaseUtils.LoadDatabase();
-			DatabaseUtils.CleanupDatabase();
 			foreach (var path in Settings.IncludeList) {
 				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
@@ -152,6 +151,8 @@ namespace VDF.Core {
 				return true;
 
 			if (entry.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.TooDark))
+				return true;
+			if (!File.Exists(entry.Path))
 				return true;
 			return false;
 		}
