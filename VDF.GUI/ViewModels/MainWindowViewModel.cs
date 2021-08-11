@@ -32,6 +32,7 @@ using VDF.Core.ViewModels;
 using VDF.GUI.Data;
 using VDF.GUI.Views;
 using System.ComponentModel;
+using System.Text.Json;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowViewModel : ReactiveObject {
@@ -388,6 +389,34 @@ namespace VDF.GUI.ViewModels {
 			IsBusyText = "Cleaning database...";
 			Scanner.CleanupDatabase();
 		});
+		public ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
+			ExportToJson(new JsonSerializerOptions {
+				IncludeFields = true,
+			});
+		});
+		public ReactiveCommand<Unit, Unit> ExportDataBaseToJsonPrettyCommand => ReactiveCommand.Create(() => {
+			ExportToJson(new JsonSerializerOptions {
+				IncludeFields = true,
+				WriteIndented = true,
+			});
+		});
+		async void ExportToJson(JsonSerializerOptions options) {
+
+			List<FileDialogFilter> filterList = new(1);
+			filterList.Add(new FileDialogFilter {
+				Name = "Json Files",
+				Extensions = new List<string>() { "json" }
+			});
+
+			string result = await new SaveFileDialog {
+				DefaultExtension = ".json",
+				Filters = filterList
+			}.ShowAsync(ApplicationHelpers.MainWindow);
+			if (string.IsNullOrEmpty(result)) return;
+
+			if (!Scanner.ExportDataBaseToJson(result, options))
+				await MessageBoxService.Show("Exporting database has failed, please see log");
+		}
 		public ReactiveCommand<DuplicateItemViewModel, Unit> OpenItemCommand => ReactiveCommand.Create<DuplicateItemViewModel>(currentItem => {
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo {

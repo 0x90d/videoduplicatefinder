@@ -112,20 +112,44 @@
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem Command="{Binding CleanDatabaseCommand}">
+                            <MenuItem>
                                 <MenuItem.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Viewbox Width="16" Height="16">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="{StaticResource SystemBaseHighColor}" />
-                                            </Canvas>
-                                        </Viewbox>
-                                        <TextBlock
-                                            Margin="5,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Text="Cleanup Database" />
-                                    </StackPanel>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Database" />
                                 </MenuItem.Header>
+                                <MenuItem Command="{Binding CleanDatabaseCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="{StaticResource SystemBaseHighColor}" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Cleanup Database" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ExportDataBaseToJsonCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Export Database To Json" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ExportDataBaseToJsonPrettyCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Export Database To Json (pretty)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </MenuItem>
                             <MenuItem Command="{Binding LatestReleaseCommand}">
                                 <MenuItem.Header>

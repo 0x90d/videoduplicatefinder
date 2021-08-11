@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using ProtoBuf;
 
 namespace VDF.Core.Utils {
@@ -72,6 +73,23 @@ namespace VDF.Core.Utils {
 			if (!Database.TryGetValue(new FileEntry(filePath), out FileEntry? actualValue))
 				return;
 			actualValue.Flags.Set(EntryFlags.ManuallyExcluded);
+		}
+
+		public static bool ExportDatabaseToJson(string jsonFile, JsonSerializerOptions options) {
+			try {
+				using var stream = File.OpenWrite(jsonFile);
+				JsonSerializer.Serialize(stream, Database, options);
+				stream.Close();
+			}
+			catch (JsonException e) {
+				Logger.Instance.Info($"Failed to serialize database to json because: {e}");
+				return false;
+			}
+			catch (Exception e) {
+				Logger.Instance.Info($"Failed to export database to json because: {e}");
+				return false;
+			}
+			return true;
 		}
 	}
 }

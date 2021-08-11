@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using VDF.Core.FFTools;
@@ -281,6 +282,7 @@ namespace VDF.Core {
 			DatabaseUtils.CleanupDatabase();
 			DatabaseCleaned?.Invoke(this, new EventArgs());
 		}
+		public bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public async void RetrieveThumbnails() {
 			await Task.Run(() => {
 				var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
