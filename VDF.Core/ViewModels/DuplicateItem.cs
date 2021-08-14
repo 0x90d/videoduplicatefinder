@@ -33,7 +33,8 @@ namespace VDF.Core.ViewModels {
 				bool videoFound = false, audioFound = false;
 
 				for (var i = 0; i < file.mediaInfo.Streams.Length; i++) {
-					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase) && !videoFound) {
+					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase) &&
+					    (!videoFound || file.mediaInfo.Streams[i].Default != 0)) {
 						Format = file.mediaInfo.Streams[i].CodecName;
 						Fps = file.mediaInfo.Streams[i].FrameRate;
 						BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
@@ -41,7 +42,8 @@ namespace VDF.Core.ViewModels {
 						FrameSizeInt = file.mediaInfo.Streams[i].Width + file.mediaInfo.Streams[i].Height;
 						videoFound = true;
 					}
-					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase) && !audioFound) {
+					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase) &&
+						     (!audioFound || file.mediaInfo.Streams[i].Default != 0)) {
 						AudioFormat = file.mediaInfo.Streams[i].CodecName;
 						AudioChannel = file.mediaInfo.Streams[i].ChannelLayout;
 						AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
