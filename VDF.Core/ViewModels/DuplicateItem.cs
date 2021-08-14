@@ -30,19 +30,22 @@ namespace VDF.Core.ViewModels {
 			GroupId = groupID;
 			if (!file.IsImage && file.mediaInfo?.Streams != null) {
 				Duration = file.mediaInfo.Duration;
+				bool videoFound = false, audioFound = false;
 
 				for (var i = 0; i < file.mediaInfo.Streams.Length; i++) {
-					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase)) {
+					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase) && !videoFound) {
 						Format = file.mediaInfo.Streams[i].CodecName;
 						Fps = file.mediaInfo.Streams[i].FrameRate;
 						BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
 						FrameSize = file.mediaInfo.Streams[i].Width + "x" + file.mediaInfo.Streams[i].Height;
 						FrameSizeInt = file.mediaInfo.Streams[i].Width + file.mediaInfo.Streams[i].Height;
+						videoFound = true;
 					}
-					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase)) {
+					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase) && !audioFound) {
 						AudioFormat = file.mediaInfo.Streams[i].CodecName;
 						AudioChannel = file.mediaInfo.Streams[i].ChannelLayout;
 						AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
+						audioFound = true;
 					}
 				}
 
