@@ -22,10 +22,8 @@ using VDF.Core.Utils;
 namespace VDF.GUI.Utils {
 	static class ImageUtils {
 		public static string ThumbnailDirectory => Core.Utils.FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Thumbnails");
-		public static Bitmap JoinImages(List<System.Drawing.Image> pImgList) {
+		public static Bitmap JoinImages(List<System.Drawing.Image> pImgList, bool persistent = false) {
 			if (pImgList == null || pImgList.Count == 0) return null;
-
-			string file = Core.Utils.FileUtils.SafePathCombine(ThumbnailDirectory, Path.GetRandomFileName() + ".jpeg");
 
 			int height = pImgList[0].Height;
 			int width = 0;
@@ -41,8 +39,20 @@ namespace VDF.GUI.Utils {
 				}
 				g.Save();
 			}
-			img.Save(file, img.RawFormat);
-			return new Bitmap(file);
+			
+			if (persistent) {
+				string file = Core.Utils.FileUtils.SafePathCombine(ThumbnailDirectory, Path.GetRandomFileName() + ".jpeg");
+				img.Save(file, img.RawFormat);
+				return new Bitmap(file);
+			}
+			else {
+				using (MemoryStream memory = new MemoryStream())
+				{
+					img.Save(memory, img.RawFormat);
+					memory.Position = 0;
+					return new Avalonia.Media.Imaging.Bitmap(memory);
+				}
+			}			
 		}
 	}
 }
