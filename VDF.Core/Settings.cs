@@ -36,5 +36,7 @@ namespace VDF.Core {
 		public float Percent = 96f;
 
 		public int ThumbnailCount = 1;
+
+		public bool CompareHorizontallyFlipped = true;
 	}
 }

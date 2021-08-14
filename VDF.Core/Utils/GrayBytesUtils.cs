@@ -24,8 +24,7 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
 namespace VDF.Core.Utils {
-	static class GrayBytesUtils {
-		public const int GrayByteValueLength = 256;
+	public static class GrayBytesUtils {
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
@@ -38,7 +37,7 @@ namespace VDF.Core.Utils {
 			return 100d / data.Length * darkPixels < darkProcent;
 		}
 
-		public static unsafe byte[]? GetGrayScaleValues(Bitmap original, double darkProcent = 80) {
+		public static unsafe byte[]? GetGrayScaleValues(Bitmap original, int width, double darkProcent = 80) {
 			// Lock the bitmap's bits.  
 			Rectangle rect = new Rectangle(0, 0, original.Width, original.Height);
 			BitmapData bmpData = original.LockBits(rect, ImageLockMode.ReadOnly, original.PixelFormat);
@@ -49,7 +48,7 @@ namespace VDF.Core.Utils {
 			// Declare an array to hold the bytes of the bitmap.
 			int bytes = bmpData.Stride * original.Height;
 			byte* rgbValues = stackalloc byte[bytes];
-			byte[] buffer = new byte[GrayByteValueLength];
+			byte[] buffer = new byte[width*width];
 
 			// Copy the RGB values into the array.
 			Unsafe.CopyBlock(rgbValues, (void*)ptr, (uint)bytes);
@@ -72,7 +71,7 @@ namespace VDF.Core.Utils {
 		public static unsafe float PercentageDifference(byte[] img1, byte[] img2) {
 			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
 			long diff = 0;
-			if (Avx2.IsSupported) {
+			if (Avx2.IsSupported && img1.Length % 32 == 0) {
 				Vector256<ushort> vec = Vector256<ushort>.Zero;
 				Span<Vector256<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector256<byte>>(img1);
 				Span<Vector256<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector256<byte>>(img2);
@@ -83,7 +82,7 @@ namespace VDF.Core.Utils {
 				for (int i = 0; i < Vector256<ushort>.Count; i++)
 					diff += Math.Abs(vec.GetElement(i));
 			}
-			else if (Sse2.IsSupported) {
+			else if (Sse2.IsSupported && img1.Length % 16 == 0) {
 				Vector128<ushort> vec = Vector128<ushort>.Zero;
 				Span<Vector128<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector128<byte>>(img1);
 				Span<Vector128<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector128<byte>>(img2);
@@ -99,6 +98,18 @@ namespace VDF.Core.Utils {
 					diff += Math.Abs(img1[i] - img2[i]);
 			}
 			return (float)diff /  img1.Length / 256;
+		}
+
+		public static byte[] FlipGrayScale(byte[] img, int img_width)
+		{
+			// V1) Simple version with two loops
+			int rows = img.Length / img_width;
+			Debug.Assert(rows * img_width == img.Length, "Invalid img.Len or img_width");
+			byte[] flip_img = new byte[img.Length];
+			for (int r = 0; r < rows; r++)
+				for (int c = 0; c < img_width; c++)
+					flip_img[r*img_width + (img_width-1) - c] = img[r*img_width + c];
+			return flip_img;
 		}
 
 	}

@@ -24,10 +24,18 @@ namespace VDF.Core.ViewModels {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItem() { }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		public DuplicateItem(FileEntry file, float percent, Guid groupID) {
+
+		[Flags]
+		public enum DuplicateFlags : short
+		{
+			None = 0,
+			Flipped = 1,
+		};
+		public DuplicateItem(FileEntry file, float percent, Guid groupID, DuplicateFlags flags) {
 			Path = file.Path;
 			Folder = file.Folder;
 			GroupId = groupID;
+			Flags = flags;
 			if (!file.IsImage && file.mediaInfo?.Streams != null) {
 				Duration = file.mediaInfo.Duration;
 
@@ -80,6 +88,7 @@ namespace VDF.Core.ViewModels {
 		public decimal BitRateKbs { get; }
 		public float Fps { get; }
 		public DateTime DateCreated { get; }
+		public DuplicateFlags Flags { get; }
 
 		public bool IsImage { get; }
 		public Action? ThumbnailsUpdated;

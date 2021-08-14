@@ -51,7 +51,8 @@ namespace VDF.Core {
 		DateTime startTime = DateTime.Now;
 		DateTime lastProgressUpdate = DateTime.MinValue;
 		static readonly TimeSpan progressUpdateIntervall = TimeSpan.FromMilliseconds(300);
-
+		static readonly int grayScaleWidth = 16;	// Default: 16, GrayBytesUtils performance may decrease at other values 
+		static readonly int thumbnailWidth = 100;	// Default: 100, UI display errors may occur at other values 
 
 		void InitProgress(int count) {
 			startTime = DateTime.Now;
@@ -187,9 +188,9 @@ namespace VDF.Core {
 
 					
 					if (entry.IsImage && entry.grayBytes.Count == 0)
-						GetGrayBytesFromImage(entry);
+						GetGrayBytesFromImage(entry, grayScaleWidth);
 					else if (!entry.IsImage)
-						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList);
+						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, grayScaleWidth);
 
 					IncrementProgress(entry.Path);
 				});
@@ -202,7 +203,6 @@ namespace VDF.Core {
 			var percentageDifference = 1.0f - Settings.Percent / 100f;
 			var duplicateDict = new Dictionary<string, DuplicateItem>();
 
-
 			//Exclude existing database entries which not met current scan settings
 			List<FileEntry> ScanList = new List<FileEntry>(DatabaseUtils.Database);
 			ScanList.RemoveAll(InvalidEntryForDuplicateCheck);
@@ -214,34 +214,52 @@ namespace VDF.Core {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					var entry = ScanList[i];
+					float[] percent = new float[positionList.Count];
+					Dictionary<double, byte[]?>[] grayBytes = new Dictionary<double, byte[]?>[2];
+					grayBytes[0] = entry.grayBytes;
+					
+					if (Settings.CompareHorizontallyFlipped)
+					{
+						grayBytes[1] = new Dictionary<double, byte[]?>();
+						if (entry.IsImage)
+							grayBytes[1].Add(0, GrayBytesUtils.FlipGrayScale(grayBytes[0][0]!, grayScaleWidth));
+						else
+							for (var j = 0; j < positionList.Count; j++)
+							{
+								var idx = entry.GetGrayBytesIndex(positionList[j]);
+								grayBytes[1].Add(idx, GrayBytesUtils.FlipGrayScale(grayBytes[0][idx]!, grayScaleWidth));
+							}
+					}
+
 					for (var n = i + 1; n < ScanList.Count; n++) {
 						var compItem = ScanList[n];
-						if (entry.IsImage && !compItem.IsImage) continue;
-						var duplicateCounter = 0;
-						float[] percent;
-						if (entry.IsImage) {
-							percent = new float[1];
-							percent[0] = GrayBytesUtils.PercentageDifference(entry.grayBytes[0]!, compItem.grayBytes[0]!);
-							if (percent[0] < percentageDifference)
-								duplicateCounter++;
-						}
-						else {
-							percent = new float[positionList.Count];
-							for (var j = 0; j < positionList.Count; j++) {
-								percent[j] =
-									GrayBytesUtils.PercentageDifference(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-								if (percent[j] < percentageDifference) {
-									duplicateCounter++;
-								}
-								else { break; }
+						if (entry.IsImage && !compItem.IsImage) 
+							continue;
+						var isDuplicate = true;
+						int flip = 0;
+						do {
+							if (entry.IsImage) {
+								percent[0] = GrayBytesUtils.PercentageDifference(grayBytes[flip][0]!, compItem.grayBytes[0]!);
+								isDuplicate = (percent[0] < percentageDifference);
 							}
-						}
+							else {
+								for (var j = 0; j < positionList.Count; j++) {
+									percent[j] =
+										GrayBytesUtils.PercentageDifference(grayBytes[flip][entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
+									if (!(percent[j] < percentageDifference)) {
+										isDuplicate = false;
+										break; 
+									}
+								}
+							}
+						} while(!isDuplicate && Settings.CompareHorizontallyFlipped && flip++ == 0);
 
-
-						if (entry.IsImage && duplicateCounter == 0 || !entry.IsImage && duplicateCounter != positionList.Count) {
+						if (!isDuplicate) {
 							IncrementProgress(entry.Path);
 							continue;
 						}
+
+						DuplicateItem.DuplicateFlags flags = flip > 0 ? DuplicateItem.DuplicateFlags.Flipped : DuplicateItem.DuplicateFlags.None;
 
 						lock (duplicateDict) {
 							var percSame = percent.Average();
@@ -259,16 +277,16 @@ namespace VDF.Core {
 							}
 							else if (foundBase) {
 								duplicateDict.TryAdd(compItem.Path,
-									new DuplicateItem(compItem, percSame, existingBase!.GroupId));
+									new DuplicateItem(compItem, percSame, existingBase!.GroupId, flags));
 							}
 							else if (foundComp) {
 								duplicateDict.TryAdd(entry.Path,
-									new DuplicateItem(entry, percSame, existingComp!.GroupId));
+									new DuplicateItem(entry, percSame, existingComp!.GroupId, flags));
 							}
 							else {
 								var groupId = Guid.NewGuid();
-								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame, groupId));
-								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, percSame, groupId));
+								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame, groupId, flags));
+								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, percSame, groupId, flags));
 							}
 						}
 						IncrementProgress(entry.Path);
@@ -296,9 +314,9 @@ namespace VDF.Core {
 							try {
 								Image bitmapImage = Image.FromFile(entry.Path);
 								float resizeFactor = 1f;
-								if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
-									float widthFactor = bitmapImage.Width / 100f;
-									float heightFactor = bitmapImage.Height / 100f;
+								if (bitmapImage.Width > thumbnailWidth || bitmapImage.Height > thumbnailWidth) {
+									float widthFactor = bitmapImage.Width / (float)thumbnailWidth;
+									float heightFactor = bitmapImage.Height / (float)thumbnailWidth;
 									resizeFactor = Math.Max(widthFactor, heightFactor);
 
 								}
@@ -326,6 +344,7 @@ namespace VDF.Core {
 									File = entry.Path,
 									Position = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]),
 									GrayScale = 0,
+									Width = thumbnailWidth,
 								});
 								if (b == null || b.Length == 0) return;
 								using var byteStream = new MemoryStream(b);
@@ -342,7 +361,7 @@ namespace VDF.Core {
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
-		static void GetGrayBytesFromImage(FileEntry imageFile) {
+		static void GetGrayBytesFromImage(FileEntry imageFile, int width) {
 			try {
 
 				using var byteStream = File.OpenRead(imageFile.Path);
@@ -353,12 +372,12 @@ namespace VDF.Core {
 							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
 						}
 				};
-				var b = new Bitmap(16, 16);
+				var b = new Bitmap(width, width);
 				using (var g = Graphics.FromImage(b)) {
-					g.DrawImage(bitmapImage, 0, 0, 16, 16);
+					g.DrawImage(bitmapImage, 0, 0, width, width);
 				}
 
-				var d = GrayBytesUtils.GetGrayScaleValues(b);
+				var d = GrayBytesUtils.GetGrayScaleValues(b, width);
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
 					return;
