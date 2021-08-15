@@ -134,8 +134,15 @@ namespace VDF.Core {
 				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					var fEntry = new FileEntry(file);
-					if (!DatabaseUtils.Database.Contains(fEntry))
+					if (!DatabaseUtils.Database.TryGetValue(fEntry, out var dbEntry))
 						DatabaseUtils.Database.Add(fEntry);
+					else if (fEntry.DateCreated != dbEntry.DateCreated || 
+						    fEntry.DateModified != dbEntry.DateModified || 
+							fEntry.FileSize != dbEntry.FileSize) {
+						// -> Modified or different file
+						DatabaseUtils.Database.Remove(dbEntry);
+						DatabaseUtils.Database.Add(fEntry);
+					}
 				}
 			}
 
