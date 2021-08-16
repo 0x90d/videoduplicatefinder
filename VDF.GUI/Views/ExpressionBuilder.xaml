@@ -1,0 +1,56 @@
+<Window
+    x:Class="VDF.GUI.Views.ExpressionBuilder"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="ExpressionBuilder"
+    MinWidth="400"
+    MaxWidth="600"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    SizeToContent="WidthAndHeight"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBox
+            Grid.Row="0"
+            Margin="10,20,10,20"
+            IsReadOnly="True"
+            Text="{Binding AvailableProperties}"
+            TextWrapping="Wrap" />
+        <Grid Grid.Row="1" Margin="5,0,5,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Expression: " />
+            <TextBox Grid.Column="1" Text="{Binding ExpressionText}" />
+        </Grid>
+        <Grid Grid.Row="2" Margin="5,0,5,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="1"
+                Width="100"
+                Margin="5"
+                Command="{Binding OKCommand}"
+                Content="OK" />
+            <Button
+                Grid.Column="2"
+                Width="100"
+                Margin="5"
+                Command="{Binding CancelCommand}"
+                Content="Cancel" />
+        </Grid>
+    </Grid>
+</Window>

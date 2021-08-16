@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <!-- MacOS --><!--
+  <PropertyGroup>
+    <CFBundleName>VDF.GUI</CFBundleName>
+    --><!-- Also defines .app file name --><!--
+    <CFBundleDisplayName>VideoDuplicateFinder</CFBundleDisplayName>
+    <CFBundleIdentifier>com.VideoDuplicateFinder</CFBundleIdentifier>
+    <CFBundleVersion>1.0.0</CFBundleVersion>
+    <CFBundlePackageType>APPL</CFBundlePackageType>
+    <CFBundleSignature>????</CFBundleSignature>
+    <CFBundleExecutable>VDF.GUI</CFBundleExecutable>
+    <CFBundleIconFile>icon.icns</CFBundleIconFile>
+    --><!-- Will be copied from output directory --><!--
+    <NSPrincipalClass>NSApplication</NSPrincipalClass>
+    <NSHighResolutionCapable>true</NSHighResolutionCapable>
+  </PropertyGroup>-->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Update="**\*.xaml.cs">
+      <DependentUpon>%(Filename)</DependentUpon>
+    </Compile>
+    <AvaloniaResource Include="**\*.xaml">
+      <SubType>Designer</SubType>
+    </AvaloniaResource>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Remove="DuplicateViewModel.xaml" />
+    <AvaloniaResource Remove="Views\ExpressionBuilder.xaml" />
+    <AvaloniaResource Remove="Views\MessageBoxView.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="DuplicateViewModel.xaml" />
+    <None Remove="Styles\Styles.xaml" />
+    <None Remove="Views\ExpressionBuilder.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="0.10.999-cibuild0014036-beta" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="0.10.999-cibuild0014036-beta" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.10.999-cibuild0014036-beta" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.999-cibuild0014036-beta" />
+    <PackageReference Include="Avalonia.Xaml.Behaviors" Version="0.10.6.10" />
+    <PackageReference Include="DynamicExpresso.Core" Version="2.8.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DuplicateViewModel.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Views\MessageBoxView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Views\ExpressionBuilder.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="DuplicateViewModel.xaml.cs">
+      <DependentUpon>DuplicateViewModel.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Update="Styles\Styles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </AvaloniaResource>
+  </ItemGroup>
+</Project>

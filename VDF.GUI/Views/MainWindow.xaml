@@ -1,0 +1,933 @@
+<mvvm:FluentWindow
+    x:Class="VDF.GUI.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:datagrid="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
+    xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+    xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
+    xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
+    xmlns:vdfCore="clr-namespace:VDF.Core.Utils;assembly=VDF.Core"
+    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+    x:Name="MainWindow"
+    Title="Video Duplicate Finder 3.0 - Cross-platform"
+    Width="1020"
+    Height="950"
+    d:DesignHeight="750"
+    d:DesignWidth="900"
+    Background="#222222"
+    FontSize="14"
+    Foreground="{StaticResource SystemBaseHighColor}"
+    Icon="/Assets/icon.ico"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <mvvm:FluentWindow.DataContext>
+        <vm:MainWindowViewModel />
+    </mvvm:FluentWindow.DataContext>
+    <Grid>
+        <TextBlock
+            Margin="10,4,0,0"
+            IsHitTestVisible="false"
+            Text="{Binding #MainWindow.Title}" />
+        <Grid Margin="0,20,0,0">
+            <TabControl x:Name="TabControl">
+                <TabItem Name="TabItemScanner">
+                    <TabItem.Header>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="Scanner" />
+                    </TabItem.Header>
+                    <Grid Background="#3A3A3A">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Menu
+                            Grid.Row="0"
+                            MinHeight="30"
+                            Background="#222222">
+                            <MenuItem Command="{Binding StartScanCommand}" IsVisible="{Binding !IsScanning}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="20" Height="20">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Start" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding ResumeScanCommand}" IsVisible="{Binding IsScanning}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M8,5.14V19.14L19,12.14L8,5.14Z" Fill="Green" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Resume" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+
+                            <MenuItem Command="{Binding PauseScanCommand}" IsVisible="{Binding IsScanning}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M14,19H18V5H14M6,19H10V5H6V19Z" Fill="Blue" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Pause" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding StopScanCommand}" IsVisible="{Binding IsScanning}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M18,18H6V6H18V18Z" Fill="Red" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Stop" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem>
+                                <MenuItem.Header>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Database" />
+                                </MenuItem.Header>
+                                <MenuItem Command="{Binding CleanDatabaseCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="{StaticResource SystemBaseHighColor}" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Cleanup Database" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ExportDataBaseToJsonCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Export Database To Json" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ExportDataBaseToJsonPrettyCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Export Database To Json (pretty)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                            </MenuItem>
+                            <MenuItem Command="{Binding LatestReleaseCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Latest Release" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem IsVisible="{Binding IsDebug}"  Command="{Binding OpenOwnFolderCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Open Folder" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </Menu>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <StackPanel
+                                Grid.ColumnSpan="2"
+                                IsEnabled="{Binding !IsScanning}"
+                                Orientation="Horizontal">
+                                <CheckBox
+                                    Margin="5,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Ignore Read Only Folders"
+                                    IsChecked="{Binding IgnoreReadOnlyFolders}"
+                                    IsThreeState="False" />
+                                <CheckBox
+                                    Margin="15,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Include Sub Directories"
+                                    IsChecked="{Binding IncludeSubDirectories}"
+                                    IsThreeState="False" />
+                                <CheckBox
+                                    Margin="15,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Include Images"
+                                    IsChecked="{Binding IncludeImages}"
+                                    IsThreeState="False" />
+                                <TextBlock
+                                    Margin="15,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Percent:" />
+                                <NumericUpDown
+                                    Height="26"
+                                    Margin="5,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Maximum="100"
+                                    Minimum="1"
+                                    Value="{Binding Percent}" />
+                                <TextBlock
+                                    Margin="15,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Thumbnails:" />
+                                <NumericUpDown
+                                    Height="26"
+                                    Margin="5,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Maximum="100"
+                                    Minimum="1"
+                                    Value="{Binding Thumbnails}" />
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                IsEnabled="{Binding !IsScanning}"
+                                Orientation="Horizontal">
+                                <CheckBox
+                                    Margin="5,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Enable GPU Acceleration (Nvidia)"
+                                    IsChecked="{Binding UseCuda}"
+                                    IsThreeState="False" />
+                                <CheckBox
+                                    Margin="5,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Generate Preview Images"
+                                    IsChecked="{Binding GeneratePreviewThumbnails}"
+                                    IsThreeState="False"
+                                    ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
+                                <CheckBox
+                                    Margin="5,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Exclude hardlinks"
+                                    IsChecked="{Binding IgnoreHardlinks}"
+                                    IsThreeState="False" />
+                            </StackPanel>
+                            <Grid
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Margin="0,10,5,0"
+                                IsEnabled="{Binding !IsScanning}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <TextBlock
+                                    Margin="5,0,0,2"
+                                    FontWeight="Bold"
+                                    Text="Search Directories" />
+                                <Grid Grid.Row="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <Menu
+                                        Grid.Row="0"
+                                        MinHeight="30"
+                                        Background="#222222">
+                                        <MenuItem Command="{Binding AddIncludesToListCommand}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                    <TextBlock
+                                                        Margin="5,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Text="Add" />
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                    <TextBlock
+                                                        Margin="5,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Text="Remove" />
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                    </Menu>
+                                    <ListBox
+                                        Name="ListboxIncludelist"
+                                        Grid.Row="1"
+                                        MinHeight="70"
+                                        Items="{Binding Includes}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                Margin="5,10,0,0"
+                                IsEnabled="{Binding !IsScanning}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <TextBlock
+                                    Margin="5,0,0,2"
+                                    FontWeight="Bold"
+                                    Text="Exclude Directories" />
+                                <Grid Grid.Row="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <Menu
+                                        Grid.Row="0"
+                                        MinHeight="30"
+                                        Background="#222222">
+                                        <MenuItem Command="{Binding AddBlacklistToListCommand}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                    <TextBlock
+                                                        Margin="5,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Text="Add" />
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                    <TextBlock
+                                                        Margin="5,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Text="Remove" />
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                    </Menu>
+                                    <ListBox
+                                        Name="ListboxBlacklist"
+                                        Grid.Row="1"
+                                        Height="70"
+                                        Items="{Binding Blacklists}" />
+                                </Grid>
+                            </Grid>
+
+                        </Grid>
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Menu
+                                Grid.Row="0"
+                                MinHeight="30"
+                                Background="#222222">
+                                <Menu.Styles>
+                                    <Style Selector="Separator">
+                                        <Setter Property="Background" Value="DarkGray" />
+                                        <Setter Property="Margin" Value="0,5,0,5" />
+                                        <Setter Property="Width" Value="1" />
+                                    </Style>
+                                </Menu.Styles>
+                                <MenuItem>
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="{StaticResource SystemBaseHighColor}" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Selection" />
+                                            <Path
+                                                Margin="4,2,0,0"
+                                                VerticalAlignment="Center"
+                                                Data="M 0 0 L 6 6 L 12 0 Z"
+                                                Fill="{StaticResource SystemBaseHighColor}" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                    <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Select 100% Identical (Keep First)" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Select 100% Identical Except Size (Keep Smallest)" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding CheckLowestQualityCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Select Lowest Duration / Lowest Quality (Keep longest / Best Quality)" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding CheckCustomCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Select Custom..." />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding ClearSelectionCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Clear Selection" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                </MenuItem>
+                                <MenuItem>
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Delete Selection" />
+                                            <Path
+                                                Margin="4,2,0,0"
+                                                VerticalAlignment="Center"
+                                                Data="M 0 0 L 6 6 L 12 0 Z"
+                                                Fill="{StaticResource SystemBaseHighColor}" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                    <MenuItem Command="{Binding DeleteSelectionCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Delete permanently" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Header="-" />
+
+                                    <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="From List (Keep Files)" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding CopySelectionCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Copy To Folder (Keep Files)" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding MoveSelectionCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Move To Folder" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                </MenuItem>
+                                <MenuItem Header="-" />
+                                <CheckBox Margin="5,0,0,0" IsChecked="{Binding ElementName=filterStackPanel, Path=IsVisible}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox
+                                            Width="16"
+                                            Height="16"
+                                            Focusable="False">
+                                            <Canvas
+                                                Width="24"
+                                                Height="24"
+                                                Focusable="False">
+                                                <Path
+                                                    Data="M10,13V11H18V13H10M10,19V17H14V19H10M10,7V5H22V7H10M6,17H8.5L5,20.5L1.5,17H4V7H1.5L5,3.5L8.5,7H6V17Z"
+                                                    Fill="{StaticResource SystemBaseHighColor}"
+                                                    Focusable="False" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Filter / Sort" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Menu>
+                            <StackPanel
+                                x:Name="filterStackPanel"
+                                Grid.Row="1"
+                                Margin="5"
+                                IsVisible="False"
+                                Orientation="Horizontal">
+                                <TextBlock VerticalAlignment="Center" Text="Path:" />
+                                <TextBox
+                                    MinWidth="150"
+                                    Margin="5,0,0,0"
+                                    Text="{Binding FilterByPath}" />
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Sort:" />
+                                <ComboBox
+                                    MinWidth="150"
+                                    Margin="5,0,0,0"
+                                    Items="{Binding SortOrders}"
+                                    SelectedItem="{Binding SortOrder}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Key}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Type:" />
+                                <ComboBox
+                                    MinWidth="150"
+                                    Margin="5,0,0,0"
+                                    Items="{Binding TypeFilters}"
+                                    SelectedItem="{Binding FileType}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Key}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                            <DataGrid Name="dataGridGrouping" Grid.Row="2">
+                                <DataGrid.KeyBindings>
+                                    <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
+                                </DataGrid.KeyBindings>
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding Checked}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Thumbnail">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <Image
+                                                        Name="ThumbnailImage"
+                                                        Grid.Column="2"
+                                                        Margin="10,0,0,0"
+                                                        Source="{Binding Thumbnail}"
+                                                        Stretch="None"
+                                                        ToolTip.Tip="Double click to open the file in explorer/shell">
+                                                        <i:Interaction.Behaviors>
+                                                            <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #ThumbnailImage}">
+                                                                <ia:InvokeCommandAction Command="{Binding $parent[DataGrid].DataContext.OpenItemCommand}" CommandParameter="{Binding}" />
+                                                            </ia:EventTriggerBehavior>
+                                                        </i:Interaction.Behaviors>
+                                                        <ToolTip.Tip>
+                                                            <Border>
+                                                                <LayoutTransformControl>
+                                                                    <LayoutTransformControl.LayoutTransform>
+                                                                        <ScaleTransform ScaleX="3" ScaleY="3" />
+                                                                    </LayoutTransformControl.LayoutTransform>
+                                                                    <Image Source="{Binding Thumbnail}" />
+                                                                </LayoutTransformControl>
+                                                            </Border>
+                                                        </ToolTip.Tip>
+                                                    </Image>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Width="1*" Header="Path">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock
+                                                    Margin="10,0,0,0"
+                                                    Text="{Binding ItemInfo.Path}"
+                                                    TextWrapping="Wrap" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Width="1*">
+                                        <DataGridTemplateColumn.Header>
+                                            <StackPanel>
+                                                <TextBlock Text="Duration / type" />
+                                                <TextBlock Text="Resolution" />
+                                                <TextBlock Text="Size" />
+                                            </StackPanel>
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="10,0,0,0">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition />
+                                                        <RowDefinition />
+                                                        <RowDefinition />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock
+                                                        Grid.Row="0"
+                                                        Margin="2"
+                                                        IsVisible="{Binding ItemInfo.IsImage}"
+                                                        Text="{Binding ItemInfo.Format, Mode=OneWay}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="0"
+                                                        Margin="2"
+                                                        IsVisible="{Binding !ItemInfo.IsImage}"
+                                                        Text="{Binding ItemInfo.Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="1"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.FrameSize}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="2"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.Size}"
+                                                        TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Width="1*">
+                                        <DataGridTemplateColumn.Header>
+                                            <StackPanel>
+                                                <TextBlock Text="Format" />
+                                                <TextBlock Text="Fps" />
+                                                <TextBlock Text="Bit Rate" />
+                                            </StackPanel>
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid IsVisible="{Binding !ItemInfo.IsImage}">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition />
+                                                        <RowDefinition />
+                                                        <RowDefinition />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock
+                                                        Grid.Row="0"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.Format, Mode=OneWay}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="1"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.Fps, Mode=OneWay, StringFormat=\{0\} fps}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="2"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
+                                                        TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Width="1*">
+                                        <DataGridTemplateColumn.Header>
+                                            <StackPanel>
+                                                <TextBlock Text="Audio Format" />
+                                                <TextBlock Text="Audio Channel" />
+                                                <TextBlock Text="Audio Sample Rate" />
+                                            </StackPanel>
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid IsVisible="{Binding !ItemInfo.IsImage}">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition />
+                                                        <RowDefinition />
+                                                        <RowDefinition />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock
+                                                        Grid.Row="0"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.AudioFormat}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="1"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.AudioChannel}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="2"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.AudioSampleRate}"
+                                                        TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn
+                                        Width="1*"
+                                        Binding="{Binding ItemInfo.Similarity}"
+                                        Header="Similarity" />
+                                </DataGrid.Columns>
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Command="{Binding OpenItemInFolderCommand}" Header="Open In Folder" />
+                                        <MenuItem
+                                            Command="{Binding RenameFileCommand}"
+                                            Header="Rename File"
+                                            InputGesture="F2" />
+                                        <MenuItem>
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="{StaticResource SystemBaseHighColor}" />
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                    <TextBlock
+                                                        Margin="5,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Text="Selected Items" />
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                            <MenuItem Command="{Binding DeleteSelectionCommand}">
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Text="Delete from disk (to recycle bin if possible)" />
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <Separator />
+                                            <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Text="Remove from list only" />
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <MenuItem Command="{Binding RemoveSelectionFromListAndBlacklistCommand}">
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Text="Remove from list only and exclude from future scans" />
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Text="Remove from list only + create symbol links" />
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsAndBlacklistCommand}"  ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Text="Remove from list only + create symbol links and exclude from future scans" />
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <Separator />
+                                            <MenuItem Command="{Binding CopySelectionCommand}" Header="Copy To Folder..." />
+                                            <MenuItem Command="{Binding MoveSelectionCommand}" Header="Move To Folder..." />
+                                        </MenuItem>
+                                        <MenuItem Header="Groups">
+                                            <MenuItem Command="{Binding ExpandAllGroupsCommand}" Header="Expand all" />
+                                            <MenuItem Command="{Binding CollapseAllGroupsCommand}" Header="Collapse all" />
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                            </DataGrid>
+                        </Grid>
+
+                        <Grid Grid.Row="3" Background="#222222">
+                            <StackPanel MinHeight="20" Orientation="Horizontal">
+                                <ProgressBar
+                                    Name="PbScanProgress"
+                                    MinWidth="100"
+                                    Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
+                                    Value="{Binding ScanProgressValue, Mode=OneWay}" />
+                                <Separator
+                                    Width="1"
+                                    Margin="5"
+                                    Background="DarkGray" />
+                                <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                                <Separator
+                                    Width="1"
+                                    Margin="5"
+                                    Background="DarkGray" />
+                                <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                                <Separator
+                                    Width="1"
+                                    Margin="5"
+                                    Background="DarkGray" />
+                                <TextBlock Text="{Binding ScanProgressText, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+                <TabItem Name="TabItemLog">
+                    <TabItem.Header>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="Log" />
+                    </TabItem.Header>
+                    <Grid Background="#3A3A3A">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <Menu
+                            Grid.Row="0"
+                            MinHeight="30"
+                            Background="#222222">
+                            <MenuItem Command="{Binding ClearLogCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Clear Log" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding SaveLogCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Save Log To File" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </Menu>
+                        <ListBox Grid.Row="1" Items="{Binding LogItems}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vdfCore:LogItem}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Index" />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            Margin="5,0,5,0"
+                                            FontWeight="Bold"
+                                            Text="{Binding DateTime}" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Text="{Binding Message}"
+                                            TextWrapping="Wrap" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+            <Grid
+                x:Name="BusyIndicator"
+                Background="Silver"
+                IsVisible="{Binding IsBusy}"
+                Opacity="0.8">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar
+                        MaxWidth="200"
+                        BorderBrush="LimeGreen"
+                        BorderThickness="10"
+                        IsIndeterminate="True" />
+                    <TextBlock
+                        Margin="0,10,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="14"
+                        FontWeight="ExtraBold"
+                        Text="Please Wait" />
+                    <TextBlock
+                        Name="LblBusyIndicator"
+                        Margin="0,10,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="14"
+                        Text="{Binding IsBusyText}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+
+
+
+</mvvm:FluentWindow>

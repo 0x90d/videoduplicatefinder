@@ -6,7 +6,7 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 - Fast scanning speed
 - Ultra fast rescan
 - Finds duplicate videos / images based on similarity
-- Windows GUI, Linux GUI and multi-OS Console
+- Windows, Linux and MacOS GUI
 
 # Requirements
 FFmpeg and FFprobe is required.
@@ -30,8 +30,12 @@ sudo apt-get update
 sudo apt-get install ffmpeg
 sudo apt-get install libgdiplus
 ```
+#### MacOS user:
+Download .NET 6 x64 runtime (NOT asp.net core runtime and NOT desktop runtime) and SDK from https://dotnet.microsoft.com/download/dotnet/6.0
+Visit https://ffmpeg.org/download.html and download ffmpeg and ffprobe for macos and extract them into the VDF folder
+Open terminal in the folder where VDF.GUI.dll is and run this command `dotnet VDF.GUI.dll` or right click on `VDF.GUI` and choose to open with terminal
 
-#### Mac OS X user (ONLY console version):
+#### MacOS user (Console version):
 Install latest dotnet, ffmpeg and ffprobe and then run build command.
 
 ```
@@ -71,7 +75,7 @@ This example execution should happen from release folder:
 ./VideoDuplicateFinderConsole -r -p 50 -i ~/Movies/PhoneBackup -o ~/duplicatedPhoneVideos.html
 ```
 
-# Screenshots (UI)
+# Screenshots (outdated, screenshots show Version 2.x only)
 ![windows](https://user-images.githubusercontent.com/46010672/50975469-97e5d900-14e5-11e9-9aba-5a843546ac2c.jpg)
 ![linux](https://user-images.githubusercontent.com/46010672/50975476-9e745080-14e5-11e9-8332-b0ac816458f4.jpg)
 
@@ -81,7 +85,14 @@ Video Duplicate Finder is licensed under GPLv3
 Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licesed under LGPL 2.1 / GPL v2
 
 
-# Compiling
-- Daily .NET Core 3.x SDK builds https://github.com/dotnet/core-setup#daily-builds
-- Visual Studio 2019
-- For Linux: Avalonia
+# Building
+### Please note
+Master branch is used for v3 which is still in development. If you build in order to use it you should get the code from v2 instead: https://github.com/0x90d/videoduplicatefinder/tree/c19190196588dd2982e269b28ff23abf78e8ff5e
+
+- .NET Core 6.x SDK DAILY builds
+- Visual Studio 2022
+- Avalonia VS Extension is recommended but not required
+
+# Committing
+- Your pull request should only contain code for a single addition or fix
+- Unles it referes to an existing issue, write into your pull request what it does
