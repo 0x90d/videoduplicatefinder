@@ -31,7 +31,6 @@ sudo apt-get install ffmpeg
 sudo apt-get install libgdiplus
 ```
 #### MacOS user:
-Download .NET 6 x64 runtime (NOT asp.net core runtime and NOT desktop runtime) and SDK from https://dotnet.microsoft.com/download/dotnet/6.0
 Visit https://ffmpeg.org/download.html and download ffmpeg and ffprobe for macos and extract them into the VDF folder
 Open terminal in the folder where VDF.GUI.dll is and run this command `dotnet VDF.GUI.dll` or right click on `VDF.GUI` and choose to open with terminal
 
