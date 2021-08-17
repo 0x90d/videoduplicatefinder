@@ -21,21 +21,20 @@ FFmpeg and FFprobe is required.
 # Requirements
 
 #### FFmpeg & FFprobe:
-Windows & macOS: Get latest package from https://ffmpeg.org/download.html I recommend the shared version
-Linux: The usual way..
+Get latest package from https://ffmpeg.org/download.html I recommend the shared version
 
-Extract ffmpeg and ffprobe into the same directory of VDF.GUI.dll. Or make sure it can be found in `PATH` system environment variable
+Extract ffmpeg and ffprobe into the same directory of VDF.GUI.dll. Or into a sub folder called `bin`. Or make sure it can be found in `PATH` system environment variable
 
-#### Also Linux user:
-Also make sure you got **libgdiplus** installed.
+#### Linux user:
+After installing FFmpeg & Ffprobe (see above). Make sure you got **libgdiplus** installed.
 
 ```
 sudo apt-get update
 sudo apt-get install ffmpeg
 sudo apt-get install libgdiplus
 ```
-#### Also MacOS user:
-Open terminal in the folder where VDF.GUI.dll is and right click on `VDF.GUI` and choose to open with terminal
+#### MacOS user:
+After installing FFmpeg & Ffprobe (see above). Open terminal in the folder where VDF.GUI.dll is and right click on `VDF.GUI` and choose to open with terminal
 
 # Screenshots
 #### v3
