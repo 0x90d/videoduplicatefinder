@@ -1,10 +1,7 @@
 name: Build releases
 
 
-on:
-  push:
-    tags:
-      - "v*.*.*"
+on: [push]
     
 jobs:
   build:
