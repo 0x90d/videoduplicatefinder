@@ -396,7 +396,7 @@ namespace VDF.GUI.ViewModels {
 				WriteIndented = true,
 			});
 		});
-		async void ExportToJson(JsonSerializerOptions options) {
+		async static void ExportToJson(JsonSerializerOptions options) {
 
 			List<FileDialogFilter> filterList = new(1);
 			filterList.Add(new FileDialogFilter {
