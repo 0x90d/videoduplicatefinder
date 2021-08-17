@@ -6,16 +6,13 @@ jobs:
   build:
 
     runs-on: windows-latest
-    strategy:
-      matrix:
-        dotnet: [ '6.0.x' ]
 
     steps:
     - uses: actions/checkout@v1
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ matrix.dotnet-version }}
+        dotnet-version: '6.0.x'
         include-prerelease: true
     - name: Build with dotnet
       run: dotnet publish -c Release -v q --self-contained -r win-x64
