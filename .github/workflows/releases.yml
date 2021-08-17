@@ -1,0 +1,56 @@
+name: Build releases
+
+
+on: push
+    
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        kind: ['linux', 'windows', 'macOS']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+          - kind: macOS
+            os: windows-latest
+            target: osx-x64
+            
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'
+        include-prerelease: true
+
+    - name: Build
+      shell: bash
+      run: |
+          tag=$(git describe --tags --abbrev=0)
+          release_name="App-${{ matrix.target }}"
+          # Build everything
+          dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "$release_name"
+          # Pack files
+          if [ "${{ matrix.target }}" == "win-x64" ]; then
+            # Pack to zip for Windows
+            7z a -tzip "${release_name}.zip" "./${release_name}/*"
+          else
+            tar czvf "${release_name}.tar.gz" "$release_name"
+          fi
+          # Delete output directory
+          rm -r "$release_name"
+    - name: Publish
+      uses: softprops/action-gh-release@v1
+      with:
+          files: "App*"
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
