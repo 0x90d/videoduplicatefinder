@@ -19,30 +19,30 @@ using System.Runtime.InteropServices;
 namespace VDF.Core.Utils {
 	public static class FileUtils {
 		public static readonly string[] ImageExtensions = {
-			"jpg",
-			"jpeg",
-			"png",
-			"gif",
-			"bmp",
-			"tiff"};
-		public static readonly string[] VideoExtensions = {
-			"mp4",
-			"wmv",
-			"avi",
-			"mkv",
-			"flv",
-			"mov",
-			"mpg",
-			"mpeg",
-			"m4v",
-			"asf",
-			"f4v",
-			"webm",
-			"divx",
-			"m2t",
-			"m2ts",
-			"vob",
-			"ts"
+			".jpg",
+			".jpeg",
+			".png",
+			".gif",
+			".bmp",
+			".tiff"};
+		static readonly string[] VideoExtensions = {
+			".mp4",
+			".wmv",
+			".avi",
+			".mkv",
+			".flv",
+			".mov",
+			".mpg",
+			".mpeg",
+			".m4v",
+			".asf",
+			".f4v",
+			".webm",
+			".divx",
+			".m2t",
+			".m2ts",
+			".vob",
+			".ts"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreHardLinks, bool recursive, bool includeImages, List<string> excludeFolders) {
