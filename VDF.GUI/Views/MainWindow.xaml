@@ -864,7 +864,7 @@
                             FontSize="12"
                             Text="Log" />
                     </TabItem.Header>
-                    <Grid Background="#3A3A3A">
+                    <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition />
@@ -885,27 +885,7 @@
                                 </MenuItem.Header>
                             </MenuItem>
                         </Menu>
-                        <ListBox Grid.Row="1" Items="{Binding LogItems}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate DataType="{x:Type vdfCore:LogItem}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Index" />
-                                            <ColumnDefinition />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock
-                                            Grid.Column="0"
-                                            Margin="5,0,5,0"
-                                            FontWeight="Bold"
-                                            Text="{Binding DateTime}" />
-                                        <TextBlock
-                                            Grid.Column="1"
-                                            Text="{Binding Message}"
-                                            TextWrapping="Wrap" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <ListBox MinHeight="70"  Grid.Row="1" Items="{Binding LogItems}" Margin="5"/>
                     </Grid>
                 </TabItem>
             </TabControl>

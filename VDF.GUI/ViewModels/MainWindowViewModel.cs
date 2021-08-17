@@ -37,7 +37,7 @@ using System.Text.Json;
 namespace VDF.GUI.ViewModels {
 	public class MainWindowViewModel : ReactiveObject {
 		public ScanEngine Scanner { get; } = new ScanEngine();
-		public ObservableCollection<LogItem> LogItems { get; } = new ObservableCollection<LogItem>();
+		public ObservableCollection<string> LogItems { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Blacklists { get; } = new ObservableCollection<string>();
 
@@ -220,7 +220,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown 
-			Instance_LogItemAdded(null, null);
+			Instance_LogItemAdded(string.Empty);
 
 		}
 
@@ -315,12 +315,10 @@ namespace VDF.GUI.ViewModels {
 				ScanProgressMaxValue = e.MaxPosition;
 			});
 
-		void Instance_LogItemAdded(object sender, EventArgs e) =>
+		void Instance_LogItemAdded(string message) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
-				while (!Logger.Instance.LogEntries.IsEmpty) {
-					if (Logger.Instance.LogEntries.TryTake(out var item))
-						LogItems.Add(item);
-				}
+				if (string.IsNullOrEmpty(message)) return;
+				LogItems.Add(message);
 			});
 
 		void Scanner_ScanDone(object sender, EventArgs e) {
@@ -496,11 +494,13 @@ namespace VDF.GUI.ViewModels {
 			LogItems.Clear();
 		});
 		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await new SaveFileDialog().ShowAsync(ApplicationHelpers.MainWindow);
+			var result = await new SaveFileDialog {
+				DefaultExtension = ".txt",
+			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			var sb = new StringBuilder();
 			foreach (var l in LogItems)
-				sb.AppendLine(l.ToString());
+				sb.AppendLine(l);
 			try {
 				File.WriteAllText(result, sb.ToString());
 			}
