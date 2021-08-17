@@ -98,6 +98,8 @@ namespace VDF.Core {
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
 			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
+			Logger.Instance.Info("Highlighting best results...");
+			HighlightBestMatches();
 			ScanDone?.Invoke(this, new EventArgs());
 			Logger.Instance.Info("Scan done.");
 			DatabaseUtils.SaveDatabase();
@@ -380,6 +382,20 @@ namespace VDF.Core {
 			}
 		}
 
+		void HighlightBestMatches() {
+			HashSet<Guid> blackList = new();
+			foreach (DuplicateItem item in Duplicates) {
+				if (blackList.Contains(item.GroupId)) continue;
+				var groupItems = Duplicates.Where(a => a.GroupId == item.GroupId);
+				groupItems.OrderByDescending(d => d.Duration).First().IsBestDuration = true;
+				groupItems.OrderBy(d => d.SizeLong).First().IsBestSize = true;
+				groupItems.OrderByDescending(d => d.Duration).First().IsBestFps = true;
+				groupItems.OrderByDescending(d => d.BitRateKbs).First().IsBestBitRateKbs = true;
+				groupItems.OrderByDescending(d => d.AudioSampleRate).First().IsBestAudioSampleRate = true;
+				groupItems.OrderByDescending(d => d.FrameSizeInt).First().IsBestFrameSize = true;
+				blackList.Add(item.GroupId);
+			}
+		}
 
 		public void Pause() {
 			if (!isScanning || pauseTokenSource.IsPaused) return;

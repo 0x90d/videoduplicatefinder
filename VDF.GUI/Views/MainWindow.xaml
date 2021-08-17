@@ -23,6 +23,9 @@
     Icon="/Assets/icon.ico"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+    <mvvm:FluentWindow.Resources>
+        <mvvm:IsBestConverter x:Key="IsBestConverter" />
+    </mvvm:FluentWindow.Resources>
     <mvvm:FluentWindow.DataContext>
         <vm:MainWindowViewModel />
     </mvvm:FluentWindow.DataContext>
@@ -622,16 +625,19 @@
                                                         Margin="2"
                                                         IsVisible="{Binding !ItemInfo.IsImage}"
                                                         Text="{Binding ItemInfo.Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
+                                                        Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
                                                     <TextBlock
                                                         Grid.Row="1"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.FrameSize}"
+                                                        Foreground="{Binding ItemInfo.IsBestFrameSize, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
                                                     <TextBlock
                                                         Grid.Row="2"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.Size}"
+                                                        Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
                                                 </Grid>
                                             </DataTemplate>
@@ -662,11 +668,13 @@
                                                         Grid.Row="1"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.Fps, Mode=OneWay, StringFormat=\{0\} fps}"
+                                                        Foreground="{Binding ItemInfo.IsBestFps, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
                                                     <TextBlock
                                                         Grid.Row="2"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
+                                                        Foreground="{Binding ItemInfo.IsBestBitRateKbs, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
                                                 </Grid>
                                             </DataTemplate>
@@ -702,6 +710,7 @@
                                                         Grid.Row="2"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.AudioSampleRate}"
+                                                        Foreground="{Binding ItemInfo.IsBestAudioSampleRate, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
                                                 </Grid>
                                             </DataTemplate>

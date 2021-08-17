@@ -67,18 +67,24 @@ namespace VDF.Core.ViewModels {
 		public  List<Image> ImageList { get; private set; } = new List<Image>();
 		public string Path { get; set; }
 		public long SizeLong { get; set; }
+		public bool IsBestSize { get; set; }
 		public string Size => SizeLong.BytesToString();
 		public float Similarity { get; set; }
 		public string Folder { get; set; }
 		public TimeSpan Duration { get; set; }
+		public bool IsBestDuration { get; set; }
 		public string? FrameSize { get; set; }
 		public int FrameSizeInt { get; }
+		public bool IsBestFrameSize { get; set; }
 		public string? Format { get; }
 		public string? AudioFormat { get; }
 		public string? AudioChannel { get; }
 		public int AudioSampleRate { get; }
+		public bool IsBestAudioSampleRate { get; set; }
 		public decimal BitRateKbs { get; }
+		public bool IsBestBitRateKbs { get; set; }
 		public float Fps { get; }
+		public bool IsBestFps { get; set; }
 		public DateTime DateCreated { get; }
 
 		public bool IsImage { get; }
