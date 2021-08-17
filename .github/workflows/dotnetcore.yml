@@ -17,9 +17,5 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
         include-prerelease: true
-    - name: Clean
-      run: dotnet clean --configuration Release && dotnet nuget locals all --clear
-    - name: Restore dependencies
-      run: dotnet restore
     - name: Build with dotnet
       run: dotnet publish -c Release -v q --self-contained -r win-x64
