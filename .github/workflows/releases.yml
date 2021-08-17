@@ -35,16 +35,16 @@ jobs:
       run: |
           release_name="App-${{ matrix.target }}"
           # Build everything
-          dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "$release_name"
+          dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             # Pack to zip for Windows
-            7z a -tzip "${release_name}.zip" "./${release_name}/*"
+            7z a -tzip "${release_name}.zip" "./outputFolder/*"
           else
-            tar czvf "${release_name}.tar.gz" "$release_name"
+            tar czvf "${release_name}.tar.gz" "outputFolder"
           fi
           # Delete output directory
-          rm -r "$release_name"
+          rm -r "outputFolder"
     - name: Publish
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
