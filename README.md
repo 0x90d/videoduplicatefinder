@@ -20,7 +20,7 @@ Latest build: [![Build status](https://ci.appveyor.com/api/projects/status/githu
 # Requirements
 
 #### Windows user:
-FFmpeg and FFprobe are already included except for AppVeyor builds. Otherwise get latest package from https://ffmpeg.zeranoe.com/builds/ and extract ffmpeg.exe and ffprobe into the same directory where VideoDuplicateFinderWindows.exe is placed in.
+FFmpeg and FFprobe are already included except for AppVeyor builds. Otherwise get latest package from https://ffmpeg.org/download.html and download latest version (I recommend the shared version) and extract ffmpeg.exe and ffprobe into the same directory where VideoDuplicateFinderWindows.exe is placed in.
 
 #### Linux user:
 Install latest ffmpeg and ffprobe the usual way and verify PATH environment variable is set. Also make sure you got **libgdiplus** installed.
