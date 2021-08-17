@@ -12,7 +12,8 @@ jobs:
     - name: Setup .NET Core
       shell: pwsh
       run: |
+          dotnet nuget add source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-          ./dotnet-install.ps1 -Version 6.0.0 -Channel master
+          ./dotnet-install.ps1 -Version 6.0.1 -Channel master
     - name: Build with dotnet
       run: dotnet publish -c Release -v q --self-contained -r win-x64
