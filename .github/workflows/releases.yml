@@ -1,7 +1,10 @@
 name: Build releases
 
 
-on: push
+on:
+  push:
+    tags:
+      - "v*.*.*"
     
 jobs:
   build:
@@ -33,8 +36,7 @@ jobs:
     - name: Build
       shell: bash
       run: |
-          tag=$(git describe --tags --abbrev=0)
-          release_name="App-$tag-${{ matrix.target }}"
+          release_name="App-${{ matrix.target }}"
           # Build everything
           dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "$release_name"
           # Pack files
