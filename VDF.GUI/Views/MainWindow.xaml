@@ -545,7 +545,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                             </StackPanel>
-                            <DataGrid Name="dataGridGrouping" Grid.Row="2">
+                            <DataGrid Name="dataGridGrouping" Grid.Row="2" CanUserResizeColumns="True">
                                 <DataGrid.KeyBindings>
                                     <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
                                 </DataGrid.KeyBindings>
