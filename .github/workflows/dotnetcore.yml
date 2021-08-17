@@ -6,14 +6,20 @@ jobs:
   build:
 
     runs-on: windows-latest
+    strategy:
+      matrix:
+        dotnet: [ '6.0.x' ]
 
     steps:
     - uses: actions/checkout@v1
-    - name: Setup .NET Core
-      shell: pwsh
-      run: |
-          dotnet nuget add source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json
-          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-          ./dotnet-install.ps1 -Version 6.0.1 -Channel master
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+        include-prerelease: true
+    - name: Clean
+      run: dotnet clean --configuration Release && dotnet nuget locals all --clear
+    - name: Restore dependencies
+      run: dotnet restore
     - name: Build with dotnet
       run: dotnet publish -c Release -v q --self-contained -r win-x64
