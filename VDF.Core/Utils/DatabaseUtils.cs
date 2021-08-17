@@ -49,7 +49,7 @@ namespace VDF.Core.Utils {
 		}
 		public static void CleanupDatabase() {
 
-			var oldCount = Database.Count;
+			int oldCount = Database.Count;
 			var st = Stopwatch.StartNew();
 
 			Database.RemoveWhere(a => !File.Exists(a.Path) || a.Flags.Any(EntryFlags.MetadataError | EntryFlags.ThumbnailError));
