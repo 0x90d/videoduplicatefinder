@@ -34,6 +34,9 @@ namespace VDF.Core {
 			var extension = fi.Extension;
 			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
 			grayBytes = new Dictionary<double, byte[]?>();
+			DateCreated = fi.CreationTimeUtc;
+			DateModified = fi.LastWriteTimeUtc;
+			FileSize = fi.Length;
 		}
 		[ProtoMember(1)]
 		public string Path { get; set; }
@@ -45,6 +48,12 @@ namespace VDF.Core {
 		public MediaInfo? mediaInfo;
 		[ProtoMember(5)]
 		public EntryFlags Flags;
+		[ProtoMember(6)]
+		public DateTime DateCreated;
+		[ProtoMember(7)]
+		public DateTime DateModified;
+		[ProtoMember(8)]
+		public long FileSize;
 
 		[ProtoIgnore]
 		public bool IsImage {
