@@ -139,17 +139,17 @@
                                 <MenuItem Command="{Binding ExportDataBaseToJsonCommand}">
                                     <MenuItem.Header>
                                         <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Export Database To Json" />
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Export Database To Json" />
                                     </MenuItem.Header>
                                 </MenuItem>
                                 <MenuItem Command="{Binding ExportDataBaseToJsonPrettyCommand}">
                                     <MenuItem.Header>
                                         <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Export Database To Json (pretty)" />
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Export Database To Json (pretty)" />
                                     </MenuItem.Header>
                                 </MenuItem>
                             </MenuItem>
@@ -720,69 +720,68 @@
                                     Value="{Binding Thumbnails}" />
                             </StackPanel>
                         </Grid>
-                        
-                            <Grid
-                                Grid.Row="1"
-                                RowDefinitions="Auto, 300"
-                                ColumnDefinitions="*, *"
-                                Margin="0,10,5,0">
-                                <TextBlock
-                                    Margin="5,0,0,2"
-                                    FontWeight="Bold"
-                                    Text="Search Directories" />
+                        <Grid
+                            Grid.Row="1"
+                            RowDefinitions="Auto, 300"
+                            ColumnDefinitions="*, *"
+                            Margin="0,10,5,0">
+                            <TextBlock
+                                Margin="5,0,0,2"
+                                FontWeight="Bold"
+                                Text="Search Directories" />
                             <Grid Grid.Row="1" RowDefinitions="Auto, *">
-                                    <Menu
-                                        Grid.Row="0"
-                                        MinHeight="30"
-                                        Background="#222222">
-                                        <MenuItem Command="{Binding AddIncludesToListCommand}">
-                                            <MenuItem.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Viewbox Width="16" Height="16">
-                                                        <Canvas Width="24" Height="24">
-                                                            <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
-                                                        </Canvas>
-                                                    </Viewbox>
-                                                    <TextBlock
-                                                        Margin="5,0,0,0"
-                                                        VerticalAlignment="Center"
-                                                        Text="Add" />
-                                                </StackPanel>
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                        <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
-                                            <MenuItem.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Viewbox Width="16" Height="16">
-                                                        <Canvas Width="24" Height="24">
-                                                            <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
-                                                        </Canvas>
-                                                    </Viewbox>
-                                                    <TextBlock
-                                                        Margin="5,0,0,0"
-                                                        VerticalAlignment="Center"
-                                                        Text="Remove" />
-                                                </StackPanel>
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                    </Menu>
-                                    <ListBox
-                                        Name="ListboxIncludelist"
-                                        Grid.Row="1"
-                                        Items="{Binding Includes}" />
+                                <Menu
+                                    Grid.Row="0"
+                                    MinHeight="30"
+                                    Background="#222222">
+                                    <MenuItem Command="{Binding AddIncludesToListCommand}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Add" />
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Remove" />
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                </Menu>
+                                <ListBox
+                                    Name="ListboxIncludelist"
+                                    Grid.Row="1"
+                                    Items="{Binding Includes}" />
                             </Grid>
                             <TextBlock
                                 Grid.Row="0"
                                 Grid.Column="1"
-                                    Margin="15,0,0,2"
-                                    FontWeight="Bold"
-                                    Text="Exclude Directories" />
+                                Margin="15,0,0,2"
+                                FontWeight="Bold"
+                                Text="Exclude Directories" />
                             <Grid Grid.Row="1"  Margin="10,0,0,0"
-                                Grid.Column="1" RowDefinitions="Auto, *">
+                                  Grid.Column="1" RowDefinitions="Auto, *">
                                 <Menu
-                                        Grid.Row="0"
-                                        MinHeight="30"
-                                        Background="#222222">
+                                    Grid.Row="0"
+                                    MinHeight="30"
+                                    Background="#222222">
                                     <MenuItem Command="{Binding AddBlacklistToListCommand}">
                                         <MenuItem.Header>
                                             <StackPanel Orientation="Horizontal">
@@ -792,9 +791,9 @@
                                                     </Canvas>
                                                 </Viewbox>
                                                 <TextBlock
-                                                        Margin="5,0,0,0"
-                                                        VerticalAlignment="Center"
-                                                        Text="Add" />
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Add" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
@@ -807,17 +806,17 @@
                                                     </Canvas>
                                                 </Viewbox>
                                                 <TextBlock
-                                                        Margin="5,0,0,0"
-                                                        VerticalAlignment="Center"
-                                                        Text="Remove" />
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Remove" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
                                 </Menu>
                                 <ListBox
-                                        Name="ListboxBlacklist"
-                                        Grid.Row="1"                                        
-                                        Items="{Binding Blacklists}" />
+                                    Name="ListboxBlacklist"
+                                    Grid.Row="1"                                        
+                                    Items="{Binding Blacklists}" />
                             </Grid>
                         </Grid>
                     </Grid>
