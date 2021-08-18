@@ -179,7 +179,7 @@ namespace VDF.Core {
 		void GatherInfos() {
 			try {
 				InitProgress(DatabaseUtils.Database.Count);
-				Parallel.ForEach(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token }, entry => {
+				Parallel.ForEach(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, entry => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					if (InvalidEntry(entry)) return;
@@ -222,7 +222,7 @@ namespace VDF.Core {
 			InitProgress(ScanList.Count);
 
 			try {
-				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token }, i => {
+				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					var entry = ScanList[i];
@@ -299,7 +299,7 @@ namespace VDF.Core {
 			await Task.Run(() => {
 				var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
 				try {
-					Parallel.For(0, dupList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token }, i => {
+					Parallel.For(0, dupList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
 						var entry = dupList[i];
 						List<Image> list;
 						if (entry.IsImage) {

@@ -718,6 +718,19 @@
                                     Maximum="100"
                                     Minimum="1"
                                     Value="{Binding Thumbnails}" />
+                                <TextBlock
+                                    Margin="0,5,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="Max Degree Of Parallelism:" />
+                                <NumericUpDown
+                                    Height="26"
+                                    Width="200"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Limits the amount of concurrent tasks"
+                                    Maximum="100"
+                                    Minimum="-1"
+                                    Value="{Binding MaxDegreeOfParallelism}" />
                             </StackPanel>
                         </Grid>
                         <Grid

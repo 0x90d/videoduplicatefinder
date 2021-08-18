@@ -99,6 +99,11 @@ namespace VDF.GUI.ViewModels {
 			get => _IgnoreHardlinks;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreHardlinks, value);
 		}
+		int _MaxDegreeOfParallelism = 1;
+		public int MaxDegreeOfParallelism {
+			get => _MaxDegreeOfParallelism;
+			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
+		}
 		bool _UseCuda;
 		public bool UseCuda {
 			get => _UseCuda;
@@ -259,6 +264,7 @@ namespace VDF.GUI.ViewModels {
 					new XElement("IncludeImages", IncludeImages),
 					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders),
 					new XElement("UseCuda", UseCuda),
+					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
 					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails)
 				)
 			);
@@ -275,6 +281,9 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("Percent"))
 				if (int.TryParse(n.Value, out var percent))
 					Percent = percent;
+			foreach (var n in xDoc.Descendants("MaxDegreeOfParallelism"))
+				if (int.TryParse(n.Value, out var maxDegreeOfParallelism))
+					MaxDegreeOfParallelism = maxDegreeOfParallelism;
 			foreach (var n in xDoc.Descendants("Thumbnails"))
 				if (int.TryParse(n.Value, out var thumbnails))
 					Thumbnails = thumbnails;
@@ -538,6 +547,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IgnoreHardlinks = IgnoreHardlinks;
 			Scanner.Settings.UseCuda = UseCuda;
 			Scanner.Settings.Percent = Percent;
+			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = Thumbnails;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
