@@ -162,6 +162,8 @@ namespace VDF.Core.FFTools {
 					info.Streams[i].CodecType = (string)streams[i]["codec_type"];
 				if (streams[i].ContainsKey("channel_layout"))
 					info.Streams[i].ChannelLayout = (string)streams[i]["channel_layout"];
+				if (streams[i].ContainsKey("channels"))
+					info.Streams[i].Channels = (int)streams[i]["channels"];
 
 				if (streams[i].ContainsKey("pix_fmt"))
 					info.Streams[i].PixelFormat = (string)streams[i]["pix_fmt"];
