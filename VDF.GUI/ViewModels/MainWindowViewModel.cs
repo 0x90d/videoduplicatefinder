@@ -262,6 +262,7 @@ namespace VDF.GUI.ViewModels {
 					new XElement("Thumbnails", Thumbnails),
 					new XElement("IncludeSubDirectories", IncludeSubDirectories),
 					new XElement("IncludeImages", IncludeImages),
+					new XElement("IgnoreHardlinks", IgnoreHardlinks),
 					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders),
 					new XElement("UseCuda", UseCuda),
 					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
@@ -279,29 +280,32 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("Exclude"))
 				Blacklists.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Percent"))
-				if (int.TryParse(n.Value, out var percent))
-					Percent = percent;
+				if (int.TryParse(n.Value, out var value))
+					Percent = value;
 			foreach (var n in xDoc.Descendants("MaxDegreeOfParallelism"))
-				if (int.TryParse(n.Value, out var maxDegreeOfParallelism))
-					MaxDegreeOfParallelism = maxDegreeOfParallelism;
+				if (int.TryParse(n.Value, out var value))
+					MaxDegreeOfParallelism = value;
 			foreach (var n in xDoc.Descendants("Thumbnails"))
-				if (int.TryParse(n.Value, out var thumbnails))
-					Thumbnails = thumbnails;
-			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
-			if (node?.Value != null)
-				IncludeSubDirectories = bool.Parse(node.Value);
-			node = xDoc.Descendants("IncludeImages").SingleOrDefault();
-			if (node?.Value != null)
-				IncludeImages = bool.Parse(node.Value);
-			node = xDoc.Descendants("IgnoreReadOnlyFolders").SingleOrDefault();
-			if (node?.Value != null)
-				IgnoreReadOnlyFolders = bool.Parse(node.Value);
-			node = xDoc.Descendants("UseCuda").SingleOrDefault();
-			if (node?.Value != null)
-				UseCuda = bool.Parse(node.Value);
-			node = xDoc.Descendants("GeneratePreviewThumbnails").SingleOrDefault();
-			if (node?.Value != null)
-				GeneratePreviewThumbnails = bool.Parse(node.Value);
+				if (int.TryParse(n.Value, out var value))
+					Thumbnails = value;
+			foreach (var n in xDoc.Descendants("IncludeSubDirectories"))
+				if (bool.TryParse(n.Value, out var value))
+					IncludeSubDirectories = value;
+			foreach (var n in xDoc.Descendants("IncludeImages"))
+				if (bool.TryParse(n.Value, out var value))
+					IncludeImages = value;
+			foreach (var n in xDoc.Descendants("IgnoreReadOnlyFolders"))
+				if (bool.TryParse(n.Value, out var value))
+					IgnoreReadOnlyFolders = value;
+			foreach (var n in xDoc.Descendants("UseCuda"))
+				if (bool.TryParse(n.Value, out var value))
+					UseCuda = value;
+			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
+				if (bool.TryParse(n.Value, out var value))
+					GeneratePreviewThumbnails = value;
+			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
+				if (bool.TryParse(n.Value, out var value))
+					IgnoreHardlinks = value;
 		}
 
 		public async void LoadDatabase() {
