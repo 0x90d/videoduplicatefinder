@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
+using System.Runtime.CompilerServices;
 
 namespace VDF.Core {
 	public sealed class ScanEngine {
@@ -198,9 +199,52 @@ namespace VDF.Core {
 			catch (OperationCanceledException) { }
 		}
 
-		void ScanForDuplicates() {
+		Dictionary<double, byte[]?> createFlippedGrayBytes(FileEntry entry)
+		{
+			var flippedGrayBytes = new Dictionary<double, byte[]?>();
+			if (entry.IsImage)
+				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!, grayScaleWidth));
+			else
+				for (int j = 0; j < positionList.Count; j++)
+				{
+					double idx = entry.GetGrayBytesIndex(positionList[j]);
+					flippedGrayBytes.Add(idx, GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!, grayScaleWidth));
+				}
 
-			var percentageDifference = 1.0f - Settings.Percent / 100f;
+			return flippedGrayBytes;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		bool isDuplicate(FileEntry entry1, Dictionary<double, byte[]?>? grayBytes1, FileEntry entry2, float differenceLimit, out float difference)
+		{
+			difference = float.PositiveInfinity;
+			grayBytes1 ??= entry1.grayBytes;
+
+			if (entry1.IsImage && !entry2.IsImage) 
+				return false; 
+
+			if (entry1.IsImage)
+			{
+				difference = GrayBytesUtils.PercentageDifference(grayBytes1[0]!, entry2.grayBytes[0]!);
+				return difference < differenceLimit;
+			}
+		
+			float diff, diffSum = 0;
+			for (int j = 0; j < positionList.Count; j++) {
+				diff = GrayBytesUtils.PercentageDifference(
+					grayBytes1[entry1.GetGrayBytesIndex(positionList[j])]!, 
+					entry2.grayBytes[entry2.GetGrayBytesIndex(positionList[j])]!
+				);
+				if (diff >= differenceLimit)
+					return false;
+				diffSum += diff;
+			}
+			difference = diffSum / positionList.Count; 
+			return true;
+		}
+
+		void ScanForDuplicates() {
+			var differenceLimit = 1.0f - Settings.Percent / 100f;
 			var duplicateDict = new Dictionary<string, DuplicateItem>();
 
 			//Exclude existing database entries which not met current scan settings
@@ -214,55 +258,27 @@ namespace VDF.Core {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					var entry = ScanList[i];
-					float[] percent = new float[positionList.Count];
-					Dictionary<double, byte[]?>[] grayBytes = new Dictionary<double, byte[]?>[2];
-					grayBytes[0] = entry.grayBytes;
-					
+					Dictionary<double, byte[]?>? flippedGrayBytes = null;
 					if (Settings.CompareHorizontallyFlipped)
-					{
-						grayBytes[1] = new Dictionary<double, byte[]?>();
-						if (entry.IsImage)
-							grayBytes[1].Add(0, GrayBytesUtils.FlipGrayScale(grayBytes[0][0]!, grayScaleWidth));
-						else
-							for (var j = 0; j < positionList.Count; j++)
-							{
-								var idx = entry.GetGrayBytesIndex(positionList[j]);
-								grayBytes[1].Add(idx, GrayBytesUtils.FlipGrayScale(grayBytes[0][idx]!, grayScaleWidth));
-							}
-					}
+						flippedGrayBytes = createFlippedGrayBytes(entry);
 
 					for (var n = i + 1; n < ScanList.Count; n++) {
-						var compItem = ScanList[n];
-						if (entry.IsImage && !compItem.IsImage) 
-							continue;
-						var isDuplicate = true;
-						int flip = 0;
-						do {
-							if (entry.IsImage) {
-								percent[0] = GrayBytesUtils.PercentageDifference(grayBytes[flip][0]!, compItem.grayBytes[0]!);
-								isDuplicate = (percent[0] < percentageDifference);
-							}
-							else {
-								for (var j = 0; j < positionList.Count; j++) {
-									percent[j] =
-										GrayBytesUtils.PercentageDifference(grayBytes[flip][entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-									if (!(percent[j] < percentageDifference)) {
-										isDuplicate = false;
-										break; 
-									}
-								}
-							}
-						} while(!isDuplicate && Settings.CompareHorizontallyFlipped && flip++ == 0);
+						FileEntry compItem = ScanList[n];
+						DuplicateFlags flags = DuplicateFlags.None; 
+						bool dupplicate = isDuplicate(entry, null, compItem, differenceLimit, out var difference);
+						if (!dupplicate && Settings.CompareHorizontallyFlipped)
+						{
+							dupplicate = isDuplicate(entry, flippedGrayBytes, compItem, differenceLimit, out difference);
+							if (dupplicate)
+								flags |= DuplicateFlags.Flipped; 
+						}
 
-						if (!isDuplicate) {
+						if (!dupplicate) {
 							IncrementProgress(entry.Path);
 							continue;
 						}
 
-						DuplicateItem.DuplicateFlags flags = flip > 0 ? DuplicateItem.DuplicateFlags.Flipped : DuplicateItem.DuplicateFlags.None;
-
 						lock (duplicateDict) {
-							var percSame = percent.Average();
 							var foundBase = duplicateDict.TryGetValue(entry.Path, out var existingBase);
 							var foundComp = duplicateDict.TryGetValue(compItem.Path, out var existingComp);
 
@@ -277,16 +293,16 @@ namespace VDF.Core {
 							}
 							else if (foundBase) {
 								duplicateDict.TryAdd(compItem.Path,
-									new DuplicateItem(compItem, percSame, existingBase!.GroupId, flags));
+									new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
 							}
 							else if (foundComp) {
 								duplicateDict.TryAdd(entry.Path,
-									new DuplicateItem(entry, percSame, existingComp!.GroupId, flags));
+									new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
 							}
 							else {
 								var groupId = Guid.NewGuid();
-								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame, groupId, flags));
-								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, percSame, groupId, flags));
+								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
+								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, flags));
 							}
 						}
 						IncrementProgress(entry.Path);

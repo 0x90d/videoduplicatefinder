@@ -29,9 +29,7 @@ namespace VDF.Core.FFTools {
 		public static byte[]? GetThumbnail(FfmpegSettings settings) {
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
-					Arguments = $" -hide_banner -loglevel panic -y {(UseCuda ? "-hwaccel cuda" : string.Empty)} -ss {settings.Position} -i \"{settings.File}\" -t 1 " +
-					            $"-f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 " +
-								$"{(settings.GrayScale == 1 ? $"-s {settings.Width}x{settings.Width}" : $"-vf scale={settings.Width}:-1")} \"-\"",
+					Arguments = $" -hide_banner -loglevel panic -y {(UseCuda ? "-hwaccel cuda" : string.Empty)} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? $"-s {settings.Width}x{settings.Width}" : $"-vf scale={settings.Width}:-1")} \"-\"",
 					FileName = FFmpegPath,
 					CreateNoWindow = true,
 					RedirectStandardInput = false,

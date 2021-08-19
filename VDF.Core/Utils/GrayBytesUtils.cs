@@ -96,6 +96,7 @@ namespace VDF.Core.Utils {
 	//-------------------------------------------------------------------------
 
 	// Different PercentageDifference versions:
+	// (Return value: [0..1])
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static unsafe float PercentageDifferenceLoop(byte[] img1, byte[] img2) {
