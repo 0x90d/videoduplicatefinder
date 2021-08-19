@@ -31,19 +31,40 @@ namespace VDF.Core.ViewModels {
 			if (!file.IsImage && file.mediaInfo?.Streams != null) {
 				Duration = file.mediaInfo.Duration;
 
-				for (var i = 0; i < file.mediaInfo.Streams.Length; i++) {
-					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase)) {
-						Format = file.mediaInfo.Streams[i].CodecName;
-						Fps = file.mediaInfo.Streams[i].FrameRate;
-						BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
-						FrameSize = file.mediaInfo.Streams[i].Width + "x" + file.mediaInfo.Streams[i].Height;
-						FrameSizeInt = file.mediaInfo.Streams[i].Width + file.mediaInfo.Streams[i].Height;
+				// Stream selection rules:
+				//  See: https://ffmpeg.org/ffmpeg.html#Automatic-stream-selection
+				//  In the absence of any map options [...] It will select that stream based upon the following criteria:
+				//  for video, it is the stream with the highest resolution,
+				//  for audio, it is the stream with the most channels,
+				//  In the case where several streams of the same type rate equally, the stream with the lowest index is chosen.
+				int[] selVideo = {-1, 0};
+				int[] selAudio = {-1, 0};
+				for (int i = file.mediaInfo.Streams.Length - 1; i >= 0; i--) {
+					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase) &&
+					    file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height >= selVideo[1] ) {
+						selVideo[0] = i;
+						selVideo[1] = file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height;
 					}
-					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase)) {
-						AudioFormat = file.mediaInfo.Streams[i].CodecName;
-						AudioChannel = file.mediaInfo.Streams[i].ChannelLayout;
-						AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
+					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase) &&
+							 file.mediaInfo.Streams[i].Channels >= selAudio[1] ) {
+						selAudio[0] = i;
+						selAudio[1] = file.mediaInfo.Streams[i].Channels;
 					}
+				}
+
+				if (selVideo[0] >= 0) {
+					var i = selVideo[0];
+					Format = file.mediaInfo.Streams[i].CodecName;
+					Fps = file.mediaInfo.Streams[i].FrameRate;
+					BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
+					FrameSize = file.mediaInfo.Streams[i].Width + "x" + file.mediaInfo.Streams[i].Height;
+					FrameSizeInt = file.mediaInfo.Streams[i].Width + file.mediaInfo.Streams[i].Height;
+				}
+				if (selAudio[0] >= 0) {
+					var i = selAudio[0];
+					AudioFormat = file.mediaInfo.Streams[i].CodecName;
+					AudioChannel = file.mediaInfo.Streams[i].ChannelLayout;
+					AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
 				}
 
 			}
