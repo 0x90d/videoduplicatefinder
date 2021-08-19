@@ -20,7 +20,7 @@ using VDF.Core.Utils;
 
 namespace VDF.Core.ViewModels {
 	[DebuggerDisplay("{" + nameof(Path) + ",nq}")]
-	public class DuplicateItem  {
+	public class DuplicateItem {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItem() { }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -28,7 +28,7 @@ namespace VDF.Core.ViewModels {
 			Path = file.Path;
 			Folder = file.Folder;
 			GroupId = groupID;
-			if (!file.IsImage && file.mediaInfo?.Streams != null) {
+			if (!file.IsImage && file.mediaInfo?.Streams?.Length > 0) {
 				Duration = file.mediaInfo.Duration;
 
 				// Stream selection rules:
@@ -37,23 +37,23 @@ namespace VDF.Core.ViewModels {
 				//  for video, it is the stream with the highest resolution,
 				//  for audio, it is the stream with the most channels,
 				//  In the case where several streams of the same type rate equally, the stream with the lowest index is chosen.
-				int[] selVideo = {-1, 0};
-				int[] selAudio = {-1, 0};
+				int[] selVideo = { -1, 0 };
+				int[] selAudio = { -1, 0 };
 				for (int i = file.mediaInfo.Streams.Length - 1; i >= 0; i--) {
 					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase) &&
-					    file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height >= selVideo[1] ) {
+						file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height >= selVideo[1]) {
 						selVideo[0] = i;
 						selVideo[1] = file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height;
 					}
 					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase) &&
-							 file.mediaInfo.Streams[i].Channels >= selAudio[1] ) {
+							 file.mediaInfo.Streams[i].Channels >= selAudio[1]) {
 						selAudio[0] = i;
 						selAudio[1] = file.mediaInfo.Streams[i].Channels;
 					}
 				}
 
 				if (selVideo[0] >= 0) {
-					var i = selVideo[0];
+					int i = selVideo[0];
 					Format = file.mediaInfo.Streams[i].CodecName;
 					Fps = file.mediaInfo.Streams[i].FrameRate;
 					BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
@@ -61,7 +61,7 @@ namespace VDF.Core.ViewModels {
 					FrameSizeInt = file.mediaInfo.Streams[i].Width + file.mediaInfo.Streams[i].Height;
 				}
 				if (selAudio[0] >= 0) {
-					var i = selAudio[0];
+					int i = selAudio[0];
 					AudioFormat = file.mediaInfo.Streams[i].CodecName;
 					AudioChannel = file.mediaInfo.Streams[i].ChannelLayout;
 					AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
@@ -85,7 +85,7 @@ namespace VDF.Core.ViewModels {
 		}
 
 		public Guid GroupId { get; set; }
-		public  List<Image> ImageList { get; private set; } = new List<Image>();
+		public List<Image> ImageList { get; private set; } = new List<Image>();
 		public string Path { get; set; }
 		public long SizeLong { get; set; }
 		public bool IsBestSize { get; set; }
