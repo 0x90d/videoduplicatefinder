@@ -83,6 +83,7 @@ namespace VDF.Core {
 		public async void StartSearch() {
 			Prepare();
 			SearchTimer.Start();
+			ElapsedTimer.Start();
 			Logger.Instance.Info("Building file list...");
 			await BuildFileList();
 			Logger.Instance.Info($"Finished building file list in {SearchTimer.StopGetElapsedAndRestart()}");
