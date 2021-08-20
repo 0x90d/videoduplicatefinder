@@ -37,10 +37,25 @@ namespace VDF.Core.Utils {
 				using var file = new FileStream(databaseFile.FullName, FileMode.Open);
 				Database = Serializer.Deserialize<HashSet<FileEntry>>(file);
 			}
-			catch (ProtoException ex) {
-				Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
-				st.Stop();
-				return false;
+			catch (ProtoException) {
+				//This could be an older database
+				try {
+					using var file = new FileStream(databaseFile.FullName, FileMode.Open);
+					var oldDatabase = Serializer.Deserialize<List<FileEntry_old>>(file);
+					Database = new();
+					foreach (var item in oldDatabase) {
+						Database.Add(new FileEntry(item.Path) {
+							Flags = item.Flags,
+							mediaInfo = item.mediaInfo,
+							grayBytes = new()
+						});
+					}
+				}
+				catch (ProtoException ex) {
+					Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
+					st.Stop();
+					return false;
+				}
 			}
 
 			st.Stop();
