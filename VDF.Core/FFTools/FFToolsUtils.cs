@@ -56,11 +56,9 @@ namespace VDF.Core.FFTools {
 					if (files.Length > 0)
 						return files[0].FullName;
 				}
-				catch (Exception e) {
+				catch (Exception) {
 #if DEBUG
-#pragma warning disable CA2200 // Rethrow to preserve stack details
-					throw e;
-#pragma warning restore CA2200 // Rethrow to preserve stack details
+					throw;
 #endif
 				}
 			}

@@ -335,7 +335,7 @@ namespace VDF.GUI.ViewModels {
 				LogItems.Add(message);
 			});
 
-		void Scanner_ScanDone(object sender, EventArgs e) {
+		void Scanner_ScanDone(object sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
 				IsBusy = false;
@@ -352,7 +352,6 @@ namespace VDF.GUI.ViewModels {
 				view.Filter += TextFilter;
 				GetDataGrid.Items = view;
 			});
-		}
 		bool TextFilter(object obj) {
 			if (obj is not DuplicateItemViewModel data) return false;
 			var success = true;
@@ -399,12 +398,12 @@ namespace VDF.GUI.ViewModels {
 			IsBusyText = "Cleaning database...";
 			Scanner.CleanupDatabase();
 		});
-		public ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
 			ExportToJson(new JsonSerializerOptions {
 				IncludeFields = true,
 			});
 		});
-		public ReactiveCommand<Unit, Unit> ExportDataBaseToJsonPrettyCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonPrettyCommand => ReactiveCommand.Create(() => {
 			ExportToJson(new JsonSerializerOptions {
 				IncludeFields = true,
 				WriteIndented = true,
@@ -732,10 +731,10 @@ namespace VDF.GUI.ViewModels {
 					try {
 
 						if (createSymbolLinksInstead) {
-							DuplicateItemViewModel? fileToKeep = Duplicates.FirstOrDefault(s =>
+							DuplicateItemViewModel fileToKeep = Duplicates.FirstOrDefault(s =>
 							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
 							s.Checked == false);
-							if (fileToKeep == null) {
+							if (fileToKeep == default(DuplicateItemViewModel)) {
 								throw new Exception($"Cannot create a symbol link for '{dub.ItemInfo.Path}' because all items in this group are selected/checked");
 							}
 							File.CreateSymbolicLink(dub.ItemInfo.Path, fileToKeep.ItemInfo.Path);

@@ -22,9 +22,7 @@ namespace VDF.Core.FFTools {
 		public static readonly string FFmpegPath;
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static bool UseCuda;
-		static FfmpegEngine() {
-			FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
-		}
+		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
 		public static byte[]? GetThumbnail(FfmpegSettings settings) {
 			using var process = new Process {

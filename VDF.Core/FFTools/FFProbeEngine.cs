@@ -21,9 +21,7 @@ namespace VDF.Core.FFTools {
 	static class FFProbeEngine {
 		public static readonly string FFprobePath;
 		const int TimeoutDuration = 15_000; //15 seconds
-		static FFProbeEngine() {
-			FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
-		}
+		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
 		public static  MediaInfo? GetMediaInfo(string file) {
 			using var process = new Process {
