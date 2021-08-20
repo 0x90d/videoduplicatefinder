@@ -29,7 +29,10 @@ jobs:
       with:
         dotnet-version: '6.0.x'
         include-prerelease: true
-
+    - name: Declare some variables
+      id: vars
+      shell: bash
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
     - name: Build
       shell: bash
       run: |
@@ -45,12 +48,16 @@ jobs:
           fi
           # Delete output directory
           rm -r "outputFolder"
+          
     - name: Publish
       uses: softprops/action-gh-release@v1
       with:
           tag_name: 3.0.x
           files: App*
           prerelease: true
+          body: |
+            Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says.
+            Last build based on ${{ steps.vars.outputs.sha_short }}
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
