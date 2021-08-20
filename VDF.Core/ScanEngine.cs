@@ -316,7 +316,7 @@ namespace VDF.Core {
 							else {
 								var groupId = Guid.NewGuid();
 								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
-								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, flags));
+								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
 							}
 						}
 						IncrementProgress(entry.Path);

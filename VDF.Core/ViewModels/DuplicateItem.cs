@@ -29,6 +29,7 @@ namespace VDF.Core.ViewModels {
 			Path = file.Path;
 			Folder = file.Folder;
 			GroupId = groupID;
+			Flags = flags;
 			if (!file.IsImage && file.mediaInfo?.Streams?.Length > 0) {
 				Duration = file.mediaInfo.Duration;
 				/*

@@ -24,7 +24,7 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
 namespace VDF.Core.Utils {
-	public static class GrayBytesUtils {
+	static class GrayBytesUtils {
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
