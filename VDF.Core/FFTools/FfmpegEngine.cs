@@ -72,14 +72,17 @@ namespace VDF.Core.FFTools {
 				});
 				if (data == null || data.Length == 0) {
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
+					Logger.Instance.Info($"ERROR: Failed to retrieve graybytes from: {videoFile.Path}");
 					return;
 				}
 				if (!GrayBytesUtils.VerifyGrayScaleValues(data))
 					tooDarkCounter++;
 				videoFile.grayBytes.Add(position, data);
 			}
-			if (tooDarkCounter == positions.Count)
+			if (tooDarkCounter == positions.Count) {
 				videoFile.Flags.Set(EntryFlags.TooDark);
+				Logger.Instance.Info($"ERROR: Graybytes too dark from: {videoFile.Path}");
+			}
 
 		}
 	}

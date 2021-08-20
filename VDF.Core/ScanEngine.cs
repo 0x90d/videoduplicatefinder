@@ -14,15 +14,9 @@
 // */
 //
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
@@ -130,7 +124,10 @@ namespace VDF.Core {
 		}
 
 		Task BuildFileList() => Task.Run(() => {
+						
 			DatabaseUtils.LoadDatabase();
+			int oldFileCount = DatabaseUtils.Database.Count;
+
 			foreach (var path in Settings.IncludeList) {
 				if (!Directory.Exists(path)) continue;
 
@@ -149,6 +146,7 @@ namespace VDF.Core {
 				}
 			}
 
+			Logger.Instance.Info($"Files in database: {DatabaseUtils.Database.Count:N0} ({DatabaseUtils.Database.Count-oldFileCount:N0} files added)");
 		});
 
 		bool InvalidEntry(FileEntry entry) {
@@ -188,6 +186,7 @@ namespace VDF.Core {
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path);
 						if (info == null) {
+							Logger.Instance.Info($"ERROR: Failed to retrieve media info from: {entry.Path}");
 							entry.Flags.Set(EntryFlags.MetadataError);
 							return;
 						}
@@ -219,6 +218,8 @@ namespace VDF.Core {
 			//Exclude existing database entries which not met current scan settings
 			List<FileEntry> ScanList = new List<FileEntry>(DatabaseUtils.Database);
 			ScanList.RemoveAll(InvalidEntryForDuplicateCheck);
+
+			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
 
 			InitProgress(ScanList.Count);
 
