@@ -51,6 +51,9 @@ jobs:
           tag_name: 3.0.x
           files: App*
           prerelease: true
+          body: |
+            Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says.
+            Last build based on $(git rev-parse --short "$GITHUB_SHA")
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
