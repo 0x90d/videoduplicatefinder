@@ -197,7 +197,8 @@ namespace VDF.GUI.ViewModels {
 				_SortOrder = value;
 				this.RaisePropertyChanged(nameof(SortOrder));
 				view?.SortDescriptions.Clear();
-				view?.SortDescriptions.Add(_SortOrder.Value);
+				if (_SortOrder.Value != null)
+					view?.SortDescriptions.Add(_SortOrder.Value);
 				view?.Refresh();
 			}
 		}

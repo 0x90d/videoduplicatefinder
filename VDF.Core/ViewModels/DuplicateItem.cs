@@ -30,13 +30,14 @@ namespace VDF.Core.ViewModels {
 			GroupId = groupID;
 			if (!file.IsImage && file.mediaInfo?.Streams?.Length > 0) {
 				Duration = file.mediaInfo.Duration;
-
-				// Stream selection rules:
-				//  See: https://ffmpeg.org/ffmpeg.html#Automatic-stream-selection
-				//  In the absence of any map options [...] It will select that stream based upon the following criteria:
-				//  for video, it is the stream with the highest resolution,
-				//  for audio, it is the stream with the most channels,
-				//  In the case where several streams of the same type rate equally, the stream with the lowest index is chosen.
+				/*
+					Stream selection rules:
+					See: https://ffmpeg.org/ffmpeg.html#Automatic-stream-selection
+					In the absence of any map options[...] It will select that stream based upon the following criteria:
+					for video, it is the stream with the highest resolution,
+					for audio, it is the stream with the most channels,
+					In the case where several streams of the same type rate equally, the stream with the lowest index is chosen.
+				*/
 				int[] selVideo = { -1, 0 };
 				int[] selAudio = { -1, 0 };
 				for (int i = file.mediaInfo.Streams.Length - 1; i >= 0; i--) {
