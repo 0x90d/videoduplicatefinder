@@ -375,6 +375,7 @@ namespace VDF.Core {
 				var d = GrayBytesUtils.GetGrayScaleValues(b);
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
+					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");
 					return;
 				}
 

@@ -81,7 +81,7 @@ namespace VDF.Core.FFTools {
 			}
 			if (tooDarkCounter == positions.Count) {
 				videoFile.Flags.Set(EntryFlags.TooDark);
-				Logger.Instance.Info($"ERROR: Graybytes too dark from: {videoFile.Path}");
+				Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
 			}
 
 		}
