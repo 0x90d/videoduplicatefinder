@@ -104,6 +104,11 @@ namespace VDF.GUI.ViewModels {
 			get => _MaxDegreeOfParallelism;
 			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
+		bool _CompareHorizontallyFlipped = false;
+		public bool CompareHorizontallyFlipped {
+			get => _CompareHorizontallyFlipped;
+			set => this.RaiseAndSetIfChanged(ref _CompareHorizontallyFlipped, value);
+		}
 		bool _UseCuda;
 		public bool UseCuda {
 			get => _UseCuda;
@@ -267,7 +272,8 @@ namespace VDF.GUI.ViewModels {
 					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders),
 					new XElement("UseCuda", UseCuda),
 					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
-					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails)
+					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails),
+					new XElement("CompareHorizontallyFlipped", CompareHorizontallyFlipped)
 				)
 			);
 			xDoc.Save(path);
@@ -307,6 +313,9 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
 				if (bool.TryParse(n.Value, out var value))
 					IgnoreHardlinks = value;
+			foreach (var n in xDoc.Descendants("CompareHorizontallyFlipped"))
+				if (bool.TryParse(n.Value, out var value))
+					CompareHorizontallyFlipped = value;
 		}
 
 		public async void LoadDatabase() {
@@ -553,6 +562,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.Percent = Percent;
 			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = Thumbnails;
+			Scanner.Settings.CompareHorizontallyFlipped =CompareHorizontallyFlipped;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

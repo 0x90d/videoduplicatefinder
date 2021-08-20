@@ -693,6 +693,11 @@
                                     Content="Exclude hardlinks"
                                     IsChecked="{Binding IgnoreHardlinks}"
                                     IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Compare Horizontally Flipped"
+                                    IsChecked="{Binding CompareHorizontallyFlipped}"
+                                    IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
                                 <TextBlock
