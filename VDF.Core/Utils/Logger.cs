@@ -14,10 +14,6 @@
 // */
 //
 
-using System;
-using System.Collections.Concurrent;
-using System.Text;
-
 namespace VDF.Core.Utils {
 	public sealed class Logger {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -25,28 +21,13 @@ namespace VDF.Core.Utils {
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static Logger Instance => instance ??= new Logger();
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		public event EventHandler LogItemAdded;
+		public event LogEventHandler LogItemAdded;
+		public delegate void LogEventHandler(string foo);
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-		public void ClearLog() => LogEntries.Clear();
-		public override string? ToString() {
-			var sb = new StringBuilder();
-			foreach (var item in LogEntries) {
-				sb.AppendLine("---------------");
-				sb.AppendLine(item.ToString());
-			}
-			return sb.ToString();
-		}
 		public void Info(string text) {
-			LogEntries.Add(new LogItem { DateTime = DateTime.Now.ToString("HH:mm:ss"), Message = text });
-			LogItemAdded?.Invoke(null, new EventArgs());
+			LogItemAdded?.Invoke($"{DateTime.Now:HH:mm:ss} => {text}");
 		}
-		public ConcurrentBag<LogItem> LogEntries { get; internal set; } = new ConcurrentBag<LogItem>();
 	}
 
-	public sealed class LogItem {
-		public string? DateTime { get; set; }
-		public string? Message { get; set; }
-		public override string? ToString() => DateTime + '\t' + Message;
-	}
 }

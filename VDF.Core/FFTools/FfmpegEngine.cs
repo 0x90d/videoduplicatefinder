@@ -22,9 +22,7 @@ namespace VDF.Core.FFTools {
 		public static readonly string FFmpegPath;
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static bool UseCuda;
-		static FfmpegEngine() {
-			FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
-		}
+		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
 		public static byte[]? GetThumbnail(FfmpegSettings settings) {
 			using var process = new Process {
@@ -75,14 +73,17 @@ namespace VDF.Core.FFTools {
 				});
 				if (data == null || data.Length == 0) {
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
+					Logger.Instance.Info($"ERROR: Failed to retrieve graybytes from: {videoFile.Path}");
 					return;
 				}
 				if (!GrayBytesUtils.VerifyGrayScaleValues(data))
 					tooDarkCounter++;
 				videoFile.grayBytes.Add(position, data);
 			}
-			if (tooDarkCounter == positions.Count)
+			if (tooDarkCounter == positions.Count) {
 				videoFile.Flags.Set(EntryFlags.TooDark);
+				Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
+			}
 
 		}
 	}

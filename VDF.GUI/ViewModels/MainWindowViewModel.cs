@@ -37,7 +37,7 @@ using System.Text.Json;
 namespace VDF.GUI.ViewModels {
 	public class MainWindowViewModel : ReactiveObject {
 		public ScanEngine Scanner { get; } = new ScanEngine();
-		public ObservableCollection<LogItem> LogItems { get; } = new ObservableCollection<LogItem>();
+		public ObservableCollection<string> LogItems { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Blacklists { get; } = new ObservableCollection<string>();
 
@@ -98,6 +98,11 @@ namespace VDF.GUI.ViewModels {
 		public bool IgnoreHardlinks {
 			get => _IgnoreHardlinks;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreHardlinks, value);
+		}
+		int _MaxDegreeOfParallelism = 1;
+		public int MaxDegreeOfParallelism {
+			get => _MaxDegreeOfParallelism;
+			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
 		bool _UseCuda;
 		public bool UseCuda {
@@ -192,7 +197,8 @@ namespace VDF.GUI.ViewModels {
 				_SortOrder = value;
 				this.RaisePropertyChanged(nameof(SortOrder));
 				view?.SortDescriptions.Clear();
-				view?.SortDescriptions.Add(_SortOrder.Value);
+				if (_SortOrder.Value != null)
+					view?.SortDescriptions.Add(_SortOrder.Value);
 				view?.Refresh();
 			}
 		}
@@ -220,7 +226,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown 
-			Instance_LogItemAdded(null, null);
+			Instance_LogItemAdded(string.Empty);
 
 		}
 
@@ -257,8 +263,10 @@ namespace VDF.GUI.ViewModels {
 					new XElement("Thumbnails", Thumbnails),
 					new XElement("IncludeSubDirectories", IncludeSubDirectories),
 					new XElement("IncludeImages", IncludeImages),
+					new XElement("IgnoreHardlinks", IgnoreHardlinks),
 					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders),
 					new XElement("UseCuda", UseCuda),
+					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
 					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails)
 				)
 			);
@@ -273,26 +281,32 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("Exclude"))
 				Blacklists.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Percent"))
-				if (int.TryParse(n.Value, out var percent))
-					Percent = percent;
+				if (int.TryParse(n.Value, out var value))
+					Percent = value;
+			foreach (var n in xDoc.Descendants("MaxDegreeOfParallelism"))
+				if (int.TryParse(n.Value, out var value))
+					MaxDegreeOfParallelism = value;
 			foreach (var n in xDoc.Descendants("Thumbnails"))
-				if (int.TryParse(n.Value, out var thumbnails))
-					Thumbnails = thumbnails;
-			var node = xDoc.Descendants("IncludeSubDirectories").SingleOrDefault();
-			if (node?.Value != null)
-				IncludeSubDirectories = bool.Parse(node.Value);
-			node = xDoc.Descendants("IncludeImages").SingleOrDefault();
-			if (node?.Value != null)
-				IncludeImages = bool.Parse(node.Value);
-			node = xDoc.Descendants("IgnoreReadOnlyFolders").SingleOrDefault();
-			if (node?.Value != null)
-				IgnoreReadOnlyFolders = bool.Parse(node.Value);
-			node = xDoc.Descendants("UseCuda").SingleOrDefault();
-			if (node?.Value != null)
-				UseCuda = bool.Parse(node.Value);
-			node = xDoc.Descendants("GeneratePreviewThumbnails").SingleOrDefault();
-			if (node?.Value != null)
-				GeneratePreviewThumbnails = bool.Parse(node.Value);
+				if (int.TryParse(n.Value, out var value))
+					Thumbnails = value;
+			foreach (var n in xDoc.Descendants("IncludeSubDirectories"))
+				if (bool.TryParse(n.Value, out var value))
+					IncludeSubDirectories = value;
+			foreach (var n in xDoc.Descendants("IncludeImages"))
+				if (bool.TryParse(n.Value, out var value))
+					IncludeImages = value;
+			foreach (var n in xDoc.Descendants("IgnoreReadOnlyFolders"))
+				if (bool.TryParse(n.Value, out var value))
+					IgnoreReadOnlyFolders = value;
+			foreach (var n in xDoc.Descendants("UseCuda"))
+				if (bool.TryParse(n.Value, out var value))
+					UseCuda = value;
+			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
+				if (bool.TryParse(n.Value, out var value))
+					GeneratePreviewThumbnails = value;
+			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
+				if (bool.TryParse(n.Value, out var value))
+					IgnoreHardlinks = value;
 		}
 
 		public async void LoadDatabase() {
@@ -315,15 +329,13 @@ namespace VDF.GUI.ViewModels {
 				ScanProgressMaxValue = e.MaxPosition;
 			});
 
-		void Instance_LogItemAdded(object sender, EventArgs e) =>
+		void Instance_LogItemAdded(string message) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
-				while (!Logger.Instance.LogEntries.IsEmpty) {
-					if (Logger.Instance.LogEntries.TryTake(out var item))
-						LogItems.Add(item);
-				}
+				if (string.IsNullOrEmpty(message)) return;
+				LogItems.Add(message);
 			});
 
-		void Scanner_ScanDone(object sender, EventArgs e) {
+		void Scanner_ScanDone(object sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
 				IsBusy = false;
@@ -340,7 +352,6 @@ namespace VDF.GUI.ViewModels {
 				view.Filter += TextFilter;
 				GetDataGrid.Items = view;
 			});
-		}
 		bool TextFilter(object obj) {
 			if (obj is not DuplicateItemViewModel data) return false;
 			var success = true;
@@ -387,18 +398,18 @@ namespace VDF.GUI.ViewModels {
 			IsBusyText = "Cleaning database...";
 			Scanner.CleanupDatabase();
 		});
-		public ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
 			ExportToJson(new JsonSerializerOptions {
 				IncludeFields = true,
 			});
 		});
-		public ReactiveCommand<Unit, Unit> ExportDataBaseToJsonPrettyCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonPrettyCommand => ReactiveCommand.Create(() => {
 			ExportToJson(new JsonSerializerOptions {
 				IncludeFields = true,
 				WriteIndented = true,
 			});
 		});
-		async void ExportToJson(JsonSerializerOptions options) {
+		async static void ExportToJson(JsonSerializerOptions options) {
 
 			List<FileDialogFilter> filterList = new(1);
 			filterList.Add(new FileDialogFilter {
@@ -496,11 +507,13 @@ namespace VDF.GUI.ViewModels {
 			LogItems.Clear();
 		});
 		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await new SaveFileDialog().ShowAsync(ApplicationHelpers.MainWindow);
+			var result = await new SaveFileDialog {
+				DefaultExtension = ".txt",
+			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			var sb = new StringBuilder();
 			foreach (var l in LogItems)
-				sb.AppendLine(l.ToString());
+				sb.AppendLine(l);
 			try {
 				File.WriteAllText(result, sb.ToString());
 			}
@@ -538,6 +551,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IgnoreHardlinks = IgnoreHardlinks;
 			Scanner.Settings.UseCuda = UseCuda;
 			Scanner.Settings.Percent = Percent;
+			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = Thumbnails;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
@@ -717,10 +731,10 @@ namespace VDF.GUI.ViewModels {
 					try {
 
 						if (createSymbolLinksInstead) {
-							DuplicateItemViewModel? fileToKeep = Duplicates.FirstOrDefault(s =>
+							DuplicateItemViewModel fileToKeep = Duplicates.FirstOrDefault(s =>
 							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
 							s.Checked == false);
-							if (fileToKeep == null) {
+							if (fileToKeep == default(DuplicateItemViewModel)) {
 								throw new Exception($"Cannot create a symbol link for '{dub.ItemInfo.Path}' because all items in this group are selected/checked");
 							}
 							File.CreateSymbolicLink(dub.ItemInfo.Path, fileToKeep.ItemInfo.Path);

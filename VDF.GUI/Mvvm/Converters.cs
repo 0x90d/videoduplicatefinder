@@ -14,14 +14,28 @@
 // */
 //
 
-using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
+using Avalonia.Media;
 
 namespace VDF.GUI.Mvvm {
 	public sealed class NegateBoolConverter : IValueConverter {
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
+	}
+	static class Values {
+		public static readonly SolidColorBrush GreenBrush = new SolidColorBrush();
+		public static readonly SolidColorBrush RedBrush = new SolidColorBrush();
+		static Values() {
+			GreenBrush.Color = Colors.LimeGreen;
+			RedBrush.Color = Colors.PaleVioletRed;
+		}
+	}
+	public sealed class IsBestConverter : IValueConverter {
+		public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+			(bool)value ? Values.GreenBrush : Values.RedBrush;
+
+		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
 	}
 }

@@ -37,6 +37,8 @@ namespace VDF.Core {
 
 		public int ThumbnailCount = 1;
 
+		public int MaxDegreeOfParallelism = 1;
+
 		public bool CompareHorizontallyFlipped = true;
 	}
 }

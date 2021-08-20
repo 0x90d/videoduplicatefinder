@@ -14,7 +14,6 @@
 // */
 //
 
-using System.Threading;
 
 namespace VDF.Core.Utils {
 	/// <summary>
@@ -22,10 +21,10 @@ namespace VDF.Core.Utils {
 	/// http://blogs.msdn.com/b/pfxteam/archive/2013/01/13/cooperatively-pausing-async-methods.aspx 
 	/// </summary>
 	public sealed class PauseTokenSource {
-		int m_paused;
+		int paused;
 		public bool IsPaused {
-			get => m_paused != 0;
-			set => Interlocked.Exchange(ref m_paused, value ? 1 : 0);
+			get => paused != 0;
+			set => Interlocked.Exchange(ref paused, value ? 1 : 0);
 		}
 
 

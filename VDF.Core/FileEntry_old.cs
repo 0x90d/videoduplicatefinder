@@ -14,15 +14,21 @@
 // */
 //
 
-using System.Runtime.InteropServices;
+using ProtoBuf;
 
-namespace VDF.Core.Utils {
-	public static class CoreUtils {
-		public static bool IsWindows;
-		public static string CurrentFolder;
-		static CoreUtils() {
-			IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-			CurrentFolder = Path.GetDirectoryName(Environment.ProcessPath)!;
-		}
+namespace VDF.Core {
+
+
+	[ProtoContract]
+	public class FileEntry_old {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
+		protected FileEntry_old() { }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized.
+		[ProtoMember(1)]
+		public string Path { get; set; }
+		[ProtoMember(4)]
+		public MediaInfo? mediaInfo;
+		[ProtoMember(5)]
+		public EntryFlags Flags;
 	}
 }

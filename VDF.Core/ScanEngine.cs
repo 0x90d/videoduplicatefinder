@@ -14,15 +14,9 @@
 // */
 //
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
@@ -85,6 +79,7 @@ namespace VDF.Core {
 		public async void StartSearch() {
 			Prepare();
 			SearchTimer.Start();
+			ElapsedTimer.Start();
 			Logger.Instance.Info("Building file list...");
 			await BuildFileList();
 			Logger.Instance.Info($"Finished building file list in {SearchTimer.StopGetElapsedAndRestart()}");
@@ -100,6 +95,8 @@ namespace VDF.Core {
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
 			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
+			Logger.Instance.Info("Highlighting best results...");
+			HighlightBestMatches();
 			ScanDone?.Invoke(this, new EventArgs());
 			Logger.Instance.Info("Scan done.");
 			DatabaseUtils.SaveDatabase();
@@ -129,18 +126,29 @@ namespace VDF.Core {
 		}
 
 		Task BuildFileList() => Task.Run(() => {
+						
 			DatabaseUtils.LoadDatabase();
+			int oldFileCount = DatabaseUtils.Database.Count;
+
 			foreach (var path in Settings.IncludeList) {
 				if (!Directory.Exists(path)) continue;
 
 				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					var fEntry = new FileEntry(file);
-					if (!DatabaseUtils.Database.Contains(fEntry))
+					if (!DatabaseUtils.Database.TryGetValue(fEntry, out var dbEntry))
 						DatabaseUtils.Database.Add(fEntry);
+					else if (fEntry.DateCreated != dbEntry.DateCreated || 
+						    fEntry.DateModified != dbEntry.DateModified || 
+							fEntry.FileSize != dbEntry.FileSize) {
+						// -> Modified or different file
+						DatabaseUtils.Database.Remove(dbEntry);
+						DatabaseUtils.Database.Add(fEntry);
+					}
 				}
 			}
 
+			Logger.Instance.Info($"Files in database: {DatabaseUtils.Database.Count:N0} ({DatabaseUtils.Database.Count-oldFileCount:N0} files added)");
 		});
 
 		bool InvalidEntry(FileEntry entry) {
@@ -172,7 +180,7 @@ namespace VDF.Core {
 		void GatherInfos() {
 			try {
 				InitProgress(DatabaseUtils.Database.Count);
-				Parallel.ForEach(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token }, entry => {
+				Parallel.ForEach(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, entry => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					if (InvalidEntry(entry)) return;
@@ -180,12 +188,16 @@ namespace VDF.Core {
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path);
 						if (info == null) {
+							Logger.Instance.Info($"ERROR: Failed to retrieve media info from: {entry.Path}");
 							entry.Flags.Set(EntryFlags.MetadataError);
 							return;
 						}
 
 						entry.mediaInfo = info;
 					}
+					// 08/17/21: This is for people upgrading from an older VDF version
+					if (entry.grayBytes == null)
+						entry.grayBytes = new Dictionary<double, byte[]?>();
 
 					
 					if (entry.IsImage && entry.grayBytes.Count == 0)
@@ -251,10 +263,12 @@ namespace VDF.Core {
 			List<FileEntry> ScanList = new List<FileEntry>(DatabaseUtils.Database);
 			ScanList.RemoveAll(InvalidEntryForDuplicateCheck);
 
+			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
+
 			InitProgress(ScanList.Count);
 
 			try {
-				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token }, i => {
+				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					var entry = ScanList[i];
@@ -321,7 +335,7 @@ namespace VDF.Core {
 			await Task.Run(() => {
 				var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
 				try {
-					Parallel.For(0, dupList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token }, i => {
+					Parallel.For(0, dupList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
 						var entry = dupList[i];
 						List<Image> list;
 						if (entry.IsImage) {
@@ -396,6 +410,7 @@ namespace VDF.Core {
 				var d = GrayBytesUtils.GetGrayScaleValues(b, width);
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
+					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");
 					return;
 				}
 
@@ -408,6 +423,20 @@ namespace VDF.Core {
 			}
 		}
 
+		void HighlightBestMatches() {
+			HashSet<Guid> blackList = new();
+			foreach (DuplicateItem item in Duplicates) {
+				if (blackList.Contains(item.GroupId)) continue;
+				var groupItems = Duplicates.Where(a => a.GroupId == item.GroupId);
+				groupItems.OrderByDescending(d => d.Duration).First().IsBestDuration = true;
+				groupItems.OrderBy(d => d.SizeLong).First().IsBestSize = true;
+				groupItems.OrderByDescending(d => d.Duration).First().IsBestFps = true;
+				groupItems.OrderByDescending(d => d.BitRateKbs).First().IsBestBitRateKbs = true;
+				groupItems.OrderByDescending(d => d.AudioSampleRate).First().IsBestAudioSampleRate = true;
+				groupItems.OrderByDescending(d => d.FrameSizeInt).First().IsBestFrameSize = true;
+				blackList.Add(item.GroupId);
+			}
+		}
 
 		public void Pause() {
 			if (!isScanning || pauseTokenSource.IsPaused) return;
