@@ -147,8 +147,8 @@ namespace VDF.Core.Utils {
 		{
 			int rows = img.Length / img_width;
 			byte[] flip_img = (byte[])img.Clone();
-			for (int r = 0; r < rows; r++)
-				Array.Reverse(flip_img, r*img_width, img_width);
+			for (int i = 0; i < rows; i++)
+				Array.Reverse(flip_img, i*img_width, img_width);
 			return flip_img;
 		}
 

@@ -20,7 +20,6 @@ using System.Text.Json;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
-using System.Runtime.CompilerServices;
 
 namespace VDF.Core {
 	public sealed class ScanEngine {
@@ -226,8 +225,7 @@ namespace VDF.Core {
 			return flippedGrayBytes;
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		bool isDuplicate(FileEntry entry1, Dictionary<double, byte[]?>? grayBytes1, FileEntry entry2, float differenceLimit, out float difference)
+		bool checkIfDuplicate(FileEntry entry1, Dictionary<double, byte[]?>? grayBytes1, FileEntry entry2, float differenceLimit, out float difference)
 		{
 			difference = float.PositiveInfinity;
 			grayBytes1 ??= entry1.grayBytes;
@@ -279,15 +277,15 @@ namespace VDF.Core {
 					for (var n = i + 1; n < ScanList.Count; n++) {
 						FileEntry compItem = ScanList[n];
 						DuplicateFlags flags = DuplicateFlags.None; 
-						bool dupplicate = isDuplicate(entry, null, compItem, differenceLimit, out var difference);
-						if (!dupplicate && Settings.CompareHorizontallyFlipped)
+						bool isDuplicate = checkIfDuplicate(entry, null, compItem, differenceLimit, out var difference);
+						if (!isDuplicate && Settings.CompareHorizontallyFlipped)
 						{
-							dupplicate = isDuplicate(entry, flippedGrayBytes, compItem, differenceLimit, out difference);
-							if (dupplicate)
+							isDuplicate = checkIfDuplicate(entry, flippedGrayBytes, compItem, differenceLimit, out difference);
+							if (isDuplicate)
 								flags |= DuplicateFlags.Flipped; 
 						}
 
-						if (!dupplicate) {
+						if (!isDuplicate) {
 							IncrementProgress(entry.Path);
 							continue;
 						}

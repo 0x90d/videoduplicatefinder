@@ -562,7 +562,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.Percent = Percent;
 			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = Thumbnails;
-			Scanner.Settings.CompareHorizontallyFlipped =CompareHorizontallyFlipped;
+			Scanner.Settings.CompareHorizontallyFlipped = CompareHorizontallyFlipped;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

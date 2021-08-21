@@ -39,6 +39,6 @@ namespace VDF.Core {
 
 		public int MaxDegreeOfParallelism = 1;
 
-		public bool CompareHorizontallyFlipped = true;
+		public bool CompareHorizontallyFlipped = false;
 	}
 }
