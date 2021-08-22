@@ -45,8 +45,7 @@ namespace VDF.Core {
 		DateTime startTime = DateTime.Now;
 		DateTime lastProgressUpdate = DateTime.MinValue;
 		static readonly TimeSpan progressUpdateIntervall = TimeSpan.FromMilliseconds(300);
-		static readonly int grayScaleWidth = 16;	// Default: 16, GrayBytesUtils performance may decrease at other values 
-		static readonly int thumbnailWidth = 100;	// Default: 100, UI display errors may occur at other values 
+
 
 		void InitProgress(int count) {
 			startTime = DateTime.Now;
@@ -200,9 +199,9 @@ namespace VDF.Core {
 
 					
 					if (entry.IsImage && entry.grayBytes.Count == 0)
-						GetGrayBytesFromImage(entry, grayScaleWidth);
+						GetGrayBytesFromImage(entry);
 					else if (!entry.IsImage)
-						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, grayScaleWidth);
+						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList);
 
 					IncrementProgress(entry.Path);
 				});
@@ -214,12 +213,12 @@ namespace VDF.Core {
 		{
 			var flippedGrayBytes = new Dictionary<double, byte[]?>();
 			if (entry.IsImage)
-				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!, grayScaleWidth));
+				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
 			else
 				for (int j = 0; j < positionList.Count; j++)
 				{
 					double idx = entry.GetGrayBytesIndex(positionList[j]);
-					flippedGrayBytes.Add(idx, GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!, grayScaleWidth));
+					flippedGrayBytes.Add(idx, GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
 				}
 
 			return flippedGrayBytes;
@@ -342,9 +341,9 @@ namespace VDF.Core {
 							try {
 								Image bitmapImage = Image.FromFile(entry.Path);
 								float resizeFactor = 1f;
-								if (bitmapImage.Width > thumbnailWidth || bitmapImage.Height > thumbnailWidth) {
-									float widthFactor = bitmapImage.Width / (float)thumbnailWidth;
-									float heightFactor = bitmapImage.Height / (float)thumbnailWidth;
+								if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
+									float widthFactor = bitmapImage.Width / 100f;
+									float heightFactor = bitmapImage.Height / 100f;
 									resizeFactor = Math.Max(widthFactor, heightFactor);
 
 								}
@@ -372,7 +371,6 @@ namespace VDF.Core {
 									File = entry.Path,
 									Position = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]),
 									GrayScale = 0,
-									Width = thumbnailWidth,
 								});
 								if (b == null || b.Length == 0) return;
 								using var byteStream = new MemoryStream(b);
@@ -389,7 +387,7 @@ namespace VDF.Core {
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
-		static void GetGrayBytesFromImage(FileEntry imageFile, int width) {
+		static void GetGrayBytesFromImage(FileEntry imageFile) {
 			try {
 
 				using var byteStream = File.OpenRead(imageFile.Path);
@@ -400,12 +398,12 @@ namespace VDF.Core {
 							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
 						}
 				};
-				var b = new Bitmap(width, width);
+				var b = new Bitmap(16, 16);
 				using (var g = Graphics.FromImage(b)) {
-					g.DrawImage(bitmapImage, 0, 0, width, width);
+					g.DrawImage(bitmapImage, 0, 0, 16, 16);
 				}
 
-				var d = GrayBytesUtils.GetGrayScaleValues(b, width);
+				var d = GrayBytesUtils.GetGrayScaleValues(b);
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
 					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");

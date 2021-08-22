@@ -27,7 +27,7 @@ namespace VDF.Core.FFTools {
 		public static byte[]? GetThumbnail(FfmpegSettings settings) {
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
-					Arguments = $" -hide_banner -loglevel panic -y {(UseCuda ? "-hwaccel cuda" : string.Empty)} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? $"-s {settings.Width}x{settings.Width}" : $"-vf scale={settings.Width}:-1")} \"-\"",
+					Arguments = $" -hide_banner -loglevel panic -y {(UseCuda ? "-hwaccel cuda" : string.Empty)} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} \"-\"",
 					FileName = FFmpegPath,
 					CreateNoWindow = true,
 					RedirectStandardInput = false,
@@ -57,7 +57,7 @@ namespace VDF.Core.FFTools {
 				return null;
 			}
 		}
-		public static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, int width) {
+		public static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions) {
 			int tooDarkCounter = 0;
 
 			for (int i = 0; i < positions.Count; i++) {
@@ -68,8 +68,7 @@ namespace VDF.Core.FFTools {
 				var data = GetThumbnail(new FfmpegSettings {
 					File = videoFile.Path,
 					Position = TimeSpan.FromSeconds(position),
-					GrayScale = 1,
-					Width = width,
+					GrayScale = 1
 				});
 				if (data == null || data.Length == 0) {
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
@@ -92,6 +91,5 @@ namespace VDF.Core.FFTools {
 		public byte GrayScale;
 		public string File;
 		public TimeSpan Position;
-		public int Width;
 	}
 }

@@ -25,7 +25,6 @@
     mc:Ignorable="d">
     <mvvm:FluentWindow.Resources>
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
-        <mvvm:IsFlaggedConverter x:Key="IsFlaggedConverter" />
     </mvvm:FluentWindow.Resources>
     <mvvm:FluentWindow.DataContext>
         <vm:MainWindowViewModel />
@@ -512,34 +511,10 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Width="1*">
-                                        <DataGridTemplateColumn.Header>
-                                            <StackPanel>
-                                                <TextBlock Text="Similarity" />
-                                            </StackPanel>
-                                        </DataGridTemplateColumn.Header>
-                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="10,0,0,0">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                    </Grid.RowDefinitions>
-                                                    <TextBlock
-                                                        Grid.Row="1"
-                                                        Margin="2"
-                                                        Text="{Binding ItemInfo.Similarity, StringFormat=\{0:0.##\}}" />
-                                                    <TextBlock
-                                                        Grid.Row="2"
-                                                        Margin="2"
-                                                        IsVisible="{Binding ItemInfo.Flags, Converter={StaticResource IsFlaggedConverter}}"
-                                                        Text="{Binding ItemInfo.Flags}"
-                                                        TextWrapping="Wrap" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn >
+                                    <DataGridTextColumn
+                                        Width="1*"
+                                        Binding="{Binding ItemInfo.Similarity, StringFormat=\{0:0.##\}}"
+                                        Header="Similarity" />
                                 </DataGrid.Columns>
                                 <DataGrid.ContextMenu>
                                     <ContextMenu>

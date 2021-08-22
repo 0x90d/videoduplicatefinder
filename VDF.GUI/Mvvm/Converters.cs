@@ -17,18 +17,12 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
-using VDF.Core;
 
 namespace VDF.GUI.Mvvm {
 	public sealed class NegateBoolConverter : IValueConverter {
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
-	}
-	public sealed class IsFlaggedConverter : IValueConverter {
-		public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => (DuplicateFlags)value != DuplicateFlags.None;
-
-		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
 	}
 	static class Values {
 		public static readonly SolidColorBrush GreenBrush = new SolidColorBrush();
