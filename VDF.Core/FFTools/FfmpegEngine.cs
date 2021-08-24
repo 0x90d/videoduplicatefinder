@@ -39,7 +39,7 @@ namespace VDF.Core.FFTools {
 				}
 			};
 			string errOut = "";
-			byte[] bytes = null;
+			byte[]? bytes = null;
 			try {
 				process.EnableRaisingEvents = true;
  				process.Start();
