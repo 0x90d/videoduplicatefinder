@@ -188,7 +188,8 @@ namespace VDF.Core {
 						if (info == null) {
 							Logger.Instance.Info($"ERROR: Failed to retrieve media info from: {entry.Path}");
 							entry.Flags.Set(EntryFlags.MetadataError);
-							entry.Flags.Set(EntryFlags.ThumbnailError); // Because of return, so GetGrayBytesFromVideo is not called ...
+							//entry.Flags.Set(EntryFlags.ThumbnailError); // Because of return, so GetGrayBytesFromVideo is not called ...
+							// ^ not consistent when removing ThumbnailError by disabling cuda
 							return;
 						}
 
