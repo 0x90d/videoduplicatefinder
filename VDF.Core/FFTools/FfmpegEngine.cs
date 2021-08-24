@@ -24,40 +24,65 @@ namespace VDF.Core.FFTools {
 		public static bool UseCuda;
 		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
-		public static byte[]? GetThumbnail(FfmpegSettings settings) {
+		public static byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
+			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")} -y {(UseCuda ? "-hwaccel cuda" : string.Empty)} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} \"-\"";
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
-					Arguments = $" -hide_banner -loglevel panic -y {(UseCuda ? "-hwaccel cuda" : string.Empty)} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} \"-\"",
+					Arguments = ffmpegArguments,
 					FileName = FFmpegPath,
 					CreateNoWindow = true,
 					RedirectStandardInput = false,
 					RedirectStandardOutput = true,
 					WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
-					RedirectStandardError = true,
+					RedirectStandardError = extendedLogging,
 					WindowStyle = ProcessWindowStyle.Hidden
 				}
 			};
+			string errOut = "";
+			byte[] bytes = null;
 			try {
 				process.EnableRaisingEvents = true;
-				process.Start();
+ 				process.Start();
+				if (extendedLogging) {
+					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => { if (e.Data?.Length > 0) errOut += "\n" + e.Data; });
+					process.BeginErrorReadLine();
+				}
 				using var ms = new MemoryStream();
 				process.StandardOutput.BaseStream.CopyTo(ms);
+
 				if (!process.WaitForExit(TimeoutDuration)) {
-					Logger.Instance.Info($"FFmpeg timed out on file '{settings.File}'");
+					errOut += $"\nFFmpeg timed out";
 					throw new Exception();
 				}
-				return ms.ToArray();
+				else if (extendedLogging)
+					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+			
+				bytes = ms.ToArray();
+				if (bytes?.Length == 0)
+					bytes = null;	// Makes subsequent checks easier
+				else if (settings.GrayScale == 1 && bytes?.Length != 16*16) {
+					bytes = null;
+					errOut += "\ngraybytes length != 256";
+				}
 			}
-			catch (Exception) {
+			catch (Exception e) {
+				errOut += '\n' + e.Message;
 				try {
 					if (process.HasExited == false)
 						process.Kill();
 				}
 				catch { }
-				return null;
+				bytes = null;
 			}
+			if (bytes == null || errOut.Length > 0) {
+				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve " : "WARNING: Problems while retrieving")} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
+				if (extendedLogging)
+					message += $":\n{FFmpegPath}{ffmpegArguments}";
+				Logger.Instance.Info($"{message}{errOut}");
+			}
+			return bytes;
 		}
-		public static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions) {
+		public static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, bool extendedLogging) {
 			int tooDarkCounter = 0;
 
 			for (int i = 0; i < positions.Count; i++) {
@@ -68,11 +93,10 @@ namespace VDF.Core.FFTools {
 				var data = GetThumbnail(new FfmpegSettings {
 					File = videoFile.Path,
 					Position = TimeSpan.FromSeconds(position),
-					GrayScale = 1
-				});
-				if (data == null || data.Length == 0) {
+					GrayScale = 1,
+				}, extendedLogging);
+				if (data == null) {
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
-					Logger.Instance.Info($"ERROR: Failed to retrieve graybytes from: {videoFile.Path}");
 					return;
 				}
 				if (!GrayBytesUtils.VerifyGrayScaleValues(data))
@@ -83,7 +107,6 @@ namespace VDF.Core.FFTools {
 				videoFile.Flags.Set(EntryFlags.TooDark);
 				Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
 			}
-
 		}
 	}
 
