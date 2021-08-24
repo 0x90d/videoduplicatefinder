@@ -112,5 +112,40 @@ namespace VDF.Core.Utils {
 			return (float)diff / img1.Length / 256;
 		}
 
+		private static byte[] flipp_shuf256 = {
+				15,14,13,12,11,10, 9, 8,   7, 6, 5, 4, 3, 2, 1, 0, 
+				31,30,29,28,27,26,25,24,  23,22,21,20,19,18,17,16 
+		};
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte[] FlipGrayScale(byte[] img)
+		{
+			Debug.Assert((img.Length % 16) == 0, "Invalid img.Length");
+			byte[] flip_img;
+			if (Avx2.IsSupported){
+				flip_img = new byte[img.Length];
+				Span<Vector256<byte>> vImg = MemoryMarshal.Cast<byte, Vector256<byte>>(img);
+				Span<Vector256<byte>> vImg_flipped = MemoryMarshal.Cast<byte, Vector256<byte>>(flip_img);
+				Span<Vector256<byte>> vFlipp_shuf = MemoryMarshal.Cast<byte, Vector256<byte>>(flipp_shuf256);
+
+				for (int i = 0; i < vImg.Length; i++)
+					vImg_flipped[i] = Avx2.Shuffle(vImg[i], vFlipp_shuf[0]);
+			}
+			else if (Sse2.IsSupported) {
+				flip_img = new byte[img.Length];
+				Span<Vector128<byte>> vImg = MemoryMarshal.Cast<byte, Vector128<byte>>(img);
+				Span<Vector128<byte>> vImg_flipped = MemoryMarshal.Cast<byte, Vector128<byte>>(flip_img);
+				Span<Vector128<byte>> vFlipp_shuf = MemoryMarshal.Cast<byte, Vector128<byte>>(flipp_shuf256);
+
+				for (int i = 0; i < vImg.Length; i++)
+					vImg_flipped[i] = Avx2.Shuffle(vImg[i], vFlipp_shuf[0]);
+			}
+			else {
+				flip_img = (byte[])img.Clone();
+				for (int i = 0; i < 16; i++)
+					Array.Reverse(flip_img, i * 16, 16);
+			}
+			return flip_img;
+		}
 	}
 }

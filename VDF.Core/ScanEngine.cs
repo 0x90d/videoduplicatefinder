@@ -223,11 +223,55 @@ namespace VDF.Core {
 			catch (OperationCanceledException) { }
 		}
 
+		Dictionary<double, byte[]?> createFlippedGrayBytes(FileEntry entry) {
+			var flippedGrayBytes = new Dictionary<double, byte[]?>();
+			if (entry.IsImage)
+				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
+			else {
+				for (int j = 0; j < positionList.Count; j++) {
+					double idx = entry.GetGrayBytesIndex(positionList[j]);
+					flippedGrayBytes.Add(idx, GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
+				}
+			}
+			return flippedGrayBytes;
+		}
+
+		bool checkIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
+			difference = 1.0f;
+			if (entry.IsImage != compItem.IsImage) 
+				return false; 
+
+			grayBytes ??= entry.grayBytes;
+			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
+			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
+			float differenceLimit  = 1.0f - Settings.Percent / 100f;
+
+			if (entry.IsImage) {
+				difference = ignoreBlackPixels || ignoreWhitePixels ?
+								GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(grayBytes[0]!, compItem.grayBytes[0]!, ignoreBlackPixels, ignoreWhitePixels) :
+								GrayBytesUtils.PercentageDifference(grayBytes[0]!, compItem.grayBytes[0]!);
+				return difference <= differenceLimit;
+			}
+		
+			float diff, diffSum = 0;
+			for (int j = 0; j < positionList.Count; j++) {
+				diff = ignoreBlackPixels || ignoreWhitePixels ?
+							GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
+								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, 
+								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
+							GrayBytesUtils.PercentageDifference(
+								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, 
+								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
+				if (diff > differenceLimit)
+					return false;
+				diffSum += diff;
+			}
+			difference = diffSum / positionList.Count; 
+			return true;
+		}
+
 		void ScanForDuplicates() {
-
-			float percentageDifference = 1.0f - Settings.Percent / 100f;
 			Dictionary<string, DuplicateItem>? duplicateDict = new();
-
 
 			//Exclude existing database entries which not met current scan settings
 			List<FileEntry> ScanList = new(DatabaseUtils.Database);
@@ -237,48 +281,36 @@ namespace VDF.Core {
 
 			InitProgress(ScanList.Count);
 
-			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
-			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
-
 			try {
 				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					FileEntry? entry = ScanList[i];
-					for (int n = i + 1; n < ScanList.Count; n++) {
+
+					Dictionary<double, byte[]?>? flippedGrayBytes = null;
+					if (Settings.CompareHorizontallyFlipped)
+						flippedGrayBytes = createFlippedGrayBytes(entry);
+
+					for (var n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
-						if (entry.IsImage && !compItem.IsImage) continue;
-						int duplicateCounter = 0;
-						float[] percent;
-						if (entry.IsImage) {
-							percent = new float[1];
-							percent[0] = ignoreBlackPixels || ignoreWhitePixels ?
-											GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entry.grayBytes[0]!, compItem.grayBytes[0]!, ignoreBlackPixels, ignoreWhitePixels) :
-											GrayBytesUtils.PercentageDifference(entry.grayBytes[0]!, compItem.grayBytes[0]!);
-							if (percent[0] <= percentageDifference)
-								duplicateCounter++;
-						}
-						else {
-							percent = new float[positionList.Count];
-							for (int j = 0; j < positionList.Count; j++) {
-								percent[j] = ignoreBlackPixels || ignoreWhitePixels ?
-												GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
-												GrayBytesUtils.PercentageDifference(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-								if (percent[j] <= percentageDifference) {
-									duplicateCounter++;
+						DuplicateFlags flags = DuplicateFlags.None; 
+						bool isDuplicate = checkIfDuplicate(entry, null, compItem, out var difference);
+						if (Settings.CompareHorizontallyFlipped && (entry.IsImage == compItem.IsImage)) {
+							if (checkIfDuplicate(entry, flippedGrayBytes, compItem, out var flippedDifference)) {
+								if (!isDuplicate || flippedDifference < difference) {
+									flags |= DuplicateFlags.Flipped; 
+									isDuplicate = true;
+									difference = flippedDifference;
 								}
-								else { break; }
 							}
 						}
 
-
-						if (entry.IsImage && duplicateCounter == 0 || !entry.IsImage && duplicateCounter != positionList.Count) {
+						if (!isDuplicate) {
 							IncrementProgress(entry.Path);
 							continue;
 						}
 
 						lock (duplicateDict) {
-							float percSame = percent.Average();
 							bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
 							bool foundComp = duplicateDict.TryGetValue(compItem.Path, out DuplicateItem? existingComp);
 
@@ -294,16 +326,16 @@ namespace VDF.Core {
 							}
 							else if (foundBase) {
 								duplicateDict.TryAdd(compItem.Path,
-									new DuplicateItem(compItem, percSame, existingBase!.GroupId));
+									new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
 							}
 							else if (foundComp) {
 								duplicateDict.TryAdd(entry.Path,
-									new DuplicateItem(entry, percSame, existingComp!.GroupId));
+									new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
 							}
 							else {
 								var groupId = Guid.NewGuid();
-								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, percSame, groupId));
-								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, percSame, groupId));
+								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
+								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
 							}
 						}
 						IncrementProgress(entry.Path);
