@@ -229,7 +229,7 @@ namespace VDF.Core {
 			difference = float.PositiveInfinity;
 			grayBytes1 ??= entry1.grayBytes;
 
-			if (entry1.IsImage && !entry2.IsImage) 
+			if (entry1.IsImage != entry2.IsImage) 
 				return false; 
 
 			if (entry1.IsImage)
@@ -277,7 +277,7 @@ namespace VDF.Core {
 						FileEntry compItem = ScanList[n];
 						DuplicateFlags flags = DuplicateFlags.None; 
 						bool isDuplicate = checkIfDuplicate(entry, null, compItem, differenceLimit, out var difference);
-						if (!isDuplicate && Settings.CompareHorizontallyFlipped)
+						if (!isDuplicate && Settings.CompareHorizontallyFlipped && (entry.IsImage == compItem.IsImage))
 						{
 							isDuplicate = checkIfDuplicate(entry, flippedGrayBytes, compItem, differenceLimit, out difference);
 							if (isDuplicate)
