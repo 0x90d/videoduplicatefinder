@@ -40,7 +40,7 @@ namespace VDF.Core.FFTools {
 		/// <param name="data">JSON output</param>
 		/// <param name="file">The file the JSON output format is about</param>
 		/// <returns><see cref="MediaInfo"/> containing information from FFprobe output</returns>
-		public static MediaInfo Read(byte[] data, string file) {
+		public static MediaInfo? Read(byte[] data, string file) {
 
 			var json = new Utf8JsonReader(data, isFinalBlock: false, state: default);
 
@@ -126,6 +126,9 @@ namespace VDF.Core.FFTools {
 					throw new ArgumentException();
 				}
 			}
+
+			if (streams.Count == 0 && format.Count == 0)
+				return null;	// -> Empty JSON object, ffprobe failed
 
 			var info = new MediaInfo {
 				Streams = new MediaInfo.StreamInfo[streams.Count]

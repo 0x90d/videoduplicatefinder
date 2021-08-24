@@ -46,7 +46,10 @@ namespace VDF.Core.FFTools {
 					Logger.Instance.Info($"FFmpeg timed out on file '{settings.File}'");
 					throw new Exception();
 				}
-				return ms.ToArray();
+				if (process.ExitCode == 0)
+					return ms.ToArray();
+				else
+					return null;	// t.b.d: + Extended Logging
 			}
 			catch (Exception) {
 				try {

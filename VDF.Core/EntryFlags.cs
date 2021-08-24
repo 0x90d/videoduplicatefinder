@@ -26,9 +26,9 @@ namespace VDF.Core {
 		MetadataError = 8,
 		TooDark = 16,
 
-		AllErrors = ThumbnailError | MetadataError | TooDark
+		AllErrors = ThumbnailError | MetadataError | TooDark,
+		RemovableFlags = ManuallyExcluded| ThumbnailError | MetadataError | TooDark
 	}
-
 	public static class EntryFlagExtensions {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool Any(this EntryFlags f, EntryFlags checkFlags) => (f & checkFlags) > 0;

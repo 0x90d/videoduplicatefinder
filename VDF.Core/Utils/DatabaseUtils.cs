@@ -19,8 +19,9 @@ using System.Text.Json;
 using ProtoBuf;
 
 namespace VDF.Core.Utils {
-	static class DatabaseUtils {
+	public static class DatabaseUtils {
 		public static HashSet<FileEntry> Database = new();
+		static EntryFlags ErrorFlagsToReset = 0;
 		public static bool LoadDatabase() {
 			var databaseFile = new FileInfo(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "ScannedFiles.db"));
 			if (databaseFile.Exists && databaseFile.Length == 0) //invalid data
@@ -60,6 +61,7 @@ namespace VDF.Core.Utils {
 
 			st.Stop();
 			Logger.Instance.Info($"Previously scanned files imported. {Database.Count:N0} files in {st.Elapsed}");
+			ResetDatabaseFlags(ErrorFlagsToReset, false, true);
 			return true;
 		}
 		public static void CleanupDatabase() {
@@ -74,8 +76,31 @@ namespace VDF.Core.Utils {
 				$"Database cleanup has finished in: {st.Elapsed}, {oldCount - Database.Count} entries have been removed");
 			SaveDatabase();
 		}
+		public static void ResetDatabaseFlags(EntryFlags flags, bool delayed = false, bool save = true) {
+			flags &= EntryFlags.RemovableFlags;
+			if (flags != 0) {
+				if (delayed) {
+					ErrorFlagsToReset |= flags;
+					return;
+				}
+				var st = Stopwatch.StartNew();
+				flags |= ErrorFlagsToReset;
+				ErrorFlagsToReset = 0;
+				foreach (var item in Database)
+					item.Flags.Set(flags, false);
+				st.Stop();
+				Logger.Instance.Info(
+					$"Resetting Flags in Database has finished in: {st.Elapsed}, removed all {flags}");
+				if (save)
+					SaveDatabase();
+			}
+		}
+		public static void UnloadDatabase() {
+			ResetDatabaseFlags(ErrorFlagsToReset, false, true);
+		}
 		public static void SaveDatabase() {
 			Logger.Instance.Info($"Save scanned files to disk ({Database.Count:N0} files).");
+			ResetDatabaseFlags(ErrorFlagsToReset, false, false);
 			using var stream = new FileStream(FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
 				"ScannedFiles.db"), FileMode.Create);
 			Serializer.Serialize(stream, Database);

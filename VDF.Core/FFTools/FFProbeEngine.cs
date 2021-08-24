@@ -24,6 +24,7 @@ namespace VDF.Core.FFTools {
 		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
 		public static  MediaInfo? GetMediaInfo(string file) {
+			MediaInfo? mediaInfo = null;
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					Arguments = $" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams  \"{file}\"",
@@ -45,7 +46,17 @@ namespace VDF.Core.FFTools {
 					Logger.Instance.Info($"FFprobe timed out on file '{file}'");
 					throw new Exception();
 				}
-				return FFProbeJsonReader.Read(ms.ToArray(), file);
+				if (process.ExitCode == 0) {
+					mediaInfo = FFProbeJsonReader.Read(ms.ToArray(), file);
+					// t.b.d: Extended Logging: 
+					//	   if (mediaInfo == null) -> ERROR Invalid Json object; return null
+					//     if (mediaInfo.Duration == 0) -> WARNING Duration == 0
+				}
+				else {
+					mediaInfo = null;
+					// t.b.d: Extended Logging: 
+					//		errLog += $"\nExitCode: {process.ExitCode}"
+				}
 			}
 			catch (Exception) {
 				try {
@@ -53,8 +64,10 @@ namespace VDF.Core.FFTools {
 						process.Kill();
 				}
 				catch { }
-				return null;
+				mediaInfo = null;
 			}
+
+			return mediaInfo;
 		}
 	}
 }

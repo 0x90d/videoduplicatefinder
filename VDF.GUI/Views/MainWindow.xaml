@@ -136,6 +136,26 @@
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <MenuItem Command="{Binding ResetBlacklistFlagsCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Show All Manually Excluded Files Again On Next Search" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ResetDatabaseErrorFlagsCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Process Bad Files Again On Next Search" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
                                 <MenuItem Command="{Binding ExportDataBaseToJsonCommand}">
                                     <MenuItem.Header>
                                         <TextBlock

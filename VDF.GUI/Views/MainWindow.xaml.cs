@@ -18,6 +18,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using VDF.GUI.Mvvm;
+using VDF.Core.Utils;
 
 namespace VDF.GUI.Views {
 	public class MainWindow : FluentWindow {
@@ -46,6 +47,7 @@ namespace VDF.GUI.Views {
 
 		void MainWindow_Exit(object sender, ControlledApplicationLifetimeExitEventArgs e) {
 			ApplicationHelpers.MainWindowDataContext.SaveSettings();
+			DatabaseUtils.UnloadDatabase(); // Needed because of delayed actions
 		}
 
 		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) {

@@ -107,9 +107,12 @@ namespace VDF.GUI.ViewModels {
 		bool _UseCuda;
 		public bool UseCuda {
 			get => _UseCuda;
-			set => this.RaiseAndSetIfChanged(ref _UseCuda, value);
+			set {
+				this.RaiseAndSetIfChanged(ref _UseCuda, value);
+				if (!value)
+					DatabaseUtils.ResetDatabaseFlags(EntryFlags.ThumbnailError, true);
+			}
 		}
-
 		bool _IncludeSubDirectories = true;
 		public bool IncludeSubDirectories {
 			get => _IncludeSubDirectories;
@@ -169,7 +172,10 @@ namespace VDF.GUI.ViewModels {
 		int _Thumbnails = 1;
 		public int Thumbnails {
 			get => _Thumbnails;
-			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
+			set {
+				this.RaiseAndSetIfChanged(ref _Thumbnails, value);
+				DatabaseUtils.ResetDatabaseFlags(EntryFlags.TooDark, true);
+			}
 		}
 #if DEBUG
 		public static bool IsDebug => true;
@@ -240,9 +246,9 @@ namespace VDF.GUI.ViewModels {
 
 		void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
 
-		async void Scanner_DatabaseCleaned(object sender, EventArgs e) {
+		async void Scanner_DatabaseCleaned(object sender, DatabaseCommandEventArgs e) {
 			IsBusy = false;
-			await MessageBoxService.Show("Database cleaned!");
+			await MessageBoxService.Show(e.Message);
 		}
 
 		public void SaveSettings() {
@@ -288,7 +294,7 @@ namespace VDF.GUI.ViewModels {
 					MaxDegreeOfParallelism = value;
 			foreach (var n in xDoc.Descendants("Thumbnails"))
 				if (int.TryParse(n.Value, out var value))
-					Thumbnails = value;
+					_Thumbnails = value;
 			foreach (var n in xDoc.Descendants("IncludeSubDirectories"))
 				if (bool.TryParse(n.Value, out var value))
 					IncludeSubDirectories = value;
@@ -300,7 +306,7 @@ namespace VDF.GUI.ViewModels {
 					IgnoreReadOnlyFolders = value;
 			foreach (var n in xDoc.Descendants("UseCuda"))
 				if (bool.TryParse(n.Value, out var value))
-					UseCuda = value;
+					_UseCuda = value;
 			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
 				if (bool.TryParse(n.Value, out var value))
 					GeneratePreviewThumbnails = value;
@@ -397,6 +403,16 @@ namespace VDF.GUI.ViewModels {
 			IsBusy = true;
 			IsBusyText = "Cleaning database...";
 			Scanner.CleanupDatabase();
+		});
+		public ReactiveCommand<Unit, Unit> ResetDatabaseErrorFlagsCommand => ReactiveCommand.Create(() => {
+			IsBusy = true;
+			IsBusyText = "Resetting error flags...";
+			Scanner.ResetDatabaseFlags(EntryFlags.AllErrors);
+		});
+		public ReactiveCommand<Unit, Unit> ResetBlacklistFlagsCommand => ReactiveCommand.Create(() => {
+			IsBusy = true;
+			IsBusyText = "Resetting ManuallyExcluded flags...";
+			Scanner.ResetDatabaseFlags(EntryFlags.ManuallyExcluded);
 		});
 		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
 			ExportToJson(new JsonSerializerOptions {

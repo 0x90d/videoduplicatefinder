@@ -30,7 +30,7 @@ namespace VDF.Core {
 		public event EventHandler? ScanDone;
 		public event EventHandler? ThumbnailsRetrieved;
 		public event EventHandler? FilesEnumerated;
-		public event EventHandler? DatabaseCleaned;
+		public event EventHandler<DatabaseCommandEventArgs>? DatabaseCleaned;
 
 
 		PauseTokenSource pauseTokenSource = new();
@@ -161,7 +161,7 @@ namespace VDF.Core {
 			if (Settings.BlackList.Any(s => entry.Folder.StartsWith(s)))
 				return true;
 
-			if (entry.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.TooDark))
+			if (entry.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.AllErrors))
 				return true;
 			if (!File.Exists(entry.Path))
 				return true;
@@ -188,6 +188,7 @@ namespace VDF.Core {
 						if (info == null) {
 							Logger.Instance.Info($"ERROR: Failed to retrieve media info from: {entry.Path}");
 							entry.Flags.Set(EntryFlags.MetadataError);
+							entry.Flags.Set(EntryFlags.ThumbnailError); // Because of return, so GetGrayBytesFromVideo is not called ...
 							return;
 						}
 
@@ -294,7 +295,11 @@ namespace VDF.Core {
 		}
 		public void CleanupDatabase() {
 			DatabaseUtils.CleanupDatabase();
-			DatabaseCleaned?.Invoke(this, new EventArgs());
+			DatabaseCleaned?.Invoke(this, new DatabaseCommandEventArgs("Database cleaned!"));
+		}
+		public void ResetDatabaseFlags(EntryFlags flags) {
+			DatabaseUtils.ResetDatabaseFlags(flags);
+			DatabaseCleaned?.Invoke(this, new DatabaseCommandEventArgs("Flags removed from Database!"));
 		}
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public async void RetrieveThumbnails() {
@@ -427,6 +432,14 @@ namespace VDF.Core {
 			if (isScanning)
 				cancelationTokenSource.Cancel();
 		}
+	}
+	public class DatabaseCommandEventArgs : EventArgs
+	{
+		public DatabaseCommandEventArgs(string message)
+		{
+			Message = message;
+		}
+		public string Message { get; set; }
 	}
 }
 
