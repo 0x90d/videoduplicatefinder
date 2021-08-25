@@ -478,7 +478,7 @@ namespace VDF.GUI.ViewModels {
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
 			string newName = await InputBoxService.Show("Enter new name", fi.Name, title:"Rename File");
 			if (string.IsNullOrEmpty(newName)) return;
-			newName = fi.DirectoryName + Path.DirectorySeparatorChar + newName;
+			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
 			fi.MoveTo(newName);
 			currentItem.ChangePath(newName);
 		});
