@@ -23,7 +23,7 @@ namespace VDF.Core.FFTools {
 		const int TimeoutDuration = 15_000; //15 seconds
 		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
-		public static  MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
+		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
 			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")} -print_format json -sexagesimal -show_format -show_streams  \"{file}\"";
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -38,18 +38,21 @@ namespace VDF.Core.FFTools {
 				}
 			};
 			MediaInfo? mediaInfo = null;
-			string errOut = "";
+			string errOut = string.Empty;
 			try {
 				process.EnableRaisingEvents = true;
 				process.Start();
 				if (extendedLogging) {
-					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => { if (e.Data?.Length > 0) errOut += "\n" + e.Data; });
+					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
+						if (e.Data?.Length > 0)
+							errOut += Environment.NewLine + e.Data;
+					});
 					process.BeginErrorReadLine();
 				}
 				using var ms = new MemoryStream();
 				process.StandardOutput.BaseStream.CopyTo(ms);
-				if (!process.WaitForExit(TimeoutDuration)) { 
-					errOut += "\nFFprobe timed out";
+				if (!process.WaitForExit(TimeoutDuration)) {
+					errOut += $"{Environment.NewLine}FFprobe timed out";
 					throw new Exception();
 				}
 				else if (extendedLogging)
@@ -57,7 +60,7 @@ namespace VDF.Core.FFTools {
 				mediaInfo = FFProbeJsonReader.Read(ms.ToArray(), file);
 			}
 			catch (Exception e) {
-				errOut += '\n' + e.Message;
+				errOut += $"{Environment.NewLine}{e.Message}";
 				try {
 					if (process.HasExited == false)
 						process.Kill();
@@ -68,7 +71,7 @@ namespace VDF.Core.FFTools {
 			if (mediaInfo == null || errOut.Length > 0) {
 				string message = $"{((mediaInfo == null) ? "ERROR: Failed to retrieve " : "WARNING: Problems while retrieving")} media info from: {file}";
 				if (extendedLogging)
-					message += $":\n{FFprobePath}{ffprobeArguments}";
+					message += $":{Environment.NewLine}{FFprobePath}{ffprobeArguments}";
 				Logger.Instance.Info($"{message}{errOut}");
 			}
 			return mediaInfo;

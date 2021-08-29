@@ -38,35 +38,38 @@ namespace VDF.Core.FFTools {
 					WindowStyle = ProcessWindowStyle.Hidden
 				}
 			};
-			string errOut = "";
+			string errOut = string.Empty;
 			byte[]? bytes = null;
 			try {
 				process.EnableRaisingEvents = true;
- 				process.Start();
+				process.Start();
 				if (extendedLogging) {
-					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => { if (e.Data?.Length > 0) errOut += "\n" + e.Data; });
+					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
+						if (e.Data?.Length > 0)
+							errOut += Environment.NewLine + e.Data;
+					});
 					process.BeginErrorReadLine();
 				}
 				using var ms = new MemoryStream();
 				process.StandardOutput.BaseStream.CopyTo(ms);
 
 				if (!process.WaitForExit(TimeoutDuration)) {
-					errOut += $"\nFFmpeg timed out";
+					errOut += $"{Environment.NewLine}FFmpeg timed out";
 					throw new Exception();
 				}
 				else if (extendedLogging)
 					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
-			
+
 				bytes = ms.ToArray();
 				if (bytes?.Length == 0)
-					bytes = null;	// Makes subsequent checks easier
-				else if (settings.GrayScale == 1 && bytes?.Length != 16*16) {
+					bytes = null;   // Makes subsequent checks easier
+				else if (settings.GrayScale == 1 && bytes?.Length != 16 * 16) {
 					bytes = null;
-					errOut += "\ngraybytes length != 256";
+					errOut += $"{Environment.NewLine}graybytes length != 256";
 				}
 			}
 			catch (Exception e) {
-				errOut += '\n' + e.Message;
+				errOut += $"{Environment.NewLine}{e.Message}";
 				try {
 					if (process.HasExited == false)
 						process.Kill();
@@ -77,7 +80,7 @@ namespace VDF.Core.FFTools {
 			if (bytes == null || errOut.Length > 0) {
 				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve " : "WARNING: Problems while retrieving")} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
 				if (extendedLogging)
-					message += $":\n{FFmpegPath}{ffmpegArguments}";
+					message += $":{Environment.NewLine}{FFmpegPath}{ffmpegArguments}";
 				Logger.Instance.Info($"{message}{errOut}");
 			}
 			return bytes;
