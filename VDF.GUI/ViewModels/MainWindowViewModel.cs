@@ -476,14 +476,11 @@ namespace VDF.GUI.ViewModels {
 			if (GetDataGrid.SelectedItem is not DuplicateItemViewModel currentItem) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
-			//TODO: Create an input dialog
-			var result = await new SaveFileDialog {
-				Title = "Enter new name",
-				Directory = fi.Directory.FullName
-			}.ShowAsync(ApplicationHelpers.MainWindow);
-			if (string.IsNullOrEmpty(result)) return;
-			fi.MoveTo(result);
-			currentItem.ChangePath(result);
+			string newName = await InputBoxService.Show("Enter new name", fi.Name, title:"Rename File");
+			if (string.IsNullOrEmpty(newName)) return;
+			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
+			fi.MoveTo(newName);
+			currentItem.ChangePath(newName);
 		});
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
