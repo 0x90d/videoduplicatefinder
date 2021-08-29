@@ -28,6 +28,9 @@ namespace VDF.Core.Utils {
 		public void Info(string text) {
 			LogItemAdded?.Invoke($"{DateTime.Now:HH:mm:ss} => {text}");
 		}
+		public void InsertSeparator(char separatorChar) {
+			LogItemAdded?.Invoke('\n' + new String(separatorChar, 150) + '\n');
+		}
 	}
 
 }

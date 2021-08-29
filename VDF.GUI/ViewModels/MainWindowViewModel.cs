@@ -125,6 +125,12 @@ namespace VDF.GUI.ViewModels {
 			get => _GeneratePreviewThumbnails;
 			set => this.RaiseAndSetIfChanged(ref _GeneratePreviewThumbnails, value);
 		}
+		bool _ExtendedFFToolsLogging = false;
+		public bool ExtendedFFToolsLogging {
+			get => _ExtendedFFToolsLogging;
+			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
+		}
+		
 		string _ScanProgressText;
 		public string ScanProgressText {
 			get => _ScanProgressText;
@@ -267,7 +273,8 @@ namespace VDF.GUI.ViewModels {
 					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders),
 					new XElement("UseCuda", UseCuda),
 					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
-					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails)
+					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails),
+					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging)
 				)
 			);
 			xDoc.Save(path);
@@ -307,6 +314,9 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
 				if (bool.TryParse(n.Value, out var value))
 					IgnoreHardlinks = value;
+			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
+				if (bool.TryParse(n.Value, out var value))
+					ExtendedFFToolsLogging = value;	
 		}
 
 		public async void LoadDatabase() {
@@ -550,6 +560,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.Percent = Percent;
 			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = Thumbnails;
+			Scanner.Settings.ExtendedFFToolsLogging = ExtendedFFToolsLogging;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

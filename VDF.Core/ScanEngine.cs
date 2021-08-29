@@ -78,6 +78,7 @@ namespace VDF.Core {
 			Prepare();
 			SearchTimer.Start();
 			ElapsedTimer.Start();
+			Logger.Instance.InsertSeparator('-');
 			Logger.Instance.Info("Building file list...");
 			await BuildFileList();
 			Logger.Instance.Info($"Finished building file list in {SearchTimer.StopGetElapsedAndRestart()}");
@@ -184,9 +185,8 @@ namespace VDF.Core {
 					if (InvalidEntry(entry)) return;
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
-						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path);
+						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
 						if (info == null) {
-							Logger.Instance.Info($"ERROR: Failed to retrieve media info from: {entry.Path}");
 							entry.Flags.Set(EntryFlags.MetadataError);
 							return;
 						}
@@ -201,7 +201,7 @@ namespace VDF.Core {
 					if (entry.IsImage && entry.grayBytes.Count == 0)
 						GetGrayBytesFromImage(entry);
 					else if (!entry.IsImage)
-						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList);
+						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.ExtendedFFToolsLogging);
 
 					IncrementProgress(entry.Path);
 				});
@@ -340,7 +340,7 @@ namespace VDF.Core {
 									File = entry.Path,
 									Position = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]),
 									GrayScale = 0,
-								});
+								}, Settings.ExtendedFFToolsLogging);
 								if (b == null || b.Length == 0) return;
 								using var byteStream = new MemoryStream(b);
 								var bitmapImage = Image.FromStream(byteStream);

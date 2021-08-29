@@ -23,38 +23,55 @@ namespace VDF.Core.FFTools {
 		const int TimeoutDuration = 15_000; //15 seconds
 		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
-		public static  MediaInfo? GetMediaInfo(string file) {
+		public static  MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
+			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")} -print_format json -sexagesimal -show_format -show_streams  \"{file}\"";
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
-					Arguments = $" -hide_banner -loglevel error -print_format json -sexagesimal -show_format -show_streams  \"{file}\"",
+					Arguments = ffprobeArguments,
 					FileName = FFprobePath,
 					CreateNoWindow = true,
 					RedirectStandardInput = false,
 					WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
 					RedirectStandardOutput = true,
-					RedirectStandardError = false,
+					RedirectStandardError = extendedLogging,
 					WindowStyle = ProcessWindowStyle.Hidden
 				}
 			};
+			MediaInfo? mediaInfo = null;
+			string errOut = "";
 			try {
 				process.EnableRaisingEvents = true;
 				process.Start();
+				if (extendedLogging) {
+					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => { if (e.Data?.Length > 0) errOut += "\n" + e.Data; });
+					process.BeginErrorReadLine();
+				}
 				using var ms = new MemoryStream();
 				process.StandardOutput.BaseStream.CopyTo(ms);
 				if (!process.WaitForExit(TimeoutDuration)) { 
-					Logger.Instance.Info($"FFprobe timed out on file '{file}'");
+					errOut += "\nFFprobe timed out";
 					throw new Exception();
 				}
-				return FFProbeJsonReader.Read(ms.ToArray(), file);
+				else if (extendedLogging)
+					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+				mediaInfo = FFProbeJsonReader.Read(ms.ToArray(), file);
 			}
-			catch (Exception) {
+			catch (Exception e) {
+				errOut += '\n' + e.Message;
 				try {
 					if (process.HasExited == false)
 						process.Kill();
 				}
 				catch { }
-				return null;
+				mediaInfo = null;
 			}
+			if (mediaInfo == null || errOut.Length > 0) {
+				string message = $"{((mediaInfo == null) ? "ERROR: Failed to retrieve " : "WARNING: Problems while retrieving")} media info from: {file}";
+				if (extendedLogging)
+					message += $":\n{FFprobePath}{ffprobeArguments}";
+				Logger.Instance.Info($"{message}{errOut}");
+			}
+			return mediaInfo;
 		}
 	}
 }

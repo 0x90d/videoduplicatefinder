@@ -693,6 +693,11 @@
                                     Content="Exclude hardlinks"
                                     IsChecked="{Binding IgnoreHardlinks}"
                                     IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Extended FFTools Logging"
+                                    IsChecked="{Binding ExtendedFFToolsLogging}"
+                                    IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
                                 <TextBlock
@@ -862,7 +867,7 @@
                                 </MenuItem.Header>
                             </MenuItem>
                         </Menu>
-                        <ListBox MinHeight="70"  Grid.Row="1" Items="{Binding LogItems}" Margin="5"/>
+                        <ListBox MinHeight="70"  Grid.Row="1" Items="{Binding LogItems}" Margin="5" ScrollViewer.HorizontalScrollBarVisibility="Visible"/>
                     </Grid>
                 </TabItem>
             </TabControl>
