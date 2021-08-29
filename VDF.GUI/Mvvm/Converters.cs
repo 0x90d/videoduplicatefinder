@@ -38,4 +38,23 @@ namespace VDF.GUI.Mvvm {
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
 	}
+
+	static class ExtraShortDateTimeFormater {
+		static string FormatString;
+		public static string DateToString(DateTime value) => String.Format(FormatString, value);
+		static ExtraShortDateTimeFormater() {
+			// "g" would be something like "4/10/2008 6:30 AM"
+			// If not using AM/PM notation the format would be: "d  hh:mm"
+			// And to keep it as short as possible, the year is shortened to two digits but the date keeps the culture specific order:
+			FormatString = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+			FormatString = FormatString.Replace("yyyy", "yy") + " hh:mm";
+			FormatString = $"{{0:{FormatString}}}";
+		}
+	}
+	public sealed class ExtraShortDateTimeConverter : IValueConverter {
+		
+		public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => ExtraShortDateTimeFormater.DateToString((DateTime)value);
+
+		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+	}
 }

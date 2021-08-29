@@ -25,6 +25,7 @@
     mc:Ignorable="d">
     <mvvm:FluentWindow.Resources>
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
+        <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
     </mvvm:FluentWindow.Resources>
     <mvvm:FluentWindow.DataContext>
         <vm:MainWindowViewModel />
@@ -439,7 +440,7 @@
                                                     <TextBlock
                                                         Grid.Row="3"
                                                         Margin="2"
-                                                        Text="{Binding ItemInfo.DateCreated, StringFormat=\{0:g\}}"
+                                                        Text="{Binding ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}"
                                                         TextWrapping="Wrap" />
                                                 </Grid>
                                             </DataTemplate>
