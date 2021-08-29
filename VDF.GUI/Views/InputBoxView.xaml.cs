@@ -14,10 +14,7 @@
 // */
 //
 
-using System;
 using System.Reactive;
-using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using ReactiveUI;
@@ -25,7 +22,7 @@ using ReactiveUI;
 namespace VDF.GUI.Views {
 
 	public static class InputBoxService {
-		public static async Task<String> Show(string message, string defaultInput="", string waterMark="", 
+		public static async Task<String> Show(string message, string defaultInput = "", string waterMark = "",
 			InputBoxButtons buttons = InputBoxButtons.Ok | InputBoxButtons.Cancel, string title = null) {
 			var dlg = new InputBoxView(message, defaultInput, waterMark, buttons, title) {
 				Icon = ApplicationHelpers.MainWindow.Icon
@@ -41,7 +38,7 @@ namespace VDF.GUI.Views {
 			//Designer need this
 			InitializeComponent();
 		}
-		public InputBoxView(string message, string defaultInput="", string waterMark="", 
+		public InputBoxView(string message, string defaultInput = "", string waterMark = "",
 			InputBoxButtons buttons = InputBoxButtons.Ok | InputBoxButtons.Cancel, string title = null) {
 			DataContext = new InputBoxVM();
 			((InputBoxVM)DataContext).host = this;
@@ -57,10 +54,16 @@ namespace VDF.GUI.Views {
 
 			InitializeComponent();
 
+
+			var textBox = this.FindControl<TextBox>("TextBoxInput");
+			if (textBox != null) {
+				textBox.AttachedToVisualTree += (s, e) => {
+					textBox.Focus();
+					textBox.SelectAll();
+				};
+			}
 		}
-		private void InitializeComponent() {
-			AvaloniaXamlLoader.Load(this);
-		}
+		private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}
 
 	[Flags]

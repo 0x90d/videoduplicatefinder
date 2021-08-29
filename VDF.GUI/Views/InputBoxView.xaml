@@ -20,7 +20,8 @@
             Margin="10,20,10,0"
             Text="{Binding Message}"
             TextWrapping="Wrap" />
-        <TextBox 
+        <TextBox
+            x:Name="TextBoxInput"
             Grid.Row="1"
             Margin="10,10,10,20"
             Text = "{Binding Input}"
