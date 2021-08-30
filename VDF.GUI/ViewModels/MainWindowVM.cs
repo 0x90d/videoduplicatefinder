@@ -812,6 +812,7 @@ namespace VDF.GUI.ViewModels {
 								throw new Exception($"Cannot create a symbol link for '{dub.ItemInfo.Path}' because all items in this group are selected/checked");
 							}
 							File.CreateSymbolicLink(dub.ItemInfo.Path, fileToKeep.ItemInfo.Path);
+							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
 						}
 						else if (CoreUtils.IsWindows) {
 							//Try moving files to recycle bin
