@@ -17,6 +17,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
 
 namespace VDF.GUI.Views {

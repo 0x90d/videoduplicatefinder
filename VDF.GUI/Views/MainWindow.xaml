@@ -28,7 +28,7 @@
         <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
     </mvvm:FluentWindow.Resources>
     <mvvm:FluentWindow.DataContext>
-        <vm:MainWindowViewModel />
+        <vm:MainWindowVM />
     </mvvm:FluentWindow.DataContext>
     <Grid>
         <TextBlock
