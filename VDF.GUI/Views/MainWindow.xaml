@@ -162,13 +162,37 @@
                                         Text="Latest Release" />
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem IsVisible="{Binding IsDebug}"  Command="{Binding OpenOwnFolderCommand}">
+                            <MenuItem IsVisible="{Binding IsDebug}" Command="{Binding OpenOwnFolderCommand}">
                                 <MenuItem.Header>
                                     <TextBlock
                                         Margin="5,0,0,0"
                                         VerticalAlignment="Center"
                                         Text="Open Folder" />
                                 </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem IsVisible="{Binding !!Duplicates.Count}">
+                                <MenuItem.Header>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Export Scan Results" />
+                                </MenuItem.Header>
+                                <MenuItem Command="{Binding ExportScanResultsCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="To Json" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding ExportScanResultsPrettyCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="To Json (pretty)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </MenuItem>
                         </Menu>
                         <Grid Grid.Row="1">

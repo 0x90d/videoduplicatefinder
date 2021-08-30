@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Drawing;
+using System.Text.Json.Serialization;
 using VDF.Core.Utils;
 
 namespace VDF.Core.ViewModels {
@@ -110,6 +111,7 @@ namespace VDF.Core.ViewModels {
 		public DateTime DateCreated { get; }
 
 		public bool IsImage { get; }
+		[JsonIgnore]
 		public Action? ThumbnailsUpdated;
 		public void SetThumbnails(List<Image>? th) {
 			if (th == null) return;

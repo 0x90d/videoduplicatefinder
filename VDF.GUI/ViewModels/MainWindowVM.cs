@@ -130,7 +130,7 @@ namespace VDF.GUI.ViewModels {
 			get => _ExtendedFFToolsLogging;
 			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
 		}
-		
+
 		string _ScanProgressText;
 		public string ScanProgressText {
 			get => _ScanProgressText;
@@ -316,7 +316,7 @@ namespace VDF.GUI.ViewModels {
 					IgnoreHardlinks = value;
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
 				if (bool.TryParse(n.Value, out var value))
-					ExtendedFFToolsLogging = value;	
+					ExtendedFFToolsLogging = value;
 		}
 
 		public async void LoadDatabase() {
@@ -409,17 +409,17 @@ namespace VDF.GUI.ViewModels {
 			Scanner.CleanupDatabase();
 		});
 		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
-			ExportToJson(new JsonSerializerOptions {
+			ExportDbToJson(new JsonSerializerOptions {
 				IncludeFields = true,
 			});
 		});
 		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonPrettyCommand => ReactiveCommand.Create(() => {
-			ExportToJson(new JsonSerializerOptions {
+			ExportDbToJson(new JsonSerializerOptions {
 				IncludeFields = true,
 				WriteIndented = true,
 			});
 		});
-		async static void ExportToJson(JsonSerializerOptions options) {
+		async static void ExportDbToJson(JsonSerializerOptions options) {
 
 			List<FileDialogFilter> filterList = new(1);
 			filterList.Add(new FileDialogFilter {
@@ -436,6 +436,43 @@ namespace VDF.GUI.ViewModels {
 			if (!ScanEngine.ExportDataBaseToJson(result, options))
 				await MessageBoxService.Show("Exporting database has failed, please see log");
 		}
+		public ReactiveCommand<Unit, Unit> ExportScanResultsCommand => ReactiveCommand.Create(() => {
+			ExportScanResultsToJson(new JsonSerializerOptions {
+				IncludeFields = true,
+			});
+		});
+		public ReactiveCommand<Unit, Unit> ExportScanResultsPrettyCommand => ReactiveCommand.Create(() => {
+			ExportScanResultsToJson(new JsonSerializerOptions {
+				IncludeFields = true,
+				WriteIndented = true,
+			});
+		});
+		async void ExportScanResultsToJson(JsonSerializerOptions options) {
+
+			List<FileDialogFilter> filterList = new(1);
+			filterList.Add(new FileDialogFilter {
+				Name = "Json Files",
+				Extensions = new List<string>() { "json" }
+			});
+
+			string result = await new SaveFileDialog {
+				DefaultExtension = ".json",
+				Filters = filterList
+			}.ShowAsync(ApplicationHelpers.MainWindow);
+			if (string.IsNullOrEmpty(result)) return;
+
+
+			try {
+				List<DuplicateItem> list = Duplicates.Select(x => x.ItemInfo).OrderBy(x => x.GroupId).ToList();
+				using var stream = File.OpenWrite(result);
+				await JsonSerializer.SerializeAsync(stream, list, options);
+				stream.Close();
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Exporting scan results has failed because of {ex}");
+			}
+		}
+
 		public static ReactiveCommand<DuplicateItemVM, Unit> OpenItemCommand => ReactiveCommand.Create<DuplicateItemVM>(currentItem => {
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo {
@@ -486,7 +523,7 @@ namespace VDF.GUI.ViewModels {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
-			string newName = await InputBoxService.Show("Enter new name", fi.Name, title:"Rename File");
+			string newName = await InputBoxService.Show("Enter new name", fi.Name, title: "Rename File");
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
 			fi.MoveTo(newName);
