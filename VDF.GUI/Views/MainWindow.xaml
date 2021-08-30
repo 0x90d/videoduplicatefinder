@@ -25,6 +25,7 @@
     mc:Ignorable="d">
     <mvvm:FluentWindow.Resources>
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
+        <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
     </mvvm:FluentWindow.Resources>
     <mvvm:FluentWindow.DataContext>
         <vm:MainWindowViewModel />
@@ -399,12 +400,14 @@
                                                 <TextBlock Text="Duration / type" />
                                                 <TextBlock Text="Resolution" />
                                                 <TextBlock Text="Size" />
+                                                <TextBlock Text="Creation Date" />
                                             </StackPanel>
                                         </DataGridTemplateColumn.Header>
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Grid Margin="10,0,0,0">
                                                     <Grid.RowDefinitions>
+                                                        <RowDefinition />
                                                         <RowDefinition />
                                                         <RowDefinition />
                                                         <RowDefinition />
@@ -434,6 +437,11 @@
                                                         Text="{Binding ItemInfo.Size}"
                                                         Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Grid.Row="3"
+                                                        Margin="2"
+                                                        Text="{Binding ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}"
+                                                        TextWrapping="Wrap" />
                                                 </Grid>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -444,12 +452,14 @@
                                                 <TextBlock Text="Format" />
                                                 <TextBlock Text="Fps" />
                                                 <TextBlock Text="Bit Rate" />
+                                                <TextBlock Text=" "/>
                                             </StackPanel>
                                         </DataGridTemplateColumn.Header>
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Grid IsVisible="{Binding !ItemInfo.IsImage}">
                                                     <Grid.RowDefinitions>
+                                                        <RowDefinition />
                                                         <RowDefinition />
                                                         <RowDefinition />
                                                         <RowDefinition />
@@ -481,12 +491,14 @@
                                                 <TextBlock Text="Audio Format" />
                                                 <TextBlock Text="Audio Channel" />
                                                 <TextBlock Text="Audio Sample Rate" />
+                                                <TextBlock Text=" "/>
                                             </StackPanel>
                                         </DataGridTemplateColumn.Header>
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Grid IsVisible="{Binding !ItemInfo.IsImage}">
                                                     <Grid.RowDefinitions>
+                                                        <RowDefinition />
                                                         <RowDefinition />
                                                         <RowDefinition />
                                                         <RowDefinition />
