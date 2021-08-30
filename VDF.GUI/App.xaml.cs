@@ -32,7 +32,7 @@ namespace VDF.GUI
             {
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(),
+                    DataContext = new MainWindowVM(),
                 };
             }
 

@@ -30,7 +30,7 @@ namespace VDF.GUI.Utils {
 		/// <param name="pOverwriteDest"></param>
 		/// <param name="pMove"></param>
 		/// <param name="errors"></param>
-		public static void CopyFile(IEnumerable<DuplicateItemViewModel> pSource, string pDest, bool pOverwriteDest, bool pMove, out int errors) {
+		public static void CopyFile(IEnumerable<DuplicateItemVM> pSource, string pDest, bool pOverwriteDest, bool pMove, out int errors) {
 			string destDirectory = Path.GetDirectoryName(pDest) ?? string.Empty;
 			Directory.CreateDirectory(destDirectory);
 			errors = 0;

@@ -14,18 +14,14 @@
 // */
 //
 
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using VDF.GUI.Views;
+namespace VDF.GUI.Data {
 
-namespace VDF.GUI {
-	static class ApplicationHelpers {
-		public static IClassicDesktopStyleApplicationLifetime CurrentApplicationLifetime =>
-			(IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
-		public static MainWindow MainWindow =>
-			(MainWindow)((IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime).MainWindow;
-		public static ViewModels.MainWindowVM MainWindowDataContext =>
-			(ViewModels.MainWindowVM)MainWindow.DataContext;
-
+	[Flags]
+	public enum MessageBoxButtons {
+		None = 0,
+		Ok = 1,
+		Cancel = 2,
+		Yes = 4,
+		No = 8
 	}
 }

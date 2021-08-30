@@ -35,7 +35,7 @@ using System.ComponentModel;
 using System.Text.Json;
 
 namespace VDF.GUI.ViewModels {
-	public class MainWindowViewModel : ReactiveObject {
+	public class MainWindowVM : ReactiveObject {
 		public ScanEngine Scanner { get; } = new ScanEngine();
 		public ObservableCollection<string> LogItems { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
@@ -43,29 +43,29 @@ namespace VDF.GUI.ViewModels {
 
 
 		[CanBeNull] DataGridCollectionView view;
-		ObservableCollection<DuplicateItemViewModel> Duplicates { get; } = new ObservableCollection<DuplicateItemViewModel>();
+		ObservableCollection<DuplicateItemVM> Duplicates { get; } = new ObservableCollection<DuplicateItemVM>();
 		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; } = {
 			new KeyValuePair<string, DataGridSortDescription>("None", null),
 			new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
 			new KeyValuePair<string, DataGridSortDescription>("Size Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
 			new KeyValuePair<string, DataGridSortDescription>("Resolution Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Ascending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Ascending)),
 			new KeyValuePair<string, DataGridSortDescription>("Resolution Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Descending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Descending)),
 			new KeyValuePair<string, DataGridSortDescription>("Duration Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Ascending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Ascending)),
 			new KeyValuePair<string, DataGridSortDescription>("Duration Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Descending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Descending)),
 			new KeyValuePair<string, DataGridSortDescription>("Date Created Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Ascending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Ascending)),
 			new KeyValuePair<string, DataGridSortDescription>("Date Created Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
 			new KeyValuePair<string, DataGridSortDescription>("Similarity Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
 			new KeyValuePair<string, DataGridSortDescription>("Similarity Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
 		};
 		public KeyValuePair<string, FileTypeFilter>[] TypeFilters { get; } = {
 			new KeyValuePair<string, FileTypeFilter>("All",  FileTypeFilter.All),
@@ -219,7 +219,7 @@ namespace VDF.GUI.ViewModels {
 				view?.Refresh();
 			}
 		}
-		public MainWindowViewModel() {
+		public MainWindowVM() {
 			var dir = new DirectoryInfo(Utils.ImageUtils.ThumbnailDirectory);
 			if (!dir.Exists)
 				dir.Create();
@@ -351,19 +351,19 @@ namespace VDF.GUI.ViewModels {
 				IsBusy = false;
 
 				foreach (var item in Scanner.Duplicates) {
-					Duplicates.Add(new DuplicateItemViewModel(item));
+					Duplicates.Add(new DuplicateItemVM(item));
 				}
 
 				if (GeneratePreviewThumbnails)
 					Scanner.RetrieveThumbnails();
 
 				view = new DataGridCollectionView(Duplicates);
-				view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemViewModel.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
+				view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
 				view.Filter += TextFilter;
 				GetDataGrid.Items = view;
 			});
 		bool TextFilter(object obj) {
-			if (obj is not DuplicateItemViewModel data) return false;
+			if (obj is not DuplicateItemVM data) return false;
 			var success = true;
 			if (!string.IsNullOrEmpty(FilterByPath)) {
 				success = data.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase);
@@ -436,7 +436,7 @@ namespace VDF.GUI.ViewModels {
 			if (!ScanEngine.ExportDataBaseToJson(result, options))
 				await MessageBoxService.Show("Exporting database has failed, please see log");
 		}
-		public static ReactiveCommand<DuplicateItemViewModel, Unit> OpenItemCommand => ReactiveCommand.Create<DuplicateItemViewModel>(currentItem => {
+		public static ReactiveCommand<DuplicateItemVM, Unit> OpenItemCommand => ReactiveCommand.Create<DuplicateItemVM>(currentItem => {
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo {
 					FileName = currentItem.ItemInfo.Path,
@@ -452,7 +452,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 		public static ReactiveCommand<Unit, Unit> OpenSelectedItemInFolderCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.SelectedItem is not DuplicateItemViewModel currentItem) return;
+			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
 					UseShellExecute = true
@@ -467,7 +467,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 		public static ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.SelectedItem is not DuplicateItemViewModel currentItem) return;
+			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
@@ -483,7 +483,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 		public static ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
-			if (GetDataGrid.SelectedItem is not DuplicateItemViewModel currentItem) return;
+			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
 			string newName = await InputBoxService.Show("Enter new name", fi.Name, title:"Rename File");
@@ -598,10 +598,10 @@ namespace VDF.GUI.ViewModels {
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
 
-				IEnumerable<DuplicateItemViewModel> l = Duplicates;
+				IEnumerable<DuplicateItemVM> l = Duplicates;
 				try {
 					var interpreter = new Interpreter().SetVariable("currentDuplicate", first).
-						ParseAsDelegate<Func<DuplicateItemViewModel, bool>>(currentExpression + " && !arg.ItemInfo.Path.Equals(currentDuplicate.ItemInfo.Path)");
+						ParseAsDelegate<Func<DuplicateItemVM, bool>>(currentExpression + " && !arg.ItemInfo.Path.Equals(currentDuplicate.ItemInfo.Path)");
 					l = l.Where(interpreter);
 				}
 				catch (ParseException e) {
@@ -609,7 +609,7 @@ namespace VDF.GUI.ViewModels {
 					return;
 				}
 
-				var dupMods = l as DuplicateItemViewModel[] ?? l.ToArray();
+				var dupMods = l as DuplicateItemVM[] ?? l.ToArray();
 				if (!dupMods.Any()) continue;
 				foreach (var dup in dupMods)
 					dup.Checked = true;
@@ -624,7 +624,7 @@ namespace VDF.GUI.ViewModels {
 
 				var l = Duplicates.Where(d => d.EqualsFull(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 
-				var dupMods = l as DuplicateItemViewModel[] ?? l.ToArray();
+				var dupMods = l as DuplicateItemVM[] ?? l.ToArray();
 				if (!dupMods.Any()) continue;
 				foreach (var dup in dupMods)
 					dup.Checked = true;
@@ -639,7 +639,7 @@ namespace VDF.GUI.ViewModels {
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
 				var l = Duplicates.Where(d => d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
-				var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
+				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
 				dupMods = dupMods.OrderBy(s => s.ItemInfo.SizeLong).ToList();
@@ -657,12 +657,12 @@ namespace VDF.GUI.ViewModels {
 
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
-				IEnumerable<DuplicateItemViewModel> l = Duplicates.Where(d => d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
-				var dupMods = l as List<DuplicateItemViewModel> ?? l.ToList();
+				IEnumerable<DuplicateItemVM> l = Duplicates.Where(d => d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Insert(0, first);
 
-				DuplicateItemViewModel keep = dupMods[0];
+				DuplicateItemVM keep = dupMods[0];
 				//Duration first
 				if (!keep.ItemInfo.IsImage)
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.Duration).First();
@@ -739,10 +739,10 @@ namespace VDF.GUI.ViewModels {
 					try {
 
 						if (createSymbolLinksInstead) {
-							DuplicateItemViewModel fileToKeep = Duplicates.FirstOrDefault(s =>
+							DuplicateItemVM fileToKeep = Duplicates.FirstOrDefault(s =>
 							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
 							s.Checked == false);
-							if (fileToKeep == default(DuplicateItemViewModel)) {
+							if (fileToKeep == default(DuplicateItemVM)) {
 								throw new Exception($"Cannot create a symbol link for '{dub.ItemInfo.Path}' because all items in this group are selected/checked");
 							}
 							File.CreateSymbolicLink(dub.ItemInfo.Path, fileToKeep.ItemInfo.Path);

@@ -41,7 +41,7 @@ namespace VDF.GUI.Views {
 
 				var properties = typeof(DuplicateItem).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 				foreach (var p in properties) {
-					sb.AppendLine($"arg.{nameof(DuplicateItemViewModel.ItemInfo)}.{p.Name} ({p.PropertyType.Name})");
+					sb.AppendLine($"arg.{nameof(DuplicateItemVM.ItemInfo)}.{p.Name} ({p.PropertyType.Name})");
 				}
 				sb.AppendLine();
 				sb.AppendLine();

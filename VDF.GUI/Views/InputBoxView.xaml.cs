@@ -14,16 +14,16 @@
 // */
 //
 
-using System.Reactive;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using ReactiveUI;
+using VDF.GUI.Data;
+using VDF.GUI.ViewModels;
 
 namespace VDF.GUI.Views {
 
 	public static class InputBoxService {
 		public static async Task<String> Show(string message, string defaultInput = "", string waterMark = "",
-			InputBoxButtons buttons = InputBoxButtons.Ok | InputBoxButtons.Cancel, string title = null) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null) {
 			var dlg = new InputBoxView(message, defaultInput, waterMark, buttons, title) {
 				Icon = ApplicationHelpers.MainWindow.Icon
 			};
@@ -34,12 +34,11 @@ namespace VDF.GUI.Views {
 
 	public class InputBoxView : Window {
 
-		public InputBoxView() {
-			//Designer need this
-			InitializeComponent();
-		}
+		//Designer need this
+		public InputBoxView() => InitializeComponent();
+
 		public InputBoxView(string message, string defaultInput = "", string waterMark = "",
-			InputBoxButtons buttons = InputBoxButtons.Ok | InputBoxButtons.Cancel, string title = null) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null) {
 			DataContext = new InputBoxVM();
 			((InputBoxVM)DataContext).host = this;
 			((InputBoxVM)DataContext).Message = message;
@@ -47,10 +46,10 @@ namespace VDF.GUI.Views {
 			((InputBoxVM)DataContext).WaterMark = waterMark;
 			if (!string.IsNullOrEmpty(title))
 				((InputBoxVM)DataContext).Title = title;
-			((InputBoxVM)DataContext).HasCancelButton = (buttons & InputBoxButtons.Cancel) != 0;
-			((InputBoxVM)DataContext).HasNoButton = (buttons & InputBoxButtons.No) != 0;
-			((InputBoxVM)DataContext).HasOKButton = (buttons & InputBoxButtons.Ok) != 0;
-			((InputBoxVM)DataContext).HasYesButton = (buttons & InputBoxButtons.Yes) != 0;
+			((InputBoxVM)DataContext).HasCancelButton = (buttons & MessageBoxButtons.Cancel) != 0;
+			((InputBoxVM)DataContext).HasNoButton = (buttons & MessageBoxButtons.No) != 0;
+			((InputBoxVM)DataContext).HasOKButton = (buttons & MessageBoxButtons.Ok) != 0;
+			((InputBoxVM)DataContext).HasYesButton = (buttons & MessageBoxButtons.Yes) != 0;
 
 			InitializeComponent();
 
@@ -66,54 +65,4 @@ namespace VDF.GUI.Views {
 		private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}
 
-	[Flags]
-	public enum InputBoxButtons {
-		None = 0,
-		Ok = 1,
-		Cancel = 2,
-		Yes = 4,
-		No = 8
-	}
-
-	public sealed class InputBoxVM : ReactiveObject {
-
-		public InputBoxView host;
-
-		bool _HasOKButton;
-		public bool HasOKButton {
-			get => _HasOKButton;
-			set => this.RaiseAndSetIfChanged(ref _HasOKButton, value);
-		}
-		bool _HasYesButton;
-		public bool HasYesButton {
-			get => _HasYesButton;
-			set => this.RaiseAndSetIfChanged(ref _HasYesButton, value);
-		}
-		bool _HasNoButton;
-		public bool HasNoButton {
-			get => _HasNoButton;
-			set => this.RaiseAndSetIfChanged(ref _HasNoButton, value);
-		}
-		bool _HasCancelButton;
-		public bool HasCancelButton {
-			get => _HasCancelButton;
-			set => this.RaiseAndSetIfChanged(ref _HasCancelButton, value);
-		}
-		public string Message { get; set; }
-		public string Input { get; set; }
-		public string WaterMark { get; set; }
-		public string Title { get; set; } = "Video Duplicate Finder";
-		public ReactiveCommand<Unit, Unit> OKCommand => ReactiveCommand.Create(() => {
-			host.Close(Input);
-		});
-		public ReactiveCommand<Unit, Unit> YesCommand => ReactiveCommand.Create(() => {
-			host.Close(Input);
-		});
-		public ReactiveCommand<Unit, Unit> NoCommand => ReactiveCommand.Create(() => {
-			host.Close(null);
-		});
-		public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
-			host.Close(null);
-		});
-	}
 }
