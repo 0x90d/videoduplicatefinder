@@ -177,6 +177,30 @@ namespace VDF.GUI.ViewModels {
 			get => _Thumbnails;
 			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
 		}
+		int _TotalDuplicates;
+		public int TotalDuplicates {
+			get => _TotalDuplicates;
+			set => this.RaiseAndSetIfChanged(ref _TotalDuplicates, value);
+		}
+		int _TotalDuplicateGroups;
+		public int TotalDuplicateGroups {
+			get => _TotalDuplicateGroups;
+			set => this.RaiseAndSetIfChanged(ref _TotalDuplicateGroups, value);
+		}
+		string _TotalDuplicatesSize;
+		public string TotalDuplicatesSize {
+			get => _TotalDuplicatesSize;
+			set => this.RaiseAndSetIfChanged(ref _TotalDuplicatesSize, value);
+		}
+		long _TotalSizeRemovedInternal;
+		long TotalSizeRemovedInternal {
+			get => _TotalSizeRemovedInternal;
+			set {
+				_TotalSizeRemovedInternal = value;
+				this.RaisePropertyChanged(nameof(TotalSizeRemoved));
+			}
+		}
+		public string TotalSizeRemoved => TotalSizeRemovedInternal.BytesToString();
 #if DEBUG
 		public static bool IsDebug => true;
 #else
@@ -361,6 +385,11 @@ namespace VDF.GUI.ViewModels {
 				view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
 				view.Filter += TextFilter;
 				GetDataGrid.Items = view;
+
+				TotalDuplicates = Duplicates.Count;
+				TotalDuplicatesSize = Duplicates.Sum(x => x.ItemInfo.SizeLong).BytesToString();
+				TotalSizeRemovedInternal = 0;
+				TotalDuplicateGroups = Duplicates.GroupBy(x => x.ItemInfo.GroupId).Count();
 			});
 		bool TextFilter(object obj) {
 			if (obj is not DuplicateItemVM data) return false;
@@ -797,9 +826,12 @@ namespace VDF.GUI.ViewModels {
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
 								throw new Exception($"SHFileOperation returned: {result:X}");
+							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
 						}
-						else
+						else {
 							File.Delete(dub.ItemInfo.Path);
+							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
+						}
 					}
 					catch (Exception ex) {
 						Logger.Instance.Info(

@@ -19,7 +19,7 @@ using System.Diagnostics;
 using System.Globalization;
 
 namespace VDF.Core.Utils {
-	static class Extensions {
+	public static class Extensions {
 		public static TimeSpan StopGetElapsedAndRestart(this Stopwatch stopwatch) {
 			stopwatch.Stop();
 			var elapsed = stopwatch.Elapsed;

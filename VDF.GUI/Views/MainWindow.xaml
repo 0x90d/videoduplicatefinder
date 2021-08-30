@@ -44,12 +44,7 @@
                             FontSize="12"
                             Text="Scanner" />
                     </TabItem.Header>
-                    <Grid Background="#3A3A3A">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                    <Grid Background="#3A3A3A" RowDefinitions="Auto, *, Auto, Auto">
                         <Menu
                             Grid.Row="0"
                             MinHeight="30"
@@ -661,8 +656,32 @@
                                 </DataGrid.ContextMenu>
                             </DataGrid>
                         </Grid>
-
-                        <Grid Grid.Row="2" Background="#222222">
+                        <Grid Grid.Row="2" Background="#222222" IsVisible="{Binding !!Duplicates.Count}">
+                            <StackPanel MinHeight="20" Orientation="Horizontal">
+                                <TextBlock Text="{Binding Duplicates.Count, Mode=OneWay, StringFormat=Duplicates In List: \{0\}}" />
+                                <Separator
+                                    Width="1"
+                                    Margin="5"
+                                    Background="DarkGray" />
+                                <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Total Duplicates: \{0\}}" />
+                                <Separator
+                                    Width="1"
+                                    Margin="5"
+                                    Background="DarkGray" />
+                                <TextBlock Text="{Binding TotalDuplicateGroups, Mode=OneWay, StringFormat=Total Duplicate Groups: \{0\}}" />
+                                <Separator
+                                    Width="1"
+                                    Margin="5"
+                                    Background="DarkGray" />
+                                <TextBlock Text="{Binding TotalDuplicatesSize, Mode=OneWay, StringFormat=Total Size: \{0\}}" />
+                                <Separator
+                                    Width="1"
+                                    Margin="5"
+                                    Background="DarkGray" />
+                                <TextBlock Text="{Binding TotalSizeRemoved, Mode=OneWay, StringFormat=Total Size Removed: \{0\}}" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="3" Background="#222222">
                             <StackPanel MinHeight="20" Orientation="Horizontal">
                                 <ProgressBar
                                     Name="PbScanProgress"
@@ -869,7 +888,7 @@
                                 </Menu>
                                 <ListBox
                                     Name="ListboxBlacklist"
-                                    Grid.Row="1"                                        
+                                    Grid.Row="1"
                                     Items="{Binding Blacklists}" />
                             </Grid>
                         </Grid>
