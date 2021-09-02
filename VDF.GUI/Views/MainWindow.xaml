@@ -363,6 +363,7 @@
                             <DataGrid Name="dataGridGrouping" Grid.Row="2" CanUserResizeColumns="True">
                                 <DataGrid.KeyBindings>
                                     <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
+                                    <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space"/>
                                 </DataGrid.KeyBindings>
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn>
