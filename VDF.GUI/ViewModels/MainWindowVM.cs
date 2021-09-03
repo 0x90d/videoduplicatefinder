@@ -40,6 +40,7 @@ namespace VDF.GUI.ViewModels {
 		public ObservableCollection<string> LogItems { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
 		public ObservableCollection<string> Blacklists { get; } = new ObservableCollection<string>();
+		List<HashSet<string>> GroupBlacklist = new List<HashSet<string>>();
 
 
 		[CanBeNull] DataGridCollectionView view;
@@ -253,6 +254,11 @@ namespace VDF.GUI.ViewModels {
 			var dir = new DirectoryInfo(Utils.ImageUtils.ThumbnailDirectory);
 			if (!dir.Exists)
 				dir.Create();
+			FileInfo groupBlacklistFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistedGroups.json"));
+			if (groupBlacklistFile.Exists && groupBlacklistFile.Length > 0) {
+				using var stream = new FileStream(groupBlacklistFile.FullName, FileMode.Open);
+				GroupBlacklist = JsonSerializer.Deserialize<List<HashSet<string>>>(stream);
+			}
 			_FileType = TypeFilters[0];
 			_SortOrder = SortOrders[0];
 			Scanner.ScanDone += Scanner_ScanDone;
@@ -386,6 +392,22 @@ namespace VDF.GUI.ViewModels {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
 				IsBusy = false;
+
+				Scanner.Duplicates.RemoveWhere(a => {
+					foreach (HashSet<string> blackListedGroup in GroupBlacklist) {
+						if (!blackListedGroup.Contains(a.Path)) continue;
+						bool isBlacklisted = true;
+						foreach (DuplicateItem blackListItem in Scanner.Duplicates.Where(b => b.GroupId == a.GroupId)) {
+							if (!blackListedGroup.Contains(blackListItem.Path)) {
+								isBlacklisted = false;
+								break;
+							}
+						}
+						if (isBlacklisted) return true;
+					}
+					return false;
+				});
+
 
 				foreach (var item in Scanner.Duplicates) {
 					Duplicates.Add(new DuplicateItemVM(item));
@@ -779,6 +801,26 @@ namespace VDF.GUI.ViewModels {
 				blackListGroupID.Add(first.ItemInfo.GroupId);
 			}
 
+		});
+		public ReactiveCommand<Unit, Unit> MarkGroupAsNotAMatchCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
+			HashSet<string> blacklist = new HashSet<string>();
+			foreach (DuplicateItemVM duplicateItem in Duplicates.Where(a => a.ItemInfo.GroupId == data.ItemInfo.GroupId))
+				blacklist.Add(duplicateItem.ItemInfo.Path);
+			GroupBlacklist.Add(blacklist);
+			try {
+				using var stream = new FileStream(FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
+				"BlacklistedGroups.json"), FileMode.Create);
+				await JsonSerializer.SerializeAsync(stream, GroupBlacklist);
+			}
+			catch (Exception e) {
+				GroupBlacklist.Remove(blacklist);
+				await MessageBoxService.Show(e.Message);
+			}
+			for (var i = Duplicates.Count - 1; i >= 0; i--) {
+				if (!blacklist.Contains(Duplicates[i].ItemInfo.Path)) continue;
+				Duplicates.RemoveAt(i);
+			}
 		});
 		public ReactiveCommand<Unit, Unit> ClearSelectionCommand => ReactiveCommand.Create(() => {
 			for (var i = 0; i < Duplicates.Count; i++)

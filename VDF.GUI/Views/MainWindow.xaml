@@ -653,6 +653,9 @@
                                             <MenuItem Command="{Binding ExpandAllGroupsCommand}" Header="Expand all" />
                                             <MenuItem Command="{Binding CollapseAllGroupsCommand}" Header="Collapse all" />
                                         </MenuItem>
+                                        <MenuItem Header="Selected Group">
+                                            <MenuItem Command="{Binding MarkGroupAsNotAMatchCommand}" Header="Mark as 'Not a match'" ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
+                                        </MenuItem>
                                     </ContextMenu>
                                 </DataGrid.ContextMenu>
                             </DataGrid>
