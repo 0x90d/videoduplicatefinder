@@ -21,7 +21,7 @@ using VDF.Core.Utils;
 
 namespace VDF.Core.ViewModels {
 	[DebuggerDisplay("{" + nameof(Path) + ",nq}")]
-	public class DuplicateItem {
+	public class DuplicateItem : ViewModelBase {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItem() { }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -88,7 +88,15 @@ namespace VDF.Core.ViewModels {
 
 		public Guid GroupId { get; set; }
 		public List<Image> ImageList { get; private set; } = new List<Image>();
-		public string Path { get; set; }
+		string _Path = string.Empty;
+		public string Path {
+			get => _Path;
+			set {
+				if (_Path == value) return;
+				_Path = value;
+				OnPropertyChanged(nameof(Path));
+			}
+		}
 		public long SizeLong { get; set; }
 		public bool IsBestSize { get; set; }
 		public string Size => SizeLong.BytesToString();

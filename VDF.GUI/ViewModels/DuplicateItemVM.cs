@@ -16,20 +16,21 @@
 
 using System.Diagnostics;
 using Avalonia.Media.Imaging;
+using ReactiveUI;
 using VDF.Core.ViewModels;
 using VDF.GUI.Utils;
 
 namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
-	public sealed class DuplicateItemVM : ViewModelBase {
+	public sealed class DuplicateItemVM : ReactiveObject {
 
 
 		public DuplicateItemVM(DuplicateItem item) {
 			ItemInfo = item;
 			ItemInfo.ThumbnailsUpdated += () => {
 				Thumbnail = ImageUtils.JoinImages(ItemInfo.ImageList);
-				OnPropertyChanged(nameof(Thumbnail));
+				this.RaisePropertyChanged(nameof(Thumbnail));
 			};
 		}
 		public DuplicateItem ItemInfo { get; }
@@ -39,11 +40,7 @@ namespace VDF.GUI.ViewModels {
 		bool _Checked;
 		public bool Checked {
 			get => _Checked;
-			set {
-				if (value == _Checked) return;
-				_Checked = value;
-				OnPropertyChanged(nameof(Checked));
-			}
+			set => this.RaiseAndSetIfChanged(ref _Checked, value);
 		}
 
 		public bool EqualsFull(DuplicateItemVM other) {
@@ -83,10 +80,5 @@ namespace VDF.GUI.ViewModels {
 			return ItemInfo.GroupId.Equals(other.ItemInfo.GroupId) && ItemInfo.Duration.Equals(other.ItemInfo.Duration);
 		}
 
-		public void ChangePath(string newPath) {
-			ItemInfo.Path = newPath;
-			OnPropertyChanged(nameof(ItemInfo.Path));
-			OnPropertyChanged(nameof(ItemInfo));
-		}
 	}
 }

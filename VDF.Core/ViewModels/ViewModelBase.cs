@@ -14,7 +14,6 @@
 // */
 //
 
-using System;
 using System.ComponentModel;
 
 namespace VDF.Core.ViewModels {

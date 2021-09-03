@@ -556,14 +556,14 @@ namespace VDF.GUI.ViewModels {
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
 			fi.MoveTo(newName);
-			currentItem.ChangePath(newName);
+			currentItem.ItemInfo.Path = newName;
 		});
 
 		public static ReactiveCommand<Unit, Unit> ToggleCheckboxCommand => ReactiveCommand.Create(() => {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			currentItem.Checked = !currentItem.Checked;
 		});
-		
+
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
 				Includes.Remove((string)lbox.SelectedItems[0]);

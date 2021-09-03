@@ -35,12 +35,10 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
-    <AvaloniaResource Remove="DuplicateViewModel.xaml" />
     <AvaloniaResource Remove="Views\ExpressionBuilder.xaml" />
     <AvaloniaResource Remove="Views\MessageBoxView.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="DuplicateViewModel.xaml" />
     <None Remove="Styles\Styles.xaml" />
     <None Remove="Views\ExpressionBuilder.xaml" />
   </ItemGroup>
@@ -51,11 +49,6 @@
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.999-cibuild0014036-beta" />
     <PackageReference Include="Avalonia.Xaml.Behaviors" Version="0.10.6.10" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.8.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="DuplicateViewModel.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Views\MessageBoxView.xaml">
@@ -69,11 +62,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Update="DuplicateViewModel.xaml.cs">
-      <DependentUpon>DuplicateViewModel.xaml</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Update="Styles\Styles.xaml">

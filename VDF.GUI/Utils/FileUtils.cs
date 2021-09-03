@@ -14,9 +14,6 @@
 // */
 //
 
-using System;
-using System.Collections.Generic;
-using System.IO;
 using VDF.Core.Utils;
 using VDF.GUI.ViewModels;
 
@@ -49,7 +46,7 @@ namespace VDF.GUI.Utils {
 						File.Move(s.ItemInfo.Path, temppath, pOverwriteDest);
 					else
 						File.Copy(s.ItemInfo.Path, temppath, pOverwriteDest);
-					s.ChangePath(temppath);
+					s.ItemInfo.Path = temppath;
 				}
 				catch (Exception e) {
 					Logger.Instance.Info($"Failed to copy '{pSource}' to '{pDest}', reason: {e.Message}");
