@@ -772,24 +772,25 @@ namespace VDF.GUI.ViewModels {
 				dupMods.Insert(0, first);
 
 				DuplicateItemVM keep = dupMods[0];
+
 				//Duration first
 				if (!keep.ItemInfo.IsImage)
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.Duration).First();
 
-				//resolution next, but only when keep is unchanged
-				if (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
+				//resolution next, but only when keep is unchanged, or when there was >=1 item with same quality
+				if (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path) || dupMods.Count(d => d.ItemInfo.Duration == keep.ItemInfo.Duration) > 1)
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.FrameSizeInt).First();
 
-				//fps next, but only when keep is unchanged
-				if (!keep.ItemInfo.IsImage && keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
+				//fps next, but only when keep is unchanged, or when there was >=1 item with same quality
+				if (!keep.ItemInfo.IsImage && (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path) || dupMods.Count(d => d.ItemInfo.FrameSizeInt == keep.ItemInfo.FrameSizeInt) > 1))
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.Fps).First();
 
-				//Bitrate next, but only when keep is unchanged
-				if (!keep.ItemInfo.IsImage && keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
+				//Bitrate next, but only when keep is unchanged, or when there was >=1 item with same quality
+				if (!keep.ItemInfo.IsImage && (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path) || dupMods.Count(d => d.ItemInfo.Fps == keep.ItemInfo.Fps) > 1))
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.BitRateKbs).First();
 
-				//Audio Bitrate next, but only when keep is unchanged
-				if (!keep.ItemInfo.IsImage && keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path))
+				//Audio Bitrate next, but only when keep is unchanged, or when there was >=1 item with same quality
+				if (!keep.ItemInfo.IsImage && (keep.ItemInfo.Path.Equals(dupMods[0].ItemInfo.Path) || dupMods.Count(d => d.ItemInfo.BitRateKbs == keep.ItemInfo.BitRateKbs) > 1))
 					keep = dupMods.OrderByDescending(d => d.ItemInfo.AudioSampleRate).First();
 
 				keep.Checked = false;
