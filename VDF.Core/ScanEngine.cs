@@ -110,6 +110,7 @@ namespace VDF.Core {
 				throw new FFNotFoundException("Cannot find FFprobe");
 
 			FfmpegEngine.HardwareAccelerationMode = Settings.HardwareAccelerationMode;
+			FfmpegEngine.CustomFFArguments = Settings.CustomFFArguments;
 			Duplicates.Clear();
 			positionList.Clear();
 			ElapsedTimer.Reset();

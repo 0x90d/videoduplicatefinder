@@ -795,6 +795,12 @@
                                     Maximum="100"
                                     Minimum="-1"
                                     Value="{Binding MaxDegreeOfParallelism}" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Text="Custom FF Arguments:" />
+                                <TextBox
+                                    VerticalAlignment="Center"
+                                    Text="{Binding CustomFFArguments}" />
                             </StackPanel>
                         </Grid>
                         <Grid

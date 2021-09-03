@@ -78,6 +78,11 @@ namespace VDF.GUI.ViewModels {
 			get => _SearchText;
 			set => this.RaiseAndSetIfChanged(ref _SearchText, value);
 		}
+		string _CustomFFArguments = string.Empty;
+		public string CustomFFArguments {
+			get => _CustomFFArguments;
+			set => this.RaiseAndSetIfChanged(ref _CustomFFArguments, value);
+		}
 		bool _IsScanning;
 		public bool IsScanning {
 			get => _IsScanning;
@@ -299,7 +304,8 @@ namespace VDF.GUI.ViewModels {
 					new XElement("HardwareAccelerationMode", HardwareAccelerationMode),
 					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
 					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails),
-					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging)
+					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging),
+					new XElement("CustomFFArguments", CustomFFArguments)
 				)
 			);
 			xDoc.Save(path);
@@ -346,6 +352,8 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
 				if (bool.TryParse(n.Value, out var value))
 					ExtendedFFToolsLogging = value;
+			foreach (var n in xDoc.Descendants("CustomFFArguments"))
+				CustomFFArguments = n.Value;
 		}
 
 		public async void LoadDatabase() {
@@ -639,6 +647,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = Thumbnails;
 			Scanner.Settings.ExtendedFFToolsLogging = ExtendedFFToolsLogging;
+			Scanner.Settings.CustomFFArguments = CustomFFArguments;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

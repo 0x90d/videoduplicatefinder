@@ -22,10 +22,11 @@ namespace VDF.Core.FFTools {
 		public static readonly string FFmpegPath;
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
+		public static string CustomFFArguments = string.Empty;
 		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
 		public static byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
-			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")} -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} \"-\"";
+			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")} -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} {CustomFFArguments} \"-\"";
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					Arguments = ffmpegArguments,
