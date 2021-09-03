@@ -622,6 +622,7 @@ namespace VDF.GUI.ViewModels {
 				return;
 			}
 			IsScanning = true;
+			SaveSettings();
 			//Set scan settings
 			Scanner.Settings.IncludeSubDirectories = IncludeSubDirectories;
 			Scanner.Settings.IncludeImages = IncludeImages;
