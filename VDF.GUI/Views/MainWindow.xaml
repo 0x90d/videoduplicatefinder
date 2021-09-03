@@ -175,17 +175,17 @@
                                 <MenuItem Command="{Binding ExportScanResultsCommand}">
                                     <MenuItem.Header>
                                         <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="To Json" />
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="To Json" />
                                     </MenuItem.Header>
                                 </MenuItem>
                                 <MenuItem Command="{Binding ExportScanResultsPrettyCommand}">
                                     <MenuItem.Header>
                                         <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="To Json (pretty)" />
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="To Json (pretty)" />
                                     </MenuItem.Header>
                                 </MenuItem>
                             </MenuItem>
@@ -733,11 +733,14 @@
                                     Content="Include Images"
                                     IsChecked="{Binding IncludeImages}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                <TextBlock
                                     VerticalAlignment="Center"
-                                    Content="Enable GPU Acceleration (Nvidia)"
-                                    IsChecked="{Binding UseCuda}"
-                                    IsThreeState="False" />
+                                    FontSize="14"
+                                    Text="Hardware Acceleration:" />
+                                <ComboBox
+                                    VerticalAlignment="Center"
+                                    Items="{Binding HardwareAccelerationModes}"
+                                    SelectedItem="{Binding HardwareAccelerationMode}" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Generate Preview Images"

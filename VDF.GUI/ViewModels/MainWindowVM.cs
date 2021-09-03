@@ -104,12 +104,13 @@ namespace VDF.GUI.ViewModels {
 			get => _MaxDegreeOfParallelism;
 			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
-		bool _UseCuda;
-		public bool UseCuda {
-			get => _UseCuda;
-			set => this.RaiseAndSetIfChanged(ref _UseCuda, value);
+		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
+			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
+		Core.FFTools.FFHardwareAccelerationMode _HardwareAccelerationMode = Core.FFTools.FFHardwareAccelerationMode.auto;
+		public Core.FFTools.FFHardwareAccelerationMode HardwareAccelerationMode {
+			get => _HardwareAccelerationMode;
+			set => this.RaiseAndSetIfChanged(ref _HardwareAccelerationMode, value);
 		}
-
 		bool _IncludeSubDirectories = true;
 		public bool IncludeSubDirectories {
 			get => _IncludeSubDirectories;
@@ -295,7 +296,7 @@ namespace VDF.GUI.ViewModels {
 					new XElement("IncludeImages", IncludeImages),
 					new XElement("IgnoreHardlinks", IgnoreHardlinks),
 					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders),
-					new XElement("UseCuda", UseCuda),
+					new XElement("HardwareAccelerationMode", HardwareAccelerationMode),
 					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
 					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails),
 					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging)
@@ -329,9 +330,13 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("IgnoreReadOnlyFolders"))
 				if (bool.TryParse(n.Value, out var value))
 					IgnoreReadOnlyFolders = value;
+			//09.03.21: UseCuda is obsolete and has been replaced with UseHardwareAcceleration.
 			foreach (var n in xDoc.Descendants("UseCuda"))
 				if (bool.TryParse(n.Value, out var value))
-					UseCuda = value;
+					HardwareAccelerationMode = value ? Core.FFTools.FFHardwareAccelerationMode.auto : Core.FFTools.FFHardwareAccelerationMode.none;
+			foreach (var n in xDoc.Descendants("HardwareAccelerationMode"))
+				if (Enum.TryParse<Core.FFTools.FFHardwareAccelerationMode>(n.Value, out var value))
+					HardwareAccelerationMode = value;
 			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
 				if (bool.TryParse(n.Value, out var value))
 					GeneratePreviewThumbnails = value;
@@ -629,7 +634,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.GeneratePreviewThumbnails = GeneratePreviewThumbnails;
 			Scanner.Settings.IgnoreReadOnlyFolders = IgnoreReadOnlyFolders;
 			Scanner.Settings.IgnoreHardlinks = IgnoreHardlinks;
-			Scanner.Settings.UseCuda = UseCuda;
+			Scanner.Settings.HardwareAccelerationMode = HardwareAccelerationMode;
 			Scanner.Settings.Percent = Percent;
 			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = Thumbnails;

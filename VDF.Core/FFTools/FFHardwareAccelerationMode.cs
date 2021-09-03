@@ -14,30 +14,14 @@
 // */
 //
 
-
-namespace VDF.Core {
-	public sealed class Settings {
-		public HashSet<string> IncludeList { get; } = new HashSet<string>();
-		public HashSet<string> BlackList { get; } = new HashSet<string>();
-
-		public bool IgnoreReadOnlyFolders;
-
-		public bool IgnoreHardlinks;
-
-		public bool GeneratePreviewThumbnails;
-
-		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
-
-		public bool IncludeSubDirectories = true;
-		public bool IncludeImages = true;
-
-		public byte Threshhold = 5;
-		public float Percent = 96f;
-
-		public int ThumbnailCount = 1;
-
-		public int MaxDegreeOfParallelism = 1;
-		
-		public bool ExtendedFFToolsLogging = false;
+namespace VDF.Core.FFTools {
+	public enum FFHardwareAccelerationMode {
+		none,
+		auto,
+		vdpau,
+		dxva2,
+		vaapi,
+		qsv,
+		cuda
 	}
 }
