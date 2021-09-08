@@ -127,7 +127,7 @@ namespace VDF.Core {
 		}
 
 		Task BuildFileList() => Task.Run(() => {
-						
+
 			DatabaseUtils.LoadDatabase();
 			int oldFileCount = DatabaseUtils.Database.Count;
 
@@ -139,8 +139,8 @@ namespace VDF.Core {
 					var fEntry = new FileEntry(file);
 					if (!DatabaseUtils.Database.TryGetValue(fEntry, out var dbEntry))
 						DatabaseUtils.Database.Add(fEntry);
-					else if (fEntry.DateCreated != dbEntry.DateCreated || 
-						    fEntry.DateModified != dbEntry.DateModified || 
+					else if (fEntry.DateCreated != dbEntry.DateCreated ||
+							fEntry.DateModified != dbEntry.DateModified ||
 							fEntry.FileSize != dbEntry.FileSize) {
 						// -> Modified or different file
 						DatabaseUtils.Database.Remove(dbEntry);
@@ -149,7 +149,7 @@ namespace VDF.Core {
 				}
 			}
 
-			Logger.Instance.Info($"Files in database: {DatabaseUtils.Database.Count:N0} ({DatabaseUtils.Database.Count-oldFileCount:N0} files added)");
+			Logger.Instance.Info($"Files in database: {DatabaseUtils.Database.Count:N0} ({DatabaseUtils.Database.Count - oldFileCount:N0} files added)");
 		});
 
 		bool InvalidEntry(FileEntry entry) {
@@ -199,7 +199,7 @@ namespace VDF.Core {
 					if (entry.grayBytes == null)
 						entry.grayBytes = new Dictionary<double, byte[]?>();
 
-					
+
 					if (entry.IsImage && entry.grayBytes.Count == 0)
 						GetGrayBytesFromImage(entry);
 					else if (!entry.IsImage)
@@ -395,12 +395,69 @@ namespace VDF.Core {
 			foreach (DuplicateItem item in Duplicates) {
 				if (blackList.Contains(item.GroupId)) continue;
 				var groupItems = Duplicates.Where(a => a.GroupId == item.GroupId);
-				groupItems.OrderByDescending(d => d.Duration).First().IsBestDuration = true;
-				groupItems.OrderBy(d => d.SizeLong).First().IsBestSize = true;
-				groupItems.OrderByDescending(d => d.Duration).First().IsBestFps = true;
-				groupItems.OrderByDescending(d => d.BitRateKbs).First().IsBestBitRateKbs = true;
-				groupItems.OrderByDescending(d => d.AudioSampleRate).First().IsBestAudioSampleRate = true;
-				groupItems.OrderByDescending(d => d.FrameSizeInt).First().IsBestFrameSize = true;
+				DuplicateItem bestMatch;
+				//Duration
+				if (!groupItems.First().IsImage) {
+					groupItems = groupItems.OrderByDescending(d => d.Duration);
+					bestMatch = groupItems.First();
+					bestMatch.IsBestDuration = true;
+					foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+						if (otherItem.Duration < bestMatch.Duration)
+							break;
+						otherItem.IsBestDuration = true;
+					}
+				}
+				//Size
+				groupItems = groupItems.OrderBy(d => d.SizeLong);
+				bestMatch = groupItems.First();
+				bestMatch.IsBestSize = true;
+				foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+					if (otherItem.SizeLong > bestMatch.SizeLong)
+						break;
+					otherItem.IsBestSize = true;
+				}
+				//Fps
+				if (!groupItems.First().IsImage) {
+					groupItems = groupItems.OrderByDescending(d => d.Fps);
+					bestMatch = groupItems.First();
+					bestMatch.IsBestFps = true;
+					foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+						if (otherItem.Fps < bestMatch.Fps)
+							break;
+						otherItem.IsBestFps = true;
+					}
+				}
+				//BitRateKbs
+				if (!groupItems.First().IsImage) {
+					groupItems = groupItems.OrderByDescending(d => d.BitRateKbs);
+					bestMatch = groupItems.First();
+					bestMatch.IsBestBitRateKbs = true;
+					foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+						if (otherItem.BitRateKbs < bestMatch.BitRateKbs)
+							break;
+						otherItem.IsBestBitRateKbs = true;
+					}
+				}
+				//AudioSampleRate
+				if (!groupItems.First().IsImage) {
+					groupItems = groupItems.OrderByDescending(d => d.AudioSampleRate);
+					bestMatch = groupItems.First();
+					bestMatch.IsBestAudioSampleRate = true;
+					foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+						if (otherItem.AudioSampleRate < bestMatch.AudioSampleRate)
+							break;
+						otherItem.IsBestAudioSampleRate = true;
+					}
+				}
+				//FrameSizeInt
+				groupItems = groupItems.OrderByDescending(d => d.FrameSizeInt);
+				bestMatch = groupItems.First();
+				bestMatch.IsBestFrameSize = true;
+				foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+					if (otherItem.FrameSizeInt < bestMatch.FrameSizeInt)
+						break;
+					otherItem.IsBestFrameSize = true;
+				}
 				blackList.Add(item.GroupId);
 			}
 		}
