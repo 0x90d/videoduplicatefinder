@@ -238,7 +238,7 @@ namespace VDF.Core {
 						if (entry.IsImage) {
 							percent = new float[1];
 							percent[0] = GrayBytesUtils.PercentageDifference(entry.grayBytes[0]!, compItem.grayBytes[0]!);
-							if (percent[0] < percentageDifference)
+							if (percent[0] <= percentageDifference)
 								duplicateCounter++;
 						}
 						else {
@@ -246,7 +246,7 @@ namespace VDF.Core {
 							for (var j = 0; j < positionList.Count; j++) {
 								percent[j] =
 									GrayBytesUtils.PercentageDifference(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-								if (percent[j] < percentageDifference) {
+								if (percent[j] <= percentageDifference) {
 									duplicateCounter++;
 								}
 								else { break; }
