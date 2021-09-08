@@ -24,9 +24,12 @@ namespace VDF.Core.Utils {
 		public event LogEventHandler LogItemAdded;
 		public delegate void LogEventHandler(string foo);
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
+		static readonly object lockObject = new();
 		public void Info(string text) {
 			LogItemAdded?.Invoke($"{DateTime.Now:HH:mm:ss} => {text}");
+			lock (lockObject) {
+				File.AppendAllText(Path.Combine(CoreUtils.CurrentFolder, "log.txt"), $"{DateTime.Now:HH:mm:ss} => {text}{Environment.NewLine}");
+			}
 		}
 		public void InsertSeparator(char separatorChar) {
 			LogItemAdded?.Invoke($"{Environment.NewLine}{new String(separatorChar, 150)}{Environment.NewLine}");

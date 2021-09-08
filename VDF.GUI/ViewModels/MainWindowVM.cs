@@ -36,15 +36,15 @@ using System.Text.Json;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowVM : ReactiveObject {
-		public ScanEngine Scanner { get; } = new ScanEngine();
-		public ObservableCollection<string> LogItems { get; } = new ObservableCollection<string>();
-		public ObservableCollection<string> Includes { get; } = new ObservableCollection<string>();
-		public ObservableCollection<string> Blacklists { get; } = new ObservableCollection<string>();
-		List<HashSet<string>> GroupBlacklist = new List<HashSet<string>>();
+		public ScanEngine Scanner { get; } = new();
+		public ObservableCollection<string> LogItems { get; } = new();
+		public ObservableCollection<string> Includes { get; } = new();
+		public ObservableCollection<string> Blacklists { get; } = new();
+		List<HashSet<string>> GroupBlacklist = new();
 
 
 		[CanBeNull] DataGridCollectionView view;
-		ObservableCollection<DuplicateItemVM> Duplicates { get; } = new ObservableCollection<DuplicateItemVM>();
+		ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
 		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; } = {
 			new KeyValuePair<string, DataGridSortDescription>("None", null),
 			new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
@@ -110,7 +110,9 @@ namespace VDF.GUI.ViewModels {
 			get => _MaxDegreeOfParallelism;
 			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
+#pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
+#pragma warning restore CA1822 // Mark members as static
 			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
 		Core.FFTools.FFHardwareAccelerationMode _HardwareAccelerationMode = Core.FFTools.FFHardwareAccelerationMode.auto;
 		public Core.FFTools.FFHardwareAccelerationMode HardwareAccelerationMode {
@@ -266,6 +268,10 @@ namespace VDF.GUI.ViewModels {
 			Scanner.ThumbnailsRetrieved += Scanner_ThumbnailsRetrieved;
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
+			try {
+				File.Delete(Path.Combine(CoreUtils.CurrentFolder, "log.txt"));
+			}
+			catch { }
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown 
 			Instance_LogItemAdded(string.Empty);
@@ -855,7 +861,7 @@ namespace VDF.GUI.ViewModels {
 
 		async void DeleteInternal(bool fromDisk, bool blackList = false, bool createSymbolLinksInstead = false) {
 			if (Duplicates.Count == 0) return;
-			var dlgResult = await MessageBoxService.Show(
+			MessageBoxButtons dlgResult = await MessageBoxService.Show(
 				fromDisk
 					? $"Are you sure you want to{(CoreUtils.IsWindows ? " move" : " permanently delete")} the selected files{(CoreUtils.IsWindows ? " to recycle bin (only if supported, i.e. network files will be deleted instead)" : " from disk")}?"
 					: $"Are you sure to delete selected from list (keep files){(blackList ? " and blacklist them" : string.Empty)}?",
@@ -863,7 +869,7 @@ namespace VDF.GUI.ViewModels {
 			if (dlgResult == MessageBoxButtons.No) return;
 
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
-				var dub = Duplicates[i];
+				DuplicateItemVM dub = Duplicates[i];
 				if (dub.Checked == false) continue;
 				if (fromDisk)
 					try {
