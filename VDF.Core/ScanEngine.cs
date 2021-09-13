@@ -268,8 +268,9 @@ namespace VDF.Core {
 								//this happens with 4+ identical items:
 								//first, 2+ duplicate groups are found independently, they are merged in this branch
 								if (existingBase!.GroupId != existingComp!.GroupId) {
+									Guid groupID = existingComp!.GroupId;
 									foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
-										c.GroupId == existingComp.GroupId))
+										c.GroupId == groupID))
 										dup.GroupId = existingBase.GroupId;
 								}
 							}
