@@ -652,6 +652,14 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
 				return;
 			}
+			if (Includes.Count == 0) {
+				await MessageBoxService.Show("There are no folders to scan. Please go to the settings and add at least one folder.");
+				return;
+			}
+			if (MaxDegreeOfParallelism == 0) {
+				await MessageBoxService.Show("MaxDegreeOfParallelism cannot be 0. Please go to the settings and change it.");
+				return;
+			}
 
 			Duplicates.Clear();
 			try {
@@ -660,6 +668,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch (Exception e) {
 				Logger.Instance.Info(e.Message);
+				await MessageBoxService.Show("Failed to clean up the thumbnail directory. Please check log file.");
 				return;
 			}
 			IsScanning = true;
