@@ -26,7 +26,12 @@ namespace VDF.Core.FFTools {
 		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
 		public static byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
-			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")} -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{settings.File}\" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1 {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} {CustomFFArguments} \"-\"";
+			//https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
+			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")}" + 
+				$" -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{settings.File}\"" +
+				$" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1" + 
+				$" {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} {CustomFFArguments} \"-\"";
+
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					Arguments = ffmpegArguments,
@@ -55,16 +60,18 @@ namespace VDF.Core.FFTools {
 				process.StandardOutput.BaseStream.CopyTo(ms);
 
 				if (!process.WaitForExit(TimeoutDuration)) {
-					errOut += $"{Environment.NewLine}FFmpeg timed out";
-					throw new Exception();
+					throw new TimeoutException($"FFmpeg timed out on file: {settings.File}");
 				}
 				else if (extendedLogging)
 					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
-
+				
+				if (process.ExitCode != 0)
+					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
+				
 				bytes = ms.ToArray();
-				if (bytes?.Length == 0)
+				if (bytes.Length == 0)
 					bytes = null;   // Makes subsequent checks easier
-				else if (settings.GrayScale == 1 && bytes?.Length != 16 * 16) {
+				else if (settings.GrayScale == 1 && bytes.Length != 256) {
 					bytes = null;
 					errOut += $"{Environment.NewLine}graybytes length != 256";
 				}
@@ -79,7 +86,7 @@ namespace VDF.Core.FFTools {
 				bytes = null;
 			}
 			if (bytes == null || errOut.Length > 0) {
-				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve " : "WARNING: Problems while retrieving")} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
+				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
 				if (extendedLogging)
 					message += $":{Environment.NewLine}{FFmpegPath}{ffmpegArguments}";
 				Logger.Instance.Info($"{message}{errOut}");

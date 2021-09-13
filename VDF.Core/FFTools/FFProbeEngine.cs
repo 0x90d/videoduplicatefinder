@@ -24,7 +24,10 @@ namespace VDF.Core.FFTools {
 		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
 		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
-			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")} -print_format json -sexagesimal -show_format -show_streams  \"{file}\"";
+			//https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
+			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")}" +
+				$" -print_format json -sexagesimal -show_format -show_streams  \"{file}\"";
+
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					Arguments = ffprobeArguments,
@@ -51,12 +54,14 @@ namespace VDF.Core.FFTools {
 				}
 				using var ms = new MemoryStream();
 				process.StandardOutput.BaseStream.CopyTo(ms);
-				if (!process.WaitForExit(TimeoutDuration)) {
-					errOut += $"{Environment.NewLine}FFprobe timed out";
-					throw new Exception();
-				}
+				if (!process.WaitForExit(TimeoutDuration))
+					throw new TimeoutException($"FFprobe timed out on file: {file}");
 				else if (extendedLogging)
 					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+
+				if (process.ExitCode != 0)
+					throw new FFInvalidExitCodeException($"FFprobe exited with: {process.ExitCode}");
+
 				mediaInfo = FFProbeJsonReader.Read(ms.ToArray(), file);
 			}
 			catch (Exception e) {
@@ -69,7 +74,7 @@ namespace VDF.Core.FFTools {
 				mediaInfo = null;
 			}
 			if (mediaInfo == null || errOut.Length > 0) {
-				string message = $"{((mediaInfo == null) ? "ERROR: Failed to retrieve " : "WARNING: Problems while retrieving")} media info from: {file}";
+				string message = $"{((mediaInfo == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} media info from: {file}";
 				if (extendedLogging)
 					message += $":{Environment.NewLine}{FFprobePath}{ffprobeArguments}";
 				Logger.Instance.Info($"{message}{errOut}");
