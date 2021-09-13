@@ -50,13 +50,13 @@ jobs:
           rm -r "outputFolder"
           
     - name: Publish
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@pick-one-body
       with:
           tag_name: 3.0.x
           files: App*
           prerelease: true
           body: |
-            Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says.
+            Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says. If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in VDF folder.
             Last build based on ${{ steps.vars.outputs.sha_short }}
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
