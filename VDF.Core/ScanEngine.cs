@@ -85,7 +85,7 @@ namespace VDF.Core {
 			FilesEnumerated?.Invoke(this, new EventArgs());
 			Logger.Instance.Info("Gathering media info and buildings hashes...");
 			if (!cancelationTokenSource.IsCancellationRequested)
-				await Task.Run(GatherInfos, cancelationTokenSource.Token);
+				await GatherInfos();
 			Logger.Instance.Info($"Finished gathering and hashing in {SearchTimer.StopGetElapsedAndRestart()}");
 			BuildingHashesDone?.Invoke(this, new EventArgs());
 			DatabaseUtils.SaveDatabase();
@@ -178,19 +178,19 @@ namespace VDF.Core {
 
 		public static void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
 
-		void GatherInfos() {
+		async Task GatherInfos() {
 			try {
 				InitProgress(DatabaseUtils.Database.Count);
-				Parallel.ForEach(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, entry => {
+				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
-					if (InvalidEntry(entry)) return;
+					if (InvalidEntry(entry)) return ValueTask.CompletedTask;
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
 						if (info == null) {
 							entry.Flags.Set(EntryFlags.MetadataError);
-							return;
+							return ValueTask.CompletedTask;
 						}
 
 						entry.mediaInfo = info;
@@ -206,6 +206,7 @@ namespace VDF.Core {
 						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.ExtendedFFToolsLogging);
 
 					IncrementProgress(entry.Path);
+					return ValueTask.CompletedTask;
 				});
 			}
 			catch (OperationCanceledException) { }
@@ -301,61 +302,58 @@ namespace VDF.Core {
 		}
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public async void RetrieveThumbnails() {
-			await Task.Run(() => {
-				var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
-				try {
-					Parallel.For(0, dupList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
-						var entry = dupList[i];
-						List<Image> list;
-						if (entry.IsImage) {
-							//For images it doesn't make sense to load the actual image more than once
-							list = new List<Image>(1);
-							try {
-								Image bitmapImage = Image.FromFile(entry.Path);
-								float resizeFactor = 1f;
-								if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
-									float widthFactor = bitmapImage.Width / 100f;
-									float heightFactor = bitmapImage.Height / 100f;
-									resizeFactor = Math.Max(widthFactor, heightFactor);
+			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
+			try {
+				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
+					List<Image> list;
+					if (entry.IsImage) {
+						//For images it doesn't make sense to load the actual image more than once
+						list = new List<Image>(1);
+						try {
+							Image bitmapImage = Image.FromFile(entry.Path);
+							float resizeFactor = 1f;
+							if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
+								float widthFactor = bitmapImage.Width / 100f;
+								float heightFactor = bitmapImage.Height / 100f;
+								resizeFactor = Math.Max(widthFactor, heightFactor);
 
-								}
-								int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
-								int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
-								var newImage = new Bitmap(width, height);
-								using (var g = Graphics.FromImage(newImage)) {
-									g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-									g.DrawImage(bitmapImage, 0, 0, newImage.Width, newImage.Height);
-								}
-
-								bitmapImage.Dispose();
-								list.Add(newImage);
 							}
-							catch (Exception ex) {
-								Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
-								return;
+							int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
+							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
+							var newImage = new Bitmap(width, height);
+							using (var g = Graphics.FromImage(newImage)) {
+								g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+								g.DrawImage(bitmapImage, 0, 0, newImage.Width, newImage.Height);
 							}
 
+							bitmapImage.Dispose();
+							list.Add(newImage);
 						}
-						else {
-							list = new List<Image>(positionList.Count);
-							for (int j = 0; j < positionList.Count; j++) {
-								var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-									File = entry.Path,
-									Position = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]),
-									GrayScale = 0,
-								}, Settings.ExtendedFFToolsLogging);
-								if (b == null || b.Length == 0) return;
-								using var byteStream = new MemoryStream(b);
-								var bitmapImage = Image.FromStream(byteStream);
-								list.Add(bitmapImage);
-							}
+						catch (Exception ex) {
+							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
+							return ValueTask.CompletedTask;
 						}
-						entry.SetThumbnails(list);
 
-					});
-				}
-				catch (OperationCanceledException) { }
-			});
+					}
+					else {
+						list = new List<Image>(positionList.Count);
+						for (int j = 0; j < positionList.Count; j++) {
+							var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+								File = entry.Path,
+								Position = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]),
+								GrayScale = 0,
+							}, Settings.ExtendedFFToolsLogging);
+							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
+							using var byteStream = new MemoryStream(b);
+							var bitmapImage = Image.FromStream(byteStream);
+							list.Add(bitmapImage);
+						}
+					}
+					entry.SetThumbnails(list);
+					return ValueTask.CompletedTask;
+				});
+			}
+			catch (OperationCanceledException) { }
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
