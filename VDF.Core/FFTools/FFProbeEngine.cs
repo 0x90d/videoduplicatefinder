@@ -25,7 +25,7 @@ namespace VDF.Core.FFTools {
 
 		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
 			//https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
-			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")}" +
+			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" +
 				$" -print_format json -sexagesimal -show_format -show_streams  \"{file}\"";
 
 			using var process = new Process {
@@ -76,7 +76,7 @@ namespace VDF.Core.FFTools {
 			if (mediaInfo == null || errOut.Length > 0) {
 				string message = $"{((mediaInfo == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} media info from: {file}";
 				if (extendedLogging)
-					message += $":{Environment.NewLine}{FFprobePath}{ffprobeArguments}";
+					message += $":{Environment.NewLine}{FFprobePath} {ffprobeArguments}";
 				Logger.Instance.Info($"{message}{errOut}");
 			}
 			return mediaInfo;

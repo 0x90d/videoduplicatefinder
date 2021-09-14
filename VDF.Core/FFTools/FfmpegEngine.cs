@@ -27,7 +27,7 @@ namespace VDF.Core.FFTools {
 
 		public static byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
 			//https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
-			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "panic")}" + 
+			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" + 
 				$" -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{settings.File}\"" +
 				$" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1" + 
 				$" {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} {CustomFFArguments} \"-\"";
@@ -88,7 +88,7 @@ namespace VDF.Core.FFTools {
 			if (bytes == null || errOut.Length > 0) {
 				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
 				if (extendedLogging)
-					message += $":{Environment.NewLine}{FFmpegPath}{ffmpegArguments}";
+					message += $":{Environment.NewLine}{FFmpegPath} {ffmpegArguments}";
 				Logger.Instance.Info($"{message}{errOut}");
 			}
 			return bytes;
