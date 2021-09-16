@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace VDF.Core.Utils {

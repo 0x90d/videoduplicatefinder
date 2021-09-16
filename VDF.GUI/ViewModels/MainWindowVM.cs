@@ -33,6 +33,7 @@ using VDF.GUI.Data;
 using VDF.GUI.Views;
 using System.ComponentModel;
 using System.Text.Json;
+using System.Linq;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowVM : ReactiveObject {

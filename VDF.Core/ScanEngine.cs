@@ -14,12 +14,18 @@
 // */
 //
 
+global using System;
+global using System.IO;
+global using System.Collections.Generic;
+global using System.Drawing;
+global using System.Threading;
+global using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Drawing;
 using System.Text.Json;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
+using System.Linq;
 
 namespace VDF.Core {
 	public sealed class ScanEngine {
@@ -296,8 +302,10 @@ namespace VDF.Core {
 			catch (OperationCanceledException) { }
 			Duplicates = new HashSet<DuplicateItem>(duplicateDict.Values);
 		}
-		public void CleanupDatabase() {
-			DatabaseUtils.CleanupDatabase();
+		public async void CleanupDatabase() {
+			await Task.Run(() => {
+				DatabaseUtils.CleanupDatabase();
+			});
 			DatabaseCleaned?.Invoke(this, new EventArgs());
 		}
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);

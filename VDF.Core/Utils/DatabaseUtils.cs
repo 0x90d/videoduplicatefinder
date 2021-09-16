@@ -63,7 +63,6 @@ namespace VDF.Core.Utils {
 			return true;
 		}
 		public static void CleanupDatabase() {
-
 			int oldCount = Database.Count;
 			var st = Stopwatch.StartNew();
 

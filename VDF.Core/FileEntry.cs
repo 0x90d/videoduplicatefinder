@@ -16,6 +16,7 @@
 
 using ProtoBuf;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using VDF.Core.Utils;
 
