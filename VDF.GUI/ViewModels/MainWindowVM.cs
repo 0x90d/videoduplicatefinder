@@ -479,6 +479,14 @@ namespace VDF.GUI.ViewModels {
 			IsBusyText = "Cleaning database...";
 			Scanner.CleanupDatabase();
 		});
+		public ReactiveCommand<Unit, Unit> ClearDatabaseCommand => ReactiveCommand.CreateFromTask(async () => {
+			MessageBoxButtons dlgResult = await MessageBoxService.Show(
+				"WARNING: This will delete all stored data in your database. Do you want to continue?",
+				MessageBoxButtons.Yes | MessageBoxButtons.No);
+			if (dlgResult == MessageBoxButtons.No) return;
+			ScanEngine.ClearDatabase();
+			await MessageBoxService.Show("Done!");
+		});		
 		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
 			ExportDbToJson(new JsonSerializerOptions {
 				IncludeFields = true,

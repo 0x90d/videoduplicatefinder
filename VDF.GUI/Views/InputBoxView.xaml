@@ -7,6 +7,7 @@
     MinWidth="400"
     Width="400"
     MaxWidth="600"
+    CanResize="false"
     SizeToContent="Height"
     WindowStartupLocation="CenterOwner">
     <Grid>

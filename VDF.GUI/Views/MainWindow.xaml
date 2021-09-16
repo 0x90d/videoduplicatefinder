@@ -112,12 +112,19 @@
                             </MenuItem>
                             <MenuItem>
                                 <MenuItem.Header>
-                                    <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Database" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Database" />
+                                        <Path
+                                                Margin="4,2,0,0"
+                                                VerticalAlignment="Center"
+                                                Data="M 0 0 L 6 6 L 12 0 Z"
+                                                Fill="{StaticResource SystemBaseHighColor}" />
+                                    </StackPanel>
                                 </MenuItem.Header>
-                                <MenuItem Command="{Binding CleanDatabaseCommand}">
+                                <MenuItem Command="{Binding CleanDatabaseCommand}" ToolTip.Tip="Removes entries which file no longer exists or which failed on ffmpeg/ffprobe">
                                     <MenuItem.Header>
                                         <StackPanel Orientation="Horizontal">
                                             <Viewbox Width="16" Height="16">
@@ -132,12 +139,13 @@
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <Separator/>
                                 <MenuItem Command="{Binding ExportDataBaseToJsonCommand}">
                                     <MenuItem.Header>
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Export Database To Json" />
+                                            Text="Export To Json" />
                                     </MenuItem.Header>
                                 </MenuItem>
                                 <MenuItem Command="{Binding ExportDataBaseToJsonPrettyCommand}">
@@ -145,7 +153,23 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Export Database To Json (pretty)" />
+                                            Text="Export To Json (pretty)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Command="{Binding ClearDatabaseCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M20 6.91L17.09 4L12 9.09L6.91 4L4 6.91L9.09 12L4 17.09L6.91 20L12 14.91L17.09 20L20 17.09L14.91 12L20 6.91Z" Fill="Red" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Clear Database" />
+                                        </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
                             </MenuItem>
@@ -167,10 +191,17 @@
                             </MenuItem>
                             <MenuItem IsVisible="{Binding !!Duplicates.Count}">
                                 <MenuItem.Header>
-                                    <TextBlock
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Text="Export Scan Results" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Export Scan Results" />
+                                        <Path
+                                                Margin="4,2,0,0"
+                                                VerticalAlignment="Center"
+                                                Data="M 0 0 L 6 6 L 12 0 Z"
+                                                Fill="{StaticResource SystemBaseHighColor}" />
+                                    </StackPanel>
                                 </MenuItem.Header>
                                 <MenuItem Command="{Binding ExportScanResultsCommand}">
                                     <MenuItem.Header>

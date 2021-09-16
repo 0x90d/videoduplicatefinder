@@ -308,6 +308,7 @@ namespace VDF.Core {
 			});
 			DatabaseCleaned?.Invoke(this, new EventArgs());
 		}
+		public static void ClearDatabase() => DatabaseUtils.ClearDatabase();
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public async void RetrieveThumbnails() {
 			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();

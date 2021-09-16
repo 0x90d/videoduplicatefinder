@@ -6,6 +6,7 @@
     Title="{Binding Title}"
     MinWidth="400"
     MaxWidth="600"
+    CanResize="false"
     SizeToContent="WidthAndHeight"
     WindowStartupLocation="CenterOwner">
     <Grid>
