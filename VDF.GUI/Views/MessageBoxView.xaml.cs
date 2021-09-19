@@ -24,6 +24,9 @@ namespace VDF.GUI.Views {
 	public static class MessageBoxService {
 		public static async Task<MessageBoxButtons> Show(string message, MessageBoxButtons buttons = MessageBoxButtons.Ok,
 			string title = null) {
+			while (ApplicationHelpers.MainWindow == null) {
+				await Task.Delay(500);
+			}
 			var dlg = new MessageBoxView(message, buttons, title) {
 				Icon = ApplicationHelpers.MainWindow.Icon
 			};

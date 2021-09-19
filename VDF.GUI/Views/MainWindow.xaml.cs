@@ -22,6 +22,7 @@ using VDF.GUI.Mvvm;
 
 namespace VDF.GUI.Views {
 	public class MainWindow : FluentWindow {
+		bool keepBackupFile;
 		public MainWindow() {
 			InitializeComponent();
 			Closing += MainWindow_Closing;
@@ -38,11 +39,15 @@ namespace VDF.GUI.Views {
 			ConfirmClose();
 		}
 
-		static async void ConfirmClose() {
-			var result = await MessageBoxService.Show("Are you sure you want to close?",
-				MessageBoxButtons.Yes | MessageBoxButtons.No);
-			if (result == MessageBoxButtons.Yes)
+		async void ConfirmClose() {
+			try {
+				if (!keepBackupFile)
+					File.Delete(ApplicationHelpers.MainWindowDataContext.BackupScanResultsFile);
+			}
+			catch { }
+			if (keepBackupFile = await ApplicationHelpers.MainWindowDataContext.SaveScanResults()) {
 				ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
+			}
 		}
 
 		void MainWindow_Exit(object sender, ControlledApplicationLifetimeExitEventArgs e) {

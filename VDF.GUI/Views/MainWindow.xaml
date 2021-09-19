@@ -219,6 +219,15 @@
                                             Text="To Json (pretty)" />
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <Separator/>
+                                <MenuItem Command="{Binding ExportScanResultsToFileCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="To File including thumbnails" />
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </MenuItem>
                         </Menu>
                         <Grid Grid.Row="1">
@@ -806,8 +815,14 @@
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Extended FFTools Logging"
-                                    ToolTip.Tip="If activate ffmpeg and ffprobe errors will be written to the log"
+                                    ToolTip.Tip="If activated ffmpeg and ffprobe errors will be written to the log"
                                     IsChecked="{Binding ExtendedFFToolsLogging}"
+                                    IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Auto backup scan results"
+                                    ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed"
+                                    IsChecked="{Binding BackupAfterListChanged}"
                                     IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">

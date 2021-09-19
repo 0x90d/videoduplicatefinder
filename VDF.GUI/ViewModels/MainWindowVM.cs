@@ -34,6 +34,7 @@ using VDF.GUI.Views;
 using System.ComponentModel;
 using System.Text.Json;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowVM : ReactiveObject {
@@ -42,7 +43,7 @@ namespace VDF.GUI.ViewModels {
 		public ObservableCollection<string> Includes { get; } = new();
 		public ObservableCollection<string> Blacklists { get; } = new();
 		List<HashSet<string>> GroupBlacklist = new();
-
+		public string BackupScanResultsFile => Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
 		[CanBeNull] DataGridCollectionView view;
 		ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
@@ -161,6 +162,11 @@ namespace VDF.GUI.ViewModels {
 		public int ScanProgressValue {
 			get => _ScanProgressValue;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressValue, value);
+		}		
+		bool _BackupAfterListChanged = true;
+		public bool BackupAfterListChanged {
+			get => _BackupAfterListChanged;
+			set => this.RaiseAndSetIfChanged(ref _BackupAfterListChanged, value);
 		}
 		bool _IsBusy;
 		public bool IsBusy {
@@ -276,7 +282,8 @@ namespace VDF.GUI.ViewModels {
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown 
 			Instance_LogItemAdded(string.Empty);
-
+			if (File.Exists(BackupScanResultsFile))
+				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
 		}
 
 		void Scanner_ThumbnailsRetrieved(object sender, EventArgs e) {
@@ -285,6 +292,9 @@ namespace VDF.GUI.ViewModels {
 			RemainingTime = new TimeSpan();
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+			ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
 		void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
@@ -294,6 +304,22 @@ namespace VDF.GUI.ViewModels {
 			await MessageBoxService.Show("Database cleaned!");
 		}
 
+		public async Task<bool> SaveScanResults() {
+			if (Duplicates.Count == 0) {
+				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
+				await Task.Delay(100);
+				return true;
+			}
+			var result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
+				MessageBoxButtons.Yes | MessageBoxButtons.No);
+			if (result == MessageBoxButtons.No) {
+				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
+				await Task.Delay(100);
+				return true;
+			}
+			await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
+			return true;
+		}
 		public void SaveSettings(string? path = null) {
 			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
 			var includes = new object[Includes.Count];
@@ -318,6 +344,7 @@ namespace VDF.GUI.ViewModels {
 					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
 					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails),
 					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging),
+					new XElement("BackupAfterListChanged", BackupAfterListChanged),
 					new XElement("CustomFFArguments", CustomFFArguments)
 				)
 			);
@@ -365,6 +392,9 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
 				if (bool.TryParse(n.Value, out var value))
 					ExtendedFFToolsLogging = value;
+			foreach (var n in xDoc.Descendants("BackupAfterListChanged"))
+				if (bool.TryParse(n.Value, out var value))
+					BackupAfterListChanged = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
 				CustomFFArguments = n.Value;
 		}
@@ -423,16 +453,19 @@ namespace VDF.GUI.ViewModels {
 				if (GeneratePreviewThumbnails)
 					Scanner.RetrieveThumbnails();
 
-				view = new DataGridCollectionView(Duplicates);
-				view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
-				view.Filter += TextFilter;
-				GetDataGrid.Items = view;
-
-				TotalDuplicates = Duplicates.Count;
-				TotalDuplicatesSize = Duplicates.Sum(x => x.ItemInfo.SizeLong).BytesToString();
-				TotalSizeRemovedInternal = 0;
-				TotalDuplicateGroups = Duplicates.GroupBy(x => x.ItemInfo.GroupId).Count();
+				BuildDuplicatesView();
 			});
+		void BuildDuplicatesView() {
+			view = new DataGridCollectionView(Duplicates);
+			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
+			view.Filter += TextFilter;
+			GetDataGrid.Items = view;
+
+			TotalDuplicates = Duplicates.Count;
+			TotalDuplicatesSize = Duplicates.Sum(x => x.ItemInfo.SizeLong).BytesToString();
+			TotalSizeRemovedInternal = 0;
+			TotalDuplicateGroups = Duplicates.GroupBy(x => x.ItemInfo.GroupId).Count();
+		}
 		bool TextFilter(object obj) {
 			if (obj is not DuplicateItemVM data) return false;
 			var success = true;
@@ -527,28 +560,101 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 		async void ExportScanResultsToJson(JsonSerializerOptions options) {
-
-			List<FileDialogFilter> filterList = new(1);
-			filterList.Add(new FileDialogFilter {
-				Name = "Json Files",
-				Extensions = new List<string>() { "json" }
-			});
-
-			string result = await new SaveFileDialog {
+			string path = await new SaveFileDialog {
 				DefaultExtension = ".json",
-				Filters = filterList
+				Filters = new List<FileDialogFilter> { new FileDialogFilter {
+					Name = "Json Files",
+					Extensions = new List<string>() { "json" }
+					}
+				}
 			}.ShowAsync(ApplicationHelpers.MainWindow);
-			if (string.IsNullOrEmpty(result)) return;
+			if (string.IsNullOrEmpty(path)) return;
 
 
 			try {
 				List<DuplicateItem> list = Duplicates.Select(x => x.ItemInfo).OrderBy(x => x.GroupId).ToList();
-				using var stream = File.OpenWrite(result);
+				using var stream = File.OpenWrite(path);
 				await JsonSerializer.SerializeAsync(stream, list, options);
 				stream.Close();
 			}
 			catch (Exception ex) {
 				await MessageBoxService.Show($"Exporting scan results has failed because of {ex}");
+			}
+		}
+		public ReactiveCommand<Unit, Unit> ExportScanResultsToFileCommand => ReactiveCommand.CreateFromTask(async () => {
+			await ExportScanResultsIncludingThumbnails();
+		});
+		async Task ExportScanResultsIncludingThumbnails(string? path = null) {
+			path ??= await new SaveFileDialog {
+				DefaultExtension = ".scanresults",
+				Filters = new List<FileDialogFilter> { new FileDialogFilter {
+					Name = "Scan Results",
+					Extensions = new List<string>() { "scanresults" }
+					}
+				}
+			}.ShowAsync(ApplicationHelpers.MainWindow);
+			if (string.IsNullOrEmpty(path)) return;
+
+			try {
+				using var stream = File.OpenWrite(path);
+				var options = new JsonSerializerOptions {
+					IncludeFields = true,
+				};
+				options.Converters.Add(new BitmapJsonConverter());
+				IsBusy = true;
+				IsBusyText = "Saving scan results to disk...";
+				await JsonSerializer.SerializeAsync(stream, Duplicates, options);
+				IsBusy = false;
+				stream.Close();
+			}
+			catch (Exception ex) {
+				IsBusy = false;
+				string error = $"Exporting scan results has failed because of {ex}";
+				Logger.Instance.Info(error);
+				await MessageBoxService.Show(error);
+			}
+		}
+		async void ImportScanResultsIncludingThumbnails(string? path = null) {
+			if (Duplicates.Count > 0) {
+				MessageBoxButtons result = await MessageBoxService.Show($"Importing scan results will clear the current list, continue?", MessageBoxButtons.Yes | MessageBoxButtons.No);
+				if (result == MessageBoxButtons.No) return;
+			}
+
+			if (path == null) {
+				var paths = await new OpenFileDialog {
+					Filters = new List<FileDialogFilter> { new FileDialogFilter {
+					Name = "Scan Results",
+					Extensions = new List<string>() { "scanresults" }
+						}
+					}
+				}.ShowAsync(ApplicationHelpers.MainWindow);
+				if (paths.Length == 0) return;
+				path = paths[0];
+			}
+			if (string.IsNullOrEmpty(path)) return;
+
+			try {
+				using var stream = File.OpenRead(path);
+				var options = new JsonSerializerOptions {
+					IncludeFields = true,
+				};
+				options.Converters.Add(new BitmapJsonConverter());
+				IsBusy = true;
+				IsBusyText = "Importing scan results from disk...";
+				var list = await JsonSerializer.DeserializeAsync<List<DuplicateItemVM>>(stream, options);
+				Duplicates.Clear();
+				foreach (var dupItem in list) {
+					Duplicates.Add(dupItem);
+				}
+				BuildDuplicatesView();
+				IsBusy = false;
+				stream.Close();
+			}
+			catch (Exception ex) {
+				IsBusy = false;
+				string error = $"Importing scan results has failed because of {ex}";
+				Logger.Instance.Info(error);
+				await MessageBoxService.Show(error);
 			}
 		}
 
@@ -964,6 +1070,8 @@ namespace VDF.GUI.ViewModels {
 			}
 			if (blackList)
 				ScanEngine.SaveDatabase();
+			if (BackupAfterListChanged)
+				await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 		}
 		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {

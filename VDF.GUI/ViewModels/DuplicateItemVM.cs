@@ -24,7 +24,8 @@ namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
 	public sealed class DuplicateItemVM : ReactiveObject {
-
+		//For JSON deserialization only
+		public DuplicateItemVM() {  }
 
 		public DuplicateItemVM(DuplicateItem item) {
 			ItemInfo = item;
@@ -33,7 +34,7 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(Thumbnail));
 			};
 		}
-		public DuplicateItem ItemInfo { get; }
+		public DuplicateItem ItemInfo { get; set; }
 
 		public Bitmap Thumbnail { get; set; }
 

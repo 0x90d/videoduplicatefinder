@@ -44,5 +44,11 @@ namespace VDF.GUI.Utils {
 			img.Save(file, img.RawFormat);
 			return new Bitmap(file);
 		}
+
+		public static byte[] ToByteArray(this Bitmap image) {
+			using MemoryStream ms = new MemoryStream();
+			image.Save(ms);
+			return ms.ToArray();
+		}
 	}
 }
