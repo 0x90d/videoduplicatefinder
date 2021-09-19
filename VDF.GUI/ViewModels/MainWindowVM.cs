@@ -294,8 +294,8 @@ namespace VDF.GUI.ViewModels {
 			await MessageBoxService.Show("Database cleaned!");
 		}
 
-		public void SaveSettings() {
-			var path = FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
+		public void SaveSettings(string? path = null) {
+			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
 			var includes = new object[Includes.Count];
 			for (var i = 0; i < Includes.Count; i++) {
 				includes[i] = new XElement("Include", Includes[i]);
@@ -323,8 +323,8 @@ namespace VDF.GUI.ViewModels {
 			);
 			xDoc.Save(path);
 		}
-		public void LoadSettings() {
-			var path = FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
+		public void LoadSettings(string? path = null) {
+			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
 			if (!File.Exists(path)) return;
 			var xDoc = XDocument.Load(path);
 			foreach (var n in xDoc.Descendants("Include"))
@@ -486,7 +486,7 @@ namespace VDF.GUI.ViewModels {
 			if (dlgResult == MessageBoxButtons.No) return;
 			ScanEngine.ClearDatabase();
 			await MessageBoxService.Show("Done!");
-		});		
+		});
 		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
 			ExportDbToJson(new JsonSerializerOptions {
 				IncludeFields = true,
@@ -650,7 +650,31 @@ namespace VDF.GUI.ViewModels {
 				Logger.Instance.Info(e.Message);
 			}
 		});
-
+		public ReactiveCommand<Unit, Unit> SaveSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await new SaveFileDialog {
+				Directory = CoreUtils.CurrentFolder,
+				DefaultExtension = ".xml",
+				Filters = new List<FileDialogFilter> { new FileDialogFilter {
+					Extensions= new List<string> { "xml" },
+					Name = "Setting File"
+					}
+				}
+			}.ShowAsync(ApplicationHelpers.MainWindow);
+			if (string.IsNullOrEmpty(result)) return;
+			SaveSettings(result);
+		});
+		public ReactiveCommand<Unit, Unit> LoadSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await new OpenFileDialog {
+				Directory = CoreUtils.CurrentFolder,
+				Filters = new List<FileDialogFilter> { new FileDialogFilter {
+					Extensions= new List<string> { "xml" },
+					Name = "Setting File"
+					}
+				}
+			}.ShowAsync(ApplicationHelpers.MainWindow);
+			if (result.Length == 0 || string.IsNullOrEmpty(result[0])) return;
+			LoadSettings(result[0]);
+		});
 
 		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (!ScanEngine.FFmpegExists) {

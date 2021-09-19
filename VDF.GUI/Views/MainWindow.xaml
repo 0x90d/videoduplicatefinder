@@ -749,8 +749,23 @@
                             FontSize="12"
                             Text="Settings" />
                     </TabItem.Header>
-                    <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto, Auto, *">
-                        <Grid ColumnDefinitions="Auto, Auto, *">
+                    <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto, Auto, Auto, *">
+                        <Menu
+                            Grid.Row="0"
+                            MinHeight="30"
+                            Background="#222222">
+                            <MenuItem Command="{Binding SaveSettingsProfileCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Save To File" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding LoadSettingsProfileCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock VerticalAlignment="Center" Text="Load From File" />
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </Menu>
+                        <Grid Grid.Row="1" ColumnDefinitions="Auto, Auto, *">
                             <StackPanel Margin="5,5,0,0">
                                 <CheckBox
                                     VerticalAlignment="Center"
@@ -848,7 +863,7 @@
                             </StackPanel>
                         </Grid>
                         <Grid
-                            Grid.Row="1"
+                            Grid.Row="2"
                             RowDefinitions="Auto, 300"
                             ColumnDefinitions="*, *"
                             Margin="0,10,5,0">
