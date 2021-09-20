@@ -136,12 +136,16 @@ namespace VDF.GUI.ViewModels {
 			get => _GeneratePreviewThumbnails;
 			set => this.RaiseAndSetIfChanged(ref _GeneratePreviewThumbnails, value);
 		}
-		bool _ExtendedFFToolsLogging = false;
+		bool _ExtendedFFToolsLogging;
 		public bool ExtendedFFToolsLogging {
 			get => _ExtendedFFToolsLogging;
 			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
 		}
-
+		bool _UseNativeFfmpegBinding;
+		public bool UseNativeFfmpegBinding {
+			get => _UseNativeFfmpegBinding;
+			set => this.RaiseAndSetIfChanged(ref _UseNativeFfmpegBinding, value);
+		}
 		string _ScanProgressText;
 		public string ScanProgressText {
 			get => _ScanProgressText;
@@ -323,15 +327,15 @@ namespace VDF.GUI.ViewModels {
 		public void SaveSettings(string? path = null) {
 			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
 			var includes = new object[Includes.Count];
-			for (var i = 0; i < Includes.Count; i++) {
+			for (int i = 0; i < Includes.Count; i++) {
 				includes[i] = new XElement("Include", Includes[i]);
 			}
 			var excludes = new object[Blacklists.Count];
-			for (var i = 0; i < Blacklists.Count; i++) {
+			for (int i = 0; i < Blacklists.Count; i++) {
 				excludes[i] = new XElement("Exclude", Blacklists[i]);
 			}
 
-			var xDoc = new XDocument(new XElement("Settings",
+			XDocument xDoc = new(new XElement("Settings",
 					new XElement("Includes", includes),
 					new XElement("Excludes", excludes),
 					new XElement("Percent", Percent),
@@ -345,7 +349,8 @@ namespace VDF.GUI.ViewModels {
 					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails),
 					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging),
 					new XElement("BackupAfterListChanged", BackupAfterListChanged),
-					new XElement("CustomFFArguments", CustomFFArguments)
+					new XElement("CustomFFArguments", CustomFFArguments),
+					new XElement("UseNativeFfmpegBinding", UseNativeFfmpegBinding)
 				)
 			);
 			xDoc.Save(path);
@@ -392,6 +397,9 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
 				if (bool.TryParse(n.Value, out var value))
 					ExtendedFFToolsLogging = value;
+			foreach (var n in xDoc.Descendants("UseNativeFfmpegBinding"))
+				if (bool.TryParse(n.Value, out var value))
+					UseNativeFfmpegBinding = value;
 			foreach (var n in xDoc.Descendants("BackupAfterListChanged"))
 				if (bool.TryParse(n.Value, out var value))
 					BackupAfterListChanged = value;
@@ -791,6 +799,10 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
 				return;
 			}
+			if (UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) {
+				await MessageBoxService.Show("Cannot find shared FFmpeg libraries. Either uncheck 'Use native ffmpeg binding' in settings or please follow instructions on Github and restart VDF");
+				return;
+			}
 			if (Includes.Count == 0) {
 				await MessageBoxService.Show("There are no folders to scan. Please go to the settings and add at least one folder.");
 				return;
@@ -824,6 +836,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.ThumbnailCount = Thumbnails;
 			Scanner.Settings.ExtendedFFToolsLogging = ExtendedFFToolsLogging;
 			Scanner.Settings.CustomFFArguments = CustomFFArguments;
+			Scanner.Settings.UseNativeFfmpegBinding = UseNativeFfmpegBinding;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

@@ -79,6 +79,7 @@ namespace VDF.Core {
 
 		public static bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);
 		public static bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
+		public static bool NativeFFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath) && File.Exists(Path.Combine(FFmpeg.AutoGen.ffmpeg.RootPath, "avcodec-58.dll"));
 
 		public async void StartSearch() {
 			Prepare();
@@ -118,6 +119,7 @@ namespace VDF.Core {
 
 			FfmpegEngine.HardwareAccelerationMode = Settings.HardwareAccelerationMode;
 			FfmpegEngine.CustomFFArguments = Settings.CustomFFArguments;
+			FfmpegEngine.UseNativeBinding = Settings.UseNativeFfmpegBinding;
 			Duplicates.Clear();
 			positionList.Clear();
 			ElapsedTimer.Reset();

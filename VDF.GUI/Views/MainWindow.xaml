@@ -824,6 +824,12 @@
                                     ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed"
                                     IsChecked="{Binding BackupAfterListChanged}"
                                     IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Use native Ffmpeg binding"
+                                    ToolTip.Tip="If activated it will call ffmpeg functions natively instead of spawning a new ffmpeg.exe process. This is MUCH(!!) faster. WARNING: You must use the latest SHARED and STABLE ffmpeg version. If something goes wrong then whole VDF will crash."
+                                    IsChecked="{Binding UseNativeFfmpegBinding}"
+                                    IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
                                 <TextBlock

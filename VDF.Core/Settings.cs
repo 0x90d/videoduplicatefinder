@@ -21,10 +21,9 @@ namespace VDF.Core {
 		public HashSet<string> BlackList { get; } = new HashSet<string>();
 
 		public bool IgnoreReadOnlyFolders;
-
 		public bool IgnoreHardlinks;
-
 		public bool GeneratePreviewThumbnails;
+		public bool UseNativeFfmpegBinding;
 
 		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 
@@ -35,10 +34,9 @@ namespace VDF.Core {
 		public float Percent = 96f;
 
 		public int ThumbnailCount = 1;
-
 		public int MaxDegreeOfParallelism = 1;
-		
-		public bool ExtendedFFToolsLogging = false;
+
+		public bool ExtendedFFToolsLogging;
 
 		public string CustomFFArguments = string.Empty;
 	}

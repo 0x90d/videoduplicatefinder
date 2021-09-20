@@ -14,7 +14,14 @@
 // */
 //
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using FFmpeg.AutoGen;
+using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
@@ -23,13 +30,69 @@ namespace VDF.Core.FFTools {
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
 		public static string CustomFFArguments = string.Empty;
-		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
+		public static bool UseNativeBinding;
+		static FfmpegEngine() {
+			FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
+			ffmpeg.RootPath = Path.GetDirectoryName(FFmpegPath);
+		}
 
-		public static byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
+		public static unsafe byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
+
+			try {
+				if (UseNativeBinding) {
+					bool isGrayByte = settings.GrayScale == 1;
+
+					AVHWDeviceType HWDevice = HardwareAccelerationMode switch {
+						FFHardwareAccelerationMode.vdpau => AVHWDeviceType.AV_HWDEVICE_TYPE_VDPAU,
+						FFHardwareAccelerationMode.dxva2 => AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2,
+						FFHardwareAccelerationMode.vaapi => AVHWDeviceType.AV_HWDEVICE_TYPE_VAAPI,
+						FFHardwareAccelerationMode.qsv => AVHWDeviceType.AV_HWDEVICE_TYPE_QSV,
+						FFHardwareAccelerationMode.cuda => AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA,
+						_ => AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
+					};
+
+					using var vsd = new VideoStreamDecoder(settings.File, HWDevice);
+
+					Size sourceSize = vsd.FrameSize;
+					AVPixelFormat sourcePixelFormat = HWDevice == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
+						? vsd.PixelFormat
+						: FFmpegHelper.GetHWPixelFormat(HWDevice);
+					Size destinationSize = isGrayByte ? new Size(16, 16) : new Size(100, -1);
+					AVPixelFormat destinationPixelFormat = isGrayByte ? AVPixelFormat.AV_PIX_FMT_GRAY8 : AVPixelFormat.AV_PIX_FMT_BGR24;
+					using var vfc =
+						new VideoFrameConverter(sourceSize, sourcePixelFormat, destinationSize, destinationPixelFormat);
+
+					if (!vsd.TryDecodeFrame(out var frame, settings.Position))
+						throw new Exception($"Failed decoding frame at {settings.Position}");
+					AVFrame convertedFrame = vfc.Convert(frame);
+
+					if (isGrayByte) {
+						int length = ffmpeg.av_image_get_buffer_size(destinationPixelFormat, convertedFrame.width,
+							convertedFrame.height, 1).ThrowExceptionIfError();
+						byte[] data = new byte[length];
+						Marshal.Copy((IntPtr)convertedFrame.data[0], data, 0, length);
+						return data;
+					}
+					else {
+						using var bitmap = new Bitmap(convertedFrame.width,
+							convertedFrame.height,
+							convertedFrame.linesize[0], PixelFormat.Format24bppRgb,
+							(IntPtr)convertedFrame.data[0]);
+						using MemoryStream stream = new();
+						bitmap.Save(stream, ImageFormat.Jpeg);
+						return stream.ToArray();
+					}
+				}
+			}
+			catch (Exception e) {
+				Logger.Instance.Info($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}");
+			}
+
+
 			//https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
-			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" + 
+			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" +
 				$" -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{settings.File}\"" +
-				$" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1" + 
+				$" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1" +
 				$" {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} {CustomFFArguments} \"-\"";
 
 			using var process = new Process {
@@ -64,10 +127,10 @@ namespace VDF.Core.FFTools {
 				}
 				else if (extendedLogging)
 					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
-				
+
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
-				
+
 				bytes = ms.ToArray();
 				if (bytes.Length == 0)
 					bytes = null;   // Makes subsequent checks easier
