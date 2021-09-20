@@ -786,7 +786,7 @@ namespace VDF.GUI.ViewModels {
 					}
 				}
 			}.ShowAsync(ApplicationHelpers.MainWindow);
-			if (result.Length == 0 || string.IsNullOrEmpty(result[0])) return;
+			if (result == null || result.Length == 0 || string.IsNullOrEmpty(result[0])) return;
 			LoadSettings(result[0]);
 		});
 
