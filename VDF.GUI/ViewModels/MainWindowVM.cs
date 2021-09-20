@@ -803,6 +803,10 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("Cannot find shared FFmpeg libraries. Either uncheck 'Use native ffmpeg binding' in settings or please follow instructions on Github and restart VDF");
 				return;
 			}
+			if (UseNativeFfmpegBinding && HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.auto) {
+				await MessageBoxService.Show("You cannot use hardware acceleration mode'auto' with native ffmpeg bindings. Please explicit set a mode or set it to 'none'.");
+				return;
+			}
 			if (Includes.Count == 0) {
 				await MessageBoxService.Show("There are no folders to scan. Please go to the settings and add at least one folder.");
 				return;
