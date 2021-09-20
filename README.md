@@ -5,11 +5,12 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 - Cross-platform
 - Fast scanning speed
 - Ultra fast rescan
+- Optional calling ffmpeg functions natively for even more speed
 - Finds duplicate videos / images based on similarity
 - Windows, Linux and MacOS GUI
 
 # Requirements
-FFmpeg and FFprobe is required.
+FFmpeg and FFprobe is required. When using native ffmpeg mode you must download SHARED and stable version of ffmpeg, which is currently `avcodec-58.dll` etc
 
 # Binaries
 
