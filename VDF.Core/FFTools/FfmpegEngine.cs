@@ -57,8 +57,8 @@ namespace VDF.Core.FFTools {
 					AVPixelFormat sourcePixelFormat = HWDevice == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
 						? vsd.PixelFormat
 						: FFmpegHelper.GetHWPixelFormat(HWDevice);
-					Size destinationSize = isGrayByte ? new Size(16, 16) : new Size(100, -1);
-					AVPixelFormat destinationPixelFormat = isGrayByte ? AVPixelFormat.AV_PIX_FMT_GRAY8 : AVPixelFormat.AV_PIX_FMT_BGR24;
+					Size destinationSize = isGrayByte ? new Size(16, 16) : new Size(100, Convert.ToInt32(sourceSize.Height * (100 / (double)sourceSize.Width)));
+					AVPixelFormat destinationPixelFormat = isGrayByte ? AVPixelFormat.AV_PIX_FMT_GRAY8 : AVPixelFormat.AV_PIX_FMT_BGRA;
 					using var vfc =
 						new VideoFrameConverter(sourceSize, sourcePixelFormat, destinationSize, destinationPixelFormat);
 
@@ -76,7 +76,7 @@ namespace VDF.Core.FFTools {
 					else {
 						using var bitmap = new Bitmap(convertedFrame.width,
 							convertedFrame.height,
-							convertedFrame.linesize[0], PixelFormat.Format24bppRgb,
+							convertedFrame.linesize[0], PixelFormat.Format32bppArgb,
 							(IntPtr)convertedFrame.data[0]);
 						using MemoryStream stream = new();
 						bitmap.Save(stream, ImageFormat.Jpeg);
