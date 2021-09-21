@@ -18,6 +18,7 @@
             Grid.Row="0"
             Margin="10,20,10,20"
             Text="{Binding Message}"
+            HorizontalAlignment="Center"
             TextWrapping="Wrap" />
         <Grid Grid.Row="1" Margin="5,0,5,5">
             <Grid.ColumnDefinitions>
