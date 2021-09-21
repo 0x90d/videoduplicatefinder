@@ -830,6 +830,18 @@
                                     ToolTip.Tip="If activated it will call ffmpeg functions natively instead of spawning a new ffmpeg.exe process. This is MUCH(!!) faster. WARNING: You must use the latest SHARED and STABLE ffmpeg version. If something goes wrong then whole VDF will crash."
                                     IsChecked="{Binding UseNativeFfmpegBinding}"
                                     IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Ignore Black Pixels"
+                                    ToolTip.Tip="Skip black pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much dark and raises the chance to detect duplicates if one of the thumbnails have black bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit."
+                                    IsChecked="{Binding IgnoreBlackPixels}"
+                                    IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Ignore White Pixels"
+                                    ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit."
+                                    IsChecked="{Binding IgnoreWhitePixels}"
+                                    IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
                                 <TextBlock

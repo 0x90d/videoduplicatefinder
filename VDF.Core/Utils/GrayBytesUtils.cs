@@ -14,9 +14,7 @@
 // */
 //
 
-using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -26,13 +24,15 @@ using System.Runtime.Intrinsics.X86;
 namespace VDF.Core.Utils {
 	static class GrayBytesUtils {
 		public const int GrayByteValueLength = 256;
+		const byte BlackPixelLimit = 0x20;
+		const byte WhitePixelLimit = 0xF0;
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool VerifyGrayScaleValues(byte[] data, double darkProcent = 80) {
 			int darkPixels = 0;
 			// ReSharper disable once LoopCanBeConvertedToQuery
 			for (int i = 0; i < data.Length; i++) {
-				if (data[i] <= 0x20)
+				if (data[i] <= BlackPixelLimit)
 					darkPixels++;
 			}
 			return 100d / data.Length * darkPixels < darkProcent;
@@ -62,11 +62,29 @@ namespace VDF.Core.Utils {
 				buffer[buffercounter] = r;
 				buffercounter++;
 				var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
-				if (brightness <= 0x20)
+				if (brightness <= BlackPixelLimit)
 					count++;
 			}
 			return 100d / all * count >= darkProcent ? null : buffer;
 
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static float PercentageDifferenceWithoutSpecificPixels(byte[] img1, byte[] img2, bool ignoreBlackPixels, bool ignoreWhitePixels) {
+			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
+			long diff = 0;
+			int counter = 0;
+			for (int i = 0; i < img1.Length; i++) {
+				bool isValid = true;
+				if (ignoreBlackPixels)
+					isValid = img1[i] > BlackPixelLimit && img2[i] > BlackPixelLimit;
+				if (!isValid) continue;
+				if (ignoreWhitePixels)
+					isValid = img1[i] < WhitePixelLimit && img2[i] < WhitePixelLimit;
+				if (!isValid) continue;
+				diff += Math.Abs(img1[i] - img2[i]);
+				counter++;
+			}
+			return (float)diff / counter / counter;
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe float PercentageDifference(byte[] img1, byte[] img2) {
@@ -98,7 +116,7 @@ namespace VDF.Core.Utils {
 				for (int i = 0; i < img1.Length; i++)
 					diff += Math.Abs(img1[i] - img2[i]);
 			}
-			return (float)diff /  img1.Length / 256;
+			return (float)diff / img1.Length / 256;
 		}
 
 	}

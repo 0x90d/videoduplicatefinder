@@ -24,19 +24,19 @@ namespace VDF.Core {
 		public bool IgnoreHardlinks;
 		public bool GeneratePreviewThumbnails;
 		public bool UseNativeFfmpegBinding;
-
-		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
-
 		public bool IncludeSubDirectories = true;
 		public bool IncludeImages = true;
+		public bool ExtendedFFToolsLogging;
+		public bool IgnoreBlackPixels;
+		public bool IgnoreWhitePixels;
+
+		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 
 		public byte Threshhold = 5;
 		public float Percent = 96f;
 
 		public int ThumbnailCount = 1;
 		public int MaxDegreeOfParallelism = 1;
-
-		public bool ExtendedFFToolsLogging;
 
 		public string CustomFFArguments = string.Empty;
 	}

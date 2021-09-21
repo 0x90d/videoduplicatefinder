@@ -107,6 +107,16 @@ namespace VDF.GUI.ViewModels {
 			get => _IgnoreHardlinks;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreHardlinks, value);
 		}
+		bool _IgnoreBlackPixels;
+		public bool IgnoreBlackPixels {
+			get => _IgnoreBlackPixels;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreBlackPixels, value);
+		}
+		bool _IgnoreWhitePixels;
+		public bool IgnoreWhitePixels {
+			get => _IgnoreWhitePixels;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreWhitePixels, value);
+		}
 		int _MaxDegreeOfParallelism = 1;
 		public int MaxDegreeOfParallelism {
 			get => _MaxDegreeOfParallelism;
@@ -166,7 +176,7 @@ namespace VDF.GUI.ViewModels {
 		public int ScanProgressValue {
 			get => _ScanProgressValue;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressValue, value);
-		}		
+		}
 		bool _BackupAfterListChanged = true;
 		public bool BackupAfterListChanged {
 			get => _BackupAfterListChanged;
@@ -350,6 +360,8 @@ namespace VDF.GUI.ViewModels {
 					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging),
 					new XElement("BackupAfterListChanged", BackupAfterListChanged),
 					new XElement("CustomFFArguments", CustomFFArguments),
+					new XElement("IgnoreBlackPixels", IgnoreBlackPixels),
+					new XElement("IgnoreWhitePixels", IgnoreWhitePixels),
 					new XElement("UseNativeFfmpegBinding", UseNativeFfmpegBinding)
 				)
 			);
@@ -403,6 +415,12 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("BackupAfterListChanged"))
 				if (bool.TryParse(n.Value, out var value))
 					BackupAfterListChanged = value;
+			foreach (var n in xDoc.Descendants("IgnoreBlackPixels"))
+				if (bool.TryParse(n.Value, out var value))
+					IgnoreBlackPixels = value;
+			foreach (var n in xDoc.Descendants("IgnoreWhitePixels"))
+				if (bool.TryParse(n.Value, out var value))
+					IgnoreWhitePixels = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
 				CustomFFArguments = n.Value;
 		}
@@ -841,6 +859,8 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.ExtendedFFToolsLogging = ExtendedFFToolsLogging;
 			Scanner.Settings.CustomFFArguments = CustomFFArguments;
 			Scanner.Settings.UseNativeFfmpegBinding = UseNativeFfmpegBinding;
+			Scanner.Settings.IgnoreBlackPixels = IgnoreBlackPixels;
+			Scanner.Settings.IgnoreWhitePixels = IgnoreWhitePixels;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

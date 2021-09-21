@@ -234,6 +234,9 @@ namespace VDF.Core {
 
 			InitProgress(ScanList.Count);
 
+			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
+			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
+
 			try {
 				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
@@ -242,19 +245,22 @@ namespace VDF.Core {
 					for (var n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
 						if (entry.IsImage && !compItem.IsImage) continue;
-						var duplicateCounter = 0;
+						int duplicateCounter = 0;
 						float[] percent;
 						if (entry.IsImage) {
 							percent = new float[1];
-							percent[0] = GrayBytesUtils.PercentageDifference(entry.grayBytes[0]!, compItem.grayBytes[0]!);
+							percent[0] = ignoreBlackPixels || ignoreWhitePixels ?
+											GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entry.grayBytes[0]!, compItem.grayBytes[0]!, ignoreBlackPixels, ignoreWhitePixels) :
+											GrayBytesUtils.PercentageDifference(entry.grayBytes[0]!, compItem.grayBytes[0]!);
 							if (percent[0] <= percentageDifference)
 								duplicateCounter++;
 						}
 						else {
 							percent = new float[positionList.Count];
 							for (var j = 0; j < positionList.Count; j++) {
-								percent[j] =
-									GrayBytesUtils.PercentageDifference(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
+								percent[j] = ignoreBlackPixels || ignoreWhitePixels ?
+												GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
+												GrayBytesUtils.PercentageDifference(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
 								if (percent[j] <= percentageDifference) {
 									duplicateCounter++;
 								}
