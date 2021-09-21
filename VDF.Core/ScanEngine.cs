@@ -127,7 +127,7 @@ namespace VDF.Core {
 			pauseTokenSource = new PauseTokenSource();
 			cancelationTokenSource = new CancellationTokenSource();
 			float positionCounter = 0f;
-			for (var i = 0; i < Settings.ThumbnailCount; i++) {
+			for (int i = 0; i < Settings.ThumbnailCount; i++) {
 				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
 				positionList.Add(positionCounter);
 			}
@@ -242,7 +242,7 @@ namespace VDF.Core {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					FileEntry? entry = ScanList[i];
-					for (var n = i + 1; n < ScanList.Count; n++) {
+					for (int n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
 						if (entry.IsImage && !compItem.IsImage) continue;
 						int duplicateCounter = 0;
@@ -257,7 +257,7 @@ namespace VDF.Core {
 						}
 						else {
 							percent = new float[positionList.Count];
-							for (var j = 0; j < positionList.Count; j++) {
+							for (int j = 0; j < positionList.Count; j++) {
 								percent[j] = ignoreBlackPixels || ignoreWhitePixels ?
 												GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
 												GrayBytesUtils.PercentageDifference(entry.grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);

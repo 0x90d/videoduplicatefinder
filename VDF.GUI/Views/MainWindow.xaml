@@ -700,8 +700,11 @@
                                 </DataGrid.ContextMenu>
                             </DataGrid>
                         </Grid>
-                        <Grid Grid.Row="2" Background="#222222" IsVisible="{Binding !!Duplicates.Count}">
-                            <StackPanel MinHeight="20" Orientation="Horizontal">
+                        <Grid Grid.Row="2" Background="#222222" IsVisible="{Binding !!Duplicates.Count}" RowDefinitions="Auto, Auto">
+                            <StackPanel MinHeight="20" Orientation="Horizontal" Grid.Row="0">
+                                <TextBlock Text="{Binding DuplicatesSelectedCounter, Mode=OneWay, StringFormat=Total Selected Duplicates: \{0\}}" />
+                            </StackPanel>
+                            <StackPanel MinHeight="20" Orientation="Horizontal" Grid.Row="1">
                                 <TextBlock Text="{Binding Duplicates.Count, Mode=OneWay, StringFormat=Duplicates In List: \{0\}}" />
                                 <Separator
                                     Width="1"

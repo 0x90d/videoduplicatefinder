@@ -35,6 +35,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Linq;
 using System.Text.Json.Serialization;
+using System.Collections.Specialized;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowVM : ReactiveObject {
@@ -230,6 +231,11 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(TotalSizeRemoved));
 			}
 		}
+		int _DuplicatesSelectedCounter;
+		public int DuplicatesSelectedCounter {
+			get => _DuplicatesSelectedCounter;
+			set => this.RaiseAndSetIfChanged(ref _DuplicatesSelectedCounter, value);
+		}
 		public string TotalSizeRemoved => TotalSizeRemovedInternal.BytesToString();
 #if DEBUG
 		public static bool IsDebug => true;
@@ -298,6 +304,28 @@ namespace VDF.GUI.ViewModels {
 			Instance_LogItemAdded(string.Empty);
 			if (File.Exists(BackupScanResultsFile))
 				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
+
+			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
+
+		}
+
+		void Duplicates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
+			if (e.OldItems != null) {
+				foreach (INotifyPropertyChanged item in e.OldItems)
+					item.PropertyChanged -= DuplicateItemVM_PropertyChanged;
+			}
+			if (e.NewItems != null) {
+				foreach (INotifyPropertyChanged item in e.NewItems)
+					item.PropertyChanged += DuplicateItemVM_PropertyChanged;
+			}
+		}
+
+		void DuplicateItemVM_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+			if (e.PropertyName != nameof(DuplicateItemVM.Checked)) return;
+			if (((DuplicateItemVM)sender).Checked)
+				DuplicatesSelectedCounter++;
+			else 
+				DuplicatesSelectedCounter--;
 		}
 
 		void Scanner_ThumbnailsRetrieved(object sender, EventArgs e) {
