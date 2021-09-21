@@ -79,7 +79,10 @@ namespace VDF.Core.Utils {
 				"ScannedFiles.db"), FileMode.Create);
 			Serializer.Serialize(stream, Database);
 		}
-		public static void ClearDatabase() => Database.Clear();
+		public static void ClearDatabase() {
+			Database.Clear();
+			SaveDatabase();
+		}
 
 		public static void BlacklistFileEntry(string filePath) {
 			if (!Database.TryGetValue(new FileEntry(filePath), out FileEntry? actualValue))
