@@ -79,7 +79,7 @@ namespace VDF.Core {
 
 		public static bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);
 		public static bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
-		public static bool NativeFFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath) && File.Exists(Path.Combine(FFmpeg.AutoGen.ffmpeg.RootPath, "avcodec-58.dll"));
+		public static bool NativeFFmpegExists => FfmpegEngine.NativeFFmpegExists;
 
 		public async void StartSearch() {
 			Prepare();

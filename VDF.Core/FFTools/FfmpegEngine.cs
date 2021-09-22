@@ -31,9 +31,24 @@ namespace VDF.Core.FFTools {
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
 		public static string CustomFFArguments = string.Empty;
 		public static bool UseNativeBinding;
+		public static bool NativeFFmpegExists = false;
 		static FfmpegEngine() {
 			FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
-			ffmpeg.RootPath = Path.GetDirectoryName(FFmpegPath);
+
+			string?[] pathList = new string?[]{Path.GetDirectoryName(FFmpegPath), ffmpeg.RootPath, string.Empty};
+			foreach (string? path in pathList)
+			{
+				if (path != null) {
+					try {
+						ffmpeg.RootPath = path;
+						ffmpeg.GetOrLoadLibrary("avformat");
+						ffmpeg.GetOrLoadLibrary("swscale");
+						NativeFFmpegExists = true;
+						break;
+					}
+					catch {	}
+				}
+			}
 		}
 
 		public static unsafe byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
