@@ -60,6 +60,12 @@ namespace VDF.Core.FFTools.FFmpegNative {
 					string? path = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg);
 					if (path != null && CheckForFfmpegLibraryFilesInFolder(Path.GetDirectoryName(path)!))
 						return true;
+					else if (path == null) {
+						//Case where ffmpeg(.exe) does not exist but libraries files could exist
+						path = Path.Combine(Utils.CoreUtils.CurrentFolder, "bin");
+						if (CheckForFfmpegLibraryFilesInFolder(path))
+							return true;
+					}
 
 					path = Utils.CoreUtils.CurrentFolder;
 					if (CheckForFfmpegLibraryFilesInFolder(path))

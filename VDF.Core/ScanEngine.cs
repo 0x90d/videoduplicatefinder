@@ -112,7 +112,7 @@ namespace VDF.Core {
 
 		void Prepare() {
 			//Using VDF.GUI we know fftools exist at this point but VDF.Core might be used in other projects as well
-			if (!FFmpegExists)
+			if (!Settings.UseNativeFfmpegBinding && !FFmpegExists)
 				throw new FFNotFoundException("Cannot find FFmpeg");
 			if (!FFprobeExists)
 				throw new FFNotFoundException("Cannot find FFprobe");

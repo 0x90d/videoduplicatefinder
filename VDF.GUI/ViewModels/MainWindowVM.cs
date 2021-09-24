@@ -837,7 +837,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
-			if (!ScanEngine.FFmpegExists) {
+			if (!UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {
 				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
 				return;
 			}
