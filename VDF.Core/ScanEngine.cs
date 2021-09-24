@@ -79,7 +79,7 @@ namespace VDF.Core {
 
 		public static bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);
 		public static bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
-		public static bool NativeFFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath) && File.Exists(Path.Combine(FFmpeg.AutoGen.ffmpeg.RootPath, "avcodec-58.dll"));
+		public static bool NativeFFmpegExists => FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist;
 
 		public async void StartSearch() {
 			Prepare();
@@ -116,6 +116,8 @@ namespace VDF.Core {
 				throw new FFNotFoundException("Cannot find FFmpeg");
 			if (!FFprobeExists)
 				throw new FFNotFoundException("Cannot find FFprobe");
+			if (Settings.UseNativeFfmpegBinding && !FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist)
+				throw new FFNotFoundException("Cannot find FFmpeg libraries");
 
 			FfmpegEngine.HardwareAccelerationMode = Settings.HardwareAccelerationMode;
 			FfmpegEngine.CustomFFArguments = Settings.CustomFFArguments;
