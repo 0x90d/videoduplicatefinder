@@ -123,6 +123,11 @@ namespace VDF.GUI.ViewModels {
 			get => _MaxDegreeOfParallelism;
 			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
+		bool _ShowEnlargedThumbnailOnMouseHover;
+		public bool ShowEnlargedThumbnailOnMouseHover {
+			get => _ShowEnlargedThumbnailOnMouseHover;
+			set => this.RaiseAndSetIfChanged(ref _ShowEnlargedThumbnailOnMouseHover, value); 
+		}
 #pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
@@ -390,6 +395,7 @@ namespace VDF.GUI.ViewModels {
 					new XElement("CustomFFArguments", CustomFFArguments),
 					new XElement("IgnoreBlackPixels", IgnoreBlackPixels),
 					new XElement("IgnoreWhitePixels", IgnoreWhitePixels),
+					new XElement("ShowEnlargedThumbnailOnMouseHover", ShowEnlargedThumbnailOnMouseHover),
 					new XElement("UseNativeFfmpegBinding", UseNativeFfmpegBinding)
 				)
 			);
@@ -449,6 +455,9 @@ namespace VDF.GUI.ViewModels {
 			foreach (var n in xDoc.Descendants("IgnoreWhitePixels"))
 				if (bool.TryParse(n.Value, out var value))
 					IgnoreWhitePixels = value;
+			foreach (var n in xDoc.Descendants("ShowEnlargedThumbnailOnMouseHover"))
+				if (bool.TryParse(n.Value, out var value))
+					ShowEnlargedThumbnailOnMouseHover = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
 				CustomFFArguments = n.Value;
 		}

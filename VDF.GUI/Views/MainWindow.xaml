@@ -422,22 +422,24 @@
                                                         Grid.Column="2"
                                                         Margin="10,0,0,0"
                                                         Source="{Binding Thumbnail}"
-                                                        Stretch="None"
-                                                        ToolTip.Tip="Double click to open the file in explorer/shell">
+                                                        Stretch="None">
                                                         <i:Interaction.Behaviors>
                                                             <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #ThumbnailImage}">
                                                                 <ia:InvokeCommandAction Command="{Binding $parent[DataGrid].DataContext.OpenItemCommand}" CommandParameter="{Binding}" />
                                                             </ia:EventTriggerBehavior>
                                                         </i:Interaction.Behaviors>
                                                         <ToolTip.Tip>
-                                                            <Border>
-                                                                <LayoutTransformControl>
-                                                                    <LayoutTransformControl.LayoutTransform>
-                                                                        <ScaleTransform ScaleX="3" ScaleY="3" />
-                                                                    </LayoutTransformControl.LayoutTransform>
-                                                                    <Image Source="{Binding Thumbnail}" />
-                                                                </LayoutTransformControl>
-                                                            </Border>
+                                                            <Grid>
+                                                                <Border IsVisible="{Binding $parent[DataGrid].DataContext.ShowEnlargedThumbnailOnMouseHover}">
+                                                                    <LayoutTransformControl>
+                                                                        <LayoutTransformControl.LayoutTransform>
+                                                                            <ScaleTransform ScaleX="3" ScaleY="3" />
+                                                                        </LayoutTransformControl.LayoutTransform>
+                                                                        <Image Source="{Binding Thumbnail}" />
+                                                                    </LayoutTransformControl>
+                                                                </Border>
+                                                                <TextBlock IsVisible="{Binding !$parent[DataGrid].DataContext.ShowEnlargedThumbnailOnMouseHover}" Text="Double click to open the file in explorer/shell"/>
+                                                            </Grid>
                                                         </ToolTip.Tip>
                                                     </Image>
                                                 </Grid>
@@ -844,6 +846,12 @@
                                     Content="Ignore White Pixels"
                                     ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit."
                                     IsChecked="{Binding IgnoreWhitePixels}"
+                                    IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Show Enlarged Thumbnail On Mouse Hover"
+                                    ToolTip.Tip="Shows a larger version of the thumbnail on mouse hover"
+                                    IsChecked="{Binding ShowEnlargedThumbnailOnMouseHover}"
                                     IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
