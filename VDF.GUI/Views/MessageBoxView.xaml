@@ -9,7 +9,11 @@
     CanResize="false"
     SizeToContent="WidthAndHeight"
     WindowStartupLocation="CenterOwner">
-    <Grid>
+    <!-- Setting width on Grid is a workaround for a bug under Windows
+         For more information see:
+         https://github.com/AvaloniaUI/Avalonia/issues/4838#issuecomment-710759375
+    -->
+    <Grid Width="{Binding $parent[Window].Bounds.Width}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
