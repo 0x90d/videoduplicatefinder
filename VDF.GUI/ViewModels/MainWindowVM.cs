@@ -47,30 +47,24 @@ namespace VDF.GUI.ViewModels {
 		public string BackupScanResultsFile => Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
 		[CanBeNull] DataGridCollectionView view;
-		ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
-		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; } = {
-			new KeyValuePair<string, DataGridSortDescription>("None", null),
-			new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
-			new KeyValuePair<string, DataGridSortDescription>("Size Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
-			new KeyValuePair<string, DataGridSortDescription>("Resolution Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Ascending)),
-			new KeyValuePair<string, DataGridSortDescription>("Resolution Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Descending)),
-			new KeyValuePair<string, DataGridSortDescription>("Duration Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Ascending)),
-			new KeyValuePair<string, DataGridSortDescription>("Duration Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Descending)),
-			new KeyValuePair<string, DataGridSortDescription>("Date Created Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Ascending)),
-			new KeyValuePair<string, DataGridSortDescription>("Date Created Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
-			new KeyValuePair<string, DataGridSortDescription>("Similarity Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
-			new KeyValuePair<string, DataGridSortDescription>("Similarity Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
-		};
+		public ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
+		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; private set; }
+
+		public sealed class CheckedGroupsComparer : System.Collections.IComparer {
+			MainWindowVM mainVM;
+			public CheckedGroupsComparer(MainWindowVM vm) {
+				mainVM = vm;
+			}
+			public int Compare(object x, object y) {
+				var dupX = (DuplicateItemVM)x;
+				var dupY = (DuplicateItemVM)y;
+				bool xHasChecked = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Where(a => a.Checked).Any();
+				bool yHasChecked = dupY.ItemInfo.GroupId == dupX.ItemInfo.GroupId ?
+					xHasChecked :
+					mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupY.ItemInfo.GroupId).Where(a => a.Checked).Any();
+				return xHasChecked.CompareTo(yHasChecked);
+			}
+		}
 		public KeyValuePair<string, FileTypeFilter>[] TypeFilters { get; } = {
 			new KeyValuePair<string, FileTypeFilter>("All",  FileTypeFilter.All),
 			new KeyValuePair<string, FileTypeFilter>("Videos",  FileTypeFilter.Videos),
@@ -126,7 +120,7 @@ namespace VDF.GUI.ViewModels {
 		bool _ShowEnlargedThumbnailOnMouseHover;
 		public bool ShowEnlargedThumbnailOnMouseHover {
 			get => _ShowEnlargedThumbnailOnMouseHover;
-			set => this.RaiseAndSetIfChanged(ref _ShowEnlargedThumbnailOnMouseHover, value); 
+			set => this.RaiseAndSetIfChanged(ref _ShowEnlargedThumbnailOnMouseHover, value);
 		}
 #pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
@@ -294,7 +288,6 @@ namespace VDF.GUI.ViewModels {
 				GroupBlacklist = JsonSerializer.Deserialize<List<HashSet<string>>>(stream);
 			}
 			_FileType = TypeFilters[0];
-			_SortOrder = SortOrders[0];
 			Scanner.ScanDone += Scanner_ScanDone;
 			Scanner.Progress += Scanner_Progress;
 			Scanner.ThumbnailsRetrieved += Scanner_ThumbnailsRetrieved;
@@ -312,6 +305,34 @@ namespace VDF.GUI.ViewModels {
 
 			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
 
+			SortOrders = new KeyValuePair<string, DataGridSortDescription>[] {
+				new KeyValuePair<string, DataGridSortDescription>("None", null),
+				new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Size Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Resolution Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Resolution Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Duration Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Duration Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Date Created Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Date Created Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Similarity Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Similarity Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Ascending",
+				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Descending",
+				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Descending)),
+			};
+			_SortOrder = SortOrders[0];
 		}
 
 		void Duplicates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
@@ -329,7 +350,7 @@ namespace VDF.GUI.ViewModels {
 			if (e.PropertyName != nameof(DuplicateItemVM.Checked)) return;
 			if (((DuplicateItemVM)sender).Checked)
 				DuplicatesSelectedCounter++;
-			else 
+			else
 				DuplicatesSelectedCounter--;
 		}
 
