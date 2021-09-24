@@ -71,6 +71,15 @@ namespace VDF.Core.FFTools.FFmpegNative {
 					if (CheckForFfmpegLibraryFilesInFolder(path))
 						return true;
 
+
+					//Try fast lookup first, credits: @Maltragor
+					try {
+						foreach (KeyValuePair<string, int> item in ffmpeg.LibraryVersionMap)
+							ffmpeg.GetOrLoadLibrary(item.Key);
+						return true;
+					}
+					catch { }
+
 					if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 						string firstLibrary = $"lib{ffmpeg.LibraryVersionMap.Keys.First()}.so.{ffmpeg.LibraryVersionMap.Values.First()}";
 						List<string> filesList = Directory.EnumerateFiles("/usr/lib/", firstLibrary, new EnumerationOptions {
