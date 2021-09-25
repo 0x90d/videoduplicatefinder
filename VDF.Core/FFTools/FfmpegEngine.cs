@@ -17,8 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
+using System.Linq;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 using VDF.Core.FFTools.FFmpegNative;
@@ -72,12 +71,28 @@ namespace VDF.Core.FFTools {
 						return data;
 					}
 					else {
-						using var bitmap = new Bitmap(convertedFrame.width,
-							convertedFrame.height,
-							convertedFrame.linesize[0], PixelFormat.Format32bppArgb,
-							(IntPtr)convertedFrame.data[0]);
+						int width = convertedFrame.width;
+						int height = convertedFrame.height;
+						var totalBytes = width * height * 4;
+						var rgbaBytes = new byte[totalBytes];
+						int stride = convertedFrame.linesize[0];
+						if (stride == width * 4) {
+							Marshal.Copy((IntPtr)convertedFrame.data[0], rgbaBytes, 0, totalBytes);
+						}
+						else {
+							var sourceOffset = 0;
+							var destOffset = 0;
+							var byteWidth = width * 4;
+							for (var y = 0; y < height; y++) {
+								Marshal.Copy((IntPtr)convertedFrame.data[0] + sourceOffset, rgbaBytes, destOffset, byteWidth);
+								sourceOffset += stride;
+								destOffset += byteWidth;
+							}
+						}
+						var image = SixLabors.ImageSharp.Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Bgra32>(rgbaBytes, width, height);
 						using MemoryStream stream = new();
-						bitmap.Save(stream, ImageFormat.Jpeg);
+						image.Save(stream, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
+						bool equal = rgbaBytes.SequenceEqual(stream.ToArray());
 						return stream.ToArray();
 					}
 				}

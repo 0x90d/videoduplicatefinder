@@ -15,7 +15,7 @@
 //
 
 using System.Diagnostics;
-using System.Drawing;
+using SixLabors.ImageSharp;
 using System.Text.Json.Serialization;
 using VDF.Core.Utils;
 

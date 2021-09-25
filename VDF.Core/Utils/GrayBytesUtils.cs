@@ -15,11 +15,11 @@
 //
 
 using System.Diagnostics;
-using System.Drawing.Imaging;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace VDF.Core.Utils {
 	static class GrayBytesUtils {
@@ -38,27 +38,20 @@ namespace VDF.Core.Utils {
 			return 100d / data.Length * darkPixels < darkProcent;
 		}
 
-		public static unsafe byte[]? GetGrayScaleValues(Bitmap original, double darkProcent = 80) {
+		public static unsafe byte[]? GetGrayScaleValues(Image original, double darkProcent = 80) {
 			// Lock the bitmap's bits.  
-			Rectangle rect = new Rectangle(0, 0, original.Width, original.Height);
-			BitmapData bmpData = original.LockBits(rect, ImageLockMode.ReadOnly, original.PixelFormat);
+			using var tempImage = original.CloneAs<Bgra32>();
+			tempImage.TryGetSinglePixelSpan(out var pixelSpan);
+			var span = MemoryMarshal.AsBytes(pixelSpan);
 
-			// Get the address of the first line.
-			IntPtr ptr = bmpData.Scan0;
-
-			// Declare an array to hold the bytes of the bitmap.
-			int bytes = bmpData.Stride * original.Height;
-			byte* rgbValues = stackalloc byte[bytes];
 			byte[] buffer = new byte[GrayByteValueLength];
+			int stride = tempImage.GetPixelRowSpan(0).Length;
+			int bytes = stride * original.Height;
 
-			// Copy the RGB values into the array.
-			Unsafe.CopyBlock(rgbValues, (void*)ptr, (uint)bytes);
-			original.UnlockBits(bmpData);
-
-			int count = 0, all = bmpData.Width * bmpData.Height;
+			int count = 0, all = original.Width * original.Height;
 			int buffercounter = 0;
 			for (int i = 0; i < bytes; i += 4) {
-				byte r = rgbValues[i + 2], g = rgbValues[i + 1], b = rgbValues[i];
+				byte r = span[i + 2], g = span[i + 1], b = span[i];
 				buffer[buffercounter] = r;
 				buffercounter++;
 				var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);

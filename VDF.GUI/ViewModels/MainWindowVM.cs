@@ -279,9 +279,6 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 		public MainWindowVM() {
-			var dir = new DirectoryInfo(Utils.ImageUtils.ThumbnailDirectory);
-			if (!dir.Exists)
-				dir.Create();
 			FileInfo groupBlacklistFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistedGroups.json"));
 			if (groupBlacklistFile.Exists && groupBlacklistFile.Length > 0) {
 				using var stream = new FileStream(groupBlacklistFile.FullName, FileMode.Open);
@@ -685,6 +682,7 @@ namespace VDF.GUI.ViewModels {
 					IncludeFields = true,
 				};
 				options.Converters.Add(new BitmapJsonConverter());
+				options.Converters.Add(new ImageJsonConverter());
 				IsBusy = true;
 				IsBusyText = "Saving scan results to disk...";
 				await JsonSerializer.SerializeAsync(stream, Duplicates, options);
@@ -893,15 +891,6 @@ namespace VDF.GUI.ViewModels {
 			}
 
 			Duplicates.Clear();
-			try {
-				foreach (var f in new DirectoryInfo(Utils.ImageUtils.ThumbnailDirectory).EnumerateFiles())
-					f.Delete();
-			}
-			catch (Exception e) {
-				Logger.Instance.Info(e.Message);
-				await MessageBoxService.Show("Failed to clean up the thumbnail directory. Please check log file.");
-				return;
-			}
 			IsScanning = true;
 			SaveSettings();
 			//Set scan settings

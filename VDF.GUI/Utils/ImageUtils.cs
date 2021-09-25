@@ -14,40 +14,45 @@
 // */
 //
 
-using System.Collections.Generic;
-using System.IO;
+
 using Avalonia.Media.Imaging;
-using VDF.Core.Utils;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace VDF.GUI.Utils {
 	static class ImageUtils {
-		public static string ThumbnailDirectory => Core.Utils.FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Thumbnails");
-		public static Bitmap JoinImages(List<System.Drawing.Image> pImgList) {
+		public static Bitmap JoinImages(List<Image> pImgList) {
 			if (pImgList == null || pImgList.Count == 0) return null;
-
-			string file = Core.Utils.FileUtils.SafePathCombine(ThumbnailDirectory, Path.GetRandomFileName() + ".jpeg");
 
 			int height = pImgList[0].Height;
 			int width = 0;
 			for (int i = 0; i <= pImgList.Count - 1; i++)
 				width += pImgList[i].Width;
-			using System.Drawing.Bitmap img = new System.Drawing.Bitmap(width, height);
-			using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(img)) {
-				g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-				int tmpwidth = 0;
-				for (int i = 0; i <= pImgList.Count - 1; i++) {
-					g.DrawImage(pImgList[i], tmpwidth, 0);
-					tmpwidth += pImgList[i].Width;
-				}
-				g.Save();
+
+			using var img = new Image<Rgba32>(width, height); // create output image of the correct dimensions
+
+			List<Point> locations = new(pImgList.Count);
+			int tmpwidth = 0;
+			for (int i = 0; i <= pImgList.Count - 1; i++) {
+				img.Mutate(a => a.DrawImage(pImgList[i], new Point(tmpwidth, 0), 1f));
+				tmpwidth += pImgList[i].Width;
 			}
-			img.Save(file, img.RawFormat);
-			return new Bitmap(file);
+
+			using MemoryStream ms = new();
+			img.Save(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
+			ms.Position = 0;
+			return new Bitmap(ms);
 		}
 
 		public static byte[] ToByteArray(this Bitmap image) {
-			using MemoryStream ms = new MemoryStream();
+			using MemoryStream ms = new();
 			image.Save(ms);
+			return ms.ToArray();
+		}
+		public static byte[] ToByteArray(this Image image) {
+			using MemoryStream ms = new();
+			image.Save(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
 			return ms.ToArray();
 		}
 	}

@@ -17,7 +17,7 @@
 global using System;
 global using System.IO;
 global using System.Collections.Generic;
-global using System.Drawing;
+global using SixLabors.ImageSharp;
 global using System.Threading;
 global using System.Threading.Tasks;
 using System.Diagnostics;
@@ -26,6 +26,7 @@ using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 using System.Linq;
+using SixLabors.ImageSharp.Processing;
 
 namespace VDF.Core {
 	public sealed class ScanEngine {
@@ -329,7 +330,7 @@ namespace VDF.Core {
 						//For images it doesn't make sense to load the actual image more than once
 						list = new List<Image>(1);
 						try {
-							Image bitmapImage = Image.FromFile(entry.Path);
+							Image bitmapImage = Image.Load(entry.Path);
 							float resizeFactor = 1f;
 							if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
 								float widthFactor = bitmapImage.Width / 100f;
@@ -339,14 +340,8 @@ namespace VDF.Core {
 							}
 							int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
 							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
-							var newImage = new Bitmap(width, height);
-							using (var g = Graphics.FromImage(newImage)) {
-								g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-								g.DrawImage(bitmapImage, 0, 0, newImage.Width, newImage.Height);
-							}
-
-							bitmapImage.Dispose();
-							list.Add(newImage);
+							bitmapImage.Mutate(i => i.Resize(width, height));
+							list.Add(bitmapImage);
 						}
 						catch (Exception ex) {
 							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
@@ -364,7 +359,7 @@ namespace VDF.Core {
 							}, Settings.ExtendedFFToolsLogging);
 							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
 							using var byteStream = new MemoryStream(b);
-							var bitmapImage = Image.FromStream(byteStream);
+							var bitmapImage = Image.Load(byteStream);
 							list.Add(bitmapImage);
 						}
 					}
@@ -380,19 +375,16 @@ namespace VDF.Core {
 			try {
 
 				using var byteStream = File.OpenRead(imageFile.Path);
-				using var bitmapImage = Image.FromStream(byteStream);
+				using var bitmapImage = Image.Load(byteStream);
 				//Set some props while we already loaded the image
 				imageFile.mediaInfo = new MediaInfo {
 					Streams = new[] {
 							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
 						}
 				};
-				var b = new Bitmap(16, 16);
-				using (var g = Graphics.FromImage(b)) {
-					g.DrawImage(bitmapImage, 0, 0, 16, 16);
-				}
+				bitmapImage.Mutate(a => a.Resize(16, 16));
 
-				var d = GrayBytesUtils.GetGrayScaleValues(b);
+				var d = GrayBytesUtils.GetGrayScaleValues(bitmapImage);
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
 					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");
