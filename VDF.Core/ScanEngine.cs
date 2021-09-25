@@ -237,10 +237,6 @@ namespace VDF.Core {
 		}
 
 		bool checkIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
-			difference = 1.0f;
-			if (entry.IsImage != compItem.IsImage) 
-				return false; 
-
 			grayBytes ??= entry.grayBytes;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
 			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
@@ -262,8 +258,10 @@ namespace VDF.Core {
 							GrayBytesUtils.PercentageDifference(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, 
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-				if (diff > differenceLimit)
+				if (diff > differenceLimit) {
+					difference = 1.0f;
 					return false;
+				}
 				diffSum += diff;
 			}
 			difference = diffSum / positionList.Count; 
@@ -286,17 +284,21 @@ namespace VDF.Core {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					FileEntry? entry = ScanList[i];
-
+					float difference = 0;
+					DuplicateFlags flags = DuplicateFlags.None;
+					bool isDuplicate;
 					Dictionary<double, byte[]?>? flippedGrayBytes = null;
+					
 					if (Settings.CompareHorizontallyFlipped)
 						flippedGrayBytes = createFlippedGrayBytes(entry);
 
 					for (var n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
-						DuplicateFlags flags = DuplicateFlags.None; 
-						bool isDuplicate = checkIfDuplicate(entry, null, compItem, out var difference);
-						if (Settings.CompareHorizontallyFlipped && (entry.IsImage == compItem.IsImage)) {
-							if (checkIfDuplicate(entry, flippedGrayBytes, compItem, out var flippedDifference)) {
+						if (entry.IsImage == compItem.IsImage) {
+							flags = DuplicateFlags.None;
+							isDuplicate = checkIfDuplicate(entry, null, compItem, out difference);
+							if (Settings.CompareHorizontallyFlipped && 
+								checkIfDuplicate(entry, flippedGrayBytes, compItem, out var flippedDifference)) {
 								if (!isDuplicate || flippedDifference < difference) {
 									flags |= DuplicateFlags.Flipped; 
 									isDuplicate = true;
@@ -304,38 +306,37 @@ namespace VDF.Core {
 								}
 							}
 						}
+						else
+							isDuplicate = false;
 
-						if (!isDuplicate) {
-							IncrementProgress(entry.Path);
-							continue;
-						}
+						if (isDuplicate) {
+							lock (duplicateDict) {
+								bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
+								bool foundComp = duplicateDict.TryGetValue(compItem.Path, out DuplicateItem? existingComp);
 
-						lock (duplicateDict) {
-							bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
-							bool foundComp = duplicateDict.TryGetValue(compItem.Path, out DuplicateItem? existingComp);
-
-							if (foundBase && foundComp) {
-								//this happens with 4+ identical items:
-								//first, 2+ duplicate groups are found independently, they are merged in this branch
-								if (existingBase!.GroupId != existingComp!.GroupId) {
-									Guid groupID = existingComp!.GroupId;
-									foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
-										c.GroupId == groupID))
-										dup.GroupId = existingBase.GroupId;
+								if (foundBase && foundComp) {
+									//this happens with 4+ identical items:
+									//first, 2+ duplicate groups are found independently, they are merged in this branch
+									if (existingBase!.GroupId != existingComp!.GroupId) {
+										Guid groupID = existingComp!.GroupId;
+										foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
+											c.GroupId == groupID))
+											dup.GroupId = existingBase.GroupId;
+									}
 								}
-							}
-							else if (foundBase) {
-								duplicateDict.TryAdd(compItem.Path,
-									new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
-							}
-							else if (foundComp) {
-								duplicateDict.TryAdd(entry.Path,
-									new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
-							}
-							else {
-								var groupId = Guid.NewGuid();
-								duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
-								duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
+								else if (foundBase) {
+									duplicateDict.TryAdd(compItem.Path,
+										new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
+								}
+								else if (foundComp) {
+									duplicateDict.TryAdd(entry.Path,
+										new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
+								}
+								else {
+									var groupId = Guid.NewGuid();
+									duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
+									duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
+								}
 							}
 						}
 						IncrementProgress(entry.Path);
