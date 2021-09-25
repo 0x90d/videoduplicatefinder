@@ -42,19 +42,17 @@ namespace VDF.Core.Utils {
 			// Lock the bitmap's bits.  
 			using var tempImage = original.CloneAs<Bgra32>();
 			tempImage.TryGetSinglePixelSpan(out var pixelSpan);
-			var span = MemoryMarshal.AsBytes(pixelSpan);
+			Span<byte> span = MemoryMarshal.AsBytes(pixelSpan);
 
 			byte[] buffer = new byte[GrayByteValueLength];
 			int stride = tempImage.GetPixelRowSpan(0).Length;
 			int bytes = stride * original.Height;
 
 			int count = 0, all = original.Width * original.Height;
-			int buffercounter = 0;
-			for (int i = 0; i < bytes; i += 4) {
+			for (int i = 0; i < bytes; i++) {
 				byte r = span[i + 2], g = span[i + 1], b = span[i];
-				buffer[buffercounter] = r;
-				buffercounter++;
-				var brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
+				buffer[i] = r;
+				byte brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
 				if (brightness <= BlackPixelLimit)
 					count++;
 			}
