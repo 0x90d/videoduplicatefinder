@@ -27,19 +27,14 @@ Get latest package from https://ffmpeg.org/download.html I recommend the shared 
 Extract ffmpeg and ffprobe into the same directory of VDF.GUI.dll. Or into a sub folder called `bin`. Or make sure it can be found in `PATH` system environment variable
 
 #### Linux user:
-After installing FFmpeg & Ffprobe (see above). Make sure you got **libgdiplus** installed.
-
+Installing ffmpeg:
 ```
 sudo apt-get update
 sudo apt-get install ffmpeg
-sudo apt-get install libgdiplus
 ```
+Open terminal in VDF folder and execute `./VDF.GUI`
+You may need to set execute permission first `sudo chmod 777 VDF.GUI`
 #### MacOS user:
-Make sure you got **libgdiplus** installed. There are several ways. One way is to install `Homebrew` and run in your terminal:
-```
-brew update
-brew install mono-libgdiplus
-```
 After installing FFmpeg & Ffprobe (see above), double click on ffmpeg. You will get an error that ffmpeg is unsigned. Now open macOS settings -> Security -> General and choose 'Always open'. Do the same for ffprobe. Now open Terminal in VDF folder and give VDF.GUI executable rights `sudo chmod -R 755 VDF.GUI`. Now right click on `VDF.GUI` and choose to open with terminal. Please remember that the steps above to allow running unsigned ffmpeg and ffprobe only last 30 minutes. Alternatively find signed versions, sign them yourself or search for other workarounds to permanently run unsigned apps on your macOS.
 
 # Screenshots
