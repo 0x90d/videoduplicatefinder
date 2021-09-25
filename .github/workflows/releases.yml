@@ -37,6 +37,8 @@ jobs:
       shell: bash
       run: |
           release_name="App-${{ matrix.target }}"
+          # Add nuget sources
+          dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
           # Build everything
           dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
           # Pack files
