@@ -223,8 +223,8 @@ namespace VDF.Core {
 			catch (OperationCanceledException) { }
 		}
 
-		Dictionary<double, byte[]?> createFlippedGrayBytes(FileEntry entry) {
-			var flippedGrayBytes = new Dictionary<double, byte[]?>();
+		Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
+			Dictionary<double, byte[]?>? flippedGrayBytes = new();
 			if (entry.IsImage)
 				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
 			else {
@@ -236,11 +236,11 @@ namespace VDF.Core {
 			return flippedGrayBytes;
 		}
 
-		bool checkIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
+		bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
 			grayBytes ??= entry.grayBytes;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
 			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
-			float differenceLimit  = 1.0f - Settings.Percent / 100f;
+			float differenceLimit = 1.0f - Settings.Percent / 100f;
 
 			if (entry.IsImage) {
 				difference = ignoreBlackPixels || ignoreWhitePixels ?
@@ -248,15 +248,15 @@ namespace VDF.Core {
 								GrayBytesUtils.PercentageDifference(grayBytes[0]!, compItem.grayBytes[0]!);
 				return difference <= differenceLimit;
 			}
-		
+
 			float diff, diffSum = 0;
 			for (int j = 0; j < positionList.Count; j++) {
 				diff = ignoreBlackPixels || ignoreWhitePixels ?
 							GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
-								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, 
+								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
 							GrayBytesUtils.PercentageDifference(
-								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!, 
+								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
 				if (diff > differenceLimit) {
 					difference = 1.0f;
@@ -264,7 +264,7 @@ namespace VDF.Core {
 				}
 				diffSum += diff;
 			}
-			difference = diffSum / positionList.Count; 
+			difference = diffSum / positionList.Count;
 			return true;
 		}
 
@@ -288,26 +288,26 @@ namespace VDF.Core {
 					DuplicateFlags flags = DuplicateFlags.None;
 					bool isDuplicate;
 					Dictionary<double, byte[]?>? flippedGrayBytes = null;
-					
-					if (Settings.CompareHorizontallyFlipped)
-						flippedGrayBytes = createFlippedGrayBytes(entry);
 
-					for (var n = i + 1; n < ScanList.Count; n++) {
+					if (Settings.CompareHorizontallyFlipped)
+						flippedGrayBytes = CreateFlippedGrayBytes(entry);
+
+					for (int n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
-						if (entry.IsImage == compItem.IsImage) {
-							flags = DuplicateFlags.None;
-							isDuplicate = checkIfDuplicate(entry, null, compItem, out difference);
-							if (Settings.CompareHorizontallyFlipped && 
-								checkIfDuplicate(entry, flippedGrayBytes, compItem, out var flippedDifference)) {
-								if (!isDuplicate || flippedDifference < difference) {
-									flags |= DuplicateFlags.Flipped; 
-									isDuplicate = true;
-									difference = flippedDifference;
-								}
+						if (entry.IsImage != compItem.IsImage)
+							continue;
+
+						flags = DuplicateFlags.None;
+						isDuplicate = CheckIfDuplicate(entry, null, compItem, out difference);
+						if (Settings.CompareHorizontallyFlipped &&
+							CheckIfDuplicate(entry, flippedGrayBytes, compItem,
+							out var flippedDifference)) {
+							if (!isDuplicate || flippedDifference < difference) {
+								flags |= DuplicateFlags.Flipped;
+								isDuplicate = true;
+								difference = flippedDifference;
 							}
 						}
-						else
-							isDuplicate = false;
 
 						if (isDuplicate) {
 							lock (duplicateDict) {

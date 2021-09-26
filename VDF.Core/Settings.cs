@@ -29,6 +29,7 @@ namespace VDF.Core {
 		public bool ExtendedFFToolsLogging;
 		public bool IgnoreBlackPixels;
 		public bool IgnoreWhitePixels;
+		public bool CompareHorizontallyFlipped;
 
 		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 
@@ -40,6 +41,5 @@ namespace VDF.Core {
 
 		public string CustomFFArguments = string.Empty;
 
-		public bool CompareHorizontallyFlipped = false;
 	}
 }
