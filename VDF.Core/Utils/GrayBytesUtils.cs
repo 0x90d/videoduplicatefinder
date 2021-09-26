@@ -49,9 +49,10 @@ namespace VDF.Core.Utils {
 			int bytes = stride * original.Height;
 
 			int count = 0, all = original.Width * original.Height;
-			for (int i = 0; i < bytes; i++) {
+			int buffercounter = 0;
+			for (int i = 0; i < span.Length; i += 4) {
 				byte r = span[i + 2], g = span[i + 1], b = span[i];
-				buffer[i] = r;
+				buffer[buffercounter++] = r;
 				byte brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
 				if (brightness <= BlackPixelLimit)
 					count++;
@@ -111,16 +112,15 @@ namespace VDF.Core.Utils {
 		}
 
 		private static byte[] flipp_shuf256 = {
-				15,14,13,12,11,10, 9, 8,   7, 6, 5, 4, 3, 2, 1, 0, 
-				31,30,29,28,27,26,25,24,  23,22,21,20,19,18,17,16 
+				15,14,13,12,11,10, 9, 8,   7, 6, 5, 4, 3, 2, 1, 0,
+				31,30,29,28,27,26,25,24,  23,22,21,20,19,18,17,16
 		};
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static byte[] FlipGrayScale(byte[] img)
-		{
+		public static byte[] FlipGrayScale(byte[] img) {
 			Debug.Assert((img.Length % 16) == 0, "Invalid img.Length");
 			byte[] flip_img;
-			if (Avx2.IsSupported){
+			if (Avx2.IsSupported) {
 				flip_img = new byte[img.Length];
 				Span<Vector256<byte>> vImg = MemoryMarshal.Cast<byte, Vector256<byte>>(img);
 				Span<Vector256<byte>> vImg_flipped = MemoryMarshal.Cast<byte, Vector256<byte>>(flip_img);
