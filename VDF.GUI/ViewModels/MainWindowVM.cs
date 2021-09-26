@@ -131,6 +131,11 @@ namespace VDF.GUI.ViewModels {
 			get => _HardwareAccelerationMode;
 			set => this.RaiseAndSetIfChanged(ref _HardwareAccelerationMode, value);
 		}
+		bool _CompareHorizontallyFlipped = false;
+		public bool CompareHorizontallyFlipped {
+			get => _CompareHorizontallyFlipped;
+			set => this.RaiseAndSetIfChanged(ref _CompareHorizontallyFlipped, value);
+		}
 		bool _IncludeSubDirectories = true;
 		public bool IncludeSubDirectories {
 			get => _IncludeSubDirectories;
@@ -414,7 +419,8 @@ namespace VDF.GUI.ViewModels {
 					new XElement("IgnoreBlackPixels", IgnoreBlackPixels),
 					new XElement("IgnoreWhitePixels", IgnoreWhitePixels),
 					new XElement("ShowEnlargedThumbnailOnMouseHover", ShowEnlargedThumbnailOnMouseHover),
-					new XElement("UseNativeFfmpegBinding", UseNativeFfmpegBinding)
+					new XElement("UseNativeFfmpegBinding", UseNativeFfmpegBinding),
+					new XElement("CompareHorizontallyFlipped", CompareHorizontallyFlipped)
 				)
 			);
 			xDoc.Save(path);
@@ -478,6 +484,9 @@ namespace VDF.GUI.ViewModels {
 					ShowEnlargedThumbnailOnMouseHover = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
 				CustomFFArguments = n.Value;
+			foreach (var n in xDoc.Descendants("CompareHorizontallyFlipped"))
+				if (bool.TryParse(n.Value, out var value))
+					CompareHorizontallyFlipped = value;
 		}
 
 		public async void LoadDatabase() {
@@ -908,6 +917,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.UseNativeFfmpegBinding = UseNativeFfmpegBinding;
 			Scanner.Settings.IgnoreBlackPixels = IgnoreBlackPixels;
 			Scanner.Settings.IgnoreWhitePixels = IgnoreWhitePixels;
+			Scanner.Settings.CompareHorizontallyFlipped = CompareHorizontallyFlipped;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in Includes)
 				Scanner.Settings.IncludeList.Add(s);

@@ -39,5 +39,7 @@ namespace VDF.Core {
 		public int MaxDegreeOfParallelism = 1;
 
 		public string CustomFFArguments = string.Empty;
+
+		public bool CompareHorizontallyFlipped = false;
 	}
 }

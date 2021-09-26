@@ -853,6 +853,12 @@
                                     ToolTip.Tip="Shows a larger version of the thumbnail on mouse hover"
                                     IsChecked="{Binding ShowEnlargedThumbnailOnMouseHover}"
                                     IsThreeState="False" />
+								<CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Compare Horizontally Flipped"
+									ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit."
+                                    IsChecked="{Binding CompareHorizontallyFlipped}"
+                                    IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
                                 <TextBlock
