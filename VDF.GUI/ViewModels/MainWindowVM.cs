@@ -363,7 +363,8 @@ namespace VDF.GUI.ViewModels {
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-			ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
+			if (BackupAfterListChanged)
+				ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
@@ -380,9 +381,9 @@ namespace VDF.GUI.ViewModels {
 				await Task.Delay(100);
 				return true;
 			}
-			var result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
+			MessageBoxButtons? result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
-			if (result == MessageBoxButtons.No) {
+			if (result != MessageBoxButtons.Yes) {
 				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
 				await Task.Delay(100);
 				return true;
@@ -603,10 +604,10 @@ namespace VDF.GUI.ViewModels {
 			Scanner.CleanupDatabase();
 		});
 		public ReactiveCommand<Unit, Unit> ClearDatabaseCommand => ReactiveCommand.CreateFromTask(async () => {
-			MessageBoxButtons dlgResult = await MessageBoxService.Show(
+			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
 				"WARNING: This will delete all stored data in your database. Do you want to continue?",
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
-			if (dlgResult == MessageBoxButtons.No) return;
+			if (dlgResult != MessageBoxButtons.Yes) return;
 			ScanEngine.ClearDatabase();
 			await MessageBoxService.Show("Done!");
 		});
@@ -707,8 +708,8 @@ namespace VDF.GUI.ViewModels {
 		}
 		async void ImportScanResultsIncludingThumbnails(string? path = null) {
 			if (Duplicates.Count > 0) {
-				MessageBoxButtons result = await MessageBoxService.Show($"Importing scan results will clear the current list, continue?", MessageBoxButtons.Yes | MessageBoxButtons.No);
-				if (result == MessageBoxButtons.No) return;
+				MessageBoxButtons? result = await MessageBoxService.Show($"Importing scan results will clear the current list, continue?", MessageBoxButtons.Yes | MessageBoxButtons.No);
+				if (result != MessageBoxButtons.Yes) return;
 			}
 
 			if (path == null) {
@@ -1103,12 +1104,12 @@ namespace VDF.GUI.ViewModels {
 
 		async void DeleteInternal(bool fromDisk, bool blackList = false, bool createSymbolLinksInstead = false) {
 			if (Duplicates.Count == 0) return;
-			MessageBoxButtons dlgResult = await MessageBoxService.Show(
+			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
 				fromDisk
 					? $"Are you sure you want to{(CoreUtils.IsWindows ? " move" : " permanently delete")} the selected files{(CoreUtils.IsWindows ? " to recycle bin (only if supported, i.e. network files will be deleted instead)" : " from disk")}?"
 					: $"Are you sure to delete selected from list (keep files){(blackList ? " and blacklist them" : string.Empty)}?",
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
-			if (dlgResult == MessageBoxButtons.No) return;
+			if (dlgResult != MessageBoxButtons.Yes) return;
 
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
 				DuplicateItemVM dub = Duplicates[i];
