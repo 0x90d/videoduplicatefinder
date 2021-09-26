@@ -6,24 +6,20 @@
     Title="{Binding Title}"
     MinWidth="400"
     MaxWidth="600"
+    MaxHeight="600"
     CanResize="false"
     SizeToContent="WidthAndHeight"
     WindowStartupLocation="CenterOwner">
-    <!-- Setting width on Grid is a workaround for a bug under Windows
-         For more information see:
-         https://github.com/AvaloniaUI/Avalonia/issues/4838#issuecomment-710759375
-    -->
-    <Grid Width="{Binding $parent[Window].Bounds.Width}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <TextBlock
-            Grid.Row="0"
-            Margin="10,20,10,20"
-            Text="{Binding Message}"
-            HorizontalAlignment="Center"
-            TextWrapping="Wrap" />
+
+    <Grid x:Name="GridMessageboxContent" RowDefinitions="Auto, Auto">
+        <ScrollViewer x:Name="ScrollViewerMessageboxContent" VerticalScrollBarVisibility="Auto">
+            <TextBlock
+                Grid.Row="0"
+                Margin="10,20,10,20"
+                Text="{Binding Message}"
+                HorizontalAlignment="Center"
+                TextWrapping="Wrap" />
+        </ScrollViewer>
         <Grid Grid.Row="1" Margin="5,0,5,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
