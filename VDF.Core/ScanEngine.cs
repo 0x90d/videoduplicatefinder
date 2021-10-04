@@ -300,8 +300,7 @@ namespace VDF.Core {
 						flags = DuplicateFlags.None;
 						isDuplicate = CheckIfDuplicate(entry, null, compItem, out difference);
 						if (Settings.CompareHorizontallyFlipped &&
-							CheckIfDuplicate(entry, flippedGrayBytes, compItem,
-							out var flippedDifference)) {
+							CheckIfDuplicate(entry, flippedGrayBytes, compItem, out float flippedDifference)) {
 							if (!isDuplicate || flippedDifference < difference) {
 								flags |= DuplicateFlags.Flipped;
 								isDuplicate = true;

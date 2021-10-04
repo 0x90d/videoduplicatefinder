@@ -339,13 +339,18 @@ namespace VDF.GUI.ViewModels {
 
 		void Duplicates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
 			if (e.OldItems != null) {
-				foreach (INotifyPropertyChanged item in e.OldItems)
+				foreach (INotifyPropertyChanged item in e.OldItems) {
 					item.PropertyChanged -= DuplicateItemVM_PropertyChanged;
+					if (((DuplicateItemVM)item).Checked)
+						DuplicatesSelectedCounter--;
+				}
 			}
 			if (e.NewItems != null) {
 				foreach (INotifyPropertyChanged item in e.NewItems)
 					item.PropertyChanged += DuplicateItemVM_PropertyChanged;
 			}
+			if (e.Action == NotifyCollectionChangedAction.Reset)
+				DuplicatesSelectedCounter = 0;
 		}
 
 		void DuplicateItemVM_PropertyChanged(object sender, PropertyChangedEventArgs e) {
