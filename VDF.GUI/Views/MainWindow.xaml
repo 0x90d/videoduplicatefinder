@@ -313,7 +313,7 @@
                                     </MenuItem.Header>
                                     <MenuItem Command="{Binding DeleteSelectionCommand}">
                                         <MenuItem.Header>
-                                            <TextBlock VerticalAlignment="Center" Text="Delete permanently" />
+                                            <TextBlock VerticalAlignment="Center" Text="Delete permanently (Shift+Delete)" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <MenuItem Header="-" />
@@ -404,6 +404,9 @@
                                 <DataGrid.KeyBindings>
                                     <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
                                     <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space"/>
+                                    <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete"/>
+                                    <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete"/>
+                                    <KeyBinding Command="{Binding DeleteHighlitedCommand}" Gesture="Control+Delete"/>
                                 </DataGrid.KeyBindings>
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn>
@@ -611,7 +614,7 @@
                                                         Text="Selected Items" />
                                                 </StackPanel>
                                             </MenuItem.Header>
-                                            <MenuItem Command="{Binding DeleteSelectionCommand}">
+                                            <MenuItem Command="{Binding DeleteSelectionCommand}" InputGesture="Shift+Delete">
                                                 <MenuItem.Header>
                                                     <StackPanel Orientation="Horizontal">
                                                         <Viewbox Width="16" Height="16">
@@ -627,7 +630,7 @@
                                                 </MenuItem.Header>
                                             </MenuItem>
                                             <Separator />
-                                            <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
+                                            <MenuItem Command="{Binding RemoveSelectionFromListCommand}" InputGesture="Delete">
                                                 <MenuItem.Header>
                                                     <StackPanel Orientation="Horizontal">
                                                         <Viewbox Width="16" Height="16">

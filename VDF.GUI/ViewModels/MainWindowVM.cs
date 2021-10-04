@@ -1081,6 +1081,24 @@ namespace VDF.GUI.ViewModels {
 			for (var i = 0; i < Duplicates.Count; i++)
 				Duplicates[i].Checked = false;
 		});
+		public ReactiveCommand<Unit, Unit> DeleteHighlitedCommand => ReactiveCommand.Create(() => {
+			if (GetDataGrid.SelectedItem == null) return;
+			Duplicates.Remove((DuplicateItemVM)GetDataGrid.SelectedItem);
+		});
+		public ReactiveCommand<Unit, Unit> DeleteSelectionWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {
+			MessageBoxButtons? dlgResult = await MessageBoxService.Show("Delete files also from DISK?",
+				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
+			if (dlgResult == MessageBoxButtons.Yes)
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+				Dispatcher.UIThread.InvokeAsync(() => {
+					DeleteInternal(true);
+				});
+			else if (dlgResult == MessageBoxButtons.No)
+				Dispatcher.UIThread.InvokeAsync(() => {
+					DeleteInternal(false);
+				});
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+		});
 		public ReactiveCommand<Unit, Unit> DeleteSelectionCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(true);
@@ -1109,6 +1127,7 @@ namespace VDF.GUI.ViewModels {
 
 		async void DeleteInternal(bool fromDisk, bool blackList = false, bool createSymbolLinksInstead = false) {
 			if (Duplicates.Count == 0) return;
+
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
 				fromDisk
 					? $"Are you sure you want to{(CoreUtils.IsWindows ? " move" : " permanently delete")} the selected files{(CoreUtils.IsWindows ? " to recycle bin (only if supported, i.e. network files will be deleted instead)" : " from disk")}?"
