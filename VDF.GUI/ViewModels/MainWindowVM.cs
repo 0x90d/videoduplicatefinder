@@ -808,8 +808,13 @@ namespace VDF.GUI.ViewModels {
 			string newName = await InputBoxService.Show("Enter new name", fi.Name, title: "Rename File");
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
-			fi.MoveTo(newName);
-			currentItem.ItemInfo.Path = newName;
+			try {
+				fi.MoveTo(newName);
+				currentItem.ItemInfo.Path = newName;
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Failed to rename file.{Environment.NewLine}{ex.Message}");
+			}
 		});
 
 		public static ReactiveCommand<Unit, Unit> ToggleCheckboxCommand => ReactiveCommand.Create(() => {
