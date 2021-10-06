@@ -241,6 +241,7 @@ namespace VDF.Core {
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
 			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
 			float differenceLimit = 1.0f - Settings.Percent / 100f;
+			difference = 1f;
 
 			if (entry.IsImage) {
 				difference = ignoreBlackPixels || ignoreWhitePixels ?
@@ -258,14 +259,13 @@ namespace VDF.Core {
 							GrayBytesUtils.PercentageDifference(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-				if (diff > differenceLimit) {
-					difference = 1.0f;
+				if (diff > differenceLimit)
 					return false;
-				}
-				diffSum += diff;
+				else
+					diffSum += diff;
 			}
 			difference = diffSum / positionList.Count;
-			return true;
+			return !float.IsNaN(difference);
 		}
 
 		void ScanForDuplicates() {

@@ -76,7 +76,7 @@ namespace VDF.Core.Utils {
 				diff += Math.Abs(img1[i] - img2[i]);
 				counter++;
 			}
-			return (float)diff / counter / counter;
+			return (float)diff / counter / 256;
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe float PercentageDifference(byte[] img1, byte[] img2) {
