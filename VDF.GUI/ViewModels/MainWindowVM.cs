@@ -808,7 +808,6 @@ namespace VDF.GUI.ViewModels {
 			string newName = await InputBoxService.Show("Enter new name", fi.Name, title: "Rename File");
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
-			bool isValid = false;
 			while (File.Exists(newName)) {
 				MessageBoxButtons? result = await MessageBoxService.Show($"A file with the name '{Path.GetFileName(newName)}' already exists. Do you want to overwrite this file? Click on 'No' to enter a new name", MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 				if (result == null || result == MessageBoxButtons.Cancel)
@@ -819,8 +818,13 @@ namespace VDF.GUI.ViewModels {
 				if (string.IsNullOrEmpty(newName))
 					return;
 			}
-			fi.MoveTo(newName, true);
-			currentItem.ItemInfo.Path = newName;
+			try {
+				fi.MoveTo(newName, true);
+				currentItem.ItemInfo.Path = newName;
+			}
+			catch (Exception e) {
+				await MessageBoxService.Show(e.Message);
+			}
 		});
 
 		public static ReactiveCommand<Unit, Unit> ToggleCheckboxCommand => ReactiveCommand.Create(() => {
