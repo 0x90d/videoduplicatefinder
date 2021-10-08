@@ -805,7 +805,7 @@ namespace VDF.GUI.ViewModels {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
-			string newName = await InputBoxService.Show("Enter new name", fi.Name, title: "Rename File");
+			string newName = await InputBoxService.Show("Enter new name", fi.Name, title: "Rename File", selEnd: -(1 + Path.GetExtension(fi.Name).Length));
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
 			while (File.Exists(newName)) {

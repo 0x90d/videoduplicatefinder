@@ -23,8 +23,8 @@ namespace VDF.GUI.Views {
 
 	public static class InputBoxService {
 		public static async Task<String> Show(string message, string defaultInput = "", string waterMark = "",
-			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null) {
-			var dlg = new InputBoxView(message, defaultInput, waterMark, buttons, title) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null, int selStart=0, int selEnd =-1) {
+			var dlg = new InputBoxView(message, defaultInput, waterMark, buttons, title, selStart, selEnd) {
 				Icon = ApplicationHelpers.MainWindow.Icon
 			};
 			return await dlg.ShowDialog<String>(ApplicationHelpers.MainWindow);
@@ -38,7 +38,7 @@ namespace VDF.GUI.Views {
 		public InputBoxView() => InitializeComponent();
 
 		public InputBoxView(string message, string defaultInput = "", string waterMark = "",
-			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null, int selStart=0, int selEnd =-1) {
 			DataContext = new InputBoxVM();
 			((InputBoxVM)DataContext).host = this;
 			((InputBoxVM)DataContext).Message = message;
@@ -58,7 +58,11 @@ namespace VDF.GUI.Views {
 			if (textBox != null) {
 				textBox.AttachedToVisualTree += (s, e) => {
 					textBox.Focus();
-					textBox.SelectAll();
+					textBox.SelectionStart = selStart;
+					if (selEnd >= 0)
+						textBox.SelectionEnd = selEnd;
+					else
+						textBox.SelectionEnd = defaultInput.Length + 1 + selEnd;
 				};
 			}
 		}
