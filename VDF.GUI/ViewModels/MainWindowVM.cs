@@ -801,22 +801,24 @@ namespace VDF.GUI.ViewModels {
 				});
 			}
 		});
+		
 		public static ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
-			string newName = await InputBoxService.Show("Enter new name", fi.Name, title: "Rename File");
+			string newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(fi.FullName), title: "Rename File");
 			if (string.IsNullOrEmpty(newName)) return;
-			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName);
+			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName + fi.Extension);
 			while (File.Exists(newName)) {
 				MessageBoxButtons? result = await MessageBoxService.Show($"A file with the name '{Path.GetFileName(newName)}' already exists. Do you want to overwrite this file? Click on 'No' to enter a new name", MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 				if (result == null || result == MessageBoxButtons.Cancel)
 					return;
 				if (result == MessageBoxButtons.Yes)
 					break;
-				newName = await InputBoxService.Show("Enter new name", newName, title: "Rename File");
+				newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(newName), title: "Rename File");
 				if (string.IsNullOrEmpty(newName))
 					return;
+				newName = FileUtils.SafePathCombine(fi.DirectoryName, newName + fi.Extension);
 			}
 			try {
 				fi.MoveTo(newName, true);
