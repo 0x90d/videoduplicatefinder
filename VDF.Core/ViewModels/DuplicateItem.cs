@@ -107,21 +107,31 @@ namespace VDF.Core.ViewModels {
 		public TimeSpan Duration { get; set; }
 		public bool IsBestDuration { get; set; }
 		public string? FrameSize { get; set; }
-		public int FrameSizeInt { get; }
+		[JsonInclude]
+		public int FrameSizeInt { get; private set; }
 		public bool IsBestFrameSize { get; set; }
-		public string? Format { get; }
-		public string? AudioFormat { get; }
-		public string? AudioChannel { get; }
-		public int AudioSampleRate { get; }
+		[JsonInclude]
+		public string? Format { get; private set; }
+		[JsonInclude]
+		public string? AudioFormat { get; private set; }
+		[JsonInclude]
+		public string? AudioChannel { get; private set; }
+		[JsonInclude]
+		public int AudioSampleRate { get; private set; }
 		public bool IsBestAudioSampleRate { get; set; }
-		public decimal BitRateKbs { get; }
+		[JsonInclude]
+		public decimal BitRateKbs { get; private set; }
 		public bool IsBestBitRateKbs { get; set; }
-		public float Fps { get; }
+		[JsonInclude]
+		public float Fps { get; private set; }
 		public bool IsBestFps { get; set; }
-		public DateTime DateCreated { get; }
-		public DuplicateFlags Flags { get; }
+		[JsonInclude]
+		public DateTime DateCreated { get; private set; }
+		[JsonInclude]
+		public DuplicateFlags Flags { get; private set; }
 
-		public bool IsImage { get; }
+		[JsonInclude]
+		public bool IsImage { get; private set; }
 		[JsonIgnore]
 		public Action? ThumbnailsUpdated;
 		public void SetThumbnails(List<Image>? th) {
