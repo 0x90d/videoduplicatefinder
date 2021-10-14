@@ -50,6 +50,7 @@ namespace VDF.Core.Utils {
 			var enumerationOptions = new EnumerationOptions {
 				IgnoreInaccessible = true,
 			};
+			enumerationOptions.AttributesToSkip = FileAttributes.System;
 			if (ignoreReadonly)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReadOnly;
 			if (ignoreHardLinks)
