@@ -14,13 +14,8 @@
 // */
 //
 
-using System.Reactive;
-using System.Reflection;
-using System.Text;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using ReactiveUI;
-using VDF.Core.ViewModels;
 using VDF.GUI.ViewModels;
 
 namespace VDF.GUI.Views {
@@ -29,42 +24,15 @@ namespace VDF.GUI.Views {
 			InitializeComponent();
 			DataContext = new ExpressionBuilderVM(this);
 			Owner = ApplicationHelpers.MainWindow;
+			var textBox = this.FindControl<TextBox>("TextBoxInput");
+			if (textBox != null) {
+				textBox.AttachedToVisualTree += (s, e) => {
+					textBox.Focus();
+				};
+			}
 		}
 
-		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
-
-		public sealed class ExpressionBuilderVM : ReactiveObject {
-			public ExpressionBuilder host;
-			public ExpressionBuilderVM(ExpressionBuilder Host) {
-				host = Host;
-				var sb = new StringBuilder();
-
-				var properties = typeof(DuplicateItem).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-				foreach (var p in properties) {
-					sb.AppendLine($"arg.{nameof(DuplicateItemVM.ItemInfo)}.{p.Name} ({p.PropertyType.Name})");
-				}
-				sb.AppendLine();
-				sb.AppendLine();
-				sb.AppendLine("Example: arg.ItemInfo.IsImage && arg.ItemInfo.SizeLong > 3000");
-				sb.AppendLine("Example: arg.ItemInfo.Path.Contains(\"imageFolder\")");
-				sb.AppendLine("Example: arg.ItemInfo.Duration.Minute > 15");
-				sb.AppendLine("Note: Expression uses 'Dynamic Expresso' library which understands C# syntax");
-
-				AvailableProperties = sb.ToString();
-			}
-			string _ExpressionText;
-			public string ExpressionText {
-				get => _ExpressionText;
-				set => this.RaiseAndSetIfChanged(ref _ExpressionText, value);
-			}
-			public string AvailableProperties { get; }
-			public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
-				host.Close(false);
-			});
-			public ReactiveCommand<Unit, Unit> OKCommand => ReactiveCommand.Create(() => {
-				host.Close(true);
-			});
-		}
+		void InitializeComponent() => AvaloniaXamlLoader.Load(this);		
 
 	}
 }

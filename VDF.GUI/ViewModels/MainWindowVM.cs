@@ -91,7 +91,7 @@ namespace VDF.GUI.ViewModels {
 			get => _IsPaused;
 			set => this.RaiseAndSetIfChanged(ref _IsPaused, value);
 		}
-
+		string LastCustomSelectExpression = string.Empty;
 		bool _IgnoreReadOnlyFolders;
 		public bool IgnoreReadOnlyFolders {
 			get => _IgnoreReadOnlyFolders;
@@ -426,7 +426,8 @@ namespace VDF.GUI.ViewModels {
 					new XElement("IgnoreWhitePixels", IgnoreWhitePixels),
 					new XElement("ShowEnlargedThumbnailOnMouseHover", ShowEnlargedThumbnailOnMouseHover),
 					new XElement("UseNativeFfmpegBinding", UseNativeFfmpegBinding),
-					new XElement("CompareHorizontallyFlipped", CompareHorizontallyFlipped)
+					new XElement("CompareHorizontallyFlipped", CompareHorizontallyFlipped),
+					new XElement("LastCustomSelectExpression", LastCustomSelectExpression)
 				)
 			);
 			xDoc.Save(path);
@@ -490,6 +491,8 @@ namespace VDF.GUI.ViewModels {
 					ShowEnlargedThumbnailOnMouseHover = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
 				CustomFFArguments = n.Value;
+			foreach (var n in xDoc.Descendants("LastCustomSelectExpression"))
+				LastCustomSelectExpression = n.Value;
 			foreach (var n in xDoc.Descendants("CompareHorizontallyFlipped"))
 				if (bool.TryParse(n.Value, out var value))
 					CompareHorizontallyFlipped = value;
@@ -967,33 +970,49 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Stop();
 		}, this.WhenAnyValue(x => x.IsScanning));
 		public ReactiveCommand<Unit, Unit> CheckCustomCommand => ReactiveCommand.CreateFromTask(async () => {
-			var dlg = new ExpressionBuilder();
-			var res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
+			ExpressionBuilder dlg = new();
+			((ExpressionBuilderVM)dlg.DataContext).ExpressionText = LastCustomSelectExpression;
+			bool res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
 			if (!res) return;
 
-			string currentExpression =
-							((ExpressionBuilder.ExpressionBuilderVM)dlg.DataContext).ExpressionText;
+			LastCustomSelectExpression =
+							((ExpressionBuilderVM)dlg.DataContext).ExpressionText;
 
-			var blackListGroupID = new HashSet<Guid>();
+			HashSet<Guid> blackListGroupID = new();
+			bool skipIfAllMatches = false;
+			bool checkAllMatches = false;
+			bool userAsked = false;
+
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
 
-				IEnumerable<DuplicateItemVM> l = Duplicates;
+				IEnumerable<DuplicateItemVM> l = Duplicates.Where(a => a.ItemInfo.GroupId == first.ItemInfo.GroupId);
+				IEnumerable<DuplicateItemVM> matches;
 				try {
-					var interpreter = new Interpreter().SetVariable("currentDuplicate", first).
-						ParseAsDelegate<Func<DuplicateItemVM, bool>>(currentExpression + " && !arg.ItemInfo.Path.Equals(currentDuplicate.ItemInfo.Path)");
-					l = l.Where(interpreter);
+					var interpreter = new Interpreter().
+						ParseAsDelegate<Func<DuplicateItemVM, bool>>(LastCustomSelectExpression);
+					matches = l.Where(interpreter);
 				}
 				catch (ParseException e) {
-					await MessageBoxService.Show($"Failed to parse '{currentExpression}': {e}");
+					await MessageBoxService.Show($"Failed to parse '{LastCustomSelectExpression}': {e}");
 					return;
 				}
 
-				var dupMods = l as DuplicateItemVM[] ?? l.ToArray();
-				if (!dupMods.Any()) continue;
-				foreach (var dup in dupMods)
+				if (!matches.Any()) continue;
+				if (matches.Count() == l.Count()) {
+					if (!userAsked) {
+						MessageBoxButtons? result = await MessageBoxService.Show($"There are groups where all items matches your expression, for example '{first.ItemInfo.Path}'.{Environment.NewLine}{Environment.NewLine}Do you want to have all items checked (Yes)? Or do you want to have NO items in these groups checked (No)?", MessageBoxButtons.Yes | MessageBoxButtons.No);
+						if (result == MessageBoxButtons.Yes)
+							checkAllMatches = true;
+						if (result == MessageBoxButtons.No)
+							skipIfAllMatches = true;
+						userAsked = true;
+					}
+					if (skipIfAllMatches)
+						continue;
+				}
+				foreach (var dup in matches)
 					dup.Checked = true;
-				first.Checked = false;
 				blackListGroupID.Add(first.ItemInfo.GroupId);
 			}
 		});
