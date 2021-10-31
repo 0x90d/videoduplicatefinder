@@ -23,15 +23,20 @@ using VDF.GUI.Mvvm;
 namespace VDF.GUI.Views {
 	public class MainWindow : FluentWindow {
 		bool keepBackupFile;
+		bool hasExited;
+		public readonly Core.FFTools.FFHardwareAccelerationMode InitialHwMode;
 		public MainWindow() {
 			//Settings must be load before XAML is parsed
 			SettingsFile.LoadSettings();
+			// See comment in App.xaml.cs
+			InitialHwMode = SettingsFile.Instance.HardwareAccelerationMode;
 
 			InitializeComponent();
 			Closing += MainWindow_Closing;
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
+			
 			ApplicationHelpers.CurrentApplicationLifetime.Startup += MainWindow_Startup;
 			ApplicationHelpers.CurrentApplicationLifetime.Exit += MainWindow_Exit;
 			ApplicationHelpers.CurrentApplicationLifetime.ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -53,11 +58,15 @@ namespace VDF.GUI.Views {
 			}
 		}
 
-		void MainWindow_Exit(object sender, ControlledApplicationLifetimeExitEventArgs e) => 
+		void MainWindow_Exit(object sender, ControlledApplicationLifetimeExitEventArgs e) {
+			if (hasExited) return;
+			hasExited = true;
 			SettingsFile.SaveSettings();
+		}
 
-		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) => 
+		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) {
 			ApplicationHelpers.MainWindowDataContext.LoadDatabase();
+		}
 
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);

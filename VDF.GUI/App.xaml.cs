@@ -17,6 +17,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 using VDF.GUI.Views;
 
@@ -37,6 +38,12 @@ namespace VDF.GUI
             }
 
             base.OnFrameworkInitializationCompleted();
+			/*
+			 * Because of an Avalonia bug, the selected item of a Combobox gets changed
+			 * when XAML is parsed back to the initial value of the list. This will
+			 * override the saved value, so we must restore it here
+			 */
+			SettingsFile.Instance.HardwareAccelerationMode = ApplicationHelpers.MainWindow.InitialHwMode;
         }
     }
 }
