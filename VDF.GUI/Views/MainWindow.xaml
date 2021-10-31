@@ -278,7 +278,7 @@
                                     </MenuItem>
                                     <MenuItem Command="{Binding CheckLowestQualityCommand}">
                                         <MenuItem.Header>
-                                            <TextBlock VerticalAlignment="Center" Text="Select Lowest Duration / Lowest Quality (Keep longest / Best Quality)" />
+                                            <TextBlock VerticalAlignment="Center" Text="Select Lowest Duration / Quality" ToolTip.Tip="Keep longest / Best Quality" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <MenuItem Command="{Binding CheckCustomCommand}">
@@ -686,7 +686,7 @@
                                                         <TextBlock
                                                             Margin="5,0,0,0"
                                                             VerticalAlignment="Center"
-                                                            Text="Remove from list only + create symbol links and exclude from future scans" />
+                                                            Text="Remove from list only + create symbol links + exclude" />
                                                     </StackPanel>
                                                 </MenuItem.Header>
                                             </MenuItem>
