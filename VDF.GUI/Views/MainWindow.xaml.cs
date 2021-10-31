@@ -24,6 +24,9 @@ namespace VDF.GUI.Views {
 	public class MainWindow : FluentWindow {
 		bool keepBackupFile;
 		public MainWindow() {
+			//Settings must be load before XAML is parsed
+			SettingsFile.LoadSettings();
+
 			InitializeComponent();
 			Closing += MainWindow_Closing;
 			//Don't use this Window.OnClosing event,
@@ -50,14 +53,11 @@ namespace VDF.GUI.Views {
 			}
 		}
 
-		void MainWindow_Exit(object sender, ControlledApplicationLifetimeExitEventArgs e) {
-			ApplicationHelpers.MainWindowDataContext.SaveSettings();
-		}
+		void MainWindow_Exit(object sender, ControlledApplicationLifetimeExitEventArgs e) => 
+			SettingsFile.SaveSettings();
 
-		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) {
-			ApplicationHelpers.MainWindowDataContext.LoadSettings();
+		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) => 
 			ApplicationHelpers.MainWindowDataContext.LoadDatabase();
-		}
 
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);

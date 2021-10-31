@@ -1,0 +1,228 @@
+// /*
+//     Copyright (C) 2021 0x90d
+//     This file is part of VideoDuplicateFinder
+//     VideoDuplicateFinder is free software: you can redistribute it and/or modify
+//     it under the terms of the GPLv3 as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//     VideoDuplicateFinder is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+//     You should have received a copy of the GNU General Public License
+//     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
+// */
+//
+
+using System.Collections.ObjectModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Xml.Linq;
+using ReactiveUI;
+using VDF.Core.Utils;
+
+namespace VDF.GUI.Data {
+	public class SettingsFile : ReactiveObject {
+		private static SettingsFile instance;
+
+		[JsonIgnore]
+		public static SettingsFile Instance => instance ??= new SettingsFile();
+
+
+		[JsonPropertyName("Includes")]
+		public ObservableCollection<string> Includes { get; set; } = new();
+		[JsonPropertyName("Blacklists")]
+		public ObservableCollection<string> Blacklists { get; set; } = new();
+
+		string _LastCustomSelectExpression = string.Empty;
+		[JsonPropertyName("LastCustomSelectExpression")]
+		public string LastCustomSelectExpression {
+			get => _LastCustomSelectExpression;
+			set => this.RaiseAndSetIfChanged(ref _LastCustomSelectExpression, value);
+		}
+		bool _IgnoreReadOnlyFolders;
+		[JsonPropertyName("IgnoreReadOnlyFolders")]
+		public bool IgnoreReadOnlyFolders {
+			get => _IgnoreReadOnlyFolders;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreReadOnlyFolders, value);
+		}
+		bool _IgnoreHardlinks;
+		[JsonPropertyName("IgnoreHardlinks")]
+		public bool IgnoreHardlinks {
+			get => _IgnoreHardlinks;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreHardlinks, value);
+		}
+		bool _IgnoreBlackPixels;
+		[JsonPropertyName("IgnoreBlackPixels")]
+		public bool IgnoreBlackPixels {
+			get => _IgnoreBlackPixels;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreBlackPixels, value);
+		}
+		bool _IgnoreWhitePixels;
+		[JsonPropertyName("IgnoreWhitePixels")]
+		public bool IgnoreWhitePixels {
+			get => _IgnoreWhitePixels;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreWhitePixels, value);
+		}
+		int _MaxDegreeOfParallelism = 1;
+		[JsonPropertyName("MaxDegreeOfParallelism")]
+		public int MaxDegreeOfParallelism {
+			get => _MaxDegreeOfParallelism;
+			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
+		}
+		bool _ShowEnlargedThumbnailOnMouseHover;
+		[JsonPropertyName("ShowEnlargedThumbnailOnMouseHover")]
+		public bool ShowEnlargedThumbnailOnMouseHover {
+			get => _ShowEnlargedThumbnailOnMouseHover;
+			set => this.RaiseAndSetIfChanged(ref _ShowEnlargedThumbnailOnMouseHover, value);
+		}
+		Core.FFTools.FFHardwareAccelerationMode _HardwareAccelerationMode = Core.FFTools.FFHardwareAccelerationMode.auto;
+		[JsonPropertyName("HardwareAccelerationMode")]
+		public Core.FFTools.FFHardwareAccelerationMode HardwareAccelerationMode {
+			get => _HardwareAccelerationMode;
+			set => this.RaiseAndSetIfChanged(ref _HardwareAccelerationMode, value);
+		}
+		bool _CompareHorizontallyFlipped = false;
+		[JsonPropertyName("CompareHorizontallyFlipped")]
+		public bool CompareHorizontallyFlipped {
+			get => _CompareHorizontallyFlipped;
+			set => this.RaiseAndSetIfChanged(ref _CompareHorizontallyFlipped, value);
+		}
+		bool _IncludeSubDirectories = true;
+		[JsonPropertyName("IncludeSubDirectories")]
+		public bool IncludeSubDirectories {
+			get => _IncludeSubDirectories;
+			set => this.RaiseAndSetIfChanged(ref _IncludeSubDirectories, value);
+		}
+		bool _IncludeImages = true;
+		[JsonPropertyName("IncludeImages")]
+		public bool IncludeImages {
+			get => _IncludeImages;
+			set => this.RaiseAndSetIfChanged(ref _IncludeImages, value);
+		}
+		bool _GeneratePreviewThumbnails = true;
+		[JsonPropertyName("GeneratePreviewThumbnails")]
+		public bool GeneratePreviewThumbnails {
+			get => _GeneratePreviewThumbnails;
+			set => this.RaiseAndSetIfChanged(ref _GeneratePreviewThumbnails, value);
+		}
+		bool _ExtendedFFToolsLogging;
+		[JsonPropertyName("ExtendedFFToolsLogging")]
+		public bool ExtendedFFToolsLogging {
+			get => _ExtendedFFToolsLogging;
+			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
+		}
+		bool _UseNativeFfmpegBinding;
+		[JsonPropertyName("UseNativeFfmpegBinding")]
+		public bool UseNativeFfmpegBinding {
+			get => _UseNativeFfmpegBinding;
+			set => this.RaiseAndSetIfChanged(ref _UseNativeFfmpegBinding, value);
+		}
+		string _CustomFFArguments = string.Empty;
+		[JsonPropertyName("CustomFFArguments")]
+		public string CustomFFArguments {
+			get => _CustomFFArguments;
+			set => this.RaiseAndSetIfChanged(ref _CustomFFArguments, value);
+		}
+		bool _BackupAfterListChanged = true;
+		[JsonPropertyName("BackupAfterListChanged")]
+		public bool BackupAfterListChanged {
+			get => _BackupAfterListChanged;
+			set => this.RaiseAndSetIfChanged(ref _BackupAfterListChanged, value);
+		}
+		int _Percent = 95;
+		[JsonPropertyName("Percent")]
+		public int Percent {
+			get => _Percent;
+			set => this.RaiseAndSetIfChanged(ref _Percent, value);
+		}
+		int _Thumbnails = 1;
+		[JsonPropertyName("Thumbnails")]
+		public int Thumbnails {
+			get => _Thumbnails;
+			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
+		}
+		public static void SaveSettings(string? path = null) {
+			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
+			File.WriteAllText(path, JsonSerializer.Serialize(instance));
+		}
+
+		public static void LoadSettings(string? path = null) {
+			if ((path == null || path.EndsWith(".xml")) && LoadOldSettings(path))
+				return;
+
+			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
+			if (!File.Exists(path)) return;
+			instance = JsonSerializer.Deserialize<SettingsFile>(File.ReadAllBytes(path));
+		}
+
+		static bool LoadOldSettings(string? path) {
+			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
+			if (!File.Exists(path)) return false;
+			var xDoc = XDocument.Load(path);
+			foreach (var n in xDoc.Descendants("Include"))
+				instance.Includes.Add(n.Value);
+			foreach (var n in xDoc.Descendants("Exclude"))
+				instance.Blacklists.Add(n.Value);
+			foreach (var n in xDoc.Descendants("Percent"))
+				if (int.TryParse(n.Value, out var value))
+					instance.Percent = value;
+			foreach (var n in xDoc.Descendants("MaxDegreeOfParallelism"))
+				if (int.TryParse(n.Value, out var value))
+					instance.MaxDegreeOfParallelism = value;
+			foreach (var n in xDoc.Descendants("Thumbnails"))
+				if (int.TryParse(n.Value, out var value))
+					instance.Thumbnails = value;
+			foreach (var n in xDoc.Descendants("IncludeSubDirectories"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.IncludeSubDirectories = value;
+			foreach (var n in xDoc.Descendants("IncludeImages"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.IncludeImages = value;
+			foreach (var n in xDoc.Descendants("IgnoreReadOnlyFolders"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.IgnoreReadOnlyFolders = value;
+			//09.03.21: UseCuda is obsolete and has been replaced with UseHardwareAcceleration.
+			foreach (var n in xDoc.Descendants("UseCuda"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.HardwareAccelerationMode = value ? Core.FFTools.FFHardwareAccelerationMode.auto : Core.FFTools.FFHardwareAccelerationMode.none;
+			foreach (var n in xDoc.Descendants("HardwareAccelerationMode"))
+				if (Enum.TryParse<Core.FFTools.FFHardwareAccelerationMode>(n.Value, out var value))
+					instance.HardwareAccelerationMode = value;
+			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.GeneratePreviewThumbnails = value;
+			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.IgnoreHardlinks = value;
+			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.ExtendedFFToolsLogging = value;
+			foreach (var n in xDoc.Descendants("UseNativeFfmpegBinding"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.UseNativeFfmpegBinding = value;
+			foreach (var n in xDoc.Descendants("BackupAfterListChanged"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.BackupAfterListChanged = value;
+			foreach (var n in xDoc.Descendants("IgnoreBlackPixels"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.IgnoreBlackPixels = value;
+			foreach (var n in xDoc.Descendants("IgnoreWhitePixels"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.IgnoreWhitePixels = value;
+			foreach (var n in xDoc.Descendants("ShowEnlargedThumbnailOnMouseHover"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.ShowEnlargedThumbnailOnMouseHover = value;
+			foreach (var n in xDoc.Descendants("CustomFFArguments"))
+				instance.CustomFFArguments = n.Value;
+			foreach (var n in xDoc.Descendants("LastCustomSelectExpression"))
+				instance.LastCustomSelectExpression = n.Value;
+			foreach (var n in xDoc.Descendants("CompareHorizontallyFlipped"))
+				if (bool.TryParse(n.Value, out var value))
+					instance.CompareHorizontallyFlipped = value;
+			SaveSettings(Path.ChangeExtension(path, "json"));
+			File.Delete(path);
+			return true;
+		}
+	}
+}

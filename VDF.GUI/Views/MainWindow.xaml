@@ -9,7 +9,7 @@
     xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
-    xmlns:vdfCore="clr-namespace:VDF.Core.Utils;assembly=VDF.Core"
+    xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:Name="MainWindow"
     Title="Video Duplicate Finder 3.0 - Cross-platform"
@@ -787,17 +787,17 @@
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Ignore Read Only Folders"
-                                    IsChecked="{Binding IgnoreReadOnlyFolders}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Include Sub Directories"
-                                    IsChecked="{Binding IncludeSubDirectories}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Include Images"
-                                    IsChecked="{Binding IncludeImages}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}"
                                     IsThreeState="False" />
                                 <TextBlock
                                     VerticalAlignment="Center"
@@ -808,59 +808,59 @@
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Hardware acceleration mode of ffmpeg"
                                     Items="{Binding HardwareAccelerationModes}"
-                                    SelectedItem="{Binding HardwareAccelerationMode}" />
+                                    SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Generate Preview Images"
-                                    IsChecked="{Binding GeneratePreviewThumbnails}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}"
                                     IsThreeState="False"
                                     ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Exclude hardlinks"
-                                    IsChecked="{Binding IgnoreHardlinks}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreHardlinks}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Extended FFTools Logging"
                                     ToolTip.Tip="If activated ffmpeg and ffprobe errors will be written to the log"
-                                    IsChecked="{Binding ExtendedFFToolsLogging}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExtendedFFToolsLogging}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Auto backup scan results"
                                     ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed"
-                                    IsChecked="{Binding BackupAfterListChanged}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Use native Ffmpeg binding"
                                     ToolTip.Tip="If activated it will call ffmpeg functions natively instead of spawning a new ffmpeg.exe process. This is MUCH(!!) faster. WARNING: You must use the latest SHARED and STABLE ffmpeg version. If something goes wrong then whole VDF will crash."
-                                    IsChecked="{Binding UseNativeFfmpegBinding}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseNativeFfmpegBinding}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Ignore Black Pixels"
                                     ToolTip.Tip="Skip black pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much dark and raises the chance to detect duplicates if one of the thumbnails have black bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit."
-                                    IsChecked="{Binding IgnoreBlackPixels}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Ignore White Pixels"
                                     ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit."
-                                    IsChecked="{Binding IgnoreWhitePixels}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Show Enlarged Thumbnail On Mouse Hover"
                                     ToolTip.Tip="Shows a larger version of the thumbnail on mouse hover"
-                                    IsChecked="{Binding ShowEnlargedThumbnailOnMouseHover}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}"
                                     IsThreeState="False" />
 								<CheckBox
                                     VerticalAlignment="Center"
                                     Content="Compare Horizontally Flipped"
 									ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit."
-                                    IsChecked="{Binding CompareHorizontallyFlipped}"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
                                     IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
@@ -876,7 +876,7 @@
                                     Maximum="100"
                                     Minimum="1"
                                     ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
-                                    Value="{Binding Percent}" />
+                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
                                 <TextBlock
                                     Margin="0,5,0,0"
                                     ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases."
@@ -890,7 +890,7 @@
                                     VerticalAlignment="Center"
                                     Maximum="100"
                                     Minimum="1"
-                                    Value="{Binding Thumbnails}" />
+                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" />
                                 <TextBlock
                                     Margin="0,5,0,0"
                                     VerticalAlignment="Center"
@@ -904,7 +904,7 @@
                                     ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable."
                                     Maximum="100"
                                     Minimum="-1"
-                                    Value="{Binding MaxDegreeOfParallelism}" />
+                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty."
@@ -912,7 +912,7 @@
                                 <TextBox
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty."
-                                    Text="{Binding CustomFFArguments}" />
+                                    Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}" />
                             </StackPanel>
                         </Grid>
                         <Grid
@@ -963,7 +963,7 @@
                                 <ListBox
                                     Name="ListboxIncludelist"
                                     Grid.Row="1"
-                                    Items="{Binding Includes}" />
+                                    Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
                             </Grid>
                             <TextBlock
                                 Grid.Row="0"
@@ -1011,7 +1011,7 @@
                                 <ListBox
                                     Name="ListboxBlacklist"
                                     Grid.Row="1"
-                                    Items="{Binding Blacklists}" />
+                                    Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
                             </Grid>
                         </Grid>
                     </Grid>

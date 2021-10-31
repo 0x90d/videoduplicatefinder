@@ -34,22 +34,18 @@ using VDF.GUI.Views;
 using System.ComponentModel;
 using System.Text.Json;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Collections.Specialized;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowVM : ReactiveObject {
 		public ScanEngine Scanner { get; } = new();
 		public ObservableCollection<string> LogItems { get; } = new();
-		public ObservableCollection<string> Includes { get; } = new();
-		public ObservableCollection<string> Blacklists { get; } = new();
 		List<HashSet<string>> GroupBlacklist = new();
 		public string BackupScanResultsFile => Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
 		[CanBeNull] DataGridCollectionView view;
 		public ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
 		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; private set; }
-
 		public sealed class CheckedGroupsComparer : System.Collections.IComparer {
 			MainWindowVM mainVM;
 			public CheckedGroupsComparer(MainWindowVM vm) {
@@ -76,11 +72,6 @@ namespace VDF.GUI.ViewModels {
 			get => _SearchText;
 			set => this.RaiseAndSetIfChanged(ref _SearchText, value);
 		}
-		string _CustomFFArguments = string.Empty;
-		public string CustomFFArguments {
-			get => _CustomFFArguments;
-			set => this.RaiseAndSetIfChanged(ref _CustomFFArguments, value);
-		}
 		bool _IsScanning;
 		public bool IsScanning {
 			get => _IsScanning;
@@ -91,76 +82,11 @@ namespace VDF.GUI.ViewModels {
 			get => _IsPaused;
 			set => this.RaiseAndSetIfChanged(ref _IsPaused, value);
 		}
-		string LastCustomSelectExpression = string.Empty;
-		bool _IgnoreReadOnlyFolders;
-		public bool IgnoreReadOnlyFolders {
-			get => _IgnoreReadOnlyFolders;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreReadOnlyFolders, value);
-		}
-		bool _IgnoreHardlinks;
-		public bool IgnoreHardlinks {
-			get => _IgnoreHardlinks;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreHardlinks, value);
-		}
-		bool _IgnoreBlackPixels;
-		public bool IgnoreBlackPixels {
-			get => _IgnoreBlackPixels;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreBlackPixels, value);
-		}
-		bool _IgnoreWhitePixels;
-		public bool IgnoreWhitePixels {
-			get => _IgnoreWhitePixels;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreWhitePixels, value);
-		}
-		int _MaxDegreeOfParallelism = 1;
-		public int MaxDegreeOfParallelism {
-			get => _MaxDegreeOfParallelism;
-			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
-		}
-		bool _ShowEnlargedThumbnailOnMouseHover;
-		public bool ShowEnlargedThumbnailOnMouseHover {
-			get => _ShowEnlargedThumbnailOnMouseHover;
-			set => this.RaiseAndSetIfChanged(ref _ShowEnlargedThumbnailOnMouseHover, value);
-		}
 #pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
 			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
-		Core.FFTools.FFHardwareAccelerationMode _HardwareAccelerationMode = Core.FFTools.FFHardwareAccelerationMode.auto;
-		public Core.FFTools.FFHardwareAccelerationMode HardwareAccelerationMode {
-			get => _HardwareAccelerationMode;
-			set => this.RaiseAndSetIfChanged(ref _HardwareAccelerationMode, value);
-		}
-		bool _CompareHorizontallyFlipped = false;
-		public bool CompareHorizontallyFlipped {
-			get => _CompareHorizontallyFlipped;
-			set => this.RaiseAndSetIfChanged(ref _CompareHorizontallyFlipped, value);
-		}
-		bool _IncludeSubDirectories = true;
-		public bool IncludeSubDirectories {
-			get => _IncludeSubDirectories;
-			set => this.RaiseAndSetIfChanged(ref _IncludeSubDirectories, value);
-		}
-		bool _IncludeImages = true;
-		public bool IncludeImages {
-			get => _IncludeImages;
-			set => this.RaiseAndSetIfChanged(ref _IncludeImages, value);
-		}
-		bool _GeneratePreviewThumbnails = true;
-		public bool GeneratePreviewThumbnails {
-			get => _GeneratePreviewThumbnails;
-			set => this.RaiseAndSetIfChanged(ref _GeneratePreviewThumbnails, value);
-		}
-		bool _ExtendedFFToolsLogging;
-		public bool ExtendedFFToolsLogging {
-			get => _ExtendedFFToolsLogging;
-			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
-		}
-		bool _UseNativeFfmpegBinding;
-		public bool UseNativeFfmpegBinding {
-			get => _UseNativeFfmpegBinding;
-			set => this.RaiseAndSetIfChanged(ref _UseNativeFfmpegBinding, value);
-		}
+
 		string _ScanProgressText;
 		public string ScanProgressText {
 			get => _ScanProgressText;
@@ -182,11 +108,6 @@ namespace VDF.GUI.ViewModels {
 			get => _ScanProgressValue;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressValue, value);
 		}
-		bool _BackupAfterListChanged = true;
-		public bool BackupAfterListChanged {
-			get => _BackupAfterListChanged;
-			set => this.RaiseAndSetIfChanged(ref _BackupAfterListChanged, value);
-		}
 		bool _IsBusy;
 		public bool IsBusy {
 			get => _IsBusy;
@@ -201,16 +122,6 @@ namespace VDF.GUI.ViewModels {
 		public int ScanProgressMaxValue {
 			get => _ScanProgressMaxValue;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressMaxValue, value);
-		}
-		int _Percent = 95;
-		public int Percent {
-			get => _Percent;
-			set => this.RaiseAndSetIfChanged(ref _Percent, value);
-		}
-		int _Thumbnails = 1;
-		public int Thumbnails {
-			get => _Thumbnails;
-			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
 		}
 		int _TotalDuplicates;
 		public int TotalDuplicates {
@@ -368,7 +279,7 @@ namespace VDF.GUI.ViewModels {
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-			if (BackupAfterListChanged)
+			if (SettingsFile.Instance.BackupAfterListChanged)
 				ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
@@ -396,107 +307,8 @@ namespace VDF.GUI.ViewModels {
 			await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 			return true;
 		}
-		public void SaveSettings(string? path = null) {
-			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
-			var includes = new object[Includes.Count];
-			for (int i = 0; i < Includes.Count; i++) {
-				includes[i] = new XElement("Include", Includes[i]);
-			}
-			var excludes = new object[Blacklists.Count];
-			for (int i = 0; i < Blacklists.Count; i++) {
-				excludes[i] = new XElement("Exclude", Blacklists[i]);
-			}
-
-			XDocument xDoc = new(new XElement("Settings",
-					new XElement("Includes", includes),
-					new XElement("Excludes", excludes),
-					new XElement("Percent", Percent),
-					new XElement("Thumbnails", Thumbnails),
-					new XElement("IncludeSubDirectories", IncludeSubDirectories),
-					new XElement("IncludeImages", IncludeImages),
-					new XElement("IgnoreHardlinks", IgnoreHardlinks),
-					new XElement("IgnoreReadOnlyFolders", IgnoreReadOnlyFolders),
-					new XElement("HardwareAccelerationMode", HardwareAccelerationMode),
-					new XElement("MaxDegreeOfParallelism", MaxDegreeOfParallelism),
-					new XElement("GeneratePreviewThumbnails", GeneratePreviewThumbnails),
-					new XElement("ExtendedFFToolsLogging", ExtendedFFToolsLogging),
-					new XElement("BackupAfterListChanged", BackupAfterListChanged),
-					new XElement("CustomFFArguments", CustomFFArguments),
-					new XElement("IgnoreBlackPixels", IgnoreBlackPixels),
-					new XElement("IgnoreWhitePixels", IgnoreWhitePixels),
-					new XElement("ShowEnlargedThumbnailOnMouseHover", ShowEnlargedThumbnailOnMouseHover),
-					new XElement("UseNativeFfmpegBinding", UseNativeFfmpegBinding),
-					new XElement("CompareHorizontallyFlipped", CompareHorizontallyFlipped),
-					new XElement("LastCustomSelectExpression", LastCustomSelectExpression)
-				)
-			);
-			xDoc.Save(path);
-		}
-		public void LoadSettings(string? path = null) {
-			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
-			if (!File.Exists(path)) return;
-			var xDoc = XDocument.Load(path);
-			foreach (var n in xDoc.Descendants("Include"))
-				Includes.Add(n.Value);
-			foreach (var n in xDoc.Descendants("Exclude"))
-				Blacklists.Add(n.Value);
-			foreach (var n in xDoc.Descendants("Percent"))
-				if (int.TryParse(n.Value, out var value))
-					Percent = value;
-			foreach (var n in xDoc.Descendants("MaxDegreeOfParallelism"))
-				if (int.TryParse(n.Value, out var value))
-					MaxDegreeOfParallelism = value;
-			foreach (var n in xDoc.Descendants("Thumbnails"))
-				if (int.TryParse(n.Value, out var value))
-					Thumbnails = value;
-			foreach (var n in xDoc.Descendants("IncludeSubDirectories"))
-				if (bool.TryParse(n.Value, out var value))
-					IncludeSubDirectories = value;
-			foreach (var n in xDoc.Descendants("IncludeImages"))
-				if (bool.TryParse(n.Value, out var value))
-					IncludeImages = value;
-			foreach (var n in xDoc.Descendants("IgnoreReadOnlyFolders"))
-				if (bool.TryParse(n.Value, out var value))
-					IgnoreReadOnlyFolders = value;
-			//09.03.21: UseCuda is obsolete and has been replaced with UseHardwareAcceleration.
-			foreach (var n in xDoc.Descendants("UseCuda"))
-				if (bool.TryParse(n.Value, out var value))
-					HardwareAccelerationMode = value ? Core.FFTools.FFHardwareAccelerationMode.auto : Core.FFTools.FFHardwareAccelerationMode.none;
-			foreach (var n in xDoc.Descendants("HardwareAccelerationMode"))
-				if (Enum.TryParse<Core.FFTools.FFHardwareAccelerationMode>(n.Value, out var value))
-					HardwareAccelerationMode = value;
-			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
-				if (bool.TryParse(n.Value, out var value))
-					GeneratePreviewThumbnails = value;
-			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
-				if (bool.TryParse(n.Value, out var value))
-					IgnoreHardlinks = value;
-			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
-				if (bool.TryParse(n.Value, out var value))
-					ExtendedFFToolsLogging = value;
-			foreach (var n in xDoc.Descendants("UseNativeFfmpegBinding"))
-				if (bool.TryParse(n.Value, out var value))
-					UseNativeFfmpegBinding = value;
-			foreach (var n in xDoc.Descendants("BackupAfterListChanged"))
-				if (bool.TryParse(n.Value, out var value))
-					BackupAfterListChanged = value;
-			foreach (var n in xDoc.Descendants("IgnoreBlackPixels"))
-				if (bool.TryParse(n.Value, out var value))
-					IgnoreBlackPixels = value;
-			foreach (var n in xDoc.Descendants("IgnoreWhitePixels"))
-				if (bool.TryParse(n.Value, out var value))
-					IgnoreWhitePixels = value;
-			foreach (var n in xDoc.Descendants("ShowEnlargedThumbnailOnMouseHover"))
-				if (bool.TryParse(n.Value, out var value))
-					ShowEnlargedThumbnailOnMouseHover = value;
-			foreach (var n in xDoc.Descendants("CustomFFArguments"))
-				CustomFFArguments = n.Value;
-			foreach (var n in xDoc.Descendants("LastCustomSelectExpression"))
-				LastCustomSelectExpression = n.Value;
-			foreach (var n in xDoc.Descendants("CompareHorizontallyFlipped"))
-				if (bool.TryParse(n.Value, out var value))
-					CompareHorizontallyFlipped = value;
-		}
+		
+		
 
 		public async void LoadDatabase() {
 			IsBusy = true;
@@ -549,7 +361,7 @@ namespace VDF.GUI.ViewModels {
 					Duplicates.Add(new DuplicateItemVM(item));
 				}
 
-				if (GeneratePreviewThumbnails)
+				if (SettingsFile.Instance.GeneratePreviewThumbnails)
 					Scanner.RetrieveThumbnails();
 
 				BuildDuplicatesView();
@@ -588,8 +400,8 @@ namespace VDF.GUI.ViewModels {
 				Title = "Select folder"
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
-			if (!Includes.Contains(result))
-				Includes.Add(result);
+			if (!SettingsFile.Instance.Includes.Contains(result))
+				SettingsFile.Instance.Includes.Add(result);
 		});
 		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.Create(() => {
 			try {
@@ -839,7 +651,7 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
-				Includes.Remove((string)lbox.SelectedItems[0]);
+				SettingsFile.Instance.Includes.Remove((string)lbox.SelectedItems[0]);
 			return null;
 		});
 		public ReactiveCommand<Unit, Unit> AddBlacklistToListCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -847,12 +659,12 @@ namespace VDF.GUI.ViewModels {
 				Title = "Select folder"
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
-			if (!Blacklists.Contains(result))
-				Blacklists.Add(result);
+			if (!SettingsFile.Instance.Blacklists.Contains(result))
+				SettingsFile.Instance.Blacklists.Add(result);
 		});
 		public ReactiveCommand<ListBox, Action> RemoveBlacklistFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
-				Blacklists.Remove((string)lbox.SelectedItems[0]);
+				SettingsFile.Instance.Blacklists.Remove((string)lbox.SelectedItems[0]);
 			return null;
 		});
 		public ReactiveCommand<Unit, Unit> ClearLogCommand => ReactiveCommand.Create(() => {
@@ -876,31 +688,31 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> SaveSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new SaveFileDialog {
 				Directory = CoreUtils.CurrentFolder,
-				DefaultExtension = ".xml",
+				DefaultExtension = ".json",
 				Filters = new List<FileDialogFilter> { new FileDialogFilter {
-					Extensions= new List<string> { "xml" },
+					Extensions= new List<string> { "json" },
 					Name = "Setting File"
 					}
 				}
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
-			SaveSettings(result);
+			SettingsFile.SaveSettings(result);
 		});
 		public ReactiveCommand<Unit, Unit> LoadSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFileDialog {
 				Directory = CoreUtils.CurrentFolder,
 				Filters = new List<FileDialogFilter> { new FileDialogFilter {
-					Extensions= new List<string> { "xml" },
+					Extensions= new List<string> { "xml", "json" },
 					Name = "Setting File"
 					}
 				}
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (result == null || result.Length == 0 || string.IsNullOrEmpty(result[0])) return;
-			LoadSettings(result[0]);
+			SettingsFile.LoadSettings(result[0]);
 		});
 
 		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
-			if (!UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {
+			if (!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {
 				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
 				return;
 			}
@@ -908,47 +720,47 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
 				return;
 			}
-			if (UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) {
+			if (SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) {
 				await MessageBoxService.Show("Cannot find shared FFmpeg libraries. Either uncheck 'Use native ffmpeg binding' in settings or please follow instructions on Github and restart VDF");
 				return;
 			}
-			if (UseNativeFfmpegBinding && HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.auto) {
+			if (SettingsFile.Instance.UseNativeFfmpegBinding && SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.auto) {
 				await MessageBoxService.Show("You cannot use hardware acceleration mode'auto' with native ffmpeg bindings. Please explicit set a mode or set it to 'none'.");
 				return;
 			}
-			if (Includes.Count == 0) {
+			if (SettingsFile.Instance.Includes.Count == 0) {
 				await MessageBoxService.Show("There are no folders to scan. Please go to the settings and add at least one folder.");
 				return;
 			}
-			if (MaxDegreeOfParallelism == 0) {
+			if (SettingsFile.Instance.MaxDegreeOfParallelism == 0) {
 				await MessageBoxService.Show("MaxDegreeOfParallelism cannot be 0. Please go to the settings and change it.");
 				return;
 			}
 
 			Duplicates.Clear();
 			IsScanning = true;
-			SaveSettings();
+			SettingsFile.SaveSettings();
 			//Set scan settings
-			Scanner.Settings.IncludeSubDirectories = IncludeSubDirectories;
-			Scanner.Settings.IncludeImages = IncludeImages;
-			Scanner.Settings.GeneratePreviewThumbnails = GeneratePreviewThumbnails;
-			Scanner.Settings.IgnoreReadOnlyFolders = IgnoreReadOnlyFolders;
-			Scanner.Settings.IgnoreHardlinks = IgnoreHardlinks;
-			Scanner.Settings.HardwareAccelerationMode = HardwareAccelerationMode;
-			Scanner.Settings.Percent = Percent;
-			Scanner.Settings.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
-			Scanner.Settings.ThumbnailCount = Thumbnails;
-			Scanner.Settings.ExtendedFFToolsLogging = ExtendedFFToolsLogging;
-			Scanner.Settings.CustomFFArguments = CustomFFArguments;
-			Scanner.Settings.UseNativeFfmpegBinding = UseNativeFfmpegBinding;
-			Scanner.Settings.IgnoreBlackPixels = IgnoreBlackPixels;
-			Scanner.Settings.IgnoreWhitePixels = IgnoreWhitePixels;
-			Scanner.Settings.CompareHorizontallyFlipped = CompareHorizontallyFlipped;
+			Scanner.Settings.IncludeSubDirectories = SettingsFile.Instance.IncludeSubDirectories;
+			Scanner.Settings.IncludeImages = SettingsFile.Instance.IncludeImages;
+			Scanner.Settings.GeneratePreviewThumbnails = SettingsFile.Instance.GeneratePreviewThumbnails;
+			Scanner.Settings.IgnoreReadOnlyFolders = SettingsFile.Instance.IgnoreReadOnlyFolders;
+			Scanner.Settings.IgnoreHardlinks = SettingsFile.Instance.IgnoreHardlinks;
+			Scanner.Settings.HardwareAccelerationMode = SettingsFile.Instance.HardwareAccelerationMode;
+			Scanner.Settings.Percent = SettingsFile.Instance.Percent;
+			Scanner.Settings.MaxDegreeOfParallelism = SettingsFile.Instance.MaxDegreeOfParallelism;
+			Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails;
+			Scanner.Settings.ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging;
+			Scanner.Settings.CustomFFArguments = SettingsFile.Instance.CustomFFArguments;
+			Scanner.Settings.UseNativeFfmpegBinding = SettingsFile.Instance.UseNativeFfmpegBinding;
+			Scanner.Settings.IgnoreBlackPixels = SettingsFile.Instance.IgnoreBlackPixels;
+			Scanner.Settings.IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels;
+			Scanner.Settings.CompareHorizontallyFlipped = SettingsFile.Instance.CompareHorizontallyFlipped;
 			Scanner.Settings.IncludeList.Clear();
-			foreach (var s in Includes)
+			foreach (var s in SettingsFile.Instance.Includes)
 				Scanner.Settings.IncludeList.Add(s);
 			Scanner.Settings.BlackList.Clear();
-			foreach (var s in Blacklists)
+			foreach (var s in SettingsFile.Instance.Blacklists)
 				Scanner.Settings.BlackList.Add(s);
 			//Start scan
 			IsBusy = true;
@@ -971,16 +783,15 @@ namespace VDF.GUI.ViewModels {
 		}, this.WhenAnyValue(x => x.IsScanning));
 		public ReactiveCommand<Unit, Unit> CheckCustomCommand => ReactiveCommand.CreateFromTask(async () => {
 			ExpressionBuilder dlg = new();
-			((ExpressionBuilderVM)dlg.DataContext).ExpressionText = LastCustomSelectExpression;
+			((ExpressionBuilderVM)dlg.DataContext).ExpressionText = SettingsFile.Instance.LastCustomSelectExpression;
 			bool res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
 			if (!res) return;
 
-			LastCustomSelectExpression =
+			SettingsFile.Instance.LastCustomSelectExpression =
 							((ExpressionBuilderVM)dlg.DataContext).ExpressionText;
 
 			HashSet<Guid> blackListGroupID = new();
 			bool skipIfAllMatches = false;
-			bool checkAllMatches = false;
 			bool userAsked = false;
 
 			foreach (var first in Duplicates) {
@@ -990,11 +801,11 @@ namespace VDF.GUI.ViewModels {
 				IEnumerable<DuplicateItemVM> matches;
 				try {
 					var interpreter = new Interpreter().
-						ParseAsDelegate<Func<DuplicateItemVM, bool>>(LastCustomSelectExpression);
+						ParseAsDelegate<Func<DuplicateItemVM, bool>>(SettingsFile.Instance.LastCustomSelectExpression);
 					matches = l.Where(interpreter);
 				}
 				catch (ParseException e) {
-					await MessageBoxService.Show($"Failed to parse '{LastCustomSelectExpression}': {e}");
+					await MessageBoxService.Show($"Failed to parse '{SettingsFile.Instance.LastCustomSelectExpression}': {e}");
 					return;
 				}
 
@@ -1002,8 +813,6 @@ namespace VDF.GUI.ViewModels {
 				if (matches.Count() == l.Count()) {
 					if (!userAsked) {
 						MessageBoxButtons? result = await MessageBoxService.Show($"There are groups where all items matches your expression, for example '{first.ItemInfo.Path}'.{Environment.NewLine}{Environment.NewLine}Do you want to have all items checked (Yes)? Or do you want to have NO items in these groups checked (No)?", MessageBoxButtons.Yes | MessageBoxButtons.No);
-						if (result == MessageBoxButtons.Yes)
-							checkAllMatches = true;
 						if (result == MessageBoxButtons.No)
 							skipIfAllMatches = true;
 						userAsked = true;
@@ -1227,7 +1036,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			if (blackList)
 				ScanEngine.SaveDatabase();
-			if (BackupAfterListChanged)
+			if (SettingsFile.Instance.BackupAfterListChanged)
 				await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 		}
 		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
