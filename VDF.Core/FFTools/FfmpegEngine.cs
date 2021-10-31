@@ -49,6 +49,8 @@ namespace VDF.Core.FFTools {
 					};
 
 					using var vsd = new VideoStreamDecoder(settings.File, HWDevice);
+					if (vsd.PixelFormat < 0 || vsd.PixelFormat >= AVPixelFormat.AV_PIX_FMT_NB)
+						throw new Exception($"Invalid source pixel format");
 
 					Size sourceSize = vsd.FrameSize;
 					AVPixelFormat sourcePixelFormat = HWDevice == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
@@ -89,7 +91,7 @@ namespace VDF.Core.FFTools {
 								destOffset += byteWidth;
 							}
 						}
-						var image = SixLabors.ImageSharp.Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Bgra32>(rgbaBytes, width, height);
+						var image = Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Bgra32>(rgbaBytes, width, height);
 						using MemoryStream stream = new();
 						image.Save(stream, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
 						bool equal = rgbaBytes.SequenceEqual(stream.ToArray());
