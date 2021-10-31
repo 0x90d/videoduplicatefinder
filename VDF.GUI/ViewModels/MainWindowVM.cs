@@ -292,7 +292,7 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		public async Task<bool> SaveScanResults() {
-			if (Duplicates.Count == 0) {
+			if (Duplicates.Count == 0 || !SettingsFile.Instance.AskToSaveResultsOnExit) {
 				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
 				await Task.Delay(100);
 				return true;

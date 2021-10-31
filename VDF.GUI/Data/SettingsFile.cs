@@ -130,6 +130,12 @@ namespace VDF.GUI.Data {
 			get => _BackupAfterListChanged;
 			set => this.RaiseAndSetIfChanged(ref _BackupAfterListChanged, value);
 		}
+		bool _AskToSaveResultsOnExit = true;
+		[JsonPropertyName("AskToSaveResultsOnExit")]
+		public bool AskToSaveResultsOnExit {
+			get => _AskToSaveResultsOnExit;
+			set => this.RaiseAndSetIfChanged(ref _AskToSaveResultsOnExit, value);
+		}		
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]
 		public int Percent {
