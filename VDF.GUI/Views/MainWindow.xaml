@@ -433,7 +433,7 @@
                                                         </i:Interaction.Behaviors>
                                                         <ToolTip.Tip>
                                                             <Grid>
-                                                                <Border IsVisible="{Binding $parent[DataGrid].DataContext.ShowEnlargedThumbnailOnMouseHover}">
+                                                                <Border IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}">
                                                                     <LayoutTransformControl>
                                                                         <LayoutTransformControl.LayoutTransform>
                                                                             <ScaleTransform ScaleX="3" ScaleY="3" />
@@ -441,7 +441,7 @@
                                                                         <Image Source="{Binding Thumbnail}" />
                                                                     </LayoutTransformControl>
                                                                 </Border>
-                                                                <TextBlock IsVisible="{Binding !$parent[DataGrid].DataContext.ShowEnlargedThumbnailOnMouseHover}" Text="Double click to open the file in explorer/shell"/>
+                                                                <TextBlock IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!ShowEnlargedThumbnailOnMouseHover}" Text="Double click to open the file in explorer/shell"/>
                                                             </Grid>
                                                         </ToolTip.Tip>
                                                     </Image>
@@ -847,12 +847,6 @@
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}"
                                     IsThreeState="False" />
 								<CheckBox
-                                    VerticalAlignment="Center"
-                                    Content="Compare Horizontally Flipped"
-									ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit."
-                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
-                                    IsThreeState="False" />
-                                <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Compare Horizontally Flipped"
 									ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit."
