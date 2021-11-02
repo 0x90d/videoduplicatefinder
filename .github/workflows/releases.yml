@@ -55,6 +55,7 @@ jobs:
             release_name="App-${{ matrix.target }}-singlefile"
           else
             release_name="App-${{ matrix.target }}"
+          fi
           # Add nuget sources
           dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
           # Build everything
@@ -62,6 +63,7 @@ jobs:
             dotnet publish -c Release -v q -p:PublishSingleFile=true --self-contained -r "${{ matrix.target }}" -o "outputFolder"
           else
             dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
+          fi
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             # Pack to zip for Windows
