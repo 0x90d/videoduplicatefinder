@@ -51,14 +51,14 @@ jobs:
     - name: Build
       shell: bash
       run: |
-          if [ "${{ matrix.singlefile }}" == true ]; then
+          if [ "${{ matrix.singlefile }}" == "true" ]; then
             release_name="App-${{ matrix.target }}-singlefile"
           else
             release_name="App-${{ matrix.target }}"
           # Add nuget sources
           dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
           # Build everything
-          if [ "${{ matrix.singlefile }}" == true ]; then
+          if [ "${{ matrix.singlefile }}" == "true" ]; then
             dotnet publish -c Release -v q -p:PublishSingleFile=true --self-contained -r "${{ matrix.target }}" -o "outputFolder"
           else
             dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
