@@ -13,12 +13,27 @@ jobs:
           - kind: linux
             os: ubuntu-latest
             target: linux-x64
+            name: linux-x64
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+            singlefile: true
           - kind: windows
             os: windows-latest
             target: win-x64
+            name: win-x64
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+            singlefile: true
           - kind: macOS
             os: windows-latest
             target: osx-x64
+            name: osx-x64
+          - kind: macOS
+            os: windows-latest
+            target: osx-x64
+            singlefile: true
             
     runs-on: ${{ matrix.os }}
 
@@ -36,11 +51,17 @@ jobs:
     - name: Build
       shell: bash
       run: |
-          release_name="App-${{ matrix.target }}"
+          if [ "${{ matrix.singlefile }}" == true ]; then
+            release_name="App-${{ matrix.target }}-singlefile"
+          else
+            release_name="App-${{ matrix.target }}"
           # Add nuget sources
           dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
           # Build everything
-          dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
+          if [ "${{ matrix.singlefile }}" == true ]; then
+            dotnet publish -c Release -v q -p:PublishSingleFile=true --self-contained -r "${{ matrix.target }}" -o "outputFolder"
+          else
+            dotnet publish -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             # Pack to zip for Windows
