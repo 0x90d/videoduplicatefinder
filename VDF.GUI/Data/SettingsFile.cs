@@ -167,65 +167,65 @@ namespace VDF.GUI.Data {
 			if (!File.Exists(path)) return false;
 			var xDoc = XDocument.Load(path);
 			foreach (var n in xDoc.Descendants("Include"))
-				instance.Includes.Add(n.Value);
+				Instance.Includes.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Exclude"))
-				instance.Blacklists.Add(n.Value);
+				Instance.Blacklists.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Percent"))
 				if (int.TryParse(n.Value, out var value))
-					instance.Percent = value;
+					Instance.Percent = value;
 			foreach (var n in xDoc.Descendants("MaxDegreeOfParallelism"))
 				if (int.TryParse(n.Value, out var value))
-					instance.MaxDegreeOfParallelism = value;
+					Instance.MaxDegreeOfParallelism = value;
 			foreach (var n in xDoc.Descendants("Thumbnails"))
 				if (int.TryParse(n.Value, out var value))
-					instance.Thumbnails = value;
+					Instance.Thumbnails = value;
 			foreach (var n in xDoc.Descendants("IncludeSubDirectories"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.IncludeSubDirectories = value;
+					Instance.IncludeSubDirectories = value;
 			foreach (var n in xDoc.Descendants("IncludeImages"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.IncludeImages = value;
+					Instance.IncludeImages = value;
 			foreach (var n in xDoc.Descendants("IgnoreReadOnlyFolders"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.IgnoreReadOnlyFolders = value;
+					Instance.IgnoreReadOnlyFolders = value;
 			//09.03.21: UseCuda is obsolete and has been replaced with UseHardwareAcceleration.
 			foreach (var n in xDoc.Descendants("UseCuda"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.HardwareAccelerationMode = value ? Core.FFTools.FFHardwareAccelerationMode.auto : Core.FFTools.FFHardwareAccelerationMode.none;
+					Instance.HardwareAccelerationMode = value ? Core.FFTools.FFHardwareAccelerationMode.auto : Core.FFTools.FFHardwareAccelerationMode.none;
 			foreach (var n in xDoc.Descendants("HardwareAccelerationMode"))
 				if (Enum.TryParse<Core.FFTools.FFHardwareAccelerationMode>(n.Value, out var value))
-					instance.HardwareAccelerationMode = value;
+					Instance.HardwareAccelerationMode = value;
 			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.GeneratePreviewThumbnails = value;
+					Instance.GeneratePreviewThumbnails = value;
 			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.IgnoreHardlinks = value;
+					Instance.IgnoreHardlinks = value;
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.ExtendedFFToolsLogging = value;
+					Instance.ExtendedFFToolsLogging = value;
 			foreach (var n in xDoc.Descendants("UseNativeFfmpegBinding"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.UseNativeFfmpegBinding = value;
+					Instance.UseNativeFfmpegBinding = value;
 			foreach (var n in xDoc.Descendants("BackupAfterListChanged"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.BackupAfterListChanged = value;
+					Instance.BackupAfterListChanged = value;
 			foreach (var n in xDoc.Descendants("IgnoreBlackPixels"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.IgnoreBlackPixels = value;
+					Instance.IgnoreBlackPixels = value;
 			foreach (var n in xDoc.Descendants("IgnoreWhitePixels"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.IgnoreWhitePixels = value;
+					Instance.IgnoreWhitePixels = value;
 			foreach (var n in xDoc.Descendants("ShowEnlargedThumbnailOnMouseHover"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.ShowEnlargedThumbnailOnMouseHover = value;
+					Instance.ShowEnlargedThumbnailOnMouseHover = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
-				instance.CustomFFArguments = n.Value;
+				Instance.CustomFFArguments = n.Value;
 			foreach (var n in xDoc.Descendants("LastCustomSelectExpression"))
-				instance.LastCustomSelectExpression = n.Value;
+				Instance.LastCustomSelectExpression = n.Value;
 			foreach (var n in xDoc.Descendants("CompareHorizontallyFlipped"))
 				if (bool.TryParse(n.Value, out var value))
-					instance.CompareHorizontallyFlipped = value;
+					Instance.CompareHorizontallyFlipped = value;
 			SaveSettings(Path.ChangeExtension(path, "json"));
 			File.Delete(path);
 			return true;
