@@ -147,7 +147,15 @@ namespace VDF.Core {
 
 				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
-					var fEntry = new FileEntry(file);
+					FileEntry fEntry;
+					try {
+						fEntry = new(file);
+					}
+					catch (Exception e) {
+						//https://github.com/0x90d/videoduplicatefinder/issues/237
+						Logger.Instance.Info($"Skipped file '{file}' because of {e}");
+						continue;
+					}
 					if (!DatabaseUtils.Database.TryGetValue(fEntry, out var dbEntry))
 						DatabaseUtils.Database.Add(fEntry);
 					else if (fEntry.DateCreated != dbEntry.DateCreated ||
