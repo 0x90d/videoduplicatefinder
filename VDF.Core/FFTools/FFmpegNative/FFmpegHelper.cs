@@ -52,63 +52,75 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			};
 		}
 
-		public static bool DoFFmpegLibraryFilesExist {
-			get {
-				if (ffmpegLibraryFound) return true;
-				try {
+		private static bool FindFFmpegLibraryFiles() {
+			try {
 
-					string? path = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg);
-					if (path != null && CheckForFfmpegLibraryFilesInFolder(Path.GetDirectoryName(path)!))
-						return true;
-					else if (path == null) {
-						//Case where ffmpeg(.exe) does not exist but libraries files could exist
-						path = Path.Combine(Utils.CoreUtils.CurrentFolder, "bin");
-						if (CheckForFfmpegLibraryFilesInFolder(path))
-							return true;
-					}
-
-					path = Utils.CoreUtils.CurrentFolder;
+				string? path = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg);
+				if (path != null && CheckForFfmpegLibraryFilesInFolder(Path.GetDirectoryName(path)!))
+					return true;
+				else if (path == null) {
+					//Case where ffmpeg(.exe) does not exist but libraries files could exist
+					path = Path.Combine(Utils.CoreUtils.CurrentFolder, "bin");
 					if (CheckForFfmpegLibraryFilesInFolder(path))
 						return true;
+				}
+
+				path = Utils.CoreUtils.CurrentFolder;
+				if (CheckForFfmpegLibraryFilesInFolder(path))
+					return true;
 
 
-					//Try fast lookup first, credits: @Maltragor
-					try {
-						foreach (KeyValuePair<string, int> item in ffmpeg.LibraryVersionMap)
-							ffmpeg.GetOrLoadLibrary(item.Key);
-						return true;
-					}
-					catch { }
+				//Try fast lookup first, credits: @Maltragor
+				try {
+					ffmpeg.RootPath = "";
+					foreach (KeyValuePair<string, int> item in ffmpeg.LibraryVersionMap)
+						ffmpeg.GetOrLoadLibrary(item.Key);
+					return true;
+				}
+				catch { }
 
-					if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-						string firstLibrary = $"lib{ffmpeg.LibraryVersionMap.Keys.First()}.so.{ffmpeg.LibraryVersionMap.Values.First()}";
-						List<string> filesList = Directory.EnumerateFiles("/usr/lib/", firstLibrary, new EnumerationOptions {
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+					List<string> libDirList = Directory.EnumerateDirectories("/usr/", "lib*", new EnumerationOptions {
+						IgnoreInaccessible = true,
+						RecurseSubdirectories = false
+					}).ToList();
+					string firstLibrary = $"lib{ffmpeg.LibraryVersionMap.Keys.First()}.so.{ffmpeg.LibraryVersionMap.Values.First()}";
+					foreach (var libDir in libDirList) {
+						List<string> filesList = Directory.EnumerateFiles(libDir, firstLibrary, new EnumerationOptions {
 							IgnoreInaccessible = true,
-							RecurseSubdirectories = true
+							RecurseSubdirectories = true,
+							MaxRecursionDepth = 2,
 						}).ToList();
-						if (filesList.Count == 0) return false;
 						foreach (string file in filesList) {
 							string currentDirectory = Path.GetDirectoryName(file)!;
 							if (CheckForFfmpegLibraryFilesInFolder(currentDirectory))
 								return true;
 						}
 					}
-					var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
-					if (environmentVariables == null)
-						return false;
+				}
+				var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
+				if (environmentVariables == null)
+					return false;
 
-					foreach (var environmentPath in environmentVariables) {
-						if (!Directory.Exists(environmentPath))
-							continue;
-						if (CheckForFfmpegLibraryFilesInFolder(environmentPath))
-							return true;
-					}
-					return false;
+				foreach (var environmentPath in environmentVariables) {
+					if (!Directory.Exists(environmentPath))
+						continue;
+					if (CheckForFfmpegLibraryFilesInFolder(environmentPath))
+						return true;
 				}
-				catch (Exception e) {
-					Utils.Logger.Instance.Info($"Failed to look for ffmpeg libraries: {e}");
-					return false;
-				}
+			}
+			catch (Exception e) {
+				Utils.Logger.Instance.Info($"Failed to look for ffmpeg libraries: {e}");
+			}
+			return false;
+		}
+
+		public static bool DoFFmpegLibraryFilesExist {
+			get {
+				if (ffmpegLibraryFound)
+					return true;
+				ffmpegLibraryFound = FindFFmpegLibraryFiles();
+				return ffmpegLibraryFound;
 			}
 		}
 
