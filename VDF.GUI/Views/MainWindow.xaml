@@ -969,6 +969,7 @@
                                 <ListBox
                                     Name="ListboxIncludelist"
                                     Grid.Row="1"
+                                    DragDrop.AllowDrop="True"
                                     Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
                             </Grid>
                             <TextBlock
@@ -1017,6 +1018,7 @@
                                 <ListBox
                                     Name="ListboxBlacklist"
                                     Grid.Row="1"
+                                    DragDrop.AllowDrop="True"
                                     Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
                             </Grid>
                         </Grid>

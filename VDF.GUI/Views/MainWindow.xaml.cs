@@ -16,6 +16,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
@@ -36,7 +37,13 @@ namespace VDF.GUI.Views {
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
-			
+
+
+			this.FindControl<ListBox>("ListboxIncludelist").AddHandler(DragDrop.DropEvent, DropInclude);
+			this.FindControl<ListBox>("ListboxIncludelist").AddHandler(DragDrop.DragOverEvent, DragOver);
+			this.FindControl<ListBox>("ListboxBlacklist").AddHandler(DragDrop.DropEvent, DropBlacklist);
+			this.FindControl<ListBox>("ListboxBlacklist").AddHandler(DragDrop.DragOverEvent, DragOver);
+
 			ApplicationHelpers.CurrentApplicationLifetime.Startup += MainWindow_Startup;
 			ApplicationHelpers.CurrentApplicationLifetime.Exit += MainWindow_Exit;
 			ApplicationHelpers.CurrentApplicationLifetime.ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -64,10 +71,49 @@ namespace VDF.GUI.Views {
 			SettingsFile.SaveSettings();
 		}
 
-		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) {
-			ApplicationHelpers.MainWindowDataContext.LoadDatabase();
+		private void DragOver(object sender, DragEventArgs e) {
+			// Only allow Copy or Link as Drop Operations.
+			e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
+
+			// Only allow if the dragged data contains text or filenames.
+			if (!e.Data.Contains(DataFormats.FileNames))
+				e.DragEffects = DragDropEffects.None;
 		}
 
+		private void DropInclude(object sender, DragEventArgs e) {
+			if (!e.Data.Contains(DataFormats.FileNames)) return;
+			
+			foreach(string file in e.Data.GetFileNames()) {
+				if (!Directory.Exists(file)) continue;
+				if (!SettingsFile.Instance.Includes.Contains(file))
+					SettingsFile.Instance.Includes.Add(file);
+			}
+		}
+		private void DropBlacklist(object sender, DragEventArgs e) {
+			if (!e.Data.Contains(DataFormats.FileNames)) return;
+
+			foreach (string file in e.Data.GetFileNames()) {
+				if (!Directory.Exists(file)) continue;
+				if (!SettingsFile.Instance.Blacklists.Contains(file))
+					SettingsFile.Instance.Blacklists.Add(file);
+			}
+		}
+
+		private async void DoDrag(object sender, Avalonia.Input.PointerPressedEventArgs e) {
+			//DataObject dragData = new DataObject();
+			//dragData.Set(DataFormats.Text, $"You have dragged text.");
+
+			//var result = await DragDrop.DoDragDrop(dragData, DragDropEffects.Copy);
+			//switch (result) {
+			//case DragDropEffects.Copy:
+			//	_DragState.Text = "The text was copied"; break;
+			//case DragDropEffects.Link:
+			//	_DragState.Text = "The text was linked"; break;
+			//case DragDropEffects.None:
+			//	_DragState.Text = "The drag operation was canceled"; break;
+			//}
+		}
+		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) => ApplicationHelpers.MainWindowDataContext.LoadDatabase();
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}
