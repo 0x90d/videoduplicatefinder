@@ -26,7 +26,6 @@ using VDF.Core.Utils;
 namespace VDF.Core.FFTools {
 	static class FfmpegEngine {
 		public static readonly string FFmpegPath;
-		public static readonly bool NativeFfmpegLibrariesExist;
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
 		public static string CustomFFArguments = string.Empty;
