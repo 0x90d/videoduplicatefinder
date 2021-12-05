@@ -35,6 +35,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Linq;
 using System.Collections.Specialized;
+using System.Reflection;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowVM : ReactiveObject {
@@ -151,6 +152,33 @@ namespace VDF.GUI.ViewModels {
 			get => _DuplicatesSelectedCounter;
 			set => this.RaiseAndSetIfChanged(ref _DuplicatesSelectedCounter, value);
 		}
+		public bool MultiOpenSupported {
+			get => !String.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
+		}
+		public bool MultiOpenInFolderSupported {
+			get => !String.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
+		}
+		static List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public|BindingFlags.Instance).Select(p => p.Name).ToList();
+		public List<string> CustomCommandList {
+			get => _CustomCommandList;
+		}
+		PropertyInfo _SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(_CustomCommandList[0]);
+		public string SelectedCustomCommand {
+			get => _SelectedCustomCommand.Name;
+			set {
+				_SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(value);
+				this.RaisePropertyChanged(nameof(SelectedCustomCommandValue));
+			}
+		}
+		public string SelectedCustomCommandValue {
+			get => (string)_SelectedCustomCommand.GetValue(SettingsFile.Instance.CustomCommands);
+			set {
+				 _SelectedCustomCommand.SetValue(SettingsFile.Instance.CustomCommands, value);
+				 this.RaisePropertyChanged(nameof(MultiOpenSupported));
+				 this.RaisePropertyChanged(nameof(MultiOpenInFolderSupported));
+			}
+		}
+		
 		public string TotalSizeRemoved => TotalSizeRemovedInternal.BytesToString();
 #if DEBUG
 		public static bool IsDebug => true;
@@ -571,38 +599,57 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		public static ReactiveCommand<DuplicateItemVM, Unit> OpenItemCommand => ReactiveCommand.Create<DuplicateItemVM>(currentItem => {
-			if (CoreUtils.IsWindows) {
-				Process.Start(new ProcessStartInfo {
-					FileName = currentItem.ItemInfo.Path,
-					UseShellExecute = true
-				});
-			}
-			else {
-				Process.Start(new ProcessStartInfo {
-					FileName = currentItem.ItemInfo.Path,
-					UseShellExecute = true,
-					Verb = "open"
-				});
-			}
+			OpenItems();
 		});
-		public static ReactiveCommand<Unit, Unit> OpenSelectedItemInFolderCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
-			if (CoreUtils.IsWindows) {
-				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
-					UseShellExecute = true
-				});
-			}
-			else {
-				Process.Start(new ProcessStartInfo {
-					FileName = currentItem.ItemInfo.Folder,
-					UseShellExecute = true,
-					Verb = "open"
-				});
-			}
-		});
-		public static ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 
+		public static ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(() => {
+			OpenItemsInFolder();
+		});
+
+		public static ReactiveCommand<Unit, Unit> OpenItemsByColIdCommand => ReactiveCommand.Create(() => {
+			if (GetDataGrid.CurrentColumn.DisplayIndex == 1) 
+				OpenItems();
+			else if (GetDataGrid.CurrentColumn.DisplayIndex == 2)
+				OpenItemsInFolder();
+		});
+
+		public ReactiveCommand<string, Unit> OpenGroupCommand => ReactiveCommand.Create<string>(openInFolder => {
+			if (GetDataGrid.SelectedItem is DuplicateItemVM currentItem) { 
+				List<DuplicateItemVM> items = Duplicates.Where(s => s.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).ToList();
+				if (openInFolder == "0")
+					AlternativeOpen(String.Empty, SettingsFile.Instance.CustomCommands.OpenMultiple, items);
+				else
+					AlternativeOpen(String.Empty, SettingsFile.Instance.CustomCommands.OpenMultipleInFolder, items);
+			}
+		});
+
+		public static void OpenItems() {
+			if (AlternativeOpen(SettingsFile.Instance.CustomCommands.OpenItem,
+								SettingsFile.Instance.CustomCommands.OpenMultiple))
+			return;
+
+			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
+			if (CoreUtils.IsWindows) {
+				Process.Start(new ProcessStartInfo {
+					FileName = currentItem.ItemInfo.Path,
+					UseShellExecute = true
+				});
+			}
+			else {
+				Process.Start(new ProcessStartInfo {
+					FileName = currentItem.ItemInfo.Path,
+					UseShellExecute = true,
+					Verb = "open"
+				});
+			}
+		}
+
+		public static void OpenItemsInFolder() {
+			if (AlternativeOpen(SettingsFile.Instance.CustomCommands.OpenItemInFolder,
+								SettingsFile.Instance.CustomCommands.OpenMultipleInFolder))
+				return;
+
+			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
 					UseShellExecute = true
@@ -615,7 +662,65 @@ namespace VDF.GUI.ViewModels {
 					Verb = "open"
 				});
 			}
-		});
+		}
+
+		private static bool AlternativeOpen(string cmdSingle, string cmdMulti, List<DuplicateItemVM> items = null) {
+			if (String.IsNullOrEmpty(cmdSingle) && String.IsNullOrEmpty(cmdMulti))
+				return false;
+			
+			if (items == null) {
+				items = new();
+				if (!String.IsNullOrEmpty(cmdMulti)) {
+					foreach (var selectedItem in GetDataGrid.SelectedItems) 
+						if (selectedItem is DuplicateItemVM item)
+							items.Add(item);
+				}
+				else {
+					if (GetDataGrid.SelectedItem is DuplicateItemVM)
+						items.Add((DuplicateItemVM)GetDataGrid.SelectedItem);
+				}
+			}
+
+			string[] cmd = null;
+			string command = String.Empty;
+			if (!String.IsNullOrEmpty(cmdSingle) && (String.IsNullOrEmpty(cmdMulti) || items.Count == 1))
+				command = cmdSingle;
+			else if (items.Count > 1)
+				command = cmdMulti;
+			if (!String.IsNullOrEmpty(command)) {
+				if (command[0] == '"' || command[0] == '\'') {	// -> when spaces in command part: "c:/my folder/prog.exe"
+					cmd = command.Split(command[0]+" ", 2);
+					cmd[0] += command[0];
+				}
+				else
+					cmd = command.Split(' ', 2);
+			}
+			if (String.IsNullOrEmpty(cmd?[0]))
+				return false;
+
+			command = cmd[0];
+			string args = string.Empty;
+			items.ForEach(item => args += $"\"{item.ItemInfo.Path}\" ");
+			if (cmd.Length == 2) 
+				if (cmd[1].Contains("%f"))
+					args = cmd[1].Replace("%f", args);	// %f in user command string is the placeholder for the file(s)
+				else
+					args = cmd[1] + " " + args;			// otherwise simply attach
+
+			try {
+				Process.Start(new ProcessStartInfo {
+						FileName  = command,
+						Arguments = args,
+						UseShellExecute = false,
+						RedirectStandardError  = true,
+				});
+			}
+			catch(Exception e){
+				Logger.Instance.Info($"Failed to run custom command: {command}\n Arguments: {args}\nException: {e.Message}");
+			}
+
+			return true;
+		}
 
 		public static ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;

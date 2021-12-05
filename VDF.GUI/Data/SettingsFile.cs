@@ -28,6 +28,12 @@ namespace VDF.GUI.Data {
 		[JsonIgnore]
 		public static SettingsFile Instance => instance ??= new SettingsFile();
 
+		public class CustomActionCommands {
+			public string OpenItemInFolder {get; set;} = string.Empty;
+			public string OpenMultipleInFolder {get; set;} = string.Empty;
+			public string OpenItem {get; set;} = string.Empty;
+			public string OpenMultiple {get; set;} = string.Empty;
+		}
 
 		[JsonPropertyName("Includes")]
 		public ObservableCollection<string> Includes { get; set; } = new();
@@ -148,6 +154,9 @@ namespace VDF.GUI.Data {
 			get => _Thumbnails;
 			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
 		}
+		[JsonPropertyName("CustomCommands")]
+		public CustomActionCommands CustomCommands {get; set;} = new();
+
 		public static void SaveSettings(string? path = null) {
 			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
 			File.WriteAllText(path, JsonSerializer.Serialize(instance));
