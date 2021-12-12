@@ -404,6 +404,7 @@
                                 <DataGrid.KeyBindings>
                                     <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
                                     <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space"/>
+                                    <KeyBinding Command="{Binding OpenItemsByColIdCommand}" Gesture="Enter"/>
                                     <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete"/>
                                     <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete"/>
                                     <KeyBinding Command="{Binding DeleteHighlitedCommand}" Gesture="Control+Delete"/>
@@ -700,6 +701,8 @@
                                         </MenuItem>
                                         <MenuItem Header="Selected Group">
                                             <MenuItem Command="{Binding MarkGroupAsNotAMatchCommand}" Header="Mark as 'Not a match'" ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
+                                            <MenuItem Command="{Binding OpenGroupCommand}" Header="Open Group" CommandParameter="0" IsVisible="{Binding MultiOpenSupported}"/>
+                                            <MenuItem Command="{Binding OpenGroupCommand}" Header="Open Group In Folder" CommandParameter="1" IsVisible="{Binding MultiOpenInFolderSupported}" />
                                         </MenuItem>
                                     </ContextMenu>
                                 </DataGrid.ContextMenu>
@@ -919,6 +922,22 @@
                                     ToolTip.Tip="Hardware acceleration mode of ffmpeg"
                                     Items="{Binding HardwareAccelerationModes}"
                                     SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    ToolTip.Tip="Enter your own commands to open single or multiple files."
+                                    Text="Custom Commands:" />
+                                <ComboBox
+                                    Width="200"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Enter your own commands to open single or multiple files."
+                                    Items="{Binding CustomCommandList}"
+                                    SelectedItem="{Binding SelectedCustomCommand}"
+                                    />
+                                <TextBox
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="E.g.: 'nemo --tabs %f', where '%f' is the placeholder for the file(s)"
+                                    Text="{Binding SelectedCustomCommandValue}" />
                             </StackPanel>
                         </Grid>
                         <Grid
