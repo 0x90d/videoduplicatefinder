@@ -298,7 +298,14 @@ namespace VDF.GUI.ViewModels {
 				return true;
 			}
 			MessageBoxButtons? result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
-				MessageBoxButtons.Yes | MessageBoxButtons.No);
+				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
+			if (result == null || result == MessageBoxButtons.Cancel) {
+				//Can be NULL if user closed the window by clicking on 'X'
+
+				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
+				await Task.Delay(100);
+				return false;
+			}
 			if (result != MessageBoxButtons.Yes) {
 				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
 				await Task.Delay(100);
