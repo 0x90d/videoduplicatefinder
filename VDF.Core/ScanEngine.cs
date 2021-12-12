@@ -123,6 +123,7 @@ namespace VDF.Core {
 			FfmpegEngine.HardwareAccelerationMode = Settings.HardwareAccelerationMode;
 			FfmpegEngine.CustomFFArguments = Settings.CustomFFArguments;
 			FfmpegEngine.UseNativeBinding = Settings.UseNativeFfmpegBinding;
+			DatabaseUtils.CustomDatabaseFolder = Settings.CustomDatabaseFolder;
 			Duplicates.Clear();
 			positionList.Clear();
 			ElapsedTimer.Reset();

@@ -21,8 +21,24 @@ using ProtoBuf;
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
 		public static HashSet<FileEntry> Database = new();
+		public static string CustomDatabaseFolder;
+
+		static string CurrentDatabasePath => Directory.Exists(CustomDatabaseFolder)
+					? FileUtils.SafePathCombine(CustomDatabaseFolder,
+					"ScannedFiles.db")
+					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
+					"ScannedFiles.db");
+		static string TempDatabasePath => Directory.Exists(CustomDatabaseFolder)
+					? FileUtils.SafePathCombine(CustomDatabaseFolder,
+					"ScannedFiles_new.db")
+					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
+					"ScannedFiles_new.db");
+
 		public static bool LoadDatabase() {
-			var databaseFile = new FileInfo(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "ScannedFiles.db"));
+			FileInfo databaseFile = new(TempDatabasePath);
+			if (!databaseFile.Exists)
+				databaseFile = new(CurrentDatabasePath);
+
 			if (databaseFile.Exists && databaseFile.Length == 0) //invalid data
 			{
 				databaseFile.Delete();
@@ -54,8 +70,18 @@ namespace VDF.Core.Utils {
 				catch (ProtoException ex) {
 					Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
 					st.Stop();
+					try {
+						File.Move(databaseFile.FullName, Path.ChangeExtension(databaseFile.FullName, "_DAMAGED.db"), true);
+					}
+					catch (Exception) { }
 					return false;
 				}
+			}
+			catch (EndOfStreamException) {
+				Logger.Instance.Info($"Importing previously scanned files from '{databaseFile.FullName}' has failed.");
+				databaseFile.Delete();
+				//Could have been the temp database file
+				LoadDatabase();
 			}
 
 			st.Stop();
@@ -75,9 +101,12 @@ namespace VDF.Core.Utils {
 		}
 		public static void SaveDatabase() {
 			Logger.Instance.Info($"Save scanned files to disk ({Database.Count:N0} files).");
-			using var stream = new FileStream(FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
-				"ScannedFiles.db"), FileMode.Create);
+
+			FileStream stream = new(TempDatabasePath, FileMode.Create);
 			Serializer.Serialize(stream, Database);
+			stream.Dispose();
+			//Reason: https://github.com/0x90d/videoduplicatefinder/issues/247
+			File.Move(TempDatabasePath, CurrentDatabasePath, true);
 		}
 		public static void ClearDatabase() {
 			Database.Clear();

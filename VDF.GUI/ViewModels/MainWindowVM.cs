@@ -42,7 +42,10 @@ namespace VDF.GUI.ViewModels {
 		public ScanEngine Scanner { get; } = new();
 		public ObservableCollection<string> LogItems { get; } = new();
 		List<HashSet<string>> GroupBlacklist = new();
-		public string BackupScanResultsFile => Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
+		public string BackupScanResultsFile => 
+			Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder) ?
+			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
+			Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
 		[CanBeNull] DataGridCollectionView view;
 		public ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
@@ -824,6 +827,10 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
+				await MessageBoxService.Show("The custom database folder does not exist!");
+				return;
+			}
 			if (!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {
 				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
 				return;
@@ -868,6 +875,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IgnoreBlackPixels = SettingsFile.Instance.IgnoreBlackPixels;
 			Scanner.Settings.IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels;
 			Scanner.Settings.CompareHorizontallyFlipped = SettingsFile.Instance.CompareHorizontallyFlipped;
+			Scanner.Settings.CustomDatabaseFolder = SettingsFile.Instance.CustomDatabaseFolder;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in SettingsFile.Instance.Includes)
 				Scanner.Settings.IncludeList.Add(s);

@@ -156,6 +156,12 @@ namespace VDF.GUI.Data {
 		}
 		[JsonPropertyName("CustomCommands")]
 		public CustomActionCommands CustomCommands {get; set;} = new();
+		string _CustomDatabaseFolder;
+		[JsonPropertyName("CustomDatabaseFolder")]
+		public string CustomDatabaseFolder {
+			get => _CustomDatabaseFolder;
+			set => this.RaiseAndSetIfChanged(ref _CustomDatabaseFolder, value);
+		}
 
 		public static void SaveSettings(string? path = null) {
 			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");

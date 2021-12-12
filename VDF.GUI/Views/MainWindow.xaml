@@ -938,6 +938,15 @@
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="E.g.: 'nemo --tabs %f', where '%f' is the placeholder for the file(s)"
                                     Text="{Binding SelectedCustomCommandValue}" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder."
+                                    Text="Custom Database Folder:" />
+                                <TextBox
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder."
+                                    Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}" />
                             </StackPanel>
                         </Grid>
                         <Grid
