@@ -179,9 +179,25 @@ namespace VDF.Core {
 				if (!Settings.IncludeList.Contains(entry.Folder))
 					return true;
 			}
-			else if (!Settings.IncludeList.Any(f => entry.Folder.StartsWith(f)))
+			else if (!Settings.IncludeList.Any(f => {
+				if (!entry.Folder.StartsWith(f))
+					return false;
+				if (entry.Folder.Length == f.Length)
+					return true;
+				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
+				string relativePath = Path.GetRelativePath(f, entry.Folder);
+				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath); 
+			}))
 				return true;
-			if (Settings.BlackList.Any(s => entry.Folder.StartsWith(s)))
+			if (Settings.BlackList.Any(f => {
+				if (!entry.Folder.StartsWith(f))
+					return false;
+				if (entry.Folder.Length == f.Length)
+					return true;
+				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
+				string relativePath = Path.GetRelativePath(f, entry.Folder);
+				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
+			}))
 				return true;
 
 			if (entry.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.TooDark))
