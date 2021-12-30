@@ -21,12 +21,12 @@ using System.Runtime.CompilerServices;
 using VDF.Core.Utils;
 
 namespace VDF.Core {
-	
+
 	[ProtoContract]
 	[DebuggerDisplay("{" + nameof(Path) + ",nq}")]
 	public class FileEntry {
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
-		protected FileEntry() { }
+		public FileEntry() { }
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
 		public FileEntry(string file) {
 			Path = file;
@@ -57,10 +57,34 @@ namespace VDF.Core {
 		public long FileSize;
 
 		[ProtoIgnore]
-		public bool IsImage {
+		internal bool IsImage {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.IsImage);
-			protected set => Flags.Set(EntryFlags.IsImage, value);
+			set => Flags.Set(EntryFlags.IsImage, value);
+		}
+		[ProtoIgnore]
+		public bool IsManuallyExcluded {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Flags.Has(EntryFlags.ManuallyExcluded);
+			protected set => Flags.Set(EntryFlags.ManuallyExcluded, value);
+		}
+		[ProtoIgnore]
+		public bool HasMetadataError {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Flags.Has(EntryFlags.MetadataError);
+			protected set => Flags.Set(EntryFlags.MetadataError, value);
+		}
+		[ProtoIgnore]
+		public bool HasThubmanilError {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Flags.Has(EntryFlags.ThumbnailError);
+			protected set => Flags.Set(EntryFlags.ThumbnailError, value);
+		}
+		[ProtoIgnore]
+		public bool IsTooDark {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Flags.Has(EntryFlags.TooDark);
+			protected set => Flags.Set(EntryFlags.TooDark, value);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

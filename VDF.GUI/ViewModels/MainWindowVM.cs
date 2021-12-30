@@ -42,7 +42,7 @@ namespace VDF.GUI.ViewModels {
 		public ScanEngine Scanner { get; } = new();
 		public ObservableCollection<string> LogItems { get; } = new();
 		List<HashSet<string>> GroupBlacklist = new();
-		public string BackupScanResultsFile => 
+		public string BackupScanResultsFile =>
 			Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder) ?
 			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
 			Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
@@ -71,11 +71,6 @@ namespace VDF.GUI.ViewModels {
 			new KeyValuePair<string, FileTypeFilter>("Images",  FileTypeFilter.Images),
 		};
 
-		string _SearchText;
-		public string SearchText {
-			get => _SearchText;
-			set => this.RaiseAndSetIfChanged(ref _SearchText, value);
-		}
 		bool _IsScanning;
 		public bool IsScanning {
 			get => _IsScanning;
@@ -161,7 +156,7 @@ namespace VDF.GUI.ViewModels {
 		public bool MultiOpenInFolderSupported {
 			get => !String.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
 		}
-		static List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public|BindingFlags.Instance).Select(p => p.Name).ToList();
+		static List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
 		public List<string> CustomCommandList {
 			get => _CustomCommandList;
 		}
@@ -176,12 +171,12 @@ namespace VDF.GUI.ViewModels {
 		public string SelectedCustomCommandValue {
 			get => (string)_SelectedCustomCommand.GetValue(SettingsFile.Instance.CustomCommands);
 			set {
-				 _SelectedCustomCommand.SetValue(SettingsFile.Instance.CustomCommands, value);
-				 this.RaisePropertyChanged(nameof(MultiOpenSupported));
-				 this.RaisePropertyChanged(nameof(MultiOpenInFolderSupported));
+				_SelectedCustomCommand.SetValue(SettingsFile.Instance.CustomCommands, value);
+				this.RaisePropertyChanged(nameof(MultiOpenSupported));
+				this.RaisePropertyChanged(nameof(MultiOpenInFolderSupported));
 			}
 		}
-		
+
 		public string TotalSizeRemoved => TotalSizeRemovedInternal.BytesToString();
 #if DEBUG
 		public static bool IsDebug => true;
@@ -345,8 +340,8 @@ namespace VDF.GUI.ViewModels {
 			await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 			return true;
 		}
-		
-		
+
+
 
 		public async void LoadDatabase() {
 			IsBusy = true;
@@ -468,6 +463,29 @@ namespace VDF.GUI.ViewModels {
 			if (dlgResult != MessageBoxButtons.Yes) return;
 			ScanEngine.ClearDatabase();
 			await MessageBoxService.Show("Done!");
+		});
+		public static ReactiveCommand<Unit, Unit> EditDataBaseCommand => ReactiveCommand.CreateFromTask(async () => {
+			DatabaseViewer dlg = new();
+			bool res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
+		});
+		public static ReactiveCommand<Unit, Unit> ImportDataBaseFromJsonCommand => ReactiveCommand.CreateFromTask(async () => {
+			List<FileDialogFilter> filterList = new(1);
+			filterList.Add(new FileDialogFilter {
+				Name = "Json Files",
+				Extensions = new List<string>() { "json" }
+			});
+			string[] result = await new OpenFileDialog {
+				Filters = filterList,
+			}.ShowAsync(ApplicationHelpers.MainWindow);
+			if (result == null || result.Length != 1 || string.IsNullOrEmpty(result[0])) return;
+
+			bool success = ScanEngine.ImportDataBaseFromJson(result[0], new JsonSerializerOptions {
+				IncludeFields = true,
+			});
+			if (!success)
+				await MessageBoxService.Show("Exporting database has failed, please see log");
+			else
+				ScanEngine.SaveDatabase();
 		});
 		public static ReactiveCommand<Unit, Unit> ExportDataBaseToJsonCommand => ReactiveCommand.Create(() => {
 			ExportDbToJson(new JsonSerializerOptions {
@@ -617,14 +635,14 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public static ReactiveCommand<Unit, Unit> OpenItemsByColIdCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.CurrentColumn.DisplayIndex == 1) 
+			if (GetDataGrid.CurrentColumn.DisplayIndex == 1)
 				OpenItems();
 			else if (GetDataGrid.CurrentColumn.DisplayIndex == 2)
 				OpenItemsInFolder();
 		});
 
 		public ReactiveCommand<string, Unit> OpenGroupCommand => ReactiveCommand.Create<string>(openInFolder => {
-			if (GetDataGrid.SelectedItem is DuplicateItemVM currentItem) { 
+			if (GetDataGrid.SelectedItem is DuplicateItemVM currentItem) {
 				List<DuplicateItemVM> items = Duplicates.Where(s => s.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).ToList();
 				if (openInFolder == "0")
 					AlternativeOpen(String.Empty, SettingsFile.Instance.CustomCommands.OpenMultiple, items);
@@ -636,7 +654,7 @@ namespace VDF.GUI.ViewModels {
 		public static void OpenItems() {
 			if (AlternativeOpen(SettingsFile.Instance.CustomCommands.OpenItem,
 								SettingsFile.Instance.CustomCommands.OpenMultiple))
-			return;
+				return;
 
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			if (CoreUtils.IsWindows) {
@@ -677,11 +695,11 @@ namespace VDF.GUI.ViewModels {
 		private static bool AlternativeOpen(string cmdSingle, string cmdMulti, List<DuplicateItemVM> items = null) {
 			if (String.IsNullOrEmpty(cmdSingle) && String.IsNullOrEmpty(cmdMulti))
 				return false;
-			
+
 			if (items == null) {
 				items = new();
 				if (!String.IsNullOrEmpty(cmdMulti)) {
-					foreach (var selectedItem in GetDataGrid.SelectedItems) 
+					foreach (var selectedItem in GetDataGrid.SelectedItems)
 						if (selectedItem is DuplicateItemVM item)
 							items.Add(item);
 				}
@@ -698,8 +716,8 @@ namespace VDF.GUI.ViewModels {
 			else if (items.Count > 1)
 				command = cmdMulti;
 			if (!String.IsNullOrEmpty(command)) {
-				if (command[0] == '"' || command[0] == '\'') {	// -> when spaces in command part: "c:/my folder/prog.exe"
-					cmd = command.Split(command[0]+" ", 2);
+				if (command[0] == '"' || command[0] == '\'') {  // -> when spaces in command part: "c:/my folder/prog.exe"
+					cmd = command.Split(command[0] + " ", 2);
 					cmd[0] += command[0];
 				}
 				else
@@ -711,21 +729,21 @@ namespace VDF.GUI.ViewModels {
 			command = cmd[0];
 			string args = string.Empty;
 			items.ForEach(item => args += $"\"{item.ItemInfo.Path}\" ");
-			if (cmd.Length == 2) 
+			if (cmd.Length == 2)
 				if (cmd[1].Contains("%f"))
-					args = cmd[1].Replace("%f", args);	// %f in user command string is the placeholder for the file(s)
+					args = cmd[1].Replace("%f", args);  // %f in user command string is the placeholder for the file(s)
 				else
-					args = cmd[1] + " " + args;			// otherwise simply attach
+					args = cmd[1] + " " + args;         // otherwise simply attach
 
 			try {
 				Process.Start(new ProcessStartInfo {
-						FileName  = command,
-						Arguments = args,
-						UseShellExecute = false,
-						RedirectStandardError  = true,
+					FileName = command,
+					Arguments = args,
+					UseShellExecute = false,
+					RedirectStandardError = true,
 				});
 			}
-			catch(Exception e){
+			catch (Exception e) {
 				Logger.Instance.Info($"Failed to run custom command: {command}\n Arguments: {args}\nException: {e.Message}");
 			}
 

@@ -20,8 +20,8 @@ using ProtoBuf;
 
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
-		public static HashSet<FileEntry> Database = new();
-		public static string CustomDatabaseFolder;
+		internal static HashSet<FileEntry> Database = new();
+		internal static string CustomDatabaseFolder;
 
 		static string CurrentDatabasePath => Directory.Exists(CustomDatabaseFolder)
 					? FileUtils.SafePathCombine(CustomDatabaseFolder,
@@ -34,7 +34,7 @@ namespace VDF.Core.Utils {
 					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
 					"ScannedFiles_new.db");
 
-		public static bool LoadDatabase() {
+		internal static bool LoadDatabase() {
 			FileInfo databaseFile = new(TempDatabasePath);
 			if (!databaseFile.Exists)
 				databaseFile = new(CurrentDatabasePath);
@@ -88,7 +88,7 @@ namespace VDF.Core.Utils {
 			Logger.Instance.Info($"Previously scanned files imported. {Database.Count:N0} files in {st.Elapsed}");
 			return true;
 		}
-		public static void CleanupDatabase() {
+		internal static void CleanupDatabase() {
 			int oldCount = Database.Count;
 			var st = Stopwatch.StartNew();
 
@@ -99,7 +99,7 @@ namespace VDF.Core.Utils {
 				$"Database cleanup has finished in: {st.Elapsed}, {oldCount - Database.Count} entries have been removed");
 			SaveDatabase();
 		}
-		public static void SaveDatabase() {
+		internal static void SaveDatabase() {
 			Logger.Instance.Info($"Save scanned files to disk ({Database.Count:N0} files).");
 
 			FileStream stream = new(TempDatabasePath, FileMode.Create);
@@ -108,18 +108,18 @@ namespace VDF.Core.Utils {
 			//Reason: https://github.com/0x90d/videoduplicatefinder/issues/247
 			File.Move(TempDatabasePath, CurrentDatabasePath, true);
 		}
-		public static void ClearDatabase() {
+		internal static void ClearDatabase() {
 			Database.Clear();
 			SaveDatabase();
 		}
 
-		public static void BlacklistFileEntry(string filePath) {
+		internal static void BlacklistFileEntry(string filePath) {
 			if (!Database.TryGetValue(new FileEntry(filePath), out FileEntry? actualValue))
 				return;
 			actualValue.Flags.Set(EntryFlags.ManuallyExcluded);
 		}
 
-		public static bool ExportDatabaseToJson(string jsonFile, JsonSerializerOptions options) {
+		internal static bool ExportDatabaseToJson(string jsonFile, JsonSerializerOptions options) {
 			try {
 				using var stream = File.OpenWrite(jsonFile);
 				JsonSerializer.Serialize(stream, Database, options);
@@ -131,6 +131,22 @@ namespace VDF.Core.Utils {
 			}
 			catch (Exception e) {
 				Logger.Instance.Info($"Failed to export database to json because: {e}");
+				return false;
+			}
+			return true;
+		}
+		internal static bool ImportDatabaseFromJson(string jsonFile, JsonSerializerOptions options) {
+			try {
+				using var stream = File.OpenRead(jsonFile);
+				Database = JsonSerializer.Deserialize<HashSet<FileEntry>>(stream, options);
+				stream.Close();
+			}
+			catch (JsonException e) {
+				Logger.Instance.Info($"Failed to deserialize database from json because: {e}");
+				return false;
+			}
+			catch (Exception e) {
+				Logger.Instance.Info($"Failed to import database from json because: {e}");
 				return false;
 			}
 			return true;

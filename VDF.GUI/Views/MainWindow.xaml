@@ -139,6 +139,14 @@
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <MenuItem Command="{Binding EditDataBaseCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Edit..." />
+                                    </MenuItem.Header>
+                                </MenuItem>
                                 <Separator/>
                                 <MenuItem Command="{Binding ExportDataBaseToJsonCommand}">
                                     <MenuItem.Header>
@@ -154,6 +162,15 @@
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
                                             Text="Export To Json (pretty)" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Command="{Binding ImportDataBaseFromJsonCommand}">
+                                    <MenuItem.Header>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Import From Json" />
                                     </MenuItem.Header>
                                 </MenuItem>
                                 <Separator/>

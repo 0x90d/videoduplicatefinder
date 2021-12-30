@@ -20,11 +20,13 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
+    <AvaloniaResource Remove="Views\DatabaseViewer.xaml" />
     <AvaloniaResource Remove="Views\ExpressionBuilder.xaml" />
     <AvaloniaResource Remove="Views\MessageBoxView.xaml" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Styles\Styles.xaml" />
+    <None Remove="Views\DatabaseViewer.xaml" />
     <None Remove="Views\ExpressionBuilder.xaml" />
   </ItemGroup>
   <ItemGroup>
@@ -36,6 +38,9 @@
     <PackageReference Include="DynamicExpresso.Core" Version="2.8.1" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Views\DatabaseViewer.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
     <EmbeddedResource Include="Views\MessageBoxView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
@@ -52,5 +57,13 @@
     <AvaloniaResource Update="Styles\Styles.xaml">
       <Generator>MSBuild:Compile</Generator>
     </AvaloniaResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Views\DatabaseViewer.xaml.cs">
+      <DependentUpon>DatabaseViewer.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>
