@@ -14,4 +14,8 @@
     <Style Selector="TextBlock.code">
         <Setter Property="FontFamily" Value="{StaticResource CodeFontFamily}" />
     </Style>
+    
+    <Style Selector="Window[WindowState=Maximized]">
+        <Setter Property="Padding" Value="8" />
+    </Style>
 </Styles>
