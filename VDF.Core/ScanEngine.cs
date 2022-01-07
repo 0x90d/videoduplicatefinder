@@ -207,7 +207,7 @@ namespace VDF.Core {
 			return false;
 		}
 		bool InvalidEntryForDuplicateCheck(FileEntry entry) =>
-			InvalidEntry(entry) || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes.Count < Settings.ThumbnailCount);
+			entry.invalid || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes.Count < Settings.ThumbnailCount);
 
 		public static Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
@@ -220,7 +220,8 @@ namespace VDF.Core {
 				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
-					if (InvalidEntry(entry)) {
+					entry.invalid = InvalidEntry(entry);
+					if (entry.invalid) {
 						IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
 					}
@@ -301,11 +302,17 @@ namespace VDF.Core {
 			Dictionary<string, DuplicateItem>? duplicateDict = new();
 
 			//Exclude existing database entries which not met current scan settings
-			List<FileEntry> ScanList = new(DatabaseUtils.Database);
-			ScanList.RemoveAll(InvalidEntryForDuplicateCheck);
+			List<FileEntry> ScanList = new();
+
+			Logger.Instance.Info("Prepare list of items to compare...");
+			foreach (FileEntry entry in DatabaseUtils.Database) {
+				if (!InvalidEntryForDuplicateCheck(entry)) {
+					ScanList.Add(entry);
+				}
+			}
 
 			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
-			
+
 			InitProgress(ScanList.Count);
 
 			try {

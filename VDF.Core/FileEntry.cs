@@ -57,6 +57,9 @@ namespace VDF.Core {
 		public long FileSize;
 
 		[ProtoIgnore]
+		public bool invalid = true;
+
+		[ProtoIgnore]
 		internal bool IsImage {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.IsImage);
