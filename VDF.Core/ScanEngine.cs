@@ -220,12 +220,16 @@ namespace VDF.Core {
 				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
-					if (InvalidEntry(entry)) return ValueTask.CompletedTask;
+					if (InvalidEntry(entry)) {
+						IncrementProgress(entry.Path);
+						return ValueTask.CompletedTask;
+					}
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
 						if (info == null) {
 							entry.Flags.Set(EntryFlags.MetadataError);
+							IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
 						}
 
@@ -301,7 +305,7 @@ namespace VDF.Core {
 			ScanList.RemoveAll(InvalidEntryForDuplicateCheck);
 
 			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
-
+			
 			InitProgress(ScanList.Count);
 
 			try {
@@ -363,8 +367,8 @@ namespace VDF.Core {
 								}
 							}
 						}
-						IncrementProgress(entry.Path);
 					}
+					IncrementProgress(entry.Path);
 				});
 			}
 			catch (OperationCanceledException) { }
