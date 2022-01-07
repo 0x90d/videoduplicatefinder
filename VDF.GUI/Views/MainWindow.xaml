@@ -1111,7 +1111,7 @@
                         MaxWidth="200"
                         BorderBrush="LimeGreen"
                         BorderThickness="10"
-                        IsIndeterminate="True" />
+                        IsIndeterminate="{Binding IsBusy}" />
                     <TextBlock
                         Margin="0,10,0,0"
                         HorizontalAlignment="Center"
