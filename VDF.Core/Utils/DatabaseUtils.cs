@@ -21,7 +21,7 @@ using ProtoBuf;
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
 		internal static HashSet<FileEntry> Database = new();
-		internal static string CustomDatabaseFolder;
+		internal static string? CustomDatabaseFolder;
 
 		static string CurrentDatabasePath => Directory.Exists(CustomDatabaseFolder)
 					? FileUtils.SafePathCombine(CustomDatabaseFolder,
@@ -138,7 +138,7 @@ namespace VDF.Core.Utils {
 		internal static bool ImportDatabaseFromJson(string jsonFile, JsonSerializerOptions options) {
 			try {
 				using var stream = File.OpenRead(jsonFile);
-				Database = JsonSerializer.Deserialize<HashSet<FileEntry>>(stream, options);
+				Database = JsonSerializer.Deserialize<HashSet<FileEntry>>(stream, options)!;
 				stream.Close();
 			}
 			catch (JsonException e) {

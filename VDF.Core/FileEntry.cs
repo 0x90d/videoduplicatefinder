@@ -57,7 +57,7 @@ namespace VDF.Core {
 		public long FileSize;
 
 		[ProtoIgnore]
-		public bool invalid = true;
+		internal bool invalid = true;
 
 		[ProtoIgnore]
 		internal bool IsImage {

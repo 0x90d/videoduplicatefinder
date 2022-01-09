@@ -23,7 +23,7 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace VDF.Core.Utils {
 	static class GrayBytesUtils {
-		public const int GrayByteValueLength = 256;
+		const int GrayByteValueLength = 256;
 		const byte BlackPixelLimit = 0x20;
 		const byte WhitePixelLimit = 0xF0;
 
