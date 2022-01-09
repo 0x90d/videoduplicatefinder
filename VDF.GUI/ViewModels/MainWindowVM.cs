@@ -862,7 +862,11 @@ namespace VDF.GUI.ViewModels {
 				return;
 			}
 			if (SettingsFile.Instance.UseNativeFfmpegBinding && SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.auto) {
-				await MessageBoxService.Show("You cannot use hardware acceleration mode'auto' with native ffmpeg bindings. Please explicit set a mode or set it to 'none'.");
+				await MessageBoxService.Show("You cannot use hardware acceleration mode 'auto' with native ffmpeg bindings. Please explicit set a mode or set it to 'none'.");
+				return;
+			}
+			if (SettingsFile.Instance.UseNativeFfmpegBinding && SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.cuda) {
+				await MessageBoxService.Show("You cannot use hardware acceleration mode 'cuda' with native ffmpeg bindings.");
 				return;
 			}
 			if (SettingsFile.Instance.Includes.Count == 0) {
