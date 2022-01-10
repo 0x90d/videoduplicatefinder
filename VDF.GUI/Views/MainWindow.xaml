@@ -838,6 +838,12 @@
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
+                                    Content="Always retry failed sampling"
+                                    ToolTip.Tip="If activated scan engine will try to generate thumbprints of failed entries each time it is run. Otherwise consecutive attempt will be taken only after cleanup of the database."
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}"
+                                    IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
                                     Content="Auto backup scan results"
                                     ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}"
