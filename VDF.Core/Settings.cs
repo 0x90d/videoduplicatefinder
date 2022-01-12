@@ -27,6 +27,7 @@ namespace VDF.Core {
 		public bool IncludeSubDirectories = true;
 		public bool IncludeImages = true;
 		public bool ExtendedFFToolsLogging;
+		public bool AlwaysRetryFailedSampling = false;
 		public bool IgnoreBlackPixels;
 		public bool IgnoreWhitePixels;
 		public bool CompareHorizontallyFlipped;

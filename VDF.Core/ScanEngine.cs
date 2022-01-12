@@ -221,7 +221,12 @@ namespace VDF.Core {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					entry.invalid = InvalidEntry(entry);
-					if (entry.invalid) {
+
+					bool skipEntry = false;
+					skipEntry |= entry.invalid;
+					skipEntry |= entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling;
+
+					if (skipEntry) {
 						IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
 					}

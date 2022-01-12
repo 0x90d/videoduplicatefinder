@@ -118,6 +118,12 @@ namespace VDF.GUI.Data {
 			get => _ExtendedFFToolsLogging;
 			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
 		}
+		bool _AlwaysRetryFailedSampling = false;
+		[JsonPropertyName("AlwaysRetryFailedSampling")]
+		public bool AlwaysRetryFailedSampling {
+			get => _AlwaysRetryFailedSampling;
+			set => this.RaiseAndSetIfChanged(ref _AlwaysRetryFailedSampling, value);
+		}
 		bool _UseNativeFfmpegBinding;
 		[JsonPropertyName("UseNativeFfmpegBinding")]
 		public bool UseNativeFfmpegBinding {
@@ -219,6 +225,9 @@ namespace VDF.GUI.Data {
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
 				if (bool.TryParse(n.Value, out var value))
 					Instance.ExtendedFFToolsLogging = value;
+			foreach (var n in xDoc.Descendants("AlwaysRetryFailedSampling"))
+				if (bool.TryParse(n.Value, out var value))
+					Instance.AlwaysRetryFailedSampling = value;
 			foreach (var n in xDoc.Descendants("UseNativeFfmpegBinding"))
 				if (bool.TryParse(n.Value, out var value))
 					Instance.UseNativeFfmpegBinding = value;

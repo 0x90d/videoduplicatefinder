@@ -892,6 +892,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.MaxDegreeOfParallelism = SettingsFile.Instance.MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails;
 			Scanner.Settings.ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging;
+			Scanner.Settings.AlwaysRetryFailedSampling = SettingsFile.Instance.AlwaysRetryFailedSampling;
 			Scanner.Settings.CustomFFArguments = SettingsFile.Instance.CustomFFArguments;
 			Scanner.Settings.UseNativeFfmpegBinding = SettingsFile.Instance.UseNativeFfmpegBinding;
 			Scanner.Settings.IgnoreBlackPixels = SettingsFile.Instance.IgnoreBlackPixels;
