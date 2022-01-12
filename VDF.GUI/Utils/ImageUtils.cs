@@ -22,7 +22,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace VDF.GUI.Utils {
 	static class ImageUtils {
-		public static Bitmap JoinImages(List<Image> pImgList) {
+		public static Bitmap? JoinImages(List<Image> pImgList) {
 			if (pImgList == null || pImgList.Count == 0) return null;
 
 			int height = pImgList[0].Height;

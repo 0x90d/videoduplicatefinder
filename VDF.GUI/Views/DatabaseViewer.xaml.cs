@@ -27,9 +27,8 @@ namespace VDF.GUI.Views {
 			Closing += DatabaseViewer_Closing;
 		}
 
-		private void DatabaseViewer_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
-			((DatabaseViewerVM)DataContext).Save();
-		}
+		private void DatabaseViewer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) 
+			=> ((DatabaseViewerVM)DataContext!).Save();
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);		
 

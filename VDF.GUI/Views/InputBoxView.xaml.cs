@@ -23,7 +23,7 @@ namespace VDF.GUI.Views {
 
 	public static class InputBoxService {
 		public static async Task<String> Show(string message, string defaultInput = "", string waterMark = "",
-			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string? title = null) {
 			var dlg = new InputBoxView(message, defaultInput, waterMark, buttons, title) {
 				Icon = ApplicationHelpers.MainWindow.Icon
 			};
@@ -38,7 +38,7 @@ namespace VDF.GUI.Views {
 		public InputBoxView() => InitializeComponent();
 
 		public InputBoxView(string message, string defaultInput = "", string waterMark = "",
-			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string title = null) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string? title = null) {
 			DataContext = new InputBoxVM();
 			((InputBoxVM)DataContext).host = this;
 			((InputBoxVM)DataContext).Message = message;

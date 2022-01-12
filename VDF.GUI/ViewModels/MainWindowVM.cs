@@ -47,15 +47,15 @@ namespace VDF.GUI.ViewModels {
 			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
 			Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
-		[CanBeNull] DataGridCollectionView view;
+		[CanBeNull] DataGridCollectionView? view;
 		public ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
 		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; private set; }
 		public sealed class CheckedGroupsComparer : System.Collections.IComparer {
-			MainWindowVM mainVM;
-			public CheckedGroupsComparer(MainWindowVM vm) {
-				mainVM = vm;
-			}
-			public int Compare(object x, object y) {
+			readonly MainWindowVM mainVM;
+			public CheckedGroupsComparer(MainWindowVM vm) => mainVM = vm;
+			public int Compare(object? x, object? y) {
+				if (x == null || y == null)
+					return -1;
 				var dupX = (DuplicateItemVM)x;
 				var dupY = (DuplicateItemVM)y;
 				bool xHasChecked = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Where(a => a.Checked).Any();
@@ -86,7 +86,7 @@ namespace VDF.GUI.ViewModels {
 #pragma warning restore CA1822 // Mark members as static
 			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
 
-		string _ScanProgressText;
+		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
 			get => _ScanProgressText;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
@@ -112,7 +112,7 @@ namespace VDF.GUI.ViewModels {
 			get => _IsBusy;
 			set => this.RaiseAndSetIfChanged(ref _IsBusy, value);
 		}
-		string _BusyText;
+		string _BusyText = string.Empty;
 		public string IsBusyText {
 			get => _BusyText;
 			set => this.RaiseAndSetIfChanged(ref _BusyText, value);
@@ -132,7 +132,7 @@ namespace VDF.GUI.ViewModels {
 			get => _TotalDuplicateGroups;
 			set => this.RaiseAndSetIfChanged(ref _TotalDuplicateGroups, value);
 		}
-		string _TotalDuplicatesSize;
+		string _TotalDuplicatesSize = string.Empty;
 		public string TotalDuplicatesSize {
 			get => _TotalDuplicatesSize;
 			set => this.RaiseAndSetIfChanged(ref _TotalDuplicatesSize, value);
@@ -150,26 +150,20 @@ namespace VDF.GUI.ViewModels {
 			get => _DuplicatesSelectedCounter;
 			set => this.RaiseAndSetIfChanged(ref _DuplicatesSelectedCounter, value);
 		}
-		public bool MultiOpenSupported {
-			get => !String.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
-		}
-		public bool MultiOpenInFolderSupported {
-			get => !String.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
-		}
-		static List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
-		public List<string> CustomCommandList {
-			get => _CustomCommandList;
-		}
-		PropertyInfo _SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(_CustomCommandList[0]);
+		public bool MultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
+		public bool MultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
+		static readonly List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
+		public List<string> CustomCommandList => _CustomCommandList;
+		PropertyInfo _SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(_CustomCommandList[0])!;
 		public string SelectedCustomCommand {
 			get => _SelectedCustomCommand.Name;
 			set {
-				_SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(value);
+				_SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(value)!;
 				this.RaisePropertyChanged(nameof(SelectedCustomCommandValue));
 			}
 		}
 		public string SelectedCustomCommandValue {
-			get => (string)_SelectedCustomCommand.GetValue(SettingsFile.Instance.CustomCommands);
+			get => (string)_SelectedCustomCommand.GetValue(SettingsFile.Instance.CustomCommands)!;
 			set {
 				_SelectedCustomCommand.SetValue(SettingsFile.Instance.CustomCommands, value);
 				this.RaisePropertyChanged(nameof(MultiOpenSupported));
@@ -209,7 +203,7 @@ namespace VDF.GUI.ViewModels {
 				view?.Refresh();
 			}
 		}
-		string _FilterByPath;
+		string _FilterByPath = string.Empty;
 
 		public string FilterByPath {
 			get => _FilterByPath;
@@ -224,7 +218,7 @@ namespace VDF.GUI.ViewModels {
 			FileInfo groupBlacklistFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistedGroups.json"));
 			if (groupBlacklistFile.Exists && groupBlacklistFile.Length > 0) {
 				using var stream = new FileStream(groupBlacklistFile.FullName, FileMode.Open);
-				GroupBlacklist = JsonSerializer.Deserialize<List<HashSet<string>>>(stream);
+				GroupBlacklist = JsonSerializer.Deserialize<List<HashSet<string>>>(stream)!;
 			}
 			_FileType = TypeFilters[0];
 			Scanner.ScanDone += Scanner_ScanDone;
@@ -245,7 +239,7 @@ namespace VDF.GUI.ViewModels {
 			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
 
 			SortOrders = new KeyValuePair<string, DataGridSortDescription>[] {
-				new KeyValuePair<string, DataGridSortDescription>("None", null),
+				new KeyValuePair<string, DataGridSortDescription>("None", null!),
 				new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
 				new KeyValuePair<string, DataGridSortDescription>("Size Descending",
@@ -274,7 +268,7 @@ namespace VDF.GUI.ViewModels {
 			_SortOrder = SortOrders[0];
 		}
 
-		void Duplicates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
+		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
 			if (e.OldItems != null) {
 				foreach (INotifyPropertyChanged item in e.OldItems) {
 					item.PropertyChanged -= DuplicateItemVM_PropertyChanged;
@@ -290,15 +284,15 @@ namespace VDF.GUI.ViewModels {
 				DuplicatesSelectedCounter = 0;
 		}
 
-		void DuplicateItemVM_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-			if (e.PropertyName != nameof(DuplicateItemVM.Checked)) return;
+		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
+			if (e.PropertyName != nameof(DuplicateItemVM.Checked) || sender == null) return;
 			if (((DuplicateItemVM)sender).Checked)
 				DuplicatesSelectedCounter++;
 			else
 				DuplicatesSelectedCounter--;
 		}
 
-		void Scanner_ThumbnailsRetrieved(object sender, EventArgs e) {
+		void Scanner_ThumbnailsRetrieved(object? sender, EventArgs e) {
 			//Reset properties
 			ScanProgressText = string.Empty;
 			RemainingTime = new TimeSpan();
@@ -310,9 +304,9 @@ namespace VDF.GUI.ViewModels {
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
-		void Scanner_FilesEnumerated(object sender, EventArgs e) => IsBusy = false;
+		void Scanner_FilesEnumerated(object? sender, EventArgs e) => IsBusy = false;
 
-		async void Scanner_DatabaseCleaned(object sender, EventArgs e) {
+		async void Scanner_DatabaseCleaned(object? sender, EventArgs e) {
 			IsBusy = false;
 			await MessageBoxService.Show("Database cleaned!");
 		}
@@ -354,7 +348,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		void Scanner_Progress(object sender, ScanProgressChangedEventArgs e) =>
+		void Scanner_Progress(object? sender, ScanProgressChangedEventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				ScanProgressText = e.CurrentFile;
 				RemainingTime = e.Remaining;
@@ -369,7 +363,7 @@ namespace VDF.GUI.ViewModels {
 				LogItems.Add(message);
 			});
 
-		void Scanner_ScanDone(object sender, EventArgs e) =>
+		void Scanner_ScanDone(object? sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
 				IsBusy = false;
@@ -474,7 +468,7 @@ namespace VDF.GUI.ViewModels {
 				Name = "Json Files",
 				Extensions = new List<string>() { "json" }
 			});
-			string[] result = await new OpenFileDialog {
+			string[]? result = await new OpenFileDialog {
 				Filters = filterList,
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (result == null || result.Length != 1 || string.IsNullOrEmpty(result[0])) return;
@@ -506,7 +500,7 @@ namespace VDF.GUI.ViewModels {
 				Extensions = new List<string>() { "json" }
 			});
 
-			string result = await new SaveFileDialog {
+			string? result = await new SaveFileDialog {
 				DefaultExtension = ".json",
 				Filters = filterList
 			}.ShowAsync(ApplicationHelpers.MainWindow);
@@ -527,7 +521,7 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 		async void ExportScanResultsToJson(JsonSerializerOptions options) {
-			string path = await new SaveFileDialog {
+			string? path = await new SaveFileDialog {
 				DefaultExtension = ".json",
 				Filters = new List<FileDialogFilter> { new FileDialogFilter {
 					Name = "Json Files",
@@ -596,7 +590,7 @@ namespace VDF.GUI.ViewModels {
 						}
 					}
 				}.ShowAsync(ApplicationHelpers.MainWindow);
-				if (paths.Length == 0) return;
+				if (paths == null || paths.Length == 0) return;
 				path = paths[0];
 			}
 			if (string.IsNullOrEmpty(path)) return;
@@ -609,11 +603,12 @@ namespace VDF.GUI.ViewModels {
 				options.Converters.Add(new BitmapJsonConverter());
 				IsBusy = true;
 				IsBusyText = "Importing scan results from disk...";
-				var list = await JsonSerializer.DeserializeAsync<List<DuplicateItemVM>>(stream, options);
+				List<DuplicateItemVM>? list = await JsonSerializer.DeserializeAsync<List<DuplicateItemVM>>(stream, options);
 				Duplicates.Clear();
-				foreach (var dupItem in list) {
-					Duplicates.Add(dupItem);
-				}
+				if (list != null)
+					foreach (var dupItem in list)
+						Duplicates.Add(dupItem);
+					
 				BuildDuplicatesView();
 				IsBusy = false;
 				stream.Close();
@@ -692,30 +687,30 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		private static bool AlternativeOpen(string cmdSingle, string cmdMulti, List<DuplicateItemVM> items = null) {
-			if (String.IsNullOrEmpty(cmdSingle) && String.IsNullOrEmpty(cmdMulti))
+		private static bool AlternativeOpen(string cmdSingle, string cmdMulti, List<DuplicateItemVM>? items = null) {
+			if (string.IsNullOrEmpty(cmdSingle) && string.IsNullOrEmpty(cmdMulti))
 				return false;
 
 			if (items == null) {
 				items = new();
-				if (!String.IsNullOrEmpty(cmdMulti)) {
+				if (!string.IsNullOrEmpty(cmdMulti)) {
 					foreach (var selectedItem in GetDataGrid.SelectedItems)
 						if (selectedItem is DuplicateItemVM item)
 							items.Add(item);
 				}
 				else {
-					if (GetDataGrid.SelectedItem is DuplicateItemVM)
-						items.Add((DuplicateItemVM)GetDataGrid.SelectedItem);
+					if (GetDataGrid.SelectedItem is DuplicateItemVM duplicateItem)
+						items.Add(duplicateItem);
 				}
 			}
 
-			string[] cmd = null;
-			string command = String.Empty;
-			if (!String.IsNullOrEmpty(cmdSingle) && (String.IsNullOrEmpty(cmdMulti) || items.Count == 1))
+			string[]? cmd = null;
+			string command = string.Empty;
+			if (!string.IsNullOrEmpty(cmdSingle) && (string.IsNullOrEmpty(cmdMulti) || items.Count == 1))
 				command = cmdSingle;
 			else if (items.Count > 1)
 				command = cmdMulti;
-			if (!String.IsNullOrEmpty(command)) {
+			if (!string.IsNullOrEmpty(command)) {
 				if (command[0] == '"' || command[0] == '\'') {  // -> when spaces in command part: "c:/my folder/prog.exe"
 					cmd = command.Split(command[0] + " ", 2);
 					cmd[0] += command[0];
@@ -723,7 +718,7 @@ namespace VDF.GUI.ViewModels {
 				else
 					cmd = command.Split(' ', 2);
 			}
-			if (String.IsNullOrEmpty(cmd?[0]))
+			if (string.IsNullOrEmpty(cmd?[0]))
 				return false;
 
 			command = cmd[0];
@@ -756,7 +751,7 @@ namespace VDF.GUI.ViewModels {
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
 			string newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(fi.FullName), title: "Rename File");
 			if (string.IsNullOrEmpty(newName)) return;
-			newName = FileUtils.SafePathCombine(fi.DirectoryName, newName + fi.Extension);
+			newName = FileUtils.SafePathCombine(fi.DirectoryName!, newName + fi.Extension);
 			while (File.Exists(newName)) {
 				MessageBoxButtons? result = await MessageBoxService.Show($"A file with the name '{Path.GetFileName(newName)}' already exists. Do you want to overwrite this file? Click on 'No' to enter a new name", MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 				if (result == null || result == MessageBoxButtons.Cancel)
@@ -766,7 +761,7 @@ namespace VDF.GUI.ViewModels {
 				newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(newName), title: "Rename File");
 				if (string.IsNullOrEmpty(newName))
 					return;
-				newName = FileUtils.SafePathCombine(fi.DirectoryName, newName + fi.Extension);
+				newName = FileUtils.SafePathCombine(fi.DirectoryName!, newName + fi.Extension);
 			}
 			try {
 				fi.MoveTo(newName, true);
@@ -784,8 +779,8 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
-				SettingsFile.Instance.Includes.Remove((string)lbox.SelectedItems[0]);
-			return null;
+				SettingsFile.Instance.Includes.Remove((string)lbox.SelectedItems[0]!);
+			return null!;
 		});
 		public ReactiveCommand<Unit, Unit> AddBlacklistToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await new OpenFolderDialog {
@@ -797,8 +792,8 @@ namespace VDF.GUI.ViewModels {
 		});
 		public ReactiveCommand<ListBox, Action> RemoveBlacklistFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems.Count > 0)
-				SettingsFile.Instance.Blacklists.Remove((string)lbox.SelectedItems[0]);
-			return null;
+				SettingsFile.Instance.Blacklists.Remove((string)lbox.SelectedItems[0]!);
+			return null!;
 		});
 		public ReactiveCommand<Unit, Unit> ClearLogCommand => ReactiveCommand.Create(() => {
 			LogItems.Clear();
@@ -926,7 +921,7 @@ namespace VDF.GUI.ViewModels {
 		}, this.WhenAnyValue(x => x.IsScanning));
 		public ReactiveCommand<Unit, Unit> CheckCustomCommand => ReactiveCommand.CreateFromTask(async () => {
 			ExpressionBuilder dlg = new();
-			((ExpressionBuilderVM)dlg.DataContext).ExpressionText = SettingsFile.Instance.LastCustomSelectExpression;
+			((ExpressionBuilderVM)dlg.DataContext!).ExpressionText = SettingsFile.Instance.LastCustomSelectExpression;
 			bool res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
 			if (!res) return;
 
@@ -1132,7 +1127,7 @@ namespace VDF.GUI.ViewModels {
 					try {
 
 						if (createSymbolLinksInstead) {
-							DuplicateItemVM fileToKeep = Duplicates.FirstOrDefault(s =>
+							DuplicateItemVM? fileToKeep = Duplicates.FirstOrDefault(s =>
 							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
 							s.Checked == false);
 							if (fileToKeep == default(DuplicateItemVM)) {

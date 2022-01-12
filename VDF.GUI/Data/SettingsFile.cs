@@ -23,7 +23,7 @@ using VDF.Core.Utils;
 
 namespace VDF.GUI.Data {
 	public class SettingsFile : ReactiveObject {
-		private static SettingsFile instance;
+		private static SettingsFile? instance;
 
 		[JsonIgnore]
 		public static SettingsFile Instance => instance ??= new SettingsFile();
@@ -162,7 +162,7 @@ namespace VDF.GUI.Data {
 		}
 		[JsonPropertyName("CustomCommands")]
 		public CustomActionCommands CustomCommands {get; set;} = new();
-		string _CustomDatabaseFolder;
+		string _CustomDatabaseFolder = string.Empty;
 		[JsonPropertyName("CustomDatabaseFolder")]
 		public string CustomDatabaseFolder {
 			get => _CustomDatabaseFolder;

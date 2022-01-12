@@ -38,7 +38,7 @@ namespace VDF.GUI.ViewModels {
 			GetDataGrid = dataGrid;
 			TempDatabaseFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 			ScanEngine.ExportDataBaseToJson(TempDatabaseFile, serializerOptions);
-			DatabaseFiles = JsonSerializer.Deserialize<ObservableCollection<FileEntry>>(File.ReadAllBytes(TempDatabaseFile), serializerOptions);
+			DatabaseFiles = JsonSerializer.Deserialize<ObservableCollection<FileEntry>>(File.ReadAllBytes(TempDatabaseFile), serializerOptions)!;
 			DatabaseFilesView = new DataGridCollectionView(DatabaseFiles);
 			DatabaseFilesView.Filter += TextFilter;
 			GetDataGrid.BeginningEdit += GetDataGrid_BeginningEdit;
@@ -46,11 +46,11 @@ namespace VDF.GUI.ViewModels {
 			GetDataGrid.RowEditEnded += GetDataGrid_RowEditEnded;
 		}
 
-		private void GetDataGrid_RowEditEnded(object sender, DataGridRowEditEndedEventArgs e) => canDeleteRows = true;
+		private void GetDataGrid_RowEditEnded(object? sender, DataGridRowEditEndedEventArgs e) => canDeleteRows = true;
 
-		private void GetDataGrid_CellEditEnded(object sender, DataGridCellEditEndedEventArgs e) => canDeleteRows = true;
+		private void GetDataGrid_CellEditEnded(object? sender, DataGridCellEditEndedEventArgs e) => canDeleteRows = true;
 
-		private void GetDataGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e) => canDeleteRows = false;
+		private void GetDataGrid_BeginningEdit(object? sender, DataGridBeginningEditEventArgs e) => canDeleteRows = false;
 
 		bool canDeleteRows = true;
 
@@ -63,7 +63,7 @@ namespace VDF.GUI.ViewModels {
 			return success;
 		}
 
-		string _SearchText;
+		string _SearchText = string.Empty;
 		public string SearchText {
 			get => _SearchText;
 			set {

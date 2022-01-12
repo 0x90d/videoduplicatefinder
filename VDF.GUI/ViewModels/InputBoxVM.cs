@@ -21,7 +21,7 @@ using VDF.GUI.Views;
 namespace VDF.GUI.ViewModels {
 	public sealed class InputBoxVM : ReactiveObject {
 
-		public InputBoxView host;
+		public InputBoxView? host;
 
 		bool _HasOKButton;
 		public bool HasOKButton {
@@ -43,21 +43,21 @@ namespace VDF.GUI.ViewModels {
 			get => _HasCancelButton;
 			set => this.RaiseAndSetIfChanged(ref _HasCancelButton, value);
 		}
-		public string Message { get; set; }
-		public string Input { get; set; }
-		public string WaterMark { get; set; }
+		public string Message { get; set; } = string.Empty;
+		public string Input { get; set; } = string.Empty;
+		public string WaterMark { get; set; } = string.Empty;
 		public string Title { get; set; } = "Video Duplicate Finder";
 		public ReactiveCommand<Unit, Unit> OKCommand => ReactiveCommand.Create(() => {
-			host.Close(Input);
+			host?.Close(Input);
 		});
 		public ReactiveCommand<Unit, Unit> YesCommand => ReactiveCommand.Create(() => {
-			host.Close(Input);
+			host?.Close(Input);
 		});
 		public ReactiveCommand<Unit, Unit> NoCommand => ReactiveCommand.Create(() => {
-			host.Close(null);
+			host?.Close(null);
 		});
 		public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
-			host.Close(null);
+			host?.Close(null);
 		});
 	}
 }

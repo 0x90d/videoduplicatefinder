@@ -41,7 +41,7 @@ namespace VDF.GUI.ViewModels {
 
 			AvailableProperties = sb.ToString();
 		}
-		string _ExpressionText;
+		string _ExpressionText = string.Empty;
 		public string ExpressionText {
 			get => _ExpressionText;
 			set => this.RaiseAndSetIfChanged(ref _ExpressionText, value);

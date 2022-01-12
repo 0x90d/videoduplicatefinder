@@ -49,7 +49,7 @@ namespace VDF.GUI.Views {
 			ApplicationHelpers.CurrentApplicationLifetime.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 		}
 
-		void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
+		void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
 			e.Cancel = true;
 			ConfirmClose();
 		}
@@ -65,13 +65,13 @@ namespace VDF.GUI.Views {
 			}
 		}
 
-		void MainWindow_Exit(object sender, ControlledApplicationLifetimeExitEventArgs e) {
+		void MainWindow_Exit(object? sender, ControlledApplicationLifetimeExitEventArgs e) {
 			if (hasExited) return;
 			hasExited = true;
 			SettingsFile.SaveSettings();
 		}
 
-		private void DragOver(object sender, DragEventArgs e) {
+		private void DragOver(object? sender, DragEventArgs e) {
 			// Only allow Copy or Link as Drop Operations.
 			e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 
@@ -80,40 +80,26 @@ namespace VDF.GUI.Views {
 				e.DragEffects = DragDropEffects.None;
 		}
 
-		private void DropInclude(object sender, DragEventArgs e) {
+		private void DropInclude(object? sender, DragEventArgs e) {
 			if (!e.Data.Contains(DataFormats.FileNames)) return;
 			
-			foreach(string file in e.Data.GetFileNames()) {
+			foreach(string file in e.Data.GetFileNames()!) {
 				if (!Directory.Exists(file)) continue;
 				if (!SettingsFile.Instance.Includes.Contains(file))
 					SettingsFile.Instance.Includes.Add(file);
 			}
 		}
-		private void DropBlacklist(object sender, DragEventArgs e) {
+		private void DropBlacklist(object? sender, DragEventArgs e) {
 			if (!e.Data.Contains(DataFormats.FileNames)) return;
 
-			foreach (string file in e.Data.GetFileNames()) {
+			foreach (string file in e.Data.GetFileNames()!) {
 				if (!Directory.Exists(file)) continue;
 				if (!SettingsFile.Instance.Blacklists.Contains(file))
 					SettingsFile.Instance.Blacklists.Add(file);
 			}
 		}
 
-		private async void DoDrag(object sender, Avalonia.Input.PointerPressedEventArgs e) {
-			//DataObject dragData = new DataObject();
-			//dragData.Set(DataFormats.Text, $"You have dragged text.");
-
-			//var result = await DragDrop.DoDragDrop(dragData, DragDropEffects.Copy);
-			//switch (result) {
-			//case DragDropEffects.Copy:
-			//	_DragState.Text = "The text was copied"; break;
-			//case DragDropEffects.Link:
-			//	_DragState.Text = "The text was linked"; break;
-			//case DragDropEffects.None:
-			//	_DragState.Text = "The drag operation was canceled"; break;
-			//}
-		}
-		void MainWindow_Startup(object sender, ControlledApplicationLifetimeStartupEventArgs e) => ApplicationHelpers.MainWindowDataContext.LoadDatabase();
+		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) => ApplicationHelpers.MainWindowDataContext.LoadDatabase();
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}

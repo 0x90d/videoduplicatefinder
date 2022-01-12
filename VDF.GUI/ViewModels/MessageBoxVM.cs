@@ -23,7 +23,7 @@ namespace VDF.GUI.ViewModels {
 
 	public sealed class MessageBoxVM : ReactiveObject {
 
-		public MessageBoxView host;
+		public MessageBoxView? host;
 
 		bool _HasOKButton;
 		public bool HasOKButton {
@@ -45,19 +45,19 @@ namespace VDF.GUI.ViewModels {
 			get => _HasCancelButton;
 			set => this.RaiseAndSetIfChanged(ref _HasCancelButton, value);
 		}
-		public string Message { get; set; }
+		public string Message { get; set; } = string.Empty;
 		public string Title { get; set; } = "Video Duplicate Finder";
 		public ReactiveCommand<Unit, Unit> OKCommand => ReactiveCommand.Create(() => {
-			host.Close(MessageBoxButtons.Ok);
+			host?.Close(MessageBoxButtons.Ok);
 		});
 		public ReactiveCommand<Unit, Unit> YesCommand => ReactiveCommand.Create(() => {
-			host.Close(MessageBoxButtons.Yes);
+			host?.Close(MessageBoxButtons.Yes);
 		});
 		public ReactiveCommand<Unit, Unit> NoCommand => ReactiveCommand.Create(() => {
-			host.Close(MessageBoxButtons.No);
+			host?.Close(MessageBoxButtons.No);
 		});
 		public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
-			host.Close(MessageBoxButtons.Cancel);
+			host?.Close(MessageBoxButtons.Cancel);
 		});
 	}
 }

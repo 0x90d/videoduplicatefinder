@@ -25,18 +25,20 @@ namespace VDF.GUI.ViewModels {
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
 	public sealed class DuplicateItemVM : ReactiveObject {
 		//For JSON deserialization only
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItemVM() {  }
 
 		public DuplicateItemVM(DuplicateItem item) {
 			ItemInfo = item;
 			ItemInfo.ThumbnailsUpdated += () => {
-				Thumbnail = ImageUtils.JoinImages(ItemInfo.ImageList);
+				Thumbnail = ImageUtils.JoinImages(ItemInfo.ImageList)!;
 				this.RaisePropertyChanged(nameof(Thumbnail));
 			};
 		}
 		public DuplicateItem ItemInfo { get; set; }
 
 		public Bitmap Thumbnail { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		bool _Checked;
 		public bool Checked {
