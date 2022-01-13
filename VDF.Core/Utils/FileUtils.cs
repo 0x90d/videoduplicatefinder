@@ -56,9 +56,15 @@ namespace VDF.Core.Utils {
 			if (ignoreHardLinks)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
-			var files = Directory.EnumerateFiles(initial, "*", enumerationOptions)
-				.Where(f => (includeImages ? AllExtensions : VideoExtensions)
-				.Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+			IEnumerable<String> files;
+
+			try {
+				files = Directory.EnumerateFiles(initial, "*", enumerationOptions)
+					.Where(f => (includeImages ? AllExtensions : VideoExtensions)
+					.Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+			} catch (System.IO.DirectoryNotFoundException) {
+				return new List<String>();
+			}
 
 			if (recursive)
 				files = files.Concat(Directory.EnumerateDirectories(initial, "*", enumerationOptions)
