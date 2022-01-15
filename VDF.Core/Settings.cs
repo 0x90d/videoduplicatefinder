@@ -43,5 +43,8 @@ namespace VDF.Core {
 		public string CustomFFArguments = string.Empty;
 		public string CustomDatabaseFolder = string.Empty;
 
+		public string IncludedFileTypes = string.Empty;
+
+		public long MinimumFileSize = 0;
 	}
 }

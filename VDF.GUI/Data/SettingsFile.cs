@@ -169,6 +169,20 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _CustomDatabaseFolder, value);
 		}
 
+		string _IncludedFileTypes = string.Empty;
+		[JsonPropertyName("IncludedFileTypes")]
+		public string IncludedFileTypes {
+			get => _IncludedFileTypes;
+			set => this.RaiseAndSetIfChanged(ref _IncludedFileTypes, value);
+		}
+
+		long _MinimumFileSize = 0;
+		[JsonPropertyName("MinimumFileSize")]
+		public long MinimumFileSize {
+			get => _MinimumFileSize;
+			set => this.RaiseAndSetIfChanged(ref _MinimumFileSize, value);
+		}
+
 		public static void SaveSettings(string? path = null) {
 			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
 			File.WriteAllText(path, JsonSerializer.Serialize(instance));

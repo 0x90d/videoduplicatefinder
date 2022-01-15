@@ -10,7 +10,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
     xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
-    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI" 
     x:Name="MainWindow"
     Title="Video Duplicate Finder 3.0 - Cross-platform"
     Width="1020"
@@ -970,6 +970,28 @@
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder."
                                     Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    ToolTip.Tip="The following file types will be selected, delimited by a comma. Leave empty to include all types."
+                                    Text="Included file types:" />
+                                <TextBox
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="The following file types will be selected, delimited by a comma. Leave empty to include all types."
+                                    Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludedFileTypes}" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    ToolTip.Tip="The minimum size a file must be to be selected. Zero means no minimum."
+                                    Text="Minimum File Size (MB):" />
+                                <NumericUpDown
+                                    Height="26"
+                                    Width="200"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Minimum="0"
+                                    ToolTip.Tip="The minimum size a file must be to be selected. Zero means no minimum."
+                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MinimumFileSize}" />
                             </StackPanel>
                         </Grid>
                         <Grid

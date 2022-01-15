@@ -46,25 +46,77 @@ namespace VDF.Core.Utils {
 			".ts"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
-		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreHardLinks, bool recursive, bool includeImages, List<string> excludeFolders) {
+
+		/// <summary>
+		/// Gets a list of files that meet the criteria of the arguments
+		/// </summary>
+		/// <param name="initial"></param>
+		/// <param name="ignoreReadonly"></param>
+		/// <param name="ignoreHardLinks"></param>
+		/// <param name="recursive"></param>
+		/// <param name="includeImages"></param>
+		/// <param name="excludeFolders"></param>
+		/// <param name="includeFileTypes"></param>
+		/// <param name="minimumFileSize"></param>
+		/// <returns></returns>
+		public static IEnumerable<string> GetFiles(string initial, bool ignoreReadonly, bool ignoreHardLinks, bool recursive,
+			bool includeImages, List<string> excludeFolders, List<string> includeFileTypes, long minimumFileSize) {
 			var enumerationOptions = new EnumerationOptions {
 				IgnoreInaccessible = true,
+				AttributesToSkip = FileAttributes.System
 			};
-			enumerationOptions.AttributesToSkip = FileAttributes.System;
+
 			if (ignoreReadonly)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReadOnly;
 			if (ignoreHardLinks)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
-			var files = Directory.EnumerateFiles(initial, "*", enumerationOptions)
-				.Where(f => (includeImages ? AllExtensions : VideoExtensions)
-				.Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+			if (includeFileTypes.Any()) {
+				includeFileTypes = includeImages ? AllExtensions.Intersect(includeFileTypes).ToList() : VideoExtensions.Intersect(includeFileTypes).ToList();
+			}
+			else if (includeImages) {
+				includeFileTypes = AllExtensions.ToList();
+			}
+			else {
+				includeFileTypes = VideoExtensions.ToList();
+			}
 
-			if (recursive)
-				files = files.Concat(Directory.EnumerateDirectories(initial, "*", enumerationOptions)
-					.Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
-					.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, ignoreHardLinks, recursive: true, includeImages, excludeFolders)));
-			return files.ToList();
+			var pending = new Queue<string>();
+			pending.Enqueue(initial);
+			while (pending.Count > 0) {
+				initial = pending.Dequeue();
+				string[] tmp;
+				try {
+					tmp = Directory.GetFiles(initial, "*", enumerationOptions)
+						.Where(f => includeFileTypes.ToArray()
+							.Any(x => {
+								var fileInfo = new FileInfo(f);
+								return string.Equals(fileInfo.Extension, x) && (!(minimumFileSize > 0) ||
+									fileInfo.Length / 1048576 > minimumFileSize);
+							}))
+						.ToArray();
+				}
+				catch (DirectoryNotFoundException) {
+					continue;
+				}
+				catch (UnauthorizedAccessException) {
+					continue;
+				}
+
+				foreach (var t in tmp) {
+					yield return t;
+				}
+
+				if (!recursive) continue;
+				{
+					tmp = Directory.GetDirectories(initial);
+
+					foreach (var t in tmp) {
+						if (!excludeFolders.Contains(t))
+							pending.Enqueue(t);
+					}
+				}
+			}
 		}
 
 		/// <summary>

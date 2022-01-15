@@ -142,12 +142,13 @@ namespace VDF.Core {
 
 			DatabaseUtils.LoadDatabase();
 			int oldFileCount = DatabaseUtils.Database.Count;
+			var includedFileTypes = Settings.IncludedFileTypes.Split(',').Where(c => !string.IsNullOrEmpty(c)).Select(x => x.Replace(x, x.StartsWith('.') ? x.ToLower() : $".{x}".ToLower())).ToList();
 
 			foreach (var path in Settings.IncludeList) {
 				if (!Directory.Exists(path)) continue;
 
-				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
-					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
+				foreach (var file in FileUtils.GetFiles(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
+					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList(), includedFileTypes, Settings.MinimumFileSize)) {
 					FileEntry fEntry;
 					try {
 						fEntry = new(file);

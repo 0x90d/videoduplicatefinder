@@ -894,6 +894,8 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels;
 			Scanner.Settings.CompareHorizontallyFlipped = SettingsFile.Instance.CompareHorizontallyFlipped;
 			Scanner.Settings.CustomDatabaseFolder = SettingsFile.Instance.CustomDatabaseFolder;
+			Scanner.Settings.IncludedFileTypes = SettingsFile.Instance.IncludedFileTypes;
+			Scanner.Settings.MinimumFileSize = SettingsFile.Instance.MinimumFileSize;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in SettingsFile.Instance.Includes)
 				Scanner.Settings.IncludeList.Add(s);
