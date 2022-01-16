@@ -70,11 +70,15 @@ namespace VDF.GUI.ViewModels {
 			new KeyValuePair<string, FileTypeFilter>("Videos",  FileTypeFilter.Videos),
 			new KeyValuePair<string, FileTypeFilter>("Images",  FileTypeFilter.Images),
 		};
-
 		bool _IsScanning;
 		public bool IsScanning {
 			get => _IsScanning;
 			set => this.RaiseAndSetIfChanged(ref _IsScanning, value);
+		}
+		bool _IsGathered;
+		public bool IsGathered {
+			get => _IsGathered;
+			set => this.RaiseAndSetIfChanged(ref _IsGathered, value);
 		}
 		bool _IsPaused;
 		public bool IsPaused {
@@ -367,6 +371,7 @@ namespace VDF.GUI.ViewModels {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
 				IsBusy = false;
+				IsGathered = true;
 
 				Scanner.Duplicates.RemoveWhere(a => {
 					foreach (HashSet<string> blackListedGroup in GroupBlacklist) {
@@ -839,7 +844,7 @@ namespace VDF.GUI.ViewModels {
 			SettingsFile.LoadSettings(result[0]);
 		});
 
-		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<String, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async (String command) => {
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
 				await MessageBoxService.Show("The custom database folder does not exist!");
 				return;
@@ -875,6 +880,7 @@ namespace VDF.GUI.ViewModels {
 
 			Duplicates.Clear();
 			IsScanning = true;
+			IsGathered = false;
 			SettingsFile.SaveSettings();
 			//Set scan settings
 			Scanner.Settings.IncludeSubDirectories = SettingsFile.Instance.IncludeSubDirectories;
@@ -900,10 +906,21 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.BlackList.Clear();
 			foreach (var s in SettingsFile.Instance.Blacklists)
 				Scanner.Settings.BlackList.Add(s);
+
 			//Start scan
-			IsBusy = true;
-			IsBusyText = "Enumerating files...";
-			Scanner.StartSearch();
+			switch (command) {
+				case "FullScan":
+					IsBusy = true;
+					IsBusyText = "Enumerating files...";
+					Scanner.StartSearch();
+					break;
+				case "CompareOnly":
+					Scanner.StartCompare();
+					break;
+				default:
+					await MessageBoxService.Show("Requested command is NOT implemented yet!");
+					break;
+			}
 		});
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();
@@ -1125,7 +1142,7 @@ namespace VDF.GUI.ViewModels {
 				if (dub.Checked == false) continue;
 				if (fromDisk)
 					try {
-
+						FileEntry dubFileEntry = new FileEntry(dub.ItemInfo.Path);
 						if (createSymbolLinksInstead) {
 							DuplicateItemVM? fileToKeep = Duplicates.FirstOrDefault(s =>
 							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
@@ -1155,6 +1172,7 @@ namespace VDF.GUI.ViewModels {
 							File.Delete(dub.ItemInfo.Path);
 							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
 						}
+						ScanEngine.RemoveFromDatabase(dubFileEntry);
 					}
 					catch (Exception ex) {
 						Logger.Instance.Info(
@@ -1172,8 +1190,9 @@ namespace VDF.GUI.ViewModels {
 				if (Duplicates.Any(s => s.ItemInfo.GroupId == first.ItemInfo.GroupId && s.ItemInfo.Path != first.ItemInfo.Path)) continue;
 				Duplicates.RemoveAt(i);
 			}
-			if (blackList)
-				ScanEngine.SaveDatabase();
+
+			ScanEngine.SaveDatabase();
+
 			if (SettingsFile.Instance.BackupAfterListChanged)
 				await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 		}

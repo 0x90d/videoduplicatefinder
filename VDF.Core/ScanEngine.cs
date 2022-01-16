@@ -97,6 +97,10 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Finished gathering and hashing in {SearchTimer.StopGetElapsedAndRestart()}");
 			BuildingHashesDone?.Invoke(this, new EventArgs());
 			DatabaseUtils.SaveDatabase();
+			StartCompare();
+		}
+
+		public async void StartCompare() {
 			Logger.Instance.Info("Scan for duplicates...");
 			if (!cancelationTokenSource.IsCancellationRequested)
 				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
@@ -211,6 +215,7 @@ namespace VDF.Core {
 
 		public static Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
+		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
 
 		public static void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
 
