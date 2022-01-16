@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="FFmpeg.AutoGen" Version="4.4.1" />
     <PackageReference Include="protobuf-net" Version="3.0.101" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4-alpha.0.69" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
   </ItemGroup>
 
 </Project>
