@@ -102,8 +102,11 @@ namespace VDF.Core {
 
 		public async void StartCompare() {
 			Logger.Instance.Info("Scan for duplicates...");
-			if (!cancelationTokenSource.IsCancellationRequested)
+			if (!cancelationTokenSource.IsCancellationRequested) {
+				cancelationTokenSource.Cancel();
+				cancelationTokenSource = new CancellationTokenSource();
 				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
+			}
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
 			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
