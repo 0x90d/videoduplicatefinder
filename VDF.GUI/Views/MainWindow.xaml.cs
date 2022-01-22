@@ -99,6 +99,8 @@ namespace VDF.GUI.Views {
 			}
 		}
 
+		void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) => ApplicationHelpers.MainWindowDataContext.Thumbnails_ValueChanged(sender, e);
+
 		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) => ApplicationHelpers.MainWindowDataContext.LoadDatabase();
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);

@@ -76,6 +76,16 @@ namespace VDF.GUI.ViewModels {
 			get => _IsScanning;
 			set => this.RaiseAndSetIfChanged(ref _IsScanning, value);
 		}
+		bool _IsReadyToCompare;
+		public bool IsReadyToCompare {
+			get => _IsReadyToCompare;
+			set => this.RaiseAndSetIfChanged(ref _IsReadyToCompare, value);
+		}
+		bool _IsGathered;
+		public bool IsGathered {
+			get => _IsGathered;
+			set => this.RaiseAndSetIfChanged(ref _IsGathered, value);
+		}
 		bool _IsPaused;
 		public bool IsPaused {
 			get => _IsPaused;
@@ -221,6 +231,7 @@ namespace VDF.GUI.ViewModels {
 				GroupBlacklist = JsonSerializer.Deserialize<List<HashSet<string>>>(stream)!;
 			}
 			_FileType = TypeFilters[0];
+			Scanner.ScanAborted += Scanner_ScanAborted;
 			Scanner.ScanDone += Scanner_ScanDone;
 			Scanner.Progress += Scanner_Progress;
 			Scanner.ThumbnailsRetrieved += Scanner_ThumbnailsRetrieved;
@@ -282,6 +293,14 @@ namespace VDF.GUI.ViewModels {
 			}
 			if (e.Action == NotifyCollectionChangedAction.Reset)
 				DuplicatesSelectedCounter = 0;
+		}
+
+		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
+			bool isReadyToCompare = IsGathered;
+			isReadyToCompare &= Scanner.Settings.ThumbnailCount == e.NewValue;
+			if (!isReadyToCompare && ApplicationHelpers.MainWindowDataContext.IsReadyToCompare)
+				await MessageBoxService.Show($"Number of thumbnails can't be changed between quick rescans. Full scan will be required.");
+			ApplicationHelpers.MainWindowDataContext.IsReadyToCompare = isReadyToCompare;
 		}
 
 		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
@@ -363,10 +382,19 @@ namespace VDF.GUI.ViewModels {
 				LogItems.Add(message);
 			});
 
+		void Scanner_ScanAborted(object? sender, EventArgs e) =>
+			Dispatcher.UIThread.InvokeAsync(() => {
+				IsScanning = false;
+				IsBusy = false;
+				IsReadyToCompare = false;
+				IsGathered = false;
+			});
 		void Scanner_ScanDone(object? sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
 				IsBusy = false;
+				IsReadyToCompare = true;
+				IsGathered = true;
 
 				Scanner.Duplicates.RemoveWhere(a => {
 					foreach (HashSet<string> blackListedGroup in GroupBlacklist) {
@@ -764,8 +792,11 @@ namespace VDF.GUI.ViewModels {
 				newName = FileUtils.SafePathCombine(fi.DirectoryName!, newName + fi.Extension);
 			}
 			try {
+				ScanEngine.GetFromDatabase(currentItem.ItemInfo.Path, out var dbEntry);
 				fi.MoveTo(newName, true);
+				ScanEngine.UpdateFilePathInDatabase(newName, dbEntry);
 				currentItem.ItemInfo.Path = newName;
+				ScanEngine.SaveDatabase();
 			}
 			catch (Exception e) {
 				await MessageBoxService.Show(e.Message);
@@ -839,7 +870,7 @@ namespace VDF.GUI.ViewModels {
 			SettingsFile.LoadSettings(result[0]);
 		});
 
-		public ReactiveCommand<Unit, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<string, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async (string command) => {
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
 				await MessageBoxService.Show("The custom database folder does not exist!");
 				return;
@@ -875,6 +906,8 @@ namespace VDF.GUI.ViewModels {
 
 			Duplicates.Clear();
 			IsScanning = true;
+			IsReadyToCompare = false;
+			IsGathered = false;
 			SettingsFile.SaveSettings();
 			//Set scan settings
 			Scanner.Settings.IncludeSubDirectories = SettingsFile.Instance.IncludeSubDirectories;
@@ -900,10 +933,21 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.BlackList.Clear();
 			foreach (var s in SettingsFile.Instance.Blacklists)
 				Scanner.Settings.BlackList.Add(s);
+
 			//Start scan
-			IsBusy = true;
-			IsBusyText = "Enumerating files...";
-			Scanner.StartSearch();
+			switch (command) {
+				case "FullScan":
+					IsBusy = true;
+					IsBusyText = "Enumerating files...";
+					Scanner.StartSearch();
+					break;
+				case "CompareOnly":
+					Scanner.StartCompare();
+					break;
+				default:
+					await MessageBoxService.Show("Requested command is NOT implemented yet!");
+					break;
+			}
 		});
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();
@@ -1125,7 +1169,7 @@ namespace VDF.GUI.ViewModels {
 				if (dub.Checked == false) continue;
 				if (fromDisk)
 					try {
-
+						FileEntry dubFileEntry = new FileEntry(dub.ItemInfo.Path);
 						if (createSymbolLinksInstead) {
 							DuplicateItemVM? fileToKeep = Duplicates.FirstOrDefault(s =>
 							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
@@ -1155,6 +1199,7 @@ namespace VDF.GUI.ViewModels {
 							File.Delete(dub.ItemInfo.Path);
 							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
 						}
+						ScanEngine.RemoveFromDatabase(dubFileEntry);
 					}
 					catch (Exception ex) {
 						Logger.Instance.Info(
@@ -1172,8 +1217,9 @@ namespace VDF.GUI.ViewModels {
 				if (Duplicates.Any(s => s.ItemInfo.GroupId == first.ItemInfo.GroupId && s.ItemInfo.Path != first.ItemInfo.Path)) continue;
 				Duplicates.RemoveAt(i);
 			}
-			if (blackList)
-				ScanEngine.SaveDatabase();
+
+			ScanEngine.SaveDatabase();
+
 			if (SettingsFile.Instance.BackupAfterListChanged)
 				await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
 		}
@@ -1191,8 +1237,17 @@ namespace VDF.GUI.ViewModels {
 				Title = "Select folder"
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
-			Utils.FileUtils.CopyFile(Duplicates.Where(s => s.Checked), result, true, true,
-				out var errorCounter);
+			var selectedItems = Duplicates.Where(s => s.Checked).ToList();
+			List<Tuple<DuplicateItemVM,FileEntry>> itemsToUpdate = new();
+			foreach (var item in selectedItems) {
+				ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry);
+				itemsToUpdate.Add(Tuple.Create(item, dbEntry));
+			}
+			Utils.FileUtils.CopyFile(selectedItems, result, true, true, out var errorCounter);
+			foreach (var pair in itemsToUpdate) {
+				ScanEngine.UpdateFilePathInDatabase(pair.Item1.ItemInfo.Path, pair.Item2);
+			}
+			ScanEngine.SaveDatabase();
 			if (errorCounter > 0)
 				await MessageBoxService.Show("Failed to copy/move some files. Please check log!");
 		});
