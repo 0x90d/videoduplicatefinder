@@ -31,11 +31,11 @@
     <None Remove="Views\ExpressionBuilder.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.10.11" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="0.10.11" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.11" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.11" />
-    <PackageReference Include="Avalonia.Xaml.Behaviors" Version="0.10.11.5" />
+    <PackageReference Include="Avalonia" Version="0.10.12" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="0.10.12" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.10.12" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.12" />
+    <PackageReference Include="Avalonia.Xaml.Behaviors" Version="0.10.12" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.10.0" />
   </ItemGroup>
   <ItemGroup>
