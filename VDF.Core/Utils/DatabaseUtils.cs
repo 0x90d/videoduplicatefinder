@@ -112,13 +112,16 @@ namespace VDF.Core.Utils {
 			Database.Clear();
 			SaveDatabase();
 		}
-
 		internal static void BlacklistFileEntry(string filePath) {
 			if (!Database.TryGetValue(new FileEntry(filePath), out FileEntry? actualValue))
 				return;
 			actualValue.Flags.Set(EntryFlags.ManuallyExcluded);
 		}
-
+		internal static void UpdateFilePath(string newPath, FileEntry dbEntry) {
+			Database.Remove(dbEntry);
+			dbEntry.Path = newPath;
+			Database.Add(dbEntry);
+		}
 		internal static bool ExportDatabaseToJson(string jsonFile, JsonSerializerOptions options) {
 			try {
 				using var stream = File.OpenWrite(jsonFile);

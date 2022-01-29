@@ -35,6 +35,7 @@ namespace VDF.Core {
 		public event EventHandler<ScanProgressChangedEventArgs>? Progress;
 		public event EventHandler? BuildingHashesDone;
 		public event EventHandler? ScanDone;
+		public event EventHandler? ScanAborted;
 		public event EventHandler? ThumbnailsRetrieved;
 		public event EventHandler? FilesEnumerated;
 		public event EventHandler? DatabaseCleaned;
@@ -83,7 +84,7 @@ namespace VDF.Core {
 		public static bool NativeFFmpegExists => FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist;
 
 		public async void StartSearch() {
-			Prepare();
+			PrepareSearch();
 			SearchTimer.Start();
 			ElapsedTimer.Start();
 			Logger.Instance.InsertSeparator('-');
@@ -97,6 +98,19 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Finished gathering and hashing in {SearchTimer.StopGetElapsedAndRestart()}");
 			BuildingHashesDone?.Invoke(this, new EventArgs());
 			DatabaseUtils.SaveDatabase();
+			if (!cancelationTokenSource.IsCancellationRequested) {
+				StartCompare();
+			} else {
+				ScanAborted?.Invoke(this, new EventArgs());
+				Logger.Instance.Info("Scan aborted.");
+				isScanning = false;
+			}
+		}
+
+		public async void StartCompare() {
+			PrepareCompare();
+			SearchTimer.Start();
+			ElapsedTimer.Start();
 			Logger.Instance.Info("Scan for duplicates...");
 			if (!cancelationTokenSource.IsCancellationRequested)
 				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
@@ -111,7 +125,7 @@ namespace VDF.Core {
 			isScanning = false;
 		}
 
-		void Prepare() {
+		void PrepareSearch() {
 			//Using VDF.GUI we know fftools exist at this point but VDF.Core might be used in other projects as well
 			if (!Settings.UseNativeFfmpegBinding && !FFmpegExists)
 				throw new FFNotFoundException("Cannot find FFmpeg");
@@ -119,6 +133,8 @@ namespace VDF.Core {
 				throw new FFNotFoundException("Cannot find FFprobe");
 			if (Settings.UseNativeFfmpegBinding && !FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist)
 				throw new FFNotFoundException("Cannot find FFmpeg libraries");
+
+			CancelAllTasks();
 
 			FfmpegEngine.HardwareAccelerationMode = Settings.HardwareAccelerationMode;
 			FfmpegEngine.CustomFFArguments = Settings.CustomFFArguments;
@@ -128,14 +144,37 @@ namespace VDF.Core {
 			positionList.Clear();
 			ElapsedTimer.Reset();
 			SearchTimer.Reset();
-			pauseTokenSource = new PauseTokenSource();
-			cancelationTokenSource = new CancellationTokenSource();
+
 			float positionCounter = 0f;
 			for (int i = 0; i < Settings.ThumbnailCount; i++) {
 				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
 				positionList.Add(positionCounter);
 			}
+
 			isScanning = true;
+		}
+
+		void PrepareCompare() {
+			if (Settings.ThumbnailCount != positionList.Count) {
+				throw new Exception("Number of thumbnails can't be changed between quick rescans! Rescan has been aborted.");
+			}
+
+			CancelAllTasks();
+
+			Duplicates.Clear();
+			SearchTimer.Reset();
+			if (!ElapsedTimer.IsRunning)
+				ElapsedTimer.Reset();
+
+			isScanning = true;
+		}
+
+		void CancelAllTasks() {
+			if (!cancelationTokenSource.IsCancellationRequested)
+				cancelationTokenSource.Cancel();
+			cancelationTokenSource = new CancellationTokenSource();
+			pauseTokenSource = new PauseTokenSource();
+			isScanning = false;
 		}
 
 		Task BuildFileList() => Task.Run(() => {
@@ -211,7 +250,11 @@ namespace VDF.Core {
 
 		public static Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
-
+		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
+		public static void UpdateFilePathInDatabase(string newPath, FileEntry dbEntry) => DatabaseUtils.UpdateFilePath(newPath, dbEntry);
+		#pragma warning disable CS8601 // Possible null reference assignment
+		public static bool GetFromDatabase(string path, out FileEntry dbEntry) => DatabaseUtils.Database.TryGetValue(new FileEntry(path), out dbEntry);
+		#pragma warning restore CS8601 // Possible null reference assignment
 		public static void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
 
 		async Task GatherInfos() {
