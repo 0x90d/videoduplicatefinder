@@ -110,7 +110,7 @@
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
-                            <MenuItem>
+                            <MenuItem IsVisible="{Binding !IsScanning}">
                                 <MenuItem.Header>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock
