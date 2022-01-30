@@ -23,14 +23,14 @@ using VDF.Core.Utils;
 namespace VDF.Core {
 
 	[ProtoContract]
-	[DebuggerDisplay("{" + nameof(Path) + ",nq}")]
+	[DebuggerDisplay("{" + nameof(_Path) + ",nq}")]
 	public class FileEntry {
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
 		public FileEntry() { }
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
 		public FileEntry(string file) : this(new FileInfo(file)) { }
 		public FileEntry(FileInfo fileInfo) {
-			Path = fileInfo.FullName;
+			_Path = fileInfo.FullName;
 			Folder = fileInfo.Directory?.FullName ?? string.Empty;
 			var extension = fileInfo.Extension;
 			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
@@ -39,8 +39,18 @@ namespace VDF.Core {
 			DateModified = fileInfo.LastWriteTimeUtc;
 			FileSize = fileInfo.Length;
 		}
+
 		[ProtoMember(1)]
-		public string Path { get; set; }
+		internal string _Path;
+		[ProtoIgnore]
+		public string Path {
+			get => _Path;
+			set {
+				FileInfo fileInfo = new FileInfo(value);
+				_Path = fileInfo.FullName;
+				Folder = fileInfo.Directory?.FullName ?? string.Empty;
+			}
+		 }
 		[ProtoMember(2)]
 		public string Folder;
 		[ProtoMember(3)]
