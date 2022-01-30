@@ -242,7 +242,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch { }
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
-			//Ensure items added before GUI was ready will be shown 
+			//Ensure items added before GUI was ready will be shown
 			Instance_LogItemAdded(string.Empty);
 			if (File.Exists(BackupScanResultsFile))
 				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
@@ -636,7 +636,7 @@ namespace VDF.GUI.ViewModels {
 				if (list != null)
 					foreach (var dupItem in list)
 						Duplicates.Add(dupItem);
-					
+
 				BuildDuplicatesView();
 				IsBusy = false;
 				stream.Close();
@@ -889,10 +889,6 @@ namespace VDF.GUI.ViewModels {
 			}
 			if (SettingsFile.Instance.UseNativeFfmpegBinding && SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.auto) {
 				await MessageBoxService.Show("You cannot use hardware acceleration mode 'auto' with native ffmpeg bindings. Please explicit set a mode or set it to 'none'.");
-				return;
-			}
-			if (SettingsFile.Instance.UseNativeFfmpegBinding && SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.cuda) {
-				await MessageBoxService.Show("You cannot use hardware acceleration mode 'cuda' with native ffmpeg bindings.");
 				return;
 			}
 			if (SettingsFile.Instance.Includes.Count == 0) {
