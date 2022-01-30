@@ -60,7 +60,9 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			AVPacket* pPacket = _pPacket;
 			ffmpeg.av_packet_free(&pPacket);
 
-			ffmpeg.avcodec_close(_pCodecContext);
+			AVCodecContext* pCodecContext = _pCodecContext;
+			ffmpeg.avcodec_free_context(&pCodecContext);
+
 			AVFormatContext* pFormatContext = _pFormatContext;
 			ffmpeg.avformat_close_input(&pFormatContext);
 		}
@@ -111,7 +113,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			return true;
 		}
 
-		private static unsafe AVPixelFormat GetHWPixelFormat(AVHWDeviceType hwDevice, AVCodec* codec) {
+		private unsafe AVPixelFormat GetHWPixelFormat(AVHWDeviceType hwDevice, AVCodec* codec) {
 			const int AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX = 1;
 			AVPixelFormat pixelFormat = AVPixelFormat.AV_PIX_FMT_NONE;
 
@@ -124,13 +126,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 					continue;
 				}
 
-				AVBufferRef* hwDeviceCtx;
-				int errno = ffmpeg.av_hwdevice_ctx_create(&hwDeviceCtx, hwDevice, null, null, 0);
-				if (errno != 0) {
-					throw new Exception($"Failed to find compatible pixel format for {hwDevice}, error code {errno}");
-				}
-
-				AVHWFramesConstraints* hwConstraints = ffmpeg.av_hwdevice_get_hwframe_constraints(hwDeviceCtx, hwConfig);
+				AVHWFramesConstraints* hwConstraints = ffmpeg.av_hwdevice_get_hwframe_constraints(_pCodecContext->hw_device_ctx, hwConfig);
 				if (hwConstraints != null) {
 					for (AVPixelFormat* p = hwConstraints->valid_sw_formats; *p != AVPixelFormat.AV_PIX_FMT_NONE; p++) {
 						pixelFormat = *p;
@@ -144,8 +140,6 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 					ffmpeg.av_hwframe_constraints_free(&hwConstraints);
 				}
-
-				ffmpeg.av_buffer_unref(&hwDeviceCtx);
 
 				if (pixelFormat != AVPixelFormat.AV_PIX_FMT_NONE) {
 					return pixelFormat;
