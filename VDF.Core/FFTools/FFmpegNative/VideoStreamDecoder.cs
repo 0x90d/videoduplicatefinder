@@ -41,6 +41,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			ffmpeg.avcodec_parameters_to_context(_pCodecContext, _pFormatContext->streams[_streamIndex]->codecpar).ThrowExceptionIfError();
 			ffmpeg.avcodec_open2(_pCodecContext, codec, null).ThrowExceptionIfError();
 
+			Codec = codec;
 			CodecName = ffmpeg.avcodec_get_name(codec->id);
 			FrameSize = new Size(_pCodecContext->width, _pCodecContext->height);
 			PixelFormat = _pCodecContext->pix_fmt;
@@ -49,6 +50,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_pFrame = ffmpeg.av_frame_alloc();
 		}
 
+		public AVCodec* Codec { get; }
 		public string CodecName { get; }
 		public Size FrameSize { get; }
 		public AVPixelFormat PixelFormat { get; }

@@ -35,21 +35,34 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			return error;
 		}
 
-		public static AVPixelFormat GetHWPixelFormat(AVHWDeviceType hWDevice) {
-			return hWDevice switch {
-				AVHWDeviceType.AV_HWDEVICE_TYPE_NONE => AVPixelFormat.AV_PIX_FMT_NONE,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_VDPAU => AVPixelFormat.AV_PIX_FMT_VDPAU,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA => AVPixelFormat.AV_PIX_FMT_CUDA,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_VAAPI => AVPixelFormat.AV_PIX_FMT_VAAPI,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2 => AVPixelFormat.AV_PIX_FMT_NV12,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_QSV => AVPixelFormat.AV_PIX_FMT_QSV,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_VIDEOTOOLBOX => AVPixelFormat.AV_PIX_FMT_VIDEOTOOLBOX,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA => AVPixelFormat.AV_PIX_FMT_NV12,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_DRM => AVPixelFormat.AV_PIX_FMT_DRM_PRIME,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_OPENCL => AVPixelFormat.AV_PIX_FMT_OPENCL,
-				AVHWDeviceType.AV_HWDEVICE_TYPE_MEDIACODEC => AVPixelFormat.AV_PIX_FMT_MEDIACODEC,
-				_ => AVPixelFormat.AV_PIX_FMT_NONE
-			};
+		public static unsafe AVPixelFormat GetHWPixelFormat(AVHWDeviceType hwDevice, AVCodec* codec) {
+			const int AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX = 1;
+			AVBufferRef* hwDeviceCtx;
+
+			for (int i = 0; ; i++) {
+				AVCodecHWConfig* hwConfig = ffmpeg.avcodec_get_hw_config(codec, i);
+				if (hwConfig == null) {
+					throw new Exception($"Failed to find compatible pixel format for {hwDevice}");
+				}
+
+				if ((hwConfig->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) == 0 || hwConfig->device_type != hwDevice) {
+					continue;
+				}
+
+				ffmpeg.av_hwdevice_ctx_create(&hwDeviceCtx, hwDevice, null, null, 0);
+				AVHWFramesConstraints* hwConstraints = ffmpeg.av_hwdevice_get_hwframe_constraints(hwDeviceCtx, hwConfig);
+				if (hwConstraints == null) {
+					continue;
+				}
+
+				for (AVPixelFormat* p = hwConstraints->valid_sw_formats; *p != AVPixelFormat.AV_PIX_FMT_NONE; p++) {
+					AVPixelFormat pixelFormat = *p;
+					if (ffmpeg.sws_isSupportedInput(pixelFormat) != 0) {
+						ffmpeg.av_hwframe_constraints_free(&hwConstraints);
+						return pixelFormat;
+					}
+				}
+			}
 		}
 
 		private static bool FindFFmpegLibraryFiles() {

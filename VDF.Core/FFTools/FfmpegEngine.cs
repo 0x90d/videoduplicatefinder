@@ -54,7 +54,7 @@ namespace VDF.Core.FFTools {
 					Size sourceSize = vsd.FrameSize;
 					AVPixelFormat sourcePixelFormat = HWDevice == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
 						? vsd.PixelFormat
-						: FFmpegHelper.GetHWPixelFormat(HWDevice);
+						: FFmpegHelper.GetHWPixelFormat(HWDevice, vsd.Codec);
 					Size destinationSize = isGrayByte ? new Size(16, 16) : new Size(100, Convert.ToInt32(sourceSize.Height * (100 / (double)sourceSize.Width)));
 					AVPixelFormat destinationPixelFormat = isGrayByte ? AVPixelFormat.AV_PIX_FMT_GRAY8 : AVPixelFormat.AV_PIX_FMT_BGRA;
 					using var vfc =
