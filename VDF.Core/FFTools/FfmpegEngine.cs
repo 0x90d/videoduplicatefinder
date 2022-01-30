@@ -60,7 +60,6 @@ namespace VDF.Core.FFTools {
 					if (!vsd.TryDecodeFrame(out var srcFrame, settings.Position))
 						throw new Exception($"Failed decoding frame at {settings.Position}");
 					AVFrame convertedFrame = vfc.Convert(srcFrame);
-					ffmpeg.av_frame_unref(&srcFrame);
 
 					if (isGrayByte) {
 						int length = ffmpeg.av_image_get_buffer_size(destinationPixelFormat, convertedFrame.width,

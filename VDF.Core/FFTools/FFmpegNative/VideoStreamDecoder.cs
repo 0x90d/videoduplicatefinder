@@ -22,12 +22,12 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		private readonly AVFormatContext* _pFormatContext;
 		private readonly AVFrame* _pFrame;
 		private readonly AVPacket* _pPacket;
-		private readonly AVFrame* _receivedFrame;
+		private readonly AVFrame* _pReceivedFrame;
 		private readonly int _streamIndex;
 
 		public VideoStreamDecoder(string url, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE) {
 			_pFormatContext = ffmpeg.avformat_alloc_context();
-			_receivedFrame = ffmpeg.av_frame_alloc();
+			_pReceivedFrame = ffmpeg.av_frame_alloc();
 			var pFormatContext = _pFormatContext;
 			ffmpeg.avformat_open_input(&pFormatContext, url, null, null).ThrowExceptionIfError();
 			ffmpeg.avformat_find_stream_info(_pFormatContext, null).ThrowExceptionIfError();
@@ -56,6 +56,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		public void Dispose() {
 			AVFrame* pFrame = _pFrame;
 			ffmpeg.av_frame_free(&pFrame);
+			AVFrame* pReceivedFrame = _pReceivedFrame;
+			ffmpeg.av_frame_free(&pReceivedFrame);
 
 			AVPacket* pPacket = _pPacket;
 			ffmpeg.av_packet_free(&pPacket);
@@ -69,7 +71,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 		public bool TryDecodeFrame(out AVFrame frame, TimeSpan position) {
 			ffmpeg.av_frame_unref(_pFrame);
-			ffmpeg.av_frame_unref(_receivedFrame);
+			ffmpeg.av_frame_unref(_pReceivedFrame);
 			int error;
 
 			AVRational timebase = _pFormatContext->streams[_streamIndex]->time_base;
@@ -104,8 +106,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			error.ThrowExceptionIfError();
 
 			if (_pCodecContext->hw_device_ctx != null) {
-				ffmpeg.av_hwframe_transfer_data(_receivedFrame, _pFrame, 0).ThrowExceptionIfError();
-				frame = *_receivedFrame;
+				ffmpeg.av_hwframe_transfer_data(_pReceivedFrame, _pFrame, 0).ThrowExceptionIfError();
+				frame = *_pReceivedFrame;
 			}
 			else
 				frame = *_pFrame;
