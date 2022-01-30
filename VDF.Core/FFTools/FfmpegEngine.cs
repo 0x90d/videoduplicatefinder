@@ -52,13 +52,10 @@ namespace VDF.Core.FFTools {
 						throw new Exception($"Invalid source pixel format");
 
 					Size sourceSize = vsd.FrameSize;
-					AVPixelFormat sourcePixelFormat = HWDevice == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
-						? vsd.PixelFormat
-						: FFmpegHelper.GetHWPixelFormat(HWDevice, vsd.Codec);
 					Size destinationSize = isGrayByte ? new Size(16, 16) : new Size(100, Convert.ToInt32(sourceSize.Height * (100 / (double)sourceSize.Width)));
 					AVPixelFormat destinationPixelFormat = isGrayByte ? AVPixelFormat.AV_PIX_FMT_GRAY8 : AVPixelFormat.AV_PIX_FMT_BGRA;
 					using var vfc =
-						new VideoFrameConverter(sourceSize, sourcePixelFormat, destinationSize, destinationPixelFormat);
+						new VideoFrameConverter(sourceSize, vsd.PixelFormat, destinationSize, destinationPixelFormat);
 
 					if (!vsd.TryDecodeFrame(out var frame, settings.Position))
 						throw new Exception($"Failed decoding frame at {settings.Position}");

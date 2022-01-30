@@ -35,36 +35,6 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			return error;
 		}
 
-		public static unsafe AVPixelFormat GetHWPixelFormat(AVHWDeviceType hwDevice, AVCodec* codec) {
-			const int AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX = 1;
-			AVBufferRef* hwDeviceCtx;
-
-			for (int i = 0; ; i++) {
-				AVCodecHWConfig* hwConfig = ffmpeg.avcodec_get_hw_config(codec, i);
-				if (hwConfig == null) {
-					throw new Exception($"Failed to find compatible pixel format for {hwDevice}");
-				}
-
-				if ((hwConfig->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) == 0 || hwConfig->device_type != hwDevice) {
-					continue;
-				}
-
-				ffmpeg.av_hwdevice_ctx_create(&hwDeviceCtx, hwDevice, null, null, 0);
-				AVHWFramesConstraints* hwConstraints = ffmpeg.av_hwdevice_get_hwframe_constraints(hwDeviceCtx, hwConfig);
-				if (hwConstraints == null) {
-					continue;
-				}
-
-				for (AVPixelFormat* p = hwConstraints->valid_sw_formats; *p != AVPixelFormat.AV_PIX_FMT_NONE; p++) {
-					AVPixelFormat pixelFormat = *p;
-					if (ffmpeg.sws_isSupportedInput(pixelFormat) != 0) {
-						ffmpeg.av_hwframe_constraints_free(&hwConstraints);
-						return pixelFormat;
-					}
-				}
-			}
-		}
-
 		private static bool FindFFmpegLibraryFiles() {
 			try {
 
