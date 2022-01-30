@@ -182,10 +182,10 @@ namespace VDF.Core {
 			DatabaseUtils.LoadDatabase();
 			int oldFileCount = DatabaseUtils.Database.Count;
 
-			foreach (var path in Settings.IncludeList) {
+			foreach (string path in Settings.IncludeList) {
 				if (!Directory.Exists(path)) continue;
 
-				foreach (var file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
+				foreach (FileInfo file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					FileEntry fEntry;
 					try {

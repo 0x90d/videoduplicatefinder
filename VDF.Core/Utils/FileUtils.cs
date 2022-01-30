@@ -46,7 +46,7 @@ namespace VDF.Core.Utils {
 			".ts"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
-		public static List<string> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreHardLinks, bool recursive, bool includeImages, List<string> excludeFolders) {
+		public static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreHardLinks, bool recursive, bool includeImages, List<string> excludeFolders) {
 			var enumerationOptions = new EnumerationOptions {
 				IgnoreInaccessible = true,
 			};
@@ -56,15 +56,29 @@ namespace VDF.Core.Utils {
 			if (ignoreHardLinks)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
-			var files = Directory.EnumerateFiles(initial, "*", enumerationOptions)
-				.Where(f => (includeImages ? AllExtensions : VideoExtensions)
-				.Any(x => f.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+			List<FileInfo> files = new();
+			Queue<DirectoryInfo> subFolders = new();
+			subFolders.Enqueue(new(initial));
 
-			if (recursive)
-				files = files.Concat(Directory.EnumerateDirectories(initial, "*", enumerationOptions)
-					.Where(d => !excludeFolders.Any(x => d.Equals(x, StringComparison.OrdinalIgnoreCase)))
-					.SelectMany(d => GetFilesRecursive(d, ignoreReadonly, ignoreHardLinks, recursive: true, includeImages, excludeFolders)));
-			return files.ToList();
+			while (subFolders.Count > 0) {
+				DirectoryInfo currentFolder = subFolders.Dequeue();
+				try {
+
+					files.AddRange(currentFolder.EnumerateFiles("*", enumerationOptions)
+					.Where(f => (includeImages ? AllExtensions : VideoExtensions)
+					.Any(x => f.FullName.EndsWith(x, StringComparison.OrdinalIgnoreCase))));
+
+					if (!recursive)
+						break;
+					foreach (DirectoryInfo subFolder in currentFolder.EnumerateDirectories("*", enumerationOptions)
+						.Where(d => !excludeFolders.Any(x => d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase))))
+						subFolders.Enqueue(subFolder);
+				}
+				catch (DirectoryNotFoundException) { }
+			}
+
+			return files;
+
 		}
 
 		/// <summary>

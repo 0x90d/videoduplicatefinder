@@ -28,16 +28,16 @@ namespace VDF.Core {
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
 		public FileEntry() { }
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
-		public FileEntry(string file) {
-			Path = file;
-			var fi = new FileInfo(file);
-			Folder = fi.Directory?.FullName ?? string.Empty;
-			var extension = fi.Extension;
+		public FileEntry(string file) : this(new FileInfo(file)) { }
+		public FileEntry(FileInfo fileInfo) {
+			Path = fileInfo.FullName;
+			Folder = fileInfo.Directory?.FullName ?? string.Empty;
+			var extension = fileInfo.Extension;
 			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
 			grayBytes = new Dictionary<double, byte[]?>();
-			DateCreated = fi.CreationTimeUtc;
-			DateModified = fi.LastWriteTimeUtc;
-			FileSize = fi.Length;
+			DateCreated = fileInfo.CreationTimeUtc;
+			DateModified = fileInfo.LastWriteTimeUtc;
+			FileSize = fileInfo.Length;
 		}
 		[ProtoMember(1)]
 		public string Path { get; set; }
