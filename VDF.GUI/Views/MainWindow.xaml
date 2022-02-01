@@ -960,7 +960,7 @@
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Hardware acceleration mode of ffmpeg"
                                     Items="{Binding HardwareAccelerationModes}"
-                                    SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}" />
+                                    SelectedItem="{Binding SelectedHardwareAccelerationMode}" />
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     FontSize="14"

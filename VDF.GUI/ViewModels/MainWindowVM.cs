@@ -92,10 +92,18 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _IsPaused, value);
 		}
 #pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
-		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
+		public IEnumerable<string> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
-			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
-
+			Array.ConvertAll(Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>(), m => m.ToString());
+		public string SelectedHardwareAccelerationMode {
+			get => SettingsFile.Instance.HardwareAccelerationMode.ToString();
+			set {
+				if (value != null) {
+					SettingsFile.Instance.HardwareAccelerationMode = Enum.Parse<Core.FFTools.FFHardwareAccelerationMode>(value)!;
+					this.RaisePropertyChanged(nameof(SelectedHardwareAccelerationMode));
+				}
+			}
+		}
 		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
 			get => _ScanProgressText;
@@ -162,7 +170,7 @@ namespace VDF.GUI.ViewModels {
 		}
 		public bool MultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
 		public bool MultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
-		static readonly List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
+		static readonly List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList().ConvertAll(p => p.Name);
 		public List<string> CustomCommandList => _CustomCommandList;
 		PropertyInfo _SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(_CustomCommandList[0])!;
 		public string SelectedCustomCommand {
