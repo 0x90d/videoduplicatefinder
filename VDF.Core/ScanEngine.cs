@@ -185,7 +185,7 @@ namespace VDF.Core {
 			foreach (string path in Settings.IncludeList) {
 				if (!Directory.Exists(path)) continue;
 
-				foreach (FileInfo file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreHardlinks,
+				foreach (FileInfo file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreReparsePoints,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
 					FileEntry fEntry;
 					try {

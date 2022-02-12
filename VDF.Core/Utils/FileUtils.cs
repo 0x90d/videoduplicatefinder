@@ -46,14 +46,14 @@ namespace VDF.Core.Utils {
 			".ts"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
-		public static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreHardLinks, bool recursive, bool includeImages, List<string> excludeFolders) {
+		public static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders) {
 			var enumerationOptions = new EnumerationOptions {
 				IgnoreInaccessible = true,
 			};
 			enumerationOptions.AttributesToSkip = FileAttributes.System;
 			if (ignoreReadonly)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReadOnly;
-			if (ignoreHardLinks)
+			if (ignoreReparsePoints)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
 			List<FileInfo> files = new();

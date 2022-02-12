@@ -52,11 +52,16 @@ namespace VDF.GUI.Data {
 			get => _IgnoreReadOnlyFolders;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreReadOnlyFolders, value);
 		}
-		bool _IgnoreHardlinks;
+		[Obsolete]
 		[JsonPropertyName("IgnoreHardlinks")]
 		public bool IgnoreHardlinks {
-			get => _IgnoreHardlinks;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreHardlinks, value);
+			set => IgnoreReparsePoints = value;
+		}
+		bool _IgnoreReparsePoints;
+		[JsonPropertyName("IgnoreReparsePoints")]
+		public bool IgnoreReparsePoints {
+			get => _IgnoreReparsePoints;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreReparsePoints, value);
 		}
 		bool _IgnoreBlackPixels;
 		[JsonPropertyName("IgnoreBlackPixels")]
@@ -221,7 +226,7 @@ namespace VDF.GUI.Data {
 					Instance.GeneratePreviewThumbnails = value;
 			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
 				if (bool.TryParse(n.Value, out var value))
-					Instance.IgnoreHardlinks = value;
+					Instance.IgnoreReparsePoints = value;
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
 				if (bool.TryParse(n.Value, out var value))
 					Instance.ExtendedFFToolsLogging = value;

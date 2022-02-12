@@ -21,7 +21,7 @@ namespace VDF.Core {
 		public HashSet<string> BlackList { get; } = new HashSet<string>();
 
 		public bool IgnoreReadOnlyFolders;
-		public bool IgnoreHardlinks;
+		public bool IgnoreReparsePoints;
 		public bool GeneratePreviewThumbnails;
 		public bool UseNativeFfmpegBinding;
 		public bool IncludeSubDirectories = true;

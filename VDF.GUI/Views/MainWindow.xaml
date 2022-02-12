@@ -842,8 +842,8 @@
                                     ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
                                 <CheckBox
                                     VerticalAlignment="Center"
-                                    Content="Exclude hardlinks"
-                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreHardlinks}"
+                                    Content="Exclude Reparse Points"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
                                     IsThreeState="False" />
                                 <CheckBox
                                     VerticalAlignment="Center"
