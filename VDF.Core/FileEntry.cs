@@ -46,7 +46,7 @@ namespace VDF.Core {
 		public string Path {
 			get => _Path;
 			set {
-				FileInfo fileInfo = new FileInfo(value);
+				FileInfo fileInfo = new(value);
 				_Path = fileInfo.FullName;
 				Folder = fileInfo.Directory?.FullName ?? string.Empty;
 			}

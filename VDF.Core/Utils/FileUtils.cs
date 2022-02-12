@@ -75,6 +75,9 @@ namespace VDF.Core.Utils {
 						subFolders.Enqueue(subFolder);
 				}
 				catch (DirectoryNotFoundException) { }
+				catch (Exception e) {
+					Logger.Instance.Info($"Failed to enumerate '{currentFolder.FullName}' because of: {e}");
+				}
 			}
 
 			return files;
