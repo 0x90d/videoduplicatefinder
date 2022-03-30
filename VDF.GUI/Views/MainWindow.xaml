@@ -899,6 +899,12 @@
 									ToolTip.Tip="If checked you will be asked if you want to save the results when you close VDF"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}"
                                     IsThreeState="False" />
+                                <CheckBox
+                                    VerticalAlignment="Center"
+                                    Content="Scan against non-existing files"
+									ToolTip.Tip="If checked non-existing files which have all necessary information are included"
+                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
+                                    IsThreeState="False" />
                             </StackPanel>
                             <StackPanel Margin="15,5,0,0" Grid.Column="1">
                                 <TextBlock

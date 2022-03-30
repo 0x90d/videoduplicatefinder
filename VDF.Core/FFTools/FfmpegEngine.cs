@@ -167,7 +167,7 @@ namespace VDF.Core.FFTools {
 			}
 			return bytes;
 		}
-		public static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, bool extendedLogging) {
+		internal static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, bool extendedLogging) {
 			int tooDarkCounter = 0;
 
 			for (int i = 0; i < positions.Count; i++) {

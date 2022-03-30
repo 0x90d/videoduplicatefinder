@@ -24,8 +24,10 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
+using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Platform;
 using Avalonia.Threading;
 using DynamicExpresso;
 using DynamicExpresso.Exceptions;
@@ -237,6 +239,9 @@ namespace VDF.GUI.ViewModels {
 			Scanner.ThumbnailsRetrieved += Scanner_ThumbnailsRetrieved;
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
+			var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(assets.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
+			
 			try {
 				File.Delete(Path.Combine(CoreUtils.CurrentFolder, "log.txt"));
 			}
@@ -924,6 +929,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels;
 			Scanner.Settings.CompareHorizontallyFlipped = SettingsFile.Instance.CompareHorizontallyFlipped;
 			Scanner.Settings.CustomDatabaseFolder = SettingsFile.Instance.CustomDatabaseFolder;
+			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in SettingsFile.Instance.Includes)
 				Scanner.Settings.IncludeList.Add(s);

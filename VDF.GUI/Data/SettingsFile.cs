@@ -153,6 +153,12 @@ namespace VDF.GUI.Data {
 			get => _AskToSaveResultsOnExit;
 			set => this.RaiseAndSetIfChanged(ref _AskToSaveResultsOnExit, value);
 		}
+		bool _IncludeNonExistingFiles;
+		[JsonPropertyName("IncludeNonExistingFiles")]
+		public bool IncludeNonExistingFiles {
+			get => _IncludeNonExistingFiles;
+			set => this.RaiseAndSetIfChanged(ref _IncludeNonExistingFiles, value);
+		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]
 		public int Percent {

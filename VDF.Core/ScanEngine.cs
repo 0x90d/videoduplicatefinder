@@ -40,6 +40,7 @@ namespace VDF.Core {
 		public event EventHandler? FilesEnumerated;
 		public event EventHandler? DatabaseCleaned;
 
+		public Image? NoThumbnailImage;
 
 		PauseTokenSource pauseTokenSource = new();
 		CancellationTokenSource cancelationTokenSource = new();
@@ -242,7 +243,7 @@ namespace VDF.Core {
 
 			if (entry.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.TooDark))
 				return true;
-			if (!File.Exists(entry.Path))
+			if (!Settings.IncludeNonExistingFiles && !File.Exists(entry.Path))
 				return true;
 			return false;
 		}
@@ -273,6 +274,22 @@ namespace VDF.Core {
 					if (skipEntry) {
 						IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
+					}
+					if (Settings.IncludeNonExistingFiles && entry.grayBytes.Count > 0) {
+						bool hasAllInformation = entry.IsImage;
+						if (!hasAllInformation) {
+							hasAllInformation = true;
+							for (int i = 0; i < positionList.Count; i++) {
+								if (entry.grayBytes.ContainsKey(entry.GetGrayBytesIndex(positionList[i])))
+									continue;
+								hasAllInformation = false;
+								break;
+							}							
+						}
+						if (hasAllInformation) {
+							IncrementProgress(entry.Path);
+							return ValueTask.CompletedTask;
+						}
 					}
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
@@ -453,8 +470,10 @@ namespace VDF.Core {
 			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
-					List<Image> list;
-					if (entry.IsImage) {
+					List<Image>? list = null;
+					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
+					
+					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						list = new List<Image>(1);
 						try {
@@ -477,7 +496,7 @@ namespace VDF.Core {
 						}
 
 					}
-					else {
+					else if (needsThumbnails) {
 						list = new List<Image>(positionList.Count);
 						for (int j = 0; j < positionList.Count; j++) {
 							var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
@@ -491,7 +510,7 @@ namespace VDF.Core {
 							list.Add(bitmapImage);
 						}
 					}
-					entry.SetThumbnails(list);
+					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()));
 					return ValueTask.CompletedTask;
 				});
 			}
