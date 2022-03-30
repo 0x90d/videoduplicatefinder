@@ -15,18 +15,18 @@
 //
 
 global using System;
-global using System.IO;
 global using System.Collections.Generic;
-global using SixLabors.ImageSharp;
+global using System.IO;
 global using System.Threading;
 global using System.Threading.Tasks;
+global using SixLabors.ImageSharp;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.Json;
+using SixLabors.ImageSharp.Processing;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
-using System.Linq;
-using SixLabors.ImageSharp.Processing;
 
 namespace VDF.Core {
 	public sealed class ScanEngine {
@@ -100,7 +100,8 @@ namespace VDF.Core {
 			DatabaseUtils.SaveDatabase();
 			if (!cancelationTokenSource.IsCancellationRequested) {
 				StartCompare();
-			} else {
+			}
+			else {
 				ScanAborted?.Invoke(this, new EventArgs());
 				Logger.Instance.Info("Scan aborted.");
 				isScanning = false;
@@ -225,7 +226,7 @@ namespace VDF.Core {
 					return true;
 				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
 				string relativePath = Path.GetRelativePath(f, entry.Folder);
-				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath); 
+				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
 			}))
 				return true;
 			if (Settings.BlackList.Any(f => {
@@ -252,9 +253,9 @@ namespace VDF.Core {
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
 		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
 		public static void UpdateFilePathInDatabase(string newPath, FileEntry dbEntry) => DatabaseUtils.UpdateFilePath(newPath, dbEntry);
-		#pragma warning disable CS8601 // Possible null reference assignment
+#pragma warning disable CS8601 // Possible null reference assignment
 		public static bool GetFromDatabase(string path, out FileEntry dbEntry) => DatabaseUtils.Database.TryGetValue(new FileEntry(path), out dbEntry);
-		#pragma warning restore CS8601 // Possible null reference assignment
+#pragma warning restore CS8601 // Possible null reference assignment
 		public static void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
 
 		async Task GatherInfos() {
@@ -363,6 +364,9 @@ namespace VDF.Core {
 
 			InitProgress(ScanList.Count);
 
+			double maxPercentDurationDifference = 100d + Settings.PercentDurationDifference;
+			double minPercentDurationDifference = 100d - Settings.PercentDurationDifference;
+
 			try {
 				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
@@ -380,6 +384,13 @@ namespace VDF.Core {
 						FileEntry? compItem = ScanList[n];
 						if (entry.IsImage != compItem.IsImage)
 							continue;
+						if (!entry.IsImage) {
+							double p = entry.mediaInfo!.Duration.TotalSeconds / compItem.mediaInfo!.Duration.TotalSeconds * 100d;
+							if (p > maxPercentDurationDifference ||
+								p < minPercentDurationDifference)
+								continue;
+						}
+
 
 						flags = DuplicateFlags.None;
 						isDuplicate = CheckIfDuplicate(entry, null, compItem, out difference);

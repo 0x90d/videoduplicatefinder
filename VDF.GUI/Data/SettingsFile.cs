@@ -29,10 +29,10 @@ namespace VDF.GUI.Data {
 		public static SettingsFile Instance => instance ??= new SettingsFile();
 
 		public class CustomActionCommands {
-			public string OpenItemInFolder {get; set;} = string.Empty;
-			public string OpenMultipleInFolder {get; set;} = string.Empty;
-			public string OpenItem {get; set;} = string.Empty;
-			public string OpenMultiple {get; set;} = string.Empty;
+			public string OpenItemInFolder { get; set; } = string.Empty;
+			public string OpenMultipleInFolder { get; set; } = string.Empty;
+			public string OpenItem { get; set; } = string.Empty;
+			public string OpenMultiple { get; set; } = string.Empty;
 		}
 
 		[JsonPropertyName("Includes")]
@@ -152,12 +152,18 @@ namespace VDF.GUI.Data {
 		public bool AskToSaveResultsOnExit {
 			get => _AskToSaveResultsOnExit;
 			set => this.RaiseAndSetIfChanged(ref _AskToSaveResultsOnExit, value);
-		}		
+		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]
 		public int Percent {
 			get => _Percent;
 			set => this.RaiseAndSetIfChanged(ref _Percent, value);
+		}
+		int _PercentDurationDifference = 20;
+		[JsonPropertyName("PercentDurationDifference")]
+		public int PercentDurationDifference {
+			get => _PercentDurationDifference;
+			set => this.RaiseAndSetIfChanged(ref _PercentDurationDifference, value);
 		}
 		int _Thumbnails = 1;
 		[JsonPropertyName("Thumbnails")]
@@ -166,7 +172,7 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
 		}
 		[JsonPropertyName("CustomCommands")]
-		public CustomActionCommands CustomCommands {get; set;} = new();
+		public CustomActionCommands CustomCommands { get; set; } = new();
 		string _CustomDatabaseFolder = string.Empty;
 		[JsonPropertyName("CustomDatabaseFolder")]
 		public string CustomDatabaseFolder {

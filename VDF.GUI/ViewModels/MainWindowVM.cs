@@ -14,28 +14,28 @@
 // */
 //
 
-using Avalonia.Controls;
-using Avalonia.Threading;
-using ReactiveUI;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Reactive;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Xml.Linq;
 using Avalonia.Collections;
+using Avalonia.Controls;
+using Avalonia.Threading;
 using DynamicExpresso;
 using DynamicExpresso.Exceptions;
 using JetBrains.Annotations;
+using ReactiveUI;
 using VDF.Core;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 using VDF.GUI.Data;
 using VDF.GUI.Views;
-using System.ComponentModel;
-using System.Text.Json;
-using System.Linq;
-using System.Collections.Specialized;
-using System.Reflection;
 
 namespace VDF.GUI.ViewModels {
 	public class MainWindowVM : ReactiveObject {
@@ -913,6 +913,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IgnoreReparsePoints = SettingsFile.Instance.IgnoreReparsePoints;
 			Scanner.Settings.HardwareAccelerationMode = SettingsFile.Instance.HardwareAccelerationMode;
 			Scanner.Settings.Percent = SettingsFile.Instance.Percent;
+			Scanner.Settings.PercentDurationDifference = SettingsFile.Instance.PercentDurationDifference;
 			Scanner.Settings.MaxDegreeOfParallelism = SettingsFile.Instance.MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails;
 			Scanner.Settings.ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging;
@@ -932,17 +933,17 @@ namespace VDF.GUI.ViewModels {
 
 			//Start scan
 			switch (command) {
-				case "FullScan":
-					IsBusy = true;
-					IsBusyText = "Enumerating files...";
-					Scanner.StartSearch();
-					break;
-				case "CompareOnly":
-					Scanner.StartCompare();
-					break;
-				default:
-					await MessageBoxService.Show("Requested command is NOT implemented yet!");
-					break;
+			case "FullScan":
+				IsBusy = true;
+				IsBusyText = "Enumerating files...";
+				Scanner.StartSearch();
+				break;
+			case "CompareOnly":
+				Scanner.StartCompare();
+				break;
+			default:
+				await MessageBoxService.Show("Requested command is NOT implemented yet!");
+				break;
 			}
 		});
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
@@ -1234,7 +1235,7 @@ namespace VDF.GUI.ViewModels {
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (string.IsNullOrEmpty(result)) return;
 			var selectedItems = Duplicates.Where(s => s.Checked).ToList();
-			List<Tuple<DuplicateItemVM,FileEntry>> itemsToUpdate = new();
+			List<Tuple<DuplicateItemVM, FileEntry>> itemsToUpdate = new();
 			foreach (var item in selectedItems) {
 				ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry);
 				itemsToUpdate.Add(Tuple.Create(item, dbEntry));

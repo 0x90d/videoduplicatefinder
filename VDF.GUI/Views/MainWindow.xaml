@@ -915,6 +915,19 @@
                                     ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
                                     Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
                                 <TextBlock
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
+                                    Text="Duration Difference in %:" />
+                                <NumericUpDown
+                                    Height="26"
+                                    Width="200"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
+                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PercentDurationDifference}" />
+                                <TextBlock
                                     Margin="0,5,0,0"
                                     ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases."
                                     VerticalAlignment="Center"
