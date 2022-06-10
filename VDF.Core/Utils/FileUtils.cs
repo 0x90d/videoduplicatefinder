@@ -47,7 +47,7 @@ namespace VDF.Core.Utils {
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 		public static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders) {
-			var enumerationOptions = new EnumerationOptions {
+			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,
 			};
 			enumerationOptions.AttributesToSkip = FileAttributes.System;

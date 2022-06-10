@@ -241,7 +241,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
 			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(assets.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
-			
+
 			try {
 				File.Delete(Path.Combine(CoreUtils.CurrentFolder, "log.txt"));
 			}
@@ -904,6 +904,10 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("MaxDegreeOfParallelism cannot be 0. Please go to the settings and change it.");
 				return;
 			}
+			if (SettingsFile.Instance.FilterByFileSize && SettingsFile.Instance.MaximumFileSize <= SettingsFile.Instance.MinimumFileSize) {
+				await MessageBoxService.Show("Filtering maximum file size cannot be greater or equal minimum file size.");
+				return;
+			}
 
 			Duplicates.Clear();
 			IsScanning = true;
@@ -930,6 +934,14 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.CompareHorizontallyFlipped = SettingsFile.Instance.CompareHorizontallyFlipped;
 			Scanner.Settings.CustomDatabaseFolder = SettingsFile.Instance.CustomDatabaseFolder;
 			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
+			Scanner.Settings.FilterByFilePathContains = SettingsFile.Instance.FilterByFilePathContains;
+			Scanner.Settings.FilePathContainsText = SettingsFile.Instance.FilePathContainsText;
+			Scanner.Settings.FilterByFilePathNotContains = SettingsFile.Instance.FilterByFilePathNotContains;
+			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
+			Scanner.Settings.FilePathNotContainsText = SettingsFile.Instance.FilePathNotContainsText;
+			Scanner.Settings.FilterByFileSize = SettingsFile.Instance.FilterByFileSize;
+			Scanner.Settings.MaximumFileSize = SettingsFile.Instance.MaximumFileSize;
+			Scanner.Settings.MinimumFileSize = SettingsFile.Instance.MinimumFileSize;
 			Scanner.Settings.IncludeList.Clear();
 			foreach (var s in SettingsFile.Instance.Includes)
 				Scanner.Settings.IncludeList.Add(s);

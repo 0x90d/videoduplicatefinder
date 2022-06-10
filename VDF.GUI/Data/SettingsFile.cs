@@ -191,6 +191,49 @@ namespace VDF.GUI.Data {
 			File.WriteAllText(path, JsonSerializer.Serialize(instance));
 		}
 
+		bool _FilterByFilePathContains;
+		[JsonPropertyName("FilterByFilePathContains")]
+		public bool FilterByFilePathContains {
+			get => _FilterByFilePathContains;
+			set => this.RaiseAndSetIfChanged(ref _FilterByFilePathContains, value);
+		}
+		string _FilePathContainsText = string.Empty;
+		[JsonPropertyName("FilePathContainsText")]
+		public string FilePathContainsText {
+			get => _FilePathContainsText;
+			set => this.RaiseAndSetIfChanged(ref _FilePathContainsText, value);
+		}
+		bool _FilterByFilePathNotContains;
+		[JsonPropertyName("FilterByFilePathNotContains")]
+		public bool FilterByFilePathNotContains {
+			get => _FilterByFilePathNotContains;
+			set => this.RaiseAndSetIfChanged(ref _FilterByFilePathNotContains, value);
+		}
+		string _FilePathNotContainsText = string.Empty;
+		[JsonPropertyName("FilePathNotContainsText")]
+		public string FilePathNotContainsText {
+			get => _FilePathNotContainsText;
+			set => this.RaiseAndSetIfChanged(ref _FilePathNotContainsText, value);
+		}
+		bool _FilterByFileSize;
+		[JsonPropertyName("FilterByFileSize")]
+		public bool FilterByFileSize {
+			get => _FilterByFileSize;
+			set => this.RaiseAndSetIfChanged(ref _FilterByFileSize, value);
+		}
+		int _MaximumFileSize = 999999999;
+		[JsonPropertyName("MaximumFileSize")]
+		public int MaximumFileSize {
+			get => _MaximumFileSize;
+			set => this.RaiseAndSetIfChanged(ref _MaximumFileSize, value);
+		}
+		int _MinimumFileSize = 0;
+		[JsonPropertyName("MinimumFileSize")]
+		public int MinimumFileSize {
+			get => _MinimumFileSize;
+			set => this.RaiseAndSetIfChanged(ref _MinimumFileSize, value);
+		}
+
 		public static void LoadSettings(string? path = null) {
 			if ((path == null || path.EndsWith(".xml")) && LoadOldSettings(path))
 				return;

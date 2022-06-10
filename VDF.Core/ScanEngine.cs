@@ -245,6 +245,19 @@ namespace VDF.Core {
 				return true;
 			if (!Settings.IncludeNonExistingFiles && !File.Exists(entry.Path))
 				return true;
+
+			if (Settings.FilterByFileSize && (entry.FileSize.BytesToMegaBytes() > Settings.MaximumFileSize ||
+				entry.FileSize.BytesToMegaBytes() < Settings.MinimumFileSize)) {
+				return true;
+			}
+			if (Settings.FilterByFilePathContains &&
+				!System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(Settings.FilePathContainsText, entry.Path))
+				return true;
+			if (Settings.FilterByFilePathNotContains &&
+				System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(Settings.FilePathNotContainsText, entry.Path))
+				return true;
+
+
 			return false;
 		}
 		bool InvalidEntryForDuplicateCheck(FileEntry entry) =>
@@ -284,7 +297,7 @@ namespace VDF.Core {
 									continue;
 								hasAllInformation = false;
 								break;
-							}							
+							}
 						}
 						if (hasAllInformation) {
 							IncrementProgress(entry.Path);
@@ -472,7 +485,7 @@ namespace VDF.Core {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<Image>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
-					
+
 					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						list = new List<Image>(1);

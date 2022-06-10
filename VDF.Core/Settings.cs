@@ -45,5 +45,12 @@ namespace VDF.Core {
 		public string CustomFFArguments = string.Empty;
 		public string CustomDatabaseFolder = string.Empty;
 
+		public bool FilterByFilePathContains;
+		public string FilePathContainsText = string.Empty;
+		public bool FilterByFilePathNotContains;
+		public string FilePathNotContainsText = string.Empty;
+		public bool FilterByFileSize;
+		public int MaximumFileSize;
+		public int MinimumFileSize;
 	}
 }

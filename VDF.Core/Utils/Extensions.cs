@@ -36,5 +36,6 @@ namespace VDF.Core.Utils {
 			var num = Math.Round(bytes / Math.Pow(1024, place), 1);
 			return (Math.Sign(byteCount) * num).ToString(CultureInfo.InvariantCulture) + suf[place];
 		}
+		public static long BytesToMegaBytes(this long byteCount) => (long)((byteCount / 1024f) / 1024f);
 	}
 }

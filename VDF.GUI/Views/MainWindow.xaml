@@ -801,7 +801,7 @@
                             FontSize="12"
                             Text="Settings" />
                     </TabItem.Header>
-                    <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto, Auto, Auto, *">
+                    <Grid RowDefinitions="Auto, *">
                         <Menu
                             Grid.Row="0"
                             MinHeight="30"
@@ -817,101 +817,110 @@
                                 </MenuItem.Header>
                             </MenuItem>
                         </Menu>
-                        <Grid Grid.Row="1" ColumnDefinitions="Auto, Auto, *">
-                            <StackPanel Margin="5,5,0,0">
-                                <CheckBox
+                        <TabControl Grid.Row="1">
+                            <TabItem x:Name="TabItemSettingsMisc">
+                                <TabItem.Header>
+                                    <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="Misc" />
+                                </TabItem.Header>
+                                <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto, *">
+                                    <Grid Grid.Row="0" ColumnDefinitions="Auto, Auto, *">
+                                        <StackPanel Margin="5,5,0,0">
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Ignore Read Only Folders"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Include Sub Directories"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Include Images"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Generate Preview Images"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}"
                                     IsThreeState="False"
                                     ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Exclude Reparse Points"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Extended FFTools Logging"
                                     ToolTip.Tip="If activated ffmpeg and ffprobe errors will be written to the log"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExtendedFFToolsLogging}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Always retry failed sampling"
                                     ToolTip.Tip="If activated scan engine will try to generate thumbprints of failed entries each time it is run. Otherwise consecutive attempt will be taken only after cleanup of the database."
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Auto backup scan results"
                                     ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Use native Ffmpeg binding"
                                     ToolTip.Tip="If activated it will call ffmpeg functions natively instead of spawning a new ffmpeg.exe process. This is MUCH(!!) faster. WARNING: You must use the latest SHARED and STABLE ffmpeg version. If something goes wrong then whole VDF will crash."
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseNativeFfmpegBinding}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Ignore Black Pixels"
                                     ToolTip.Tip="Skip black pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much dark and raises the chance to detect duplicates if one of the thumbnails have black bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit."
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Ignore White Pixels"
                                     ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit."
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Show Enlarged Thumbnail On Mouse Hover"
                                     ToolTip.Tip="Shows a larger version of the thumbnail on mouse hover"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}"
                                     IsThreeState="False" />
-								<CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Compare Horizontally Flipped"
 									ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit."
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Save results on exit"
 									ToolTip.Tip="If checked you will be asked if you want to save the results when you close VDF"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}"
                                     IsThreeState="False" />
-                                <CheckBox
+                                            <CheckBox
                                     VerticalAlignment="Center"
                                     Content="Scan against non-existing files"
 									ToolTip.Tip="If checked non-existing files which have all necessary information are included"
                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
                                     IsThreeState="False" />
-                            </StackPanel>
-                            <StackPanel Margin="15,5,0,0" Grid.Column="1">
-                                <TextBlock
+                                        </StackPanel>
+                                        <StackPanel Margin="15,5,0,0" Grid.Column="1">
+                                            <TextBlock
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
                                     Text="Percent:" />
-                                <NumericUpDown
+                                            <NumericUpDown
                                     Height="26"
                                     Width="200"
                                     HorizontalAlignment="Left"
@@ -920,11 +929,11 @@
                                     Minimum="1"
                                     ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
                                     Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
-                                <TextBlock
+                                            <TextBlock
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
                                     Text="Duration Difference in %:" />
-                                <NumericUpDown
+                                            <NumericUpDown
                                     Height="26"
                                     Width="200"
                                     HorizontalAlignment="Left"
@@ -933,12 +942,12 @@
                                     Minimum="0"
                                     ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
                                     Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PercentDurationDifference}" />
-                                <TextBlock
+                                            <TextBlock
                                     Margin="0,5,0,0"
                                     ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases."
                                     VerticalAlignment="Center"
                                     Text="Thumbnails:" />
-                                <NumericUpDown
+                                            <NumericUpDown
                                     Height="26"
                                     Width="200"
                                     ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases."
@@ -948,12 +957,12 @@
                                     Minimum="1"
                                     ValueChanged="Thumbnails_ValueChanged"
                                     Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" />
-                                <TextBlock
+                                            <TextBlock
                                     Margin="0,5,0,0"
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable."
                                     Text="Max Degree Of Parallelism:" />
-                                <NumericUpDown
+                                            <NumericUpDown
                                     Height="26"
                                     Width="200"
                                     HorizontalAlignment="Left"
@@ -962,152 +971,237 @@
                                     Maximum="100"
                                     Minimum="-1"
                                     Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
-                                <TextBlock
+                                            <TextBlock
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty."
                                     Text="Custom FF Arguments:" />
-                                <TextBox
+                                            <TextBox
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty."
                                     Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}" />
-                                <TextBlock
+                                            <TextBlock
                                     VerticalAlignment="Center"
                                     FontSize="14"
                                     ToolTip.Tip="Hardware acceleration mode of ffmpeg"
                                     Text="Hardware Acceleration:" />
-                                <ComboBox
+                                            <ComboBox
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Hardware acceleration mode of ffmpeg"
                                     Items="{Binding HardwareAccelerationModes}"
                                     SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}" />
-                                <TextBlock
+                                            <TextBlock
                                     VerticalAlignment="Center"
                                     FontSize="14"
                                     ToolTip.Tip="Enter your own commands to open single or multiple files."
                                     Text="Custom Commands:" />
-                                <ComboBox
+                                            <ComboBox
                                     Width="200"
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Enter your own commands to open single or multiple files."
                                     Items="{Binding CustomCommandList}"
                                     SelectedItem="{Binding SelectedCustomCommand}"
                                     />
-                                <TextBox
+                                            <TextBox
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="E.g.: 'nemo --tabs %f', where '%f' is the placeholder for the file(s)"
                                     Text="{Binding SelectedCustomCommandValue}" />
-                                <TextBlock
+                                            <TextBlock
                                     VerticalAlignment="Center"
                                     FontSize="14"
                                     ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder."
                                     Text="Custom Database Folder:" />
-                                <TextBox
+                                            <TextBox
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder."
                                     Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}" />
-                            </StackPanel>
-                        </Grid>
-                        <Grid
-                            Grid.Row="2"
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid
+                            Grid.Row="1"
                             RowDefinitions="Auto, 300"
                             ColumnDefinitions="*, *"
                             Margin="0,10,5,0">
-                            <TextBlock
+                                        <TextBlock
                                 Margin="5,0,0,2"
                                 FontWeight="Bold"
                                 Text="Search Directories" />
-                            <Grid Grid.Row="1" RowDefinitions="Auto, *">
-                                <Menu
+                                        <Grid Grid.Row="1" RowDefinitions="Auto, *">
+                                            <Menu
                                     Grid.Row="0"
                                     MinHeight="30"
                                     Background="#222222">
-                                    <MenuItem Command="{Binding AddIncludesToListCommand}">
-                                        <MenuItem.Header>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Viewbox Width="16" Height="16">
-                                                    <Canvas Width="24" Height="24">
-                                                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
-                                                    </Canvas>
-                                                </Viewbox>
-                                                <TextBlock
+                                                <MenuItem Command="{Binding AddIncludesToListCommand}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
                                                     Text="Add" />
-                                            </StackPanel>
-                                        </MenuItem.Header>
-                                    </MenuItem>
-                                    <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
-                                        <MenuItem.Header>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Viewbox Width="16" Height="16">
-                                                    <Canvas Width="24" Height="24">
-                                                        <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
-                                                    </Canvas>
-                                                </Viewbox>
-                                                <TextBlock
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
                                                     Text="Remove" />
-                                            </StackPanel>
-                                        </MenuItem.Header>
-                                    </MenuItem>
-                                </Menu>
-                                <ListBox
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                            </Menu>
+                                            <ListBox
                                     Name="ListboxIncludelist"
                                     Grid.Row="1"
                                     DragDrop.AllowDrop="True"
                                     Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
-                            </Grid>
-                            <TextBlock
+                                        </Grid>
+                                        <TextBlock
                                 Grid.Row="0"
                                 Grid.Column="1"
                                 Margin="15,0,0,2"
                                 FontWeight="Bold"
                                 Text="Exclude Directories" />
-                            <Grid Grid.Row="1"  Margin="10,0,0,0"
+                                        <Grid Grid.Row="1"  Margin="10,0,0,0"
                                   Grid.Column="1" RowDefinitions="Auto, *">
-                                <Menu
+                                            <Menu
                                     Grid.Row="0"
                                     MinHeight="30"
                                     Background="#222222">
-                                    <MenuItem Command="{Binding AddBlacklistToListCommand}">
-                                        <MenuItem.Header>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Viewbox Width="16" Height="16">
-                                                    <Canvas Width="24" Height="24">
-                                                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
-                                                    </Canvas>
-                                                </Viewbox>
-                                                <TextBlock
+                                                <MenuItem Command="{Binding AddBlacklistToListCommand}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
                                                     Text="Add" />
-                                            </StackPanel>
-                                        </MenuItem.Header>
-                                    </MenuItem>
-                                    <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
-                                        <MenuItem.Header>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Viewbox Width="16" Height="16">
-                                                    <Canvas Width="24" Height="24">
-                                                        <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
-                                                    </Canvas>
-                                                </Viewbox>
-                                                <TextBlock
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
                                                     Text="Remove" />
-                                            </StackPanel>
-                                        </MenuItem.Header>
-                                    </MenuItem>
-                                </Menu>
-                                <ListBox
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                            </Menu>
+                                            <ListBox
                                     Name="ListboxBlacklist"
                                     Grid.Row="1"
                                     DragDrop.AllowDrop="True"
                                     Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
-                            </Grid>
-                        </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </TabItem>
+                            <TabItem x:Name="TabItemSettingsFiles">
+                                <TabItem.Header>
+                                    <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="Files" />
+                                </TabItem.Header>
+                                <Grid Grid.Row="0" IsEnabled="{Binding !IsScanning}"
+                                      ColumnDefinitions="Auto, Auto, Auto, Auto, *"
+                                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*">
+                                    <CheckBox
+                                        x:Name="CheckboxFilterByFileSize"
+                                        VerticalAlignment="Center"
+                                        Content="File Size (MB):"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFileSize}"
+                                        IsThreeState="False"
+                                        Grid.Row="0"
+                                        Grid.Column="0"/>
+                                    <NumericUpDown
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        Height="26"
+                                        Width="200"
+                                        Margin="10,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Minimum="0"
+                                        IsEnabled="{Binding #CheckboxFilterByFileSize.IsChecked}"
+                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MinimumFileSize}" />
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="2"
+                                        Margin="10,0"
+                                        VerticalAlignment="Center"
+                                        Text="to" />
+                                    <NumericUpDown
+                                        Grid.Row="0"
+                                        Grid.Column="3"
+                                        Height="26"
+                                        Width="200"
+                                        Margin="10,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Minimum="0"
+                                        IsEnabled="{Binding #CheckboxFilterByFileSize.IsChecked}"
+                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaximumFileSize}" />
+                                    <CheckBox
+                                        x:Name="CheckboxFilterByFilePathContains"
+                                        VerticalAlignment="Center"
+                                        Content="File Path contains:"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathContains}"
+                                        IsThreeState="False"
+                                        Grid.Row="1"
+                                        Grid.Column="0"/>
+                                    <TextBox
+                                        Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsText}"
+                                        Margin="10,5"
+                                        IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}"
+                                        Watermark="Supports the following wildcards: '*' and '?'. The backslash character '\' escapes."
+                                        UseFloatingWatermark="True"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Grid.ColumnSpan="3"/>
+                                    <CheckBox
+                                        x:Name="CheckboxFilterByFilePathNotContains"
+                                        VerticalAlignment="Center"
+                                        Content="File Path does NOT contain:"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathNotContains}"
+                                        IsThreeState="False"
+                                        Grid.Row="2"
+                                        Grid.Column="0"/>
+                                    <TextBox
+                                        Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsText}"
+                                        Margin="10,5"
+                                        IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}"
+                                        Watermark="Supports the following wildcards: '*' and '?'. The backslash character '\' escapes."
+                                        UseFloatingWatermark="True"
+                                        Grid.Row="2"
+                                        Grid.Column="1"
+                                        Grid.ColumnSpan="3"/>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
                     </Grid>
                 </TabItem>
                 <TabItem Name="TabItemLog">
