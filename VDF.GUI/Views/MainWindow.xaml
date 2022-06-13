@@ -10,7 +10,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
     xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
-    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI" 
+    xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
     x:Name="MainWindow"
     Title="Video Duplicate Finder 3.0 - Cross-platform"
     Width="1020"
@@ -389,6 +390,151 @@
                                             Text="Filter / Sort" />
                                     </StackPanel>
                                 </CheckBox>
+
+                                <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    IsEnabled="False"
+                                    Text="Zoom All:" />
+                                    <Slider
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        x:Name="ZoomSlider"
+                                        MinWidth="100"
+                                        LargeChange="0.5"
+                                        Maximum="4.0"
+                                        Minimum="0.5"
+                                        TickFrequency="0.5"
+                                        IsSnapToTickEnabled="True"
+                                        Orientation="Horizontal"
+                                        SmallChange="0.1"
+                                        Value="1.0">
+                                        <Slider.Styles>
+                                            <Style Selector="Slider:horizontal">
+                                                <Setter Property="Background" Value="{DynamicResource SliderTrackFill}" />
+                                                <Setter Property="BorderThickness" Value="{DynamicResource SliderBorderThemeThickness}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource SliderTrackValueFill}" />
+                                                <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+                                                <Setter Property="Template">
+                                                    <ControlTemplate>
+                                                        <DataValidationErrors>
+                                                            <Border BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" CornerRadius="{TemplateBinding CornerRadius}">
+                                                                <Grid Name="grid" Margin="{TemplateBinding Padding}" RowDefinitions="Auto, *">
+                                                                    <presenters:ContentPresenter x:Name="HeaderContentPresenter" Grid.Row="0" Margin="{DynamicResource SliderTopHeaderMargin}" />
+                                                                    <Grid x:Name="SliderContainer" Grid.Row="1">
+                                                                        
+                                                                        <Grid x:Name="HorizontalTemplate" ColumnDefinitions="Auto,Auto,*" MinHeight="{DynamicResource SliderHorizontalHeight}">
+                                                                            <Track Name="PART_Track" Grid.ColumnSpan="3" IsDirectionReversed="{TemplateBinding IsDirectionReversed}" Orientation="Horizontal">
+                                                                                <Track.DecreaseButton>
+                                                                                    <RepeatButton Name="PART_DecreaseButton" Background="{TemplateBinding Foreground}" Focusable="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                                                        <RepeatButton.Template>
+                                                                                            <ControlTemplate>
+                                                                                                <Grid>
+                                                                                                    <Border Name="FocusTarget" Background="Transparent" Margin="0,-10" />
+                                                                                                    <Border Name="TrackBackground" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" Height="{DynamicResource SliderTrackThemeHeight}" VerticalAlignment="Center" />
+                                                                                                </Grid>
+                                                                                            </ControlTemplate>
+                                                                                        </RepeatButton.Template>
+                                                                                    </RepeatButton>
+                                                                                </Track.DecreaseButton>
+                                                                                <Track.IncreaseButton>
+                                                                                    <RepeatButton Name="PART_IncreaseButton" Background="{TemplateBinding Background}" Focusable="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                                                        <RepeatButton.Template>
+                                                                                            <ControlTemplate>
+                                                                                            <Grid>
+                                                                                                <Border Name="FocusTarget" Background="Transparent" Margin="0,-10" />
+                                                                                                <Border Name="TrackBackground" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" Height="{DynamicResource SliderTrackThemeHeight}" VerticalAlignment="Center" />
+                                                                                            </Grid>
+                                                                                        </ControlTemplate>
+                                                                                    </RepeatButton.Template>
+                                                                                </RepeatButton>
+                                                                            </Track.IncreaseButton>
+                                                                            <Thumb Classes="SliderThumbStyle" Name="thumb" Margin="0" Padding="0" DataContext="{TemplateBinding Value}" Height="{DynamicResource SliderHorizontalThumbHeight}" Width="{DynamicResource SliderHorizontalThumbWidth}" />
+                                                                        </Track>
+                                                                    </Grid>
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataValidationErrors>
+                                                </ControlTemplate>
+                                            </Setter>
+                                        </Style>
+                                    </Slider.Styles>
+                                </Slider>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="False"
+                                        Text="Zoom Thumbnails:" />
+                                    <Slider
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        x:Name="ZoomSliderThumbnails"
+                                        MinWidth="100"
+                                        LargeChange="0.5"
+                                        Maximum="4.0"
+                                        Minimum="0.5"
+                                        TickFrequency="0.5"
+                                        IsSnapToTickEnabled="True"
+                                        Orientation="Horizontal"
+                                        SmallChange="0.1"
+                                        Value="1.0" >
+                                        <Slider.Styles>
+                                            <Style Selector="Slider:horizontal">
+                                                <Setter Property="Background" Value="{DynamicResource SliderTrackFill}" />
+                                                <Setter Property="BorderThickness" Value="{DynamicResource SliderBorderThemeThickness}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource SliderTrackValueFill}" />
+                                                <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+                                                <Setter Property="Template">
+                                                    <ControlTemplate>
+                                                        <DataValidationErrors>
+                                                            <Border BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" CornerRadius="{TemplateBinding CornerRadius}">
+                                                                <Grid Name="grid" Margin="{TemplateBinding Padding}" RowDefinitions="Auto, *">
+                                                                    <presenters:ContentPresenter x:Name="HeaderContentPresenter" Grid.Row="0" Margin="{DynamicResource SliderTopHeaderMargin}" />
+                                                                    <Grid x:Name="SliderContainer" Grid.Row="1">
+
+                                                                        <Grid x:Name="HorizontalTemplate" ColumnDefinitions="Auto,Auto,*" MinHeight="{DynamicResource SliderHorizontalHeight}">
+                                                                            <Track Name="PART_Track" Grid.ColumnSpan="3" IsDirectionReversed="{TemplateBinding IsDirectionReversed}" Orientation="Horizontal">
+                                                                                <Track.DecreaseButton>
+                                                                                    <RepeatButton Name="PART_DecreaseButton" Background="{TemplateBinding Foreground}" Focusable="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                                                        <RepeatButton.Template>
+                                                                                            <ControlTemplate>
+                                                                                                <Grid>
+                                                                                                    <Border Name="FocusTarget" Background="Transparent" Margin="0,-10" />
+                                                                                                    <Border Name="TrackBackground" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" Height="{DynamicResource SliderTrackThemeHeight}" VerticalAlignment="Center" />
+                                                                                                </Grid>
+                                                                                            </ControlTemplate>
+                                                                                        </RepeatButton.Template>
+                                                                                    </RepeatButton>
+                                                                                </Track.DecreaseButton>
+                                                                                <Track.IncreaseButton>
+                                                                                    <RepeatButton Name="PART_IncreaseButton" Background="{TemplateBinding Background}" Focusable="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                                                        <RepeatButton.Template>
+                                                                                            <ControlTemplate>
+                                                                                                <Grid>
+                                                                                                    <Border Name="FocusTarget" Background="Transparent" Margin="0,-10" />
+                                                                                                    <Border Name="TrackBackground" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" Height="{DynamicResource SliderTrackThemeHeight}" VerticalAlignment="Center" />
+                                                                                                </Grid>
+                                                                                            </ControlTemplate>
+                                                                                        </RepeatButton.Template>
+                                                                                    </RepeatButton>
+                                                                                </Track.IncreaseButton>
+                                                                                <Thumb Classes="SliderThumbStyle" Name="thumb" Margin="0" Padding="0" DataContext="{TemplateBinding Value}" Height="{DynamicResource SliderHorizontalThumbHeight}" Width="{DynamicResource SliderHorizontalThumbWidth}" />
+                                                                            </Track>
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataValidationErrors>
+                                                    </ControlTemplate>
+                                                </Setter>
+                                            </Style>
+                                        </Slider.Styles>
+                                    </Slider>
+                                </StackPanel>
                             </Menu>
                             <StackPanel
                                 x:Name="filterStackPanel"
@@ -432,31 +578,33 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                             </StackPanel>
-                            <DataGrid Name="dataGridGrouping" Grid.Row="2" CanUserResizeColumns="True">
-                                <DataGrid.KeyBindings>
-                                    <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
-                                    <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space"/>
-                                    <KeyBinding Command="{Binding OpenItemsByColIdCommand}" Gesture="Enter"/>
-                                    <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete"/>
-                                    <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete"/>
-                                    <KeyBinding Command="{Binding DeleteHighlitedCommand}" Gesture="Control+Delete"/>
-                                </DataGrid.KeyBindings>
-                                <DataGrid.Columns>
-                                    <DataGridTemplateColumn>
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <CheckBox IsChecked="{Binding Checked}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Thumbnail">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Grid>
+                            <LayoutTransformControl Grid.Row="2">
+                                <DataGrid Name="dataGridGrouping" Grid.Row="2" CanUserResizeColumns="True">
+                                    <DataGrid.KeyBindings>
+                                        <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2"/>
+                                        <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space"/>
+                                        <KeyBinding Command="{Binding OpenItemsByColIdCommand}" Gesture="Enter"/>
+                                        <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete"/>
+                                        <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete"/>
+                                        <KeyBinding Command="{Binding DeleteHighlitedCommand}" Gesture="Control+Delete"/>
+                                    </DataGrid.KeyBindings>
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn>
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox IsChecked="{Binding Checked}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Thumbnail">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <LayoutTransformControl>
+                                                        <LayoutTransformControl.LayoutTransform>
+                                                            <ScaleTransform ScaleX="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" ScaleY="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" />
+                                                        </LayoutTransformControl.LayoutTransform>
                                                     <Image
                                                         Name="ThumbnailImage"
-                                                        Grid.Column="2"
-                                                        Margin="10,0,0,0"
                                                         Source="{Binding Thumbnail}"
                                                         Stretch="None">
                                                         <i:Interaction.Behaviors>
@@ -477,268 +625,272 @@
                                                                 <TextBlock IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!ShowEnlargedThumbnailOnMouseHover}" Text="Double click to open the file in explorer/shell"/>
                                                             </Grid>
                                                         </ToolTip.Tip>
-                                                    </Image>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Width="1*" Header="Path">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock
+                                                        </Image>
+                                                    </LayoutTransformControl>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Width="1*" Header="Path">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock
                                                     Margin="10,0,0,0"
                                                     Text="{Binding ItemInfo.Path}"
                                                     TextWrapping="Wrap" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Width="1*">
-                                        <DataGridTemplateColumn.Header>
-                                            <StackPanel>
-                                                <TextBlock Text="Duration / type" />
-                                                <TextBlock Text="Resolution" />
-                                                <TextBlock Text="Size" />
-                                                <TextBlock Text="Creation Date" />
-                                            </StackPanel>
-                                        </DataGridTemplateColumn.Header>
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="10,0,0,0">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                    </Grid.RowDefinitions>
-                                                    <TextBlock
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Width="1*">
+                                            <DataGridTemplateColumn.Header>
+                                                <StackPanel>
+                                                    <TextBlock Text="Duration / type" />
+                                                    <TextBlock Text="Resolution" />
+                                                    <TextBlock Text="Size" />
+                                                    <TextBlock Text="Creation Date" />
+                                                </StackPanel>
+                                            </DataGridTemplateColumn.Header>
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="10,0,0,0">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock
                                                         Grid.Row="0"
                                                         Margin="2"
                                                         IsVisible="{Binding ItemInfo.IsImage}"
                                                         Text="{Binding ItemInfo.Format, Mode=OneWay}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="0"
                                                         Margin="2"
                                                         IsVisible="{Binding !ItemInfo.IsImage}"
                                                         Text="{Binding ItemInfo.Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
                                                         Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="1"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.FrameSize}"
                                                         Foreground="{Binding ItemInfo.IsBestFrameSize, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="2"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.Size}"
                                                         Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="3"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}"
                                                         TextWrapping="Wrap" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Width="1*">
-                                        <DataGridTemplateColumn.Header>
-                                            <StackPanel>
-                                                <TextBlock Text="Format" />
-                                                <TextBlock Text="Fps" />
-                                                <TextBlock Text="Bit Rate" />
-                                                <TextBlock Text=" "/>
-                                            </StackPanel>
-                                        </DataGridTemplateColumn.Header>
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Grid IsVisible="{Binding !ItemInfo.IsImage}">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                    </Grid.RowDefinitions>
-                                                    <TextBlock
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Width="1*">
+                                            <DataGridTemplateColumn.Header>
+                                                <StackPanel>
+                                                    <TextBlock Text="Format" />
+                                                    <TextBlock Text="Fps" />
+                                                    <TextBlock Text="Bit Rate" />
+                                                    <TextBlock Text=" "/>
+                                                </StackPanel>
+                                            </DataGridTemplateColumn.Header>
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Grid IsVisible="{Binding !ItemInfo.IsImage}">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock
                                                         Grid.Row="0"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.Format, Mode=OneWay}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="1"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.Fps, Mode=OneWay, StringFormat=\{0\} fps}"
                                                         Foreground="{Binding ItemInfo.IsBestFps, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="2"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
                                                         Foreground="{Binding ItemInfo.IsBestBitRateKbs, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Width="1*">
-                                        <DataGridTemplateColumn.Header>
-                                            <StackPanel>
-                                                <TextBlock Text="Audio Format" />
-                                                <TextBlock Text="Audio Channel" />
-                                                <TextBlock Text="Audio Sample Rate" />
-                                                <TextBlock Text=" "/>
-                                            </StackPanel>
-                                        </DataGridTemplateColumn.Header>
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Grid IsVisible="{Binding !ItemInfo.IsImage}">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
-                                                    </Grid.RowDefinitions>
-                                                    <TextBlock
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Width="1*">
+                                            <DataGridTemplateColumn.Header>
+                                                <StackPanel>
+                                                    <TextBlock Text="Audio Format" />
+                                                    <TextBlock Text="Audio Channel" />
+                                                    <TextBlock Text="Audio Sample Rate" />
+                                                    <TextBlock Text=" "/>
+                                                </StackPanel>
+                                            </DataGridTemplateColumn.Header>
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Grid IsVisible="{Binding !ItemInfo.IsImage}">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                            <RowDefinition />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock
                                                         Grid.Row="0"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.AudioFormat}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="1"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.AudioChannel}"
                                                         TextWrapping="Wrap" />
-                                                    <TextBlock
+                                                        <TextBlock
                                                         Grid.Row="2"
                                                         Margin="2"
                                                         Text="{Binding ItemInfo.AudioSampleRate}"
                                                         Foreground="{Binding ItemInfo.IsBestAudioSampleRate, Converter={StaticResource IsBestConverter}}"
                                                         TextWrapping="Wrap" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTextColumn
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn
                                         Width="1*"
                                         Binding="{Binding ItemInfo.Similarity}"
                                         Header="Similarity" />
-                                </DataGrid.Columns>
-                                <DataGrid.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Command="{Binding OpenItemInFolderCommand}" Header="Open In Folder" />
-                                        <MenuItem
+                                    </DataGrid.Columns>
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Command="{Binding OpenItemInFolderCommand}" Header="Open In Folder" />
+                                            <MenuItem
                                             Command="{Binding RenameFileCommand}"
                                             Header="Rename File"
                                             InputGesture="F2" />
-                                        <MenuItem>
-                                            <MenuItem.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Viewbox Width="16" Height="16">
-                                                        <Canvas Width="24" Height="24">
-                                                            <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="{StaticResource SystemBaseHighColor}" />
-                                                        </Canvas>
-                                                    </Viewbox>
-                                                    <TextBlock
+                                            <MenuItem>
+                                                <MenuItem.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Viewbox Width="16" Height="16">
+                                                            <Canvas Width="24" Height="24">
+                                                                <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="{StaticResource SystemBaseHighColor}" />
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock
                                                         Margin="5,0,0,0"
                                                         VerticalAlignment="Center"
                                                         Text="Selected Items" />
-                                                </StackPanel>
-                                            </MenuItem.Header>
-                                            <MenuItem Command="{Binding DeleteSelectionCommand}" InputGesture="Shift+Delete">
-                                                <MenuItem.Header>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Viewbox Width="16" Height="16">
-                                                            <Canvas Width="24" Height="24">
-                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                            </Canvas>
-                                                        </Viewbox>
-                                                        <TextBlock
+                                                    </StackPanel>
+                                                </MenuItem.Header>
+                                                <MenuItem Command="{Binding DeleteSelectionCommand}" InputGesture="Shift+Delete">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                             Margin="5,0,0,0"
                                                             VerticalAlignment="Center"
                                                             Text="Delete from disk (to recycle bin if possible)" />
-                                                    </StackPanel>
-                                                </MenuItem.Header>
-                                            </MenuItem>
-                                            <Separator />
-                                            <MenuItem Command="{Binding RemoveSelectionFromListCommand}" InputGesture="Delete">
-                                                <MenuItem.Header>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Viewbox Width="16" Height="16">
-                                                            <Canvas Width="24" Height="24">
-                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                            </Canvas>
-                                                        </Viewbox>
-                                                        <TextBlock
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <Separator />
+                                                <MenuItem Command="{Binding RemoveSelectionFromListCommand}" InputGesture="Delete">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                             Margin="5,0,0,0"
                                                             VerticalAlignment="Center"
                                                             Text="Remove from list only" />
-                                                    </StackPanel>
-                                                </MenuItem.Header>
-                                            </MenuItem>
-                                            <MenuItem Command="{Binding RemoveSelectionFromListAndBlacklistCommand}">
-                                                <MenuItem.Header>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Viewbox Width="16" Height="16">
-                                                            <Canvas Width="24" Height="24">
-                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                            </Canvas>
-                                                        </Viewbox>
-                                                        <TextBlock
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding RemoveSelectionFromListAndBlacklistCommand}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                             Margin="5,0,0,0"
                                                             VerticalAlignment="Center"
                                                             Text="Remove from list only and exclude from future scans" />
-                                                    </StackPanel>
-                                                </MenuItem.Header>
-                                            </MenuItem>
-                                            <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
-                                                <MenuItem.Header>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Viewbox Width="16" Height="16">
-                                                            <Canvas Width="24" Height="24">
-                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                            </Canvas>
-                                                        </Viewbox>
-                                                        <TextBlock
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                             Margin="5,0,0,0"
                                                             VerticalAlignment="Center"
                                                             Text="Remove from list only + create symbol links" />
-                                                    </StackPanel>
-                                                </MenuItem.Header>
-                                            </MenuItem>
-                                            <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsAndBlacklistCommand}"  ToolTip.Tip="Links all selected items to the first unselected item in each group.">
-                                                <MenuItem.Header>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Viewbox Width="16" Height="16">
-                                                            <Canvas Width="24" Height="24">
-                                                                <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                            </Canvas>
-                                                        </Viewbox>
-                                                        <TextBlock
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsAndBlacklistCommand}"  ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
                                                             Margin="5,0,0,0"
                                                             VerticalAlignment="Center"
                                                             Text="Remove from list only + create symbol links + exclude" />
-                                                    </StackPanel>
-                                                </MenuItem.Header>
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <Separator />
+                                                <MenuItem Command="{Binding CopySelectionCommand}" Header="Copy To Folder..." />
+                                                <MenuItem Command="{Binding MoveSelectionCommand}" Header="Move To Folder..." />
                                             </MenuItem>
-                                            <Separator />
-                                            <MenuItem Command="{Binding CopySelectionCommand}" Header="Copy To Folder..." />
-                                            <MenuItem Command="{Binding MoveSelectionCommand}" Header="Move To Folder..." />
-                                        </MenuItem>
-                                        <MenuItem Header="Groups">
-                                            <MenuItem Command="{Binding ExpandAllGroupsCommand}" Header="Expand all" />
-                                            <MenuItem Command="{Binding CollapseAllGroupsCommand}" Header="Collapse all" />
-                                        </MenuItem>
-                                        <MenuItem Header="Selected Group">
-                                            <MenuItem Command="{Binding MarkGroupAsNotAMatchCommand}" Header="Mark as 'Not a match'" ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
-                                            <MenuItem Command="{Binding OpenGroupCommand}" Header="Open Group" CommandParameter="0" IsVisible="{Binding MultiOpenSupported}"/>
-                                            <MenuItem Command="{Binding OpenGroupCommand}" Header="Open Group In Folder" CommandParameter="1" IsVisible="{Binding MultiOpenInFolderSupported}" />
-                                        </MenuItem>
-                                    </ContextMenu>
-                                </DataGrid.ContextMenu>
-                            </DataGrid>
+                                            <MenuItem Header="Groups">
+                                                <MenuItem Command="{Binding ExpandAllGroupsCommand}" Header="Expand all" />
+                                                <MenuItem Command="{Binding CollapseAllGroupsCommand}" Header="Collapse all" />
+                                            </MenuItem>
+                                            <MenuItem Header="Selected Group">
+                                                <MenuItem Command="{Binding MarkGroupAsNotAMatchCommand}" Header="Mark as 'Not a match'" ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
+                                                <MenuItem Command="{Binding OpenGroupCommand}" Header="Open Group" CommandParameter="0" IsVisible="{Binding MultiOpenSupported}"/>
+                                                <MenuItem Command="{Binding OpenGroupCommand}" Header="Open Group In Folder" CommandParameter="1" IsVisible="{Binding MultiOpenInFolderSupported}" />
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                </DataGrid>
+                                <LayoutTransformControl.LayoutTransform>
+                                    <ScaleTransform ScaleX="{Binding ElementName=ZoomSlider, Path=Value}" ScaleY="{Binding ElementName=ZoomSlider, Path=Value}" />
+                                </LayoutTransformControl.LayoutTransform>
+                            </LayoutTransformControl>
                         </Grid>
                         <Grid Grid.Row="2" Background="#222222" IsVisible="{Binding !!Duplicates.Count}" RowDefinitions="Auto, Auto">
                             <StackPanel MinHeight="20" Orientation="Horizontal" Grid.Row="0">
