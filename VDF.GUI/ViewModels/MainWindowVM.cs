@@ -240,7 +240,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(assets.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
+			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(assets!.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
 
 			try {
 				File.Delete(Path.Combine(CoreUtils.CurrentFolder, "log.txt"));
