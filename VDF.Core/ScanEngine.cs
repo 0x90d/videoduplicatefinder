@@ -283,6 +283,7 @@ namespace VDF.Core {
 					bool skipEntry = false;
 					skipEntry |= entry.invalid;
 					skipEntry |= entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling;
+					skipEntry |= entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling;
 
 					if (skipEntry) {
 						IncrementProgress(entry.Path);
@@ -308,6 +309,7 @@ namespace VDF.Core {
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
 						if (info == null) {
+							entry.invalid = true;
 							entry.Flags.Set(EntryFlags.MetadataError);
 							IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
@@ -320,10 +322,14 @@ namespace VDF.Core {
 						entry.grayBytes = new Dictionary<double, byte[]?>();
 
 
-					if (entry.IsImage && entry.grayBytes.Count == 0)
-						GetGrayBytesFromImage(entry);
-					else if (!entry.IsImage)
-						FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.ExtendedFFToolsLogging);
+					if (entry.IsImage && entry.grayBytes.Count == 0) {
+						if (!GetGrayBytesFromImage(entry))
+							entry.invalid = true;
+					}
+					else if (!entry.IsImage) {
+						if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.ExtendedFFToolsLogging))
+							entry.invalid = true;
+					}
 
 					IncrementProgress(entry.Path);
 					return ValueTask.CompletedTask;
@@ -531,7 +537,7 @@ namespace VDF.Core {
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
-		static void GetGrayBytesFromImage(FileEntry imageFile) {
+		static bool GetGrayBytesFromImage(FileEntry imageFile) {
 			try {
 
 				using var byteStream = File.OpenRead(imageFile.Path);
@@ -548,15 +554,17 @@ namespace VDF.Core {
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
 					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");
-					return;
+					return false;
 				}
 
 				imageFile.grayBytes.Add(0, d);
+				return true;
 			}
 			catch (Exception ex) {
 				Logger.Instance.Info(
 					$"Exception, file: {imageFile.Path}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
 				imageFile.Flags.Set(EntryFlags.ThumbnailError);
+				return false;
 			}
 		}
 

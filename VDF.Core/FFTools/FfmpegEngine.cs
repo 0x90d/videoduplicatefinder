@@ -167,7 +167,7 @@ namespace VDF.Core.FFTools {
 			}
 			return bytes;
 		}
-		internal static void GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, bool extendedLogging) {
+		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, bool extendedLogging) {
 			int tooDarkCounter = 0;
 
 			for (int i = 0; i < positions.Count; i++) {
@@ -182,7 +182,7 @@ namespace VDF.Core.FFTools {
 				}, extendedLogging);
 				if (data == null) {
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
-					return;
+					return false;
 				}
 				if (!GrayBytesUtils.VerifyGrayScaleValues(data))
 					tooDarkCounter++;
@@ -191,7 +191,9 @@ namespace VDF.Core.FFTools {
 			if (tooDarkCounter == positions.Count) {
 				videoFile.Flags.Set(EntryFlags.TooDark);
 				Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
+				return false;
 			}
+			return true;
 		}
 	}
 
