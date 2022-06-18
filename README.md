@@ -17,7 +17,7 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 # Requirements
 
 #### FFmpeg & FFprobe:
-Get latest package from https://ffmpeg.org/download.html I recommend the full (GPL) shared version. If you want to use native ffmpeg binding for much faster speed you must download the **4.4.1 stable shared** version.
+Get latest package from https://ffmpeg.org/download.html I recommend the full (GPL) shared version. If you want to use native ffmpeg binding for much faster speed you must download the **5.0 stable shared** version.
 
 Extract ffmpeg and ffprobe into the same directory of VDF.GUI.dll. Or into a sub folder called `bin`. Or make sure it can be found in `PATH` system environment variable
 
