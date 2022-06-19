@@ -283,7 +283,6 @@ namespace VDF.Core {
 					bool skipEntry = false;
 					skipEntry |= entry.invalid;
 					skipEntry |= entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling;
-					skipEntry |= entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling;
 
 					if (skipEntry) {
 						IncrementProgress(entry.Path);
