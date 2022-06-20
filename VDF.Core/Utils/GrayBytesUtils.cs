@@ -41,15 +41,12 @@ namespace VDF.Core.Utils {
 		public static unsafe byte[]? GetGrayScaleValues(Image original, double darkProcent = 80) {
 			// Lock the bitmap's bits.  
 			using var tempImage = original.CloneAs<Bgra32>();
-			tempImage.DangerousTryGetSinglePixelMemory(out var pixelSpan);
-			Span<byte> span = MemoryMarshal.AsBytes(pixelSpan.Span);
+			tempImage.TryGetSinglePixelSpan(out var pixelSpan);
+			Span<byte> span = MemoryMarshal.AsBytes(pixelSpan);
 
 			byte[] buffer = new byte[GrayByteValueLength];
 			int stride = 0;
-			tempImage.ProcessPixelRows(pixelAccessor =>
-			{
-				stride = pixelAccessor.GetRowSpan(0).Length;
-			}); 
+			stride = tempImage.GetPixelRowSpan(0).Length; 
 			int bytes = stride * original.Height;
 
 			int count = 0, all = original.Width * original.Height;
