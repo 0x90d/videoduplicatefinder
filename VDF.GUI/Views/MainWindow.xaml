@@ -1137,6 +1137,7 @@
                                     ToolTip.Tip="Hardware acceleration mode of ffmpeg"
                                     Text="Hardware Acceleration:" />
                                             <ComboBox
+                                    x:Name="ComboboxHardwareAccelerationMode"
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Hardware acceleration mode of ffmpeg"
                                     Items="{Binding HardwareAccelerationModes}"

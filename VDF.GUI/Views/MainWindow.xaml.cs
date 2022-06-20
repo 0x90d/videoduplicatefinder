@@ -38,6 +38,10 @@ namespace VDF.GUI.Views {
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
 
+			if (SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.none) {
+				this.FindControl<ComboBox>("ComboboxHardwareAccelerationMode").SelectedIndex = 1;
+			}
+
 
 			this.FindControl<ListBox>("ListboxIncludelist").AddHandler(DragDrop.DropEvent, DropInclude);
 			this.FindControl<ListBox>("ListboxIncludelist").AddHandler(DragDrop.DragOverEvent, DragOver);
