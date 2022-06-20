@@ -873,6 +873,7 @@ namespace VDF.GUI.ViewModels {
 			}.ShowAsync(ApplicationHelpers.MainWindow);
 			if (result == null || result.Length == 0 || string.IsNullOrEmpty(result[0])) return;
 			SettingsFile.LoadSettings(result[0]);
+			await MessageBoxService.Show("Please restart VDF to apply new settings.");
 		});
 
 		public ReactiveCommand<string, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async (string command) => {
