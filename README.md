@@ -29,8 +29,9 @@ sudo apt-get install ffmpeg
 ```
 Open terminal in VDF folder and execute `./VDF.GUI`
 You may need to set execute permission first `sudo chmod 777 VDF.GUI`
+
 #### MacOS user:
-After installing FFmpeg & Ffprobe (see above), double click on ffmpeg. You will get an error that ffmpeg is unsigned. Now open macOS settings -> Security -> General and choose 'Always open'. Do the same for ffprobe. Now open Terminal in VDF folder and give VDF.GUI executable rights `sudo chmod -R 755 VDF.GUI`. Now right click on `VDF.GUI` and choose to open with terminal. Please remember that the steps above to allow running unsigned ffmpeg and ffprobe only last 30 minutes. Alternatively find signed versions, sign them yourself or search for other workarounds to permanently run unsigned apps on your macOS.
+Install ffmpeg / ffprobe using homebrew
 
 # Screenshots
 <img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
