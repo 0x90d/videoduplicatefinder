@@ -1100,6 +1100,25 @@ namespace VDF.GUI.ViewModels {
 			}
 
 		});
+		public ReactiveCommand<Unit, Unit> SelectAllExceptOldest => ReactiveCommand.Create(() => {
+			HashSet<Guid> blackListGroupID = new();
+
+			foreach (var first in Duplicates) {
+				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
+				IEnumerable<DuplicateItemVM> l = Duplicates.Where(d => d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
+				if (!dupMods.Any()) continue;
+
+				dupMods.Add(first);
+				dupMods = dupMods.OrderBy(s => s.ItemInfo.DateCreated).ToList();
+				dupMods[0].Checked = false;
+				for (int i = 1; i < dupMods.Count; i++) {
+					dupMods[i].Checked = true;
+				}
+
+				blackListGroupID.Add(first.ItemInfo.GroupId);
+			}
+		});
 		public ReactiveCommand<Unit, Unit> MarkGroupAsNotAMatchCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
 				if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;

@@ -314,6 +314,11 @@
                                             <TextBlock VerticalAlignment="Center" Text="Select Lowest Duration / Quality" ToolTip.Tip="Keep longest / Best Quality" />
                                         </MenuItem.Header>
                                     </MenuItem>
+                                    <MenuItem Command="{Binding SelectAllExceptOldest}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Select All Except Oldest" ToolTip.Tip="Keep oldest only" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
                                     <MenuItem Command="{Binding CheckCustomCommand}">
                                         <MenuItem.Header>
                                             <TextBlock VerticalAlignment="Center" Text="Select Custom..." />
