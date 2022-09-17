@@ -39,8 +39,16 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			try {
 
 				string? path = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg);
-				if (path != null && CheckForFfmpegLibraryFilesInFolder(Path.GetDirectoryName(path)!))
-					return true;
+				if (path != null) {
+
+					if (CheckForFfmpegLibraryFilesInFolder(Path.GetDirectoryName(path)!))
+						return true;
+					if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+						if (CheckForFfmpegLibraryFilesInFolder(Path.Combine(Directory.GetParent(Directory.GetParent(path)!.FullName)!.FullName, "lib")))
+							return true;
+					}
+
+				}
 				else if (path == null) {
 					//Case where ffmpeg(.exe) does not exist but libraries files could exist
 					path = Path.Combine(Utils.CoreUtils.CurrentFolder, "bin");
@@ -110,9 +118,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		static bool CheckForFfmpegLibraryFilesInFolder(string path) {
 
 			foreach (KeyValuePair<string, int> item in ffmpeg.LibraryVersionMap) {
-				string libraryName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ?
-					Path.Combine(path, $"lib{item.Key}.so.{item.Value}") :
+				string libraryName =
+					RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ?
+						Path.Combine(path, $"lib{item.Key}.so.{item.Value}") :
+					RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ?
+						Path.Combine(path, $"lib{item.Key}.{item.Value}.dylib") :
 					Path.Combine(path, $"{item.Key}-{item.Value}.dll");
+
 				if (!File.Exists(libraryName))
 					return false;
 			}
