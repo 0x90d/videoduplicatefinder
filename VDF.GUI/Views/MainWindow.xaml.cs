@@ -37,7 +37,7 @@ namespace VDF.GUI.Views {
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
-
+			// Workaround for Avalonia bug, see https://github.com/0x90d/videoduplicatefinder/issues/327
 			if (SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.none) {
 				this.FindControl<ComboBox>("ComboboxHardwareAccelerationMode").SelectedIndex = 1;
 			}
