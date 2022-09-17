@@ -9,7 +9,7 @@
     <PlatformTargets>x64;arm64</PlatformTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>x64;arm64</PlatformTarget>
+    <PlatformTargets>x64;arm64</PlatformTargets>
   </PropertyGroup>
   <ItemGroup>
     <Compile Update="**\*.xaml.cs">
