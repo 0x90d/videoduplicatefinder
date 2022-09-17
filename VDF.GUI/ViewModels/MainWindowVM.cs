@@ -809,8 +809,10 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public static ReactiveCommand<Unit, Unit> ToggleCheckboxCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
-			currentItem.Checked = !currentItem.Checked;
+			foreach (var item in GetDataGrid.SelectedItems) {
+				if (item is not DuplicateItemVM currentItem) return;
+				currentItem.Checked = !currentItem.Checked;
+			}
 		});
 
 		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
