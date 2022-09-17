@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        kind: ['linux', 'windows', 'macOS']
+        kind: ['linux', 'windows', 'macOS', 'macOSarm64']
         include:
           - kind: linux
             os: ubuntu-latest
@@ -22,6 +22,10 @@ jobs:
             os: windows-latest
             target: osx-x64
             name: osx-x64
+          - kind: macOSarm64
+            os: windows-latest
+            target: osx-arm64
+            name: osx-arm64
             
     runs-on: ${{ matrix.os }}
 
