@@ -42,7 +42,11 @@ RUN apt-get update \
         dotnet-runtime-6.0 \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy the built files to the Desktop
 WORKDIR /root/Desktop
 COPY --from=build-env /app/VDF.GUI/out ./VDF
+
+# Copy the shortcut to the desktop
+COPY Docker/VDF.desktop .
 
 ENTRYPOINT ["/startup.sh"]

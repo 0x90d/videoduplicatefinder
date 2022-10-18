@@ -40,11 +40,47 @@ Install ffmpeg / ffprobe using homebrew
 Video Duplicate Finder is licensed under GPLv3  
 Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licensed under LGPL 2.1 / GPL v2
 
+# Docker
+Runs a docker container with a VNC server that is accessible via the host browser. 
+
+Tested on Linux.  Presumibly would run on MacOS without any issues.  Windows would need to set the Linux runtime.
+
+First time start:
+```
+WEB_PORT=6080
+docker run -p $WEB_PORT:80 -v /dev/shm:/dev/shm \
+    --name vdf \
+    --mount type=bind,source="FILE_PATH_1",target="/media/FILE_PATH_1" \
+    --mount type=bind,source="FILE_PATH_2",target="/media/FILE_PATH_2" \
+    vdf:latest
+```
+
+Access the instance via your browser at http://localhost:6080 (or whatever you set the WEB_PORT to).  On the desktop there will be a shortcut to run VDF and a VDF directory where VDF is installed to.
+
+Your files to scan will be located on /media when configuring VDF.  You must have at least one "--mount" line when starting docker, but you can have as many as you like.
+
+NOTE: It is recommended export your settings and database to your host file system.  If you remove this container these will be lost.
+
+Stopping the container:
+```shell
+docker stop vdf
+```
+
+Restarting the container:
+```shell
+docker start vdf
+```
 
 # Building
 - .NET Core 6.x
 - Visual Studio 2022
 - Avalonia VS Extension is recommended but not required
+
+## Docker
+
+```shell
+docker build -t vdf .
+```
 
 # Committing
 - Your pull request should only contain code for a single addition or fix
