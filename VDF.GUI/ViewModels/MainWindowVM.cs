@@ -463,6 +463,29 @@ namespace VDF.GUI.ViewModels {
 			if (!SettingsFile.Instance.Includes.Contains(result))
 				SettingsFile.Instance.Includes.Add(result);
 		});
+		public ReactiveCommand<Unit, Unit> AddFilePathContainsTextToListCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await InputBoxService.Show("New Entry");
+			if (string.IsNullOrEmpty(result)) return;
+			if (!SettingsFile.Instance.FilePathContainsTexts.Contains(result))
+				SettingsFile.Instance.FilePathContainsTexts.Add(result);
+		});
+		public ReactiveCommand<ListBox, Action> RemoveFilePathContainsTextFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
+			while (lbox.SelectedItems.Count > 0)
+				SettingsFile.Instance.FilePathContainsTexts.Remove((string)lbox.SelectedItems[0]!);
+			return null!;
+		});
+		public ReactiveCommand<Unit, Unit> AddFilePathNotContainsTextToListCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await InputBoxService.Show("New Entry");
+			if (string.IsNullOrEmpty(result)) return;
+			if (!SettingsFile.Instance.FilePathNotContainsTexts.Contains(result))
+				SettingsFile.Instance.FilePathNotContainsTexts.Add(result);
+		});
+		public ReactiveCommand<ListBox, Action> RemoveFilePathNotContainsTextFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
+			while (lbox.SelectedItems.Count > 0)
+				SettingsFile.Instance.FilePathNotContainsTexts.Remove((string)lbox.SelectedItems[0]!);
+			return null!;
+		});
+
 		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.Create(() => {
 			try {
 				Process.Start(new ProcessStartInfo {
@@ -938,10 +961,10 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.CustomDatabaseFolder = SettingsFile.Instance.CustomDatabaseFolder;
 			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
 			Scanner.Settings.FilterByFilePathContains = SettingsFile.Instance.FilterByFilePathContains;
-			Scanner.Settings.FilePathContainsText = SettingsFile.Instance.FilePathContainsText;
+			Scanner.Settings.FilePathContainsTexts = SettingsFile.Instance.FilePathContainsTexts.ToList();
 			Scanner.Settings.FilterByFilePathNotContains = SettingsFile.Instance.FilterByFilePathNotContains;
 			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
-			Scanner.Settings.FilePathNotContainsText = SettingsFile.Instance.FilePathNotContainsText;
+			Scanner.Settings.FilePathNotContainsTexts = SettingsFile.Instance.FilePathNotContainsTexts.ToList();
 			Scanner.Settings.FilterByFileSize = SettingsFile.Instance.FilterByFileSize;
 			Scanner.Settings.MaximumFileSize = SettingsFile.Instance.MaximumFileSize;
 			Scanner.Settings.MinimumFileSize = SettingsFile.Instance.MinimumFileSize;

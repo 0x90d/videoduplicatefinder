@@ -197,11 +197,11 @@ namespace VDF.GUI.Data {
 			get => _FilterByFilePathContains;
 			set => this.RaiseAndSetIfChanged(ref _FilterByFilePathContains, value);
 		}
-		string _FilePathContainsText = string.Empty;
-		[JsonPropertyName("FilePathContainsText")]
-		public string FilePathContainsText {
-			get => _FilePathContainsText;
-			set => this.RaiseAndSetIfChanged(ref _FilePathContainsText, value);
+		ObservableCollection<string> _FilePathContainsTexts = new();
+		[JsonPropertyName("FilePathContainsTexts")]
+		public ObservableCollection<string> FilePathContainsTexts {
+			get => _FilePathContainsTexts;
+			set => this.RaiseAndSetIfChanged(ref _FilePathContainsTexts, value);
 		}
 		bool _FilterByFilePathNotContains;
 		[JsonPropertyName("FilterByFilePathNotContains")]
@@ -209,11 +209,11 @@ namespace VDF.GUI.Data {
 			get => _FilterByFilePathNotContains;
 			set => this.RaiseAndSetIfChanged(ref _FilterByFilePathNotContains, value);
 		}
-		string _FilePathNotContainsText = string.Empty;
-		[JsonPropertyName("FilePathNotContainsText")]
-		public string FilePathNotContainsText {
-			get => _FilePathNotContainsText;
-			set => this.RaiseAndSetIfChanged(ref _FilePathNotContainsText, value);
+		ObservableCollection<string> _FilePathNotContainsTexts = new();
+		[JsonPropertyName("FilePathNotContainsTexts")]
+		public ObservableCollection<string> FilePathNotContainsTexts {
+			get => _FilePathNotContainsTexts;
+			set => this.RaiseAndSetIfChanged(ref _FilePathNotContainsTexts, value);
 		}
 		bool _FilterByFileSize;
 		[JsonPropertyName("FilterByFileSize")]

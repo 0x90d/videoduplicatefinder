@@ -250,12 +250,28 @@ namespace VDF.Core {
 				entry.FileSize.BytesToMegaBytes() < Settings.MinimumFileSize)) {
 				return true;
 			}
-			if (Settings.FilterByFilePathContains &&
-				!System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(Settings.FilePathContainsText, entry.Path))
-				return true;
-			if (Settings.FilterByFilePathNotContains &&
-				System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(Settings.FilePathNotContainsText, entry.Path))
-				return true;
+			if (Settings.FilterByFilePathContains) {
+				bool contains = false;
+				foreach (var f in Settings.FilePathContainsTexts) {
+					if (System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(f, entry.Path)) {
+						contains = true;
+						break;
+					}
+				}
+				if (!contains)
+					return true;
+			}
+			if (Settings.FilterByFilePathNotContains) {
+				bool contains = false;
+				foreach (var f in Settings.FilePathContainsTexts) {
+					if (System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(f, entry.Path)) {
+						contains = true;
+						break;
+					}
+				}
+				if (contains)
+					return true;
+			}
 
 
 			return false;
