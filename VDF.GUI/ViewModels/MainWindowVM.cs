@@ -934,6 +934,21 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("Filtering maximum file size cannot be greater or equal minimum file size.");
 				return;
 			}
+			bool isFreshScan = true;
+			switch (command) {
+			case "FullScan":
+				isFreshScan = true;
+				break;
+			case "CompareOnly":
+				isFreshScan = false;
+				if (await MessageBoxService.Show("Are you sure to perform a rescan?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+					return;
+				break;
+			default:
+				await MessageBoxService.Show("Requested command is NOT implemented yet!");
+				break;
+			}
+
 
 			Duplicates.Clear();
 			IsScanning = true;
@@ -976,18 +991,13 @@ namespace VDF.GUI.ViewModels {
 				Scanner.Settings.BlackList.Add(s);
 
 			//Start scan
-			switch (command) {
-			case "FullScan":
+			if (isFreshScan) {
 				IsBusy = true;
 				IsBusyText = "Enumerating files...";
 				Scanner.StartSearch();
-				break;
-			case "CompareOnly":
+			}
+			else {
 				Scanner.StartCompare();
-				break;
-			default:
-				await MessageBoxService.Show("Requested command is NOT implemented yet!");
-				break;
 			}
 		});
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
