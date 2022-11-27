@@ -215,21 +215,7 @@ namespace VDF.Core {
 
 		bool InvalidEntry(FileEntry entry) {
 			if (Settings.IncludeImages == false && entry.IsImage)
-				return true;
-			if (Settings.IncludeSubDirectories == false) {
-				if (!Settings.IncludeList.Contains(entry.Folder))
-					return true;
-			}
-			else if (!Settings.IncludeList.Any(f => {
-				if (!entry.Folder.StartsWith(f))
-					return false;
-				if (entry.Folder.Length == f.Length)
-					return true;
-				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
-				string relativePath = Path.GetRelativePath(f, entry.Folder);
-				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
-			}))
-				return true;
+				return true;			
 			if (Settings.BlackList.Any(f => {
 				if (!entry.Folder.StartsWith(f))
 					return false;
@@ -299,6 +285,23 @@ namespace VDF.Core {
 					bool skipEntry = false;
 					skipEntry |= entry.invalid;
 					skipEntry |= entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling;
+
+					if (!skipEntry && !Settings.ScanAgainstEntireDatabase) {
+						if (Settings.IncludeSubDirectories == false) {
+							if (!Settings.IncludeList.Contains(entry.Folder))
+								skipEntry = true;
+						}
+						else if (!Settings.IncludeList.Any(f => {
+							if (!entry.Folder.StartsWith(f))
+								return false;
+							if (entry.Folder.Length == f.Length)
+								return true;
+							//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
+							string relativePath = Path.GetRelativePath(f, entry.Folder);
+							return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
+						}))
+							skipEntry = true;
+					}
 
 					if (skipEntry) {
 						IncrementProgress(entry.Path);

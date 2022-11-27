@@ -1109,7 +1109,8 @@
                                         FontSize="12"
                                         Text="Misc" />
                                 </TabItem.Header>
-                                <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto, *">
+                                <ScrollViewer>
+                                    <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto, *">
                                     <Grid Grid.Row="0" ColumnDefinitions="Auto, Auto, *">
                                         <StackPanel Margin="5,5,0,0">
                                             <CheckBox
@@ -1198,6 +1199,12 @@
                                                 IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
                                                 IsThreeState="False"
                                                 ToolTip.Tip="If checked non-existing files which have all necessary information are included" />
+                                            <CheckBox
+                                                VerticalAlignment="Center"
+                                                Content="Scan against entire database"
+                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
+                                                IsThreeState="False"
+                                                ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Margin="15,5,0,0">
                                             <TextBlock
@@ -1405,6 +1412,7 @@
                                         </Grid>
                                     </Grid>
                                 </Grid>
+                                </ScrollViewer>
                             </TabItem>
                             <TabItem x:Name="TabItemSettingsFiles">
                                 <TabItem.Header>

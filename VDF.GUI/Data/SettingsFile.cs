@@ -159,6 +159,12 @@ namespace VDF.GUI.Data {
 			get => _IncludeNonExistingFiles;
 			set => this.RaiseAndSetIfChanged(ref _IncludeNonExistingFiles, value);
 		}
+		bool _ScanAgainstEntireDatabase;
+		[JsonPropertyName("ScanAgainstEntireDatabase")]
+		public bool ScanAgainstEntireDatabase {
+			get => _ScanAgainstEntireDatabase;
+			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
+		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]
 		public int Percent {

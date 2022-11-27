@@ -32,6 +32,7 @@ namespace VDF.Core {
 		public bool IgnoreWhitePixels;
 		public bool CompareHorizontallyFlipped;
 		public bool IncludeNonExistingFiles = true;
+		public bool ScanAgainstEntireDatabase;
 
 		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 
