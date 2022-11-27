@@ -1202,7 +1202,7 @@
                                             <CheckBox
                                                 VerticalAlignment="Center"
                                                 Content="Scan against entire database"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
+                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
                                                 IsThreeState="False"
                                                 ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
                                         </StackPanel>
