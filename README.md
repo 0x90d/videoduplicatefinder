@@ -48,5 +48,5 @@ Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licensed un
 
 # Committing
 - Your pull request should only contain code for a single addition or fix
-- Unless it referes to an existing issue, write into your pull request what it does
+- Unless it refers to an existing issue, write into your pull request what it does
 - Changes in VDF.Core should be discussed in issue section first
