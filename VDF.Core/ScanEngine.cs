@@ -304,6 +304,7 @@ namespace VDF.Core {
 					}
 
 					if (skipEntry) {
+						entry.invalid = true;
 						IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
 					}
