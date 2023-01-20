@@ -22,7 +22,7 @@ using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
 
 namespace VDF.GUI.Views {
-	public class MainWindow : FluentWindow {
+	public class MainWindow : Window {
 		bool keepBackupFile;
 		bool hasExited;
 		public readonly Core.FFTools.FFHardwareAccelerationMode InitialHwMode;
@@ -39,14 +39,14 @@ namespace VDF.GUI.Views {
 
 			// Workaround for Avalonia bug, see https://github.com/0x90d/videoduplicatefinder/issues/327
 			if (SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.none) {
-				this.FindControl<ComboBox>("ComboboxHardwareAccelerationMode").SelectedIndex = 1;
+				this.FindControl<ComboBox>("ComboboxHardwareAccelerationMode")!.SelectedIndex = 1;
 			}
 
 
-			this.FindControl<ListBox>("ListboxIncludelist").AddHandler(DragDrop.DropEvent, DropInclude);
-			this.FindControl<ListBox>("ListboxIncludelist").AddHandler(DragDrop.DragOverEvent, DragOver);
-			this.FindControl<ListBox>("ListboxBlacklist").AddHandler(DragDrop.DropEvent, DropBlacklist);
-			this.FindControl<ListBox>("ListboxBlacklist").AddHandler(DragDrop.DragOverEvent, DragOver);
+			this.FindControl<ListBox>("ListboxIncludelist")!.AddHandler(DragDrop.DropEvent, DropInclude);
+			this.FindControl<ListBox>("ListboxIncludelist")!.AddHandler(DragDrop.DragOverEvent, DragOver);
+			this.FindControl<ListBox>("ListboxBlacklist")!.AddHandler(DragDrop.DropEvent, DropBlacklist);
+			this.FindControl<ListBox>("ListboxBlacklist")!.AddHandler(DragDrop.DragOverEvent, DragOver);
 
 			ApplicationHelpers.CurrentApplicationLifetime.Startup += MainWindow_Startup;
 			ApplicationHelpers.CurrentApplicationLifetime.Exit += MainWindow_Exit;
@@ -86,8 +86,8 @@ namespace VDF.GUI.Views {
 
 		private void DropInclude(object? sender, DragEventArgs e) {
 			if (!e.Data.Contains(DataFormats.FileNames)) return;
-			
-			foreach(string file in e.Data.GetFileNames()!) {
+
+			foreach (string file in e.Data.GetFileNames()!) {
 				if (!Directory.Exists(file)) continue;
 				if (!SettingsFile.Instance.Includes.Contains(file))
 					SettingsFile.Instance.Includes.Add(file);

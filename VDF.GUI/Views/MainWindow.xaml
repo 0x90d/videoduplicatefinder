@@ -1,4 +1,4 @@
-<mvvm:FluentWindow
+<Window
     x:Class="VDF.GUI.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -18,19 +18,17 @@
     Height="950"
     d:DesignHeight="750"
     d:DesignWidth="900"
-    Background="#222222"
+    Background="Transparent"
+    ExtendClientAreaToDecorationsHint="True"
     FontSize="14"
-    Foreground="{StaticResource SystemBaseHighColor}"
     Icon="/Assets/icon.ico"
+    TransparencyLevelHint="AcrylicBlur"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    <mvvm:FluentWindow.Resources>
+    <Window.Resources>
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
         <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
-    </mvvm:FluentWindow.Resources>
-    <mvvm:FluentWindow.DataContext>
-        <vm:MainWindowVM />
-    </mvvm:FluentWindow.DataContext>
+    </Window.Resources>
     <Grid>
         <TextBlock
             Margin="10,4,0,0"
@@ -45,11 +43,8 @@
                             FontSize="12"
                             Text="Scanner" />
                     </TabItem.Header>
-                    <Grid Background="#3A3A3A" RowDefinitions="Auto, *, Auto, Auto">
-                        <Menu
-                            Grid.Row="0"
-                            MinHeight="30"
-                            Background="#333333">
+                    <Grid RowDefinitions="Auto, *, Auto, Auto">
+                        <Menu Grid.Row="0" MinHeight="30">
                             <MenuItem
                                 Command="{Binding StartScanCommand}"
                                 CommandParameter="FullScan"
@@ -276,13 +271,9 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <Menu
-                                Grid.Row="0"
-                                MinHeight="30"
-                                Background="#222222">
+                            <Menu Grid.Row="0" MinHeight="30">
                                 <Menu.Styles>
                                     <Style Selector="Separator">
-                                        <Setter Property="Background" Value="DarkGray" />
                                         <Setter Property="Margin" Value="0,5,0,5" />
                                         <Setter Property="Width" Value="1" />
                                     </Style>
@@ -323,6 +314,18 @@
                                                 Text="Select Lowest Duration / Quality"
                                                 ToolTip.Tip="Keep longest / Best Quality" />
                                         </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Header="Date">
+                                        <MenuItem Command="{Binding CheckOldestCommand}">
+                                            <MenuItem.Header>
+                                                <TextBlock VerticalAlignment="Center" Text="Select Oldest" />
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem Command="{Binding CheckNewestCommand}">
+                                            <MenuItem.Header>
+                                                <TextBlock VerticalAlignment="Center" Text="Select Newest" />
+                                            </MenuItem.Header>
+                                        </MenuItem>
                                     </MenuItem>
                                     <MenuItem Command="{Binding CheckCustomCommand}">
                                         <MenuItem.Header>
@@ -377,8 +380,8 @@
                                         </MenuItem.Header>
                                     </MenuItem>
                                 </MenuItem>
-                                <MenuItem Header="-" />
-                                <CheckBox Margin="5,0,0,0" IsChecked="{Binding ElementName=filterStackPanel, Path=IsVisible}">
+                                <MenuItem Header="|" />
+                                <CheckBox Margin="5,0,0,0" IsChecked="{Binding ElementName=GridFilter, Path=IsVisible}">
                                     <StackPanel Orientation="Horizontal">
                                         <Viewbox
                                             Width="16"
@@ -411,6 +414,7 @@
                                         x:Name="ZoomSlider"
                                         MinWidth="100"
                                         Margin="5,0,0,0"
+                                        Padding="0"
                                         VerticalAlignment="Center"
                                         IsSnapToTickEnabled="True"
                                         LargeChange="0.5"
@@ -434,84 +438,83 @@
                                                                 BorderThickness="{TemplateBinding BorderThickness}"
                                                                 CornerRadius="{TemplateBinding CornerRadius}">
                                                                 <Grid
-                                                                    Name="grid"
+                                                                    x:Name="SliderContainer"
                                                                     Margin="{TemplateBinding Padding}"
-                                                                    RowDefinitions="Auto, *">
-                                                                    <presenters:ContentPresenter
-                                                                        x:Name="HeaderContentPresenter"
-                                                                        Grid.Row="0"
-                                                                        Margin="{DynamicResource SliderTopHeaderMargin}" />
-                                                                    <Grid x:Name="SliderContainer" Grid.Row="1">
-
-                                                                        <Grid
-                                                                            x:Name="HorizontalTemplate"
-                                                                            MinHeight="{DynamicResource SliderHorizontalHeight}"
-                                                                            ColumnDefinitions="Auto,Auto,*">
-                                                                            <Track
-                                                                                Name="PART_Track"
-                                                                                Grid.ColumnSpan="3"
-                                                                                IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
-                                                                                Orientation="Horizontal">
-                                                                                <Track.DecreaseButton>
-                                                                                    <RepeatButton
-                                                                                        Name="PART_DecreaseButton"
-                                                                                        HorizontalAlignment="Stretch"
-                                                                                        VerticalAlignment="Stretch"
-                                                                                        Background="{TemplateBinding Foreground}"
-                                                                                        Focusable="False">
-                                                                                        <RepeatButton.Template>
-                                                                                            <ControlTemplate>
-                                                                                                <Grid>
-                                                                                                    <Border
-                                                                                                        Name="FocusTarget"
-                                                                                                        Margin="0,-10"
-                                                                                                        Background="Transparent" />
-                                                                                                    <Border
-                                                                                                        Name="TrackBackground"
-                                                                                                        Height="{DynamicResource SliderTrackThemeHeight}"
-                                                                                                        VerticalAlignment="Center"
-                                                                                                        Background="{TemplateBinding Background}"
-                                                                                                        CornerRadius="{DynamicResource ControlCornerRadius}" />
-                                                                                                </Grid>
-                                                                                            </ControlTemplate>
-                                                                                        </RepeatButton.Template>
-                                                                                    </RepeatButton>
-                                                                                </Track.DecreaseButton>
-                                                                                <Track.IncreaseButton>
-                                                                                    <RepeatButton
-                                                                                        Name="PART_IncreaseButton"
-                                                                                        HorizontalAlignment="Stretch"
-                                                                                        VerticalAlignment="Stretch"
-                                                                                        Background="{TemplateBinding Background}"
-                                                                                        Focusable="False">
-                                                                                        <RepeatButton.Template>
-                                                                                            <ControlTemplate>
-                                                                                                <Grid>
-                                                                                                    <Border
-                                                                                                        Name="FocusTarget"
-                                                                                                        Margin="0,-10"
-                                                                                                        Background="Transparent" />
-                                                                                                    <Border
-                                                                                                        Name="TrackBackground"
-                                                                                                        Height="{DynamicResource SliderTrackThemeHeight}"
-                                                                                                        VerticalAlignment="Center"
-                                                                                                        Background="{TemplateBinding Background}"
-                                                                                                        CornerRadius="{DynamicResource ControlCornerRadius}" />
-                                                                                                </Grid>
-                                                                                            </ControlTemplate>
-                                                                                        </RepeatButton.Template>
-                                                                                    </RepeatButton>
-                                                                                </Track.IncreaseButton>
-                                                                                <Thumb
-                                                                                    Name="thumb"
-                                                                                    Width="{DynamicResource SliderHorizontalThumbWidth}"
-                                                                                    Height="{DynamicResource SliderHorizontalThumbHeight}"
-                                                                                    Margin="0"
-                                                                                    Padding="0"
-                                                                                    Classes="SliderThumbStyle"
-                                                                                    DataContext="{TemplateBinding Value}" />
-                                                                            </Track>
-                                                                        </Grid>
+                                                                    Background="{DynamicResource SliderContainerBackground}">
+                                                                    <Grid
+                                                                        x:Name="HorizontalTemplate"
+                                                                        MinHeight="{DynamicResource SliderHorizontalHeight}"
+                                                                        ColumnDefinitions="Auto,Auto,*">
+                                                                        <Track
+                                                                            Name="PART_Track"
+                                                                            Grid.ColumnSpan="3"
+                                                                            IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+                                                                            Maximum="{TemplateBinding Maximum}"
+                                                                            Minimum="{TemplateBinding Minimum}"
+                                                                            Orientation="Horizontal"
+                                                                            Value="{TemplateBinding Value,
+                                                                                                    Mode=TwoWay}">
+                                                                            <Track.DecreaseButton>
+                                                                                <RepeatButton
+                                                                                    Name="PART_DecreaseButton"
+                                                                                    HorizontalAlignment="Stretch"
+                                                                                    VerticalAlignment="Stretch"
+                                                                                    Background="{TemplateBinding Foreground}"
+                                                                                    Focusable="False">
+                                                                                    <RepeatButton.Template>
+                                                                                        <ControlTemplate>
+                                                                                            <Grid>
+                                                                                                <Border
+                                                                                                    Name="FocusTarget"
+                                                                                                    Margin="0,-10"
+                                                                                                    Background="Transparent" />
+                                                                                                <Border
+                                                                                                    Name="TrackBackground"
+                                                                                                    Height="{DynamicResource SliderTrackThemeHeight}"
+                                                                                                    VerticalAlignment="Center"
+                                                                                                    Background="{TemplateBinding Background}"
+                                                                                                    CornerRadius="{DynamicResource ControlCornerRadius}" />
+                                                                                            </Grid>
+                                                                                        </ControlTemplate>
+                                                                                    </RepeatButton.Template>
+                                                                                </RepeatButton>
+                                                                            </Track.DecreaseButton>
+                                                                            <Track.IncreaseButton>
+                                                                                <RepeatButton
+                                                                                    Name="PART_IncreaseButton"
+                                                                                    HorizontalAlignment="Stretch"
+                                                                                    VerticalAlignment="Stretch"
+                                                                                    Background="{TemplateBinding Background}"
+                                                                                    Focusable="False">
+                                                                                    <RepeatButton.Template>
+                                                                                        <ControlTemplate>
+                                                                                            <Grid>
+                                                                                                <Border
+                                                                                                    Name="FocusTarget"
+                                                                                                    Margin="0,-10"
+                                                                                                    Background="Transparent" />
+                                                                                                <Border
+                                                                                                    Name="TrackBackground"
+                                                                                                    Height="{DynamicResource SliderTrackThemeHeight}"
+                                                                                                    VerticalAlignment="Center"
+                                                                                                    Background="{TemplateBinding Background}"
+                                                                                                    CornerRadius="{DynamicResource ControlCornerRadius}" />
+                                                                                            </Grid>
+                                                                                        </ControlTemplate>
+                                                                                    </RepeatButton.Template>
+                                                                                </RepeatButton>
+                                                                            </Track.IncreaseButton>
+                                                                            <Thumb
+                                                                                Name="thumb"
+                                                                                Width="{DynamicResource SliderHorizontalThumbWidth}"
+                                                                                Height="{DynamicResource SliderHorizontalThumbHeight}"
+                                                                                Margin="0"
+                                                                                Padding="0"
+                                                                                Background="{DynamicResource SliderThumbBackground}"
+                                                                                BorderThickness="0"
+                                                                                DataContext="{TemplateBinding Value}"
+                                                                                Theme="{StaticResource FluentSliderThumbTheme}" />
+                                                                        </Track>
                                                                     </Grid>
                                                                 </Grid>
                                                             </Border>
@@ -555,84 +558,83 @@
                                                                 BorderThickness="{TemplateBinding BorderThickness}"
                                                                 CornerRadius="{TemplateBinding CornerRadius}">
                                                                 <Grid
-                                                                    Name="grid"
+                                                                    x:Name="SliderContainer"
                                                                     Margin="{TemplateBinding Padding}"
-                                                                    RowDefinitions="Auto, *">
-                                                                    <presenters:ContentPresenter
-                                                                        x:Name="HeaderContentPresenter"
-                                                                        Grid.Row="0"
-                                                                        Margin="{DynamicResource SliderTopHeaderMargin}" />
-                                                                    <Grid x:Name="SliderContainer" Grid.Row="1">
-
-                                                                        <Grid
-                                                                            x:Name="HorizontalTemplate"
-                                                                            MinHeight="{DynamicResource SliderHorizontalHeight}"
-                                                                            ColumnDefinitions="Auto,Auto,*">
-                                                                            <Track
-                                                                                Name="PART_Track"
-                                                                                Grid.ColumnSpan="3"
-                                                                                IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
-                                                                                Orientation="Horizontal">
-                                                                                <Track.DecreaseButton>
-                                                                                    <RepeatButton
-                                                                                        Name="PART_DecreaseButton"
-                                                                                        HorizontalAlignment="Stretch"
-                                                                                        VerticalAlignment="Stretch"
-                                                                                        Background="{TemplateBinding Foreground}"
-                                                                                        Focusable="False">
-                                                                                        <RepeatButton.Template>
-                                                                                            <ControlTemplate>
-                                                                                                <Grid>
-                                                                                                    <Border
-                                                                                                        Name="FocusTarget"
-                                                                                                        Margin="0,-10"
-                                                                                                        Background="Transparent" />
-                                                                                                    <Border
-                                                                                                        Name="TrackBackground"
-                                                                                                        Height="{DynamicResource SliderTrackThemeHeight}"
-                                                                                                        VerticalAlignment="Center"
-                                                                                                        Background="{TemplateBinding Background}"
-                                                                                                        CornerRadius="{DynamicResource ControlCornerRadius}" />
-                                                                                                </Grid>
-                                                                                            </ControlTemplate>
-                                                                                        </RepeatButton.Template>
-                                                                                    </RepeatButton>
-                                                                                </Track.DecreaseButton>
-                                                                                <Track.IncreaseButton>
-                                                                                    <RepeatButton
-                                                                                        Name="PART_IncreaseButton"
-                                                                                        HorizontalAlignment="Stretch"
-                                                                                        VerticalAlignment="Stretch"
-                                                                                        Background="{TemplateBinding Background}"
-                                                                                        Focusable="False">
-                                                                                        <RepeatButton.Template>
-                                                                                            <ControlTemplate>
-                                                                                                <Grid>
-                                                                                                    <Border
-                                                                                                        Name="FocusTarget"
-                                                                                                        Margin="0,-10"
-                                                                                                        Background="Transparent" />
-                                                                                                    <Border
-                                                                                                        Name="TrackBackground"
-                                                                                                        Height="{DynamicResource SliderTrackThemeHeight}"
-                                                                                                        VerticalAlignment="Center"
-                                                                                                        Background="{TemplateBinding Background}"
-                                                                                                        CornerRadius="{DynamicResource ControlCornerRadius}" />
-                                                                                                </Grid>
-                                                                                            </ControlTemplate>
-                                                                                        </RepeatButton.Template>
-                                                                                    </RepeatButton>
-                                                                                </Track.IncreaseButton>
-                                                                                <Thumb
-                                                                                    Name="thumb"
-                                                                                    Width="{DynamicResource SliderHorizontalThumbWidth}"
-                                                                                    Height="{DynamicResource SliderHorizontalThumbHeight}"
-                                                                                    Margin="0"
-                                                                                    Padding="0"
-                                                                                    Classes="SliderThumbStyle"
-                                                                                    DataContext="{TemplateBinding Value}" />
-                                                                            </Track>
-                                                                        </Grid>
+                                                                    Background="{DynamicResource SliderContainerBackground}">
+                                                                    <Grid
+                                                                        x:Name="HorizontalTemplate"
+                                                                        MinHeight="{DynamicResource SliderHorizontalHeight}"
+                                                                        ColumnDefinitions="Auto,Auto,*">
+                                                                        <Track
+                                                                            Name="PART_Track"
+                                                                            Grid.ColumnSpan="3"
+                                                                            IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+                                                                            Maximum="{TemplateBinding Maximum}"
+                                                                            Minimum="{TemplateBinding Minimum}"
+                                                                            Orientation="Horizontal"
+                                                                            Value="{TemplateBinding Value,
+                                                                                                    Mode=TwoWay}">
+                                                                            <Track.DecreaseButton>
+                                                                                <RepeatButton
+                                                                                    Name="PART_DecreaseButton"
+                                                                                    HorizontalAlignment="Stretch"
+                                                                                    VerticalAlignment="Stretch"
+                                                                                    Background="{TemplateBinding Foreground}"
+                                                                                    Focusable="False">
+                                                                                    <RepeatButton.Template>
+                                                                                        <ControlTemplate>
+                                                                                            <Grid>
+                                                                                                <Border
+                                                                                                    Name="FocusTarget"
+                                                                                                    Margin="0,-10"
+                                                                                                    Background="Transparent" />
+                                                                                                <Border
+                                                                                                    Name="TrackBackground"
+                                                                                                    Height="{DynamicResource SliderTrackThemeHeight}"
+                                                                                                    VerticalAlignment="Center"
+                                                                                                    Background="{TemplateBinding Background}"
+                                                                                                    CornerRadius="{DynamicResource ControlCornerRadius}" />
+                                                                                            </Grid>
+                                                                                        </ControlTemplate>
+                                                                                    </RepeatButton.Template>
+                                                                                </RepeatButton>
+                                                                            </Track.DecreaseButton>
+                                                                            <Track.IncreaseButton>
+                                                                                <RepeatButton
+                                                                                    Name="PART_IncreaseButton"
+                                                                                    HorizontalAlignment="Stretch"
+                                                                                    VerticalAlignment="Stretch"
+                                                                                    Background="{TemplateBinding Background}"
+                                                                                    Focusable="False">
+                                                                                    <RepeatButton.Template>
+                                                                                        <ControlTemplate>
+                                                                                            <Grid>
+                                                                                                <Border
+                                                                                                    Name="FocusTarget"
+                                                                                                    Margin="0,-10"
+                                                                                                    Background="Transparent" />
+                                                                                                <Border
+                                                                                                    Name="TrackBackground"
+                                                                                                    Height="{DynamicResource SliderTrackThemeHeight}"
+                                                                                                    VerticalAlignment="Center"
+                                                                                                    Background="{TemplateBinding Background}"
+                                                                                                    CornerRadius="{DynamicResource ControlCornerRadius}" />
+                                                                                            </Grid>
+                                                                                        </ControlTemplate>
+                                                                                    </RepeatButton.Template>
+                                                                                </RepeatButton>
+                                                                            </Track.IncreaseButton>
+                                                                            <Thumb
+                                                                                Name="thumb"
+                                                                                Width="{DynamicResource SliderHorizontalThumbWidth}"
+                                                                                Height="{DynamicResource SliderHorizontalThumbHeight}"
+                                                                                Margin="0"
+                                                                                Padding="0"
+                                                                                Background="{DynamicResource SliderThumbBackground}"
+                                                                                BorderThickness="0"
+                                                                                DataContext="{TemplateBinding Value}"
+                                                                                Theme="{StaticResource FluentSliderThumbTheme}" />
+                                                                        </Track>
                                                                     </Grid>
                                                                 </Grid>
                                                             </Border>
@@ -644,48 +646,56 @@
                                     </Slider>
                                 </StackPanel>
                             </Menu>
-                            <StackPanel
-                                x:Name="filterStackPanel"
+                            <Grid
+                                x:Name="GridFilter"
                                 Grid.Row="1"
                                 Margin="5"
                                 IsVisible="False"
-                                Orientation="Horizontal">
-                                <TextBlock VerticalAlignment="Center" Text="Path:" />
-                                <TextBox
-                                    MinWidth="150"
-                                    Margin="5,0,0,0"
-                                    Text="{Binding FilterByPath}" />
+                                RowDefinitions="*, Auto">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock VerticalAlignment="Center" Text="Path:" />
+                                    <TextBox
+                                        MinWidth="150"
+                                        Margin="5,0,0,0"
+                                        Text="{Binding FilterByPath}" />
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Sort:" />
+                                    <ComboBox
+                                        MinWidth="150"
+                                        Margin="5,0,0,0"
+                                        Items="{Binding SortOrders}"
+                                        SelectedItem="{Binding SortOrder}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Key}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBlock
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="Type:" />
+                                    <ComboBox
+                                        MinWidth="150"
+                                        Margin="5,0,0,0"
+                                        Items="{Binding TypeFilters}"
+                                        SelectedItem="{Binding FileType}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Key}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
                                 <TextBlock
-                                    Margin="5,0,0,0"
+                                    Grid.Row="1"
+                                    Margin="0,5,0,0"
                                     VerticalAlignment="Center"
-                                    Text="Sort:" />
-                                <ComboBox
-                                    MinWidth="150"
-                                    Margin="5,0,0,0"
-                                    Items="{Binding SortOrders}"
-                                    SelectedItem="{Binding SortOrder}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Key}" />
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                                <TextBlock
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Text="Type:" />
-                                <ComboBox
-                                    MinWidth="150"
-                                    Margin="5,0,0,0"
-                                    Items="{Binding TypeFilters}"
-                                    SelectedItem="{Binding FileType}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Key}" />
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                            </StackPanel>
+                                    Foreground="Red"
+                                    Text="Note: Filter is only visual. Any action also applies to filtered out items!" />
+                            </Grid>
                             <LayoutTransformControl Grid.Row="2">
                                 <DataGrid
                                     Name="dataGridGrouping"
@@ -1016,7 +1026,6 @@
                         </Grid>
                         <Grid
                             Grid.Row="2"
-                            Background="#222222"
                             IsVisible="{Binding !!Duplicates.Count}"
                             RowDefinitions="Auto, Auto">
                             <StackPanel
@@ -1030,49 +1039,28 @@
                                 MinHeight="20"
                                 Orientation="Horizontal">
                                 <TextBlock Text="{Binding Duplicates.Count, Mode=OneWay, StringFormat=Duplicates In List: \{0\}}" />
-                                <Separator
-                                    Width="1"
-                                    Margin="5"
-                                    Background="DarkGray" />
+                                <Separator Width="1" Margin="5" />
                                 <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Total Duplicates: \{0\}}" />
-                                <Separator
-                                    Width="1"
-                                    Margin="5"
-                                    Background="DarkGray" />
+                                <Separator Width="1" Margin="5" />
                                 <TextBlock Text="{Binding TotalDuplicateGroups, Mode=OneWay, StringFormat=Total Duplicate Groups: \{0\}}" />
-                                <Separator
-                                    Width="1"
-                                    Margin="5"
-                                    Background="DarkGray" />
+                                <Separator Width="1" Margin="5" />
                                 <TextBlock Text="{Binding TotalDuplicatesSize, Mode=OneWay, StringFormat=Total Size: \{0\}}" />
-                                <Separator
-                                    Width="1"
-                                    Margin="5"
-                                    Background="DarkGray" />
+                                <Separator Width="1" Margin="5" />
                                 <TextBlock Text="{Binding TotalSizeRemoved, Mode=OneWay, StringFormat=Total Size Removed: \{0\}}" />
                             </StackPanel>
                         </Grid>
-                        <Grid Grid.Row="3" Background="#222222">
+                        <Grid Grid.Row="3">
                             <StackPanel MinHeight="20" Orientation="Horizontal">
                                 <ProgressBar
                                     Name="PbScanProgress"
                                     MinWidth="100"
                                     Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
                                     Value="{Binding ScanProgressValue, Mode=OneWay}" />
-                                <Separator
-                                    Width="1"
-                                    Margin="5"
-                                    Background="DarkGray" />
+                                <Separator Width="1" Margin="5" />
                                 <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
-                                <Separator
-                                    Width="1"
-                                    Margin="5"
-                                    Background="DarkGray" />
+                                <Separator Width="1" Margin="5" />
                                 <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
-                                <Separator
-                                    Width="1"
-                                    Margin="5"
-                                    Background="DarkGray" />
+                                <Separator Width="1" Margin="5" />
                                 <TextBlock Text="{Binding ScanProgressText, Mode=OneWay}" />
                             </StackPanel>
                         </Grid>
@@ -1086,18 +1074,35 @@
                             Text="Settings" />
                     </TabItem.Header>
                     <Grid RowDefinitions="Auto, *">
-                        <Menu
-                            Grid.Row="0"
-                            MinHeight="30"
-                            Background="#222222">
+                        <Menu Grid.Row="0" MinHeight="30">
                             <MenuItem Command="{Binding SaveSettingsProfileCommand}">
                                 <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Save To File" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="20" Height="20">
+                                            <Canvas Width="16" Height="16">
+                                                <Path Data="M11.04 1.33L12.71 3l.29.71v.33h-.5l-.5.5v-.83l-1.67-1.67H10v4H4v-4H2v10h3l-.5 1H2l-1-1v-10l1-1h8.33l.71.29zM7 5h2V2H7v3zm6.5 0L15 6.5l-.02.69-5.5 5.5-.13.12-.37.37-.1.09-3 1.5-.67-.67 1.5-3 .09-.1.37-.37.12-.13 5.5-5.5h.71zm-6.22 7.24l-.52 1 1.04-.48-.52-.52zm.69-1.03l.79.79 5.15-5.15-.79-.79-5.15 5.15z" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Save To File" />
+                                    </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
                             <MenuItem Command="{Binding LoadSettingsProfileCommand}">
                                 <MenuItem.Header>
-                                    <TextBlock VerticalAlignment="Center" Text="Load From File" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="20" Height="20">
+                                            <Canvas Width="16" Height="16">
+                                                <Path Data="M1.5 14h11l.48-.37 2.63-7-.48-.63H14V3.5l-.5-.5H7.71l-.86-.85L6.5 2h-5l-.5.5v11l.5.5zM2 3h4.29l.86.85.35.15H13v2H8.5l-.35.15-.86.85H3.5l-.47.34-1 3.08L2 3zm10.13 10H2.19l1.67-5H7.5l.35-.15.86-.85h5.79l-2.37 6z" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Load From File" />
+                                    </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
                         </Menu>
@@ -1111,307 +1116,301 @@
                                 </TabItem.Header>
                                 <ScrollViewer>
                                     <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto, *">
-                                    <Grid Grid.Row="0" ColumnDefinitions="Auto, Auto, *">
-                                        <StackPanel Margin="5,5,0,0">
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Ignore Read Only Folders"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}"
-                                                IsThreeState="False" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Include Sub Directories"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}"
-                                                IsThreeState="False" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Include Images"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}"
-                                                IsThreeState="False" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Generate Preview Images"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Exclude Reparse Points"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
-                                                IsThreeState="False" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Extended FFTools Logging"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExtendedFFToolsLogging}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="If activated ffmpeg and ffprobe errors will be written to the log" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Always retry failed sampling"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="If activated scan engine will try to generate thumbprints of failed entries each time it is run. Otherwise consecutive attempt will be taken only after cleanup of the database." />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Auto backup scan results"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Use native Ffmpeg binding"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseNativeFfmpegBinding}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="If activated it will call ffmpeg functions natively instead of spawning a new ffmpeg.exe process. This is MUCH(!!) faster. WARNING: You must use the latest SHARED and STABLE ffmpeg version. If something goes wrong then whole VDF will crash." />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Ignore Black Pixels"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="Skip black pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much dark and raises the chance to detect duplicates if one of the thumbnails have black bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit." />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Ignore White Pixels"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit." />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Show Enlarged Thumbnail On Mouse Hover"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="Shows a larger version of the thumbnail on mouse hover" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Compare Horizontally Flipped"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit." />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Save results on exit"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="If checked you will be asked if you want to save the results when you close VDF" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Scan against non-existing files"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="If checked non-existing files which have all necessary information are included" />
-                                            <CheckBox
-                                                VerticalAlignment="Center"
-                                                Content="Scan against entire database"
-                                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
-                                                IsThreeState="False"
-                                                ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" Margin="15,5,0,0">
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                Text="Percent:"
-                                                ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates" />
-                                            <NumericUpDown
-                                                Width="200"
-                                                Height="26"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Center"
-                                                Maximum="100"
-                                                Minimum="1"
-                                                ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
-                                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                Text="Duration Difference in %:"
-                                                ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %" />
-                                            <NumericUpDown
-                                                Width="200"
-                                                Height="26"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Center"
-                                                Maximum="100"
-                                                Minimum="0"
-                                                ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
-                                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PercentDurationDifference}" />
-                                            <TextBlock
-                                                Margin="0,5,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="Thumbnails:"
-                                                ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases." />
-                                            <NumericUpDown
-                                                Width="200"
-                                                Height="26"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Center"
-                                                Maximum="100"
-                                                Minimum="1"
-                                                ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases."
-                                                ValueChanged="Thumbnails_ValueChanged"
-                                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" />
-                                            <TextBlock
-                                                Margin="0,5,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="Max Degree Of Parallelism:"
-                                                ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable." />
-                                            <NumericUpDown
-                                                Width="200"
-                                                Height="26"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Center"
-                                                Maximum="100"
-                                                Minimum="-1"
-                                                ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable."
-                                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                Text="Custom FF Arguments:"
-                                                ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty." />
-                                            <TextBox
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
-                                                ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty." />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                FontSize="14"
-                                                Text="Hardware Acceleration:"
-                                                ToolTip.Tip="Hardware acceleration mode of ffmpeg" />
-                                            <ComboBox
-                                                x:Name="ComboboxHardwareAccelerationMode"
-                                                VerticalAlignment="Center"
-                                                Items="{Binding HardwareAccelerationModes}"
-                                                SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}"
-                                                ToolTip.Tip="Hardware acceleration mode of ffmpeg" />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                FontSize="14"
-                                                Text="Custom Commands:"
-                                                ToolTip.Tip="Enter your own commands to open single or multiple files." />
-                                            <ComboBox
-                                                Width="200"
-                                                VerticalAlignment="Center"
-                                                Items="{Binding CustomCommandList}"
-                                                SelectedItem="{Binding SelectedCustomCommand}"
-                                                ToolTip.Tip="Enter your own commands to open single or multiple files." />
-                                            <TextBox
-                                                VerticalAlignment="Center"
-                                                Text="{Binding SelectedCustomCommandValue}"
-                                                ToolTip.Tip="E.g.: 'nemo --tabs %f', where '%f' is the placeholder for the file(s)" />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                FontSize="14"
-                                                Text="Custom Database Folder:"
-                                                ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder." />
-                                            <TextBox
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
-                                                ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder." />
-                                        </StackPanel>
-                                    </Grid>
-                                    <Grid
-                                        Grid.Row="1"
-                                        Margin="0,10,5,0"
-                                        ColumnDefinitions="*, *"
-                                        RowDefinitions="Auto, 300">
-                                        <TextBlock
-                                            Margin="5,0,0,2"
-                                            FontWeight="Bold"
-                                            Text="Search Directories" />
-                                        <Grid Grid.Row="1" RowDefinitions="Auto, *">
-                                            <Menu
-                                                Grid.Row="0"
-                                                MinHeight="30"
-                                                Background="#222222">
-                                                <MenuItem Command="{Binding AddIncludesToListCommand}">
-                                                    <MenuItem.Header>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Viewbox Width="16" Height="16">
-                                                                <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
-                                                                </Canvas>
-                                                            </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="Add" />
-                                                        </StackPanel>
-                                                    </MenuItem.Header>
-                                                </MenuItem>
-                                                <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
-                                                    <MenuItem.Header>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Viewbox Width="16" Height="16">
-                                                                <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
-                                                                </Canvas>
-                                                            </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="Remove" />
-                                                        </StackPanel>
-                                                    </MenuItem.Header>
-                                                </MenuItem>
-                                            </Menu>
-                                            <ListBox
-                                                Name="ListboxIncludelist"
-                                                Grid.Row="1"
-                                                DragDrop.AllowDrop="True"
-                                                Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
+                                        <Grid Grid.Row="0" ColumnDefinitions="Auto, Auto, *">
+                                            <StackPanel Margin="5,5,0,0">
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Ignore Read Only Folders"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}"
+                                                    IsThreeState="False" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Include Sub Directories"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}"
+                                                    IsThreeState="False" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Include Images"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}"
+                                                    IsThreeState="False" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Generate Preview Images"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Exclude Reparse Points"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
+                                                    IsThreeState="False" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Extended FFTools Logging"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExtendedFFToolsLogging}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="If activated ffmpeg and ffprobe errors will be written to the log" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Always retry failed sampling"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="If activated scan engine will try to generate thumbprints of failed entries each time it is run. Otherwise consecutive attempt will be taken only after cleanup of the database." />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Auto backup scan results"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Use native Ffmpeg binding"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseNativeFfmpegBinding}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="If activated it will call ffmpeg functions natively instead of spawning a new ffmpeg.exe process. This is MUCH(!!) faster. WARNING: You must use the latest SHARED and STABLE ffmpeg version. If something goes wrong then whole VDF will crash." />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Ignore Black Pixels"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="Skip black pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much dark and raises the chance to detect duplicates if one of the thumbnails have black bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit." />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Ignore White Pixels"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit." />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Show Enlarged Thumbnail On Mouse Hover"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="Shows a larger version of the thumbnail on mouse hover" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Compare Horizontally Flipped"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit." />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Save results on exit"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="If checked you will be asked if you want to save the results when you close VDF" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Scan against non-existing files"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="If checked non-existing files which have all necessary information are included" />
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Content="Scan against entire database"
+                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="15,5,0,0">
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Text="Percent:"
+                                                    ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates" />
+                                                <NumericUpDown
+                                                    Width="200"
+                                                    Height="26"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    Maximum="100"
+                                                    Minimum="1"
+                                                    ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
+                                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Text="Duration Difference in %:"
+                                                    ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %" />
+                                                <NumericUpDown
+                                                    Width="200"
+                                                    Height="26"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    Maximum="100"
+                                                    Minimum="0"
+                                                    ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
+                                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PercentDurationDifference}" />
+                                                <TextBlock
+                                                    Margin="0,5,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Thumbnails:"
+                                                    ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases." />
+                                                <NumericUpDown
+                                                    Width="200"
+                                                    Height="26"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    Maximum="100"
+                                                    Minimum="1"
+                                                    ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases."
+                                                    ValueChanged="Thumbnails_ValueChanged"
+                                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" />
+                                                <TextBlock
+                                                    Margin="0,5,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Max Degree Of Parallelism:"
+                                                    ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable." />
+                                                <NumericUpDown
+                                                    Width="200"
+                                                    Height="26"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    Maximum="100"
+                                                    Minimum="-1"
+                                                    ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable."
+                                                    Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Text="Custom FF Arguments:"
+                                                    ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty." />
+                                                <TextBox
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
+                                                    ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty." />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    FontSize="14"
+                                                    Text="Hardware Acceleration:"
+                                                    ToolTip.Tip="Hardware acceleration mode of ffmpeg" />
+                                                <ComboBox
+                                                    x:Name="ComboboxHardwareAccelerationMode"
+                                                    VerticalAlignment="Center"
+                                                    Items="{Binding HardwareAccelerationModes}"
+                                                    SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}"
+                                                    ToolTip.Tip="Hardware acceleration mode of ffmpeg" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    FontSize="14"
+                                                    Text="Custom Commands:"
+                                                    ToolTip.Tip="Enter your own commands to open single or multiple files." />
+                                                <ComboBox
+                                                    Width="200"
+                                                    VerticalAlignment="Center"
+                                                    Items="{Binding CustomCommandList}"
+                                                    SelectedItem="{Binding SelectedCustomCommand}"
+                                                    ToolTip.Tip="Enter your own commands to open single or multiple files." />
+                                                <TextBox
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding SelectedCustomCommandValue}"
+                                                    ToolTip.Tip="E.g.: 'nemo --tabs %f', where '%f' is the placeholder for the file(s)" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    FontSize="14"
+                                                    Text="Custom Database Folder:"
+                                                    ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder." />
+                                                <TextBox
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
+                                                    ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder." />
+                                            </StackPanel>
                                         </Grid>
-                                        <TextBlock
-                                            Grid.Row="0"
-                                            Grid.Column="1"
-                                            Margin="15,0,0,2"
-                                            FontWeight="Bold"
-                                            Text="Exclude Directories" />
                                         <Grid
                                             Grid.Row="1"
-                                            Grid.Column="1"
-                                            Margin="10,0,0,0"
-                                            RowDefinitions="Auto, *">
-                                            <Menu
+                                            Margin="0,10,5,0"
+                                            ColumnDefinitions="*, *"
+                                            RowDefinitions="Auto, 300">
+                                            <TextBlock
+                                                Margin="5,0,0,2"
+                                                FontWeight="Bold"
+                                                Text="Search Directories" />
+                                            <Grid Grid.Row="1" RowDefinitions="Auto, *">
+                                                <Menu Grid.Row="0" MinHeight="30">
+                                                    <MenuItem Command="{Binding AddIncludesToListCommand}">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Viewbox Width="16" Height="16">
+                                                                    <Canvas Width="24" Height="24">
+                                                                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="LimeGreen" />
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Add" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                    <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Viewbox Width="16" Height="16">
+                                                                    <Canvas Width="24" Height="24">
+                                                                        <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Remove" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                </Menu>
+                                                <ListBox
+                                                    Name="ListboxIncludelist"
+                                                    Grid.Row="1"
+                                                    DragDrop.AllowDrop="True"
+                                                    Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
+                                            </Grid>
+                                            <TextBlock
                                                 Grid.Row="0"
-                                                MinHeight="30"
-                                                Background="#222222">
-                                                <MenuItem Command="{Binding AddBlacklistToListCommand}">
-                                                    <MenuItem.Header>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Viewbox Width="16" Height="16">
-                                                                <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
-                                                                </Canvas>
-                                                            </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="Add" />
-                                                        </StackPanel>
-                                                    </MenuItem.Header>
-                                                </MenuItem>
-                                                <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
-                                                    <MenuItem.Header>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Viewbox Width="16" Height="16">
-                                                                <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
-                                                                </Canvas>
-                                                            </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="Remove" />
-                                                        </StackPanel>
-                                                    </MenuItem.Header>
-                                                </MenuItem>
-                                            </Menu>
-                                            <ListBox
-                                                Name="ListboxBlacklist"
+                                                Grid.Column="1"
+                                                Margin="15,0,0,2"
+                                                FontWeight="Bold"
+                                                Text="Exclude Directories" />
+                                            <Grid
                                                 Grid.Row="1"
-                                                DragDrop.AllowDrop="True"
-                                                Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
+                                                Grid.Column="1"
+                                                Margin="10,0,0,0"
+                                                RowDefinitions="Auto, *">
+                                                <Menu Grid.Row="0" MinHeight="30">
+                                                    <MenuItem Command="{Binding AddBlacklistToListCommand}">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Viewbox Width="16" Height="16">
+                                                                    <Canvas Width="24" Height="24">
+                                                                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="LimeGreen" />
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Add" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                    <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Viewbox Width="16" Height="16">
+                                                                    <Canvas Width="24" Height="24">
+                                                                        <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Remove" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                </Menu>
+                                                <ListBox
+                                                    Name="ListboxBlacklist"
+                                                    Grid.Row="1"
+                                                    DragDrop.AllowDrop="True"
+                                                    Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
+                                            </Grid>
                                         </Grid>
                                     </Grid>
-                                </Grid>
                                 </ScrollViewer>
                             </TabItem>
                             <TabItem x:Name="TabItemSettingsFiles">
@@ -1478,7 +1477,6 @@
                                         <Menu
                                             Grid.Row="0"
                                             MinHeight="30"
-                                            Background="#222222"
                                             IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}">
                                             <MenuItem Command="{Binding AddFilePathContainsTextToListCommand}">
                                                 <MenuItem.Header>
@@ -1544,7 +1542,6 @@
                                         <Menu
                                             Grid.Row="0"
                                             MinHeight="30"
-                                            Background="#222222"
                                             IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}">
                                             <MenuItem Command="{Binding AddFilePathNotContainsTextToListCommand}">
                                                 <MenuItem.Header>
@@ -1612,10 +1609,7 @@
                             <RowDefinition />
                         </Grid.RowDefinitions>
 
-                        <Menu
-                            Grid.Row="0"
-                            MinHeight="30"
-                            Background="#222222">
+                        <Menu Grid.Row="0" MinHeight="30">
                             <MenuItem Command="{Binding ClearLogCommand}">
                                 <MenuItem.Header>
                                     <TextBlock VerticalAlignment="Center" Text="Clear Log" />
@@ -1667,4 +1661,4 @@
 
 
 
-</mvvm:FluentWindow>
+</Window>

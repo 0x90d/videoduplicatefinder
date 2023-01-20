@@ -22,6 +22,7 @@ namespace VDF.Core.FFTools {
 		dxva2,
 		vaapi,
 		qsv,
-		cuda
+		cuda,
+		videotoolbox
 	}
 }

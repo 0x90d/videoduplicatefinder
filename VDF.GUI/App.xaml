@@ -6,7 +6,8 @@
 
     <Application.Styles>
         <FluentTheme Mode="Dark" />
-        <StyleInclude Source="resm:Avalonia.Controls.DataGrid.Themes.Fluent.xaml?assembly=Avalonia.Controls.DataGrid" />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+        <!--<StyleInclude Source="resm:Avalonia.Controls.DataGrid.Themes.Fluent.xaml?assembly=Avalonia.Controls.DataGrid" />-->
         <StyleInclude Source="/Styles/Styles.xaml" />
     </Application.Styles>
 </Application>
