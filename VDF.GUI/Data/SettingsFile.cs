@@ -197,6 +197,18 @@ namespace VDF.GUI.Data {
 			File.WriteAllText(path, JsonSerializer.Serialize(instance));
 		}
 
+		bool _UseMica = true;
+		[JsonPropertyName("UseMica")]
+		public bool UseMica {
+			get => _UseMica;
+			set => this.RaiseAndSetIfChanged(ref _UseMica, value);
+		}
+		bool _DarkMode = true;
+		[JsonPropertyName("DarkMode")]
+		public bool DarkMode {
+			get => _DarkMode;
+			set => this.RaiseAndSetIfChanged(ref _DarkMode, value);
+		}
 		bool _FilterByFilePathContains;
 		[JsonPropertyName("FilterByFilePathContains")]
 		public bool FilterByFilePathContains {

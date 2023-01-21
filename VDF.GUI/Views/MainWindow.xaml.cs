@@ -14,10 +14,15 @@
 // */
 //
 
+using System.Runtime.InteropServices;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Media;
+using Avalonia.Themes.Fluent;
 using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
 
@@ -25,6 +30,10 @@ namespace VDF.GUI.Views {
 	public class MainWindow : Window {
 		bool keepBackupFile;
 		bool hasExited;
+
+		static readonly StyleInclude DataGridDefault = new(new Uri("avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"));
+
+
 		public readonly Core.FFTools.FFHardwareAccelerationMode InitialHwMode;
 		public MainWindow() {
 			//Settings must be load before XAML is parsed
@@ -51,6 +60,22 @@ namespace VDF.GUI.Views {
 			ApplicationHelpers.CurrentApplicationLifetime.Startup += MainWindow_Startup;
 			ApplicationHelpers.CurrentApplicationLifetime.Exit += MainWindow_Exit;
 			ApplicationHelpers.CurrentApplicationLifetime.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+			if (SettingsFile.Instance.UseMica &&
+				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+				Environment.OSVersion.Version.Build >= 22000) {
+				Background = null;
+				TransparencyLevelHint = WindowTransparencyLevel.Mica;
+				ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.PreferSystemChrome;
+				if (SettingsFile.Instance.DarkMode)
+					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundBlack")!.IsVisible = true;
+				else
+					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundWhite")!.IsVisible = true;
+			}
+
+			if (!SettingsFile.Instance.DarkMode)
+				((FluentTheme)Application.Current!.Styles[0]).Mode = FluentThemeMode.Light;
+
 		}
 
 		void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {

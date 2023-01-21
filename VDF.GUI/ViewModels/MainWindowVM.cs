@@ -458,7 +458,7 @@ namespace VDF.GUI.ViewModels {
 		static DataGrid GetDataGrid => ApplicationHelpers.MainWindow.FindControl<DataGrid>("dataGridGrouping")!;
 
 		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.OpenFolderPickerAsync(
+			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					AllowMultiple = true,
 					Title = "Select folder"
@@ -467,9 +467,8 @@ namespace VDF.GUI.ViewModels {
 
 			if (result == null || result.Count == 0) return;
 			foreach (var item in result) {
-				item.TryGetUri(out Uri? path);
-				if (!SettingsFile.Instance.Includes.Contains(path!.LocalPath))
-					SettingsFile.Instance.Includes.Add(path.LocalPath);
+				if (!SettingsFile.Instance.Includes.Contains(item))
+					SettingsFile.Instance.Includes.Add(item);
 			}
 		});
 		public ReactiveCommand<Unit, Unit> AddFilePathContainsTextToListCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -528,15 +527,14 @@ namespace VDF.GUI.ViewModels {
 			bool res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
 		});
 		public static ReactiveCommand<Unit, Unit> ImportDataBaseFromJsonCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions() {
+			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
 				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
 				FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Json File") { Patterns = new string[] { "*.json" }}}
 			});
-			if (result == null || result.Count == 0 || string.IsNullOrEmpty(result[0].Name)) return;
+			if (string.IsNullOrEmpty(result)) return;
 
-			result[0].TryGetUri(out Uri? path);
-			bool success = ScanEngine.ImportDataBaseFromJson(path!.LocalPath, new JsonSerializerOptions {
+			bool success = ScanEngine.ImportDataBaseFromJson(result, new JsonSerializerOptions {
 				IncludeFields = true,
 			});
 			if (!success)
@@ -557,15 +555,14 @@ namespace VDF.GUI.ViewModels {
 		});
 		async static void ExportDbToJson(JsonSerializerOptions options) {
 
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions() {
+			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				DefaultExtension = ".json",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Json Files") { Patterns = new string[] { "*.json" }}}
 			});
-			if (result == null || string.IsNullOrEmpty(result.Name)) return;
+			if (string.IsNullOrEmpty(result)) return;
 
-			result.TryGetUri(out Uri? path);
-			if (!ScanEngine.ExportDataBaseToJson(path!.LocalPath, options))
+			if (!ScanEngine.ExportDataBaseToJson(result, options))
 				await MessageBoxService.Show("Exporting database has failed, please see log");
 		}
 		public ReactiveCommand<Unit, Unit> ExportScanResultsCommand => ReactiveCommand.Create(() => {
@@ -580,18 +577,17 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 		async void ExportScanResultsToJson(JsonSerializerOptions options) {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions() {
+			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				DefaultExtension = ".json",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Json Files") { Patterns = new string[] { "*.json" }}}
 			});
-			if (result == null || string.IsNullOrEmpty(result.Name)) return;
+			if (string.IsNullOrEmpty(result)) return;
 
 
 			try {
 				List<DuplicateItem> list = Duplicates.Select(x => x.ItemInfo).OrderBy(x => x.GroupId).ToList();
-				result.TryGetUri(out Uri? path);
-				using var stream = File.OpenWrite(path!.LocalPath);
+				using var stream = File.OpenWrite(result);
 				await JsonSerializer.SerializeAsync(stream, list, options);
 				stream.Close();
 			}
@@ -603,16 +599,13 @@ namespace VDF.GUI.ViewModels {
 			await ExportScanResultsIncludingThumbnails();
 		});
 		async Task ExportScanResultsIncludingThumbnails(string? path = null) {
-			if (path == null) {
-				var result = await ApplicationHelpers.MainWindow.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions() {
-					SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
-					DefaultExtension = ".json",
-					FileTypeChoices = new FilePickerFileType[] {
+			path ??= await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
+				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				DefaultExtension = ".json",
+				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Scan Results") { Patterns = new string[] { "*.scanresults" }}}
-				});
-				if (result?.TryGetUri(out Uri? uriPath) == true)
-					path = uriPath.LocalPath;
-			};
+			});
+
 			if (string.IsNullOrEmpty(path)) return;
 
 			try {
@@ -635,6 +628,15 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show(error);
 			}
 		}
+		public ReactiveCommand<Unit, Unit> ImportScanResultsFromFileCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions {
+				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				FileTypeFilter = new FilePickerFileType[] {
+					 new FilePickerFileType("Scan Results") { Patterns = new string[] { "*.scanresults" }}}
+			});
+			if (string.IsNullOrEmpty(result)) return;
+			ImportScanResultsIncludingThumbnails(result);
+		});
 		async void ImportScanResultsIncludingThumbnails(string? path = null) {
 			if (Duplicates.Count > 0) {
 				MessageBoxButtons? result = await MessageBoxService.Show($"Importing scan results will clear the current list, continue?", MessageBoxButtons.Yes | MessageBoxButtons.No);
@@ -642,14 +644,11 @@ namespace VDF.GUI.ViewModels {
 			}
 
 			if (path == null) {
-				var paths = await ApplicationHelpers.MainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions() {
+				path = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
 					SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
 					FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Scan Results") { Patterns = new string[] { "*.scanresults" }}}
 				});
-				if (paths == null || paths.Count == 0 || string.IsNullOrEmpty(paths[0].Name)) return;
-				paths[0].TryGetUri(out Uri? uriPath);
-				path = uriPath!.LocalPath;
 			}
 			if (string.IsNullOrEmpty(path)) return;
 
@@ -846,7 +845,7 @@ namespace VDF.GUI.ViewModels {
 			return null!;
 		});
 		public ReactiveCommand<Unit, Unit> AddBlacklistToListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.OpenFolderPickerAsync(
+			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					AllowMultiple = true,
 					Title = "Select folder"
@@ -854,9 +853,8 @@ namespace VDF.GUI.ViewModels {
 
 			if (result == null || result.Count == 0) return;
 			foreach (var item in result) {
-				item.TryGetUri(out Uri? path);
-				if (!SettingsFile.Instance.Includes.Contains(path!.LocalPath))
-					SettingsFile.Instance.Includes.Add(path.LocalPath);
+				if (!SettingsFile.Instance.Includes.Contains(item))
+					SettingsFile.Instance.Includes.Add(item);
 			}
 		});
 		public ReactiveCommand<ListBox, Action> RemoveBlacklistFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
@@ -868,43 +866,40 @@ namespace VDF.GUI.ViewModels {
 			LogItems.Clear();
 		});
 		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions() {
+			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				DefaultExtension = ".txt",
 			});
-			if (result == null || string.IsNullOrEmpty(result.Name)) return;
+			if (string.IsNullOrEmpty(result)) return;
 			var sb = new StringBuilder();
 			foreach (var l in LogItems)
 				sb.AppendLine(l);
 			try {
-				result.TryGetUri(out Uri? path);
-				File.WriteAllText(path!.LocalPath, sb.ToString());
+				File.WriteAllText(result, sb.ToString());
 			}
 			catch (Exception e) {
 				Logger.Instance.Info(e.Message);
 			}
 		});
 		public ReactiveCommand<Unit, Unit> SaveSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions() {
+			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
 				DefaultExtension = ".json",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Setting File") { Patterns = new string[] { "*.json" }}}
 			});
-			if (result == null || string.IsNullOrEmpty(result.Name)) return;
+			if (string.IsNullOrEmpty(result)) return;
 
-			result.TryGetUri(out Uri? path);
-			SettingsFile.SaveSettings(path!.LocalPath);
+			SettingsFile.SaveSettings(result);
 		});
 		public ReactiveCommand<Unit, Unit> LoadSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions() {
+			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
 				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
 				FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Setting File") { Patterns = new string[] { "*.json", "*.xml" }}}
 			});
-			if (result == null || result.Count == 0 || string.IsNullOrEmpty(result[0].Name)) return;
+			if (string.IsNullOrEmpty(result)) return;
 
-			result[0].TryGetUri(out Uri? path);
-			SettingsFile.LoadSettings(path!.LocalPath);
+			SettingsFile.LoadSettings(result);
 			await MessageBoxService.Show("Please restart VDF to apply new settings.");
 		});
 

@@ -240,20 +240,19 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.OpenFolderPickerAsync(
+			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					Title = "Select folder"
 				});
 
 			if (result == null || result.Count == 0) return;
 
-			result[0].TryGetUri(out Uri? path);
-			Utils.FileUtils.CopyFile(Duplicates.Where(s => s.Checked), path!.LocalPath, true, false, out var errorCounter);
+			Utils.FileUtils.CopyFile(Duplicates.Where(s => s.Checked), result[0], true, false, out var errorCounter);
 			if (errorCounter > 0)
 				await MessageBoxService.Show("Failed to copy some files. Please check log!");
 		});
 		public ReactiveCommand<Unit, Unit> MoveSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await ApplicationHelpers.MainWindow.StorageProvider.OpenFolderPickerAsync(
+			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					Title = "Select folder"
 				});
@@ -266,8 +265,7 @@ namespace VDF.GUI.ViewModels {
 				ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry);
 				itemsToUpdate.Add(Tuple.Create(item, dbEntry));
 			}
-			result[0].TryGetUri(out Uri? path);
-			Utils.FileUtils.CopyFile(selectedItems, path!.LocalPath, true, true, out var errorCounter);
+			Utils.FileUtils.CopyFile(selectedItems, result[0], true, true, out var errorCounter);
 			foreach (var pair in itemsToUpdate) {
 				ScanEngine.UpdateFilePathInDatabase(pair.Item1.ItemInfo.Path, pair.Item2);
 			}
