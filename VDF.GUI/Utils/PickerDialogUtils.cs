@@ -48,7 +48,7 @@ namespace VDF.GUI.Utils {
 				if (item.TryGetUri(out Uri? uriPath))
 					results.Add(uriPath.LocalPath);
 			}
-			return null;
+			return results;
 		}
 	}
 }

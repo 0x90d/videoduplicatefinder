@@ -21,14 +21,7 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
-    <AvaloniaResource Remove="Views\DatabaseViewer.xaml" />
-    <AvaloniaResource Remove="Views\ExpressionBuilder.xaml" />
-    <AvaloniaResource Remove="Views\MessageBoxView.xaml" />
-  </ItemGroup>
-  <ItemGroup>
     <None Remove="Styles\Styles.xaml" />
-    <None Remove="Views\DatabaseViewer.xaml" />
-    <None Remove="Views\ExpressionBuilder.xaml" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.0.0-preview4" />
@@ -38,19 +31,6 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.0-preview4" />
     <PackageReference Include="Avalonia.Xaml.Behaviors" Version="11.0.0-preview4" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.13.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Views\DatabaseViewer.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\MessageBoxView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Views\ExpressionBuilder.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />

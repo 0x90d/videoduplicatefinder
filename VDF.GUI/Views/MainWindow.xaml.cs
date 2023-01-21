@@ -31,9 +31,6 @@ namespace VDF.GUI.Views {
 		bool keepBackupFile;
 		bool hasExited;
 
-		static readonly StyleInclude DataGridDefault = new(new Uri("avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"));
-
-
 		public readonly Core.FFTools.FFHardwareAccelerationMode InitialHwMode;
 		public MainWindow() {
 			//Settings must be load before XAML is parsed
