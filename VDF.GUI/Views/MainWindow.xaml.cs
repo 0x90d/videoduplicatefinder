@@ -87,6 +87,7 @@ namespace VDF.GUI.Views {
 			}
 			catch { }
 			if (keepBackupFile = await ApplicationHelpers.MainWindowDataContext.SaveScanResults()) {
+				Closing -= MainWindow_Closing;
 				ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
 			}
 		}
