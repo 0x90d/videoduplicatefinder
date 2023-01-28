@@ -889,7 +889,12 @@ namespace VDF.GUI.ViewModels {
 			});
 			if (string.IsNullOrEmpty(result)) return;
 
-			SettingsFile.SaveSettings(result);
+			try {
+				SettingsFile.SaveSettings(result);
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Saving settings to file has failed: {ex.Message}");
+			}
 		});
 		public ReactiveCommand<Unit, Unit> LoadSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
@@ -899,7 +904,13 @@ namespace VDF.GUI.ViewModels {
 			});
 			if (string.IsNullOrEmpty(result)) return;
 
-			SettingsFile.LoadSettings(result);
+			try {
+				SettingsFile.LoadSettings(result);
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Loading settings from file has failed: {ex.Message}");
+				return;
+			}
 			await MessageBoxService.Show("Please restart VDF to apply new settings.");
 		});
 
