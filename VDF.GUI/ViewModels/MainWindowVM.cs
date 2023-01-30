@@ -919,6 +919,7 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("The custom database folder does not exist!");
 				return;
 			}
+
 			if (!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {
 				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
 				return;

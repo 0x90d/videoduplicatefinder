@@ -59,16 +59,16 @@ namespace VDF.GUI.Views {
 		}
 
 		private void MessageBoxView_Opened(object? sender, EventArgs e) {
-			//	Setting width on Grid is a workaround for a bug under Windows
-			//	For more information see:
-			//	https://github.com/AvaloniaUI/Avalonia/issues/4838#issuecomment-710759375
-			var grid = this.FindControl<Grid>("GridMessageboxContent");
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				grid.Width = Bounds.Width;
-			}
-			//	Workaround for an Avalonia bug with Scrollviewer height not working with Window.SizeToContent
-			var scrollviewer = this.FindControl<ScrollViewer>("ScrollViewerMessageboxContent");
-			scrollviewer.MaxHeight = Bounds.Height - grid.RowDefinitions[1].ActualHeight;
+			////	Setting width on Grid is a workaround for a bug under Windows
+			////	For more information see:
+			////	https://github.com/AvaloniaUI/Avalonia/issues/4838#issuecomment-710759375
+			//var grid = this.FindControl<Grid>("GridMessageboxContent");
+			//if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+			//	grid.Width = Bounds.Width;
+			//}
+			////	Workaround for an Avalonia bug with Scrollviewer height not working with Window.SizeToContent
+			//var scrollviewer = this.FindControl<ScrollViewer>("ScrollViewerMessageboxContent");
+			//scrollviewer.MaxHeight = Bounds.Height - grid.RowDefinitions[1].ActualHeight;
 		}
 
 		private void InitializeComponent() => AvaloniaXamlLoader.Load(this);

@@ -47,9 +47,10 @@
             </controls:ExperimentalAcrylicBorder.Material>
         </controls:ExperimentalAcrylicBorder>
         <TextBlock
+            x:Name="TextBlockWindowTitle"
             Margin="10,4,0,0"
-            IsHitTestVisible="false"
             HorizontalAlignment="Center"
+            IsHitTestVisible="false"
             Text="{Binding #MainWindow.Title}" />
         <Grid Margin="2,30,2,2">
             <TabControl x:Name="TabControl">

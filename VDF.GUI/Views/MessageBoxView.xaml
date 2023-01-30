@@ -7,56 +7,56 @@
     MinWidth="400"
     MaxWidth="600"
     MaxHeight="600"
-    CanResize="false"
+    CanResize="false"    
     SizeToContent="WidthAndHeight"
     WindowStartupLocation="CenterOwner">
 
-    <Grid x:Name="GridMessageboxContent" RowDefinitions="Auto, Auto">
-        <ScrollViewer x:Name="ScrollViewerMessageboxContent" VerticalScrollBarVisibility="Auto">
+    <ScrollViewer x:Name="ScrollViewerMessageboxContent" VerticalScrollBarVisibility="Auto">
+        <Grid x:Name="GridMessageboxContent" RowDefinitions="Auto, Auto">
             <TextBlock
                 Grid.Row="0"
                 Margin="10,20,10,20"
-                Text="{Binding Message}"
                 HorizontalAlignment="Center"
+                Text="{Binding Message}"
                 TextWrapping="Wrap" />
-        </ScrollViewer>
-        <Grid Grid.Row="1" Margin="5,0,5,5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <Button
-                Grid.Column="1"
-                Width="100"
-                Margin="5"
-                Command="{Binding OKCommand}"
-                Content="OK"
-                IsVisible="{Binding HasOKButton}" />
-            <Button
-                Grid.Column="2"
-                Width="100"
-                Margin="5"
-                Command="{Binding YesCommand}"
-                Content="Yes"
-                IsVisible="{Binding HasYesButton}" />
-            <Button
-                Grid.Column="3"
-                Width="100"
-                Margin="5"
-                Command="{Binding NoCommand}"
-                Content="No"
-                IsVisible="{Binding HasNoButton}" />
-            <Button
-                Grid.Column="4"
-                Width="100"
-                Margin="5"
-                Command="{Binding CancelCommand}"
-                Content="Cancel"
-                IsVisible="{Binding HasCancelButton}" />
+            <Grid Grid.Row="1" Margin="5,0,5,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="1"
+                    Width="100"
+                    Margin="5"
+                    Command="{Binding OKCommand}"
+                    Content="OK"
+                    IsVisible="{Binding HasOKButton}" />
+                <Button
+                    Grid.Column="2"
+                    Width="100"
+                    Margin="5"
+                    Command="{Binding YesCommand}"
+                    Content="Yes"
+                    IsVisible="{Binding HasYesButton}" />
+                <Button
+                    Grid.Column="3"
+                    Width="100"
+                    Margin="5"
+                    Command="{Binding NoCommand}"
+                    Content="No"
+                    IsVisible="{Binding HasNoButton}" />
+                <Button
+                    Grid.Column="4"
+                    Width="100"
+                    Margin="5"
+                    Command="{Binding CancelCommand}"
+                    Content="Cancel"
+                    IsVisible="{Binding HasCancelButton}" />
+            </Grid>
         </Grid>
-    </Grid>
+    </ScrollViewer>
 </Window>
