@@ -339,8 +339,6 @@ namespace VDF.GUI.ViewModels {
 
 		public async Task<bool> SaveScanResults() {
 			if (Duplicates.Count == 0 || !SettingsFile.Instance.AskToSaveResultsOnExit) {
-				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
-				await Task.Delay(100);
 				return true;
 			}
 			MessageBoxButtons? result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
