@@ -215,7 +215,7 @@ namespace VDF.Core {
 
 		bool InvalidEntry(FileEntry entry) {
 			if (Settings.IncludeImages == false && entry.IsImage)
-				return true;			
+				return true;
 			if (Settings.BlackList.Any(f => {
 				if (!entry.Folder.StartsWith(f))
 					return false;
@@ -510,9 +510,10 @@ namespace VDF.Core {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<Image>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
-
+					List<TimeSpan>? timeStamps = null;
 					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
+						timeStamps = new(0);
 						list = new List<Image>(1);
 						try {
 							Image bitmapImage = Image.Load(entry.Path);
@@ -536,10 +537,13 @@ namespace VDF.Core {
 					}
 					else if (needsThumbnails) {
 						list = new List<Image>(positionList.Count);
+						timeStamps = new List<TimeSpan>(positionList.Count);
 						for (int j = 0; j < positionList.Count; j++) {
+							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
+							timeStamps.Add(timestamp);
 							var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
 								File = entry.Path,
-								Position = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]),
+								Position = timestamp,
 								GrayScale = 0,
 							}, Settings.ExtendedFFToolsLogging);
 							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
@@ -548,7 +552,8 @@ namespace VDF.Core {
 							list.Add(bitmapImage);
 						}
 					}
-					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()));
+					Debug.Assert(timeStamps != null);
+					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps!);
 					return ValueTask.CompletedTask;
 				});
 			}

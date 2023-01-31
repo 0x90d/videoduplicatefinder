@@ -15,8 +15,8 @@
 //
 
 using System.Diagnostics;
-using SixLabors.ImageSharp;
 using System.Text.Json.Serialization;
+using SixLabors.ImageSharp;
 using VDF.Core.Utils;
 
 namespace VDF.Core.ViewModels {
@@ -90,6 +90,8 @@ namespace VDF.Core.ViewModels {
 
 		public Guid GroupId { get; set; }
 		public List<Image> ImageList { get; private set; } = new List<Image>();
+		[JsonInclude]
+		public List<TimeSpan> ThumbnailTimestamps { get; private set; } = new List<TimeSpan>();
 		string _Path = string.Empty;
 		public string Path {
 			get => _Path;
@@ -134,9 +136,10 @@ namespace VDF.Core.ViewModels {
 		public bool IsImage { get; private set; }
 		[JsonIgnore]
 		public Action? ThumbnailsUpdated;
-		public void SetThumbnails(List<Image>? th) {
-			if (th == null) return;
-			ImageList = th;
+		public void SetThumbnails(List<Image>? images, List<TimeSpan> timeSpans) {
+			if (images == null) return;
+			ImageList = images;
+			ThumbnailTimestamps = timeSpans;
 			ThumbnailsUpdated?.Invoke();
 		}
 

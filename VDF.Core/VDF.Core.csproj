@@ -1,11 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-
+  <ItemGroup>
+    <InternalsVisibleTo  Include="VDF.GUI" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FFmpeg.AutoGen" Version="5.0.0" />
     <PackageReference Include="protobuf-net" Version="3.1.4" />

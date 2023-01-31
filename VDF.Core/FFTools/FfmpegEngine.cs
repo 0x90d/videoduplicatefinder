@@ -24,7 +24,7 @@ using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
-	static class FfmpegEngine {
+	internal static class FfmpegEngine {
 		public static readonly string FFmpegPath;
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
@@ -53,7 +53,10 @@ namespace VDF.Core.FFTools {
 						throw new Exception($"Invalid source pixel format");
 
 					Size sourceSize = vsd.FrameSize;
-					Size destinationSize = isGrayByte ? new Size(16, 16) : new Size(100, Convert.ToInt32(sourceSize.Height * (100 / (double)sourceSize.Width)));
+					Size destinationSize = isGrayByte ? new Size(16, 16) :
+						settings.Fullsize == 1 ?
+							sourceSize :
+							new Size(100, Convert.ToInt32(sourceSize.Height * (100 / (double)sourceSize.Width)));
 					AVPixelFormat destinationPixelFormat = isGrayByte ? AVPixelFormat.AV_PIX_FMT_GRAY8 : AVPixelFormat.AV_PIX_FMT_BGRA;
 					using var vfc =
 						new VideoFrameConverter(sourceSize, vsd.PixelFormat, destinationSize, destinationPixelFormat);
@@ -105,7 +108,7 @@ namespace VDF.Core.FFTools {
 			string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" +
 				$" -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{settings.File}\"" +
 				$" -t 1 -f {(settings.GrayScale == 1 ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1" +
-				$" {(settings.GrayScale == 1 ? "-s 16x16" : "-vf scale=100:-1")} {CustomFFArguments} \"-\"";
+				$" {(settings.GrayScale == 1 ? "-s 16x16" : (settings.Fullsize == 1 ? string.Empty : "-vf scale=100:-1"))} {CustomFFArguments} \"-\"";
 
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
@@ -198,8 +201,9 @@ namespace VDF.Core.FFTools {
 		}
 	}
 
-	struct FfmpegSettings {
+	internal struct FfmpegSettings {
 		public byte GrayScale;
+		public byte Fullsize;
 		public string File;
 		public TimeSpan Position;
 	}

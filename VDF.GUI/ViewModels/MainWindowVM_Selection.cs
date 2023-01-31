@@ -218,6 +218,11 @@ namespace VDF.GUI.ViewModels {
 				DeleteInternal(true);
 			});
 		});
+		public ReactiveCommand<Unit, Unit> DeleteSelectionPermanentlyCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(() => {
+				DeleteInternal(true, permanently: true);
+			});
+		});
 		public ReactiveCommand<Unit, Unit> RemoveSelectionFromListCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(false);
