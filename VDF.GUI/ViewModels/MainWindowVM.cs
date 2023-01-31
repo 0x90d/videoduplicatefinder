@@ -164,8 +164,8 @@ namespace VDF.GUI.ViewModels {
 			get => _DuplicatesSelectedCounter;
 			set => this.RaiseAndSetIfChanged(ref _DuplicatesSelectedCounter, value);
 		}
-		public bool MultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
-		public bool MultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
+		public bool IsMultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
+		public bool IsMultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
 		static readonly List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
 		public List<string> CustomCommandList => _CustomCommandList;
 		PropertyInfo _SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(_CustomCommandList[0])!;
@@ -180,10 +180,12 @@ namespace VDF.GUI.ViewModels {
 			get => (string)_SelectedCustomCommand.GetValue(SettingsFile.Instance.CustomCommands)!;
 			set {
 				_SelectedCustomCommand.SetValue(SettingsFile.Instance.CustomCommands, value);
-				this.RaisePropertyChanged(nameof(MultiOpenSupported));
-				this.RaisePropertyChanged(nameof(MultiOpenInFolderSupported));
+				this.RaisePropertyChanged(nameof(IsMultiOpenSupported));
+				this.RaisePropertyChanged(nameof(IsMultiOpenInFolderSupported));
 			}
 		}
+
+		public bool IsWindows => CoreUtils.IsWindows;
 
 		public string TotalSizeRemoved => TotalSizeRemovedInternal.BytesToString();
 #if DEBUG
@@ -339,22 +341,15 @@ namespace VDF.GUI.ViewModels {
 
 		public async Task<bool> SaveScanResults() {
 			if (Duplicates.Count == 0 || !SettingsFile.Instance.AskToSaveResultsOnExit) {
-				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
-				await Task.Delay(100);
 				return true;
 			}
 			MessageBoxButtons? result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
 				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 			if (result == null || result == MessageBoxButtons.Cancel) {
 				//Can be NULL if user closed the window by clicking on 'X'
-
-				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
-				await Task.Delay(100);
 				return false;
 			}
 			if (result != MessageBoxButtons.Yes) {
-				//Otherwise an exception is thrown when calling ApplicationHelpers.CurrentApplicationLifetime.Shutdown();
-				await Task.Delay(100);
 				return true;
 			}
 			await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
@@ -880,6 +875,14 @@ namespace VDF.GUI.ViewModels {
 				Logger.Instance.Info(e.Message);
 			}
 		});
+		public ReactiveCommand<Unit, Unit> SaveSettingsCommand => ReactiveCommand.CreateFromTask(async () => {
+			try {
+				SettingsFile.SaveSettings();
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Saving settings has failed: {ex.Message}");
+			}
+		});
 		public ReactiveCommand<Unit, Unit> SaveSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
@@ -889,7 +892,12 @@ namespace VDF.GUI.ViewModels {
 			});
 			if (string.IsNullOrEmpty(result)) return;
 
-			SettingsFile.SaveSettings(result);
+			try {
+				SettingsFile.SaveSettings(result);
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Saving settings to file has failed: {ex.Message}");
+			}
 		});
 		public ReactiveCommand<Unit, Unit> LoadSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
@@ -899,7 +907,13 @@ namespace VDF.GUI.ViewModels {
 			});
 			if (string.IsNullOrEmpty(result)) return;
 
-			SettingsFile.LoadSettings(result);
+			try {
+				SettingsFile.LoadSettings(result);
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Loading settings from file has failed: {ex.Message}");
+				return;
+			}
 			await MessageBoxService.Show("Please restart VDF to apply new settings.");
 		});
 
@@ -908,6 +922,7 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("The custom database folder does not exist!");
 				return;
 			}
+
 			if (!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {
 				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
 				return;
@@ -1039,15 +1054,28 @@ namespace VDF.GUI.ViewModels {
 				}
 			});
 		});
+		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
+
+			if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
+			List<LargeThumbnailDuplicateItem> items = new();
+			foreach (DuplicateItemVM duplicateItem in Duplicates.Where(a => a.ItemInfo.GroupId == data.ItemInfo.GroupId))
+				items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
+
+			ThumbnailComparer thumbnailComparer = new(items);
+			thumbnailComparer.Show();
+		});
 
 
 
-		async void DeleteInternal(bool fromDisk, bool blackList = false, bool createSymbolLinksInstead = false) {
+		async void DeleteInternal(bool fromDisk,
+								  bool blackList = false,
+								  bool createSymbolLinksInstead = false,
+								  bool permanently = false) {
 			if (Duplicates.Count == 0) return;
 
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
 				fromDisk
-					? $"Are you sure you want to{(CoreUtils.IsWindows ? " move" : " permanently delete")} the selected files{(CoreUtils.IsWindows ? " to recycle bin (only if supported, i.e. network files will be deleted instead)" : " from disk")}?"
+					? $"Are you sure you want to{(CoreUtils.IsWindows && !permanently ? " move" : " permanently delete")} the selected files{(CoreUtils.IsWindows && !permanently ? " to recycle bin (only if supported, i.e. network files will be deleted instead)" : " from disk")}?"
 					: $"Are you sure to delete selected from list (keep files){(blackList ? " and blacklist them" : string.Empty)}?",
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult != MessageBoxButtons.Yes) return;
@@ -1068,7 +1096,7 @@ namespace VDF.GUI.ViewModels {
 							File.CreateSymbolicLink(dub.ItemInfo.Path, fileToKeep.ItemInfo.Path);
 							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
 						}
-						else if (CoreUtils.IsWindows) {
+						else if (CoreUtils.IsWindows && !permanently) {
 							//Try moving files to recycle bin
 							var fs = new FileUtils.SHFILEOPSTRUCT {
 								wFunc = FileUtils.FileOperationType.FO_DELETE,
@@ -1081,6 +1109,7 @@ namespace VDF.GUI.ViewModels {
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
 								throw new Exception($"SHFileOperation returned: {result:X}");
+
 							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
 						}
 						else {

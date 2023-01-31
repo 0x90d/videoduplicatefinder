@@ -45,6 +45,9 @@
     <Compile Update="Views\DatabaseViewer.xaml.cs">
       <DependentUpon>DatabaseViewer.xaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\ThumbnailComparer.xaml.cs">
+      <DependentUpon>ThumbnailComparer.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

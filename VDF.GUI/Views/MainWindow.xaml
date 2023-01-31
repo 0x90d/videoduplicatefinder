@@ -15,7 +15,7 @@
     xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:Name="MainWindow"
-    Title="Video Duplicate Finder 3.0 - Cross-platform"
+    Title="Video Duplicate Finder - Cross-platform"
     Width="1020"
     Height="950"
     d:DesignHeight="750"
@@ -47,9 +47,10 @@
             </controls:ExperimentalAcrylicBorder.Material>
         </controls:ExperimentalAcrylicBorder>
         <TextBlock
-            Margin="10,4,0,0"
-            IsHitTestVisible="false"
+            x:Name="TextBlockWindowTitle"
+            Margin="0,4,0,0"
             HorizontalAlignment="Center"
+            IsHitTestVisible="false"
             Text="{Binding #MainWindow.Title}" />
         <Grid Margin="2,30,2,2">
             <TabControl x:Name="TabControl">
@@ -412,7 +413,12 @@
                                     </MenuItem.Header>
                                     <MenuItem Command="{Binding DeleteSelectionCommand}">
                                         <MenuItem.Header>
-                                            <TextBlock VerticalAlignment="Center" Text="Delete permanently (Shift+Delete)" />
+                                            <TextBlock VerticalAlignment="Center" Text="Delete from disk (Shift+Delete)" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding DeleteSelectionPermanentlyCommand}" IsVisible="{Binding IsWindows}">
+                                        <MenuItem.Header>
+                                            <TextBlock VerticalAlignment="Center" Text="Delete permanently from disk" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <MenuItem Header="-" />
@@ -762,6 +768,7 @@
                                         <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete" />
                                         <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete" />
                                         <KeyBinding Command="{Binding DeleteHighlitedCommand}" Gesture="Control+Delete" />
+                                        <KeyBinding Command="{Binding ShowGroupInThumbnailComparerCommand}" Gesture="Alt+C" />
                                     </DataGrid.KeyBindings>
                                     <DataGrid.Columns>
                                         <DataGridTemplateColumn>
@@ -771,7 +778,7 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Header="Thumbnail">
+                                        <DataGridTemplateColumn Header="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <LayoutTransformControl>
@@ -788,34 +795,37 @@
                                                                 </ia:EventTriggerBehavior>
                                                             </i:Interaction.Behaviors>
                                                             <ToolTip.Tip>
-                                                                <Grid>
-                                                                    <Border IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}">
-                                                                        <LayoutTransformControl>
-                                                                            <LayoutTransformControl.LayoutTransform>
-                                                                                <ScaleTransform ScaleX="3" ScaleY="3" />
-                                                                            </LayoutTransformControl.LayoutTransform>
-                                                                            <Image Source="{Binding Thumbnail}" />
-                                                                        </LayoutTransformControl>
-                                                                    </Border>
-                                                                    <TextBlock IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!ShowEnlargedThumbnailOnMouseHover}" Text="Double click to open the file in explorer/shell" />
-                                                                </Grid>
+                                                                <TextBlock Text="Double click to open the file" />
                                                             </ToolTip.Tip>
                                                         </Image>
                                                     </LayoutTransformControl>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Width="1*" Header="Path">
+                                        <DataGridTemplateColumn
+                                            Width="1*"
+                                            Header="Path"
+                                            IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock
+                                                        x:Name="TextBlockPath"
                                                         Margin="10,0,0,0"
                                                         Text="{Binding ItemInfo.Path}"
-                                                        TextWrapping="Wrap" />
+                                                        TextWrapping="Wrap">
+                                                        <i:Interaction.Behaviors>
+                                                            <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #TextBlockPath}">
+                                                                <ia:InvokeCommandAction Command="{Binding $parent[DataGrid].DataContext.OpenItemInFolderCommand}" />
+                                                            </ia:EventTriggerBehavior>
+                                                        </i:Interaction.Behaviors>
+                                                        <ToolTip.Tip>
+                                                            <TextBlock Text="Double click to open the file in explorer/shell" />
+                                                        </ToolTip.Tip>
+                                                    </TextBlock>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Width="1*">
+                                        <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}">
                                             <DataGridTemplateColumn.Header>
                                                 <StackPanel>
                                                     <TextBlock Text="Duration / type" />
@@ -867,7 +877,7 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Width="1*">
+                                        <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}">
                                             <DataGridTemplateColumn.Header>
                                                 <StackPanel>
                                                     <TextBlock Text="Format" />
@@ -906,7 +916,7 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Width="1*">
+                                        <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}">
                                             <DataGridTemplateColumn.Header>
                                                 <StackPanel>
                                                     <TextBlock Text="Audio Format" />
@@ -947,7 +957,8 @@
                                         <DataGridTextColumn
                                             Width="1*"
                                             Binding="{Binding ItemInfo.Similarity}"
-                                            Header="Similarity" />
+                                            Header="Similarity"
+                                            IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
                                     </DataGrid.Columns>
                                     <DataGrid.ContextMenu>
                                         <ContextMenu>
@@ -982,6 +993,21 @@
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
                                                                 Text="Delete from disk (to recycle bin if possible)" />
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding DeleteSelectionPermanentlyCommand}" IsVisible="{Binding IsWindows}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock
+                                                                Margin="5,0,0,0"
+                                                                VerticalAlignment="Center"
+                                                                Text="Delete permanently from disk" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
@@ -1063,12 +1089,16 @@
                                                     Command="{Binding OpenGroupCommand}"
                                                     CommandParameter="0"
                                                     Header="Open Group"
-                                                    IsVisible="{Binding MultiOpenSupported}" />
+                                                    IsVisible="{Binding IsMultiOpenSupported}" />
                                                 <MenuItem
                                                     Command="{Binding OpenGroupCommand}"
                                                     CommandParameter="1"
                                                     Header="Open Group In Folder"
-                                                    IsVisible="{Binding MultiOpenInFolderSupported}" />
+                                                    IsVisible="{Binding IsMultiOpenInFolderSupported}" />
+                                                <MenuItem
+                                                    Command="{Binding ShowGroupInThumbnailComparerCommand}"
+                                                    Header="Compare Fullsize Thumbnails"
+                                                    InputGesture="Alt+C" />
                                             </MenuItem>
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
@@ -1132,6 +1162,21 @@
                         Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                         RowDefinitions="Auto, *">
                         <Menu Grid.Row="0" MinHeight="30">
+                            <MenuItem Command="{Binding SaveSettingsCommand}" ToolTip.Tip="Note: Settings are automatically saved on normal exit">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="20" Height="20">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Save" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
                             <MenuItem Command="{Binding SaveSettingsProfileCommand}">
                                 <MenuItem.Header>
                                     <StackPanel Orientation="Horizontal">
@@ -1200,7 +1245,8 @@
                                                     VerticalAlignment="Center"
                                                     Content="Exclude Reparse Points"
                                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
-                                                    IsThreeState="False" />
+                                                    IsThreeState="False"
+                                                    ToolTip.Tip="Symbolic links and junction only" />
                                                 <CheckBox
                                                     VerticalAlignment="Center"
                                                     Content="Extended FFTools Logging"
@@ -1239,12 +1285,6 @@
                                                     ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit." />
                                                 <CheckBox
                                                     VerticalAlignment="Center"
-                                                    Content="Show Enlarged Thumbnail On Mouse Hover"
-                                                    IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowEnlargedThumbnailOnMouseHover}"
-                                                    IsThreeState="False"
-                                                    ToolTip.Tip="Shows a larger version of the thumbnail on mouse hover" />
-                                                <CheckBox
-                                                    VerticalAlignment="Center"
                                                     Content="Compare Horizontally Flipped"
                                                     IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
                                                     IsThreeState="False"
@@ -1269,28 +1309,24 @@
                                                     ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Margin="15,5,0,0">
-                                                <TextBlock
-                                                    VerticalAlignment="Center"
-                                                    Text="Percent:"
-                                                    ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates" />
+                                                <TextBlock VerticalAlignment="Center" Text="Percent:" />
                                                 <NumericUpDown
                                                     Width="200"
                                                     Height="26"
                                                     HorizontalAlignment="Left"
                                                     VerticalAlignment="Center"
+                                                    FormatString="\{0\}%"
                                                     Maximum="100"
                                                     Minimum="1"
                                                     ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
                                                     Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
-                                                <TextBlock
-                                                    VerticalAlignment="Center"
-                                                    Text="Duration Difference in %:"
-                                                    ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %" />
+                                                <TextBlock VerticalAlignment="Center" Text="Duration Difference:" />
                                                 <NumericUpDown
                                                     Width="200"
                                                     Height="26"
                                                     HorizontalAlignment="Left"
                                                     VerticalAlignment="Center"
+                                                    FormatString="\{0\}%"
                                                     Maximum="100"
                                                     Minimum="0"
                                                     ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
@@ -1298,8 +1334,7 @@
                                                 <TextBlock
                                                     Margin="0,5,0,0"
                                                     VerticalAlignment="Center"
-                                                    Text="Thumbnails:"
-                                                    ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases." />
+                                                    Text="Thumbnails:" />
                                                 <NumericUpDown
                                                     Width="200"
                                                     Height="26"
@@ -1313,8 +1348,7 @@
                                                 <TextBlock
                                                     Margin="0,5,0,0"
                                                     VerticalAlignment="Center"
-                                                    Text="Max Degree Of Parallelism:"
-                                                    ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable." />
+                                                    Text="Max Degree Of Parallelism:" />
                                                 <NumericUpDown
                                                     Width="200"
                                                     Height="26"
@@ -1324,10 +1358,7 @@
                                                     Minimum="-1"
                                                     ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable."
                                                     Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
-                                                <TextBlock
-                                                    VerticalAlignment="Center"
-                                                    Text="Custom FF Arguments:"
-                                                    ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty." />
+                                                <TextBlock VerticalAlignment="Center" Text="Custom FF Arguments:" />
                                                 <TextBox
                                                     VerticalAlignment="Center"
                                                     Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
@@ -1335,8 +1366,7 @@
                                                 <TextBlock
                                                     VerticalAlignment="Center"
                                                     FontSize="14"
-                                                    Text="Hardware Acceleration:"
-                                                    ToolTip.Tip="Hardware acceleration mode of ffmpeg" />
+                                                    Text="Hardware Acceleration:" />
                                                 <ComboBox
                                                     x:Name="ComboboxHardwareAccelerationMode"
                                                     VerticalAlignment="Center"
@@ -1346,8 +1376,7 @@
                                                 <TextBlock
                                                     VerticalAlignment="Center"
                                                     FontSize="14"
-                                                    Text="Custom Commands:"
-                                                    ToolTip.Tip="Enter your own commands to open single or multiple files." />
+                                                    Text="Custom Commands:" />
                                                 <ComboBox
                                                     Width="200"
                                                     VerticalAlignment="Center"
@@ -1361,8 +1390,7 @@
                                                 <TextBlock
                                                     VerticalAlignment="Center"
                                                     FontSize="14"
-                                                    Text="Custom Database Folder:"
-                                                    ToolTip.Tip="Specify a custom database folder. Otherwise it uses the current VDF folder." />
+                                                    Text="Custom Database Folder:" />
                                                 <TextBox
                                                     VerticalAlignment="Center"
                                                     Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
@@ -1658,25 +1686,53 @@
                                         FontSize="12"
                                         Text="Appearance" />
                                 </TabItem.Header>
-                                <Grid RowDefinitions="Auto,Auto,Auto,*">
+                                <StackPanel>
                                     <CheckBox
-                                        Grid.Row="0"
                                         VerticalAlignment="Center"
-                                        Content="Use Mica (Windows 11 only)"
+                                        Content="Use Mica (Windows 11 only)¹"
                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseMica}"
                                         IsThreeState="False" />
                                     <CheckBox
-                                        Grid.Row="1"
                                         VerticalAlignment="Center"
-                                        Content="Dark Mode"
+                                        Content="Dark Mode¹"
                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DarkMode}"
                                         IsThreeState="False" />
                                     <TextBlock
-                                        Grid.Row="2"
-                                        Margin="0,5,0,0"
+                                        Margin="0,5,0,5"
                                         VerticalAlignment="Center"
-                                        Text="Restart VDF to apply changes" />
-                                </Grid>
+                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                        Text="¹ Restart VDF to apply changes" />
+                                    <CheckBox
+                                        VerticalAlignment="Center"
+                                        Content="Show Thumbnail Column"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}"
+                                        IsThreeState="False" />
+                                    <CheckBox
+                                        VerticalAlignment="Center"
+                                        Content="Show Path Column"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}"
+                                        IsThreeState="False" />
+                                    <CheckBox
+                                        VerticalAlignment="Center"
+                                        Content="Show Duration Column"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}"
+                                        IsThreeState="False" />
+                                    <CheckBox
+                                        VerticalAlignment="Center"
+                                        Content="Show Format Column"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
+                                        IsThreeState="False" />
+                                    <CheckBox
+                                        VerticalAlignment="Center"
+                                        Content="Show Audio Column"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}"
+                                        IsThreeState="False" />
+                                    <CheckBox
+                                        VerticalAlignment="Center"
+                                        Content="Show Similarity Column"
+                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
+                                        IsThreeState="False" />
+                                </StackPanel>
                             </TabItem>
                         </TabControl>
                     </Grid>

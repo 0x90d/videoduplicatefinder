@@ -33,12 +33,6 @@ namespace VDF.GUI {
 			}
 
 			base.OnFrameworkInitializationCompleted();
-			/*
-			 * Because of an Avalonia bug, the selected item of a Combobox gets changed
-			 * when XAML is parsed back to the initial value of the list. This will
-			 * override the saved value, so we must restore it here
-			 */
-			SettingsFile.Instance.HardwareAccelerationMode = ApplicationHelpers.MainWindow.InitialHwMode;
 		}
 	}
 }

@@ -35,18 +35,12 @@ namespace VDF.GUI.Views {
 		public MainWindow() {
 			//Settings must be load before XAML is parsed
 			SettingsFile.LoadSettings();
-			// See comment in App.xaml.cs
-			InitialHwMode = SettingsFile.Instance.HardwareAccelerationMode;
 
 			InitializeComponent();
 			Closing += MainWindow_Closing;
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
-			// Workaround for Avalonia bug, see https://github.com/0x90d/videoduplicatefinder/issues/327
-			if (SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.none) {
-				this.FindControl<ComboBox>("ComboboxHardwareAccelerationMode")!.SelectedIndex = 1;
-			}
 
 
 			this.FindControl<ListBox>("ListboxIncludelist")!.AddHandler(DragDrop.DropEvent, DropInclude);
@@ -73,6 +67,9 @@ namespace VDF.GUI.Views {
 			if (!SettingsFile.Instance.DarkMode)
 				((FluentTheme)Application.Current!.Styles[0]).Mode = FluentThemeMode.Light;
 
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
+			}
 		}
 
 		void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {

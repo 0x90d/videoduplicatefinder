@@ -81,12 +81,6 @@ namespace VDF.GUI.Data {
 			get => _MaxDegreeOfParallelism;
 			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
-		bool _ShowEnlargedThumbnailOnMouseHover;
-		[JsonPropertyName("ShowEnlargedThumbnailOnMouseHover")]
-		public bool ShowEnlargedThumbnailOnMouseHover {
-			get => _ShowEnlargedThumbnailOnMouseHover;
-			set => this.RaiseAndSetIfChanged(ref _ShowEnlargedThumbnailOnMouseHover, value);
-		}
 		Core.FFTools.FFHardwareAccelerationMode _HardwareAccelerationMode = Core.FFTools.FFHardwareAccelerationMode.auto;
 		[JsonPropertyName("HardwareAccelerationMode")]
 		public Core.FFTools.FFHardwareAccelerationMode HardwareAccelerationMode {
@@ -209,6 +203,42 @@ namespace VDF.GUI.Data {
 			get => _DarkMode;
 			set => this.RaiseAndSetIfChanged(ref _DarkMode, value);
 		}
+		bool _ShowThumbnailColumn = true;
+		[JsonPropertyName("ShowThumbnailColumn")]
+		public bool ShowThumbnailColumn {
+			get => _ShowThumbnailColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowThumbnailColumn, value);
+		}
+		bool _ShowPathColumn = true;
+		[JsonPropertyName("ShowPathColumn")]
+		public bool ShowPathColumn {
+			get => _ShowPathColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowPathColumn, value);
+		}
+		bool _ShowDurationColumn = true;
+		[JsonPropertyName("ShowDurationColumn")]
+		public bool ShowDurationColumn {
+			get => _ShowDurationColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowDurationColumn, value);
+		}
+		bool _ShowFormatColumn = true;
+		[JsonPropertyName("ShowFormatColumn")]
+		public bool ShowFormatColumn {
+			get => _ShowFormatColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowFormatColumn, value);
+		}
+		bool _ShowAudioColumn = true;
+		[JsonPropertyName("ShowAudioColumn")]
+		public bool ShowAudioColumn {
+			get => _ShowAudioColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowAudioColumn, value);
+		}
+		bool _ShowSimilarityColumn = true;
+		[JsonPropertyName("ShowSimilarityColumn")]
+		public bool ShowSimilarityColumn {
+			get => _ShowSimilarityColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowSimilarityColumn, value);
+		}
 		bool _FilterByFilePathContains;
 		[JsonPropertyName("FilterByFilePathContains")]
 		public bool FilterByFilePathContains {
@@ -318,9 +348,6 @@ namespace VDF.GUI.Data {
 			foreach (var n in xDoc.Descendants("IgnoreWhitePixels"))
 				if (bool.TryParse(n.Value, out var value))
 					Instance.IgnoreWhitePixels = value;
-			foreach (var n in xDoc.Descendants("ShowEnlargedThumbnailOnMouseHover"))
-				if (bool.TryParse(n.Value, out var value))
-					Instance.ShowEnlargedThumbnailOnMouseHover = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
 				Instance.CustomFFArguments = n.Value;
 			foreach (var n in xDoc.Descendants("LastCustomSelectExpression"))
