@@ -724,19 +724,25 @@ namespace VDF.Core {
 		//// Returns the enumeration of hard links for the given *file* as full file paths, which includes the input path itself.
 		/// </summary>
 		public static List<string> GetHardLinks(string filepath) {
-			Char[] sbPath = new Char[MAX_PATH + 1];
-			uint charCount = (uint)MAX_PATH;
-			GetVolumePathName(filepath, sbPath, (uint)MAX_PATH);
-			string volume = new string(sbPath).Trim('\0');
-			volume = volume.Substring(0, volume.Length - 1);
-			IntPtr findHandle;
 			List<string> links = new List<string>();
-			if (INVALID_HANDLE_VALUE != (findHandle = FindFirstFileNameW(filepath, 0, ref charCount, sbPath))) {
-				do {
-					links.Add((volume + new string(sbPath)).Trim('\0')); // Add the full path to the result list.
-					charCount = (uint)MAX_PATH; // Prepare for the next FindNextFileNameW() call.
-				} while (FindNextFileNameW(findHandle, ref charCount, sbPath));
-				FindClose(findHandle);
+			try {
+				Char[] sbPath = new Char[MAX_PATH + 1];
+				uint charCount = (uint)MAX_PATH;
+				GetVolumePathName(filepath, sbPath, (uint)MAX_PATH);
+				string volume = new string(sbPath).Trim('\0');
+				volume = volume.Substring(0, volume.Length - 1);
+				IntPtr findHandle;
+				if (INVALID_HANDLE_VALUE != (findHandle = FindFirstFileNameW(filepath, 0, ref charCount, sbPath))) {
+					do {
+						links.Add((volume + new string(sbPath)).Trim('\0')); // Add the full path to the result list.
+						charCount = (uint)MAX_PATH; // Prepare for the next FindNextFileNameW() call.
+					} while (FindNextFileNameW(findHandle, ref charCount, sbPath));
+					FindClose(findHandle);
+				}
+			}
+			catch (Exception ex) {
+				Logger.Instance.Info(
+					$"GetHardLinks: Exception, file: {filepath}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
 			}
 			return links;
 		}
