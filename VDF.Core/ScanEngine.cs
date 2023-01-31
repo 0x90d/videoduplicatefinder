@@ -710,32 +710,31 @@ namespace VDF.Core {
 	public static class HardLinkHelper {
 		#region WinAPI P/Invoke declarations
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-		static extern IntPtr FindFirstFileNameW(string lpFileName, uint dwFlags, ref uint StringLength, StringBuilder LinkName);
+		static extern IntPtr FindFirstFileNameW(string lpFileName, uint dwFlags, ref uint StringLength, char[] LinkName);
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-		static extern bool FindNextFileNameW(IntPtr hFindStream, ref uint StringLength, StringBuilder LinkName);
+		static extern bool FindNextFileNameW(IntPtr hFindStream, ref uint StringLength, char[] LinkName);
 		[DllImport("kernel32.dll", SetLastError = true)]
 		static extern bool FindClose(IntPtr hFindFile);
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-		static extern bool GetVolumePathName(string lpszFileName, [Out] StringBuilder lpszVolumePathName, uint cchBufferLength);
-		public static readonly IntPtr INVALID_HANDLE_VALUE = (IntPtr)(-1); // 0xffffffff;
-		public const int MAX_PATH = 65535; // Max. NTFS path length.
+		static extern bool GetVolumePathName(string lpszFileName, [Out] char[] lpszVolumePathName, uint cchBufferLength);
+		private static readonly IntPtr INVALID_HANDLE_VALUE = (IntPtr)(-1); // 0xffffffff;
+		private const int MAX_PATH = 65535; // Max. NTFS path length.
 		#endregion
 		/// <summary>
-		//// Returns the enumeration of hardlinks for the given *file* as full file paths, which includes
-		/// the input path itself.
+		//// Returns the enumeration of hard links for the given *file* as full file paths, which includes the input path itself.
 		/// </summary>
 		public static List<string> GetHardLinks(string filepath) {
-			StringBuilder sbPath = new StringBuilder(MAX_PATH);
-			uint charCount = (uint)sbPath.Capacity; 
-			GetVolumePathName(filepath, sbPath, (uint)sbPath.Capacity);
-			string volume = sbPath.ToString();
+			Char[] sbPath = new Char[MAX_PATH + 1];
+			uint charCount = (uint)MAX_PATH;
+			GetVolumePathName(filepath, sbPath, (uint)MAX_PATH);
+			string volume = new string(sbPath).Trim('\0');
 			volume = volume.Substring(0, volume.Length - 1);
 			IntPtr findHandle;
 			List<string> links = new List<string>();
 			if (INVALID_HANDLE_VALUE != (findHandle = FindFirstFileNameW(filepath, 0, ref charCount, sbPath))) {
 				do {
-					links.Add(volume + sbPath.ToString()); // Add the full path to the result list.
-					charCount = (uint)sbPath.Capacity; // Prepare for the next FindNextFileNameW() call.
+					links.Add((volume + new string(sbPath)).Trim('\0')); // Add the full path to the result list.
+					charCount = (uint)MAX_PATH; // Prepare for the next FindNextFileNameW() call.
 				} while (FindNextFileNameW(findHandle, ref charCount, sbPath));
 				FindClose(findHandle);
 			}
