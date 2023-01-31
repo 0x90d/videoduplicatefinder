@@ -551,6 +551,7 @@ namespace VDF.GUI.ViewModels {
 		async static void ExportDbToJson(JsonSerializerOptions options) {
 
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
+				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
 				DefaultExtension = ".json",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Json Files") { Patterns = new string[] { "*.json" }}}
@@ -573,6 +574,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		async void ExportScanResultsToJson(JsonSerializerOptions options) {
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
+				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
 				DefaultExtension = ".json",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Json Files") { Patterns = new string[] { "*.json" }}}
@@ -862,6 +864,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
+				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
 				DefaultExtension = ".txt",
 			});
 			if (string.IsNullOrEmpty(result)) return;
