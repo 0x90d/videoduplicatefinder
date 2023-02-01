@@ -22,11 +22,15 @@ global using System.Threading.Tasks;
 global using SixLabors.ImageSharp;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using SixLabors.ImageSharp.Processing;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
+using static System.Net.WebRequestMethods;
+using File = System.IO.File;
 
 namespace VDF.Core {
 	public sealed class ScanEngine {
@@ -458,6 +462,26 @@ namespace VDF.Core {
 							}
 						}
 
+						if (isDuplicate && entry.mediaInfo.Duration == compItem.mediaInfo.Duration) {
+							if (Settings.IgnoreReparsePoints) {
+								System.IO.FileAttributes entryAttrib = File.GetAttributes(entry.Path);
+								System.IO.FileAttributes compItemAttrib = File.GetAttributes(compItem.Path);
+								if (entryAttrib.HasFlag(FileAttributes.ReparsePoint) || compItemAttrib.HasFlag(FileAttributes.ReparsePoint))
+									isDuplicate = false;
+							}
+							if (isDuplicate && Settings.IgnoreHardLinks  && CoreUtils.IsWindows && entry.FileSize == compItem.FileSize) {
+								List<string> links = HardLinkHelper.GetHardLinks(entry.Path);
+								if (links.Count > 1) {
+									foreach (var link in links) {
+										if (compItem.Path == link) {
+											isDuplicate = false;
+											break;
+										}
+									}
+								}
+							}
+						}
+
 						if (isDuplicate) {
 							lock (duplicateDict) {
 								bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
@@ -687,6 +711,47 @@ namespace VDF.Core {
 			Logger.Instance.Info("Scan stopped by user");
 			if (isScanning)
 				cancelationTokenSource.Cancel();
+		}
+	}
+
+	public static class HardLinkHelper {
+		#region WinAPI P/Invoke declarations
+		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		static extern IntPtr FindFirstFileNameW(string lpFileName, uint dwFlags, ref uint StringLength, char[] LinkName);
+		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		static extern bool FindNextFileNameW(IntPtr hFindStream, ref uint StringLength, char[] LinkName);
+		[DllImport("kernel32.dll", SetLastError = true)]
+		static extern bool FindClose(IntPtr hFindFile);
+		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		static extern bool GetVolumePathName(string lpszFileName, [Out] char[] lpszVolumePathName, uint cchBufferLength);
+		private static readonly IntPtr INVALID_HANDLE_VALUE = (IntPtr)(-1); // 0xffffffff;
+		private const int MAX_PATH = 65535; // Max. NTFS path length.
+		#endregion
+		/// <summary>
+		//// Returns the enumeration of hard links for the given *file* as full file paths, which includes the input path itself.
+		/// </summary>
+		public static List<string> GetHardLinks(string filepath) {
+			List<string> links = new List<string>();
+			try {
+				Char[] sbPath = new Char[MAX_PATH + 1];
+				uint charCount = (uint)MAX_PATH;
+				GetVolumePathName(filepath, sbPath, (uint)MAX_PATH);
+				string volume = new string(sbPath).Trim('\0');
+				volume = volume.Substring(0, volume.Length - 1);
+				IntPtr findHandle;
+				if (INVALID_HANDLE_VALUE != (findHandle = FindFirstFileNameW(filepath, 0, ref charCount, sbPath))) {
+					do {
+						links.Add((volume + new string(sbPath)).Trim('\0')); // Add the full path to the result list.
+						charCount = (uint)MAX_PATH; // Prepare for the next FindNextFileNameW() call.
+					} while (FindNextFileNameW(findHandle, ref charCount, sbPath));
+					FindClose(findHandle);
+				}
+			}
+			catch (Exception ex) {
+				Logger.Instance.Info(
+					$"GetHardLinks: Exception, file: {filepath}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
+			}
+			return links;
 		}
 	}
 }

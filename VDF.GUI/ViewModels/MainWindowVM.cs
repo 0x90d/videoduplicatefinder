@@ -762,6 +762,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IncludeImages = SettingsFile.Instance.IncludeImages;
 			Scanner.Settings.GeneratePreviewThumbnails = SettingsFile.Instance.GeneratePreviewThumbnails;
 			Scanner.Settings.IgnoreReadOnlyFolders = SettingsFile.Instance.IgnoreReadOnlyFolders;
+			Scanner.Settings.IgnoreHardLinks = SettingsFile.Instance.IgnoreHardLinks;
 			Scanner.Settings.IgnoreReparsePoints = SettingsFile.Instance.IgnoreReparsePoints;
 			Scanner.Settings.HardwareAccelerationMode = SettingsFile.Instance.HardwareAccelerationMode;
 			Scanner.Settings.Percent = SettingsFile.Instance.Percent;
@@ -871,6 +872,26 @@ namespace VDF.GUI.ViewModels {
 					: $"Are you sure to delete selected from list (keep files){(blackList ? " and blacklist them" : string.Empty)}?",
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult != MessageBoxButtons.Yes) return;
+
+			// Apply filters and deselected any duplicate in which no group member is included in the filters
+			if (!string.IsNullOrEmpty(FilterByPath) || FileType.Value != FileTypeFilter.All) {
+				string FilterByPath_lwr = FilterByPath.ToLower();
+				HashSet<System.Guid> IncludedGroups = new HashSet<System.Guid>();
+				for (var i = Duplicates.Count - 1; i >= 0; i--) {
+					if (FileType.Value != FileTypeFilter.All) {
+						if (FileType.Value == FileTypeFilter.Images && !Duplicates[i].ItemInfo.IsImage)
+							continue;
+						if (FileType.Value == FileTypeFilter.Videos && Duplicates[i].ItemInfo.IsImage)
+							continue;
+					}
+					if (string.IsNullOrEmpty(FilterByPath) || Duplicates[i].ItemInfo.Path.ToLower().Contains(FilterByPath_lwr))
+						IncludedGroups.Add(Duplicates[i].ItemInfo.GroupId);
+				}
+				for (var i = Duplicates.Count - 1; i >= 0; i--) {
+					if (!IncludedGroups.Contains(Duplicates[i].ItemInfo.GroupId))
+						Duplicates[i].Checked = false;
+				}
+			}
 
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
 				DuplicateItemVM dub = Duplicates[i];
