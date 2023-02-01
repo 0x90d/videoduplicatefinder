@@ -21,6 +21,13 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
+    <AvaloniaResource Remove="Properties\**" />
+    <AvaloniaXaml Remove="Properties\**" />
+    <Compile Remove="Properties\**" />
+    <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Properties\**" />
+  </ItemGroup>
+  <ItemGroup>
     <None Remove="Styles\Styles.xaml" />
   </ItemGroup>
   <ItemGroup>
@@ -47,8 +54,5 @@
     <Compile Update="Views\ThumbnailComparer.xaml.cs">
       <DependentUpon>ThumbnailComparer.xaml</DependentUpon>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>

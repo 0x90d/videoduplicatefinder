@@ -20,20 +20,16 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Platform.Storage.FileIO;
 using Avalonia.Threading;
-using DynamicExpresso;
-using DynamicExpresso.Exceptions;
-using JetBrains.Annotations;
 using ReactiveUI;
 using VDF.Core;
 using VDF.Core.Utils;
@@ -51,29 +47,8 @@ namespace VDF.GUI.ViewModels {
 			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
 			Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
-		[CanBeNull] DataGridCollectionView? view;
 		public ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
-		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; private set; }
-		public sealed class CheckedGroupsComparer : System.Collections.IComparer {
-			readonly MainWindowVM mainVM;
-			public CheckedGroupsComparer(MainWindowVM vm) => mainVM = vm;
-			public int Compare(object? x, object? y) {
-				if (x == null || y == null)
-					return -1;
-				var dupX = (DuplicateItemVM)x;
-				var dupY = (DuplicateItemVM)y;
-				bool xHasChecked = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Where(a => a.Checked).Any();
-				bool yHasChecked = dupY.ItemInfo.GroupId == dupX.ItemInfo.GroupId ?
-					xHasChecked :
-					mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupY.ItemInfo.GroupId).Where(a => a.Checked).Any();
-				return xHasChecked.CompareTo(yHasChecked);
-			}
-		}
-		public KeyValuePair<string, FileTypeFilter>[] TypeFilters { get; } = {
-			new KeyValuePair<string, FileTypeFilter>("All",  FileTypeFilter.All),
-			new KeyValuePair<string, FileTypeFilter>("Videos",  FileTypeFilter.Videos),
-			new KeyValuePair<string, FileTypeFilter>("Images",  FileTypeFilter.Images),
-		};
+
 
 		bool _IsScanning;
 		public bool IsScanning {
@@ -95,10 +70,6 @@ namespace VDF.GUI.ViewModels {
 			get => _IsPaused;
 			set => this.RaiseAndSetIfChanged(ref _IsPaused, value);
 		}
-#pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
-		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
-#pragma warning restore CA1822 // Mark members as static
-			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
 
 		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
@@ -166,24 +137,7 @@ namespace VDF.GUI.ViewModels {
 		}
 		public bool IsMultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
 		public bool IsMultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
-		static readonly List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
-		public List<string> CustomCommandList => _CustomCommandList;
-		PropertyInfo _SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(_CustomCommandList[0])!;
-		public string SelectedCustomCommand {
-			get => _SelectedCustomCommand.Name;
-			set {
-				_SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(value)!;
-				this.RaisePropertyChanged(nameof(SelectedCustomCommandValue));
-			}
-		}
-		public string SelectedCustomCommandValue {
-			get => (string)_SelectedCustomCommand.GetValue(SettingsFile.Instance.CustomCommands)!;
-			set {
-				_SelectedCustomCommand.SetValue(SettingsFile.Instance.CustomCommands, value);
-				this.RaisePropertyChanged(nameof(IsMultiOpenSupported));
-				this.RaisePropertyChanged(nameof(IsMultiOpenInFolderSupported));
-			}
-		}
+
 
 		public bool IsWindows => CoreUtils.IsWindows;
 
@@ -194,42 +148,7 @@ namespace VDF.GUI.ViewModels {
 		public static bool IsDebug => false;
 #endif
 
-		KeyValuePair<string, FileTypeFilter> _FileType;
 
-		public KeyValuePair<string, FileTypeFilter> FileType {
-			get => _FileType;
-			set {
-				if (value.Key == _FileType.Key) return;
-				_FileType = value;
-				this.RaisePropertyChanged(nameof(FileType));
-				view?.Refresh();
-			}
-		}
-		KeyValuePair<string, DataGridSortDescription> _SortOrder;
-
-		public KeyValuePair<string, DataGridSortDescription> SortOrder {
-			get => _SortOrder;
-			set {
-				if (value.Key == _SortOrder.Key) return;
-				_SortOrder = value;
-				this.RaisePropertyChanged(nameof(SortOrder));
-				view?.SortDescriptions.Clear();
-				if (_SortOrder.Value != null)
-					view?.SortDescriptions.Add(_SortOrder.Value);
-				view?.Refresh();
-			}
-		}
-		string _FilterByPath = string.Empty;
-
-		public string FilterByPath {
-			get => _FilterByPath;
-			set {
-				if (value == FilterByPath) return;
-				_FilterByPath = value;
-				this.RaisePropertyChanged(nameof(FilterByPath));
-				view?.Refresh();
-			}
-		}
 		public MainWindowVM() {
 			FileInfo groupBlacklistFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistedGroups.json"));
 			if (groupBlacklistFile.Exists && groupBlacklistFile.Length > 0) {
@@ -378,11 +297,7 @@ namespace VDF.GUI.ViewModels {
 				ScanProgressMaxValue = e.MaxPosition;
 			});
 
-		void Instance_LogItemAdded(string message) =>
-			Dispatcher.UIThread.InvokeAsync(() => {
-				if (string.IsNullOrEmpty(message)) return;
-				LogItems.Add(message);
-			});
+
 
 		void Scanner_ScanAborted(object? sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
@@ -426,7 +341,7 @@ namespace VDF.GUI.ViewModels {
 		void BuildDuplicatesView() {
 			view = new DataGridCollectionView(Duplicates);
 			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
-			view.Filter += TextFilter;
+			view.Filter += DuplicatesFilter;
 			GetDataGrid.Items = view;
 
 			TotalDuplicates = Duplicates.Count;
@@ -434,60 +349,11 @@ namespace VDF.GUI.ViewModels {
 			TotalSizeRemovedInternal = 0;
 			TotalDuplicateGroups = Duplicates.GroupBy(x => x.ItemInfo.GroupId).Count();
 		}
-		bool TextFilter(object obj) {
-			if (obj is not DuplicateItemVM data) return false;
-			var success = true;
-			if (!string.IsNullOrEmpty(FilterByPath)) {
-				success = data.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase);
-				//see if a group member matches, then this should be considered as match too
-				if (!success)
-					success = Duplicates.Any(s =>
-						s.ItemInfo.GroupId == data.ItemInfo.GroupId &&
-						s.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase));
-			}
-			if (success && FileType.Value != FileTypeFilter.All)
-				success = FileType.Value == FileTypeFilter.Images ? data.ItemInfo.IsImage : !data.ItemInfo.IsImage;
-			return success;
-		}
+
 
 		static DataGrid GetDataGrid => ApplicationHelpers.MainWindow.FindControl<DataGrid>("dataGridGrouping")!;
 
-		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
-				new FolderPickerOpenOptions() {
-					AllowMultiple = true,
-					Title = "Select folder"
-				}
-				);
 
-			if (result == null || result.Count == 0) return;
-			foreach (var item in result) {
-				if (!SettingsFile.Instance.Includes.Contains(item))
-					SettingsFile.Instance.Includes.Add(item);
-			}
-		});
-		public ReactiveCommand<Unit, Unit> AddFilePathContainsTextToListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await InputBoxService.Show("New Entry");
-			if (string.IsNullOrEmpty(result)) return;
-			if (!SettingsFile.Instance.FilePathContainsTexts.Contains(result))
-				SettingsFile.Instance.FilePathContainsTexts.Add(result);
-		});
-		public ReactiveCommand<ListBox, Action> RemoveFilePathContainsTextFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
-			while (lbox.SelectedItems?.Count > 0)
-				SettingsFile.Instance.FilePathContainsTexts.Remove((string)lbox.SelectedItems[0]!);
-			return null!;
-		});
-		public ReactiveCommand<Unit, Unit> AddFilePathNotContainsTextToListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await InputBoxService.Show("New Entry");
-			if (string.IsNullOrEmpty(result)) return;
-			if (!SettingsFile.Instance.FilePathNotContainsTexts.Contains(result))
-				SettingsFile.Instance.FilePathNotContainsTexts.Add(result);
-		});
-		public ReactiveCommand<ListBox, Action> RemoveFilePathNotContainsTextFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
-			while (lbox.SelectedItems?.Count > 0)
-				SettingsFile.Instance.FilePathNotContainsTexts.Remove((string)lbox.SelectedItems[0]!);
-			return null!;
-		});
 
 		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.Create(() => {
 			try {
@@ -834,88 +700,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
-		public ReactiveCommand<ListBox, Action> RemoveIncludesFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
-			while (lbox.SelectedItems?.Count > 0)
-				SettingsFile.Instance.Includes.Remove((string)lbox.SelectedItems[0]!);
-			return null!;
-		});
-		public ReactiveCommand<Unit, Unit> AddBlacklistToListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
-				new FolderPickerOpenOptions() {
-					AllowMultiple = true,
-					Title = "Select folder"
-				});
 
-			if (result == null || result.Count == 0) return;
-			foreach (var item in result) {
-				if (!SettingsFile.Instance.Includes.Contains(item))
-					SettingsFile.Instance.Includes.Add(item);
-			}
-		});
-		public ReactiveCommand<ListBox, Action> RemoveBlacklistFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
-			while (lbox.SelectedItems?.Count > 0)
-				SettingsFile.Instance.Blacklists.Remove((string)lbox.SelectedItems[0]!);
-			return null!;
-		});
-		public ReactiveCommand<Unit, Unit> ClearLogCommand => ReactiveCommand.Create(() => {
-			LogItems.Clear();
-		});
-		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
-				DefaultExtension = ".txt",
-			});
-			if (string.IsNullOrEmpty(result)) return;
-			var sb = new StringBuilder();
-			foreach (var l in LogItems)
-				sb.AppendLine(l);
-			try {
-				File.WriteAllText(result, sb.ToString());
-			}
-			catch (Exception e) {
-				Logger.Instance.Info(e.Message);
-			}
-		});
-		public ReactiveCommand<Unit, Unit> SaveSettingsCommand => ReactiveCommand.CreateFromTask(async () => {
-			try {
-				SettingsFile.SaveSettings();
-			}
-			catch (Exception ex) {
-				await MessageBoxService.Show($"Saving settings has failed: {ex.Message}");
-			}
-		});
-		public ReactiveCommand<Unit, Unit> SaveSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
-				DefaultExtension = ".json",
-				FileTypeChoices = new FilePickerFileType[] {
-					 new FilePickerFileType("Setting File") { Patterns = new string[] { "*.json" }}}
-			});
-			if (string.IsNullOrEmpty(result)) return;
-
-			try {
-				SettingsFile.SaveSettings(result);
-			}
-			catch (Exception ex) {
-				await MessageBoxService.Show($"Saving settings to file has failed: {ex.Message}");
-			}
-		});
-		public ReactiveCommand<Unit, Unit> LoadSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
-				FileTypeFilter = new FilePickerFileType[] {
-					 new FilePickerFileType("Setting File") { Patterns = new string[] { "*.json", "*.xml" }}}
-			});
-			if (string.IsNullOrEmpty(result)) return;
-
-			try {
-				SettingsFile.LoadSettings(result);
-			}
-			catch (Exception ex) {
-				await MessageBoxService.Show($"Loading settings from file has failed: {ex.Message}");
-				return;
-			}
-			await MessageBoxService.Show("Please restart VDF to apply new settings.");
-		});
 
 		public ReactiveCommand<string, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async (string command) => {
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
@@ -940,7 +725,7 @@ namespace VDF.GUI.ViewModels {
 				return;
 			}
 			if (SettingsFile.Instance.Includes.Count == 0) {
-				await MessageBoxService.Show("There are no folders to scan. Please go to the settings and add at least one folder.");
+				await MessageBoxService.Show("There are no folders to scan. Please go to the settings and add at least one folder to 'Search Directories'.");
 				return;
 			}
 			if (SettingsFile.Instance.MaxDegreeOfParallelism == 0) {
@@ -1058,8 +843,15 @@ namespace VDF.GUI.ViewModels {
 
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
 			List<LargeThumbnailDuplicateItem> items = new();
-			foreach (DuplicateItemVM duplicateItem in Duplicates.Where(a => a.ItemInfo.GroupId == data.ItemInfo.GroupId))
-				items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
+
+			if (GetDataGrid.SelectedItems.Count == 1) {
+				foreach (DuplicateItemVM duplicateItem in Duplicates.Where(a => a.ItemInfo.GroupId == data.ItemInfo.GroupId))
+					items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
+			}
+			else {
+				foreach (DuplicateItemVM duplicateItem in GetDataGrid.SelectedItems)
+					items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
+			}
 
 			ThumbnailComparer thumbnailComparer = new(items);
 			thumbnailComparer.Show();
@@ -1146,6 +938,32 @@ namespace VDF.GUI.ViewModels {
 		});
 		public static ReactiveCommand<Unit, Unit> CollapseAllGroupsCommand => ReactiveCommand.Create(() => {
 			Utils.TreeHelper.ToggleExpander(GetDataGrid, false);
+		});
+		public static ReactiveCommand<Unit, Unit> CopyPathsToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
+			StringBuilder sb = new();
+			foreach (var item in GetDataGrid.SelectedItems) {
+				if (item is not DuplicateItemVM currentItem) return;
+				sb.AppendLine(currentItem.ItemInfo.Path);
+			}
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+			await ((IClipboard)AvaloniaLocator.Current.GetService(typeof(IClipboard)))
+				   .SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+		});
+		public static ReactiveCommand<Unit, Unit> CopyFilenamesToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
+			StringBuilder sb = new();
+			foreach (var item in GetDataGrid.SelectedItems) {
+				if (item is not DuplicateItemVM currentItem) return;
+				sb.AppendLine(Path.GetFileName(currentItem.ItemInfo.Path));
+			}
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+			await ((IClipboard)AvaloniaLocator.Current.GetService(typeof(IClipboard)))
+				   .SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 		});
 
 	}
