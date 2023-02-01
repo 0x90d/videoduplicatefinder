@@ -462,12 +462,14 @@ namespace VDF.Core {
 							}
 						}
 
-						if (isDuplicate && Settings.IgnoreReparsePoints && entry.mediaInfo.Duration == compItem.mediaInfo.Duration) {
-							System.IO.FileAttributes entryAttrib = File.GetAttributes(entry.Path);
-							System.IO.FileAttributes compItemAttrib = File.GetAttributes(compItem.Path);
-							if (entryAttrib.HasFlag(FileAttributes.ReparsePoint) || compItemAttrib.HasFlag(FileAttributes.ReparsePoint))
-								isDuplicate = false;
-							else if (CoreUtils.IsWindows && entry.FileSize == compItem.FileSize) {
+						if (isDuplicate && entry.mediaInfo.Duration == compItem.mediaInfo.Duration) {
+							if (Settings.IgnoreReparsePoints) {
+								System.IO.FileAttributes entryAttrib = File.GetAttributes(entry.Path);
+								System.IO.FileAttributes compItemAttrib = File.GetAttributes(compItem.Path);
+								if (entryAttrib.HasFlag(FileAttributes.ReparsePoint) || compItemAttrib.HasFlag(FileAttributes.ReparsePoint))
+									isDuplicate = false;
+							}
+							if (isDuplicate && Settings.IgnoreHardLinks  && CoreUtils.IsWindows && entry.FileSize == compItem.FileSize) {
 								List<string> links = HardLinkHelper.GetHardLinks(entry.Path);
 								if (links.Count > 1) {
 									foreach (var link in links) {
