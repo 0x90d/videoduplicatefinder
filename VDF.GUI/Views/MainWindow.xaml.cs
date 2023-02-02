@@ -38,6 +38,7 @@ namespace VDF.GUI.Views {
 
 			InitializeComponent();
 			Closing += MainWindow_Closing;
+			Opened += MainWindow_Opened;
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
@@ -69,6 +70,17 @@ namespace VDF.GUI.Views {
 
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
+			}
+		}
+
+		private void MainWindow_Opened(object? sender, EventArgs e) {
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				/*
+				 * Due to Avalonia bug, window is bigger than screen size. 
+				 * Status bar is hidden by MacOS launch bar,
+				 * see https://github.com/0x90d/videoduplicatefinder/issues/391
+				 */
+				Height = 750d;
 			}
 		}
 
