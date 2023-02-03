@@ -738,11 +738,13 @@ namespace VDF.Core {
 				GetVolumePathName(filepath, sbPath, (uint)MAX_PATH);
 				string volume = new string(sbPath).Trim('\0');
 				volume = volume.Substring(0, volume.Length - 1);
+				Array.Clear(sbPath, 0, MAX_PATH);
 				IntPtr findHandle;
 				if (INVALID_HANDLE_VALUE != (findHandle = FindFirstFileNameW(filepath, 0, ref charCount, sbPath))) {
 					do {
 						links.Add((volume + new string(sbPath)).Trim('\0')); // Add the full path to the result list.
 						charCount = (uint)MAX_PATH; // Prepare for the next FindNextFileNameW() call.
+						Array.Clear(sbPath, 0, MAX_PATH);
 					} while (FindNextFileNameW(findHandle, ref charCount, sbPath));
 					FindClose(findHandle);
 				}
