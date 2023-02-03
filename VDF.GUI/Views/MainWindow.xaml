@@ -1300,7 +1300,7 @@
                                                         Content="Exclude Hard Links (Windows Only)"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreHardLinks}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="Ignore duplicate files which share the same hard link" />
+                                                        ToolTip.Tip="Ignore duplicate files which share the same hard link (Windows NTFS Only)" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
                                                         Content="Exclude Reparse Points"
