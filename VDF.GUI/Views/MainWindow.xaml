@@ -1297,7 +1297,7 @@
                                                         ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Exclude Hard Links"
+                                                        Content="Exclude Hard Links (Windows Only)"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreHardLinks}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="Ignore duplicate files which share the same hard link" />
