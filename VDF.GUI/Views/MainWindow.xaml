@@ -780,12 +780,6 @@
                                             Minimum="0"
                                             Value="{Binding FilterSimilarityTo}" />
                                     </StackPanel>
-                                    <TextBlock
-                                        Grid.Row="1"
-                                        Margin="0,5,0,0"
-                                        VerticalAlignment="Center"
-                                        Foreground="Red"
-                                        Text="Note: Filter is only visual. All action also applies to filtered out items!" />
                                 </Grid>
                                 <LayoutTransformControl Grid.Row="2">
                                     <DataGrid
