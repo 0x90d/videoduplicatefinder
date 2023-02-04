@@ -726,6 +726,8 @@ namespace VDF.Core {
 		/// <summary>
 		//// Returns the enumeration of hard links for the given *file* as full file paths, which includes the input path itself.
 		/// </summary>
+		/// <param name="filepath">Full file path for the file to check for shared hard links</param>
+		/// <param name="ReturnEmptyListIfOnlyOne">Set true, to return populated list only for files having multiple hard links</param>
 		public static List<string> GetHardLinks(string filepath, bool ReturnEmptyListIfOnlyOne = false) {
 			List<string> links = new List<string>();
 			try {
