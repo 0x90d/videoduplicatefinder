@@ -35,6 +35,9 @@ You may need to set execute permission first `sudo chmod 777 VDF.GUI`
 #### MacOS user:
 Install ffmpeg / ffprobe using homebrew
 
+Open terminal in VDF folder and execute `./VDF.GUI` or if you have .NET installed `dotnet VDF.GUI.dll`
+You may get a permission error. Open system settings of your Mac, go to `Privacy & Security` and then `Developer Tools`. Now add `Terminal` to the list.
+
 # Screenshots (slightly outdated)
 <img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
 
