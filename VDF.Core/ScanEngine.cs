@@ -470,15 +470,11 @@ namespace VDF.Core {
 									isDuplicate = false;
 							}
 							if (isDuplicate && Settings.IgnoreHardLinks  && CoreUtils.IsWindows && entry.FileSize == compItem.FileSize) {
-								List<string> links = HardLinkHelper.GetHardLinks(entry.Path);
-								if (links.Count > 1) {
-									foreach (var link in links) {
-										if (compItem.Path == link) {
-											isDuplicate = false;
-											break;
-										}
+								foreach (var link in HardLinkHelper.GetHardLinks(entry.Path, true))
+									if (compItem.Path == link) {
+										isDuplicate = false;
+										break;
 									}
-								}
 							}
 						}
 
@@ -730,7 +726,7 @@ namespace VDF.Core {
 		/// <summary>
 		//// Returns the enumeration of hard links for the given *file* as full file paths, which includes the input path itself.
 		/// </summary>
-		public static List<string> GetHardLinks(string filepath) {
+		public static List<string> GetHardLinks(string filepath, bool ReturnEmptyListIfOnlyOne = false) {
 			List<string> links = new List<string>();
 			try {
 				Char[] sbPath = new Char[MAX_PATH + 1];
@@ -753,6 +749,8 @@ namespace VDF.Core {
 				Logger.Instance.Info(
 					$"GetHardLinks: Exception, file: {filepath}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
 			}
+			if (ReturnEmptyListIfOnlyOne && links.Count < 2)
+				links.Clear();
 			return links;
 		}
 	}
