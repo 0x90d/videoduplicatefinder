@@ -724,24 +724,29 @@ namespace VDF.Core {
 		private const int MAX_PATH = 65535; // Max. NTFS path length.
 		#endregion
 		/// <summary>
-		//// Returns the enumeration of hard links for the given *file* as full file paths, which includes the input path itself.
+		/// Checks for hard links on a Windows NTFS drive associated with the given path.
 		/// </summary>
-		/// <param name="filepath">Full file path for the file to check for shared hard links</param>
+		/// <param name="filepath">Fully qualified path of the file to check for shared hard links</param>
 		/// <param name="ReturnEmptyListIfOnlyOne">Set true, to return populated list only for files having multiple hard links</param>
+		/// <returns>
+		///		Empty list is returned for non-existing path or unsupported path.
+		///		Single hard link paths returns empty list if ReturnEmptyListIfOnlyOne is true. If false, returns single item list.
+		///		For multiple shared hard links, returns list of all the shared hard links.
+		/// </returns>
 		public static List<string> GetHardLinks(string filepath, bool ReturnEmptyListIfOnlyOne = false) {
 			List<string> links = new List<string>();
 			try {
 				Char[] sbPath = new Char[MAX_PATH + 1];
 				uint charCount = (uint)MAX_PATH;
-				GetVolumePathName(filepath, sbPath, (uint)MAX_PATH);
+				GetVolumePathName(filepath, sbPath, (uint)MAX_PATH); // Must use GetVolumePathName, because Path.GetPathRoot fails on a mounted drive on an empty folder.
 				string volume = new string(sbPath).Trim('\0');
 				volume = volume.Substring(0, volume.Length - 1);
-				Array.Clear(sbPath, 0, MAX_PATH);
+				Array.Clear(sbPath, 0, MAX_PATH); // Reset the array because these API's can leave garbage at the end of the buffer.
 				IntPtr findHandle;
 				if (INVALID_HANDLE_VALUE != (findHandle = FindFirstFileNameW(filepath, 0, ref charCount, sbPath))) {
 					do {
 						links.Add((volume + new string(sbPath)).Trim('\0')); // Add the full path to the result list.
-						charCount = (uint)MAX_PATH; // Prepare for the next FindNextFileNameW() call.
+						charCount = (uint)MAX_PATH;
 						Array.Clear(sbPath, 0, MAX_PATH);
 					} while (FindNextFileNameW(findHandle, ref charCount, sbPath));
 					FindClose(findHandle);
@@ -749,7 +754,7 @@ namespace VDF.Core {
 			}
 			catch (Exception ex) {
 				Logger.Instance.Info(
-					$"GetHardLinks: Exception, file: {filepath}, reason: {ex.Message}, stacktrace {ex.StackTrace}");
+					  $"GetHardLinks: Exception, file: {filepath}, reason: {ex.Message}");
 			}
 			if (ReturnEmptyListIfOnlyOne && links.Count < 2)
 				links.Clear();
