@@ -874,7 +874,8 @@ namespace VDF.GUI.ViewModels {
 			if (dlgResult != MessageBoxButtons.Yes) return;
 
 			// Apply filters and deselected any duplicate in which no group member is included in the filters
-			if (!string.IsNullOrEmpty(FilterByPath) || FileType.Value != FileTypeFilter.All) {
+			if (!string.IsNullOrEmpty(FilterByPath) || FileType.Value != FileTypeFilter.All ||
+				FilterSimilarityFrom != 0 || FilterSimilarityTo != 100) {
 				string FilterByPath_lwr = FilterByPath.ToLower();
 				HashSet<System.Guid> IncludedGroups = new HashSet<System.Guid>();
 				for (var i = Duplicates.Count - 1; i >= 0; i--) {
@@ -884,11 +885,18 @@ namespace VDF.GUI.ViewModels {
 						if (FileType.Value == FileTypeFilter.Videos && Duplicates[i].ItemInfo.IsImage)
 							continue;
 					}
+					// With the current GUI behavior, this logic needs to be in the second for-loop
+					//if (Duplicates[i].ItemInfo.Similarity < FilterSimilarityFrom ||
+					//	FilterSimilarityTo > Duplicates[i].ItemInfo.Similarity)
+					//	continue;
 					if (string.IsNullOrEmpty(FilterByPath) || Duplicates[i].ItemInfo.Path.ToLower().Contains(FilterByPath_lwr))
 						IncludedGroups.Add(Duplicates[i].ItemInfo.GroupId);
 				}
 				for (var i = Duplicates.Count - 1; i >= 0; i--) {
 					if (!IncludedGroups.Contains(Duplicates[i].ItemInfo.GroupId))
+						Duplicates[i].Checked = false;
+					else if (Duplicates[i].ItemInfo.Similarity < FilterSimilarityFrom ||
+						FilterSimilarityTo < Duplicates[i].ItemInfo.Similarity)
 						Duplicates[i].Checked = false;
 				}
 			}
