@@ -15,11 +15,12 @@
 //
 
 using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace VDF.Core.Utils {
 	/// <summary>
-	/// Credits to David-Maisonave for his original implementation
+	/// Credits to David-Maisonave for his original windows implementation
 	/// </summary>
 	internal static partial class HardLinkUtils {
 		[LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
@@ -37,7 +38,6 @@ namespace VDF.Core.Utils {
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static partial bool GetVolumePathNameW(string lpszFileName, [Out] char[] lpszVolumePathName, int cchBufferLength);
 
-
 		const IntPtr INVALID_HANDLE_VALUE = -1;
 		const int ERROR_MORE_DATA = 234;
 
@@ -45,6 +45,45 @@ namespace VDF.Core.Utils {
 		//// Returns enumeration of hard links for the given *file* as full file paths
 		/// </summary>
 		public static IEnumerable<string> GetHardLinks(string filepath) {
+			if (CoreUtils.IsWindows)
+				return GetHardLinksWindows(filepath);
+			else
+				return GetHardLinksPosix(filepath);
+		}
+
+		static IEnumerable<string> GetHardLinksPosix(string filepath) {
+			const int timeout = 30_000;
+
+			Process process = new() {
+				StartInfo = {
+					FileName = "find",
+					Arguments = $" {Path.GetPathRoot(filepath)} -samefile \"{filepath}\"",
+					RedirectStandardOutput = true,
+					/*
+					 * Do not redirect error output, this makes the process run
+					 * much longer due to all the 'Permission denied' errors
+					 */
+					WindowStyle = ProcessWindowStyle.Hidden,
+					UseShellExecute = false
+				}
+			};
+			try {
+				process.Start();
+				process.WaitForExit(timeout);
+				if (!process.HasExited) {
+					process.Kill();
+					throw new TimeoutException("timed out");
+				}
+				List<string> files = new(process.StandardOutput.ReadToEnd().Split(Environment.NewLine));
+				return files;
+			}
+			catch (Exception ex) {
+				Logger.Instance.Info($"Failed getting hard links of file: {filepath}, reason: {ex.Message}");
+				return Array.Empty<string>();
+			}
+		}
+
+		static IEnumerable<string> GetHardLinksWindows(string filepath) {
 			char[] buffer = ArrayPool<char>.Shared.Rent(512);
 			try {
 				int stringLength = buffer.Length;

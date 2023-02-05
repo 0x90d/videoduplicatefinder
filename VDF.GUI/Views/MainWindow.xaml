@@ -90,9 +90,9 @@
                                 <MenuItem
                                     Command="{Binding StartScanCommand}"
                                     CommandParameter="CompareOnly"
-                                    ToolTip.Tip="Re-run the scan but without enumerating and gathering file informations. Changing certain settings will only take effect during a full scan."
                                     IsEnabled="{Binding IsReadyToCompare}"
-                                    IsVisible="{Binding !IsScanning}">
+                                    IsVisible="{Binding !IsScanning}"
+                                    ToolTip.Tip="Re-run the scan but without enumerating and gathering file informations. Changing certain settings will only take effect during a full scan.">
                                     <MenuItem.Header>
                                         <StackPanel Orientation="Horizontal">
                                             <Viewbox Width="20" Height="20">
@@ -1333,10 +1333,10 @@
                                                         ToolTip.Tip="Symbolic links and junction only. Note this will completely skip these from file enumeration to search." />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Exclude Hard Links (Windows Only)"
+                                                        Content="Exclude Hard Links"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExcludeHardLinks}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="Unlike reparse points hard links are still included in search but are not considered as duplicates" />
+                                                        ToolTip.Tip="Unlike reparse points hard links are still included in search but are not considered as duplicates. WARNING: Use this option only when necessary, as it slows down the scanning process considerably!" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
                                                         Content="Extended FFTools Logging"
