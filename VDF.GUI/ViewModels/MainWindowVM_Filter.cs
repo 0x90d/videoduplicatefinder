@@ -116,6 +116,7 @@ namespace VDF.GUI.ViewModels {
 			if (success) {
 				success = data.ItemInfo.Similarity >= FilterSimilarityFrom && data.ItemInfo.Similarity <= FilterSimilarityTo;
 			}
+			data.IsVisibleInFilter = success;
 			return success;
 		}
 	}

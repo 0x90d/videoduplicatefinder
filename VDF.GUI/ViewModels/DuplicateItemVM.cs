@@ -15,6 +15,7 @@
 //
 
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using Avalonia.Media.Imaging;
 using ReactiveUI;
 using VDF.Core.ViewModels;
@@ -26,7 +27,7 @@ namespace VDF.GUI.ViewModels {
 	public sealed class DuplicateItemVM : ReactiveObject {
 		//For JSON deserialization only
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		public DuplicateItemVM() {  }
+		public DuplicateItemVM() { }
 
 		public DuplicateItemVM(DuplicateItem item) {
 			ItemInfo = item;
@@ -45,6 +46,15 @@ namespace VDF.GUI.ViewModels {
 			get => _Checked;
 			set => this.RaiseAndSetIfChanged(ref _Checked, value);
 		}
+
+		/// <summary>
+		///   Returns if item matches the filter conditions
+		/// </summary>
+		/// <remarks>
+		///   Workaround until DataGridCollectionView can return list of all filtered items
+		/// </remarks>
+		[JsonIgnore]
+		internal bool IsVisibleInFilter = true;
 
 		public bool EqualsFull(DuplicateItemVM other) {
 			if (ReferenceEquals(null, other)) return false;

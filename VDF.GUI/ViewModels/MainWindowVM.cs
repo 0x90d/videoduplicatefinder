@@ -343,7 +343,6 @@ namespace VDF.GUI.ViewModels {
 			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
 			view.Filter += DuplicatesFilter;
 			GetDataGrid.Items = view;
-
 			TotalDuplicates = Duplicates.Count;
 			TotalDuplicatesSize = Duplicates.Sum(x => x.ItemInfo.SizeLong).BytesToString();
 			TotalSizeRemovedInternal = 0;
@@ -874,7 +873,7 @@ namespace VDF.GUI.ViewModels {
 
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
 				DuplicateItemVM dub = Duplicates[i];
-				if (dub.Checked == false) continue;
+				if (dub.Checked == false || !dub.IsVisibleInFilter) continue;
 				if (fromDisk)
 					try {
 						FileEntry dubFileEntry = new FileEntry(dub.ItemInfo.Path);
@@ -920,7 +919,7 @@ namespace VDF.GUI.ViewModels {
 				Duplicates.RemoveAt(i);
 			}
 
-			//Hide groups with just one item left
+			//Remove groups with just one item left
 			for (var i = Duplicates.Count - 1; i >= 0; i--) {
 				var first = Duplicates[i];
 				if (Duplicates.Any(s => s.ItemInfo.GroupId == first.ItemInfo.GroupId && s.ItemInfo.Path != first.ItemInfo.Path)) continue;

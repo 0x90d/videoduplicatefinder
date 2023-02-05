@@ -726,7 +726,8 @@
                                         <TextBox
                                             MinWidth="150"
                                             Margin="5,0,0,0"
-                                            Text="{Binding FilterByPath}" />
+                                            Text="{Binding FilterByPath}"
+                                            ToolTip.Tip="Note: if only one item of a group is matching, all group items will be shown" />
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
@@ -780,12 +781,40 @@
                                             Minimum="0"
                                             Value="{Binding FilterSimilarityTo}" />
                                     </StackPanel>
-                                    <TextBlock
+                                    <StackPanel
                                         Grid.Row="1"
-                                        Margin="0,5,0,0"
-                                        VerticalAlignment="Center"
-                                        Foreground="Red"
-                                        Text="Note: Filter is only visual. All action also applies to filtered out items!" />
+                                        Margin="0,10"
+                                        HorizontalAlignment="Center"
+                                        Orientation="Horizontal">
+                                        <Image Width="16" Height="16">
+                                            <Image.Resources>
+                                                <SolidColorBrush x:Key="Brush0" Color="#FFFFCE31" />
+                                                <SolidColorBrush x:Key="Brush1" Color="#FF231F20" />
+                                            </Image.Resources>
+                                            <Image.Source>
+                                                <DrawingImage>
+                                                    <DrawingImage.Drawing>
+                                                        <DrawingGroup>
+                                                            <DrawingGroup>
+                                                                <DrawingGroup.Transform>
+                                                                    <MatrixTransform Matrix="12.5,0,0,12.5,0,0" />
+                                                                </DrawingGroup.Transform>
+                                                                <GeometryDrawing Brush="{DynamicResource Brush0}" Geometry="F1 M5.9 62C2.6 62 1.1 59.6 2.6 56.7L29.3 4.2C30.8 1.3 33.2 1.3 34.7 4.2L61.4 56.7C62.9 59.6 61.4 62 58.1 62L5.9 62Z" />
+                                                                <GeometryDrawing Brush="{DynamicResource Brush1}" Geometry="F1 M27.8 23.6L30.6 42.1C30.9 43.9 33.2 43.9 33.5 42.1L36.2 23.6C36.7 16.4 27.3 16.4 27.8 23.6" />
+                                                                <GeometryDrawing Brush="{DynamicResource Brush1}" Geometry="F1 M36.2 49.6Q36.2 49.7031 36.1949 49.8061Q36.1899 49.9091 36.1798 50.0117Q36.1697 50.1143 36.1545 50.2163Q36.1394 50.3183 36.1193 50.4194Q36.0992 50.5205 36.0741 50.6205Q36.0491 50.7205 36.0191 50.8192Q35.9892 50.9179 35.9545 51.0149Q35.9197 51.112 35.8803 51.2073Q35.8408 51.3025 35.7968 51.3957Q35.7527 51.4889 35.7041 51.5799Q35.6555 51.6708 35.6025 51.7592Q35.5494 51.8477 35.4922 51.9334Q35.4349 52.0191 35.3735 52.1019Q35.312 52.1847 35.2466 52.2644Q35.1812 52.3441 35.112 52.4205Q35.0427 52.4969 34.9698 52.5698Q34.8969 52.6427 34.8205 52.712Q34.7442 52.7812 34.6645 52.8466Q34.5847 52.912 34.5019 52.9735Q34.4191 53.0349 34.3334 53.0922Q34.2477 53.1494 34.1592 53.2025Q34.0708 53.2555 33.9799 53.3041Q33.8889 53.3527 33.7957 53.3968Q33.7025 53.4408 33.6073 53.4803Q33.512 53.5197 33.4149 53.5545Q33.3179 53.5892 33.2192 53.6191Q33.1205 53.6491 33.0205 53.6741Q32.9205 53.6992 32.8194 53.7193Q32.7183 53.7394 32.6163 53.7545Q32.5143 53.7697 32.4117 53.7798Q32.3091 53.7899 32.2061 53.7949Q32.1031 53.8 32 53.8Q31.8969 53.8 31.7939 53.7949Q31.6909 53.7899 31.5883 53.7798Q31.4857 53.7697 31.3837 53.7545Q31.2817 53.7394 31.1806 53.7193Q31.0795 53.6992 30.9795 53.6741Q30.8795 53.6491 30.7808 53.6191Q30.6821 53.5892 30.5851 53.5545Q30.488 53.5197 30.3927 53.4803Q30.2975 53.4408 30.2043 53.3968Q30.1111 53.3527 30.0201 53.3041Q29.9292 53.2555 29.8408 53.2025Q29.7523 53.1494 29.6666 53.0922Q29.5809 53.0349 29.4981 52.9735Q29.4152 52.912 29.3355 52.8466Q29.2558 52.7812 29.1795 52.712Q29.1031 52.6427 29.0302 52.5698Q28.9572 52.4969 28.888 52.4205Q28.8188 52.3441 28.7534 52.2644Q28.6879 52.1847 28.6265 52.1019Q28.5651 52.0191 28.5078 51.9334Q28.4505 51.8477 28.3975 51.7592Q28.3445 51.6708 28.2959 51.5799Q28.2473 51.4889 28.2032 51.3957Q28.1592 51.3025 28.1197 51.2073Q28.0802 51.112 28.0455 51.0149Q28.0108 50.9179 27.9808 50.8192Q27.9509 50.7205 27.9259 50.6205Q27.9008 50.5205 27.8807 50.4194Q27.8606 50.3182 27.8455 50.2163Q27.8303 50.1143 27.8202 50.0117Q27.8101 49.9091 27.8051 49.8061Q27.8 49.7031 27.8 49.6Q27.8 49.4969 27.8051 49.3939Q27.8101 49.2909 27.8202 49.1883Q27.8303 49.0857 27.8455 48.9837Q27.8606 48.8817 27.8807 48.7806Q27.9008 48.6795 27.9259 48.5795Q27.9509 48.4795 27.9808 48.3808Q28.0108 48.2821 28.0455 48.1851Q28.0802 48.088 28.1197 47.9927Q28.1592 47.8975 28.2032 47.8043Q28.2473 47.7111 28.2959 47.6201Q28.3445 47.5292 28.3975 47.4408Q28.4505 47.3523 28.5078 47.2666Q28.5651 47.1809 28.6265 47.0981Q28.6879 47.0152 28.7534 46.9355Q28.8188 46.8558 28.888 46.7794Q28.9572 46.7031 29.0301 46.6301Q29.1031 46.5572 29.1794 46.488Q29.2558 46.4188 29.3355 46.3534Q29.4152 46.2879 29.4981 46.2265Q29.5809 46.1651 29.6666 46.1078Q29.7523 46.0505 29.8408 45.9975Q29.9292 45.9445 30.0201 45.8959Q30.1111 45.8473 30.2043 45.8032Q30.2975 45.7591 30.3927 45.7197Q30.488 45.6802 30.5851 45.6455Q30.6821 45.6108 30.7808 45.5808Q30.8795 45.5509 30.9795 45.5259Q31.0795 45.5008 31.1806 45.4807Q31.2817 45.4606 31.3837 45.4455Q31.4857 45.4303 31.5883 45.4202Q31.6909 45.4101 31.7939 45.4051Q31.8969 45.4 32 45.4Q32.1031 45.4 32.2061 45.4051Q32.3091 45.4101 32.4117 45.4202Q32.5143 45.4303 32.6163 45.4455Q32.7183 45.4606 32.8194 45.4807Q32.9205 45.5008 33.0205 45.5259Q33.1205 45.5509 33.2192 45.5808Q33.3179 45.6108 33.4149 45.6455Q33.512 45.6802 33.6073 45.7197Q33.7025 45.7591 33.7957 45.8032Q33.8889 45.8473 33.9799 45.8959Q34.0708 45.9445 34.1592 45.9975Q34.2477 46.0505 34.3334 46.1078Q34.4191 46.1651 34.5019 46.2265Q34.5847 46.2879 34.6645 46.3534Q34.7442 46.4188 34.8205 46.488Q34.8969 46.5572 34.9698 46.6301Q35.0427 46.7031 35.112 46.7794Q35.1812 46.8558 35.2466 46.9355Q35.312 47.0152 35.3735 47.0981Q35.4349 47.1809 35.4922 47.2666Q35.5494 47.3523 35.6025 47.4408Q35.6555 47.5292 35.7041 47.6201Q35.7527 47.7111 35.7967 47.8043Q35.8408 47.8975 35.8803 47.9927Q35.9197 48.088 35.9545 48.1851Q35.9892 48.2821 36.0191 48.3808Q36.0491 48.4795 36.0741 48.5795Q36.0992 48.6795 36.1193 48.7806Q36.1394 48.8817 36.1545 48.9837Q36.1697 49.0857 36.1798 49.1883Q36.1899 49.2909 36.1949 49.3939Q36.2 49.4969 36.2 49.6Z" />
+                                                            </DrawingGroup>
+                                                        </DrawingGroup>
+                                                    </DrawingImage.Drawing>
+                                                </DrawingImage>
+                                            </Image.Source>
+                                        </Image>
+                                        <TextBlock
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            FontWeight="Bold"
+                                            Foreground="Yellow"
+                                            Text="Note: Any action (select, delete etc) will only apply on filtered duplicates" />
+                                    </StackPanel>
                                 </Grid>
                                 <LayoutTransformControl Grid.Row="2">
                                     <DataGrid
@@ -1176,7 +1205,7 @@
                                     Grid.Row="1"
                                     MinHeight="20"
                                     Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Duplicates.Count, Mode=OneWay, StringFormat=Duplicates In List: \{0\}}" />
+                                    <TextBlock Text="{Binding #dataGridGrouping.Items.Count, Mode=OneWay, StringFormat=Visible Duplicates: \{0\}}" />
                                     <Separator Width="1" Margin="5" />
                                     <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Total Duplicates: \{0\}}" />
                                     <Separator Width="1" Margin="5" />
@@ -1213,7 +1242,7 @@
                         </TabItem.Header>
                         <Grid
                             Margin="0,0,0,10"
-                            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                            Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}"
                             RowDefinitions="Auto, *">
                             <Menu Grid.Row="0" MinHeight="30">
                                 <MenuItem Command="{Binding SaveSettingsCommand}" ToolTip.Tip="Note: Settings are automatically saved on normal exit">
@@ -1653,6 +1682,7 @@
                                                 Name="ListboxFilePathContainsText"
                                                 Grid.Row="1"
                                                 MinHeight="70"
+                                                BorderThickness="1"
                                                 IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}"
                                                 Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsTexts}" />
                                             <TextBlock Grid.Row="2" Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
@@ -1718,6 +1748,7 @@
                                                 Name="ListboxFilePathNotContainsText"
                                                 Grid.Row="1"
                                                 MinHeight="70"
+                                                BorderThickness="1"
                                                 IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}"
                                                 Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsTexts}" />
                                             <TextBlock Grid.Row="2" Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
@@ -1798,7 +1829,7 @@
                                 FontSize="12"
                                 Text="Log" />
                         </TabItem.Header>
-                        <Grid Margin="0,0,0,10" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+                        <Grid Margin="0,0,0,10" Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition />
