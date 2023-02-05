@@ -52,10 +52,11 @@ namespace VDF.GUI.Data {
 			get => _IgnoreReadOnlyFolders;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreReadOnlyFolders, value);
 		}
-		[Obsolete]
-		[JsonPropertyName("IgnoreHardlinks")]
-		public bool IgnoreHardlinks {
-			set => IgnoreReparsePoints = value;
+		bool _ExcludeHardLinks;
+		[JsonPropertyName("ExcludeHardLinks")]
+		public bool ExcludeHardLinks {
+			get => _ExcludeHardLinks;
+			set => this.RaiseAndSetIfChanged(ref _ExcludeHardLinks, value);
 		}
 		bool _IgnoreReparsePoints;
 		[JsonPropertyName("IgnoreReparsePoints")]

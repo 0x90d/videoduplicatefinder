@@ -1330,7 +1330,13 @@
                                                         Content="Exclude Reparse Points"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="Symbolic links and junction only" />
+                                                        ToolTip.Tip="Symbolic links and junction only. Note this will completely skip these from file enumeration to search." />
+                                                    <CheckBox
+                                                        VerticalAlignment="Center"
+                                                        Content="Exclude Hard Links (Windows Only)"
+                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExcludeHardLinks}"
+                                                        IsThreeState="False"
+                                                        ToolTip.Tip="Unlike reparse points hard links are still included in search but are not considered as duplicates" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
                                                         Content="Extended FFTools Logging"

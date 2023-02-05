@@ -459,6 +459,18 @@ namespace VDF.Core {
 							}
 						}
 
+						if (isDuplicate &&
+							entry.FileSize == compItem.FileSize &&
+							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
+							CoreUtils.IsWindows &&
+							Settings.ExcludeHardLinks) {
+							foreach (var link in HardLinkUtils.GetHardLinks(entry.Path))
+								if (compItem.Path == link) {
+									isDuplicate = false;
+									break;
+								}
+						}
+
 						if (isDuplicate) {
 							lock (duplicateDict) {
 								bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
