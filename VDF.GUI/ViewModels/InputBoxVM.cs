@@ -54,10 +54,10 @@ namespace VDF.GUI.ViewModels {
 			host?.Close(Input);
 		});
 		public ReactiveCommand<Unit, Unit> NoCommand => ReactiveCommand.Create(() => {
-			host?.Close(null);
+			host?.Close(null!);
 		});
 		public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
-			host?.Close(null);
+			host?.Close(null!);
 		});
 	}
 }

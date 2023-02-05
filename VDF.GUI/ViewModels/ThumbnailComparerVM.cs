@@ -38,7 +38,7 @@ namespace VDF.GUI.ViewModels {
 	public sealed class LargeThumbnailDuplicateItem : ReactiveObject {
 		public DuplicateItemVM Item { get; }
 
-		public Bitmap Thumbnail { get; set; }
+		public Bitmap? Thumbnail { get; set; }
 
 		bool _IsLoadingThumbnail = true;
 		public bool IsLoadingThumbnail {

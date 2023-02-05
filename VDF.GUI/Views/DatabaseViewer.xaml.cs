@@ -22,7 +22,7 @@ namespace VDF.GUI.Views {
 	public class DatabaseViewer : Window {
 		public DatabaseViewer() {
 			InitializeComponent();
-			DataContext = new DatabaseViewerVM(this.FindControl<DataGrid>("datagridDatabase"));
+			DataContext = new DatabaseViewerVM(this.FindControl<DataGrid>("datagridDatabase")!);
 			Owner = ApplicationHelpers.MainWindow;
 			Closing += DatabaseViewer_Closing;
 		}
