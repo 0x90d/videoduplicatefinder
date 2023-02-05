@@ -247,6 +247,8 @@ namespace VDF.Core {
 				if (!contains)
 					return true;
 			}
+			if (Settings.IgnoreReparsePoints && File.ResolveLinkTarget(entry.Path, false) != null)
+				return true;
 			if (Settings.FilterByFilePathNotContains) {
 				bool contains = false;
 				foreach (var f in Settings.FilePathContainsTexts) {
@@ -337,8 +339,7 @@ namespace VDF.Core {
 						entry.mediaInfo = info;
 					}
 					// 08/17/21: This is for people upgrading from an older VDF version
-					if (entry.grayBytes == null)
-						entry.grayBytes = new Dictionary<double, byte[]?>();
+					entry.grayBytes ??= new Dictionary<double, byte[]?>();
 
 
 					if (entry.IsImage && entry.grayBytes.Count == 0) {

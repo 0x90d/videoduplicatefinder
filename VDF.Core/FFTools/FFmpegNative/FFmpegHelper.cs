@@ -21,7 +21,7 @@ using FFmpeg.AutoGen;
 namespace VDF.Core.FFTools.FFmpegNative {
 	static class FFmpegHelper {
 		private static bool ffmpegLibraryFound;
-		public static unsafe string? av_strerror(int error) {
+		public static unsafe string? Av_strerror(int error) {
 			const int bufferSize = 1024;
 			byte* buffer = stackalloc byte[bufferSize];
 			ffmpeg.av_strerror(error, buffer, bufferSize).ThrowExceptionIfError();
@@ -31,7 +31,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 		public static int ThrowExceptionIfError(this int error) {
 			if (error < 0)
-				throw new FFInvalidExitCodeException(av_strerror(error) ?? "Unknown error");
+				throw new FFInvalidExitCodeException(Av_strerror(error) ?? "Unknown error");
 			return error;
 		}
 

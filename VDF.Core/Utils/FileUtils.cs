@@ -18,8 +18,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace VDF.Core.Utils {
-	public static class FileUtils {
-		public static readonly string[] ImageExtensions = {
+	internal static class FileUtils {
+		internal static readonly string[] ImageExtensions = {
 			".jpg",
 			".jpeg",
 			".png",
@@ -47,11 +47,12 @@ namespace VDF.Core.Utils {
 			".ts"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
-		public static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders) {
+		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders) {
 			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,
+				AttributesToSkip = FileAttributes.System
 			};
-			enumerationOptions.AttributesToSkip = FileAttributes.System;
+
 			if (ignoreReadonly)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReadOnly;
 			if (ignoreReparsePoints)
@@ -91,7 +92,7 @@ namespace VDF.Core.Utils {
 		/// <param name="path1"></param>
 		/// <param name="path2"></param>
 		/// <returns></returns>
-		public static string SafePathCombine(string path1, string path2) {
+		internal static string SafePathCombine(string path1, string path2) {
 			if (!Path.IsPathRooted(path2))
 				Path.Combine(path1, path2);
 
@@ -103,7 +104,7 @@ namespace VDF.Core.Utils {
 		/// Possible flags for the SHFileOperation method.
 		/// </summary>
 		[Flags]
-		public enum FileOperationFlags : ushort {
+		internal enum FileOperationFlags : ushort {
 			/// <summary>
 			/// Do not show a dialog during the process
 			/// </summary>
@@ -134,7 +135,7 @@ namespace VDF.Core.Utils {
 		/// <summary>
 		/// File Operation Function Type for SHFileOperation
 		/// </summary>
-		public enum FileOperationType : uint {
+		internal enum FileOperationType : uint {
 			/// <summary>
 			/// Move the objects
 			/// </summary>
@@ -154,7 +155,7 @@ namespace VDF.Core.Utils {
 		}
 
 		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-		public struct SHFILEOPSTRUCT {
+		internal struct SHFILEOPSTRUCT {
 
 			public IntPtr hwnd;
 			[MarshalAs(UnmanagedType.U4)]
@@ -169,6 +170,6 @@ namespace VDF.Core.Utils {
 		}
 
 		[DllImport("shell32.dll", CharSet = CharSet.Auto)]
-		public static extern int SHFileOperation(ref SHFILEOPSTRUCT FileOp);
+		internal static extern int SHFileOperation(ref SHFILEOPSTRUCT FileOp);
 	}
 }

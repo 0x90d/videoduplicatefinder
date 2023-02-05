@@ -90,6 +90,7 @@
                                 <MenuItem
                                     Command="{Binding StartScanCommand}"
                                     CommandParameter="CompareOnly"
+                                    ToolTip.Tip="Re-run the scan but without enumerating and gathering file informations. Changing certain settings will only take effect during a full scan."
                                     IsEnabled="{Binding IsReadyToCompare}"
                                     IsVisible="{Binding !IsScanning}">
                                     <MenuItem.Header>
