@@ -111,7 +111,7 @@ namespace VDF.Core.Utils {
 							break;
 						}
 					}
-					links.Add(string.Concat(volume, new string(buffer.AsSpan().TrimEnd('\0'))));
+					links.Add(string.Concat(volume, buffer.AsSpan().TrimEnd('\0')));
 					while (true) {
 						buffer.AsSpan().Clear();
 						bool success = FindNextFileNameW(findHandle, ref stringLength, buffer);
@@ -127,7 +127,7 @@ namespace VDF.Core.Utils {
 								break;
 							}
 						}
-						links.Add(string.Concat(volume, new string(buffer.AsSpan().TrimEnd('\0'))));
+						links.Add(string.Concat(volume, buffer.AsSpan().TrimEnd('\0')));
 					}
 					break;
 				}
