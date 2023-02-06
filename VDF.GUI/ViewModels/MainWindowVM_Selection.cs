@@ -315,11 +315,11 @@ namespace VDF.GUI.ViewModels {
 				if (megaBytes > data.MaximumFileSize)
 					return false;
 				foreach (var item in data.PathContains) {
-					if (!x.ItemInfo.Path.Contains(item))
+					if (!System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(item, x.ItemInfo.Path))					
 						return false;
 				}
 				foreach (var item in data.PathNotContains) {
-					if (x.ItemInfo.Path.Contains(item))
+					if (System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(item, x.ItemInfo.Path))
 						return false;
 				}
 				if (x.ItemInfo.Similarity < data.SimilarityFrom)

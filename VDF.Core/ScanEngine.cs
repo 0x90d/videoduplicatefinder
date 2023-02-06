@@ -251,7 +251,7 @@ namespace VDF.Core {
 				return true;
 			if (Settings.FilterByFilePathNotContains) {
 				bool contains = false;
-				foreach (var f in Settings.FilePathContainsTexts) {
+				foreach (var f in Settings.FilePathNotContainsTexts) {
 					if (System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(f, entry.Path)) {
 						contains = true;
 						break;
