@@ -6,11 +6,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <InternalsVisibleTo  Include="VDF.GUI" />
+    <InternalsVisibleTo Include="VDF.GUI" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen" Version="5.0.0" />
-    <PackageReference Include="protobuf-net" Version="3.1.4" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="5.1.1" />
+    <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
+    <PackageReference Include="protobuf-net" Version="3.1.33" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
   </ItemGroup>
 

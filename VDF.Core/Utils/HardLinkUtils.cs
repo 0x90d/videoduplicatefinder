@@ -53,6 +53,9 @@ namespace VDF.Core.Utils {
 
 		static IEnumerable<string> GetHardLinksPosix(string filepath) {
 			const int timeout = 30_000;
+			int success = Mono.Unix.Native.Syscall.stat(filepath, out var stat);
+			if (success == 0 && stat.st_nlink <= 1)
+				return Array.Empty<string>();
 
 			Process process = new() {
 				StartInfo = {
