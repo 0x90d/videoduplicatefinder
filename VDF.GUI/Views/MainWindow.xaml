@@ -392,10 +392,20 @@
                                                 </MenuItem.Header>
                                             </MenuItem>
                                         </MenuItem>
-                                        <MenuItem Command="{Binding CheckCustomCommand}">
+                                        <MenuItem>
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Select Custom..." />
+                                                <TextBlock VerticalAlignment="Center" Text="Select Custom" />
                                             </MenuItem.Header>
+                                            <MenuItem Command="{Binding CheckCustomCommand}">
+                                                <MenuItem.Header>
+                                                    <TextBlock VerticalAlignment="Center" Text="Expression Builder" />
+                                                </MenuItem.Header>
+                                            </MenuItem>
+                                            <MenuItem Command="{Binding OpenCustomSelectionCommand}">
+                                                <MenuItem.Header>
+                                                    <TextBlock VerticalAlignment="Center" Text="Custom Selection" />
+                                                </MenuItem.Header>
+                                            </MenuItem>
                                         </MenuItem>
                                         <MenuItem Command="{Binding ClearSelectionCommand}">
                                             <MenuItem.Header>
@@ -1503,7 +1513,7 @@
                                                                 <StackPanel Orientation="Horizontal">
                                                                     <Viewbox Width="16" Height="16">
                                                                         <Canvas Width="24" Height="24">
-                                                                            <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="LimeGreen" />
+                                                                            <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
                                                                         </Canvas>
                                                                     </Viewbox>
                                                                     <TextBlock
@@ -1518,7 +1528,7 @@
                                                                 <StackPanel Orientation="Horizontal">
                                                                     <Viewbox Width="16" Height="16">
                                                                         <Canvas Width="24" Height="24">
-                                                                            <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
                                                                         </Canvas>
                                                                     </Viewbox>
                                                                     <TextBlock
@@ -1553,7 +1563,7 @@
                                                                 <StackPanel Orientation="Horizontal">
                                                                     <Viewbox Width="16" Height="16">
                                                                         <Canvas Width="24" Height="24">
-                                                                            <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="LimeGreen" />
+                                                                            <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
                                                                         </Canvas>
                                                                     </Viewbox>
                                                                     <TextBlock
@@ -1568,7 +1578,7 @@
                                                                 <StackPanel Orientation="Horizontal">
                                                                     <Viewbox Width="16" Height="16">
                                                                         <Canvas Width="24" Height="24">
-                                                                            <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
                                                                         </Canvas>
                                                                     </Viewbox>
                                                                     <TextBlock
@@ -1659,7 +1669,7 @@
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
                                                                 <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                                    <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
                                                                 </Canvas>
                                                             </Viewbox>
                                                             <TextBlock
@@ -1674,7 +1684,7 @@
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
                                                                 <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                    <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
                                                                 </Canvas>
                                                             </Viewbox>
                                                             <TextBlock
@@ -1694,15 +1704,6 @@
                                                 Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsTexts}" />
                                             <TextBlock Grid.Row="2" Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
                                         </Grid>
-                                        <!--<TextBox
-                                        Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsText}"
-                                        Margin="10,5"
-                                        IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}"
-                                        Watermark="Supports the following wildcards: '*' and '?'. The backslash character '\' escapes."
-                                        UseFloatingWatermark="True"
-                                        Grid.Row="1"
-                                        Grid.Column="1"
-                                        Grid.ColumnSpan="3"/>-->
                                         <CheckBox
                                             x:Name="CheckboxFilterByFilePathNotContains"
                                             Grid.Row="2"
@@ -1725,7 +1726,7 @@
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
                                                                 <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="Green" />
+                                                                    <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
                                                                 </Canvas>
                                                             </Viewbox>
                                                             <TextBlock
@@ -1740,7 +1741,7 @@
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
                                                                 <Canvas Width="24" Height="24">
-                                                                    <Path Data="M19,13H5V11H19V13Z" Fill="Red" />
+                                                                    <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
                                                                 </Canvas>
                                                             </Viewbox>
                                                             <TextBlock

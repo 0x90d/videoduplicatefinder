@@ -1,0 +1,269 @@
+<Window
+    x:Class="VDF.GUI.Views.CustomSelectionView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
+    x:Name="CustomSelectionWindow"
+    Title="Custom Selection"
+    MinWidth="400"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    ExtendClientAreaToDecorationsHint="True"
+    FontSize="14"
+    Icon="/Assets/icon.ico"
+    SizeToContent="WidthAndHeight"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+    <Border BorderBrush="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderThickness="2">
+        <Grid RowDefinitions="Auto, Auto, *, Auto">
+            <controls:ExperimentalAcrylicBorder
+                x:Name="ExperimentalAcrylicBorderBackgroundWhite"
+                IsHitTestVisible="False"
+                IsVisible="False">
+                <controls:ExperimentalAcrylicBorder.Material>
+                    <media:ExperimentalAcrylicMaterial BackgroundSource="Digger" TintColor="White" />
+                </controls:ExperimentalAcrylicBorder.Material>
+            </controls:ExperimentalAcrylicBorder>
+            <controls:ExperimentalAcrylicBorder
+                x:Name="ExperimentalAcrylicBorderBackgroundBlack"
+                IsHitTestVisible="False"
+                IsVisible="False">
+                <controls:ExperimentalAcrylicBorder.Material>
+                    <media:ExperimentalAcrylicMaterial BackgroundSource="Digger" TintColor="Black" />
+                </controls:ExperimentalAcrylicBorder.Material>
+            </controls:ExperimentalAcrylicBorder>
+            <TextBlock
+                x:Name="TextBlockWindowTitle"
+                Grid.Row="0"
+                Grid.ColumnSpan="3"
+                Margin="0,4,0,10"
+                HorizontalAlignment="Center"
+                IsHitTestVisible="false"
+                Text="{Binding #CustomSelectionWindow.Title}" />
+
+            <Menu Grid.Row="1">
+                <MenuItem Command="{Binding SaveCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="20" Height="20">
+                                <Canvas Width="16" Height="16">
+                                    <Path Data="M11.04 1.33L12.71 3l.29.71v.33h-.5l-.5.5v-.83l-1.67-1.67H10v4H4v-4H2v10h3l-.5 1H2l-1-1v-10l1-1h8.33l.71.29zM7 5h2V2H7v3zm6.5 0L15 6.5l-.02.69-5.5 5.5-.13.12-.37.37-.1.09-3 1.5-.67-.67 1.5-3 .09-.1.37-.37.12-.13 5.5-5.5h.71zm-6.22 7.24l-.52 1 1.04-.48-.52-.52zm.69-1.03l.79.79 5.15-5.15-.79-.79-5.15 5.15z" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock
+                                Margin="5,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="Save To File" />
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding LoadCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="20" Height="20">
+                                <Canvas Width="16" Height="16">
+                                    <Path Data="M1.5 14h11l.48-.37 2.63-7-.48-.63H14V3.5l-.5-.5H7.71l-.86-.85L6.5 2h-5l-.5.5v11l.5.5zM2 3h4.29l.86.85.35.15H13v2H8.5l-.35.15-.86.85H3.5l-.47.34-1 3.08L2 3zm10.13 10H2.19l1.67-5H7.5l.35-.15.86-.85h5.79l-2.37 6z" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock
+                                Margin="5,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="Load From File" />
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+            </Menu>
+            <ScrollViewer
+                Grid.Row="2"
+                Margin="0,10"
+                Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}"
+                HorizontalScrollBarVisibility="Auto">
+                <StackPanel Margin="10,0">
+                    <CheckBox
+                        Content="Ignore groups which contain selected items"
+                        IsChecked="{Binding Data.IgnoreGroupsWithSelectedItems}"
+                        IsThreeState="False"
+                        ToolTip.Tip="While active any group which contain at least one selected item will be ignored" />
+                    <TextBlock Margin="0,10" Text="File type:" />
+                    <ComboBox MinWidth="200" SelectedIndex="{Binding Data.FileTypeSelection}">
+                        <ComboBoxItem>All</ComboBoxItem>
+                        <ComboBoxItem>Videos</ComboBoxItem>
+                        <ComboBoxItem>Images</ComboBoxItem>
+                    </ComboBox>
+                    <TextBlock Margin="0,10" Text="Must be identical:" />
+                    <ComboBox MinWidth="200" SelectedIndex="{Binding Data.IdenticalSelection}">
+                        <ComboBoxItem>Any</ComboBoxItem>
+                        <ComboBoxItem>100% Identical</ComboBoxItem>
+                        <ComboBoxItem>100% Identical except size</ComboBoxItem>
+                        <ComboBoxItem>Not identical</ComboBoxItem>
+                    </ComboBox>
+                    <TextBlock Margin="0,10" Text="Date Time:" />
+                    <ComboBox MinWidth="200" SelectedIndex="{Binding Data.DateTimeSelection}">
+                        <ComboBoxItem>Ignore</ComboBoxItem>
+                        <ComboBoxItem>Newest</ComboBoxItem>
+                        <ComboBoxItem>Oldest</ComboBoxItem>
+                    </ComboBox>
+                    <StackPanel Margin="0,10" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Center"
+                            Text="Minimum File Size (MB):" />
+                        <NumericUpDown
+                            x:Name="NumericUpDownMinimumFileSize"
+                            Width="200"
+                            HorizontalAlignment="Left"
+                            Minimum="0"
+                            Value="{Binding Data.MinimumFileSize}" />
+                        <TextBlock
+                            Margin="10,0"
+                            VerticalAlignment="Center"
+                            Text="Maximum File Size (MB):" />
+                        <NumericUpDown
+                            Width="200"
+                            HorizontalAlignment="Left"
+                            Maximum="999999999"
+                            Minimum="{Binding #NumericUpDownMinimumFileSize.Value}"
+                            Value="{Binding Data.MaximumFileSize}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,10" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Center"
+                            Text="Similarity From:" />
+                        <NumericUpDown
+                            Width="200"
+                            HorizontalAlignment="Left"
+                            Maximum="100"
+                            Minimum="0"
+                            Value="{Binding Data.SimilarityFrom}" />
+                        <TextBlock
+                            Margin="10,0"
+                            VerticalAlignment="Center"
+                            Text="Similarity To:" />
+                        <NumericUpDown
+                            Width="200"
+                            HorizontalAlignment="Left"
+                            Maximum="100"
+                            Minimum="0"
+                            Value="{Binding Data.SimilarityTo}" />
+                    </StackPanel>
+                    <TextBlock Margin="0,10" Text="Path contains:" />
+                    <Grid RowDefinitions="Auto, *, Auto">
+                        <Menu Grid.Row="0" MinHeight="30">
+                            <MenuItem Command="{Binding AddFilePathContainsTextToListCommand}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Add" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding RemoveFilePathContainsTextFromListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathContainsText}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Remove" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </Menu>
+                        <ListBox
+                            Name="ListboxFilePathContainsText"
+                            Grid.Row="1"
+                            MinHeight="70"
+                            BorderThickness="1"
+                            Items="{Binding Data.PathContains}"
+                            SelectionMode="Multiple" />
+                        <TextBlock
+                            Grid.Row="2"
+                            FontStyle="Italic"
+                            Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
+                    </Grid>
+                    <TextBlock Margin="0,10" Text="Path does NOT contain:" />
+                    <Grid RowDefinitions="Auto, *, Auto">
+                        <Menu Grid.Row="0" MinHeight="30">
+                            <MenuItem Command="{Binding AddFilePathNotContainsTextToListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathNotContainsText}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Add" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Command="{Binding RemoveFilePathNotContainsTextFromListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathNotContainsText}">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Text="Remove" />
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </Menu>
+                        <ListBox
+                            Name="ListboxFilePathNotContainsText"
+                            Grid.Row="1"
+                            MinHeight="70"
+                            BorderThickness="1"
+                            Items="{Binding Data.PathNotContains}"
+                            SelectionMode="Multiple" />
+                        <TextBlock
+                            Grid.Row="2"
+                            FontStyle="Italic"
+                            Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+            <Grid Grid.Row="3" Margin="5,0,5,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="1"
+                    Width="100"
+                    Margin="5"
+                    Command="{Binding SelectCommand}"
+                    Content="Select" />
+                <Button
+                    Grid.Column="2"
+                    Width="100"
+                    Margin="5"
+                    Command="{Binding CancelCommand}"
+                    Content="Close" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

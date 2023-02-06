@@ -51,6 +51,9 @@
     <Compile Update="Views\DatabaseViewer.xaml.cs">
       <DependentUpon>DatabaseViewer.xaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\CustomSelectionView.xaml.cs">
+      <DependentUpon>CustomSelectionView.xaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\ThumbnailComparer.xaml.cs">
       <DependentUpon>ThumbnailComparer.xaml</DependentUpon>
     </Compile>

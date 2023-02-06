@@ -22,12 +22,17 @@ using DynamicExpresso;
 using DynamicExpresso.Exceptions;
 using ReactiveUI;
 using VDF.Core;
+using VDF.Core.Utils;
 using VDF.GUI.Data;
 using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
 
+		public ReactiveCommand<Unit, Unit> OpenCustomSelectionCommand => ReactiveCommand.Create(() => {
+			CustomSelectionView dlg = new(string.Empty);
+			dlg.Show(ApplicationHelpers.MainWindow);
+		});
 		public ReactiveCommand<Unit, Unit> CheckCustomCommand => ReactiveCommand.CreateFromTask(async () => {
 			ExpressionBuilder dlg = new();
 			((ExpressionBuilderVM)dlg.DataContext!).ExpressionText = SettingsFile.Instance.LastCustomSelectExpression;
@@ -278,5 +283,95 @@ namespace VDF.GUI.ViewModels {
 			if (errorCounter > 0)
 				await MessageBoxService.Show("Failed to move some files. Please check log!");
 		});
+
+		internal void RunCustomSelection(CustomSelectionData data) {
+
+			IEnumerable<DuplicateItemVM> dups = Duplicates.Where(x => x.IsVisibleInFilter);
+#if DEBUG
+			int itemsCount = dups.Count();
+			System.Diagnostics.Trace.WriteLine($"Custom selection items count: {itemsCount}");
+#endif
+			if (data.IgnoreGroupsWithSelectedItems) {
+				HashSet<Guid> blackList = new();
+				foreach (var first in dups.Where(x => x.Checked)) {
+					if (blackList.Contains(first.ItemInfo.GroupId)) continue;
+					blackList.Add(first.ItemInfo.GroupId);
+				}
+				dups = dups.Where(x => !blackList.Contains(x.ItemInfo.GroupId));
+#if DEBUG
+				itemsCount = dups.Count();
+				System.Diagnostics.Trace.WriteLine($"Custom selection items count: {itemsCount}");
+#endif
+			}
+
+			dups = dups.Where(x => {
+				if (data.FileTypeSelection == 1 && x.ItemInfo.IsImage)
+					return false;
+				if (data.FileTypeSelection == 2 && !x.ItemInfo.IsImage)
+					return false;
+				long megaBytes = x.ItemInfo.SizeLong.BytesToMegaBytes();
+				if (megaBytes < data.MinimumFileSize)
+					return false;
+				if (megaBytes > data.MaximumFileSize)
+					return false;
+				foreach (var item in data.PathContains) {
+					if (!x.ItemInfo.Path.Contains(item))
+						return false;
+				}
+				foreach (var item in data.PathNotContains) {
+					if (x.ItemInfo.Path.Contains(item))
+						return false;
+				}
+				if (x.ItemInfo.Similarity < data.SimilarityFrom)
+					return false;
+				if (x.ItemInfo.Similarity < data.SimilarityTo)
+					return false;
+
+				return true;
+			});
+#if DEBUG
+			itemsCount = dups.Count();
+			System.Diagnostics.Trace.WriteLine($"Custom selection items count: {itemsCount}");
+#endif
+
+			HashSet<Guid> blackListGroupID = new();
+			foreach (var first in dups) {
+				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
+
+				var l = dups.Where(d => {
+					if (d.ItemInfo.Path.Equals(first.ItemInfo.Path))
+						return false;
+					switch (data.IdenticalSelection) {
+					case 1:
+						return d.EqualsFull(first);
+					case 2:
+						return d.EqualsButSize(first);
+					case 3:
+						return !d.EqualsFull(first) || !d.EqualsButSize(first);
+					default:
+						break;
+					}
+					return true;
+				});
+
+				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
+				if (dupMods.Count == 0) continue;
+				dupMods.Insert(0, first);
+				switch (data.DateTimeSelection) {
+				case 1:
+					dupMods = dupMods.OrderBy(s => s.ItemInfo.DateCreated).ToList();
+					break;
+				case 2:
+					dupMods = dupMods.OrderByDescending(s => s.ItemInfo.DateCreated).ToList();
+					break;
+				}
+				dupMods[0].Checked = false;
+				for (int i = 1; i < dupMods.Count; i++) {
+					dupMods[i].Checked = true;
+				}
+				blackListGroupID.Add(first.ItemInfo.GroupId);
+
+			}
+		}
 	}
 }

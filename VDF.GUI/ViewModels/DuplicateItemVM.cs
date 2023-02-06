@@ -16,7 +16,9 @@
 
 using System.Diagnostics;
 using System.Text.Json.Serialization;
+using Avalonia;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using ReactiveUI;
 using VDF.Core.ViewModels;
 using VDF.GUI.Utils;
@@ -33,7 +35,9 @@ namespace VDF.GUI.ViewModels {
 			ItemInfo = item;
 			ItemInfo.ThumbnailsUpdated += () => {
 				Thumbnail = ImageUtils.JoinImages(ItemInfo.ImageList)!;
-				this.RaisePropertyChanged(nameof(Thumbnail));
+				Dispatcher.UIThread.Post(() => {
+					this.RaisePropertyChanged(nameof(Thumbnail));
+				}, DispatcherPriority.Layout);
 			};
 		}
 		public DuplicateItem ItemInfo { get; set; }
