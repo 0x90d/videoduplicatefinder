@@ -46,7 +46,7 @@ jobs:
           # Add nuget sources
           dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
           # Build everything
-            dotnet publish ~/VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
+            dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             # Pack to zip for Windows
