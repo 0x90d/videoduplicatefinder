@@ -34,7 +34,7 @@ namespace VDF.GUI {
 		public static AppBuilder BuildAvaloniaApp()
 			=> AppBuilder.Configure<App>()
 				.UsePlatformDetect()
-				.With(new SkiaOptions { MaxGpuResourceSizeBytes = 8096000 })
+				.With(new X11PlatformOptions {  UseDBusFilePicker = false })
 				.With(new Win32PlatformOptions { UseWindowsUIComposition = true })
 				.UseReactiveUI();
 	}
