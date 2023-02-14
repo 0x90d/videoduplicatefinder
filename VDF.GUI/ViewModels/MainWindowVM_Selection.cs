@@ -64,7 +64,7 @@ namespace VDF.GUI.ViewModels {
 				if (!matches.Any()) continue;
 				if (matches.Count() == l.Count()) {
 					if (!userAsked) {
-						MessageBoxButtons? result = await MessageBoxService.Show($"There are groups where all items matches your expression, for example '{first.ItemInfo.Path}'.{Environment.NewLine}{Environment.NewLine}Do you want to have all items checked (Yes)? Or do you want to have NO items in these groups checked (No)?", MessageBoxButtons.Yes | MessageBoxButtons.No);
+						MessageBoxButtons? result = await MessageBoxService.Show($"There are groups where all items match your expression, for example '{first.ItemInfo.Path}'.{Environment.NewLine}{Environment.NewLine}Do you want to have all items checked (Yes)? Or do you want to have NO items in these groups checked (No)?", MessageBoxButtons.Yes | MessageBoxButtons.No);
 						if (result == MessageBoxButtons.No)
 							skipIfAllMatches = true;
 						userAsked = true;
