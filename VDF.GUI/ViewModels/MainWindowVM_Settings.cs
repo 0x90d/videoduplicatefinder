@@ -109,8 +109,8 @@ namespace VDF.GUI.ViewModels {
 
 			if (result == null || result.Count == 0) return;
 			foreach (var item in result) {
-				if (!SettingsFile.Instance.Includes.Contains(item))
-					SettingsFile.Instance.Includes.Add(item);
+				if (!SettingsFile.Instance.Blacklists.Contains(item))
+					SettingsFile.Instance.Blacklists.Add(item);
 			}
 		});
 		public ReactiveCommand<ListBox, Action> RemoveBlacklistFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
