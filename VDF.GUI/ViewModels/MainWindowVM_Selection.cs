@@ -315,7 +315,7 @@ namespace VDF.GUI.ViewModels {
 				if (megaBytes > data.MaximumFileSize)
 					return false;
 				foreach (var item in data.PathContains) {
-					if (!System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(item, x.ItemInfo.Path))					
+					if (!System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(item, x.ItemInfo.Path))
 						return false;
 				}
 				foreach (var item in data.PathNotContains) {
@@ -324,7 +324,7 @@ namespace VDF.GUI.ViewModels {
 				}
 				if (x.ItemInfo.Similarity < data.SimilarityFrom)
 					return false;
-				if (x.ItemInfo.Similarity < data.SimilarityTo)
+				if (x.ItemInfo.Similarity > data.SimilarityTo)
 					return false;
 
 				return true;
@@ -349,9 +349,8 @@ namespace VDF.GUI.ViewModels {
 					case 3:
 						return !d.EqualsFull(first) || !d.EqualsButSize(first);
 					default:
-						break;
+						return d.ItemInfo.GroupId == first.ItemInfo.GroupId;
 					}
-					return true;
 				});
 
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
