@@ -63,7 +63,7 @@ namespace VDF.GUI.ViewModels {
 		[JsonIgnore]
 		public ReactiveCommand<ListBox, Action> RemoveFilePathContainsTextFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems?.Count > 0)
-				Data.PathNotContains.Remove((string)lbox.SelectedItems[0]!);
+				Data.PathContains.Remove((string)lbox.SelectedItems[0]!);
 			return null!;
 		});
 		[JsonIgnore]
