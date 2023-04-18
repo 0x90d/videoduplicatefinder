@@ -17,9 +17,14 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using FFmpeg.AutoGen.Native;
 
 namespace VDF.Core.FFTools.FFmpegNative {
 	static class FFmpegHelper {
+		static readonly LinuxFunctionResolver linuxFunctionResolver = new();
+		static readonly WindowsFunctionResolver windowsFunctionResolver = new();
+		static readonly MacFunctionResolver macFunctionResolver = new();
+
 		private static bool ffmpegLibraryFound;
 		public static unsafe string? Av_strerror(int error) {
 			const int bufferSize = 1024;
@@ -64,8 +69,14 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				//Try fast lookup first, credits: @Maltragor
 				try {
 					ffmpeg.RootPath = string.Empty;
-					foreach (KeyValuePair<string, int> item in ffmpeg.LibraryVersionMap)
-						ffmpeg.GetOrLoadLibrary(item.Key);
+					foreach (KeyValuePair<string, int> item in ffmpeg.LibraryVersionMap) {
+						if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+							windowsFunctionResolver.GetOrLoadLibrary(item.Key, throwOnError: true);
+						else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+							linuxFunctionResolver.GetOrLoadLibrary(item.Key, throwOnError: true);
+						else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+							macFunctionResolver.GetOrLoadLibrary(item.Key, throwOnError: true);
+					}
 					return true;
 				}
 				catch { }
@@ -73,15 +84,15 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 					string firstLibrary = $"lib{ffmpeg.LibraryVersionMap.Keys.First()}.so.{ffmpeg.LibraryVersionMap.Values.First()}";
 					foreach (var libDir in Directory.EnumerateDirectories("/usr/", "lib*", new EnumerationOptions {
-							IgnoreInaccessible = true,
-							RecurseSubdirectories = false
-						})) {
+						IgnoreInaccessible = true,
+						RecurseSubdirectories = false
+					})) {
 
-							foreach (string file in Directory.EnumerateFiles(libDir, firstLibrary, new EnumerationOptions {
-								IgnoreInaccessible = true,
-								RecurseSubdirectories = true,
-								MaxRecursionDepth = 2,
-							})) {
+						foreach (string file in Directory.EnumerateFiles(libDir, firstLibrary, new EnumerationOptions {
+							IgnoreInaccessible = true,
+							RecurseSubdirectories = true,
+							MaxRecursionDepth = 2,
+						})) {
 							string currentDirectory = Path.GetDirectoryName(file)!;
 							if (CheckForFfmpegLibraryFilesInFolder(currentDirectory))
 								return true;
