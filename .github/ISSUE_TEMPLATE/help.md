@@ -8,7 +8,7 @@ assignees: ""
 ---
 
 ## Environment
- - OS: [e.g. Windows / Linux / Any]
+ - OS: [e.g. Windows / Linux / MacOS ]
 
 
 ## Question

@@ -8,7 +8,7 @@ assignees: "0x90d"
 ---
 
 ## Environment
- - OS: [e.g. Windows / Linux / Any]
+ - OS: [e.g. Windows / Linux / MacOS ]
 
 ## Describe desired feature
 A clear and concise description of what you want to happen.
