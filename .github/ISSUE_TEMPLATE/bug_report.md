@@ -3,10 +3,8 @@ name: Bug report
 about: Create a bug report
 title: "[Bug]: "
 labels: "bug"
-assignees: "0x90d"
 
 ---
-Thanks for taking the time to fill out this bug report!
 
 ## Environment
  - OS: [e.g. Windows / Linux / MacOS ]
