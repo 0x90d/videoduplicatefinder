@@ -3,7 +3,6 @@ name: Feature request
 about: Suggest an idea to improve Video Duplicate Finder (videoduplicatefinder)
 title: "[Enhancement]: "
 labels: "enhancement"
-assignees: "0x90d"
 
 ---
 
