@@ -44,12 +44,12 @@ namespace VDF.Core.ViewModels {
 				int[] selVideo = { -1, 0 };
 				int[] selAudio = { -1, 0 };
 				for (int i = file.mediaInfo.Streams.Length - 1; i >= 0; i--) {
-					if (file.mediaInfo.Streams[i].CodecType.Equals("video", StringComparison.OrdinalIgnoreCase) &&
+					if (file.mediaInfo.Streams[i].CodecType?.Equals("video", StringComparison.OrdinalIgnoreCase) == true &&
 						file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height >= selVideo[1]) {
 						selVideo[0] = i;
 						selVideo[1] = file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height;
 					}
-					else if (file.mediaInfo.Streams[i].CodecType.Equals("audio", StringComparison.OrdinalIgnoreCase) &&
+					else if (file.mediaInfo.Streams[i].CodecType?.Equals("audio", StringComparison.OrdinalIgnoreCase) == true &&
 							 file.mediaInfo.Streams[i].Channels >= selAudio[1]) {
 						selAudio[0] = i;
 						selAudio[1] = file.mediaInfo.Streams[i].Channels;
@@ -58,7 +58,7 @@ namespace VDF.Core.ViewModels {
 
 				if (selVideo[0] >= 0) {
 					int i = selVideo[0];
-					Format = file.mediaInfo.Streams[i].CodecName;
+					Format = file.mediaInfo.Streams[i].CodecName ?? "<Unknown>";
 					Fps = file.mediaInfo.Streams[i].FrameRate;
 					BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
 					FrameSize = file.mediaInfo.Streams[i].Width + "x" + file.mediaInfo.Streams[i].Height;
@@ -66,8 +66,8 @@ namespace VDF.Core.ViewModels {
 				}
 				if (selAudio[0] >= 0) {
 					int i = selAudio[0];
-					AudioFormat = file.mediaInfo.Streams[i].CodecName;
-					AudioChannel = file.mediaInfo.Streams[i].ChannelLayout;
+					AudioFormat = file.mediaInfo.Streams[i].CodecName ?? "<Unknown>";
+					AudioChannel = file.mediaInfo.Streams[i].ChannelLayout ?? "<Unknown>";
 					AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
 				}
 
