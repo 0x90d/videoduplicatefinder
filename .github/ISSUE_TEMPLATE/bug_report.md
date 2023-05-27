@@ -1,17 +1,18 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+about: Create a bug report
+title: "[Bug]: "
+labels: "bug"
 
 ---
 
-**Environment**
- - OS: [e.g. Windows / Linux]
+## Environment
+ - OS: [e.g. Windows / Linux / MacOS ]
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Describe the bug
+ - A clear and concise description of the bug.
+ - What happen, and what did you expect to happen?
+ - What are the steps to reproduce issue?
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Snapshots
+Optionally, include snapshots showing the issue.
