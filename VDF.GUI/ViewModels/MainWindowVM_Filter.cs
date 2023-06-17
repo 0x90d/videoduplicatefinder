@@ -39,6 +39,19 @@ namespace VDF.GUI.ViewModels {
 				return xHasChecked.CompareTo(yHasChecked);
 			}
 		}
+		public sealed class GroupSizeComparer : System.Collections.IComparer {
+			readonly MainWindowVM mainVM;
+			public GroupSizeComparer(MainWindowVM vm) => mainVM = vm;
+			public int Compare(object? x, object? y) {
+				if (x == null || y == null)
+					return -1;
+				var dupX = (DuplicateItemVM)x;
+				var dupY = (DuplicateItemVM)y;
+				int groupSizeX = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Count();
+				int groupSizeY = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupY.ItemInfo.GroupId).Count();
+				return groupSizeX.CompareTo(groupSizeY);
+			}
+		}
 		public KeyValuePair<string, FileTypeFilter>[] TypeFilters { get; } = {
 			new KeyValuePair<string, FileTypeFilter>("All",  FileTypeFilter.All),
 			new KeyValuePair<string, FileTypeFilter>("Videos",  FileTypeFilter.Videos),

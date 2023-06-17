@@ -203,6 +203,10 @@ namespace VDF.GUI.ViewModels {
 				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Ascending)),
 				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Descending",
 				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Size Ascending",
+				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Size Descending",
+				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
 			};
 			_SortOrder = SortOrders[0];
 		}
