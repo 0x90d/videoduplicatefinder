@@ -41,14 +41,28 @@ namespace VDF.GUI.ViewModels {
 		}
 		public sealed class GroupSizeComparer : System.Collections.IComparer {
 			readonly MainWindowVM mainVM;
+			private readonly Dictionary<Guid, int> guidMap = new();
 			public GroupSizeComparer(MainWindowVM vm) => mainVM = vm;
 			public int Compare(object? x, object? y) {
 				if (x == null || y == null)
 					return -1;
 				var dupX = (DuplicateItemVM)x;
 				var dupY = (DuplicateItemVM)y;
-				int groupSizeX = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Count();
-				int groupSizeY = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupY.ItemInfo.GroupId).Count();
+				int groupSizeX, groupSizeY;
+				if (guidMap.ContainsKey(dupX.ItemInfo.GroupId)) {
+					groupSizeX = guidMap[dupX.ItemInfo.GroupId];
+				}
+				else {
+					groupSizeX = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Count();
+					guidMap[dupX.ItemInfo.GroupId] = groupSizeX;
+				}
+				if (guidMap.ContainsKey(dupY.ItemInfo.GroupId)) {
+					groupSizeY = guidMap[dupY.ItemInfo.GroupId];
+				}
+				else {
+					groupSizeY = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupY.ItemInfo.GroupId).Count();
+					guidMap[dupY.ItemInfo.GroupId] = groupSizeY;
+				}
 				return groupSizeX.CompareTo(groupSizeY);
 			}
 		}
