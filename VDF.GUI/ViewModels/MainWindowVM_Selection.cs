@@ -14,7 +14,6 @@
 // */
 //
 
-using System.Drawing.Text;
 using System.Linq;
 using System.Reactive;
 using Avalonia.Platform.Storage;
