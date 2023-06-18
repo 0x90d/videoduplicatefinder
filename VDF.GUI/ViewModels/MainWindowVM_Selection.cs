@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Drawing.Text;
 using System.Linq;
 using System.Reactive;
 using Avalonia.Platform.Storage;
@@ -48,6 +49,8 @@ namespace VDF.GUI.ViewModels {
 			bool skipIfAllMatches = false;
 			bool userAsked = false;
 
+			const string shortIdentifier = "item";
+
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
 
@@ -55,7 +58,6 @@ namespace VDF.GUI.ViewModels {
 				IEnumerable<DuplicateItemVM> matches;
 
 				try {
-					const string shortIdentifier = "item";
 					var interpreter = new Interpreter().
 						ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
 					matches = l.Where(arg => interpreter.Invoke(arg.ItemInfo));
