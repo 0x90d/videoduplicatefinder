@@ -14,7 +14,6 @@
 // */
 //
 
-using System;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
@@ -23,7 +22,6 @@ using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using Avalonia.Platform.Storage.FileIO;
 using Avalonia.Threading;
-using ProtoBuf.WellKnownTypes;
 using ReactiveUI;
 using VDF.Core.Utils;
 using VDF.GUI.Data;
