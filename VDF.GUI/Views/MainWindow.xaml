@@ -1538,6 +1538,21 @@
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>
+                                                        <MenuItem Command="{Binding ClearIncludesListCommand}">
+                                                            <MenuItem.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Viewbox Width="16" Height="16">
+                                                                        <Canvas Width="24" Height="24">
+                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                    <TextBlock
+                                                                        Margin="5,0,0,0"
+                                                                        VerticalAlignment="Center"
+                                                                        Text="Clear All" />
+                                                                </StackPanel>
+                                                            </MenuItem.Header>
+                                                        </MenuItem>
                                                     </Menu>
                                                     <ListBox
                                                         Name="ListboxIncludelist"
@@ -1585,6 +1600,21 @@
                                                                         Margin="5,0,0,0"
                                                                         VerticalAlignment="Center"
                                                                         Text="Remove" />
+                                                                </StackPanel>
+                                                            </MenuItem.Header>
+                                                        </MenuItem>
+                                                        <MenuItem Command="{Binding ClearBlacklistListCommand}">
+                                                            <MenuItem.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Viewbox Width="16" Height="16">
+                                                                        <Canvas Width="24" Height="24">
+                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                    <TextBlock
+                                                                        Margin="5,0,0,0"
+                                                                        VerticalAlignment="Center"
+                                                                        Text="Clear All" />
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>

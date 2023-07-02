@@ -100,6 +100,19 @@ namespace VDF.GUI.ViewModels {
 				SettingsFile.Instance.Includes.Remove((string)lbox.SelectedItems[0]!);
 			return null!;
 		});
+
+		public ReactiveCommand<Unit, Unit> ClearIncludesListCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await MessageBoxService.Show("Are you sure you want to clear the list of ALL included folders?", MessageBoxButtons.Yes | MessageBoxButtons.Cancel);
+			if (result == MessageBoxButtons.Yes)
+				SettingsFile.Instance.Includes.Clear();
+		});
+
+		public ReactiveCommand<Unit, Unit> ClearBlacklistListCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await MessageBoxService.Show("Are you sure you want to clear the list of ALL excluded folders?", MessageBoxButtons.Yes | MessageBoxButtons.Cancel);
+			if (result == MessageBoxButtons.Yes)
+				SettingsFile.Instance.Blacklists.Clear();
+		});
+
 		public ReactiveCommand<Unit, Unit> AddBlacklistToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
