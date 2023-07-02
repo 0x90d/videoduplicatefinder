@@ -29,14 +29,16 @@ namespace VDF.GUI.ViewModels {
 			var sb = new StringBuilder();
 
 			var properties = typeof(DuplicateItem).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+			sb.AppendLine("Build a custom expression to select items. Your expression must return a bool: true if the video should be selected, false otherwise.");
+			sb.AppendLine();
 			foreach (var p in properties) {
-				sb.AppendLine($"arg.{nameof(DuplicateItemVM.ItemInfo)}.{p.Name} ({p.PropertyType.Name})");
+				sb.AppendLine($"item.{p.Name} ({p.PropertyType.Name})");
 			}
 			sb.AppendLine();
 			sb.AppendLine();
-			sb.AppendLine($"Example: arg.{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.IsImage)} && arg.{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)} > 3000");
-			sb.AppendLine($"Example: arg.{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Path)}.Contains(\"imageFolder\")");
-			sb.AppendLine($"Example: arg.{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}.Minute > 15");
+			sb.AppendLine($"Example: item.{nameof(DuplicateItem.IsImage)} && arg.{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)} > 3000");
+			sb.AppendLine($"Example: item.{nameof(DuplicateItem.Path)}.Contains(\"imageFolder\")");
+			sb.AppendLine($"Example: item.{nameof(DuplicateItem.Duration)}.Minute > 15");
 			sb.AppendLine("Note: Expression uses 'Dynamic Expresso' library which understands C# syntax");
 
 			AvailableProperties = sb.ToString();

@@ -23,6 +23,7 @@ using DynamicExpresso.Exceptions;
 using ReactiveUI;
 using VDF.Core;
 using VDF.Core.Utils;
+using VDF.Core.ViewModels;
 using VDF.GUI.Data;
 using VDF.GUI.Views;
 
@@ -33,6 +34,7 @@ namespace VDF.GUI.ViewModels {
 			CustomSelectionView dlg = new(string.Empty);
 			dlg.Show(ApplicationHelpers.MainWindow);
 		});
+
 		public ReactiveCommand<Unit, Unit> CheckCustomCommand => ReactiveCommand.CreateFromTask(async () => {
 			ExpressionBuilder dlg = new();
 			((ExpressionBuilderVM)dlg.DataContext!).ExpressionText = SettingsFile.Instance.LastCustomSelectExpression;
@@ -46,15 +48,18 @@ namespace VDF.GUI.ViewModels {
 			bool skipIfAllMatches = false;
 			bool userAsked = false;
 
+			const string shortIdentifier = "item";
+
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
 
 				IEnumerable<DuplicateItemVM> l = Duplicates.Where(a => a.IsVisibleInFilter && a.ItemInfo.GroupId == first.ItemInfo.GroupId);
 				IEnumerable<DuplicateItemVM> matches;
+
 				try {
 					var interpreter = new Interpreter().
-						ParseAsDelegate<Func<DuplicateItemVM, bool>>(SettingsFile.Instance.LastCustomSelectExpression);
-					matches = l.Where(interpreter);
+						ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
+					matches = l.Where(arg => interpreter.Invoke(arg.ItemInfo));
 				}
 				catch (ParseException e) {
 					await MessageBoxService.Show($"Failed to parse '{SettingsFile.Instance.LastCustomSelectExpression}': {e}");
