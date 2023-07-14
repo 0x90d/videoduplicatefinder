@@ -1176,9 +1176,17 @@
                                                 </MenuItem>
                                                 <MenuItem Header="Selected Group">
                                                     <MenuItem
-                                                        Command="{Binding MarkGroupAsNotAMatchCommand}"
-                                                        Header="Mark as 'Not a match'"
-                                                        ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
+                                                        Command="{Binding MarkGroupItemsAsNotMatchingCommand}"
+                                                        Header="Mark all items in group as 'Not a match' to each other"
+                                                        ToolTip.Tip="Hides this group and flags all items in it as confirmed non-duplicates of the other items in this group. Future scans will not pair any of these items with eachother in the same group(s) anymore." />
+                                                    <MenuItem
+                                                        Command="{Binding MarkSelectedAsNotMatchingCommand}"
+                                                        Header="Mark this item as 'Not a match' to other items in group"
+                                                        ToolTip.Tip="Hides this item and flags it as a confirmed non-duplicate of the other items in this group. Future scans will not pair this item with any of the other items in the same group anymore." />
+                                                    <MenuItem
+                                                        Command="{Binding AlwaysHideExactGroupCommand}"
+                                                        Header="Always hide this exact group from this and future scans"
+                                                        ToolTip.Tip="Hides this exact group and excludes it from future scan results. The group will reappear if there is a new duplicate added to the group." />
                                                     <MenuItem
                                                         Command="{Binding OpenGroupCommand}"
                                                         CommandParameter="0"

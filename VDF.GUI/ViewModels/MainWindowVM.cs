@@ -42,6 +42,7 @@ namespace VDF.GUI.ViewModels {
 		public ScanEngine Scanner { get; } = new();
 		public ObservableCollection<string> LogItems { get; } = new();
 		List<HashSet<string>> GroupBlacklist = new();
+		Dictionary<string, HashSet<string>> BlacklistDictionary = new();
 		public string BackupScanResultsFile =>
 			Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder) ?
 			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
@@ -155,6 +156,13 @@ namespace VDF.GUI.ViewModels {
 				using var stream = new FileStream(groupBlacklistFile.FullName, FileMode.Open);
 				GroupBlacklist = JsonSerializer.Deserialize<List<HashSet<string>>>(stream)!;
 			}
+
+			FileInfo blacklistDictionaryFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistDictionary.json"));
+			if (blacklistDictionaryFile.Exists && blacklistDictionaryFile.Length > 0) {
+				using var stream = new FileStream(blacklistDictionaryFile.FullName, FileMode.Open);
+				BlacklistDictionary = JsonSerializer.Deserialize<Dictionary<string, HashSet<string>>>(stream)!;
+			}
+
 			_FileType = TypeFilters[0];
 			Scanner.ScanAborted += Scanner_ScanAborted;
 			Scanner.ScanDone += Scanner_ScanDone;
@@ -317,6 +325,8 @@ namespace VDF.GUI.ViewModels {
 				IsReadyToCompare = true;
 				IsGathered = true;
 
+				// Hides specific displayed blacklisted groups of exact composition after complete scan
+				// Not to be confused with the dictionary blacklist that filters during scanning.
 				Scanner.Duplicates.RemoveWhere(a => {
 					foreach (HashSet<string> blackListedGroup in GroupBlacklist) {
 						if (!blackListedGroup.Contains(a.Path)) continue;
@@ -821,7 +831,12 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Stop();
 		}, this.WhenAnyValue(x => x.IsScanning));
 
-		public ReactiveCommand<Unit, Unit> MarkGroupAsNotAMatchCommand => ReactiveCommand.Create(() => {
+		/**
+		 * Instructs the program to hide the group when it's made up from this exact combination of files.
+		 * 
+		 * This also applies for future scans.
+		 */
+		public ReactiveCommand<Unit, Unit> AlwaysHideExactGroupCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
 				if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
 				HashSet<string> blacklist = new HashSet<string>();
@@ -843,6 +858,110 @@ namespace VDF.GUI.ViewModels {
 				}
 			});
 		});
+
+		/**
+		 * Adds a two-way blacklist link between all items in group.
+		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
+		 * 
+		 * E.g. In (A, B, C) group, A, B, and C will be marked as not matching eachother. 
+		 * 
+		 * Meaning AB, AC, and BC (and thus BA, CA, CB) is individually blacklisted for future matching with each other,
+		 * and the group is removed from the displayed list.
+		 * 
+		 * Useful when none of the items in the group is matching eachother and you don't ever want them grouped.
+		 */
+		public ReactiveCommand<Unit, Unit> MarkGroupItemsAsNotMatchingCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(async () => {
+				if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
+
+				DuplicateItemVM[] groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == data.ItemInfo.GroupId).ToArray();
+				if (groupItems.Length < 2) return;
+
+				for (var i = 0; i < groupItems.Length-1; i++) {
+
+					HashSet<string> groupItemABlacklist = GetBlacklistFromDictionary(groupItems[i].ItemInfo.Path);
+
+					for (var j = i + 1; j < groupItems.Length; j++) {
+						HashSet<string> groupItemBBlacklist = GetBlacklistFromDictionary(groupItems[j].ItemInfo.Path);
+						groupItemABlacklist.Add(groupItems[j].ItemInfo.Path);
+						groupItemBBlacklist.Add(groupItems[i].ItemInfo.Path);
+					}
+				}
+
+				await SaveBlacklistDictionary();
+
+				for (var i = Duplicates.Count - 1; i >= 0; i--) {
+					if (!Duplicates[i].ItemInfo.GroupId.Equals(data.ItemInfo.GroupId)) continue;
+					Duplicates.RemoveAt(i);
+				}
+
+			});
+		});
+
+		/**
+		 * Adds a two-way blacklist link between the selected item, and each of the other items in the group.
+		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
+		 * 
+		 * E.g. In (A, B, C) group, when B marked as not match, then BA, BC (and thus AB, CB) is blacklisted for future matching,
+		 * and B is removed from the current group in the displayed list.
+		 * AC remains grouped and will still be potential match in future scans.
+		 * 
+		 * If the group consists of only two items, the displayed group would have only one item left, so the last item is also removed.
+		 * 
+		 * Useful when B is not matching A or C, and you never want B to be grouped with A or C again.
+		 */
+		public ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(async () => {
+				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
+
+				HashSet<string> selectedItemBlacklist = GetBlacklistFromDictionary(selectedItem.ItemInfo.Path);
+
+				IEnumerable<DuplicateItemVM> groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId);
+				foreach (DuplicateItemVM groupItem in groupItems) {
+					if (selectedItem.ItemInfo.Path.Equals(groupItem.ItemInfo.Path)) {
+						continue;
+					}
+
+					HashSet<string> groupItemBlacklist = GetBlacklistFromDictionary(groupItem.ItemInfo.Path);
+
+					selectedItemBlacklist.Add(groupItem.ItemInfo.Path);
+					groupItemBlacklist.Add(selectedItem.ItemInfo.Path);
+
+				}
+
+				await SaveBlacklistDictionary();
+
+				Duplicates.Remove(selectedItem);
+
+				// To ensure we don't have groups of remaining single items after marking an item as not matching
+				List<DuplicateItemVM> groupItemList = groupItems.ToList();
+				groupItemList.Remove(selectedItem);
+				if (groupItemList.Count == 1) {
+					Duplicates.Remove(groupItems.First());
+				}
+			});
+		});
+
+		private HashSet<string> GetBlacklistFromDictionary(string path) {
+			if (!BlacklistDictionary.TryGetValue(path, out HashSet<string>? blacklist)) {
+				blacklist = new HashSet<string>();
+				BlacklistDictionary.Add(path, blacklist);
+			}
+			return blacklist;
+		}
+
+		private async Task SaveBlacklistDictionary() {
+			try {
+				using var stream = new FileStream(FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
+				"BlacklistDictionary.json"), FileMode.Create);
+				await JsonSerializer.SerializeAsync(stream, BlacklistDictionary);
+			}
+			catch (Exception e) {
+				await MessageBoxService.Show(e.Message);
+			}
+			
+		}
+
 		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
 
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
