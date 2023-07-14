@@ -433,18 +433,18 @@ namespace VDF.Core {
 
 			try {
 				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
-				while (pauseTokenSource.IsPaused) Thread.Sleep(50);
+					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
-				FileEntry? entry = ScanList[i];
-				float difference = 0;
-				DuplicateFlags flags = DuplicateFlags.None;
-				bool isDuplicate;
-				Dictionary<double, byte[]?>? flippedGrayBytes = null;
+					FileEntry? entry = ScanList[i];
+					float difference = 0;
+					DuplicateFlags flags = DuplicateFlags.None;
+					bool isDuplicate;
+					Dictionary<double, byte[]?>? flippedGrayBytes = null;
 
-				if (Settings.CompareHorizontallyFlipped)
-					flippedGrayBytes = CreateFlippedGrayBytes(entry);
+					if (Settings.CompareHorizontallyFlipped)
+						flippedGrayBytes = CreateFlippedGrayBytes(entry);
 
-				bool entryHasBlacklist = BlacklistDictionary.TryGetValue(entry.Path, out HashSet<string>? entryBlacklist);
+					bool entryHasBlacklist = BlacklistDictionary.TryGetValue(entry.Path, out HashSet<string>? entryBlacklist);
 
 					for (int n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
