@@ -1145,10 +1145,19 @@
                                                         </MenuItem.Header>
                                                     </MenuItem>
                                                     <Separator />
-                                                    <MenuItem Command="{Binding MarkCheckedAsNotMatchingCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                    <MenuItem Command="{Binding MarkSelectedAsNotMatchingCheckedItemsCommand}" ToolTip.Tip="Flags all checked items as confirmed non-duplicates of the selected item. Future scans will not group this item with any of the checkmarked items anymore.">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
-                                                                
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Mark checked items as 'Not a match' to this item" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                    <MenuItem Command="{Binding MarkCheckedAsNotMatchingCommand}" ToolTip.Tip="Flags all checkmarked items as confirmed non-duplicates of each other. Future scans will not group any of the checkmarked items with each other anymore.">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
                                                                 <TextBlock
                                                                     Margin="5,0,0,0"
                                                                     VerticalAlignment="Center"
@@ -1190,11 +1199,11 @@
                                                     <MenuItem
                                                         Command="{Binding MarkGroupItemsAsNotMatchingCommand}"
                                                         Header="Mark all items in group as 'Not a match' to each other"
-                                                        ToolTip.Tip="Hides this group and flags all items in it as confirmed non-duplicates of the other items in this group. Future scans will not pair any of these items with eachother in the same group(s) anymore." />
+                                                        ToolTip.Tip="Hides this group and flags all items in it as confirmed non-duplicates of the other items in this group. Future scans will not group any of the items in the current group with each other anymore." />
                                                     <MenuItem
-                                                        Command="{Binding MarkSelectedAsNotMatchingCommand}"
+                                                        Command="{Binding MarkSelectedAsNotMatchingGroupItemsCommand}"
                                                         Header="Mark this item as 'Not a match' to other items in group"
-                                                        ToolTip.Tip="Hides this item and flags it as a confirmed non-duplicate of the other items in this group. Future scans will not pair this item with any of the other items in the same group anymore." />
+                                                        ToolTip.Tip="Hides this item and flags it as a confirmed non-duplicate of the other items in this group. Future scans will not group this item with any of the other current group items in the same group anymore." />
                                                     <MenuItem
                                                         Command="{Binding AlwaysHideExactGroupCommand}"
                                                         Header="Always hide this exact group from this and future scans"

@@ -859,23 +859,6 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 
-		private async Task BlacklistEachMemberOfCollection(DuplicateItemVM[] items) {
-			if (items.Length < 2) return;
-
-			for (var i = 0; i < items.Length - 1; i++) {
-
-				HashSet<string> itemABlacklist = GetBlacklistFromDictionary(items[i].ItemInfo.Path);
-
-				for (var j = i + 1; j < items.Length; j++) {
-					HashSet<string> itemBBlacklist = GetBlacklistFromDictionary(items[j].ItemInfo.Path);
-					itemABlacklist.Add(items[j].ItemInfo.Path);
-					itemBBlacklist.Add(items[i].ItemInfo.Path);
-				}
-			}
-
-			await SaveBlacklistDictionary();
-		}
-
 		/**
 		 * Adds a two-way blacklist link between all checkmarked items, regardless of group.
 		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
@@ -901,16 +884,13 @@ namespace VDF.GUI.ViewModels {
 		private ReactiveCommand<Unit, Unit> MarkCheckedAsNotMatchingCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
 
-				List<DuplicateItemVM> checkedItems = new List<DuplicateItemVM>();
+				IEnumerable<DuplicateItemVM> checkedItems = GetCheckedItems();
 
-				for (var i = Duplicates.Count - 1; i >= 0; i--) {
-					DuplicateItemVM item = Duplicates[i];
-					if (item.Checked == false || !item.IsVisibleInFilter) continue;
-
-					checkedItems.Add(item);
+				if (!checkedItems.Any()) {
+					return;
 				}
 
-				await BlacklistEachMemberOfCollection(checkedItems.ToArray());
+				await BlacklistEachMemberOfCollection(checkedItems);
 
 				// Checked items can belong to random groups.
 				// We should not remove the item from the scan results unless it's now blacklisting another item in the same group.
@@ -929,6 +909,33 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		/**
+		 * 
+		 */
+		private ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingCheckedItemsCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(async () => {
+				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
+
+				IEnumerable<DuplicateItemVM> checkedItems = GetCheckedItems();
+
+				if (!checkedItems.Any()) {
+					return;
+				}
+
+				await BlacklistSingleItemWithCollection(selectedItem, checkedItems);
+
+				// Need to remove checked items in the same group as the selected item
+				foreach (DuplicateItemVM item in checkedItems.Where(a => a.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId)) {
+					if (!item.ItemInfo.Path.Equals(selectedItem.ItemInfo.Path)) {
+						Duplicates.Remove(item);
+					}
+				}
+
+				// If selected all 
+				RemoveGroupsWithJustOneItemLeft();
+			});
+		});
+
+		/**
 		 * Adds a two-way blacklist link between all items in group.
 		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
 		 * 
@@ -941,13 +948,13 @@ namespace VDF.GUI.ViewModels {
 		 */
 		public ReactiveCommand<Unit, Unit> MarkGroupItemsAsNotMatchingCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
-				if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
+				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
 
-				DuplicateItemVM[] groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == data.ItemInfo.GroupId).ToArray();
+				DuplicateItemVM[] groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId).ToArray();
 				await BlacklistEachMemberOfCollection(groupItems);
 
 				for (var i = Duplicates.Count - 1; i >= 0; i--) {
-					if (!Duplicates[i].ItemInfo.GroupId.Equals(data.ItemInfo.GroupId)) continue;
+					if (!Duplicates[i].ItemInfo.GroupId.Equals(selectedItem.ItemInfo.GroupId)) continue;
 					Duplicates.RemoveAt(i);
 				}
 			});
@@ -965,24 +972,12 @@ namespace VDF.GUI.ViewModels {
 		 * 
 		 * Useful when B is not matching A or C, and you never want B to be grouped with A or C again.
 		 */
-		public ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingGroupItemsCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
 				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
 
-				HashSet<string> selectedItemBlacklist = GetBlacklistFromDictionary(selectedItem.ItemInfo.Path);
-
 				IEnumerable<DuplicateItemVM> groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId);
-				foreach (DuplicateItemVM groupItem in groupItems) {
-					if (selectedItem.ItemInfo.Path.Equals(groupItem.ItemInfo.Path)) {
-						continue;
-					}
-
-					HashSet<string> groupItemBlacklist = GetBlacklistFromDictionary(groupItem.ItemInfo.Path);
-
-					selectedItemBlacklist.Add(groupItem.ItemInfo.Path);
-					groupItemBlacklist.Add(selectedItem.ItemInfo.Path);
-
-				}
+				await BlacklistSingleItemWithCollection(selectedItem, groupItems);
 
 				await SaveBlacklistDictionary();
 
@@ -997,12 +992,70 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 
+		private IEnumerable<DuplicateItemVM> GetCheckedItems() {
+			List<DuplicateItemVM> checkedItems = new List<DuplicateItemVM>();
+
+			for (var i = Duplicates.Count - 1; i >= 0; i--) {
+				DuplicateItemVM item = Duplicates[i];
+				if (item.Checked == false || !item.IsVisibleInFilter) continue;
+
+				checkedItems.Add(item);
+			}
+			return checkedItems.AsEnumerable();
+		}
+
+		private async Task BlacklistSingleItemWithCollection(DuplicateItemVM singleItem, IEnumerable<DuplicateItemVM> items) {
+			HashSet<string> singleItemBlacklist = GetBlacklistFromDictionary(singleItem.ItemInfo.Path);
+
+			foreach (DuplicateItemVM item in items) {
+				if (item.ItemInfo.Path.Equals(singleItem.ItemInfo.Path)) {
+					continue;
+				}
+
+				HashSet<string> groupItemBlacklist = GetBlacklistFromDictionary(item.ItemInfo.Path);
+
+				singleItemBlacklist.Add(item.ItemInfo.Path);
+				groupItemBlacklist.Add(singleItem.ItemInfo.Path);
+
+			}
+
+			// To avoid creating empty blacklists in memory when selected item is also the only checked item
+			if (!singleItemBlacklist.Any()) {
+				RemoveBlacklistFromDictionary(singleItem.ItemInfo.Path);
+				return;
+			}
+
+			await SaveBlacklistDictionary();
+		}
+
+		private async Task BlacklistEachMemberOfCollection(IEnumerable<DuplicateItemVM> items) {
+			DuplicateItemVM[] itemArray = items.ToArray();
+			if (itemArray.Length < 2) return;
+
+			for (var i = 0; i < itemArray.Length - 1; i++) {
+
+				HashSet<string> itemABlacklist = GetBlacklistFromDictionary(itemArray[i].ItemInfo.Path);
+
+				for (var j = i + 1; j < itemArray.Length; j++) {
+					HashSet<string> itemBBlacklist = GetBlacklistFromDictionary(itemArray[j].ItemInfo.Path);
+					itemABlacklist.Add(itemArray[j].ItemInfo.Path);
+					itemBBlacklist.Add(itemArray[i].ItemInfo.Path);
+				}
+			}
+
+			await SaveBlacklistDictionary();
+		}
+
 		private HashSet<string> GetBlacklistFromDictionary(string path) {
 			if (!BlacklistDictionary.TryGetValue(path, out HashSet<string>? blacklist)) {
 				blacklist = new HashSet<string>();
 				BlacklistDictionary.Add(path, blacklist);
 			}
 			return blacklist;
+		}
+
+		private void RemoveBlacklistFromDictionary(string path) {
+			BlacklistDictionary.Remove(path);
 		}
 
 		private async Task SaveBlacklistDictionary() {
