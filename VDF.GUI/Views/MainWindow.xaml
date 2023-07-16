@@ -1145,6 +1145,18 @@
                                                         </MenuItem.Header>
                                                     </MenuItem>
                                                     <Separator />
+                                                    <MenuItem Command="{Binding MarkCheckedAsNotMatchingCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Mark checked items as 'Not a match' to each other" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>                                                    
+                                                    <Separator />
                                                     <MenuItem Command="{Binding CopySelectionCommand}" Header="Copy To Folder..." />
                                                     <MenuItem Command="{Binding MoveSelectionCommand}" Header="Move To Folder..." />
                                                     <Separator />

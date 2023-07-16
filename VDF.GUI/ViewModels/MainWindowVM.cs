@@ -859,6 +859,75 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 
+		private async Task BlacklistEachMemberOfCollection(DuplicateItemVM[] items) {
+			if (items.Length < 2) return;
+
+			for (var i = 0; i < items.Length - 1; i++) {
+
+				HashSet<string> itemABlacklist = GetBlacklistFromDictionary(items[i].ItemInfo.Path);
+
+				for (var j = i + 1; j < items.Length; j++) {
+					HashSet<string> itemBBlacklist = GetBlacklistFromDictionary(items[j].ItemInfo.Path);
+					itemABlacklist.Add(items[j].ItemInfo.Path);
+					itemBBlacklist.Add(items[i].ItemInfo.Path);
+				}
+			}
+
+			await SaveBlacklistDictionary();
+		}
+
+		/**
+		 * Adds a two-way blacklist link between all checkmarked items, regardless of group.
+		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
+		 * 
+		 * Useful when 
+		 * 1. You have large groups that contain potentially both matches and non-matches, 
+		 *    and you want to reduce the size of the group for easier visual matching.
+		 * 2. When you have groups with several different matches, like (A1, A2, B1, B2).
+		 *    Using the "selected item" blacklist on e.g. B1 would then also blacklist B1-B2, which we don't want.
+		 *    You can instead checkmark A1 and B1, run this command, and be left with e.g. (A1, A2, B2)
+		 *    Future scans will then yield either (A1, A2) (B1, B2), or (A1, A2, B2) again depending on which items scan first.
+		 *    Repeat process, or use other blacklist functions as needed.
+		 * 
+		 * Items contained in different groups will blacklist each other, but it has no effect on the current scan results.
+		 * 
+		 * When multiple items in the same group is checkmarked, 
+		 * it will keep only one of the items in the group, and remove the others.
+		 * Future scans may include only one of the checkmarked items in the same group, 
+		 * but which item it will be is decided by which one is scanned and mathced first during a scan.
+		 * 
+		 * If the displayed group would have only one item left, the last item is also removed.
+		 */
+		private ReactiveCommand<Unit, Unit> MarkCheckedAsNotMatchingCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(async () => {
+
+				List<DuplicateItemVM> checkedItems = new List<DuplicateItemVM>();
+
+				for (var i = Duplicates.Count - 1; i >= 0; i--) {
+					DuplicateItemVM item = Duplicates[i];
+					if (item.Checked == false || !item.IsVisibleInFilter) continue;
+
+					checkedItems.Add(item);
+				}
+
+				await BlacklistEachMemberOfCollection(checkedItems.ToArray());
+
+				// Checked items can belong to random groups.
+				// We should not remove the item from the scan results unless it's now blacklisting another item in the same group.
+				// -> We can keep the item with the first occurrence of a groupId, and remove any following ones.
+				List<Guid> foundIds = new List<Guid>();
+				foreach (DuplicateItemVM removalCandidate in checkedItems) {
+					if (foundIds.Contains(removalCandidate.ItemInfo.GroupId)) {
+						Duplicates.Remove(removalCandidate);
+					}
+					else {
+						foundIds.Add(removalCandidate.ItemInfo.GroupId);
+					}
+				}
+				RemoveGroupsWithJustOneItemLeft();
+			});
+		});
+
 		/**
 		 * Adds a two-way blacklist link between all items in group.
 		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
@@ -875,26 +944,12 @@ namespace VDF.GUI.ViewModels {
 				if (GetDataGrid.SelectedItem is not DuplicateItemVM data) return;
 
 				DuplicateItemVM[] groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == data.ItemInfo.GroupId).ToArray();
-				if (groupItems.Length < 2) return;
-
-				for (var i = 0; i < groupItems.Length-1; i++) {
-
-					HashSet<string> groupItemABlacklist = GetBlacklistFromDictionary(groupItems[i].ItemInfo.Path);
-
-					for (var j = i + 1; j < groupItems.Length; j++) {
-						HashSet<string> groupItemBBlacklist = GetBlacklistFromDictionary(groupItems[j].ItemInfo.Path);
-						groupItemABlacklist.Add(groupItems[j].ItemInfo.Path);
-						groupItemBBlacklist.Add(groupItems[i].ItemInfo.Path);
-					}
-				}
-
-				await SaveBlacklistDictionary();
+				await BlacklistEachMemberOfCollection(groupItems);
 
 				for (var i = Duplicates.Count - 1; i >= 0; i--) {
 					if (!Duplicates[i].ItemInfo.GroupId.Equals(data.ItemInfo.GroupId)) continue;
 					Duplicates.RemoveAt(i);
 				}
-
 			});
 		});
 
@@ -1043,12 +1098,7 @@ namespace VDF.GUI.ViewModels {
 				Duplicates.RemoveAt(i);
 			}
 
-			//Remove groups with just one item left
-			for (var i = Duplicates.Count - 1; i >= 0; i--) {
-				var first = Duplicates[i];
-				if (Duplicates.Any(s => s.ItemInfo.GroupId == first.ItemInfo.GroupId && s.ItemInfo.Path != first.ItemInfo.Path)) continue;
-				Duplicates.RemoveAt(i);
-			}
+			RemoveGroupsWithJustOneItemLeft();
 
 			ScanEngine.SaveDatabase();
 
@@ -1062,6 +1112,14 @@ namespace VDF.GUI.ViewModels {
 		public static ReactiveCommand<Unit, Unit> CollapseAllGroupsCommand => ReactiveCommand.Create(() => {
 			Utils.TreeHelper.ToggleExpander(GetDataGrid, false);
 		});
+		private void RemoveGroupsWithJustOneItemLeft() {
+			//Remove groups with just one item left
+			for (var i = Duplicates.Count - 1; i >= 0; i--) {
+				var first = Duplicates[i];
+				if (Duplicates.Any(s => s.ItemInfo.GroupId == first.ItemInfo.GroupId && s.ItemInfo.Path != first.ItemInfo.Path)) continue;
+				Duplicates.RemoveAt(i);
+			}
+		}
 		public static ReactiveCommand<Unit, Unit> CopyPathsToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
 			StringBuilder sb = new();
 			foreach (var item in GetDataGrid.SelectedItems) {
