@@ -107,6 +107,26 @@
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <MenuItem
+                                    Command="{Binding StartScanCommand}"
+                                    CommandParameter="RegroupOnly"
+                                    IsEnabled="{Binding IsReadyToCompare}"
+                                    IsVisible="{Binding !IsScanning}"
+                                    ToolTip.Tip="Re-run the scan but only for current set of duplicates, potentially regrouping the items. Changing certain settings will only take effect during a full scan.">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="20" Height="20">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="m19.3809,4.64738l-1.69658,1.69658c-3.12529,-3.12529 -8.21505,-3.12529 -11.34034,0c-3.12529,3.12529 -3.12529,8.21505 0,11.34034c1.518,1.60729 3.57176,2.41094 5.62553,2.41094s4.10753,-0.80365 5.71483,-2.32165c0.71435,-0.71435 0.71435,-1.78588 0,-2.50024s-1.78588,-0.71435 -2.50024,0c-1.69658,1.78588 -4.554,1.69658 -6.33988,0c-0.89294,-0.89294 -1.33941,-2.05376 -1.33941,-3.21459s0.44647,-2.32165 1.33941,-3.12529c1.69658,-1.78588 4.554,-1.78588 6.33988,0l-1.60729,1.60729c-0.53577,0.53577 -0.17859,1.518 0.62505,1.518l5.80411,0c0.53577,0 0.89294,-0.35717 0.89294,-0.89294l0,-5.89341c0,-0.80365 -0.98224,-1.16083 -1.518,-0.62505l-0.00001,0.00001l0.00001,-0.00001z" Fill="Orange" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Regroup" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
                                 <MenuItem Command="{Binding ResumeScanCommand}" IsVisible="{Binding IsScanning}">
                                     <MenuItem.Header>
                                         <StackPanel Orientation="Horizontal">

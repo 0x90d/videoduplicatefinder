@@ -676,7 +676,7 @@ namespace VDF.GUI.ViewModels {
 			return true;
 		}
 
-		public static ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
@@ -698,6 +698,7 @@ namespace VDF.GUI.ViewModels {
 				ScanEngine.GetFromDatabase(currentItem.ItemInfo.Path, out var dbEntry);
 				fi.MoveTo(newName, true);
 				ScanEngine.UpdateFilePathInDatabase(newName, dbEntry);
+				Scanner.UpdateFilePathInCurrentDuplicateEntries(newName, dbEntry);
 				currentItem.ItemInfo.Path = newName;
 				ScanEngine.SaveDatabase();
 			}
@@ -749,14 +750,15 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("Filtering maximum file size cannot be greater or equal minimum file size.");
 				return;
 			}
-			bool isFreshScan = true;
 			switch (command) {
 			case "FullScan":
-				isFreshScan = true;
 				break;
 			case "CompareOnly":
-				isFreshScan = false;
 				if (await MessageBoxService.Show("Are you sure to perform a rescan?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+					return;
+				break;
+			case "RegroupOnly":
+				if (await MessageBoxService.Show("Are you sure to regroup current duplicates?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
 					return;
 				break;
 			default:
@@ -807,14 +809,23 @@ namespace VDF.GUI.ViewModels {
 				Scanner.Settings.BlackList.Add(s);
 
 			//Start scan
-			if (isFreshScan) {
+			switch (command) {
+			case "FullScan":
 				IsBusy = true;
 				IsBusyText = "Enumerating files...";
 				Scanner.StartSearch();
-			}
-			else {
+				break;
+			case "CompareOnly":
 				Scanner.StartCompare();
+				break;
+			case "RegroupOnly":
+				Scanner.StartRegroup();
+				break;
+			default:
+				await MessageBoxService.Show("Requested command is NOT implemented yet!");
+				break;
 			}
+			
 		});
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();
@@ -909,7 +920,13 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		/**
+		 * Adds a two-way blacklist link between all selected item and all checkmarked items, regardless of group.
+		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
 		 * 
+		 * Useful when you want to remove specific items from a group, and keep the selected item.
+		 * 
+		 * Items contained in different groups than selected item will be blacklisted, but it has no effect on the current scan results.
+		 * Items contained in the same group as selected item will be blacklisted and removed from the current scan result.
 		 */
 		private ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingCheckedItemsCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {

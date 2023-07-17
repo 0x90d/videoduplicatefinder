@@ -31,6 +31,10 @@ using VDF.Core.ViewModels;
 namespace VDF.Core {
 	public sealed class ScanEngine {
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
+
+		// Store all relevant entries here so we can re-compare the set to generate new groups without rescanning all files
+		public HashSet<FileEntry> CurrentDuplicateEntries { get; set; } = new HashSet<FileEntry>();
+
 		public Settings Settings { get; } = new Settings();
 		public event EventHandler<ScanProgressChangedEventArgs>? Progress;
 		public event EventHandler? BuildingHashesDone;
@@ -110,21 +114,14 @@ namespace VDF.Core {
 		}
 
 		public async void StartCompare() {
+			CurrentDuplicateEntries.Clear();
 			PrepareCompare();
-			SearchTimer.Start();
-			ElapsedTimer.Start();
-			Logger.Instance.Info("Scan for duplicates...");
-			if (!cancelationTokenSource.IsCancellationRequested)
-				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
-			SearchTimer.Stop();
-			ElapsedTimer.Stop();
-			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
-			Logger.Instance.Info("Highlighting best results...");
-			HighlightBestMatches();
-			ScanDone?.Invoke(this, new EventArgs());
-			Logger.Instance.Info("Scan done.");
-			DatabaseUtils.SaveDatabase();
-			isScanning = false;
+			await ScanEntries(DatabaseUtils.Database);
+		}
+
+		public async void StartRegroup() {
+			PrepareCompare();
+			await ScanEntries(CurrentDuplicateEntries);
 		}
 
 		void PrepareSearch() {
@@ -169,6 +166,26 @@ namespace VDF.Core {
 				ElapsedTimer.Reset();
 
 			isScanning = true;
+		}
+
+		private async Task ScanEntries(HashSet<FileEntry> entries) {
+			SearchTimer.Start();
+			ElapsedTimer.Start();
+			Logger.Instance.Info("Scan for duplicates...");
+			if (!cancelationTokenSource.IsCancellationRequested) {
+				await Task.Run(() => {
+					ScanForDuplicates(entries);
+				}, cancelationTokenSource.Token);
+			}
+			SearchTimer.Stop();
+			ElapsedTimer.Stop();
+			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
+			Logger.Instance.Info("Highlighting best results...");
+			HighlightBestMatches();
+			ScanDone?.Invoke(this, new EventArgs());
+			Logger.Instance.Info("Scan done.");
+			DatabaseUtils.SaveDatabase();
+			isScanning = false;
 		}
 
 		void CancelAllTasks() {
@@ -271,6 +288,13 @@ namespace VDF.Core {
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
 		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
 		public static void UpdateFilePathInDatabase(string newPath, FileEntry dbEntry) => DatabaseUtils.UpdateFilePath(newPath, dbEntry);
+
+		public void UpdateFilePathInCurrentDuplicateEntries(string newPath, FileEntry fileEntry) {
+			CurrentDuplicateEntries.Remove(fileEntry);
+			fileEntry.Path = newPath;
+			CurrentDuplicateEntries.Add(fileEntry);
+		}
+
 #pragma warning disable CS8601 // Possible null reference assignment
 		public static bool GetFromDatabase(string path, out FileEntry dbEntry) => DatabaseUtils.Database.TryGetValue(new FileEntry(path), out dbEntry);
 #pragma warning restore CS8601 // Possible null reference assignment
@@ -403,7 +427,7 @@ namespace VDF.Core {
 			return !float.IsNaN(difference);
 		}
 
-		void ScanForDuplicates() {
+		void ScanForDuplicates(HashSet<FileEntry> inputEntries) {
 			Dictionary<string, HashSet<string>> BlacklistDictionary = new();
 			Dictionary<string, DuplicateItem>? duplicateDict = new();
 
@@ -411,7 +435,7 @@ namespace VDF.Core {
 			List<FileEntry> ScanList = new();
 
 			Logger.Instance.Info("Prepare list of items to compare...");
-			foreach (FileEntry entry in DatabaseUtils.Database) {
+			foreach (FileEntry entry in inputEntries) {
 				if (!InvalidEntryForDuplicateCheck(entry)) {
 					ScanList.Add(entry);
 				}
@@ -486,6 +510,8 @@ namespace VDF.Core {
 						}
 
 						if (isDuplicate) {
+							CurrentDuplicateEntries.Add(entry);
+							CurrentDuplicateEntries.Add(compItem);
 							lock (duplicateDict) {
 								bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
 								bool foundComp = duplicateDict.TryGetValue(compItem.Path, out DuplicateItem? existingComp);
