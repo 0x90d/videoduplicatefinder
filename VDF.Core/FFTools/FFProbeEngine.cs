@@ -26,7 +26,7 @@ namespace VDF.Core.FFTools {
 		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
 			//https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
 			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" +
-				$" -print_format json -sexagesimal -show_format -show_streams  \"{file}\"";
+				$" -print_format json -sexagesimal -show_format -show_streams  \"\\\\?\\{file}\"";
 
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
