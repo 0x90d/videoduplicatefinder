@@ -914,6 +914,8 @@ namespace VDF.GUI.ViewModels {
 					else {
 						foundIds.Add(removalCandidate.ItemInfo.GroupId);
 					}
+					// De-check after running command to avoid confusion
+					removalCandidate.Checked = false;
 				}
 				RemoveGroupsWithJustOneItemLeft();
 			});
@@ -940,14 +942,19 @@ namespace VDF.GUI.ViewModels {
 
 				await BlacklistSingleItemWithCollection(selectedItem, checkedItems);
 
-				// Need to remove checked items in the same group as the selected item
-				foreach (DuplicateItemVM item in checkedItems.Where(a => a.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId)) {
-					if (!item.ItemInfo.Path.Equals(selectedItem.ItemInfo.Path)) {
-						Duplicates.Remove(item);
+				
+				foreach (DuplicateItemVM item in checkedItems) {
+					if (item.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId) {
+						if (!item.ItemInfo.Path.Equals(selectedItem.ItemInfo.Path)) {
+							// Need to remove checked items in the same group as the selected item
+							Duplicates.Remove(item);
+						}
 					}
+					// De-check after running command to avoid confusion
+					item.Checked = false;
 				}
 
-				// If selected all 
+				// If checkmarked all but one item in same group as selecteditem
 				RemoveGroupsWithJustOneItemLeft();
 			});
 		});
