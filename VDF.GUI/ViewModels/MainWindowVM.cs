@@ -930,7 +930,7 @@ namespace VDF.GUI.ViewModels {
 		 * Items contained in different groups than selected item will be blacklisted, but it has no effect on the current scan results.
 		 * Items contained in the same group as selected item will be blacklisted and removed from the current scan result.
 		 */
-		private ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingCheckedItemsCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingCheckedItemsCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
 				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
 
@@ -973,6 +973,10 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> MarkGroupItemsAsNotMatchingCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
 				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
+				if(Duplicates.Where(a => a.Checked).Any()) {
+					if (await MessageBoxService.Show("You currently have checkmarked items, are you sure you want to process this group instead?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+						return;
+				}
 
 				DuplicateItemVM[] groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId).ToArray();
 				await BlacklistEachMemberOfCollection(groupItems);
@@ -999,11 +1003,13 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> MarkSelectedAsNotMatchingGroupItemsCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(async () => {
 				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
+				if (Duplicates.Where(a => a.Checked).Any()) {
+					if (await MessageBoxService.Show("You currently have checkmarked items, are you sure you want to process this group instead?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+						return;
+				}
 
 				IEnumerable<DuplicateItemVM> groupItems = Duplicates.Where(a => a.ItemInfo.GroupId == selectedItem.ItemInfo.GroupId);
 				await BlacklistSingleItemWithCollection(selectedItem, groupItems);
-
-				await SaveBlacklistDictionary();
 
 				Duplicates.Remove(selectedItem);
 
