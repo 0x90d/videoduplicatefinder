@@ -1175,6 +1175,16 @@
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
+                                                    <MenuItem Command="{Binding MarkCheckedInGroupAsNotMatchingGroupItemsCommand}" ToolTip.Tip="Flags all checked items as confirmed non-duplicates of every other item in the same group. Future scans will not group any of the checkmarked items with any of the members of its current group anymore.">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Mark checked items as 'Not a match' to items in same group" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
                                                     <MenuItem Command="{Binding MarkCheckedAsNotMatchingCommand}" ToolTip.Tip="Flags all checkmarked items as confirmed non-duplicates of each other. Future scans will not group any of the checkmarked items with each other anymore.">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">

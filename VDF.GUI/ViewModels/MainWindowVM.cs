@@ -205,7 +205,7 @@ namespace VDF.GUI.ViewModels {
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
 				new KeyValuePair<string, DataGridSortDescription>("Similarity Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Similarity Descending",
+				new KeyValuePair<string, DataGridSortDescription>("Similarity Descending", 
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
 				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Ascending",
 				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Ascending)),
@@ -922,7 +922,37 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		/**
-		 * Adds a two-way blacklist link between all selected item and all checkmarked items, regardless of group.
+		 * Adds a two-way blacklist link between every checkmarked item in a group, and all other group members.
+		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
+		 * 
+		 * Useful when you want to remove specific items from group(s), and only have the unchecked items not blacklist eachother.
+		 * The checked items will never be grouped with any of the other current group members anymore.
+		 * 
+		 * Checkmarked items will blacklist all other members of its group and is removed from the current scan result.
+		 */
+		public ReactiveCommand<Unit, Unit> MarkCheckedInGroupAsNotMatchingGroupItemsCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(async () => {
+				if (GetDataGrid.SelectedItem is not DuplicateItemVM selectedItem) return;
+
+				IEnumerable<DuplicateItemVM> checkedItems = GetCheckedItems();
+
+				if (!checkedItems.Any()) {
+					return;
+				}
+
+
+				foreach (DuplicateItemVM checkedItem in checkedItems) {
+					await BlacklistSingleItemWithCollection(checkedItem, Duplicates.Where(a => a.ItemInfo.GroupId == checkedItem.ItemInfo.GroupId));
+					Duplicates.Remove(checkedItem);
+				}
+
+				// If checkmarked all but one item in group
+				RemoveGroupsWithJustOneItemLeft();
+			});
+		});
+
+		/**
+		 * Adds a two-way blacklist link between selected item and all checkmarked items, regardless of group.
 		 * This is used while scanning for duplicates, and forces items not to be grouped with each other.
 		 * 
 		 * Useful when you want to remove specific items from a group, and keep the selected item.
