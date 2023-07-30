@@ -64,6 +64,17 @@ namespace VDF.Core.FFTools {
 			}
 			return null;
 		}
+
+		/// <summary>
+		/// Returns a path with long path prefix
+		/// </summary>
+		/// <param name="path">Path of the file</param>
+		/// <returns>On Windows: path with long path prefix. Otherwise same as input</returns>
+		internal static string LongPathFix(string path) {
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				return path;
+			return $"\\\\?\\{path}";
+		}
 	}
 
 }
