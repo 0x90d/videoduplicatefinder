@@ -44,21 +44,23 @@ namespace VDF.GUI.Views {
 
 		public MessageBoxView(string message, MessageBoxButtons buttons = MessageBoxButtons.Ok, string? title = null) {
 
-			DataContext = new MessageBoxVM();
-			((MessageBoxVM)DataContext).host = this;
-			((MessageBoxVM)DataContext).Message = message;
+			MessageBoxVM vm = new() {
+				host = this,
+				Message = message,
+				HasCancelButton = (buttons & MessageBoxButtons.Cancel) != 0,
+				HasNoButton = (buttons & MessageBoxButtons.No) != 0,
+				HasOKButton = (buttons & MessageBoxButtons.Ok) != 0,
+				HasYesButton = (buttons & MessageBoxButtons.Yes) != 0
+			};
 			if (!string.IsNullOrEmpty(title))
-				((MessageBoxVM)DataContext).Title = title;
-			((MessageBoxVM)DataContext).HasCancelButton = (buttons & MessageBoxButtons.Cancel) != 0;
-			((MessageBoxVM)DataContext).HasNoButton = (buttons & MessageBoxButtons.No) != 0;
-			((MessageBoxVM)DataContext).HasOKButton = (buttons & MessageBoxButtons.Ok) != 0;
-			((MessageBoxVM)DataContext).HasYesButton = (buttons & MessageBoxButtons.Yes) != 0;
+				vm.Title = title;
 
+			DataContext = vm;
 			InitializeComponent();
-			Opened += MessageBoxView_Opened;
+			//Opened += MessageBoxView_Opened;
 		}
 
-		private void MessageBoxView_Opened(object? sender, EventArgs e) {
+		//private void MessageBoxView_Opened(object? sender, EventArgs e) {
 			////	Setting width on Grid is a workaround for a bug under Windows
 			////	For more information see:
 			////	https://github.com/AvaloniaUI/Avalonia/issues/4838#issuecomment-710759375
@@ -69,7 +71,7 @@ namespace VDF.GUI.Views {
 			////	Workaround for an Avalonia bug with Scrollviewer height not working with Window.SizeToContent
 			//var scrollviewer = this.FindControl<ScrollViewer>("ScrollViewerMessageboxContent");
 			//scrollviewer.MaxHeight = Bounds.Height - grid.RowDefinitions[1].ActualHeight;
-		}
+		//}
 
 		private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}

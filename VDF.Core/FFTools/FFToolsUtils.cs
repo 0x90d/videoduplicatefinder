@@ -33,7 +33,13 @@ namespace VDF.Core.FFTools {
 			ffProbePlatformName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? FFprobeExecutableName + ".exe" : FFprobeExecutableName;
 			ffMpegPlatformName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? FFmpegExecutableName + ".exe" : FFmpegExecutableName;
 		}
-		public static string? GetPath(FFTool tool) {
+
+		/// <summary>
+		/// Gets path of ffprobe or ffmpeg
+		/// </summary>
+		/// <param name="tool"></param>
+		/// <returns>path or null if not found</returns>
+		internal static string? GetPath(FFTool tool) {
 
 			if (File.Exists($"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}"))
 				return $"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}";
@@ -73,6 +79,9 @@ namespace VDF.Core.FFTools {
 		internal static string LongPathFix(string path) {
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				return path;
+			//Check if path is UNC, see https://github.com/0x90d/videoduplicatefinder/issues/443
+			if (path.StartsWith('\\'))
+				return $"\\\\?\\UNC\\{path.TrimStart('\\')}";
 			return $"\\\\?\\{path}";
 		}
 	}
