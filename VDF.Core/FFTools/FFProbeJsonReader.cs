@@ -99,6 +99,17 @@ namespace VDF.Core.FFTools {
 					break;
 				case JsonTokenType.Number:
 					if (!json.TryGetInt32(out int valueInteger)) {
+						if (lastKey == "duration_ts") {
+							if (json.TryGetInt64(out long valueLong)) {
+								if (currentObject == JsonObjects.Streams && lastKey != null) {
+									streams[currentStream][lastKey] = valueLong;
+								}
+								else if (currentObject == JsonObjects.Format && lastKey != null) {
+									format[lastKey] = valueLong;
+								}
+								break;
+							}
+						}
 #if DEBUG
 						System.Diagnostics.Trace.TraceWarning($"JSON number parse error: \"{lastKey}\" = {System.Text.Encoding.UTF8.GetString(valueSpan.ToArray())}, file = {file}");
 #endif
