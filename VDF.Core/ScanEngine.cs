@@ -213,6 +213,8 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Files in database: {DatabaseUtils.Database.Count:N0} ({DatabaseUtils.Database.Count - oldFileCount:N0} files added)");
 		});
 
+		// Check if entry should be excluded from the scan for any reason
+		// Returns true if the entry is invalid (should be excluded)
 		bool InvalidEntry(FileEntry entry) {
 			if (Settings.IncludeImages == false && entry.IsImage)
 				return true;
@@ -247,7 +249,8 @@ namespace VDF.Core {
 				if (!contains)
 					return true;
 			}
-			if (Settings.IgnoreReparsePoints && File.ResolveLinkTarget(entry.Path, false) != null)
+
+			if (Settings.IgnoreReparsePoints && File.Exists(entry.Path) && File.ResolveLinkTarget(entry.Path, /*returnFinalTarget=*/false) != null)
 				return true;
 			if (Settings.FilterByFilePathNotContains) {
 				bool contains = false;
@@ -260,7 +263,6 @@ namespace VDF.Core {
 				if (contains)
 					return true;
 			}
-
 
 			return false;
 		}
