@@ -250,7 +250,7 @@ namespace VDF.Core {
 					return true;
 			}
 
-			if (Settings.IgnoreReparsePoints && File.Exists(entry.Path) && File.ResolveLinkTarget(entry.Path, /*returnFinalTarget=*/false) != null)
+			if (Settings.IgnoreReparsePoints && File.Exists(entry.Path) && File.ResolveLinkTarget(entry.Path, returnFinalTarget: false) != null)
 				return true;
 			if (Settings.FilterByFilePathNotContains) {
 				bool contains = false;

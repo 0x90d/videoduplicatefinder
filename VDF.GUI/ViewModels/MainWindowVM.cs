@@ -522,6 +522,7 @@ namespace VDF.GUI.ViewModels {
 					IncludeFields = true,
 				};
 				options.Converters.Add(new BitmapJsonConverter());
+				options.Converters.Add(new ImageJsonConverter());
 				IsBusy = true;
 				IsBusyText = "Importing scan results from disk...";
 				List<DuplicateItemVM>? list = await JsonSerializer.DeserializeAsync<List<DuplicateItemVM>>(stream, options);
