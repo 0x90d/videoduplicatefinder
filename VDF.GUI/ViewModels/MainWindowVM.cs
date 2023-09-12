@@ -162,8 +162,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.ThumbnailsRetrieved += Scanner_ThumbnailsRetrieved;
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
-			var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(assets!.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
+			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(AssetLoader.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
 
 			try {
 				File.Delete(Path.Combine(CoreUtils.CurrentFolder, "log.txt"));
@@ -346,7 +345,7 @@ namespace VDF.GUI.ViewModels {
 			view = new DataGridCollectionView(Duplicates);
 			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
 			view.Filter += DuplicatesFilter;
-			GetDataGrid.Items = view;
+			GetDataGrid.ItemsSource = view;
 			TotalDuplicates = Duplicates.Count;
 			TotalDuplicatesSize = Duplicates.Sum(x => x.ItemInfo.SizeLong).BytesToString();
 			TotalSizeRemovedInternal = 0;
@@ -392,7 +391,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		public static ReactiveCommand<Unit, Unit> ImportDataBaseFromJsonCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Json File") { Patterns = new string[] { "*.json" }}}
 			});
@@ -464,7 +463,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		async Task ExportScanResultsIncludingThumbnails(string? path = null) {
 			path ??= await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				DefaultExtension = ".json",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Scan Results") { Patterns = new string[] { "*.scanresults" }}}
@@ -494,7 +493,7 @@ namespace VDF.GUI.ViewModels {
 		}
 		public ReactiveCommand<Unit, Unit> ImportScanResultsFromFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Scan Results") { Patterns = new string[] { "*.scanresults" }}}
 			});
@@ -509,7 +508,7 @@ namespace VDF.GUI.ViewModels {
 
 			if (path == null) {
 				path = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
-					SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+					SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 					FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Scan Results") { Patterns = new string[] { "*.scanresults" }}}
 				});
@@ -951,8 +950,7 @@ namespace VDF.GUI.ViewModels {
 			}
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-			await ((IClipboard)AvaloniaLocator.Current.GetService(typeof(IClipboard)))
-				   .SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
+			await (ApplicationHelpers.MainWindow.Clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' })));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 		});
@@ -964,8 +962,7 @@ namespace VDF.GUI.ViewModels {
 			}
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-			await ((IClipboard)AvaloniaLocator.Current.GetService(typeof(IClipboard)))
-				   .SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
+			await (ApplicationHelpers.MainWindow.Clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' })));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 		});

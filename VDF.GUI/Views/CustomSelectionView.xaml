@@ -189,7 +189,7 @@
                             Grid.Row="1"
                             MinHeight="70"
                             BorderThickness="1"
-                            Items="{Binding Data.PathContains}"
+                            ItemsSource="{Binding Data.PathContains}"
                             SelectionMode="Multiple" />
                         <TextBlock
                             Grid.Row="2"
@@ -235,7 +235,7 @@
                             Grid.Row="1"
                             MinHeight="70"
                             BorderThickness="1"
-                            Items="{Binding Data.PathNotContains}"
+                            ItemsSource="{Binding Data.PathNotContains}"
                             SelectionMode="Multiple" />
                         <TextBlock
                             Grid.Row="2"

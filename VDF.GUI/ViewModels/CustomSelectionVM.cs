@@ -83,7 +83,7 @@ namespace VDF.GUI.ViewModels {
 		[JsonIgnore]
 		public ReactiveCommand<Unit, Unit> SaveCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				DefaultExtension = ".vdfselection",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Selection File") { Patterns = new string[] { "*.vdfselection" }}}
@@ -100,7 +100,7 @@ namespace VDF.GUI.ViewModels {
 		[JsonIgnore]
 		public ReactiveCommand<Unit, Unit> LoadCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Selection File") { Patterns = new string[] { "*.vdfselection" }}}
 			});

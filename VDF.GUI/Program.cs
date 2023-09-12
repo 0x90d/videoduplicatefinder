@@ -35,7 +35,6 @@ namespace VDF.GUI {
 			=> AppBuilder.Configure<App>()
 				.UsePlatformDetect()
 				.With(new X11PlatformOptions {  UseDBusFilePicker = false })
-				.With(new Win32PlatformOptions { UseWindowsUIComposition = true })
 				.UseReactiveUI();
 	}
 }

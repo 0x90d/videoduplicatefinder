@@ -17,7 +17,7 @@
             <TextBlock Text="Search:" VerticalAlignment="Center"/>
             <TextBox Text="{Binding SearchText}" Margin="10,0,0,0" Grid.Column="1"/>
         </Grid>
-        <controls:DataGrid x:Name="datagridDatabase" Grid.Row="1" Items="{Binding DatabaseFilesView}" AutoGenerateColumns="True">
+        <controls:DataGrid x:Name="datagridDatabase" Grid.Row="1" ItemsSource="{Binding DatabaseFilesView}" AutoGenerateColumns="True">
             <controls:DataGrid.KeyBindings>
                 <KeyBinding Command="{Binding DeleteSelectedEntries}" Gesture="Delete"/>
             </controls:DataGrid.KeyBindings>

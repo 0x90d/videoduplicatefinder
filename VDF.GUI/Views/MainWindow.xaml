@@ -746,7 +746,7 @@
                                         <ComboBox
                                             MinWidth="150"
                                             Margin="5,0,0,0"
-                                            Items="{Binding SortOrders}"
+                                            ItemsSource="{Binding SortOrders}"
                                             SelectedItem="{Binding SortOrder}">
                                             <ComboBox.ItemTemplate>
                                                 <DataTemplate>
@@ -761,7 +761,7 @@
                                         <ComboBox
                                             MinWidth="150"
                                             Margin="5,0,0,0"
-                                            Items="{Binding TypeFilters}"
+                                            ItemsSource="{Binding TypeFilters}"
                                             SelectedItem="{Binding FileType}">
                                             <ComboBox.ItemTemplate>
                                                 <DataTemplate>
@@ -1470,7 +1470,7 @@
                                                     <ComboBox
                                                         x:Name="ComboboxHardwareAccelerationMode"
                                                         VerticalAlignment="Center"
-                                                        Items="{Binding HardwareAccelerationModes}"
+                                                        ItemsSource="{Binding HardwareAccelerationModes}"
                                                         SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}"
                                                         ToolTip.Tip="Hardware acceleration mode of ffmpeg" />
                                                     <TextBlock
@@ -1480,7 +1480,7 @@
                                                     <ComboBox
                                                         Width="200"
                                                         VerticalAlignment="Center"
-                                                        Items="{Binding CustomCommandList}"
+                                                        ItemsSource="{Binding CustomCommandList}"
                                                         SelectedItem="{Binding SelectedCustomCommand}"
                                                         ToolTip.Tip="Enter your own commands to open single or multiple files." />
                                                     <TextBox
@@ -1559,7 +1559,7 @@
                                                         Grid.Row="1"
                                                         BorderThickness="1"
                                                         DragDrop.AllowDrop="True"
-                                                        Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
+                                                        ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
                                                 </Grid>
                                                 <TextBlock
                                                     Grid.Row="0"
@@ -1624,7 +1624,7 @@
                                                         Grid.Row="1"
                                                         BorderThickness="1"
                                                         DragDrop.AllowDrop="True"
-                                                        Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
+                                                        ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
                                                 </Grid>
                                             </Grid>
                                         </Grid>
@@ -1731,7 +1731,7 @@
                                                 MinHeight="70"
                                                 BorderThickness="1"
                                                 IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}"
-                                                Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsTexts}" />
+                                                ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsTexts}" />
                                             <TextBlock Grid.Row="2" Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
                                         </Grid>
                                         <CheckBox
@@ -1788,7 +1788,7 @@
                                                 MinHeight="70"
                                                 BorderThickness="1"
                                                 IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}"
-                                                Items="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsTexts}" />
+                                                ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsTexts}" />
                                             <TextBlock Grid.Row="2" Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
                                         </Grid>
                                         <!--<TextBox
@@ -1909,7 +1909,7 @@
                                 Grid.Row="1"
                                 MinHeight="70"
                                 Margin="5"
-                                Items="{Binding LogItems}"
+                                ItemsSource="{Binding LogItems}"
                                 ScrollViewer.HorizontalScrollBarVisibility="Visible" />
                         </Grid>
                     </TabItem>

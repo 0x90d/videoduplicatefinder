@@ -159,7 +159,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		public ReactiveCommand<Unit, Unit> SaveSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				DefaultExtension = ".json",
 				FileTypeChoices = new FilePickerFileType[] {
 					 new FilePickerFileType("Setting File") { Patterns = new string[] { "*.json" }}}
@@ -175,7 +175,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		public ReactiveCommand<Unit, Unit> LoadSettingsProfileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
-				SuggestedStartLocation = new BclStorageFolder(CoreUtils.CurrentFolder),
+				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				FileTypeFilter = new FilePickerFileType[] {
 					 new FilePickerFileType("Setting File") { Patterns = new string[] { "*.json", "*.xml" }}}
 			});

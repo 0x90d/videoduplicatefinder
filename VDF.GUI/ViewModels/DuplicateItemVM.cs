@@ -37,7 +37,7 @@ namespace VDF.GUI.ViewModels {
 				Thumbnail = ImageUtils.JoinImages(ItemInfo.ImageList)!;
 				Dispatcher.UIThread.Post(() => {
 					this.RaisePropertyChanged(nameof(Thumbnail));
-				}, DispatcherPriority.Layout);
+				}, DispatcherPriority.Render); // DispatcherPriority.Layout was removed in https://github.com/AvaloniaUI/Avalonia/commit/f300a24402afc9f7f3c177e835a0cec10ce52e6c
 			};
 		}
 		public DuplicateItem ItemInfo { get; set; }
