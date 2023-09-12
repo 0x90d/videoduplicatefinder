@@ -448,7 +448,7 @@ namespace VDF.GUI.ViewModels {
 			});
 			if (string.IsNullOrEmpty(result)) return;
 
-
+			options.Converters.Add(new ImageJsonConverter());
 			try {
 				List<DuplicateItem> list = Duplicates.Select(x => x.ItemInfo).OrderBy(x => x.GroupId).ToList();
 				using var stream = File.OpenWrite(result);
