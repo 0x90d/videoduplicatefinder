@@ -48,16 +48,16 @@ namespace VDF.GUI.Utils {
 
 			if (paths != null &&
 				paths.Count > 0 &&
-				paths[0].TryGetUri(out Uri? uriPath))
-				return GetLocalPath(uriPath);
+				paths[0].TryGetLocalPath() is string uriPath)
+				return uriPath;
 
 			return null;
 		}
 		internal static async Task<string?> SaveFilePicker(FilePickerSaveOptions options) {
 			var path = await ApplicationHelpers.MainWindow.StorageProvider.SaveFilePickerAsync(options);
 
-			if (path != null && path.TryGetUri(out Uri? uriPath))
-				return GetLocalPath(uriPath);
+			if (path != null && path.TryGetLocalPath() is string uriPath)
+				return uriPath;
 
 			return null;
 		}
@@ -69,8 +69,8 @@ namespace VDF.GUI.Utils {
 
 			List<string> results = new();
 			foreach (var item in paths) {
-				if (item.TryGetUri(out Uri? uriPath))
-					results.Add(GetLocalPath(uriPath));
+				if (item.TryGetLocalPath() is string uriPath)
+					results.Add(uriPath);
 			}
 			return results;
 		}

@@ -33,7 +33,7 @@ namespace VDF.GUI.Views {
 				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
 				Environment.OSVersion.Version.Build >= 22000) {
 				Background = null;
-				TransparencyLevelHint = WindowTransparencyLevel.Mica;
+				TransparencyLevelHint = new List<WindowTransparencyLevel> { WindowTransparencyLevel.Mica };
 				ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.PreferSystemChrome;
 				if (SettingsFile.Instance.DarkMode)
 					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundBlack")!.IsVisible = true;

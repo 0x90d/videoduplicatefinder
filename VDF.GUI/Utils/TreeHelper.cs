@@ -22,9 +22,9 @@ using Avalonia.VisualTree;
 namespace VDF.GUI.Utils {
 	static class TreeHelper {
 
-		static List<T> GetVisualTreeObjects<T>(this IVisual obj) where T : IVisual {
+		static List<T> GetVisualTreeObjects<T>(this Control obj) where T : Control {
 			var objects = new List<T>();
-			foreach (var child in obj.GetVisualChildren()) {
+			foreach (Control child in obj.GetVisualChildren()) {
 				if (child is T requestedType)
 					objects.Add(requestedType);
 				objects.AddRange(child.GetVisualTreeObjects<T>());

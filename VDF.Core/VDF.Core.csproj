@@ -9,9 +9,9 @@
     <InternalsVisibleTo Include="VDF.GUI" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen" Version="6.0.0" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="6.0.0.2" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
-    <PackageReference Include="protobuf-net" Version="3.2.16" />
+    <PackageReference Include="protobuf-net" Version="3.2.26" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
   </ItemGroup>
 

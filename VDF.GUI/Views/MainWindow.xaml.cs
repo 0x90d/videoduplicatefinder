@@ -22,7 +22,9 @@ using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Themes.Fluent;
+using Avalonia.Styling;
 using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
 
@@ -57,7 +59,7 @@ namespace VDF.GUI.Views {
 				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
 				Environment.OSVersion.Version.Build >= 22000) {
 				Background = null;
-				TransparencyLevelHint = WindowTransparencyLevel.Mica;
+				TransparencyLevelHint = new List<WindowTransparencyLevel> { WindowTransparencyLevel.Mica };
 				ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.PreferSystemChrome;
 				if (SettingsFile.Instance.DarkMode)
 					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundBlack")!.IsVisible = true;
@@ -66,7 +68,7 @@ namespace VDF.GUI.Views {
 			}
 
 			if (!SettingsFile.Instance.DarkMode)
-				((FluentTheme)Application.Current!.Styles[0]).Mode = FluentThemeMode.Light;
+				RequestedThemeVariant = ThemeVariant.Light;
 
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
@@ -112,26 +114,26 @@ namespace VDF.GUI.Views {
 			e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 
 			// Only allow if the dragged data contains text or filenames.
-			if (!e.Data.Contains(DataFormats.FileNames))
+			if (!e.Data.Contains(DataFormats.Files))
 				e.DragEffects = DragDropEffects.None;
 		}
 
 		private void DropInclude(object? sender, DragEventArgs e) {
-			if (!e.Data.Contains(DataFormats.FileNames)) return;
+			if (!e.Data.Contains(DataFormats.Files)) return;
 
-			foreach (string file in e.Data.GetFileNames()!) {
-				if (!Directory.Exists(file)) continue;
-				if (!SettingsFile.Instance.Includes.Contains(file))
-					SettingsFile.Instance.Includes.Add(file);
+			foreach (var path in e.Data.GetFiles() ?? Array.Empty<IStorageFolder>()) {
+				if (path is not IStorageFolder) continue;
+				if (!SettingsFile.Instance.Includes.Contains(path.Name))
+					SettingsFile.Instance.Includes.Add(path.Name);
 			}
 		}
 		private void DropBlacklist(object? sender, DragEventArgs e) {
-			if (!e.Data.Contains(DataFormats.FileNames)) return;
+			if (!e.Data.Contains(DataFormats.Files)) return;
 
-			foreach (string file in e.Data.GetFileNames()!) {
-				if (!Directory.Exists(file)) continue;
-				if (!SettingsFile.Instance.Blacklists.Contains(file))
-					SettingsFile.Instance.Blacklists.Add(file);
+			foreach (var path in e.Data.GetFiles() ?? Array.Empty<IStorageFolder>()) {
+				if (path is not IStorageFolder) continue;
+				if (!SettingsFile.Instance.Includes.Contains(path.Name))
+					SettingsFile.Instance.Includes.Add(path.Name);
 			}
 		}
 
