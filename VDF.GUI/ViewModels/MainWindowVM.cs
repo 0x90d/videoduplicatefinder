@@ -357,14 +357,16 @@ namespace VDF.GUI.ViewModels {
 
 
 
-		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.Create(() => {
+		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.CreateFromTask(async  () => {
 			try {
 				Process.Start(new ProcessStartInfo {
 					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
 					UseShellExecute = true
 				});
 			}
-			catch { }
+			catch {
+				await MessageBoxService.Show("Failed to open URL: https://github.com/0x90d/videoduplicatefinder/releases");
+			}
 		});
 		public static ReactiveCommand<Unit, Unit> OpenOwnFolderCommand => ReactiveCommand.Create(() => {
 			Process.Start(new ProcessStartInfo {

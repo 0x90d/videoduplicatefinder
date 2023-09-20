@@ -31,6 +31,23 @@
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
         <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
     </Window.Resources>
+    <Window.Styles>
+        <Style Selector="Button.hyperlink">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <TextBlock Text="{TemplateBinding Content}" Foreground="{StaticResource SystemAccentColor}" TextDecorations="Underline">
+                        <TextBlock.Styles>
+                            <Style Selector="TextBlock:pointerover">
+                                <Setter Property="Foreground" Value="{StaticResource SystemAccentColorLight1}"/>
+                            </Style>
+                        </TextBlock.Styles>
+                    </TextBlock>
+                </ControlTemplate>
+            </Setter>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+    </Window.Styles>
     <Border BorderBrush="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderThickness="2">
         <Grid>
             <controls:ExperimentalAcrylicBorder
@@ -377,7 +394,7 @@
                                                 <TextBlock
                                                     VerticalAlignment="Center"
                                                     Text="Select Lowest Duration / Quality"
-                                                    ToolTip.Tip="Keep longest / Best Quality" />
+                                                    ToolTip.Tip="Keep longest / Best Quality. The order is: Duration, Resolution, FPS, Bitrate, Audio Bitrate" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Header="Date">
@@ -1463,10 +1480,16 @@
                                                         VerticalAlignment="Center"
                                                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
                                                         ToolTip.Tip="FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty." />
+                                                    <StackPanel Orientation="Horizontal">
                                                     <TextBlock
                                                         VerticalAlignment="Center"
                                                         FontSize="14"
                                                         Text="Hardware Acceleration:" />
+                                                        <Button Command="{Binding OpenHWInfoLinkCommand}"
+                                                                Margin="10,0,0,0"
+                                                                Classes="hyperlink"
+                                                                Content="More Info"/>
+                                                    </StackPanel>
                                                     <ComboBox
                                                         x:Name="ComboboxHardwareAccelerationMode"
                                                         VerticalAlignment="Center"

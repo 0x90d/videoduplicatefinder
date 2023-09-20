@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
@@ -58,6 +59,17 @@ namespace VDF.GUI.ViewModels {
 				LogItems.Add(message);
 			});
 
+		public ReactiveCommand<Unit, Unit> OpenHWInfoLinkCommand => ReactiveCommand.CreateFromTask(async () => {
+			try {
+				Process.Start(new ProcessStartInfo {
+					FileName = "https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability",
+					UseShellExecute = true
+				});
+			}
+			catch {
+				await MessageBoxService.Show("Failed to open URL: https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability");
+			}
+		});
 		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
