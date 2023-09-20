@@ -57,7 +57,7 @@ namespace VDF.Core {
 
 
 		void InitProgress(int count) {
-			startTime = DateTime.Now;
+			startTime = DateTime.UtcNow;
 			scanProgressMaxValue = count;
 			processedFiles = 0;
 			lastProgressUpdate = DateTime.MinValue;
@@ -65,10 +65,10 @@ namespace VDF.Core {
 		void IncrementProgress(string path) {
 			processedFiles++;
 			var pushUpdate = processedFiles == scanProgressMaxValue ||
-								lastProgressUpdate + progressUpdateIntervall < DateTime.Now;
+								lastProgressUpdate + progressUpdateIntervall < DateTime.UtcNow;
 			if (!pushUpdate) return;
-			lastProgressUpdate = DateTime.Now;
-			var timeRemaining = TimeSpan.FromTicks(DateTime.Now.Subtract(startTime).Ticks *
+			lastProgressUpdate = DateTime.UtcNow;
+			var timeRemaining = TimeSpan.FromTicks(DateTime.UtcNow.Subtract(startTime).Ticks *
 									(scanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
 			Progress?.Invoke(this,
 							new ScanProgressChangedEventArgs {
@@ -215,7 +215,9 @@ namespace VDF.Core {
 
 		// Check if entry should be excluded from the scan for any reason
 		// Returns true if the entry is invalid (should be excluded)
-		bool InvalidEntry(FileEntry entry) {
+		bool InvalidEntry(FileEntry entry, out bool reportProgress) {
+			reportProgress = true;
+
 			if (Settings.IncludeImages == false && entry.IsImage)
 				return true;
 			if (Settings.BlackList.Any(f => {
@@ -228,6 +230,31 @@ namespace VDF.Core {
 				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
 			}))
 				return true;
+
+			if (!Settings.ScanAgainstEntireDatabase) {
+				/* Skip non-included file before checking if it exists
+				 * This greatly improves performance if the file is on
+				 * a disconnected network/mobile drive
+				 */
+				if (Settings.IncludeSubDirectories == false) {
+					if (!Settings.IncludeList.Contains(entry.Folder)) {
+						reportProgress = false;
+						return true;
+					}
+				}
+				else if (!Settings.IncludeList.Any(f => {
+					if (!entry.Folder.StartsWith(f))
+						return false;
+					if (entry.Folder.Length == f.Length)
+						return true;
+					//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
+					string relativePath = Path.GetRelativePath(f, entry.Folder);
+					return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
+				})) {
+					reportProgress = false;
+					return true;
+				}
+			}
 
 			if (entry.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.TooDark))
 				return true;
@@ -284,7 +311,7 @@ namespace VDF.Core {
 				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
-					entry.invalid = InvalidEntry(entry);
+					entry.invalid = InvalidEntry(entry, out bool reportProgress);
 
 					bool skipEntry = false;
 					skipEntry |= entry.invalid;
@@ -309,7 +336,8 @@ namespace VDF.Core {
 
 					if (skipEntry) {
 						entry.invalid = true;
-						IncrementProgress(entry.Path);
+						if (reportProgress)
+							IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
 					}
 					if (Settings.IncludeNonExistingFiles && entry.grayBytes.Count > 0) {
