@@ -1529,7 +1529,7 @@
                                                     Margin="5,0,0,2"
                                                     FontWeight="Bold"
                                                     Text="Search Directories" />
-                                                <Grid Grid.Row="1" RowDefinitions="Auto, *">
+                                                <Grid Grid.Row="1" RowDefinitions="Auto, *, Auto">
                                                     <Menu Grid.Row="0" MinHeight="30">
                                                         <MenuItem Command="{Binding AddIncludesToListCommand}">
                                                             <MenuItem.Header>
@@ -1583,6 +1583,10 @@
                                                         BorderThickness="1"
                                                         DragDrop.AllowDrop="True"
                                                         ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
+                                                    <TextBlock
+                                                        Grid.Row="2"
+                                                        Margin="5"
+                                                        Text="Hint: You can also add folders with drag &amp; drop" />
                                                 </Grid>
                                                 <TextBlock
                                                     Grid.Row="0"
@@ -1594,7 +1598,7 @@
                                                     Grid.Row="1"
                                                     Grid.Column="1"
                                                     Margin="10,0,0,0"
-                                                    RowDefinitions="Auto, *">
+                                                    RowDefinitions="Auto, *, Auto">
                                                     <Menu Grid.Row="0" MinHeight="30">
                                                         <MenuItem Command="{Binding AddBlacklistToListCommand}">
                                                             <MenuItem.Header>
@@ -1648,6 +1652,10 @@
                                                         BorderThickness="1"
                                                         DragDrop.AllowDrop="True"
                                                         ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
+                                                    <TextBlock
+                                                        Grid.Row="2"
+                                                        Margin="5"
+                                                        Text="Hint: You can also add folders with drag &amp; drop" />
                                                 </Grid>
                                             </Grid>
                                         </Grid>
