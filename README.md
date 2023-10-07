@@ -34,6 +34,16 @@ You may need to set execute permission first `sudo chmod 777 VDF.GUI`
 
 #### MacOS user:
 Install ffmpeg & ffprobe using homebrew
+<details>
+  <summary>If homebrew is not installed, open Terminal.app and execute</summary>
+
+###
+  ```js
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
+and then
+</details>
+
 ```
 brew install ffmpeg
 ```
