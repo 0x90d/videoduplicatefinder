@@ -33,18 +33,33 @@ Open terminal in VDF folder and execute `./VDF.GUI`
 You may need to set execute permission first `sudo chmod 777 VDF.GUI`
 
 #### MacOS user:
-Install ffmpeg / ffprobe using homebrew
+Install ffmpeg & ffprobe using homebrew
+<details>
+  <summary>If homebrew is not installed, open Terminal.app and execute</summary>
 
-Open terminal in VDF folder and execute `./VDF.GUI` or if you have .NET installed `dotnet VDF.GUI.dll`
-You may get a permission error. Open system settings of your Mac, go to `Privacy & Security` and then `Developer Tools`. Now add `Terminal` to the list.
+###
+  ```js
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
+and then
+</details>
 
+```
+brew install ffmpeg
+```
+Open `System Settings.app` go to `Privacy & Security` > `Developer Tools` and add `Terminal.app`.
+Afterwards open `Terminal.app` in videoduplicatefinder root directory. If you have .NET installed execute `dotnet VDF.GUI.dll` otherwise execute
+```
+xattr -rc ./VDF.GUI && codesign --force --deep --sign - ./VDF.GUI
+chmod +x ./VDF.GUI
+./VDF.GUI
+```
 # Screenshots (slightly outdated)
-<img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
+<img width="685" src="https://github.com/0x90d/videoduplicatefinder/assets/54822494/99b013ac-aad9-4284-97ac-6691018e9d86">
 
 # License
 Video Duplicate Finder is licensed under GPLv3  
 Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licensed under LGPL 2.1 / GPL v2
-
 
 # Building
 - .NET Core 6.x
