@@ -51,7 +51,6 @@ chmod +x ./VDF.GUI
 Video Duplicate Finder is licensed under GPLv3  
 Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licensed under LGPL 2.1 / GPL v2
 
-
 # Building
 - .NET Core 6.x
 - Visual Studio 2022
