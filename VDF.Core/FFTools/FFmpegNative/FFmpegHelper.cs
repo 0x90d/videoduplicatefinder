@@ -116,7 +116,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			return false;
 		}
 
-		public static bool DoFFmpegLibraryFilesExist {
+		internal static bool DoFFmpegLibraryFilesExist {
 			get {
 				if (ffmpegLibraryFound)
 					return true;

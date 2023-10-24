@@ -7,7 +7,7 @@
     MinWidth="400"
     MaxWidth="600"
     MaxHeight="600"
-    CanResize="false"    
+    CanResize="false"
     SizeToContent="WidthAndHeight"
     WindowStartupLocation="CenterOwner">
 

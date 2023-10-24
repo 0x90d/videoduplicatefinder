@@ -192,7 +192,7 @@ namespace VDF.GUI.Data {
 			File.WriteAllText(path, JsonSerializer.Serialize(instance));
 		}
 
-		bool _UseMica = true;
+		bool _UseMica = false;
 		[JsonPropertyName("UseMica")]
 		public bool UseMica {
 			get => _UseMica;

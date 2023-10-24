@@ -23,8 +23,8 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Avalonia.Themes.Fluent;
 using Avalonia.Styling;
+using Avalonia.Themes.Fluent;
 using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
 
@@ -123,20 +123,20 @@ namespace VDF.GUI.Views {
 
 			foreach (var path in e.Data.GetFiles() ?? Array.Empty<IStorageFolder>()) {
 				if (path is not IStorageFolder) continue;
-                string? localPath = path.TryGetLocalPath();
-                if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
-                    SettingsFile.Instance.Includes.Add(localPath);
-            }
+				string? localPath = path.TryGetLocalPath();
+				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
+					SettingsFile.Instance.Includes.Add(localPath);
+			}
 		}
 		private void DropBlacklist(object? sender, DragEventArgs e) {
 			if (!e.Data.Contains(DataFormats.Files)) return;
 
 			foreach (var path in e.Data.GetFiles() ?? Array.Empty<IStorageFolder>()) {
 				if (path is not IStorageFolder) continue;
-                string? localPath = path.TryGetLocalPath();
-                if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
-                    SettingsFile.Instance.Includes.Add(localPath);
-            }
+				string? localPath = path.TryGetLocalPath();
+				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
+					SettingsFile.Instance.Includes.Add(localPath);
+			}
 		}
 
 		void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {

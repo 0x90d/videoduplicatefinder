@@ -20,6 +20,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Avalonia;
@@ -357,7 +358,7 @@ namespace VDF.GUI.ViewModels {
 
 
 
-		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.CreateFromTask(async  () => {
+		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.CreateFromTask(async () => {
 			try {
 				Process.Start(new ProcessStartInfo {
 					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
@@ -714,15 +715,41 @@ namespace VDF.GUI.ViewModels {
 			}
 
 			if (!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {
-				await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
-				return;
-			}
-			if (!ScanEngine.FFprobeExists) {
-				await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+					await MessageBoxService.Show("Cannot find FFmpeg executable. The easiest solution is to download ffmpeg and place it in VDF 'bin' folder. Otherwise please follow instructions on Github and restart VDF");
+				}
+				else {
+					await MessageBoxService.Show("Cannot find FFmpeg. Please follow instructions on Github and restart VDF");
+				}
 				return;
 			}
 			if (SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) {
-				await MessageBoxService.Show("Cannot find shared FFmpeg libraries. Either uncheck 'Use native ffmpeg binding' in settings or please follow instructions on Github and restart VDF");
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+					if (await MessageBoxService.Show("Cannot find shared FFmpeg libraries. Would you like to open the download page? Otherwise either uncheck 'Use native ffmpeg binding' in settings or please follow instructions on Github and restart VDF.", MessageBoxButtons.Yes | MessageBoxButtons.No) == MessageBoxButtons.Yes) {
+						try {
+							int ffmpegMajorVersion = FFmpeg.AutoGen.ffmpeg.LibraryVersionMap["avcodec"] / 10;
+							Process.Start(new ProcessStartInfo($"https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n{ffmpegMajorVersion}.0-latest-win64-gpl-shared-{ffmpegMajorVersion}.0.zip") {
+								UseShellExecute = true
+							});
+							await MessageBoxService.Show("After downloading, please extract and copy the 'bin' (!!) folder into VDF folder. Then restart VDF");
+						}
+						catch {
+							await MessageBoxService.Show("Failed to open download page. Please visit: https://github.com/BtbN/FFmpeg-Builds/releases");
+						}
+					}
+				}
+				else {
+					await MessageBoxService.Show("Cannot find shared FFmpeg libraries. Either uncheck 'Use native ffmpeg binding' in settings or please follow instructions on Github and restart VDF");
+				}
+				return;
+			}
+			if (!ScanEngine.FFprobeExists) {
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+					await MessageBoxService.Show("Cannot find FFprobe executable. The easiest solution is to download ffmpeg/ffprobe and place it in VDF 'bin' folder. Otherwise please follow instructions on Github and restart VDF");
+				}
+				else {
+					await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
+				}
 				return;
 			}
 			if (SettingsFile.Instance.UseNativeFfmpegBinding && SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.auto) {

@@ -46,7 +46,7 @@ namespace VDF.Core.Utils {
 
 			byte[] buffer = new byte[GrayByteValueLength];
 			int stride = 0;
-			stride = tempImage.GetPixelRowSpan(0).Length; 
+			stride = tempImage.GetPixelRowSpan(0).Length;
 			int bytes = stride * original.Height;
 
 			int count = 0, all = original.Width * original.Height;
@@ -130,14 +130,14 @@ namespace VDF.Core.Utils {
 				for (int i = 0; i < vImg.Length; i++)
 					vImg_flipped[i] = Avx2.Shuffle(vImg[i], vFlipp_shuf[0]);
 			}
-			else if (Sse2.IsSupported) {
+			else if (Sse3.IsSupported) {
 				flip_img = new byte[img.Length];
 				Span<Vector128<byte>> vImg = MemoryMarshal.Cast<byte, Vector128<byte>>(img);
 				Span<Vector128<byte>> vImg_flipped = MemoryMarshal.Cast<byte, Vector128<byte>>(flip_img);
 				Span<Vector128<byte>> vFlipp_shuf = MemoryMarshal.Cast<byte, Vector128<byte>>(flipp_shuf256);
 
 				for (int i = 0; i < vImg.Length; i++)
-					vImg_flipped[i] = Avx2.Shuffle(vImg[i], vFlipp_shuf[0]);
+					vImg_flipped[i] = Ssse3.Shuffle(vImg[i], vFlipp_shuf[0]);
 			}
 			else {
 				flip_img = (byte[])img.Clone();

@@ -19,9 +19,9 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 #### FFmpeg & FFprobe:
 
 #### Windows user:
-Get latest package from https://ffmpeg.org/download.html I recommend the full (GPL) shared version. If you want to use native ffmpeg binding for much faster speed you must download the **5.0 stable shared** version.
+Get latest package from https://ffmpeg.org/download.html I recommend the full (GPL) shared version. If you want to use native ffmpeg binding you **must** use the shared version.
 
-Extract ffmpeg and ffprobe into the same directory of VDF.GUI.dll. Or into a sub folder called `bin`. Or make sure it can be found in `PATH` system environment variable
+Extract ffmpeg and ffprobe into the same directory of VDF.GUI.dll or into a sub folder called `bin`. Or make sure it can be found in `PATH` system environment variable
 
 #### Linux user:
 Installing ffmpeg:
@@ -42,15 +42,20 @@ You may get a permission error. Open system settings of your Mac, go to `Privacy
 <img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
 
 # License
-Video Duplicate Finder is licensed under GPLv3  
-Video Duplicate Finder uses ffmpeg / ffprobe (not included) which is licensed under LGPL 2.1 / GPL v2
+Video Duplicate Finder is licensed under GPLv3
 
+# Credits / Third Party
+- [Avalonia](https://github.com/AvaloniaUI/Avalonia)
+- [ActiPro Avalonia Controls (Free Edition)](https://github.com/Actipro/Avalonia-Controls)
+- [FFmpeg.AutoGen](https://github.com/Ruslan-B/FFmpeg.AutoGen)
+- [protobuf-net](https://github.com/protobuf-net/protobuf-net)
+- [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp)
 
 # Building
-- .NET Core 6.x
-- Visual Studio 2022
-- Avalonia VS Extension is recommended but not required
+- .NET 7.x
+- Visual Studio 2022 is recommended
 
 # Committing
-- Your pull request should only contain code for a single addition or fix
+- Create a pull request for each addition or fix - do NOT merge them into one PR
 - Unless it refers to an existing issue, write into your pull request what it does
+- For larger PRs I recommend you create an issue for discussion first
