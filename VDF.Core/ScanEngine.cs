@@ -119,10 +119,8 @@ namespace VDF.Core {
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
 			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
-			if (Settings.HighlightBestResults) {
-				Logger.Instance.Info("Highlighting best results...");
-				HighlightBestMatches();
-			}
+			Logger.Instance.Info("Highlighting best results...");
+			HighlightBestMatches();
 			ScanDone?.Invoke(this, new EventArgs());
 			Logger.Instance.Info("Scan done.");
 			DatabaseUtils.SaveDatabase();

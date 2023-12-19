@@ -24,7 +24,6 @@ namespace VDF.Core {
 		public bool IgnoreReparsePoints;
 		public bool ExcludeHardLinks;
 		public bool GeneratePreviewThumbnails;
-		public bool HighlightBestResults;
 		public bool UseNativeFfmpegBinding;
 		public bool IncludeSubDirectories = true;
 		public bool IncludeImages = true;

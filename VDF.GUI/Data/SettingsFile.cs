@@ -112,12 +112,6 @@ namespace VDF.GUI.Data {
 			get => _GeneratePreviewThumbnails;
 			set => this.RaiseAndSetIfChanged(ref _GeneratePreviewThumbnails, value);
 		}
-		bool _HighlightBestResults = true;
-		[JsonPropertyName("HighlightBestResults")]
-		public bool HighlightBestResults {
-			get => _HighlightBestResults;
-			set => this.RaiseAndSetIfChanged(ref _HighlightBestResults, value);
-		}
 		bool _ExtendedFFToolsLogging;
 		[JsonPropertyName("ExtendedFFToolsLogging")]
 		public bool ExtendedFFToolsLogging {
@@ -246,6 +240,18 @@ namespace VDF.GUI.Data {
 			get => _ShowSimilarityColumn;
 			set => this.RaiseAndSetIfChanged(ref _ShowSimilarityColumn, value);
 		}
+		bool _HighlightBestResults = true;
+		[JsonPropertyName("HighlightBestResults")]
+		public bool HighlightBestResults {
+			get => _HighlightBestResults;
+			set => this.RaiseAndSetIfChanged(ref _HighlightBestResults, value);
+		}
+		bool _HighlightNonBestResults = true;
+		[JsonPropertyName("HighlightNonBestResults")]
+		public bool HighlightNonBestResults {
+			get => _HighlightNonBestResults;
+			set => this.RaiseAndSetIfChanged(ref _HighlightNonBestResults, value);
+		}
 		bool _FilterByFilePathContains;
 		[JsonPropertyName("FilterByFilePathContains")]
 		public bool FilterByFilePathContains {
@@ -333,11 +339,7 @@ namespace VDF.GUI.Data {
 					Instance.HardwareAccelerationMode = value;
 			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
 				if (bool.TryParse(n.Value, out var value))
-					Instance.GeneratePreviewThumbnails = value;
-			foreach (var n in xDoc.Descendants("HighlightBestResults"))
-				if (bool.TryParse(n.Value, out var value))
-					Instance.HighlightBestResults = value;
-			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
+					Instance.GeneratePreviewThumbnails = value;			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
 				if (bool.TryParse(n.Value, out var value))
 					Instance.IgnoreReparsePoints = value;
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))

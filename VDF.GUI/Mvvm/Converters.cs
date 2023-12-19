@@ -43,7 +43,11 @@ namespace VDF.GUI.Mvvm {
 	}
 	public sealed class IsBestConverter : IValueConverter {
 		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-			if (!SettingsFile.Instance.HighlightBestResults) {
+			if (!SettingsFile.Instance.HighlightBestResults && (bool)value!) {
+				return Values.DefaultBrush;
+			}
+
+			if (!SettingsFile.Instance.HighlightNonBestResults && !(bool)value!) {
 				return Values.DefaultBrush;
 			}
 
