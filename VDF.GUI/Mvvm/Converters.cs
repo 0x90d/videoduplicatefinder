@@ -43,6 +43,16 @@ namespace VDF.GUI.Mvvm {
 	}
 	public sealed class IsBestConverter : IValueConverter {
 		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+			if (parameter is not null) {
+				if (parameter.ToString() == "Size" && !SettingsFile.Instance.HighlightSize) {
+					return Values.DefaultBrush;
+				}
+
+				if (parameter.ToString() == "Duration" && !SettingsFile.Instance.HighlightDuration) {
+					return Values.DefaultBrush;
+				}
+			}
+
 			if (!SettingsFile.Instance.HighlightBestResults && (bool)value!) {
 				return Values.DefaultBrush;
 			}

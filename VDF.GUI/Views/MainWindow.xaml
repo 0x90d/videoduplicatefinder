@@ -742,7 +742,7 @@
                                                             <TextBlock
                                                                 Grid.Row="0"
                                                                 Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}}"
+                                                                Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}, ConverterParameter=Duration}"
                                                                 IsVisible="{Binding !ItemInfo.IsImage}"
                                                                 Text="{Binding ItemInfo.Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
                                                                 TextWrapping="Wrap" />
@@ -755,7 +755,7 @@
                                                             <TextBlock
                                                                 Grid.Row="2"
                                                                 Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
+                                                                Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}, ConverterParameter=Size}"
                                                                 Text="{Binding ItemInfo.Size}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
@@ -1712,6 +1712,16 @@
                                             VerticalAlignment="Center"
                                             Content="Highlight Non-Best Results"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HighlightNonBestResults}"
+                                            IsThreeState="False" />
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            Content="Highlight Duration"
+                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HighlightDuration}"
+                                            IsThreeState="False" />
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            Content="Highlight Size"
+                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HighlightSize}"
                                             IsThreeState="False" />
                                     </StackPanel>
                                 </TabItem>

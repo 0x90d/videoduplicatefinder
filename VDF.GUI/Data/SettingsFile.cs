@@ -252,6 +252,18 @@ namespace VDF.GUI.Data {
 			get => _HighlightNonBestResults;
 			set => this.RaiseAndSetIfChanged(ref _HighlightNonBestResults, value);
 		}
+		bool _HighlightDuration = true;
+		[JsonPropertyName("HighlightDuration")]
+		public bool HighlightDuration {
+			get => _HighlightDuration;
+			set => this.RaiseAndSetIfChanged(ref _HighlightDuration, value);
+		}
+		bool _HighlightSize = true;
+		[JsonPropertyName("HighlightSize")]
+		public bool HighlightSize {
+			get => _HighlightSize;
+			set => this.RaiseAndSetIfChanged(ref _HighlightSize, value);
+		}
 		bool _FilterByFilePathContains;
 		[JsonPropertyName("FilterByFilePathContains")]
 		public bool FilterByFilePathContains {
