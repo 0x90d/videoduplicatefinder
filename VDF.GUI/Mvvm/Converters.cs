@@ -30,17 +30,25 @@ namespace VDF.GUI.Mvvm {
 	static class Values {
 		public static readonly SolidColorBrush GreenBrush = new();
 		public static readonly SolidColorBrush RedBrush = new();
+		public static readonly SolidColorBrush DefaultBrush = new();
 		static Values() {
 			App.Current!.TryGetResource(ThemeResourceKind.ControlBackgroundBrushSolidSuccess.ToResourceKey(), SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light, out var greenBrush);
 			GreenBrush.Color = ((SolidColorBrush)greenBrush!).Color;
 			App.Current.TryGetResource(ThemeResourceKind.ControlBackgroundBrushSolidDanger.ToResourceKey(), SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light, out var redBrush);
 			RedBrush.Color = ((SolidColorBrush)redBrush!).Color;
+			App.Current.TryGetResource(ThemeResourceKind.DefaultForegroundBrush.ToResourceKey(), SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light, out var defaultBrush);
+			DefaultBrush.Color = ((SolidColorBrush)defaultBrush!).Color;
 		}
 
 	}
 	public sealed class IsBestConverter : IValueConverter {
-		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-			(bool)value! ? Values.GreenBrush : Values.RedBrush;
+		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+			if (!SettingsFile.Instance.HighlightBestResults) {
+				return Values.DefaultBrush;
+			}
+
+			return (bool)value! ? Values.GreenBrush : Values.RedBrush;
+		}
 
 		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
 	}

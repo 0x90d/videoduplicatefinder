@@ -793,6 +793,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.IncludeSubDirectories = SettingsFile.Instance.IncludeSubDirectories;
 			Scanner.Settings.IncludeImages = SettingsFile.Instance.IncludeImages;
 			Scanner.Settings.GeneratePreviewThumbnails = SettingsFile.Instance.GeneratePreviewThumbnails;
+			Scanner.Settings.HighlightBestResults = SettingsFile.Instance.HighlightBestResults;
 			Scanner.Settings.IgnoreReadOnlyFolders = SettingsFile.Instance.IgnoreReadOnlyFolders;
 			Scanner.Settings.IgnoreReparsePoints = SettingsFile.Instance.IgnoreReparsePoints;
 			Scanner.Settings.ExcludeHardLinks = SettingsFile.Instance.ExcludeHardLinks;
