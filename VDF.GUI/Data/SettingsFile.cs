@@ -339,7 +339,8 @@ namespace VDF.GUI.Data {
 					Instance.HardwareAccelerationMode = value;
 			foreach (var n in xDoc.Descendants("GeneratePreviewThumbnails"))
 				if (bool.TryParse(n.Value, out var value))
-					Instance.GeneratePreviewThumbnails = value;			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
+					Instance.GeneratePreviewThumbnails = value;
+			foreach (var n in xDoc.Descendants("IgnoreHardlinks"))
 				if (bool.TryParse(n.Value, out var value))
 					Instance.IgnoreReparsePoints = value;
 			foreach (var n in xDoc.Descendants("ExtendedFFToolsLogging"))
