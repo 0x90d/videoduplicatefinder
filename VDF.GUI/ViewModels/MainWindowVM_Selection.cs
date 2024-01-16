@@ -283,6 +283,7 @@ namespace VDF.GUI.ViewModels {
 			Utils.FileUtils.CopyFile(selectedItems, result[0], true, true, out var errorCounter);
 			foreach (var pair in itemsToUpdate) {
 				ScanEngine.UpdateFilePathInDatabase(pair.Item1.ItemInfo.Path, pair.Item2);
+				Scanner.UpdateFilePathInCurrentDuplicateEntries(pair.Item1.ItemInfo.Path, pair.Item2);
 			}
 			ScanEngine.SaveDatabase();
 			if (errorCounter > 0)
