@@ -634,6 +634,16 @@ namespace VDF.Core {
 			}
 		}
 
+		private static void annotateWorstFrameSize(IEnumerable<DuplicateItem> groupItems) {
+			var worstMatch = groupItems.Last();
+			var reverseItems = groupItems.Reverse();
+			foreach (var otherItem in reverseItems.Skip(1)) {
+				if (otherItem.FrameSizeInt > worstMatch.FrameSizeInt) {
+					worstMatch.IsWorstFrameSize = true;
+				}
+			}
+		}
+
 		void HighlightBestMatches() {
 			HashSet<Guid> blackList = new();
 			foreach (DuplicateItem item in Duplicates) {
@@ -702,6 +712,9 @@ namespace VDF.Core {
 						break;
 					otherItem.IsBestFrameSize = true;
 				}
+
+				annotateWorstFrameSize(groupItems);
+
 				blackList.Add(item.GroupId);
 			}
 		}

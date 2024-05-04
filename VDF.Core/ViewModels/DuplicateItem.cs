@@ -112,6 +112,7 @@ namespace VDF.Core.ViewModels {
 		[JsonInclude]
 		public int FrameSizeInt { get; private set; }
 		public bool IsBestFrameSize { get; set; }
+		public bool IsWorstFrameSize {get; set;}
 		[JsonInclude]
 		public string? Format { get; private set; }
 		[JsonInclude]
@@ -142,6 +143,5 @@ namespace VDF.Core.ViewModels {
 			ThumbnailTimestamps = timeSpans;
 			ThumbnailsUpdated?.Invoke();
 		}
-
 	}
 }
