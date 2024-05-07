@@ -345,7 +345,7 @@ namespace VDF.GUI.ViewModels {
 
 				var l = dups.Where(d => {
 					if (d.ItemInfo.Path.Equals(first.ItemInfo.Path))
-						return false;
+						return true;
 					switch (data.IdenticalSelection) {
 					case 1:
 						return d.EqualsFull(first);
