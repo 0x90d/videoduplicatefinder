@@ -23,6 +23,11 @@ namespace VDF.Core.FFTools {
 		vaapi,
 		qsv,
 		cuda,
-		videotoolbox
+		videotoolbox,
+		d3d11va,
+		drm,
+		opencl,
+		mediacodec,
+		vulkan
 	}
 }
