@@ -17,7 +17,7 @@
 using FFmpeg.AutoGen;
 
 namespace VDF.Core.FFTools.FFmpegNative {
-	sealed unsafe class VideoStreamDecoder : IDisposable {
+	unsafe class VideoStreamDecoder : IDisposable {
 		private readonly AVCodecContext* _pCodecContext;
 		private readonly AVFormatContext* _pFormatContext;
 		private readonly AVFrame* _pFrame;
@@ -53,7 +53,20 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		public Size FrameSize { get; }
 		public AVPixelFormat PixelFormat { get; }
 
+		protected virtual void Dispose(bool disposing) {
+			ReleaseUnmanaged();
+		}
+
+		~VideoStreamDecoder() {
+			Dispose(false);
+		}
+
 		public void Dispose() {
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		public void ReleaseUnmanaged() {
 			AVFrame* pFrame = _pFrame;
 			ffmpeg.av_frame_free(&pFrame);
 			AVFrame* pReceivedFrame = _pReceivedFrame;
