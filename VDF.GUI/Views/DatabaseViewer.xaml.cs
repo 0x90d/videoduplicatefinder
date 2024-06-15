@@ -25,6 +25,8 @@ namespace VDF.GUI.Views {
 			DataContext = new DatabaseViewerVM(this.FindControl<DataGrid>("datagridDatabase")!);
 			Owner = ApplicationHelpers.MainWindow;
 			Closing += DatabaseViewer_Closing;
+			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
+				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 		}
 
 		private void DatabaseViewer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) 

@@ -53,6 +53,8 @@ namespace VDF.GUI.Views {
 
 			InitializeComponent();
 
+			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
+				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 
 			var textBox = this.FindControl<TextBox>("TextBoxInput");
 			if (textBox != null) {

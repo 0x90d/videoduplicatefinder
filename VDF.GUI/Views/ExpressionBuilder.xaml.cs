@@ -30,6 +30,8 @@ namespace VDF.GUI.Views {
 					textBox.Focus();
 				};
 			}
+			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
+				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 		}
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);		

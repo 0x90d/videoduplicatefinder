@@ -44,6 +44,8 @@ namespace VDF.GUI.Views {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
 			}
+			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
+				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 		}
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
