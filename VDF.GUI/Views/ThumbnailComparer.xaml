@@ -53,8 +53,15 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>
-                            <Image IsVisible="{Binding !IsLoadingThumbnail}" Source="{Binding Thumbnail}" />
-                            <TextBlock Text="{Binding Item.ItemInfo.Path}" TextWrapping="Wrap" />
+                            <Image
+                                MaxWidth="80"
+                                IsVisible="{Binding !IsLoadingThumbnail}"
+                                Source="{Binding Thumbnail}"
+                                Stretch="Uniform" />
+                            <TextBlock
+                                MaxWidth="80"
+                                Text="{Binding Item.ItemInfo.Path}"
+                                TextWrapping="Wrap" />
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
