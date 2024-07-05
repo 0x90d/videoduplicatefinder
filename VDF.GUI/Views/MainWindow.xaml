@@ -125,6 +125,26 @@
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <MenuItem
+                                    Command="{Binding StartScanCommand}"
+                                    CommandParameter="RegroupOnly"
+                                    IsEnabled="{Binding IsReadyToCompare}"
+                                    IsVisible="{Binding !IsScanning}"
+                                    ToolTip.Tip="Re-run the scan but only for current set of duplicates, potentially regrouping the items. Changing certain settings will only take effect during a full scan.">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="20" Height="20">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="m19.3809,4.64738l-1.69658,1.69658c-3.12529,-3.12529 -8.21505,-3.12529 -11.34034,0c-3.12529,3.12529 -3.12529,8.21505 0,11.34034c1.518,1.60729 3.57176,2.41094 5.62553,2.41094s4.10753,-0.80365 5.71483,-2.32165c0.71435,-0.71435 0.71435,-1.78588 0,-2.50024s-1.78588,-0.71435 -2.50024,0c-1.69658,1.78588 -4.554,1.69658 -6.33988,0c-0.89294,-0.89294 -1.33941,-2.05376 -1.33941,-3.21459s0.44647,-2.32165 1.33941,-3.12529c1.69658,-1.78588 4.554,-1.78588 6.33988,0l-1.60729,1.60729c-0.53577,0.53577 -0.17859,1.518 0.62505,1.518l5.80411,0c0.53577,0 0.89294,-0.35717 0.89294,-0.89294l0,-5.89341c0,-0.80365 -0.98224,-1.16083 -1.518,-0.62505l-0.00001,0.00001l0.00001,-0.00001z" Fill="Orange" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Regroup" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
                                 <MenuItem Command="{Binding ResumeScanCommand}" IsVisible="{Binding IsScanning}">
                                     <MenuItem.Header>
                                         <StackPanel Orientation="Horizontal">
@@ -963,6 +983,37 @@
                                                         </MenuItem.Header>
                                                     </MenuItem>
                                                     <Separator />
+                                                    <MenuItem Command="{Binding MarkSelectedAsNotMatchingCheckedItemsCommand}" ToolTip.Tip="Flags all checked items as confirmed non-duplicates of the selected item. Future scans will not group this item with any of the checkmarked items anymore.">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Mark checked items as 'Not a match' to this item" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                    <MenuItem Command="{Binding MarkCheckedInGroupAsNotMatchingGroupItemsCommand}" ToolTip.Tip="Flags all checked items as confirmed non-duplicates of every other item in the same group. Future scans will not group any of the checkmarked items with any of the members of its current group anymore.">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Mark checked items as 'Not a match' to items in same group" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                    <MenuItem Command="{Binding MarkCheckedAsNotMatchingCommand}" ToolTip.Tip="Flags all checkmarked items as confirmed non-duplicates of each other. Future scans will not group any of the checkmarked items with each other anymore.">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="Mark checked items as 'Not a match' to each other" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>                                                    
+                                                    <Separator />
                                                     <MenuItem Command="{Binding CopySelectionCommand}" Header="Copy To Folder..." />
                                                     <MenuItem Command="{Binding MoveSelectionCommand}" Header="Move To Folder..." />
                                                     <Separator />
@@ -994,9 +1045,17 @@
                                                 </MenuItem>
                                                 <MenuItem Header="Selected Group">
                                                     <MenuItem
-                                                        Command="{Binding MarkGroupAsNotAMatchCommand}"
-                                                        Header="Mark as 'Not a match'"
-                                                        ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
+                                                        Command="{Binding MarkGroupItemsAsNotMatchingCommand}"
+                                                        Header="Mark all items in group as 'Not a match' to each other"
+                                                        ToolTip.Tip="Hides this group and flags all items in it as confirmed non-duplicates of the other items in this group. Future scans will not group any of the items in the current group with each other anymore." />
+                                                    <MenuItem
+                                                        Command="{Binding MarkSelectedAsNotMatchingGroupItemsCommand}"
+                                                        Header="Mark this item as 'Not a match' to other items in group"
+                                                        ToolTip.Tip="Hides this item and flags it as a confirmed non-duplicate of the other items in this group. Future scans will not group this item with any of the other current group items in the same group anymore." />
+                                                    <MenuItem
+                                                        Command="{Binding AlwaysHideExactGroupCommand}"
+                                                        Header="Always hide this exact group from this and future scans"
+                                                        ToolTip.Tip="Hides this exact group and excludes it from future scan results. The group will reappear if there is a new duplicate added to the group." />
                                                     <MenuItem
                                                         Command="{Binding OpenGroupCommand}"
                                                         CommandParameter="0"
