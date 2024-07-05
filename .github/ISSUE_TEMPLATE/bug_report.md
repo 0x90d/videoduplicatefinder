@@ -10,9 +10,7 @@ labels: "bug"
  - OS: [e.g. Windows / Linux / MacOS ]
 
 ## Describe the bug
- - A clear and concise description of the bug.
- - What happen, and what did you expect to happen?
- - What are the steps to reproduce issue?
+When you report a crash provide the stacktrace. For windows users: Open the event viewer of Windows and look for a crash with type ".NET Runtime". For linux or macos users: Run the app from terminal, when it crashes the stacktrace is written to terminal. A crash report without stacktrace might get closed without additional comment.
 
 ## Snapshots
 Optionally, include snapshots showing the issue.
