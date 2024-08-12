@@ -31,6 +31,10 @@ using VDF.Core.ViewModels;
 namespace VDF.Core {
 	public sealed class ScanEngine {
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
+
+		// Store all relevant entries here so we can re-compare the set to generate new groups without rescanning all files
+		public HashSet<FileEntry> CurrentDuplicateEntries { get; set; } = new HashSet<FileEntry>();
+
 		public Settings Settings { get; } = new Settings();
 		public event EventHandler<ScanProgressChangedEventArgs>? Progress;
 		public event EventHandler? BuildingHashesDone;
@@ -110,21 +114,14 @@ namespace VDF.Core {
 		}
 
 		public async void StartCompare() {
+			CurrentDuplicateEntries.Clear();
 			PrepareCompare();
-			SearchTimer.Start();
-			ElapsedTimer.Start();
-			Logger.Instance.Info("Scan for duplicates...");
-			if (!cancelationTokenSource.IsCancellationRequested)
-				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
-			SearchTimer.Stop();
-			ElapsedTimer.Stop();
-			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
-			Logger.Instance.Info("Highlighting best results...");
-			HighlightBestMatches();
-			ScanDone?.Invoke(this, new EventArgs());
-			Logger.Instance.Info("Scan done.");
-			DatabaseUtils.SaveDatabase();
-			isScanning = false;
+			await ScanEntries(DatabaseUtils.Database);
+		}
+
+		public async void StartRegroup() {
+			PrepareCompare();
+			await ScanEntries(CurrentDuplicateEntries);
 		}
 
 		void PrepareSearch() {
@@ -169,6 +166,26 @@ namespace VDF.Core {
 				ElapsedTimer.Reset();
 
 			isScanning = true;
+		}
+
+		private async Task ScanEntries(HashSet<FileEntry> entries) {
+			SearchTimer.Start();
+			ElapsedTimer.Start();
+			Logger.Instance.Info("Scan for duplicates...");
+			if (!cancelationTokenSource.IsCancellationRequested) {
+				await Task.Run(() => {
+					ScanForDuplicates(entries);
+				}, cancelationTokenSource.Token);
+			}
+			SearchTimer.Stop();
+			ElapsedTimer.Stop();
+			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
+			Logger.Instance.Info("Highlighting best results...");
+			HighlightBestMatches();
+			ScanDone?.Invoke(this, new EventArgs());
+			Logger.Instance.Info("Scan done.");
+			DatabaseUtils.SaveDatabase();
+			isScanning = false;
 		}
 
 		void CancelAllTasks() {
@@ -300,6 +317,13 @@ namespace VDF.Core {
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
 		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
 		public static void UpdateFilePathInDatabase(string newPath, FileEntry dbEntry) => DatabaseUtils.UpdateFilePath(newPath, dbEntry);
+
+		public void UpdateFilePathInCurrentDuplicateEntries(string newPath, FileEntry fileEntry) {
+			CurrentDuplicateEntries.Remove(fileEntry);
+			fileEntry.Path = newPath;
+			CurrentDuplicateEntries.Add(fileEntry);
+		}
+
 #pragma warning disable CS8601 // Possible null reference assignment
 		public static bool GetFromDatabase(string path, out FileEntry dbEntry) => DatabaseUtils.Database.TryGetValue(new FileEntry(path), out dbEntry);
 #pragma warning restore CS8601 // Possible null reference assignment
@@ -433,17 +457,25 @@ namespace VDF.Core {
 			return !float.IsNaN(difference);
 		}
 
-		void ScanForDuplicates() {
+		void ScanForDuplicates(HashSet<FileEntry> inputEntries) {
+			Dictionary<string, HashSet<string>> BlacklistDictionary = new();
 			Dictionary<string, DuplicateItem>? duplicateDict = new();
 
 			//Exclude existing database entries which not met current scan settings
 			List<FileEntry> ScanList = new();
 
 			Logger.Instance.Info("Prepare list of items to compare...");
-			foreach (FileEntry entry in DatabaseUtils.Database) {
+			foreach (FileEntry entry in inputEntries) {
 				if (!InvalidEntryForDuplicateCheck(entry)) {
 					ScanList.Add(entry);
 				}
+			}
+
+			Logger.Instance.Info("Initializing blacklist dictionary of confirmed non-matches...");
+			FileInfo blacklistDictionaryFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistDictionary.json"));
+			if (blacklistDictionaryFile.Exists && blacklistDictionaryFile.Length > 0) {
+				using var stream = new FileStream(blacklistDictionaryFile.FullName, FileMode.Open);
+				BlacklistDictionary = JsonSerializer.Deserialize<Dictionary<string, HashSet<string>>>(stream)!;
 			}
 
 			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
@@ -466,8 +498,15 @@ namespace VDF.Core {
 					if (Settings.CompareHorizontallyFlipped)
 						flippedGrayBytes = CreateFlippedGrayBytes(entry);
 
+					bool entryHasBlacklist = BlacklistDictionary.TryGetValue(entry.Path, out HashSet<string>? entryBlacklist);
+
 					for (int n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
+
+						// If entry has blacklisted compItem we can't group them at all, so no need to compare (and blacklist is two-way, no need to check mutual blacklisting)
+						if (entryHasBlacklist && entryBlacklist!.Contains(compItem.Path)) {
+							continue;
+						}
 						if (entry.IsImage != compItem.IsImage)
 							continue;
 						if (!entry.IsImage) {
@@ -501,29 +540,117 @@ namespace VDF.Core {
 						}
 
 						if (isDuplicate) {
+							CurrentDuplicateEntries.Add(entry);
+							CurrentDuplicateEntries.Add(compItem);
 							lock (duplicateDict) {
 								bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
 								bool foundComp = duplicateDict.TryGetValue(compItem.Path, out DuplicateItem? existingComp);
+
+								bool compItemHasBlacklist = BlacklistDictionary.TryGetValue(compItem.Path, out HashSet<string>? compItemBlacklist);
 
 								if (foundBase && foundComp) {
 									//this happens with 4+ identical items:
 									//first, 2+ duplicate groups are found independently, they are merged in this branch
 									if (existingBase!.GroupId != existingComp!.GroupId) {
+
+										bool isEntryGroupMemberBlacklistedByCompItem = false;
+										if (compItemHasBlacklist) {
+											isEntryGroupMemberBlacklistedByCompItem = IsBlacklisted(compItemBlacklist!, duplicateDict.Values.Where(c =>
+												c.GroupId == existingBase!.GroupId));
+										}
+
+										bool isCompItemGroupMemberBlacklistedByEntry = false;
+										if (entryHasBlacklist) {
+											isCompItemGroupMemberBlacklistedByEntry = IsBlacklisted(entryBlacklist!, duplicateDict.Values.Where(c =>
+												c.GroupId == existingComp!.GroupId));
+										}
+
+										// if BOTH entry blacklists one of compItem-group's members AND compitem blacklists one of entry-group's members
+										// we cannot merge these groups, nor add entry or compItem to the other's group
+										if (isEntryGroupMemberBlacklistedByCompItem && isCompItemGroupMemberBlacklistedByEntry) {
+											continue;
+										}
+
+										// if entry blacklists one of compItem-group's items
+										// we cannot merge the groups, but potentially move the compItem over to the entry group.
+										if (isEntryGroupMemberBlacklistedByCompItem) {
+											// Not messing with attempting to move item between groups for now
+											continue;
+										}
+
+										// if compItem blacklists one of entry-group's items
+										// we cannot merge the groups, but potentially move the entry over to the compItem group.
+										if (isCompItemGroupMemberBlacklistedByEntry) {
+											// Not messing with attempting to move item between groups for now
+											continue;
+										}
+
+										// if neither item blacklists members of the other's group
+										// but one of entry-group's members blacklists one of compItem-group's members (and thus vice versa)
+										bool isCompItemGroupMemberBlacklistedByEntryGroupMember = false;
+										foreach(DuplicateItem? entryGroupMember in duplicateDict.Values.Where(c =>
+											c.GroupId == existingBase!.GroupId)) {
+
+											bool entryGroupMemberHasBlacklist = BlacklistDictionary.TryGetValue(entryGroupMember.Path, out HashSet<string>? entryGroupMemberBlacklist);
+											if (entryGroupMemberHasBlacklist) {
+												isCompItemGroupMemberBlacklistedByEntryGroupMember = IsBlacklisted(entryGroupMemberBlacklist!, duplicateDict.Values.Where(c =>
+													c.GroupId == existingComp!.GroupId));
+											}
+
+											if (isCompItemGroupMemberBlacklistedByEntryGroupMember) {
+												break;
+											}
+										}
+
+										if (isCompItemGroupMemberBlacklistedByEntryGroupMember) {
+											continue;
+										}
+
+										// else there is no relevant possible blacklisting, merge groups happily
 										Guid groupID = existingComp!.GroupId;
 										foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
-											c.GroupId == groupID))
+											c.GroupId == groupID)) {
 											dup.GroupId = existingBase.GroupId;
+										}
+									} else {
+										// Do nothing, we found two items that are already grouped together through previously merging groups
+										// and we can assume that they therefore have passed blacklist checking
+										continue;
 									}
 								}
 								else if (foundBase) {
-									duplicateDict.TryAdd(compItem.Path,
-										new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
+									// Entry has existing group, compItem does not.
+									// In order to add compItem to entry's group, compItem can't have blacklisted any of the elements in entry's group
+									bool isBlacklisted = false;
+									if (compItemHasBlacklist) {
+										isBlacklisted = IsBlacklisted(compItemBlacklist!, duplicateDict.Values.Where(c =>
+											c.GroupId == existingBase!.GroupId));
+									}
+
+									if (!isBlacklisted) {
+										duplicateDict.TryAdd(compItem.Path,
+											new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
+									} else {
+										// Not messing with trying to move items between groups for now
+										continue;
+									}
 								}
 								else if (foundComp) {
-									duplicateDict.TryAdd(entry.Path,
-										new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
+									// compItem does have an existing group, entry does not
+									// In order to add entry to compItem's group, entry can't have blacklisted any of the elements in compItem's group
+									bool isBlacklisted = false;
+									if (entryHasBlacklist) {
+										isBlacklisted = IsBlacklisted(entryBlacklist!, duplicateDict.Values.Where(c =>
+											c.GroupId == existingComp!.GroupId));
+									}
+	
+									if (!isBlacklisted) {
+										duplicateDict.TryAdd(entry.Path,
+											new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
+									}
 								}
 								else {
+									// Neither item belongs to group. Create new group to hold the matching items
 									var groupId = Guid.NewGuid();
 									duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
 									duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
@@ -537,6 +664,16 @@ namespace VDF.Core {
 			catch (OperationCanceledException) { }
 			Duplicates = new HashSet<DuplicateItem>(duplicateDict.Values);
 		}
+
+		private static bool IsBlacklisted(HashSet<string> blacklist, IEnumerable<DuplicateItem> duplicateItems) {
+			foreach (DuplicateItem? dup in duplicateItems) {
+				if (blacklist.Contains(dup.Path)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public async void CleanupDatabase() {
 			await Task.Run(() => {
 				DatabaseUtils.CleanupDatabase();
