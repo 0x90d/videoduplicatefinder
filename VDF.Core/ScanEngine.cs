@@ -477,6 +477,16 @@ namespace VDF.Core {
 								continue;
 						}
 
+						// Shortcut for linux, if the inodes are known and they are the same
+						// these two files are by definition hard links of each other
+						// no further inspection necessary
+						if (Settings.ExcludeHardLinks &&
+							entry.Inode > 0 &&
+							entry.Inode == compItem.Inode) {
+							isDuplicate = false;
+							break;
+						}
+
 
 						flags = DuplicateFlags.None;
 						isDuplicate = CheckIfDuplicate(entry, null, compItem, out difference);
