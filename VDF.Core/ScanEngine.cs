@@ -438,6 +438,9 @@ namespace VDF.Core {
 
 			//Exclude existing database entries which not met current scan settings
 			List<FileEntry> ScanList = new();
+			var includedPathsArr = new String[Settings.IncludeList.Count];
+			Settings.IncludeList.CopyTo(includedPathsArr);
+			var includedPaths = includedPathsArr.ToList();
 
 			Logger.Instance.Info("Prepare list of items to compare...");
 			foreach (FileEntry entry in DatabaseUtils.Database) {
@@ -493,7 +496,7 @@ namespace VDF.Core {
 							entry.FileSize == compItem.FileSize &&
 							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
 							Settings.ExcludeHardLinks) {
-							foreach (var link in HardLinkUtils.GetHardLinks(entry.Path))
+							foreach (var link in HardLinkUtils.GetHardLinks(includedPaths, entry.Path))
 								if (compItem.Path == link) {
 									isDuplicate = false;
 									break;
