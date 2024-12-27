@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        kind: ['linux', 'windows', 'macOS', 'macOSarm64']
+        kind: ['linux', 'windows', 'macOS', 'macOSarm64', 'linuxarm64']
         include:
           - kind: linux
             os: ubuntu-latest
@@ -26,6 +26,10 @@ jobs:
             os: windows-latest
             target: osx-arm64
             name: osx-arm64
+          - kind: linuxarm64
+            os: ubuntu-latest
+            target: linux-arm64
+            name: linux-arm64
             
     runs-on: ${{ matrix.os }}
 
@@ -34,7 +38,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
+        dotnet-version: '9.0.x'
     - name: Declare some variables
       id: vars
       shell: bash
