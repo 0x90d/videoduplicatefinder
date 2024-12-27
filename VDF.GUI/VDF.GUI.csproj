@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
   </PropertyGroup>
@@ -28,15 +28,15 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="23.1.0" />
-    <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="23.1.0" />
-    <PackageReference Include="Avalonia" Version="11.0.5" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.0.5" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.0.5" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.5" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.5" />
-    <PackageReference Include="Avalonia.Xaml.Behaviors" Version="11.0.2" />
-    <PackageReference Include="DynamicExpresso.Core" Version="2.16.1" />
+    <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="25.1.0" />
+    <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="25.1.0" />
+    <PackageReference Include="Avalonia" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Xaml.Behaviors" Version="11.2.0.1" />
+    <PackageReference Include="DynamicExpresso.Core" Version="2.17.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />

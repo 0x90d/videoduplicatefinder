@@ -146,7 +146,7 @@
                                         <StackPanel Orientation="Horizontal">
                                             <Viewbox Width="16" Height="16">
                                                 <Canvas Width="24" Height="24">
-                                                    <Path Data="M14,19H18V5H14M6,19H10V5H6V19Z" Fill="Blue" />
+                                                    <Path Data="M14,19H18V5H14M6,19H10V5H6V19Z" Fill="Gold" />
                                                 </Canvas>
                                             </Viewbox>
                                             <TextBlock
@@ -1069,7 +1069,7 @@
                                     <Separator Width="1" Margin="5" />
                                     <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
                                     <Separator Width="1" Margin="5" />
-                                    <TextBlock Text="{Binding ScanProgressText, Mode=OneWay}" />
+                                    <TextBlock Text="{Binding ScanProgressText, Mode=OneWay} TextTrimming=CharacterEllipsis" />
                                 </StackPanel>
                             </Grid>
                         </Grid>

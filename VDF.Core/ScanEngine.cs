@@ -301,7 +301,13 @@ namespace VDF.Core {
 		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
 		public static void UpdateFilePathInDatabase(string newPath, FileEntry dbEntry) => DatabaseUtils.UpdateFilePath(newPath, dbEntry);
 #pragma warning disable CS8601 // Possible null reference assignment
-		public static bool GetFromDatabase(string path, out FileEntry dbEntry) => DatabaseUtils.Database.TryGetValue(new FileEntry(path), out dbEntry);
+		public static bool GetFromDatabase(string path, out FileEntry? dbEntry) {
+			if (!File.Exists(path)) {
+				dbEntry = null;
+				return false;
+			}
+			return DatabaseUtils.Database.TryGetValue(new FileEntry(path), out dbEntry);
+		}
 #pragma warning restore CS8601 // Possible null reference assignment
 		public static void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
 
@@ -340,7 +346,7 @@ namespace VDF.Core {
 							IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
 					}
-					if (Settings.IncludeNonExistingFiles && entry.grayBytes.Count > 0) {
+					if (Settings.IncludeNonExistingFiles && entry.grayBytes?.Count > 0) {
 						bool hasAllInformation = entry.IsImage;
 						if (!hasAllInformation) {
 							hasAllInformation = true;

@@ -225,6 +225,8 @@ namespace VDF.GUI.ViewModels {
 			}
 			if (e.Action == NotifyCollectionChangedAction.Reset)
 				DuplicatesSelectedCounter = 0;
+
+			TotalDuplicates = Duplicates.Count;
 		}
 
 		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
@@ -671,6 +673,10 @@ namespace VDF.GUI.ViewModels {
 
 		public static ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
+			if (!File.Exists(currentItem.ItemInfo.Path)) {
+				await MessageBoxService.Show("The file no longer exists");
+				return;
+			}
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
 			string newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(fi.FullName), title: "Rename File");
@@ -690,7 +696,7 @@ namespace VDF.GUI.ViewModels {
 			try {
 				ScanEngine.GetFromDatabase(currentItem.ItemInfo.Path, out var dbEntry);
 				fi.MoveTo(newName, true);
-				ScanEngine.UpdateFilePathInDatabase(newName, dbEntry);
+				ScanEngine.UpdateFilePathInDatabase(newName, dbEntry!);
 				currentItem.ItemInfo.Path = newName;
 				ScanEngine.SaveDatabase();
 			}
@@ -712,6 +718,11 @@ namespace VDF.GUI.ViewModels {
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
 				await MessageBoxService.Show("The custom database folder does not exist!");
 				return;
+			}
+			if (Duplicates.Count > 0) {
+				if (await MessageBoxService.Show("Do you want to discard the results and start a new scan?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes) {
+					return;
+				}
 			}
 
 			if (!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) {

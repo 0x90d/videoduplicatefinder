@@ -15,7 +15,7 @@
     mc:Ignorable="d">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="300" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -30,8 +30,15 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Expression: " VerticalAlignment="Center" />
-            <TextBox x:Name="TextBoxInput"  Margin="5,0,0,0" Grid.Column="1" Text="{Binding ExpressionText}" />
+            <TextBlock
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Expression: " />
+            <TextBox
+                x:Name="TextBoxInput"
+                Grid.Column="1"
+                Margin="5,0,0,0"
+                Text="{Binding ExpressionText}" />
         </Grid>
         <Grid Grid.Row="2" Margin="5,0,5,5">
             <Grid.ColumnDefinitions>

@@ -44,7 +44,9 @@ namespace VDF.Core.Utils {
 			".m2t",
 			".m2ts",
 			".vob",
-			".ts"
+			".ts",
+			".rmvb",
+			".rm"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
 		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders) {

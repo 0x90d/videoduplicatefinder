@@ -277,8 +277,8 @@ namespace VDF.GUI.ViewModels {
 			var selectedItems = Duplicates.Where(s => s.Checked).ToList();
 			List<Tuple<DuplicateItemVM, FileEntry>> itemsToUpdate = new();
 			foreach (var item in selectedItems) {
-				ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry);
-				itemsToUpdate.Add(Tuple.Create(item, dbEntry));
+				if (ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry))
+					itemsToUpdate.Add(Tuple.Create(item, dbEntry!));
 			}
 			Utils.FileUtils.CopyFile(selectedItems, result[0], true, true, out var errorCounter);
 			foreach (var pair in itemsToUpdate) {

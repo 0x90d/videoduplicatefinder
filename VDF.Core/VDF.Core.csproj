@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
@@ -11,8 +11,8 @@
   <ItemGroup>
     <PackageReference Include="FFmpeg.AutoGen" Version="7.0.0" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
-    <PackageReference Include="protobuf-net" Version="3.2.26" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+    <PackageReference Include="protobuf-net" Version="3.2.45" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
   </ItemGroup>
 
 </Project>
