@@ -39,6 +39,12 @@ namespace VDF.GUI.Utils {
 				tmpwidth += pImgList[i].Width;
 			}
 
+			// Check if the resulting image exceeds the maximum width
+			if (width > 65535 || width*height*4 > 128*1024*1024) {
+				// Resize to fit within the maximum width and max memory in ImageShart (128M)
+				img.Mutate(x => x.Resize((int)(width/((width * height * 4)/(128*1024*1024))), 0, KnownResamplers.Lanczos3));
+			}
+
 			using MemoryStream ms = new();
 			img.Save(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
 			ms.Position = 0;
