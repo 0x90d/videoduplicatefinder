@@ -38,6 +38,14 @@ namespace VDF.Core {
 			DateCreated = fileInfo.CreationTimeUtc;
 			DateModified = fileInfo.LastWriteTimeUtc;
 			FileSize = fileInfo.Length;
+			if (CoreUtils.IsWindows) {
+				Inode = 0;
+			} else {
+				var ok = Mono.Unix.Native.Syscall.stat(_Path, out var stat);
+				if (ok == 0) {
+					Inode = stat.st_ino;
+				}
+			}
 		}
 
 		[ProtoMember(1)]
@@ -65,6 +73,8 @@ namespace VDF.Core {
 		public DateTime DateModified;
 		[ProtoMember(8)]
 		public long FileSize;
+		[ProtoMember(9)]
+		public ulong Inode;
 
 		[ProtoIgnore]
 		internal bool invalid = true;
