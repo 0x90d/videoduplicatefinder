@@ -42,7 +42,7 @@ jobs:
     - name: Declare some variables
       id: vars
       shell: bash
-      run: echo "name=sha_short::$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     - name: Build
       shell: bash
       run: |
