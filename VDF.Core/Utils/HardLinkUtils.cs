@@ -44,46 +44,49 @@ namespace VDF.Core.Utils {
 		/// <summary>
 		//// Returns enumeration of hard links for the given *file* as full file paths
 		/// </summary>
-		public static IEnumerable<string> GetHardLinks(string filepath) {
+		public static IEnumerable<string> GetHardLinks(List<string> includedPaths, string filepath) {
 			if (CoreUtils.IsWindows)
 				return GetHardLinksWindows(filepath);
 			else
-				return GetHardLinksPosix(filepath);
+				return GetHardLinksPosix(includedPaths, filepath);
 		}
 
-		static IEnumerable<string> GetHardLinksPosix(string filepath) {
+		static IEnumerable<string> GetHardLinksPosix(List<string> includedPaths, string filepath) {
 			const int timeout = 30_000;
+			var links = new List<string>();
 			int success = Mono.Unix.Native.Syscall.stat(filepath, out var stat);
 			if (success == 0 && stat.st_nlink <= 1)
 				return Array.Empty<string>();
 
-			Process process = new() {
-				StartInfo = {
-					FileName = "find",
-					Arguments = $" {Path.GetPathRoot(filepath)} -samefile \"{filepath}\"",
-					RedirectStandardOutput = true,
-					/*
-					 * Do not redirect error output, this makes the process run
-					 * much longer due to all the 'Permission denied' errors
-					 */
-					WindowStyle = ProcessWindowStyle.Hidden,
-					UseShellExecute = false
+
+			foreach (var includePath in includedPaths) {
+				Process process = new() {
+					StartInfo = {
+						FileName = "find",
+						Arguments = $" {includePath} -samefile \"{filepath}\"",
+						RedirectStandardOutput = true,
+						/*
+						* Do not redirect error output, this makes the process run
+						* much longer due to all the 'Permission denied' errors
+						*/
+						WindowStyle = ProcessWindowStyle.Hidden,
+						UseShellExecute = false
+					}
+				};
+				try {
+					process.Start();
+					process.WaitForExit(timeout);
+					if (!process.HasExited) {
+						process.Kill();
+						throw new TimeoutException("timed out");
+					}
+					links.AddRange(process.StandardOutput.ReadToEnd().Split(Environment.NewLine));
 				}
-			};
-			try {
-				process.Start();
-				process.WaitForExit(timeout);
-				if (!process.HasExited) {
-					process.Kill();
-					throw new TimeoutException("timed out");
+				catch (Exception ex) {
+					Logger.Instance.Info($"Failed getting hard links of file: {filepath}, reason: {ex.Message}");
 				}
-				List<string> files = new(process.StandardOutput.ReadToEnd().Split(Environment.NewLine));
-				return files;
 			}
-			catch (Exception ex) {
-				Logger.Instance.Info($"Failed getting hard links of file: {filepath}, reason: {ex.Message}");
-				return Array.Empty<string>();
-			}
+			return links;
 		}
 
 		static IEnumerable<string> GetHardLinksWindows(string filepath) {
