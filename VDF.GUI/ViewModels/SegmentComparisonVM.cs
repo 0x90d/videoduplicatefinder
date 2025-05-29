@@ -17,14 +17,14 @@ namespace VDF.GUI.ViewModels
 {
     public class SegmentComparisonVM : ReactiveObject // Assuming ReactiveObject is the base like in MainWindowVM
     {
-        private string _videoAPath;
+        private string _videoAPath = string.Empty;
         public string VideoAPath
         {
             get => _videoAPath;
             set => this.RaiseAndSetIfChanged(ref _videoAPath, value);
         }
 
-        private string _videoBPath;
+        private string _videoBPath = string.Empty;
         public string VideoBPath
         {
             get => _videoBPath;
@@ -147,7 +147,7 @@ namespace VDF.GUI.ViewModels
         }
 
         // Results & Status
-        private string _resultMessage;
+        private string _resultMessage = string.Empty;
         public string ResultMessage
         {
             get => _resultMessage;
@@ -170,7 +170,7 @@ namespace VDF.GUI.ViewModels
             set => this.RaiseAndSetIfChanged(ref _isBusy, value);
         }
 
-        private string _busyText;
+        private string _busyText = string.Empty;
         public string BusyText
         {
             get => _busyText;
@@ -197,6 +197,11 @@ namespace VDF.GUI.ViewModels
             BrowseVideoACommand = ReactiveCommand.CreateFromTask(BrowseVideoA);
             BrowseVideoBCommand = ReactiveCommand.CreateFromTask(BrowseVideoB);
             CompareSegmentsCommand = ReactiveCommand.CreateFromTask(CompareSegments, this.WhenAnyValue(x => x.IsBusy, isBusy => !isBusy));
+
+            // Ensure properties that are set in constructor or immediately after also reflect initial state if needed
+            // However, for these backing fields, declaration is sufficient.
+            // If ResultMessage or BusyText were meant to have specific initial UI values,
+            // they could be set here, but string.Empty at declaration is fine for CS8618.
         }
 
         private async Task BrowseVideoA()
@@ -300,7 +305,7 @@ namespace VDF.GUI.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Instance.Error($"Error during segment comparison: {ex}");
+                Logger.Instance.Info($"ERROR: Error during segment comparison: {ex}"); // Corrected Logger call
                 ResultMessage = $"An unexpected error occurred: {ex.Message}";
             }
             finally

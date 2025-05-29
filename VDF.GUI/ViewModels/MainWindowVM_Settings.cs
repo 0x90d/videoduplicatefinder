@@ -225,7 +225,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			// Ensure MessageBoxService.Show can handle potentially long strings or consider a custom dialog for many items.
 			// For now, we'll use the existing MessageBoxService.
-			await MessageBoxService.Show(sb.ToString(), "Broken File Entries");
+			await MessageBoxService.Show(sb.ToString(), title: "Broken File Entries");
 		});
 
 		public ReactiveCommand<Unit, Unit> FindSubClipsCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -243,8 +243,8 @@ namespace VDF.GUI.ViewModels {
 				};
 
 				// Ensure database is loaded. DatabaseUtils.Database is a HashSet<FileEntry>.
-				if (!Core.Utils.DatabaseUtils.IsDatabaseLoaded) {
-					await Core.Utils.DatabaseUtils.LoadDatabase();
+				if (!Core.Utils.DatabaseUtils.Database.Any()) {
+					Core.Utils.DatabaseUtils.LoadDatabase(); // Corrected: removed await
 				}
 				var allFiles = Core.Utils.DatabaseUtils.Database.ToList(); // Pass a list
 
@@ -267,11 +267,11 @@ namespace VDF.GUI.ViewModels {
 							break;
 						}
 					}
-					await MessageBoxService.Show(sb.ToString(), "Sub-Clip Matches Found");
+					await MessageBoxService.Show(sb.ToString(), title: "Sub-Clip Matches Found");
 				}
 			} catch (Exception ex) {
-				Logger.Instance.Error($"Error finding sub-clips: {ex.Message}");
-				await MessageBoxService.Show($"An error occurred while finding sub-clips: {ex.Message}", "Error");
+				Logger.Instance.Info($"ERROR: Error finding sub-clips: {ex.Message}"); // Corrected Logger call
+				await MessageBoxService.Show($"An error occurred while finding sub-clips: {ex.Message}", title: "Error");
 			} finally {
 				IsBusy = false;
 				IsBusyText = string.Empty;
