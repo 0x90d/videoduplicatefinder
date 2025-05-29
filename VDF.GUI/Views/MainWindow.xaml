@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
+    xmlns:core="clr-namespace:VDF.Core;assembly=VDF.Core" 
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -31,6 +32,7 @@
     <Window.Resources>
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
         <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
+        <mvvm:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
     </Window.Resources>
     <Window.Styles>
         <Style Selector="Button.hyperlink">
@@ -1322,7 +1324,8 @@
                                                         Margin="0,5,0,0"
                                                         VerticalAlignment="Center"
                                                         Text="Thumbnails:" />
-                                                    <NumericUpDown
+                                                    <!-- Removed old NumericUpDown for Thumbnails -->
+                                                    <!-- <NumericUpDown
                                                         Width="200"
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Center"
@@ -1330,7 +1333,23 @@
                                                         Minimum="1"
                                                         ToolTip.Tip="Number of thumbnails generated per file. This only applies to video files. A high number means that the scan takes longer but also the chance of a 'false positive' decreases."
                                                         ValueChanged="Thumbnails_ValueChanged"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" />
+                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" /> -->
+                                                    <TextBlock Text="Thumbnail Positions:" Margin="0,5,0,2" FontWeight="Bold"/>
+                                                    <ItemsControl ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailPositions}" MaxHeight="200">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate DataType="{x:Type core:ThumbnailPositionSetting}">
+                                                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,2">
+                                                                    <ComboBox Grid.Column="0" ItemsSource="{Binding $parent[ItemsControl].DataContext.ThumbnailPositionTypes}" SelectedItem="{Binding Type}" Width="150" Margin="0,0,5,0"/>
+                                                                    <NumericUpDown Grid.Column="1" Value="{Binding Value}" Minimum="0" Maximum="10000" Increment="0.1" FormatString="F1" Margin="0,0,5,0" Width="100"/>
+                                                                    <TextBlock Grid.Column="2" Text="%" VerticalAlignment="Center" IsVisible="{Binding Type, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Percentage}"/>
+                                                                    <TextBlock Grid.Column="2" Text="s" VerticalAlignment="Center" IsVisible="{Binding Type, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=OffsetFromStart}"/>
+                                                                    <TextBlock Grid.Column="2" Text="s" VerticalAlignment="Center" IsVisible="{Binding Type, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=OffsetFromEnd}"/>
+                                                                    <Button Grid.Column="3" Content="Remove" Command="{Binding $parent[ItemsControl].DataContext.RemoveThumbnailPositionCommand}" CommandParameter="{Binding}" Margin="5,0,0,0" Padding="5,2"/>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <Button Content="Add New Thumbnail Position" Command="{Binding AddThumbnailPositionCommand}" Margin="0,5,0,0" HorizontalAlignment="Left"/>
                                                     <TextBlock
                                                         Margin="0,5,0,0"
                                                         VerticalAlignment="Center"
