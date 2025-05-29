@@ -29,6 +29,13 @@ using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 
 namespace VDF.Core {
+
+	public class SubClipMatch {
+		public FileEntry MainVideo { get; set; }
+		public FileEntry SubClipVideo { get; set; }
+		public List<double> MainVideoMatchStartTimes { get; set; }
+	}
+
 	public sealed class ScanEngine {
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
 		public Settings Settings { get; } = new Settings();
@@ -440,6 +447,7 @@ namespace VDF.Core {
 		}
 
 		void ScanForDuplicates() {
+			DateTime cutoffDateTime = DateTime.MinValue;
 			Dictionary<string, DuplicateItem>? duplicateDict = new();
 
 			//Exclude existing database entries which not met current scan settings
@@ -456,6 +464,10 @@ namespace VDF.Core {
 
 			InitProgress(ScanList.Count);
 
+			if (Settings.EnableTimeLimitedScan) {
+				cutoffDateTime = DateTime.UtcNow - TimeSpan.FromSeconds(Settings.TimeLimitSeconds);
+			}
+
 			double maxPercentDurationDifference = 100d + Settings.PercentDurationDifference;
 			double minPercentDurationDifference = 100d - Settings.PercentDurationDifference;
 
@@ -464,6 +476,12 @@ namespace VDF.Core {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					FileEntry? entry = ScanList[i];
+
+					if (Settings.EnableTimeLimitedScan && entry.DateModified < cutoffDateTime) {
+						IncrementProgress(entry.Path); // Still need to report progress for skipped items
+						return; // Using return instead of continue because it's a Parallel.For body
+					}
+
 					float difference = 0;
 					DuplicateFlags flags = DuplicateFlags.None;
 					bool isDuplicate;
@@ -474,6 +492,11 @@ namespace VDF.Core {
 
 					for (int n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
+
+						if (Settings.EnableTimeLimitedScan && compItem.DateModified < cutoffDateTime) {
+							continue;
+						}
+
 						if (entry.IsImage != compItem.IsImage)
 							continue;
 						if (!entry.IsImage) {
@@ -735,6 +758,95 @@ namespace VDF.Core {
 			Logger.Instance.Info("Scan stopped by user");
 			if (isScanning)
 				cancelationTokenSource.Cancel();
+		}
+
+		public List<FileEntry> GetBrokenFileEntries() {
+			List<FileEntry> brokenEntries = new List<FileEntry>();
+			if (DatabaseUtils.Database == null) {
+				return brokenEntries;
+			}
+			foreach (FileEntry entry in DatabaseUtils.Database) {
+				if (entry.Flags.HasFlag(EntryFlags.MetadataError) || entry.Flags.HasFlag(EntryFlags.ThumbnailError)) {
+					brokenEntries.Add(entry);
+				}
+			}
+			return brokenEntries;
+		}
+
+		public List<SubClipMatch> FindSubClipMatches(IEnumerable<FileEntry> allFiles, Settings settings) {
+			List<SubClipMatch> matches = new List<SubClipMatch>();
+			var fileList = allFiles.ToList(); // Convert to list for easier handling if needed, or just use as is.
+
+			foreach (FileEntry potentialMain in fileList) {
+				foreach (FileEntry potentialSub in fileList) {
+					if (potentialMain == potentialSub) continue;
+					if (potentialMain.mediaInfo == null || potentialSub.mediaInfo == null) continue;
+					if (potentialMain.IsImage || potentialSub.IsImage) continue; 
+					if (potentialMain.mediaInfo.Duration <= potentialSub.mediaInfo.Duration) continue;
+					if (potentialMain.grayBytes == null || potentialSub.grayBytes == null) continue;
+					
+                                        // Ensure enough thumbnails based on current settings. 
+                                        // The original logic in ScanForDuplicates uses positionList.Count which is derived from Settings.ThumbnailCount
+                                        // So, we use settings.ThumbnailCount directly here for clarity.
+					if (potentialMain.grayBytes.Count < settings.ThumbnailCount || potentialSub.grayBytes.Count < settings.ThumbnailCount) continue;
+
+					var mainThumbnails = potentialMain.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+					var subThumbnails = potentialSub.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+					var mainThumbnailTimes = potentialMain.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Key).ToList();
+
+					if (mainThumbnails.Count < subThumbnails.Count) continue; 
+					if (subThumbnails.Count == 0) continue; // Cannot match if sub-clip has no thumbnails
+
+					float differenceLimit = 1.0f - settings.Percent / 100f;
+
+					for (int i = 0; i <= mainThumbnails.Count - subThumbnails.Count; i++) {
+						bool currentWindowMatch = true;
+						List<double> currentMatchTimes = new List<double>();
+						for (int j = 0; j < subThumbnails.Count; j++) {
+							byte[]? mainTb = mainThumbnails[i + j];
+							byte[]? subTb = subThumbnails[j];
+
+							if (mainTb == null || subTb == null) {
+								currentWindowMatch = false;
+								break;
+							}
+							
+                                                        // Using the same logic as CheckIfDuplicate for consistency, including ignoring specific pixels
+                                                        float difference;
+                                                        if (settings.IgnoreBlackPixels || settings.IgnoreWhitePixels) {
+                                                            difference = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(mainTb, subTb, settings.IgnoreBlackPixels, settings.IgnoreWhitePixels);
+                                                        } else {
+                                                            difference = GrayBytesUtils.PercentageDifference(mainTb, subTb);
+                                                        }
+
+							if (difference > differenceLimit) {
+								currentWindowMatch = false;
+								break;
+							}
+							currentMatchTimes.Add(mainThumbnailTimes[i + j]);
+						}
+
+						if (currentWindowMatch) {
+							// Check if this exact match (main, sub, and specific start times) already exists
+							// This is a simple check; more sophisticated grouping might be needed later
+							bool alreadyExists = matches.Any(m => m.MainVideo == potentialMain && 
+							                                  m.SubClipVideo == potentialSub && 
+							                                  m.MainVideoMatchStartTimes.SequenceEqual(currentMatchTimes));
+							if (!alreadyExists) {
+								matches.Add(new SubClipMatch { 
+									MainVideo = potentialMain, 
+									SubClipVideo = potentialSub, 
+									MainVideoMatchStartTimes = new List<double>(currentMatchTimes) // Ensure a new list is added
+								});
+							}
+							// Depending on desired behavior, one might want to `break;` here
+							// if only the first sequence match per (main, sub) pair is needed.
+							// For now, collect all distinct sequence matches.
+						}
+					}
+				}
+			}
+			return matches;
 		}
 	}
 }

@@ -160,6 +160,12 @@ namespace VDF.GUI.Data {
 			get => _ScanAgainstEntireDatabase;
 			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
 		}
+		bool _EnableTimeLimitedScan;
+		[JsonPropertyName("EnableTimeLimitedScan")]
+		public bool EnableTimeLimitedScan {
+			get => _EnableTimeLimitedScan;
+			set => this.RaiseAndSetIfChanged(ref _EnableTimeLimitedScan, value);
+		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]
 		public int Percent {
@@ -177,6 +183,12 @@ namespace VDF.GUI.Data {
 		public int Thumbnails {
 			get => _Thumbnails;
 			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
+		}
+		int _TimeLimitSeconds = 3600;
+		[JsonPropertyName("TimeLimitSeconds")]
+		public int TimeLimitSeconds {
+			get => _TimeLimitSeconds;
+			set => this.RaiseAndSetIfChanged(ref _TimeLimitSeconds, value);
 		}
 		[JsonPropertyName("CustomCommands")]
 		public CustomActionCommands CustomCommands { get; set; } = new();

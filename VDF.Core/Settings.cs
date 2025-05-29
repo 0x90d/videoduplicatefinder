@@ -34,6 +34,7 @@ namespace VDF.Core {
 		public bool CompareHorizontallyFlipped;
 		public bool IncludeNonExistingFiles = true;
 		public bool ScanAgainstEntireDatabase;
+		public bool EnableTimeLimitedScan = false;
 
 		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 
@@ -43,6 +44,7 @@ namespace VDF.Core {
 
 		public int ThumbnailCount = 1;
 		public int MaxDegreeOfParallelism = 1;
+		public int TimeLimitSeconds = 3600;
 
 		public string CustomFFArguments = string.Empty;
 		public string CustomDatabaseFolder = string.Empty;
