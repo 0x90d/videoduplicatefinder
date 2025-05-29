@@ -240,6 +240,22 @@
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
+                                    <MenuItem Command="{Binding OpenSegmentComparisonCommand}" ToolTip.Tip="Opens a tool to compare specific segments from two videos.">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <!-- Icon representing custom segment comparison -->
+                                                        <Path Data="M21,2H3C1.9,2 1,2.9 1,4V20C1,21.1 1.9,22 3,22H21C22.1,22 23,21.1 23,20V4C23,2.9 22.1,2 21,2M21,20H3V4H21V20M7,14H5V12H7V14M7,10H5V8H7V10M7,6H5V4H7V6M19,12H9V10H19V12M19,8H9V6H19V8M19,16H9V14H19V16Z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="Custom Segment Comparison..." />
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
                                     <Separator />
                                     <MenuItem Command="{Binding ExportDataBaseToJsonCommand}">
                                         <MenuItem.Header>

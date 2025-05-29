@@ -1,0 +1,121 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="750"
+        x:Class="VDF.GUI.Views.SegmentComparisonView"
+        x:DataType="vm:SegmentComparisonVM"
+        Title="Custom Segment Comparison"
+        Width="800" Height="750"
+        WindowStartupLocation="CenterOwner">
+
+    <Design.DataContext>
+        <!-- This is only for design-time IntelliSense -->
+        <vm:SegmentComparisonVM />
+    </Design.DataContext>
+
+    <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" IsEnabled="{Binding !IsBusy}">
+        <!-- Video A Section -->
+        <GroupBox Header="Video A" Grid.Row="0" Margin="0,0,0,5">
+            <StackPanel Spacing="5">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Text="{Binding VideoAPath}" IsReadOnly="True" Watermark="Path to Video A"/>
+                    <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseVideoACommand}" Margin="5,0,0,0"/>
+                </Grid>
+                <ComboBox ItemsSource="{Binding DefinitionModes}" SelectedItem="{Binding ModeA}"/>
+                
+                <!-- Absolute Time A -->
+                <StackPanel Spacing="5" IsVisible="{Binding ModeA, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.AbsoluteTime}}">
+                    <TextBlock Text="Absolute Start Time (hh:mm:ss):"/>
+                    <TextBox Text="{Binding AbsoluteStartTimeA, Mode=TwoWay}"/>
+                    <TextBlock Text="Absolute End Time (hh:mm:ss):"/>
+                    <TextBox Text="{Binding AbsoluteEndTimeA, Mode=TwoWay}"/>
+                </StackPanel>
+
+                <!-- Offset Time A -->
+                <StackPanel Spacing="5" IsVisible="{Binding ModeA, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.Offset}}">
+                    <TextBlock Text="Start Reference:"/>
+                    <ComboBox ItemsSource="{Binding OffsetReferences}" SelectedItem="{Binding StartReferenceA}"/>
+                    <TextBlock Text="Start Offset (hh:mm:ss):"/>
+                    <TextBox Text="{Binding StartOffsetA, Mode=TwoWay}"/>
+                    <TextBlock Text="End Reference:"/>
+                    <ComboBox ItemsSource="{Binding OffsetReferences}" SelectedItem="{Binding EndReferenceA}"/>
+                    <TextBlock Text="End Offset (hh:mm:ss):"/>
+                    <TextBox Text="{Binding EndOffsetA, Mode=TwoWay}"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Video B Section -->
+        <GroupBox Header="Video B" Grid.Row="1" Margin="0,5,0,5">
+            <StackPanel Spacing="5">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Text="{Binding VideoBPath}" IsReadOnly="True" Watermark="Path to Video B"/>
+                    <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseVideoBCommand}" Margin="5,0,0,0"/>
+                </Grid>
+                <ComboBox ItemsSource="{Binding DefinitionModes}" SelectedItem="{Binding ModeB}"/>
+
+                <!-- Absolute Time B -->
+                <StackPanel Spacing="5" IsVisible="{Binding ModeB, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.AbsoluteTime}}">
+                    <TextBlock Text="Absolute Start Time (hh:mm:ss):"/>
+                    <TextBox Text="{Binding AbsoluteStartTimeB, Mode=TwoWay}"/>
+                    <TextBlock Text="Absolute End Time (hh:mm:ss):"/>
+                    <TextBox Text="{Binding AbsoluteEndTimeB, Mode=TwoWay}"/>
+                </StackPanel>
+
+                <!-- Offset Time B -->
+                <StackPanel Spacing="5" IsVisible="{Binding ModeB, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.Offset}}">
+                    <TextBlock Text="Start Reference:"/>
+                    <ComboBox ItemsSource="{Binding OffsetReferences}" SelectedItem="{Binding StartReferenceB}"/>
+                    <TextBlock Text="Start Offset (hh:mm:ss):"/>
+                    <TextBox Text="{Binding StartOffsetB, Mode=TwoWay}"/>
+                    <TextBlock Text="End Reference:"/>
+                    <ComboBox ItemsSource="{Binding OffsetReferences}" SelectedItem="{Binding EndReferenceB}"/>
+                    <TextBlock Text="End Offset (hh:mm:ss):"/>
+                    <TextBox Text="{Binding EndOffsetB, Mode=TwoWay}"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Comparison Parameters Section -->
+        <GroupBox Header="Comparison Parameters" Grid.Row="2" Margin="0,5,0,5">
+            <StackPanel Spacing="5">
+                <TextBlock Text="Number of Thumbnails:"/>
+                <NumericUpDown Value="{Binding NumberOfThumbnails}" Minimum="1" Maximum="100"/>
+                <TextBlock Text="Comparison Method:"/>
+                <ComboBox ItemsSource="{Binding ComparisonMethods}" SelectedItem="{Binding SelectedComparisonMethod}"/>
+            </StackPanel>
+        </GroupBox>
+        
+        <!-- Action Button -->
+        <Button Grid.Row="3" Content="Compare Segments" Command="{Binding CompareSegmentsCommand}" HorizontalAlignment="Stretch" Margin="0,10"/>
+
+        <!-- Busy Indicator -->
+        <StackPanel Grid.Row="4" Orientation="Vertical" Spacing="5" IsVisible="{Binding IsBusy}" Margin="0,5">
+            <TextBlock Text="{Binding BusyText}" HorizontalAlignment="Center"/>
+            <ProgressBar IsIndeterminate="True" MaxWidth="300" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Results Section -->
+        <GroupBox Header="Results" Grid.Row="5" Margin="0,5,0,0">
+            <ScrollViewer>
+                <StackPanel Spacing="5">
+                    <TextBlock Text="{Binding ResultMessage}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding SimilarityScoreVM, StringFormat='Similarity Score: {0:P2}'}" 
+                               IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonParameters.ComparisonMethod.DirectSequenceMatch}}"/>
+                    <StackPanel IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonParameters.ComparisonMethod.SearchASinB}}">
+                        <TextBlock Text="Match Start Times in Video B:"/>
+                        <ItemsControl ItemsSource="{Binding MatchStartTimesInBVM}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Margin="10,0,0,0"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </GroupBox>
+    </Grid>
+</Window>

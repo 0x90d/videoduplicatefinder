@@ -205,6 +205,65 @@ namespace VDF.Core.FFTools {
 			}
 			return true;
 		}
+
+		public static Dictionary<double, byte[]?> GetThumbnailsForSegment(string videoPath, TimeSpan segmentStart, TimeSpan segmentEnd, int numberOfThumbnails, bool extendedLogging) {
+			var result = new Dictionary<double, byte[]?>();
+
+			if (numberOfThumbnails <= 0) {
+				Logger.Instance.Error("GetThumbnailsForSegment: numberOfThumbnails must be greater than 0.");
+				return result;
+			}
+
+			if (segmentStart >= segmentEnd) {
+				Logger.Instance.Error("GetThumbnailsForSegment: segmentStart must be less than segmentEnd.");
+				return result;
+			}
+
+			if (string.IsNullOrEmpty(videoPath)) {
+				Logger.Instance.Error("GetThumbnailsForSegment: videoPath cannot be null or empty.");
+				return result;
+			}
+
+			if (string.IsNullOrEmpty(FFmpegPath)) {
+				Logger.Instance.Error("GetThumbnailsForSegment: FFmpeg path is not configured.");
+				return result;
+			}
+
+			List<TimeSpan> timestamps = new List<TimeSpan>();
+			TimeSpan segmentDuration = segmentEnd - segmentStart;
+
+			if (numberOfThumbnails == 1) {
+				timestamps.Add(segmentStart + TimeSpan.FromSeconds(segmentDuration.TotalSeconds / 2));
+			} else {
+				for (int i = 0; i < numberOfThumbnails; i++) {
+					double stepRatio = (double)i / (numberOfThumbnails - 1);
+					TimeSpan timestamp = segmentStart + TimeSpan.FromSeconds(segmentDuration.TotalSeconds * stepRatio);
+					timestamps.Add(timestamp);
+				}
+			}
+
+			foreach (TimeSpan ts in timestamps) {
+				// GetThumbnail already uses FfmpegEngine.HardwareAccelerationMode and FfmpegEngine.CustomFFArguments
+				// and FfmpegEngine.UseNativeBinding internally.
+				var settings = new FfmpegSettings {
+					File = videoPath,
+					Position = ts,
+					GrayScale = 0, // Color thumbnails
+					Fullsize = 0 // Assuming we want standard size thumbnails, not fullsize. This could be a parameter.
+				};
+
+				byte[]? thumbnailData = GetThumbnail(settings, extendedLogging);
+
+				if (thumbnailData != null && thumbnailData.Length > 0) {
+					result.Add(ts.TotalSeconds, thumbnailData);
+				} else {
+					Logger.Instance.Warn($"GetThumbnailsForSegment: Failed to retrieve thumbnail for {videoPath} at {ts}.");
+					// Optionally, add a null or placeholder if you need to signify a failed attempt for a specific timestamp
+				}
+			}
+
+			return result;
+		}
 	}
 
 	internal struct FfmpegSettings {
