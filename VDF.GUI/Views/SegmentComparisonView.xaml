@@ -2,13 +2,22 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+        xmlns:vm="using:VDF.GUI.ViewModels"
+        xmlns:core="using:VDF.Core"
+        xmlns:data="using:VDF.GUI.Data"
+        xmlns:converters="using:VDF.GUI.Mvvm.Converters"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="750"
         x:Class="VDF.GUI.Views.SegmentComparisonView"
         x:DataType="vm:SegmentComparisonVM"
         Title="Custom Segment Comparison"
         Width="800" Height="750"
         WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <!-- Assuming ObjectConverters.IsEqual is a static property/field returning an IValueConverter instance -->
+        <!-- If EnumToBooleanConverter is what's actually used for these cases, it would be defined here if not global -->
+        <!-- For now, relying on x:Static to resolve ObjectConverters.IsEqual from its namespace -->
+    </Window.Resources>
 
     <Design.DataContext>
         <!-- This is only for design-time IntelliSense -->
@@ -26,7 +35,7 @@
                 <ComboBox ItemsSource="{Binding DefinitionModes}" SelectedItem="{Binding ModeA}"/>
                 
                 <!-- Absolute Time A -->
-                <StackPanel Spacing="5" IsVisible="{Binding ModeA, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.AbsoluteTime}}">
+                <StackPanel Spacing="5" IsVisible="{Binding ModeA, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinitionMode.AbsoluteTime}}">
                     <TextBlock Text="Absolute Start Time (hh:mm:ss):"/>
                     <TextBox Text="{Binding AbsoluteStartTimeA, Mode=TwoWay}"/>
                     <TextBlock Text="Absolute End Time (hh:mm:ss):"/>
@@ -34,7 +43,7 @@
                 </StackPanel>
 
                 <!-- Offset Time A -->
-                <StackPanel Spacing="5" IsVisible="{Binding ModeA, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.Offset}}">
+                <StackPanel Spacing="5" IsVisible="{Binding ModeA, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinitionMode.Offset}}">
                     <TextBlock Text="Start Reference:"/>
                     <ComboBox ItemsSource="{Binding OffsetReferences}" SelectedItem="{Binding StartReferenceA}"/>
                     <TextBlock Text="Start Offset (hh:mm:ss):"/>
@@ -57,7 +66,7 @@
                 <ComboBox ItemsSource="{Binding DefinitionModes}" SelectedItem="{Binding ModeB}"/>
 
                 <!-- Absolute Time B -->
-                <StackPanel Spacing="5" IsVisible="{Binding ModeB, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.AbsoluteTime}}">
+                <StackPanel Spacing="5" IsVisible="{Binding ModeB, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinitionMode.AbsoluteTime}}">
                     <TextBlock Text="Absolute Start Time (hh:mm:ss):"/>
                     <TextBox Text="{Binding AbsoluteStartTimeB, Mode=TwoWay}"/>
                     <TextBlock Text="Absolute End Time (hh:mm:ss):"/>
@@ -65,7 +74,7 @@
                 </StackPanel>
 
                 <!-- Offset Time B -->
-                <StackPanel Spacing="5" IsVisible="{Binding ModeB, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinition.DefinitionMode.Offset}}">
+                <StackPanel Spacing="5" IsVisible="{Binding ModeB, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinitionMode.Offset}}">
                     <TextBlock Text="Start Reference:"/>
                     <ComboBox ItemsSource="{Binding OffsetReferences}" SelectedItem="{Binding StartReferenceB}"/>
                     <TextBlock Text="Start Offset (hh:mm:ss):"/>
@@ -103,8 +112,8 @@
                 <StackPanel Spacing="5">
                     <TextBlock Text="{Binding ResultMessage}" TextWrapping="Wrap"/>
                     <TextBlock Text="{Binding SimilarityScoreVM, StringFormat='Similarity Score: {0:P2}'}" 
-                               IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonParameters.ComparisonMethod.DirectSequenceMatch}}"/>
-                    <StackPanel IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonParameters.ComparisonMethod.SearchASinB}}">
+                               IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonMethodType.DirectSequenceMatch}}"/>
+                    <StackPanel IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonMethodType.SearchASinB}}">
                         <TextBlock Text="Match Start Times in Video B:"/>
                         <ItemsControl ItemsSource="{Binding MatchStartTimesInBVM}">
                             <ItemsControl.ItemTemplate>
