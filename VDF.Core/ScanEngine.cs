@@ -33,7 +33,21 @@ namespace VDF.Core {
 	public class SubClipMatch {
 		public FileEntry MainVideo { get; set; }
 		public FileEntry SubClipVideo { get; set; }
-		public List<double> MainVideoMatchStartTimes { get; set; }
+		public List<double> MainVideoMatchStartTimes { get; set; } = new List<double>();
+
+		// Parameterless constructor for object initializers or deserialization
+		public SubClipMatch() {
+			MainVideo = null!; // Indicates to the compiler this will be initialized post-construction
+			SubClipVideo = null!; 
+			// MainVideoMatchStartTimes is already initialized at declaration
+		}
+
+		// Parameterized constructor for explicit initialization
+		public SubClipMatch(FileEntry mainVideo, FileEntry subClipVideo, List<double> mainVideoMatchStartTimes) {
+			MainVideo = mainVideo;
+			SubClipVideo = subClipVideo;
+			MainVideoMatchStartTimes = mainVideoMatchStartTimes ?? new List<double>(); // Ensure list is not null
+		}
 	}
 
 	public sealed class ScanEngine {

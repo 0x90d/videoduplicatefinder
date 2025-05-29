@@ -100,13 +100,13 @@ namespace VDF.Core.FFTools {
 						var image = Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Bgra32>(rgbaBytes, width, height);
 						using MemoryStream stream = new();
 						image.Save(stream, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
-						bool equal = rgbaBytes.SequenceEqual(stream.ToArray());
+						// bool equal = rgbaBytes.SequenceEqual(stream.ToArray()); // This line seems unused, consider removing
 						return stream.ToArray();
 					}
 				}
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}");
+				Logger.Instance.Info($"WARNING: Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}");
 			}
 
 
@@ -147,33 +147,49 @@ namespace VDF.Core.FFTools {
 					throw new TimeoutException($"FFmpeg timed out on file: {settings.File}");
 				}
 				else if (extendedLogging)
-					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+					process.WaitForExit(); 
 
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
 
 				bytes = ms.ToArray();
 				if (bytes.Length == 0)
-					bytes = null;   // Makes subsequent checks easier
+					bytes = null;   
 				else if (settings.GrayScale == 1 && bytes.Length != 256) {
 					bytes = null;
-					errOut += $"{Environment.NewLine}graybytes length != 256";
+					// This specific detail will be part of the consolidated log message if extendedLogging is true
+					if(extendedLogging) errOut += $"{Environment.NewLine}CustomDetail: graybytes length != 256";
 				}
 			}
-			catch (Exception e) {
-				errOut += $"{Environment.NewLine}{e.Message}";
+			catch (Exception e) { 
+				if(extendedLogging) errOut += $"{Environment.NewLine}ExceptionDetail: {e.GetType().Name}: {e.Message}";
+				bytes = null; 
+			}
+			finally { 
 				try {
-					if (process.HasExited == false)
+					if (process != null && !process.HasExited) {
 						process.Kill();
+						if(extendedLogging) errOut += $"{Environment.NewLine}CustomDetail: Process was killed due to an issue or timeout.";
+					}
 				}
-				catch { }
-				bytes = null;
+				catch {/* Best effort */}
 			}
-			if (bytes == null || errOut.Length > 0) {
-				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
-				if (extendedLogging)
-					message += $":{Environment.NewLine}{FFmpegPath} {ffmpegArguments}";
-				Logger.Instance.Info($"{message}{errOut}");
+
+			if (bytes == null || (extendedLogging && !string.IsNullOrEmpty(errOut))) {
+				string prefix = bytes == null ? "ERROR: " : "WARNING: ";
+				string mainMessage = bytes == null ? "Failed to retrieve" : "Problems while retrieving";
+				
+				string logMessage = $"{prefix}{mainMessage} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
+				
+				if (extendedLogging) { 
+					logMessage += $":{Environment.NewLine}FFmpeg Path: {FFmpegPath}{Environment.NewLine}Arguments: {ffmpegArguments}";
+                    if (!string.IsNullOrEmpty(errOut)) {
+                        logMessage += $"{Environment.NewLine}Stderr: {errOut}";
+                    }
+                } else if (bytes == null && string.IsNullOrEmpty(errOut)) {
+                    logMessage += ". No extended error output.";
+                }
+				Logger.Instance.Info(logMessage);
 			}
 			return bytes;
 		}
@@ -192,6 +208,7 @@ namespace VDF.Core.FFTools {
 				}, extendedLogging);
 				if (data == null) {
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
+					// No specific log here as GetThumbnail would have logged the failure.
 					return false;
 				}
 				if (!GrayBytesUtils.VerifyGrayScaleValues(data))
@@ -210,22 +227,22 @@ namespace VDF.Core.FFTools {
 			var result = new Dictionary<double, byte[]?>();
 
 			if (numberOfThumbnails <= 0) {
-				Logger.Instance.Error("GetThumbnailsForSegment: numberOfThumbnails must be greater than 0.");
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: numberOfThumbnails must be greater than 0.");
 				return result;
 			}
 
 			if (segmentStart >= segmentEnd) {
-				Logger.Instance.Error("GetThumbnailsForSegment: segmentStart must be less than segmentEnd.");
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: segmentStart must be less than segmentEnd.");
 				return result;
 			}
 
 			if (string.IsNullOrEmpty(videoPath)) {
-				Logger.Instance.Error("GetThumbnailsForSegment: videoPath cannot be null or empty.");
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: videoPath cannot be null or empty.");
 				return result;
 			}
 
 			if (string.IsNullOrEmpty(FFmpegPath)) {
-				Logger.Instance.Error("GetThumbnailsForSegment: FFmpeg path is not configured.");
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: FFmpeg path is not configured.");
 				return result;
 			}
 
@@ -243,13 +260,11 @@ namespace VDF.Core.FFTools {
 			}
 
 			foreach (TimeSpan ts in timestamps) {
-				// GetThumbnail already uses FfmpegEngine.HardwareAccelerationMode and FfmpegEngine.CustomFFArguments
-				// and FfmpegEngine.UseNativeBinding internally.
 				var settings = new FfmpegSettings {
 					File = videoPath,
 					Position = ts,
-					GrayScale = 0, // Color thumbnails
-					Fullsize = 0 // Assuming we want standard size thumbnails, not fullsize. This could be a parameter.
+					GrayScale = 0, 
+					Fullsize = 0 
 				};
 
 				byte[]? thumbnailData = GetThumbnail(settings, extendedLogging);
@@ -257,8 +272,7 @@ namespace VDF.Core.FFTools {
 				if (thumbnailData != null && thumbnailData.Length > 0) {
 					result.Add(ts.TotalSeconds, thumbnailData);
 				} else {
-					Logger.Instance.Warn($"GetThumbnailsForSegment: Failed to retrieve thumbnail for {videoPath} at {ts}.");
-					// Optionally, add a null or placeholder if you need to signify a failed attempt for a specific timestamp
+					Logger.Instance.Info($"WARNING: GetThumbnailsForSegment: Failed to retrieve thumbnail for {videoPath} at {ts}.");
 				}
 			}
 

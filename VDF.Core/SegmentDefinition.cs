@@ -4,6 +4,12 @@ namespace VDF.Core {
     public class SegmentDefinition {
         public string VideoPath { get; set; }
         public enum DefinitionMode { AbsoluteTime, Offset }
+
+        public SegmentDefinition() {
+            VideoPath = string.Empty;
+            // TimeSpan properties default to TimeSpan.Zero, which is acceptable.
+            // Enums default to their 0 value, which is also acceptable.
+        }
         public DefinitionMode Mode { get; set; }
 
         // For AbsoluteTime Mode

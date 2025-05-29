@@ -47,7 +47,7 @@ namespace VDF.Core {
             var thumbnailsDictB = FfmpegEngine.GetThumbnailsForSegment(segBDef.VideoPath, startB, endB, compParams.NumberOfThumbnails, currentSettings.ExtendedFFToolsLogging);
 
             // After fetching all data, call the internal method
-            return CompareSegmentsLogic(
+            return CompareSegmentsForTest( // Corrected method name
                 segADef, segBDef, compParams, currentSettings,
                 mediaInfoA, mediaInfoB,
                 (startA, endA), (startB, endB),
@@ -105,15 +105,29 @@ namespace VDF.Core {
 
             if (compParams.Method == ComparisonParameters.ComparisonMethod.DirectSequenceMatch) {
                 float totalDifference = 0;
+                int comparablePairs = 0;
                 // NumberOfThumbnails is used as the loop bound because we've already validated counts match
                 for (int i = 0; i < compParams.NumberOfThumbnails; i++) { 
-                    float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
-                                    thumbnailsA[i], thumbnailsB[i],
-                                    currentSettings.IgnoreBlackPixels, currentSettings.IgnoreWhitePixels);
-                    totalDifference += diff;
+                    byte[]? currentThumbnailA = thumbnailsA[i];
+                    byte[]? currentThumbnailB = thumbnailsB[i];
+
+                    if (currentThumbnailA != null && currentThumbnailB != null) {
+                        float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
+                                        currentThumbnailA, currentThumbnailB, 
+                                        currentSettings.IgnoreBlackPixels, currentSettings.IgnoreWhitePixels);
+                        totalDifference += diff;
+                        comparablePairs++;
+                    }
+                    // If one is null, this pair is skipped. The comparablePairs count will be lower.
+                }
+
+                if (comparablePairs == 0) { 
+                    result.IsSuccess = false;
+                    result.Message = "No comparable thumbnail pairs found for direct sequence match (all pairs had at least one null thumbnail).";
+                    return result;
                 }
                 
-                float averageDifference = totalDifference / compParams.NumberOfThumbnails;
+                float averageDifference = totalDifference / comparablePairs;
                 result.SimilarityScore = 1.0f - averageDifference;
                 result.IsSuccess = true;
                 result.Message = $"Comparison complete. Average Similarity: {result.SimilarityScore:P2}";
@@ -122,8 +136,16 @@ namespace VDF.Core {
                 for (int i = 0; i <= thumbnailsB.Count - thumbnailsA.Count; i++) {
                     bool currentWindowMatch = true;
                     for (int j = 0; j < thumbnailsA.Count; j++) {
+                        byte[]? currentSearchThumbnailA = thumbnailsA[j];
+                        byte[]? currentSegmentThumbnailB = thumbnailsB[i + j];
+
+                        if (currentSearchThumbnailA == null || currentSegmentThumbnailB == null) {
+                            currentWindowMatch = false; // If any thumbnail in the sequence is null, this window can't match
+                            break;
+                        }
+
                         float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
-                                        thumbnailsA[j], thumbnailsB[i + j],
+                                        currentSearchThumbnailA, currentSegmentThumbnailB,
                                         currentSettings.IgnoreBlackPixels, currentSettings.IgnoreWhitePixels);
                         if (diff > differenceLimit) {
                             currentWindowMatch = false;
