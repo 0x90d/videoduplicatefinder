@@ -430,7 +430,7 @@ namespace VDF.Core {
                         bool needsExtraction = entry.grayBytes.Count < Settings.ThumbnailPositions.Count;
                         if (Settings.AlwaysRetryFailedSampling && entry.Flags.Has(EntryFlags.ThumbnailError)) {
                             needsExtraction = true;
-                            entry.Flags.Remove(EntryFlags.ThumbnailError); 
+                            entry.Flags.Remove(EntryFlags.ThumbnailError, out _); 
                         }
                         
                         if (needsExtraction && positionListForThisVideo.Any()) {
@@ -683,11 +683,32 @@ namespace VDF.Core {
 			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
+					// 'entry' here is a DuplicateItem
+					FileEntry? fileEntryFromDb = null;
+					// DatabaseUtils.Database is a HashSet, which is not ideal for direct lookup by path without creating a new FileEntry for comparison.
+					// A potentially more performant way if DatabaseUtils.Database is large and this is frequent:
+					// First, ensure DatabaseUtils.GetFromDatabase can be used or adapt its usage.
+					// For now, let's use a LINQ FirstOrDefault, assuming Database is accessible.
+					// This requires DatabaseUtils.Database to be accessible here.
+					// If ScanEngine has a copy or direct access to the HashSet<FileEntry> used in scanning (e.g. a filtered list like ScanList), that could be used too.
+					// Let's assume DatabaseUtils.Database is the source of truth for FileEntries.
+					if (File.Exists(entry.Path)) { // Check if file exists before trying to get from DB
+						DatabaseUtils.GetFromDatabase(entry.Path, out fileEntryFromDb);
+					}
+
+					if (fileEntryFromDb == null || (!entry.IsImage && fileEntryFromDb.mediaInfo == null)) { // For videos, mediaInfo is essential
+						// Cannot retrieve thumbnails if FileEntry or its mediaInfo is missing for videos.
+						// For images, mediaInfo might not be strictly necessary for basic thumbnail retrieval if path is known.
+						Logger.Instance.Info($"WARNING: Could not find FileEntry or mediaInfo for {entry.Path} in RetrieveThumbnails. Skipping thumbnail retrieval for this item.");
+						entry.SetThumbnails(new List<Image>(), new List<TimeSpan>()); // Set empty lists
+						return ValueTask.CompletedTask; // Continue to next item in Parallel.ForEachAsync
+					}
+
 					List<Image>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
-					List<TimeSpan>? timeStamps = null; 
-					
-                    if (needsThumbnails && entry.IsImage) {
+					List<TimeSpan>? timeStamps = null;
+
+					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						timeStamps = new List<TimeSpan> { TimeSpan.Zero }; // Image is at time 0
 						list = new List<Image>(1);
@@ -710,17 +731,19 @@ namespace VDF.Core {
                             list.Add(NoThumbnailImage ?? new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1,1));
 						}
 					}
-					else if (needsThumbnails && entry.mediaInfo != null) { // Video processing
-                        if (entry.mediaInfo.Duration.TotalSeconds > 0 && Settings.ThumbnailPositions.Any()) {
+					// Use fileEntryFromDb.mediaInfo for videos
+					else if (needsThumbnails && fileEntryFromDb.mediaInfo != null) { // Video processing
+                        if (fileEntryFromDb.mediaInfo.Duration.TotalSeconds > 0 && Settings.ThumbnailPositions.Any()) {
                             list = new List<Image>(Settings.ThumbnailPositions.Count);
                             timeStamps = new List<TimeSpan>(Settings.ThumbnailPositions.Count);
 
                             foreach(var posSetting in Settings.ThumbnailPositions) {
-                                TimeSpan actualTimestamp = TimeSpan.FromSeconds(CalculateExpectedGrayBytesKey(posSetting, entry.mediaInfo.Duration));
+                                // Use fileEntryFromDb.mediaInfo.Duration
+                                TimeSpan actualTimestamp = TimeSpan.FromSeconds(CalculateExpectedGrayBytesKey(posSetting, fileEntryFromDb.mediaInfo.Duration));
                                 timeStamps.Add(actualTimestamp);
                                 
                                 var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-                                    File = entry.Path,
+                                    File = entry.Path, // entry.Path is fine here as DuplicateItem has Path
                                     Position = actualTimestamp,
                                     GrayScale = 0, // Color thumbnail for preview
                                 }, Settings.ExtendedFFToolsLogging);
