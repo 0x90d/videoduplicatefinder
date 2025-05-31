@@ -19,6 +19,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
 using ReactiveUI;
+using VDF.Core; // Added for ThumbnailPositionSetting
 using VDF.Core.Utils;
 
 namespace VDF.GUI.Data {
@@ -160,6 +161,12 @@ namespace VDF.GUI.Data {
 			get => _ScanAgainstEntireDatabase;
 			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
 		}
+		bool _EnableTimeLimitedScan;
+		[JsonPropertyName("EnableTimeLimitedScan")]
+		public bool EnableTimeLimitedScan {
+			get => _EnableTimeLimitedScan;
+			set => this.RaiseAndSetIfChanged(ref _EnableTimeLimitedScan, value);
+		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]
 		public int Percent {
@@ -172,11 +179,28 @@ namespace VDF.GUI.Data {
 			get => _PercentDurationDifference;
 			set => this.RaiseAndSetIfChanged(ref _PercentDurationDifference, value);
 		}
-		int _Thumbnails = 1;
-		[JsonPropertyName("Thumbnails")]
-		public int Thumbnails {
-			get => _Thumbnails;
-			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
+		// int _Thumbnails = 1; // Removed
+		// [JsonPropertyName("Thumbnails")] // Removed
+		// public int Thumbnails { // Removed
+		// 	get => _Thumbnails; // Removed
+		// 	set => this.RaiseAndSetIfChanged(ref _Thumbnails, value); // Removed
+		// }
+
+		private ObservableCollection<Core.ThumbnailPositionSetting> _thumbnailPositions =
+			new ObservableCollection<Core.ThumbnailPositionSetting> {
+				new Core.ThumbnailPositionSetting(Core.ThumbnailPositionSetting.PositionType.Percentage, 50.0)
+			};
+
+		[JsonPropertyName("ThumbnailPositions")]
+		public ObservableCollection<Core.ThumbnailPositionSetting> ThumbnailPositions {
+			get => _thumbnailPositions;
+			set => this.RaiseAndSetIfChanged(ref _thumbnailPositions, value);
+		}
+		int _TimeLimitSeconds = 3600;
+		[JsonPropertyName("TimeLimitSeconds")]
+		public int TimeLimitSeconds {
+			get => _TimeLimitSeconds;
+			set => this.RaiseAndSetIfChanged(ref _TimeLimitSeconds, value);
 		}
 		[JsonPropertyName("CustomCommands")]
 		public CustomActionCommands CustomCommands { get; set; } = new();
@@ -306,9 +330,14 @@ namespace VDF.GUI.Data {
 			foreach (var n in xDoc.Descendants("MaxDegreeOfParallelism"))
 				if (int.TryParse(n.Value, out var value))
 					Instance.MaxDegreeOfParallelism = value;
-			foreach (var n in xDoc.Descendants("Thumbnails"))
-				if (int.TryParse(n.Value, out var value))
-					Instance.Thumbnails = value;
+			// foreach (var n in xDoc.Descendants("Thumbnails")) // Old "Thumbnails" (int) property handling
+			// 	if (int.TryParse(n.Value, out var value))
+			// 		Instance.Thumbnails = value; // This line would cause error if not removed/updated
+			// New ThumbnailPositions will be handled by JSON deserialization if present in new format,
+            // or default if loading very old XML that doesn't have it.
+			// If specific migration from an old integer "Thumbnails" to ThumbnailPositions is needed,
+			// it would require more complex logic here, e.g., if (Instance.ThumbnailPositions.Count == 0 && oldThumbnailsIntValue > 0) { create based on old int }
+			// For now, direct deserialization of the new format is assumed for JSON, and default for XML.
 			foreach (var n in xDoc.Descendants("IncludeSubDirectories"))
 				if (bool.TryParse(n.Value, out var value))
 					Instance.IncludeSubDirectories = value;

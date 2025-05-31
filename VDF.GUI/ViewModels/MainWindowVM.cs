@@ -209,6 +209,8 @@ namespace VDF.GUI.ViewModels {
 				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
 			};
 			_SortOrder = SortOrders[0];
+
+			OpenSegmentComparisonCommand = ReactiveCommand.Create(OpenSegmentComparisonWindow);
 		}
 
 		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -227,14 +229,6 @@ namespace VDF.GUI.ViewModels {
 				DuplicatesSelectedCounter = 0;
 
 			TotalDuplicates = Duplicates.Count;
-		}
-
-		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
-			bool isReadyToCompare = IsGathered;
-			isReadyToCompare &= Scanner.Settings.ThumbnailCount == e.NewValue;
-			if (!isReadyToCompare && ApplicationHelpers.MainWindowDataContext.IsReadyToCompare)
-				await MessageBoxService.Show($"Number of thumbnails can't be changed between quick rescans. Full scan will be required.");
-			ApplicationHelpers.MainWindowDataContext.IsReadyToCompare = isReadyToCompare;
 		}
 
 		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
@@ -811,7 +805,8 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.Percent = SettingsFile.Instance.Percent;
 			Scanner.Settings.PercentDurationDifference = SettingsFile.Instance.PercentDurationDifference;
 			Scanner.Settings.MaxDegreeOfParallelism = SettingsFile.Instance.MaxDegreeOfParallelism;
-			Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails;
+			// Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails; // Obsolete
+			Scanner.Settings.ThumbnailPositions = new List<Core.ThumbnailPositionSetting>(SettingsFile.Instance.ThumbnailPositions);
 			Scanner.Settings.ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging;
 			Scanner.Settings.AlwaysRetryFailedSampling = SettingsFile.Instance.AlwaysRetryFailedSampling;
 			Scanner.Settings.CustomFFArguments = SettingsFile.Instance.CustomFFArguments;

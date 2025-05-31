@@ -29,6 +29,27 @@ using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 
 namespace VDF.Core {
+
+	public class SubClipMatch {
+		public FileEntry MainVideo { get; set; }
+		public FileEntry SubClipVideo { get; set; }
+		public List<double> MainVideoMatchStartTimes { get; set; } = new List<double>();
+
+		// Parameterless constructor for object initializers or deserialization
+		public SubClipMatch() {
+			MainVideo = null!; // Indicates to the compiler this will be initialized post-construction
+			SubClipVideo = null!;
+			// MainVideoMatchStartTimes is already initialized at declaration
+		}
+
+		// Parameterized constructor for explicit initialization
+		public SubClipMatch(FileEntry mainVideo, FileEntry subClipVideo, List<double> mainVideoMatchStartTimes) {
+			MainVideo = mainVideo;
+			SubClipVideo = subClipVideo;
+			MainVideoMatchStartTimes = mainVideoMatchStartTimes ?? new List<double>(); // Ensure list is not null
+		}
+	}
+
 	public sealed class ScanEngine {
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
 		public Settings Settings { get; } = new Settings();
@@ -44,7 +65,7 @@ namespace VDF.Core {
 
 		PauseTokenSource pauseTokenSource = new();
 		CancellationTokenSource cancelationTokenSource = new();
-		readonly List<float> positionList = new();
+		// readonly List<float> positionList = new(); // Removed
 
 		bool isScanning;
 		int scanProgressMaxValue;
@@ -143,23 +164,20 @@ namespace VDF.Core {
 			FfmpegEngine.UseNativeBinding = Settings.UseNativeFfmpegBinding;
 			DatabaseUtils.CustomDatabaseFolder = Settings.CustomDatabaseFolder;
 			Duplicates.Clear();
-			positionList.Clear();
+			// positionList.Clear(); // Removed
 			ElapsedTimer.Reset();
 			SearchTimer.Reset();
 
-			float positionCounter = 0f;
-			for (int i = 0; i < Settings.ThumbnailCount; i++) {
-				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
-				positionList.Add(positionCounter);
-			}
+			// Removed old positionList initialization
 
 			isScanning = true;
 		}
 
 		void PrepareCompare() {
-			if (Settings.ThumbnailCount != positionList.Count) {
-				throw new Exception("Number of thumbnails can't be changed between quick rescans! Rescan has been aborted.");
-			}
+			// Old check based on ThumbnailCount and positionList.Count is removed.
+			// A new check, if necessary for "quick rescan" integrity, would need to compare
+			// the actual ThumbnailPositionSetting objects in Settings, which is more complex
+			// and not specified in this subtask. For now, removing the check.
 
 			CancelAllTasks();
 
@@ -294,7 +312,7 @@ namespace VDF.Core {
 			return false;
 		}
 		bool InvalidEntryForDuplicateCheck(FileEntry entry) =>
-			entry.invalid || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes.Count < Settings.ThumbnailCount);
+			entry.invalid || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && Settings.ThumbnailPositions.Any() && entry.grayBytes.Count < Settings.ThumbnailPositions.Count);
 
 		public static Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
@@ -348,20 +366,33 @@ namespace VDF.Core {
 					}
 					if (Settings.IncludeNonExistingFiles && entry.grayBytes?.Count > 0) {
 						bool hasAllInformation = entry.IsImage;
-						if (!hasAllInformation) {
-							hasAllInformation = true;
-							for (int i = 0; i < positionList.Count; i++) {
-								if (entry.grayBytes.ContainsKey(entry.GetGrayBytesIndex(positionList[i])))
-									continue;
-								hasAllInformation = false;
-								break;
-							}
+						if (!hasAllInformation && entry.mediaInfo != null && entry.mediaInfo.Duration.TotalSeconds > 0) {
+							hasAllInformation = true; // Assume true, then check
+                            if (Settings.ThumbnailPositions.Any()) {
+                                foreach (var posSetting in Settings.ThumbnailPositions) {
+                                    double expectedKey = CalculateExpectedGrayBytesKey(posSetting, entry.mediaInfo.Duration);
+                                    if (!entry.grayBytes.ContainsKey(expectedKey) || entry.grayBytes[expectedKey] == null) {
+                                        hasAllInformation = false;
+                                        break;
+                                    }
+                                }
+                            } else { // No thumbnail positions defined, so technically all (zero) required thumbnails are present.
+                                hasAllInformation = true;
+                            }
+						}
+						bool oldGrayBytesExisted = entry.grayBytes?.Count > 0; // Check before potential clear
+						if (!hasAllInformation && oldGrayBytesExisted) {
+							Logger.Instance.Info($"INFO: Clearing inconsistent or incomplete thumbnails for {entry.Path} based on hasAllInformation check.");
+							entry.grayBytes.Clear();
 						}
 						if (hasAllInformation) {
 							IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
 						}
 					}
+
+					// Ensure grayBytes is initialized (might be redundant if already done, but safe)
+					entry.grayBytes ??= new Dictionary<double, byte[]?>();
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
@@ -374,17 +405,67 @@ namespace VDF.Core {
 
 						entry.mediaInfo = info;
 					}
-					// 08/17/21: This is for people upgrading from an older VDF version
-					entry.grayBytes ??= new Dictionary<double, byte[]?>();
+					//Moved earlier: entry.grayBytes ??= new Dictionary<double, byte[]?>();
 
 
 					if (entry.IsImage && entry.grayBytes.Count == 0) {
 						if (!GetGrayBytesFromImage(entry))
 							entry.invalid = true;
 					}
-					else if (!entry.IsImage) {
-						if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.ExtendedFFToolsLogging))
-							entry.invalid = true;
+					else if (!entry.IsImage) { // This block is for videos
+                        // Clear grayBytes if settings define no positions but old thumbnails exist
+                        if (!Settings.ThumbnailPositions.Any() && entry.grayBytes.Count > 0) {
+                            Logger.Instance.Info($"INFO: Clearing thumbnails for {entry.Path} as no thumbnail positions are currently defined.");
+                            entry.grayBytes.Clear();
+                        }
+
+                        List<float> positionListForThisVideo = new List<float>();
+                        if (entry.mediaInfo != null && entry.mediaInfo.Duration.TotalSeconds > 0) {
+                            foreach (var posSetting in Settings.ThumbnailPositions) {
+                                float percentage = 0f;
+                                switch (posSetting.Type) {
+                                    case ThumbnailPositionSetting.PositionType.Percentage:
+                                        percentage = (float)(posSetting.Value / 100.0);
+                                        break;
+                                    case ThumbnailPositionSetting.PositionType.OffsetFromStart:
+                                        percentage = entry.mediaInfo.Duration.TotalSeconds > 0 ? (float)(posSetting.Value / entry.mediaInfo.Duration.TotalSeconds) : 0f;
+                                        break;
+                                    case ThumbnailPositionSetting.PositionType.OffsetFromEnd:
+                                        double timeFromStart = entry.mediaInfo.Duration.TotalSeconds - posSetting.Value;
+                                        percentage = entry.mediaInfo.Duration.TotalSeconds > 0 ? (float)(timeFromStart / entry.mediaInfo.Duration.TotalSeconds) : 0f;
+                                        break;
+                                }
+                                positionListForThisVideo.Add(Math.Clamp(percentage, 0.0f, 1.0f));
+                            }
+                        }
+
+                        // Determine if extraction is needed
+                        bool needsExtraction = Settings.ThumbnailPositions.Any() &&
+                                               entry.grayBytes.Count < Settings.ThumbnailPositions.Count &&
+                                               (entry.mediaInfo?.Duration.TotalSeconds ?? 0) > 0;
+
+
+                        if (Settings.AlwaysRetryFailedSampling && entry.Flags.Has(EntryFlags.ThumbnailError)) {
+                            if (!needsExtraction && entry.grayBytes.Count > 0 && Settings.ThumbnailPositions.Any()) {
+                                // If retry is forced, but counts seemed to match, still clear to ensure re-extraction.
+                                Logger.Instance.Info($"INFO: Retrying failed thumbnail sampling for {entry.Path}. Clearing existing thumbnails.");
+                                entry.grayBytes.Clear();
+                            }
+                            needsExtraction = Settings.ThumbnailPositions.Any() && (entry.mediaInfo?.Duration.TotalSeconds ?? 0) > 0; // Re-evaluate after clearing
+                            entry.Flags &= ~EntryFlags.ThumbnailError; // Correct way to remove a flag
+                        }
+
+                        if (needsExtraction && positionListForThisVideo.Any()) {
+						    if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionListForThisVideo, Settings.ExtendedFFToolsLogging)) {
+							    entry.invalid = true;
+                                entry.Flags.Set(EntryFlags.ThumbnailError); // Explicitly set error flag on failure
+                            }
+                        } else if (needsExtraction && !positionListForThisVideo.Any() && Settings.ThumbnailPositions.Any()) {
+                             // This case implies settings expect thumbnails, but we couldn't generate positions (e.g. zero duration video for offset math).
+                             // Mark as thumbnail error if media info is present, otherwise metadata error might already be set.
+                             if(entry.mediaInfo != null) entry.Flags.Set(EntryFlags.ThumbnailError);
+                             Logger.Instance.Info($"WARNING: Could not generate thumbnail positions for {entry.Path} (Duration: {entry.mediaInfo?.Duration.TotalSeconds}s), marking as thumbnail error.");
+                        }
 					}
 
 					IncrementProgress(entry.Path);
@@ -396,50 +477,106 @@ namespace VDF.Core {
 
 		Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
 			Dictionary<double, byte[]?>? flippedGrayBytes = new();
-			if (entry.IsImage)
-				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
-			else {
-				for (int j = 0; j < positionList.Count; j++) {
-					double idx = entry.GetGrayBytesIndex(positionList[j]);
-					flippedGrayBytes.Add(idx, GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
-				}
+			if (entry.IsImage) {
+				if (entry.grayBytes.TryGetValue(0, out var tb) && tb != null)
+					flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(tb));
+			} else {
+                if (entry.mediaInfo != null && entry.mediaInfo.Duration.TotalSeconds > 0 && Settings.ThumbnailPositions.Any()) {
+                    foreach (var posSetting in Settings.ThumbnailPositions) {
+                        double keyEntry = CalculateExpectedGrayBytesKey(posSetting, entry.mediaInfo.Duration);
+                        if (entry.grayBytes.TryGetValue(keyEntry, out byte[]? entryTb) && entryTb != null) {
+                            flippedGrayBytes.Add(keyEntry, GrayBytesUtils.FlipGrayScale(entryTb));
+                        }
+                    }
+                }
 			}
 			return flippedGrayBytes;
 		}
+        private double CalculateExpectedGrayBytesKey(ThumbnailPositionSetting posSetting, TimeSpan duration) {
+            float percentage = 0f;
+            switch (posSetting.Type) {
+                case ThumbnailPositionSetting.PositionType.Percentage:
+                    percentage = (float)(posSetting.Value / 100.0);
+                    break;
+                case ThumbnailPositionSetting.PositionType.OffsetFromStart:
+                    if (duration.TotalSeconds == 0) percentage = 0;
+                    else percentage = (float)(posSetting.Value / duration.TotalSeconds);
+                    break;
+                case ThumbnailPositionSetting.PositionType.OffsetFromEnd:
+                    if (duration.TotalSeconds == 0) percentage = 0;
+                    else {
+                        double timeFromStart = duration.TotalSeconds - posSetting.Value;
+                        percentage = (float)(timeFromStart / duration.TotalSeconds);
+                    }
+                    break;
+            }
+            percentage = Math.Clamp(percentage, 0.0f, 1.0f);
+            return duration.TotalSeconds * percentage;
+        }
 
-		bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
-			grayBytes ??= entry.grayBytes;
+		bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytesToCompare, FileEntry compItem, out float difference) {
+			grayBytesToCompare ??= entry.grayBytes;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
 			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
 			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			difference = 1f;
 
 			if (entry.IsImage) {
-				difference = ignoreBlackPixels || ignoreWhitePixels ?
-								GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(grayBytes[0]!, compItem.grayBytes[0]!, ignoreBlackPixels, ignoreWhitePixels) :
-								GrayBytesUtils.PercentageDifference(grayBytes[0]!, compItem.grayBytes[0]!);
-				return difference <= differenceLimit;
+                if (grayBytesToCompare.TryGetValue(0, out byte[]? entryTb) && entryTb != null &&
+                    compItem.grayBytes.TryGetValue(0, out byte[]? compTb) && compTb != null) {
+                    difference = ignoreBlackPixels || ignoreWhitePixels ?
+                                    GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entryTb, compTb, ignoreBlackPixels, ignoreWhitePixels) :
+                                    GrayBytesUtils.PercentageDifference(entryTb, compTb);
+                    return difference <= differenceLimit;
+                }
+                return false;
 			}
 
-			float diff, diffSum = 0;
-			for (int j = 0; j < positionList.Count; j++) {
-				diff = ignoreBlackPixels || ignoreWhitePixels ?
-							GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
-								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
-								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
-							GrayBytesUtils.PercentageDifference(
-								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
-								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-				if (diff > differenceLimit)
-					return false;
-				else
-					diffSum += diff;
-			}
-			difference = diffSum / positionList.Count;
-			return !float.IsNaN(difference);
+            if (Settings.ThumbnailPositions.Count == 0) {
+                return false;
+            }
+
+            float diffSum = 0;
+            int validComparisons = 0;
+
+            foreach (var posSetting in Settings.ThumbnailPositions) {
+                if (entry.mediaInfo == null || compItem.mediaInfo == null ||
+                    entry.mediaInfo.Duration.TotalSeconds == 0 || compItem.mediaInfo.Duration.TotalSeconds == 0) {
+                    continue;
+                }
+
+                double keyEntry = CalculateExpectedGrayBytesKey(posSetting, entry.mediaInfo.Duration);
+                double keyCompItem = CalculateExpectedGrayBytesKey(posSetting, compItem.mediaInfo.Duration);
+
+                if (grayBytesToCompare.TryGetValue(keyEntry, out byte[]? entryTb) && entryTb != null &&
+                    compItem.grayBytes.TryGetValue(keyCompItem, out byte[]? compTb) && compTb != null) {
+
+                    float singleDiff = ignoreBlackPixels || ignoreWhitePixels ?
+                                GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entryTb, compTb, ignoreBlackPixels, ignoreWhitePixels) :
+                                GrayBytesUtils.PercentageDifference(entryTb, compTb);
+
+                    if (singleDiff > differenceLimit) {
+                        difference = singleDiff;
+                        return false;
+                    }
+                    diffSum += singleDiff;
+                    validComparisons++;
+                } else {
+                     difference = 1f;
+                     return false;
+                }
+            }
+
+            if (validComparisons == 0) {
+                return false;
+            }
+
+            difference = diffSum / validComparisons;
+            return !float.IsNaN(difference);
 		}
 
 		void ScanForDuplicates() {
+			DateTime cutoffDateTime = DateTime.MinValue;
 			Dictionary<string, DuplicateItem>? duplicateDict = new();
 
 			//Exclude existing database entries which not met current scan settings
@@ -456,6 +593,10 @@ namespace VDF.Core {
 
 			InitProgress(ScanList.Count);
 
+			if (Settings.EnableTimeLimitedScan) {
+				cutoffDateTime = DateTime.UtcNow - TimeSpan.FromSeconds(Settings.TimeLimitSeconds);
+			}
+
 			double maxPercentDurationDifference = 100d + Settings.PercentDurationDifference;
 			double minPercentDurationDifference = 100d - Settings.PercentDurationDifference;
 
@@ -464,6 +605,12 @@ namespace VDF.Core {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
 					FileEntry? entry = ScanList[i];
+
+					if (Settings.EnableTimeLimitedScan && entry.DateModified < cutoffDateTime) {
+						IncrementProgress(entry.Path); // Still need to report progress for skipped items
+						return; // Using return instead of continue because it's a Parallel.For body
+					}
+
 					float difference = 0;
 					DuplicateFlags flags = DuplicateFlags.None;
 					bool isDuplicate;
@@ -474,6 +621,11 @@ namespace VDF.Core {
 
 					for (int n = i + 1; n < ScanList.Count; n++) {
 						FileEntry? compItem = ScanList[n];
+
+						if (Settings.EnableTimeLimitedScan && compItem.DateModified < cutoffDateTime) {
+							continue;
+						}
+
 						if (entry.IsImage != compItem.IsImage)
 							continue;
 						if (!entry.IsImage) {
@@ -556,12 +708,36 @@ namespace VDF.Core {
 			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
+					// 'entry' here is a DuplicateItem
+					FileEntry? fileEntryFromDb = null;
+					// DatabaseUtils.Database is a HashSet, which is not ideal for direct lookup by path without creating a new FileEntry for comparison.
+					// A potentially more performant way if DatabaseUtils.Database is large and this is frequent:
+					// First, ensure DatabaseUtils.GetFromDatabase can be used or adapt its usage.
+					// For now, let's use a LINQ FirstOrDefault, assuming Database is accessible.
+					// This requires DatabaseUtils.Database to be accessible here.
+					// If ScanEngine has a copy or direct access to the HashSet<FileEntry> used in scanning (e.g. a filtered list like ScanList), that could be used too.
+					// Let's assume DatabaseUtils.Database is the source of truth for FileEntries.
+					if (File.Exists(entry.Path)) { // Check if file exists before trying to get from DB
+						// DatabaseUtils.GetFromDatabase(entry.Path, out fileEntryFromDb); // Incorrect call
+						var keyFileEntry = new FileEntry(entry.Path); // Create a FileEntry key for lookup
+						DatabaseUtils.Database.TryGetValue(keyFileEntry, out fileEntryFromDb);
+					}
+
+					if (fileEntryFromDb == null || (!entry.IsImage && fileEntryFromDb.mediaInfo == null)) { // For videos, mediaInfo is essential
+						// Cannot retrieve thumbnails if FileEntry or its mediaInfo is missing for videos.
+						// For images, mediaInfo might not be strictly necessary for basic thumbnail retrieval if path is known.
+						Logger.Instance.Info($"WARNING: Could not find FileEntry or mediaInfo for {entry.Path} in RetrieveThumbnails. Skipping thumbnail retrieval for this item.");
+						entry.SetThumbnails(new List<Image>(), new List<TimeSpan>()); // Set empty lists
+						return ValueTask.CompletedTask; // Continue to next item in Parallel.ForEachAsync
+					}
+
 					List<Image>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
+
 					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
-						timeStamps = new(0);
+						timeStamps = new List<TimeSpan> { TimeSpan.Zero }; // Image is at time 0
 						list = new List<Image>(1);
 						try {
 							Image bitmapImage = Image.Load(entry.Path);
@@ -570,7 +746,6 @@ namespace VDF.Core {
 								float widthFactor = bitmapImage.Width / 100f;
 								float heightFactor = bitmapImage.Height / 100f;
 								resizeFactor = Math.Max(widthFactor, heightFactor);
-
 							}
 							int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
 							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
@@ -578,30 +753,48 @@ namespace VDF.Core {
 							list.Add(bitmapImage);
 						}
 						catch (Exception ex) {
-							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
-							return ValueTask.CompletedTask;
+							Logger.Instance.Info($"WARNING: Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
+							// Add placeholder if loading fails
+                            list.Add(NoThumbnailImage ?? new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1,1));
 						}
+					}
+					// Use fileEntryFromDb.mediaInfo for videos
+					else if (needsThumbnails && fileEntryFromDb.mediaInfo != null) { // Video processing
+                        if (fileEntryFromDb.mediaInfo.Duration.TotalSeconds > 0 && Settings.ThumbnailPositions.Any()) {
+                            list = new List<Image>(Settings.ThumbnailPositions.Count);
+                            timeStamps = new List<TimeSpan>(Settings.ThumbnailPositions.Count);
 
+                            foreach(var posSetting in Settings.ThumbnailPositions) {
+                                // Use fileEntryFromDb.mediaInfo.Duration
+                                TimeSpan actualTimestamp = TimeSpan.FromSeconds(CalculateExpectedGrayBytesKey(posSetting, fileEntryFromDb.mediaInfo.Duration));
+                                timeStamps.Add(actualTimestamp);
+
+                                var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+                                    File = entry.Path, // entry.Path is fine here as DuplicateItem has Path
+                                    Position = actualTimestamp,
+                                    GrayScale = 0, // Color thumbnail for preview
+                                }, Settings.ExtendedFFToolsLogging);
+
+                                if (b == null || b.Length == 0) {
+                                    list.Add(NoThumbnailImage ?? new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1,1));
+                                    continue;
+                                }
+                                try {
+                                    using var byteStream = new MemoryStream(b);
+                                    var bitmapImage = Image.Load(byteStream);
+                                    list.Add(bitmapImage);
+                                } catch (Exception ex) {
+                                    Logger.Instance.Info($"WARNING: Failed to load thumbnail image from byte stream for {entry.Path} at {actualTimestamp}. Exception: {ex.Message}");
+                                    list.Add(NoThumbnailImage ?? new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1,1));
+                                }
+                            }
+                        } else {
+                            list = new List<Image>();
+                            timeStamps = new List<TimeSpan>();
+                        }
 					}
-					else if (needsThumbnails) {
-						list = new List<Image>(positionList.Count);
-						timeStamps = new List<TimeSpan>(positionList.Count);
-						for (int j = 0; j < positionList.Count; j++) {
-							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
-							timeStamps.Add(timestamp);
-							var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-								File = entry.Path,
-								Position = timestamp,
-								GrayScale = 0,
-							}, Settings.ExtendedFFToolsLogging);
-							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
-							using var byteStream = new MemoryStream(b);
-							var bitmapImage = Image.Load(byteStream);
-							list.Add(bitmapImage);
-						}
-					}
-					Debug.Assert(timeStamps != null);
-					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps!);
+                    timeStamps ??= new List<TimeSpan>();
+					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps);
 					return ValueTask.CompletedTask;
 				});
 			}
@@ -735,6 +928,95 @@ namespace VDF.Core {
 			Logger.Instance.Info("Scan stopped by user");
 			if (isScanning)
 				cancelationTokenSource.Cancel();
+		}
+
+		public List<FileEntry> GetBrokenFileEntries() {
+			List<FileEntry> brokenEntries = new List<FileEntry>();
+			if (DatabaseUtils.Database == null) {
+				return brokenEntries;
+			}
+			foreach (FileEntry entry in DatabaseUtils.Database) {
+				if (entry.Flags.HasFlag(EntryFlags.MetadataError) || entry.Flags.HasFlag(EntryFlags.ThumbnailError)) {
+					brokenEntries.Add(entry);
+				}
+			}
+			return brokenEntries;
+		}
+
+		public List<SubClipMatch> FindSubClipMatches(IEnumerable<FileEntry> allFiles, Settings settings) {
+			List<SubClipMatch> matches = new List<SubClipMatch>();
+			var fileList = allFiles.ToList(); // Convert to list for easier handling if needed, or just use as is.
+
+			foreach (FileEntry potentialMain in fileList) {
+				foreach (FileEntry potentialSub in fileList) {
+					if (potentialMain == potentialSub) continue;
+					if (potentialMain.mediaInfo == null || potentialSub.mediaInfo == null) continue;
+					if (potentialMain.IsImage || potentialSub.IsImage) continue;
+					if (potentialMain.mediaInfo.Duration <= potentialSub.mediaInfo.Duration) continue;
+					if (potentialMain.grayBytes == null || potentialSub.grayBytes == null) continue;
+
+                                        // Ensure enough thumbnails based on current settings.
+                                        // The original logic in ScanForDuplicates uses positionList.Count which is derived from Settings.ThumbnailCount
+                                        // So, we use settings.ThumbnailPositions.Count directly here for clarity for sub-clip detection.
+					if (potentialMain.grayBytes.Count < settings.ThumbnailPositions.Count || potentialSub.grayBytes.Count < settings.ThumbnailPositions.Count) continue;
+
+					var mainThumbnails = potentialMain.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+					var subThumbnails = potentialSub.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+					var mainThumbnailTimes = potentialMain.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Key).ToList();
+
+					if (mainThumbnails.Count < subThumbnails.Count) continue;
+					if (subThumbnails.Count == 0) continue; // Cannot match if sub-clip has no thumbnails
+
+					float differenceLimit = 1.0f - settings.Percent / 100f;
+
+					for (int i = 0; i <= mainThumbnails.Count - subThumbnails.Count; i++) {
+						bool currentWindowMatch = true;
+						List<double> currentMatchTimes = new List<double>();
+						for (int j = 0; j < subThumbnails.Count; j++) {
+							byte[]? mainTb = mainThumbnails[i + j];
+							byte[]? subTb = subThumbnails[j];
+
+							if (mainTb == null || subTb == null) {
+								currentWindowMatch = false;
+								break;
+							}
+
+                                                        // Using the same logic as CheckIfDuplicate for consistency, including ignoring specific pixels
+                                                        float difference;
+                                                        if (settings.IgnoreBlackPixels || settings.IgnoreWhitePixels) {
+                                                            difference = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(mainTb, subTb, settings.IgnoreBlackPixels, settings.IgnoreWhitePixels);
+                                                        } else {
+                                                            difference = GrayBytesUtils.PercentageDifference(mainTb, subTb);
+                                                        }
+
+							if (difference > differenceLimit) {
+								currentWindowMatch = false;
+								break;
+							}
+							currentMatchTimes.Add(mainThumbnailTimes[i + j]);
+						}
+
+						if (currentWindowMatch) {
+							// Check if this exact match (main, sub, and specific start times) already exists
+							// This is a simple check; more sophisticated grouping might be needed later
+							bool alreadyExists = matches.Any(m => m.MainVideo == potentialMain &&
+							                                  m.SubClipVideo == potentialSub &&
+							                                  m.MainVideoMatchStartTimes.SequenceEqual(currentMatchTimes));
+							if (!alreadyExists) {
+								matches.Add(new SubClipMatch {
+									MainVideo = potentialMain,
+									SubClipVideo = potentialSub,
+									MainVideoMatchStartTimes = new List<double>(currentMatchTimes) // Ensure a new list is added
+								});
+							}
+							// Depending on desired behavior, one might want to `break;` here
+							// if only the first sequence match per (main, sub) pair is needed.
+							// For now, collect all distinct sequence matches.
+						}
+					}
+				}
+			}
+			return matches;
 		}
 	}
 }

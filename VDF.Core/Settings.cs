@@ -13,6 +13,7 @@
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
+using System.Collections.Generic; // Ensure this is present
 
 
 namespace VDF.Core {
@@ -34,6 +35,7 @@ namespace VDF.Core {
 		public bool CompareHorizontallyFlipped;
 		public bool IncludeNonExistingFiles = true;
 		public bool ScanAgainstEntireDatabase;
+		public bool EnableTimeLimitedScan = false;
 
 		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 
@@ -41,8 +43,13 @@ namespace VDF.Core {
 		public float Percent = 96f;
 		public double PercentDurationDifference = 20d;
 
-		public int ThumbnailCount = 1;
+		// public int ThumbnailCount = 1; // Removed as per instruction
+		public List<ThumbnailPositionSetting> ThumbnailPositions { get; set; } =
+			new List<ThumbnailPositionSetting> {
+				new ThumbnailPositionSetting(ThumbnailPositionSetting.PositionType.Percentage, 50.0)
+			};
 		public int MaxDegreeOfParallelism = 1;
+		public int TimeLimitSeconds = 3600;
 
 		public string CustomFFArguments = string.Empty;
 		public string CustomDatabaseFolder = string.Empty;

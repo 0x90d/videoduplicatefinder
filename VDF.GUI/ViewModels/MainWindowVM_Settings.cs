@@ -30,6 +30,9 @@ using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
+		// Command for opening the segment comparison window
+		public ReactiveCommand<Unit, Unit> OpenSegmentComparisonCommand { get; }
+
 #pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
@@ -203,5 +206,108 @@ namespace VDF.GUI.ViewModels {
 			await MessageBoxService.Show("Please restart VDF to apply new settings.");
 		});
 
+		public ReactiveCommand<Unit, Unit> ShowBrokenFilesCommand => ReactiveCommand.CreateFromTask(async () => {
+			var scanEngine = new Core.ScanEngine(); // Consider if a shared instance is better
+			var brokenEntries = scanEngine.GetBrokenFileEntries();
+
+			if (brokenEntries.Count == 0) {
+				await MessageBoxService.Show("No broken file entries found in the database.");
+				return;
+			}
+
+			var sb = new StringBuilder();
+			sb.AppendLine($"Found {brokenEntries.Count} broken file entries:");
+			int count = 0;
+			foreach (var entry in brokenEntries) {
+				sb.AppendLine($"- {entry.Path} (Flags: {entry.Flags})");
+				count++;
+				if (count >= 20) { // Limit the number of paths displayed directly
+					sb.AppendLine($"...and {brokenEntries.Count - count} more.");
+					break;
+				}
+			}
+			// Ensure MessageBoxService.Show can handle potentially long strings or consider a custom dialog for many items.
+			// For now, we'll use the existing MessageBoxService.
+			await MessageBoxService.Show(sb.ToString(), title: "Broken File Entries");
+		});
+
+		public ReactiveCommand<Unit, Unit> FindSubClipsCommand => ReactiveCommand.CreateFromTask(async () => {
+			IsBusy = true;
+			IsBusyText = "Finding sub-clip matches... This may take a while.";
+			try {
+				var scanEngine = new Core.ScanEngine(); // Consider if a shared instance is better
+				// It's important to use the settings from SettingsFile.Instance for consistency with the rest of the app
+				var coreSettings = new Core.Settings {
+					Percent = SettingsFile.Instance.Percent,
+					IgnoreBlackPixels = SettingsFile.Instance.IgnoreBlackPixels,
+					IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels,
+                    // ThumbnailCount = SettingsFile.Instance.Thumbnails, // Obsolete: Remove this line
+                    ThumbnailPositions = new List<Core.ThumbnailPositionSetting>(SettingsFile.Instance.ThumbnailPositions),
+					ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging
+					// Add any other relevant settings from SettingsFile to Core.Settings if needed by FindSubClipMatches
+				};
+
+				// Ensure database is loaded. DatabaseUtils.Database is a HashSet<FileEntry>.
+				if (!Core.Utils.DatabaseUtils.Database.Any()) {
+					Core.Utils.DatabaseUtils.LoadDatabase(); // Corrected: removed await
+				}
+				var allFiles = Core.Utils.DatabaseUtils.Database.ToList(); // Pass a list
+
+				List<Core.SubClipMatch> subClipMatches = await Task.Run(() => scanEngine.FindSubClipMatches(allFiles, coreSettings));
+
+				if (subClipMatches.Count == 0) {
+					await MessageBoxService.Show("No sub-clip matches found.");
+				} else {
+					var sb = new StringBuilder();
+					sb.AppendLine($"Found {subClipMatches.Count} potential sub-clip match(es):");
+					int displayCount = 0;
+					foreach (var match in subClipMatches) {
+						sb.AppendLine($"Main: {match.MainVideo.Path}");
+						sb.AppendLine($"  Sub: {match.SubClipVideo.Path}");
+						sb.AppendLine($"  Matched at (main video times %): {string.Join(", ", match.MainVideoMatchStartTimes.Select(t => (t*100).ToString("F1")))}");
+						sb.AppendLine();
+						displayCount++;
+						if (displayCount >= 10) { // Limit direct display
+							sb.AppendLine($"...and {subClipMatches.Count - displayCount} more matches.");
+							break;
+						}
+					}
+					await MessageBoxService.Show(sb.ToString(), title: "Sub-Clip Matches Found");
+				}
+			} catch (Exception ex) {
+				Logger.Instance.Info($"ERROR: Error finding sub-clips: {ex.Message}"); // Corrected Logger call
+				await MessageBoxService.Show($"An error occurred while finding sub-clips: {ex.Message}", title: "Error");
+			} finally {
+				IsBusy = false;
+				IsBusyText = string.Empty;
+			}
+		});
+
+        // The actual method to open the window
+		private void OpenSegmentComparisonWindow() {
+		   var view = new SegmentComparisonView();
+		   view.DataContext = new SegmentComparisonVM();
+		   // For Avalonia, showing a window might need to be done via a window manager service or by ShowDialog(owner)
+		   // For simplicity, and if ApplicationHelpers.MainWindow is accessible and appropriate:
+           if (ApplicationHelpers.MainWindow != null)
+           {
+                view.ShowDialog(ApplicationHelpers.MainWindow);
+           }
+           else
+           {
+                view.Show(); // Fallback if no owner can be determined easily
+           }
+		}
+		// Ensure OpenSegmentComparisonCommand is initialized. This usually happens in the constructor.
+		// If MainWindowVM is not partial or this is not the right place, this initialization needs to be moved.
+		// For the purpose of this task, I'm adding a placeholder initialization.
+		// This should be integrated into the actual MainWindowVM constructor.
+		public void EnsureCommandsInitialized() {
+		// This is a conceptual method. Command should be initialized in constructor.
+		// if (OpenSegmentComparisonCommand == null) {
+		//     OpenSegmentComparisonCommand = ReactiveCommand.Create(OpenSegmentComparisonWindow); // This line should be in the constructor
+		// }
+	}
+		// Removed duplicate constructor and EnsureCommandsInitialized method
 	}
 }

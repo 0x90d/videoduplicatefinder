@@ -100,13 +100,13 @@ namespace VDF.Core.FFTools {
 						var image = Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Bgra32>(rgbaBytes, width, height);
 						using MemoryStream stream = new();
 						image.Save(stream, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
-						bool equal = rgbaBytes.SequenceEqual(stream.ToArray());
+						// bool equal = rgbaBytes.SequenceEqual(stream.ToArray()); // This line seems unused, consider removing
 						return stream.ToArray();
 					}
 				}
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}");
+				Logger.Instance.Info($"WARNING: Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}");
 			}
 
 
@@ -147,33 +147,49 @@ namespace VDF.Core.FFTools {
 					throw new TimeoutException($"FFmpeg timed out on file: {settings.File}");
 				}
 				else if (extendedLogging)
-					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+					process.WaitForExit();
 
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
 
 				bytes = ms.ToArray();
 				if (bytes.Length == 0)
-					bytes = null;   // Makes subsequent checks easier
+					bytes = null;
 				else if (settings.GrayScale == 1 && bytes.Length != 256) {
 					bytes = null;
-					errOut += $"{Environment.NewLine}graybytes length != 256";
+					// This specific detail will be part of the consolidated log message if extendedLogging is true
+					if(extendedLogging) errOut += $"{Environment.NewLine}CustomDetail: graybytes length != 256";
 				}
 			}
 			catch (Exception e) {
-				errOut += $"{Environment.NewLine}{e.Message}";
-				try {
-					if (process.HasExited == false)
-						process.Kill();
-				}
-				catch { }
+				if(extendedLogging) errOut += $"{Environment.NewLine}ExceptionDetail: {e.GetType().Name}: {e.Message}";
 				bytes = null;
 			}
-			if (bytes == null || errOut.Length > 0) {
-				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
-				if (extendedLogging)
-					message += $":{Environment.NewLine}{FFmpegPath} {ffmpegArguments}";
-				Logger.Instance.Info($"{message}{errOut}");
+			finally {
+				try {
+					if (process != null && !process.HasExited) {
+						process.Kill();
+						if(extendedLogging) errOut += $"{Environment.NewLine}CustomDetail: Process was killed due to an issue or timeout.";
+					}
+				}
+				catch {/* Best effort */}
+			}
+
+			if (bytes == null || (extendedLogging && !string.IsNullOrEmpty(errOut))) {
+				string prefix = bytes == null ? "ERROR: " : "WARNING: ";
+				string mainMessage = bytes == null ? "Failed to retrieve" : "Problems while retrieving";
+
+				string logMessage = $"{prefix}{mainMessage} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
+
+				if (extendedLogging) {
+					logMessage += $":{Environment.NewLine}FFmpeg Path: {FFmpegPath}{Environment.NewLine}Arguments: {ffmpegArguments}";
+                    if (!string.IsNullOrEmpty(errOut)) {
+                        logMessage += $"{Environment.NewLine}Stderr: {errOut}";
+                    }
+                } else if (bytes == null && string.IsNullOrEmpty(errOut)) {
+                    logMessage += ". No extended error output.";
+                }
+				Logger.Instance.Info(logMessage);
 			}
 			return bytes;
 		}
@@ -192,6 +208,7 @@ namespace VDF.Core.FFTools {
 				}, extendedLogging);
 				if (data == null) {
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
+					// No specific log here as GetThumbnail would have logged the failure.
 					return false;
 				}
 				if (!GrayBytesUtils.VerifyGrayScaleValues(data))
@@ -204,6 +221,62 @@ namespace VDF.Core.FFTools {
 				return false;
 			}
 			return true;
+		}
+
+		public static Dictionary<double, byte[]?> GetThumbnailsForSegment(string videoPath, TimeSpan segmentStart, TimeSpan segmentEnd, int numberOfThumbnails, bool extendedLogging) {
+			var result = new Dictionary<double, byte[]?>();
+
+			if (numberOfThumbnails <= 0) {
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: numberOfThumbnails must be greater than 0.");
+				return result;
+			}
+
+			if (segmentStart >= segmentEnd) {
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: segmentStart must be less than segmentEnd.");
+				return result;
+			}
+
+			if (string.IsNullOrEmpty(videoPath)) {
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: videoPath cannot be null or empty.");
+				return result;
+			}
+
+			if (string.IsNullOrEmpty(FFmpegPath)) {
+				Logger.Instance.Info("ERROR: GetThumbnailsForSegment: FFmpeg path is not configured.");
+				return result;
+			}
+
+			List<TimeSpan> timestamps = new List<TimeSpan>();
+			TimeSpan segmentDuration = segmentEnd - segmentStart;
+
+			if (numberOfThumbnails == 1) {
+				timestamps.Add(segmentStart + TimeSpan.FromSeconds(segmentDuration.TotalSeconds / 2));
+			} else {
+				for (int i = 0; i < numberOfThumbnails; i++) {
+					double stepRatio = (double)i / (numberOfThumbnails - 1);
+					TimeSpan timestamp = segmentStart + TimeSpan.FromSeconds(segmentDuration.TotalSeconds * stepRatio);
+					timestamps.Add(timestamp);
+				}
+			}
+
+			foreach (TimeSpan ts in timestamps) {
+				var settings = new FfmpegSettings {
+					File = videoPath,
+					Position = ts,
+					GrayScale = 0,
+					Fullsize = 0
+				};
+
+				byte[]? thumbnailData = GetThumbnail(settings, extendedLogging);
+
+				if (thumbnailData != null && thumbnailData.Length > 0) {
+					result.Add(ts.TotalSeconds, thumbnailData);
+				} else {
+					Logger.Instance.Info($"WARNING: GetThumbnailsForSegment: Failed to retrieve thumbnail for {videoPath} at {ts}.");
+				}
+			}
+
+			return result;
 		}
 	}
 
