@@ -54,7 +54,7 @@ namespace VDF.Core {
 
             if (calcStart > calcEnd) {
                 // Allow for calcStart == calcEnd for very short segments or single frame
-                 return (false, calcStart, calcEnd); 
+                 return (false, calcStart, calcEnd);
             }
 
             return (true, calcStart, calcEnd);

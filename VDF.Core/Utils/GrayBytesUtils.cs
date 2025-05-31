@@ -56,7 +56,8 @@ namespace VDF.Core.Utils {
 			int buffercounter = 0;
 			for (int i = 0; i < span.Length; i += 4) {
 				byte r = span[i + 2], g = span[i + 1], b = span[i];
-				byte brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
+				// byte brightness = (byte)Math.Round(0.299 * r + 0.5876 * g + 0.114 * b);
+				byte brightness = (byte)((77 * r + 150 * g + 29 * b + 128) >> 8);
 				buffer[buffercounter++] = brightness;
 				if (brightness <= BlackPixelLimit)
 					count++;

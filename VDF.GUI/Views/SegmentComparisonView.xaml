@@ -33,7 +33,7 @@
                     <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseVideoACommand}" Margin="5,0,0,0"/>
                 </Grid>
                 <ComboBox ItemsSource="{Binding DefinitionModes}" SelectedItem="{Binding ModeA}"/>
-                
+
                 <!-- Absolute Time A -->
                 <StackPanel Spacing="5" IsVisible="{Binding ModeA, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:SegmentDefinitionMode.AbsoluteTime}}">
                     <TextBlock Text="Absolute Start Time (hh:mm:ss):"/>
@@ -96,7 +96,7 @@
                 <ComboBox ItemsSource="{Binding ComparisonMethods}" SelectedItem="{Binding SelectedComparisonMethod}"/>
             </StackPanel>
         </GroupBox>
-        
+
         <!-- Action Button -->
         <Button Grid.Row="3" Content="Compare Segments" Command="{Binding CompareSegmentsCommand}" HorizontalAlignment="Stretch" Margin="0,10"/>
 
@@ -111,7 +111,7 @@
             <ScrollViewer>
                 <StackPanel Spacing="5">
                     <TextBlock Text="{Binding ResultMessage}" TextWrapping="Wrap"/>
-                    <TextBlock Text="{Binding SimilarityScoreVM, StringFormat='Similarity Score: {0:P2}'}" 
+                    <TextBlock Text="{Binding SimilarityScoreVM, StringFormat='Similarity Score: {0:P2}'}"
                                IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonMethodType.DirectSequenceMatch}}"/>
                     <StackPanel IsVisible="{Binding SelectedComparisonMethod, Converter={x:Static converters:ObjectConverters.IsEqual}, ConverterParameter={x:Static vm:ComparisonMethodType.SearchASinB}}">
                         <TextBlock Text="Match Start Times in Video B:"/>

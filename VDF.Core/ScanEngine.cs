@@ -38,7 +38,7 @@ namespace VDF.Core {
 		// Parameterless constructor for object initializers or deserialization
 		public SubClipMatch() {
 			MainVideo = null!; // Indicates to the compiler this will be initialized post-construction
-			SubClipVideo = null!; 
+			SubClipVideo = null!;
 			// MainVideoMatchStartTimes is already initialized at declaration
 		}
 
@@ -380,11 +380,19 @@ namespace VDF.Core {
                                 hasAllInformation = true;
                             }
 						}
+						bool oldGrayBytesExisted = entry.grayBytes?.Count > 0; // Check before potential clear
+						if (!hasAllInformation && oldGrayBytesExisted) {
+							Logger.Instance.Info($"INFO: Clearing inconsistent or incomplete thumbnails for {entry.Path} based on hasAllInformation check.");
+							entry.grayBytes.Clear();
+						}
 						if (hasAllInformation) {
 							IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
 						}
 					}
+
+					// Ensure grayBytes is initialized (might be redundant if already done, but safe)
+					entry.grayBytes ??= new Dictionary<double, byte[]?>();
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
@@ -397,8 +405,7 @@ namespace VDF.Core {
 
 						entry.mediaInfo = info;
 					}
-					// 08/17/21: This is for people upgrading from an older VDF version
-					entry.grayBytes ??= new Dictionary<double, byte[]?>();
+					//Moved earlier: entry.grayBytes ??= new Dictionary<double, byte[]?>();
 
 
 					if (entry.IsImage && entry.grayBytes.Count == 0) {
@@ -406,6 +413,12 @@ namespace VDF.Core {
 							entry.invalid = true;
 					}
 					else if (!entry.IsImage) { // This block is for videos
+                        // Clear grayBytes if settings define no positions but old thumbnails exist
+                        if (!Settings.ThumbnailPositions.Any() && entry.grayBytes.Count > 0) {
+                            Logger.Instance.Info($"INFO: Clearing thumbnails for {entry.Path} as no thumbnail positions are currently defined.");
+                            entry.grayBytes.Clear();
+                        }
+
                         List<float> positionListForThisVideo = new List<float>();
                         if (entry.mediaInfo != null && entry.mediaInfo.Duration.TotalSeconds > 0) {
                             foreach (var posSetting in Settings.ThumbnailPositions) {
@@ -415,7 +428,6 @@ namespace VDF.Core {
                                         percentage = (float)(posSetting.Value / 100.0);
                                         break;
                                     case ThumbnailPositionSetting.PositionType.OffsetFromStart:
-                                        // Ensure duration is not zero to prevent division by zero
                                         percentage = entry.mediaInfo.Duration.TotalSeconds > 0 ? (float)(posSetting.Value / entry.mediaInfo.Duration.TotalSeconds) : 0f;
                                         break;
                                     case ThumbnailPositionSetting.PositionType.OffsetFromEnd:
@@ -427,19 +439,32 @@ namespace VDF.Core {
                             }
                         }
 
-                        bool needsExtraction = entry.grayBytes.Count < Settings.ThumbnailPositions.Count;
+                        // Determine if extraction is needed
+                        bool needsExtraction = Settings.ThumbnailPositions.Any() &&
+                                               entry.grayBytes.Count < Settings.ThumbnailPositions.Count &&
+                                               (entry.mediaInfo?.Duration.TotalSeconds ?? 0) > 0;
+
+
                         if (Settings.AlwaysRetryFailedSampling && entry.Flags.Has(EntryFlags.ThumbnailError)) {
-                            needsExtraction = true;
-                            entry.Flags.Remove(EntryFlags.ThumbnailError, out _); 
+                            if (!needsExtraction && entry.grayBytes.Count > 0 && Settings.ThumbnailPositions.Any()) {
+                                // If retry is forced, but counts seemed to match, still clear to ensure re-extraction.
+                                Logger.Instance.Info($"INFO: Retrying failed thumbnail sampling for {entry.Path}. Clearing existing thumbnails.");
+                                entry.grayBytes.Clear();
+                            }
+                            needsExtraction = Settings.ThumbnailPositions.Any() && (entry.mediaInfo?.Duration.TotalSeconds ?? 0) > 0; // Re-evaluate after clearing
+                            entry.Flags.Remove(EntryFlags.ThumbnailError, out _);
                         }
-                        
+
                         if (needsExtraction && positionListForThisVideo.Any()) {
-						    if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionListForThisVideo, Settings.ExtendedFFToolsLogging))
-							    entry.invalid = true; 
-                        } else if (!positionListForThisVideo.Any() && Settings.ThumbnailPositions.Any() && entry.mediaInfo != null && entry.mediaInfo.Duration.TotalSeconds > 0) {
-                            // This case implies settings expect thumbnails, but we couldn't generate positions (e.g. zero duration for offset math).
-                            // Or Settings.ThumbnailPositions is empty, so no thumbnails are taken.
-                            // If no positions are defined, grayBytes should ideally remain empty or be cleared.
+						    if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionListForThisVideo, Settings.ExtendedFFToolsLogging)) {
+							    entry.invalid = true;
+                                entry.Flags.Set(EntryFlags.ThumbnailError); // Explicitly set error flag on failure
+                            }
+                        } else if (needsExtraction && !positionListForThisVideo.Any() && Settings.ThumbnailPositions.Any()) {
+                             // This case implies settings expect thumbnails, but we couldn't generate positions (e.g. zero duration video for offset math).
+                             // Mark as thumbnail error if media info is present, otherwise metadata error might already be set.
+                             if(entry.mediaInfo != null) entry.Flags.Set(EntryFlags.ThumbnailError);
+                             Logger.Instance.Info($"WARNING: Could not generate thumbnail positions for {entry.Path} (Duration: {entry.mediaInfo?.Duration.TotalSeconds}s), marking as thumbnail error.");
                         }
 					}
 
@@ -474,11 +499,11 @@ namespace VDF.Core {
                     percentage = (float)(posSetting.Value / 100.0);
                     break;
                 case ThumbnailPositionSetting.PositionType.OffsetFromStart:
-                    if (duration.TotalSeconds == 0) percentage = 0; 
+                    if (duration.TotalSeconds == 0) percentage = 0;
                     else percentage = (float)(posSetting.Value / duration.TotalSeconds);
                     break;
                 case ThumbnailPositionSetting.PositionType.OffsetFromEnd:
-                    if (duration.TotalSeconds == 0) percentage = 0; 
+                    if (duration.TotalSeconds == 0) percentage = 0;
                     else {
                         double timeFromStart = duration.TotalSeconds - posSetting.Value;
                         percentage = (float)(timeFromStart / duration.TotalSeconds);
@@ -486,15 +511,15 @@ namespace VDF.Core {
                     break;
             }
             percentage = Math.Clamp(percentage, 0.0f, 1.0f);
-            return duration.TotalSeconds * percentage; 
+            return duration.TotalSeconds * percentage;
         }
 
 		bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytesToCompare, FileEntry compItem, out float difference) {
-			grayBytesToCompare ??= entry.grayBytes; 
+			grayBytesToCompare ??= entry.grayBytes;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
 			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
 			float differenceLimit = 1.0f - Settings.Percent / 100f;
-			difference = 1f; 
+			difference = 1f;
 
 			if (entry.IsImage) {
                 if (grayBytesToCompare.TryGetValue(0, out byte[]? entryTb) && entryTb != null &&
@@ -504,20 +529,20 @@ namespace VDF.Core {
                                     GrayBytesUtils.PercentageDifference(entryTb, compTb);
                     return difference <= differenceLimit;
                 }
-                return false; 
+                return false;
 			}
 
             if (Settings.ThumbnailPositions.Count == 0) {
-                return false; 
+                return false;
             }
 
             float diffSum = 0;
             int validComparisons = 0;
 
             foreach (var posSetting in Settings.ThumbnailPositions) {
-                if (entry.mediaInfo == null || compItem.mediaInfo == null || 
+                if (entry.mediaInfo == null || compItem.mediaInfo == null ||
                     entry.mediaInfo.Duration.TotalSeconds == 0 || compItem.mediaInfo.Duration.TotalSeconds == 0) {
-                    continue; 
+                    continue;
                 }
 
                 double keyEntry = CalculateExpectedGrayBytesKey(posSetting, entry.mediaInfo.Duration);
@@ -525,29 +550,29 @@ namespace VDF.Core {
 
                 if (grayBytesToCompare.TryGetValue(keyEntry, out byte[]? entryTb) && entryTb != null &&
                     compItem.grayBytes.TryGetValue(keyCompItem, out byte[]? compTb) && compTb != null) {
-                    
+
                     float singleDiff = ignoreBlackPixels || ignoreWhitePixels ?
                                 GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(entryTb, compTb, ignoreBlackPixels, ignoreWhitePixels) :
                                 GrayBytesUtils.PercentageDifference(entryTb, compTb);
-                    
+
                     if (singleDiff > differenceLimit) {
-                        difference = singleDiff; 
-                        return false; 
+                        difference = singleDiff;
+                        return false;
                     }
                     diffSum += singleDiff;
                     validComparisons++;
                 } else {
-                     difference = 1f; 
-                     return false; 
+                     difference = 1f;
+                     return false;
                 }
             }
 
-            if (validComparisons == 0) { 
+            if (validComparisons == 0) {
                 return false;
             }
-            
+
             difference = diffSum / validComparisons;
-            return !float.IsNaN(difference); 
+            return !float.IsNaN(difference);
 		}
 
 		void ScanForDuplicates() {
@@ -741,16 +766,16 @@ namespace VDF.Core {
                                 // Use fileEntryFromDb.mediaInfo.Duration
                                 TimeSpan actualTimestamp = TimeSpan.FromSeconds(CalculateExpectedGrayBytesKey(posSetting, fileEntryFromDb.mediaInfo.Duration));
                                 timeStamps.Add(actualTimestamp);
-                                
+
                                 var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
                                     File = entry.Path, // entry.Path is fine here as DuplicateItem has Path
                                     Position = actualTimestamp,
                                     GrayScale = 0, // Color thumbnail for preview
                                 }, Settings.ExtendedFFToolsLogging);
-                                
+
                                 if (b == null || b.Length == 0) {
-                                    list.Add(NoThumbnailImage ?? new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1,1)); 
-                                    continue; 
+                                    list.Add(NoThumbnailImage ?? new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1,1));
+                                    continue;
                                 }
                                 try {
                                     using var byteStream = new MemoryStream(b);
@@ -761,13 +786,13 @@ namespace VDF.Core {
                                     list.Add(NoThumbnailImage ?? new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1,1));
                                 }
                             }
-                        } else { 
+                        } else {
                             list = new List<Image>();
                             timeStamps = new List<TimeSpan>();
                         }
 					}
                     timeStamps ??= new List<TimeSpan>();
-					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps); 
+					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps);
 					return ValueTask.CompletedTask;
 				});
 			}
@@ -924,11 +949,11 @@ namespace VDF.Core {
 				foreach (FileEntry potentialSub in fileList) {
 					if (potentialMain == potentialSub) continue;
 					if (potentialMain.mediaInfo == null || potentialSub.mediaInfo == null) continue;
-					if (potentialMain.IsImage || potentialSub.IsImage) continue; 
+					if (potentialMain.IsImage || potentialSub.IsImage) continue;
 					if (potentialMain.mediaInfo.Duration <= potentialSub.mediaInfo.Duration) continue;
 					if (potentialMain.grayBytes == null || potentialSub.grayBytes == null) continue;
-					
-                                        // Ensure enough thumbnails based on current settings. 
+
+                                        // Ensure enough thumbnails based on current settings.
                                         // The original logic in ScanForDuplicates uses positionList.Count which is derived from Settings.ThumbnailCount
                                         // So, we use settings.ThumbnailPositions.Count directly here for clarity for sub-clip detection.
 					if (potentialMain.grayBytes.Count < settings.ThumbnailPositions.Count || potentialSub.grayBytes.Count < settings.ThumbnailPositions.Count) continue;
@@ -937,7 +962,7 @@ namespace VDF.Core {
 					var subThumbnails = potentialSub.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
 					var mainThumbnailTimes = potentialMain.grayBytes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Key).ToList();
 
-					if (mainThumbnails.Count < subThumbnails.Count) continue; 
+					if (mainThumbnails.Count < subThumbnails.Count) continue;
 					if (subThumbnails.Count == 0) continue; // Cannot match if sub-clip has no thumbnails
 
 					float differenceLimit = 1.0f - settings.Percent / 100f;
@@ -953,7 +978,7 @@ namespace VDF.Core {
 								currentWindowMatch = false;
 								break;
 							}
-							
+
                                                         // Using the same logic as CheckIfDuplicate for consistency, including ignoring specific pixels
                                                         float difference;
                                                         if (settings.IgnoreBlackPixels || settings.IgnoreWhitePixels) {
@@ -972,13 +997,13 @@ namespace VDF.Core {
 						if (currentWindowMatch) {
 							// Check if this exact match (main, sub, and specific start times) already exists
 							// This is a simple check; more sophisticated grouping might be needed later
-							bool alreadyExists = matches.Any(m => m.MainVideo == potentialMain && 
-							                                  m.SubClipVideo == potentialSub && 
+							bool alreadyExists = matches.Any(m => m.MainVideo == potentialMain &&
+							                                  m.SubClipVideo == potentialSub &&
 							                                  m.MainVideoMatchStartTimes.SequenceEqual(currentMatchTimes));
 							if (!alreadyExists) {
-								matches.Add(new SubClipMatch { 
-									MainVideo = potentialMain, 
-									SubClipVideo = potentialSub, 
+								matches.Add(new SubClipMatch {
+									MainVideo = potentialMain,
+									SubClipVideo = potentialSub,
 									MainVideoMatchStartTimes = new List<double>(currentMatchTimes) // Ensure a new list is added
 								});
 							}

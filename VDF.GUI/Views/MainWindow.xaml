@@ -3,7 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
-    xmlns:core="clr-namespace:VDF.Core;assembly=VDF.Core" 
+    xmlns:core="clr-namespace:VDF.Core;assembly=VDF.Core"
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -1371,7 +1371,7 @@
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Center"
                                                         Minimum="1"
-                                                        Maximum="86400" 
+                                                        Maximum="86400"
                                                         ToolTip.Tip="Maximum duration for a scan in seconds (e.g., 3600 for 1 hour). Only active if 'Enable Time Limited Scan' is checked."
                                                         Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=TimeLimitSeconds}"
                                                         IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnableTimeLimitedScan}" />

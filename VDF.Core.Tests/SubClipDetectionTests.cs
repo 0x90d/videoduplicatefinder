@@ -25,7 +25,7 @@ namespace VDF.Core.Tests
                 IgnoreBlackPixels = false,
                 IgnoreWhitePixels = false
             };
-            // DatabaseUtils.Database isn't directly used by FindSubClipMatches, 
+            // DatabaseUtils.Database isn't directly used by FindSubClipMatches,
             // as it takes IEnumerable<FileEntry> directly.
             // So, no specific DatabaseUtils cleanup is needed here beyond what other tests might do.
         }
@@ -46,7 +46,7 @@ namespace VDF.Core.Tests
             for (int i = 0; i < thumbnails.Length; i++)
             {
                 // Using simple incremental keys for ordered thumbnails, representing time positions
-                dict.Add(i * 0.1, thumbnails[i]); 
+                dict.Add(i * 0.1, thumbnails[i]);
             }
             return dict;
         }
@@ -135,7 +135,7 @@ namespace VDF.Core.Tests
             Assert.AreEqual(subClip, matches[0].SubClipVideo);
             CollectionAssert.AreEqual(new List<double> { 0.2, 0.3 }, matches[0].MainVideoMatchStartTimes);
         }
-        
+
         [TestMethod]
         public void FindSubClipMatches_VaryingSimilarity_MatchFound()
         {
@@ -148,7 +148,7 @@ namespace VDF.Core.Tests
             // This means T2_Similar_90 is 98.2% similar to T2, so it should match at 85% and 95% threshold.
             // Let's make T2_Similar_70 for testing 85% threshold specifically
             byte[] T2_Similar_70 = new byte[] { 2, 2, 50, 80 }; // diff = (50-2) + (80-2) = 48+78 = 126.  1 - (126 / 1020) = 1 - 0.123 = 0.877 (87.7%)
-                                                        
+
             var mainVideo = CreateTestFileEntry("main.mp4", 30, CreateThumbnails(T1, T2_Similar_70, T3));
             var subClip = CreateTestFileEntry("sub.mp4", 20, CreateThumbnails(T1, T2)); // Sub has original T2
             var files = new List<FileEntry> { mainVideo, subClip };
@@ -206,7 +206,7 @@ namespace VDF.Core.Tests
             var mainVideo = CreateTestFileEntry("main.mp4", 20, CreateThumbnails(T1, T2)); // Main only has 2
             var subClip = CreateTestFileEntry("sub.mp4", 30, CreateThumbnails(T1, T2, T3));
             var files = new List<FileEntry> { mainVideo, subClip };
-            
+
             // Override scan engine settings for this specific test regarding required thumbnail counts
             // The method FindSubClipMatches uses settings.ThumbnailCount to check if *each file* has enough.
             // And then compares based on the actual count in subThumbnails.
@@ -226,9 +226,9 @@ namespace VDF.Core.Tests
             // is `potentialMain.grayBytes.Count < settings.ThumbnailCount || potentialSub.grayBytes.Count < settings.ThumbnailCount`
             // This means if subClip has MORE than settings.ThumbnailCount, it passes this initial check.
             // The logic then proceeds based on the actual number of thumbnails in the sub-clip.
-            var subClip = CreateTestFileEntry("sub.mp4", 30, CreateThumbnails(T1, T2, T3)); 
+            var subClip = CreateTestFileEntry("sub.mp4", 30, CreateThumbnails(T1, T2, T3));
             var files = new List<FileEntry> { mainVideo, subClip };
-            
+
             // In this case, mainVideo has 3 thumbnails, subClip has 3. settings.ThumbnailCount is 2.
             // The initial check `potentialSub.grayBytes.Count < settings.ThumbnailCount` (3 < 2) is false.
             // The comparison loop will run.
@@ -251,7 +251,7 @@ namespace VDF.Core.Tests
             var matches = _scanEngine.FindSubClipMatches(files, _settings);
 
             Assert.AreEqual(3, matches.Count, "Should find T1 matching at three different positions in main.");
-            
+
             // Verify each match points to the same main and sub video
             Assert.IsTrue(matches.All(m => m.MainVideo == mainVideo && m.SubClipVideo == subClip));
 
@@ -264,7 +264,7 @@ namespace VDF.Core.Tests
             };
 
             var actualStartTimes = matches.Select(m => m.MainVideoMatchStartTimes).ToList();
-            
+
             foreach(var expectedTimeList in expectedStartTimes)
             {
                 Assert.IsTrue(actualStartTimes.Any(actualTimeList => actualTimeList.SequenceEqual(expectedTimeList)),

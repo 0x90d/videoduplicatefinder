@@ -147,25 +147,25 @@ namespace VDF.Core.FFTools {
 					throw new TimeoutException($"FFmpeg timed out on file: {settings.File}");
 				}
 				else if (extendedLogging)
-					process.WaitForExit(); 
+					process.WaitForExit();
 
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
 
 				bytes = ms.ToArray();
 				if (bytes.Length == 0)
-					bytes = null;   
+					bytes = null;
 				else if (settings.GrayScale == 1 && bytes.Length != 256) {
 					bytes = null;
 					// This specific detail will be part of the consolidated log message if extendedLogging is true
 					if(extendedLogging) errOut += $"{Environment.NewLine}CustomDetail: graybytes length != 256";
 				}
 			}
-			catch (Exception e) { 
+			catch (Exception e) {
 				if(extendedLogging) errOut += $"{Environment.NewLine}ExceptionDetail: {e.GetType().Name}: {e.Message}";
-				bytes = null; 
+				bytes = null;
 			}
-			finally { 
+			finally {
 				try {
 					if (process != null && !process.HasExited) {
 						process.Kill();
@@ -178,10 +178,10 @@ namespace VDF.Core.FFTools {
 			if (bytes == null || (extendedLogging && !string.IsNullOrEmpty(errOut))) {
 				string prefix = bytes == null ? "ERROR: " : "WARNING: ";
 				string mainMessage = bytes == null ? "Failed to retrieve" : "Problems while retrieving";
-				
+
 				string logMessage = $"{prefix}{mainMessage} {(settings.GrayScale == 1 ? "graybytes" : "thumbnail")} from: {settings.File}";
-				
-				if (extendedLogging) { 
+
+				if (extendedLogging) {
 					logMessage += $":{Environment.NewLine}FFmpeg Path: {FFmpegPath}{Environment.NewLine}Arguments: {ffmpegArguments}";
                     if (!string.IsNullOrEmpty(errOut)) {
                         logMessage += $"{Environment.NewLine}Stderr: {errOut}";
@@ -263,8 +263,8 @@ namespace VDF.Core.FFTools {
 				var settings = new FfmpegSettings {
 					File = videoPath,
 					Position = ts,
-					GrayScale = 0, 
-					Fullsize = 0 
+					GrayScale = 0,
+					Fullsize = 0
 				};
 
 				byte[]? thumbnailData = GetThumbnail(settings, extendedLogging);

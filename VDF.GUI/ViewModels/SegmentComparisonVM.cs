@@ -178,13 +178,13 @@ namespace VDF.GUI.ViewModels
         }
 
         // Enum Value Providers
-        public IEnumerable<Core.SegmentDefinition.DefinitionMode> DefinitionModes => 
+        public IEnumerable<Core.SegmentDefinition.DefinitionMode> DefinitionModes =>
             Enum.GetValues(typeof(Core.SegmentDefinition.DefinitionMode)).Cast<Core.SegmentDefinition.DefinitionMode>();
-        
-        public IEnumerable<Core.SegmentDefinition.OffsetReference> OffsetReferences => 
+
+        public IEnumerable<Core.SegmentDefinition.OffsetReference> OffsetReferences =>
             Enum.GetValues(typeof(Core.SegmentDefinition.OffsetReference)).Cast<Core.SegmentDefinition.OffsetReference>();
 
-        public IEnumerable<Core.ComparisonParameters.ComparisonMethod> ComparisonMethods => 
+        public IEnumerable<Core.ComparisonParameters.ComparisonMethod> ComparisonMethods =>
             Enum.GetValues(typeof(Core.ComparisonParameters.ComparisonMethod)).Cast<Core.ComparisonParameters.ComparisonMethod>();
 
         // Commands
@@ -280,7 +280,7 @@ namespace VDF.GUI.ViewModels
 
                 var comparer = new SegmentComparer();
 
-                SegmentComparisonResult coreResult = await Task.Run(() => 
+                SegmentComparisonResult coreResult = await Task.Run(() =>
                     comparer.CompareSegments(segADef, segBDef, compParams, currentCoreSettings));
 
                 if (coreResult.IsSuccess)

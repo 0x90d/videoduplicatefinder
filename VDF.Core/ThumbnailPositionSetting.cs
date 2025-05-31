@@ -15,7 +15,7 @@ namespace VDF.Core {
             Value = value;
         }
 
-        // Override Equals and GetHashCode if these objects are stored in collections 
+        // Override Equals and GetHashCode if these objects are stored in collections
         // where value-based equality is important (e.g., HashSet, or for Distinct()).
         // For a List serialized to JSON and then compared, this might not be strictly necessary
         // unless direct comparison of ThumbnailPositionSetting objects is done.

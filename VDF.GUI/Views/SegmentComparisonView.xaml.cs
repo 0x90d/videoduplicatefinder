@@ -9,7 +9,7 @@ namespace VDF.GUI.Views
             InitializeComponent();
 #if DEBUG
             // Optional: This line is common for enabling Avalonia DevTools for windows.
-            // this.AttachDevTools(); 
+            // this.AttachDevTools();
 #endif
         }
     }

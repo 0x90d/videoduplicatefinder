@@ -28,23 +28,23 @@ namespace VDF.Core.Tests
             _scanEngine.Settings.ThumbnailCount = 1;
             _scanEngine.Settings.Percent = 100f; // Expect exact matches for simplicity
 
-            _fileOld = new FileEntry("c:\\dummy\\old.mp4") 
-            { 
-                DateModified = DateTime.UtcNow.AddHours(-2), 
-                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } }, 
-                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) } 
+            _fileOld = new FileEntry("c:\\dummy\\old.mp4")
+            {
+                DateModified = DateTime.UtcNow.AddHours(-2),
+                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } },
+                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) }
             };
-            _fileRecent1 = new FileEntry("c:\\dummy\\recent1.mp4") 
-            { 
-                DateModified = DateTime.UtcNow.AddMinutes(-10), 
-                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } }, 
-                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) } 
+            _fileRecent1 = new FileEntry("c:\\dummy\\recent1.mp4")
+            {
+                DateModified = DateTime.UtcNow.AddMinutes(-10),
+                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } },
+                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) }
             };
-            _fileRecent2 = new FileEntry("c:\\dummy\\recent2.mp4") 
-            { 
-                DateModified = DateTime.UtcNow.AddMinutes(-5), 
-                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } }, 
-                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) } 
+            _fileRecent2 = new FileEntry("c:\\dummy\\recent2.mp4")
+            {
+                DateModified = DateTime.UtcNow.AddMinutes(-5),
+                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } },
+                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) }
             };
         }
 
@@ -88,16 +88,16 @@ namespace VDF.Core.Tests
 
             Assert.AreEqual(0, _scanEngine.Duplicates.Count, "Should find no duplicates as all files are older than 1 minute relative to their scan window.");
         }
-        
+
         [TestMethod]
         public void ScanForDuplicates_TimeLimit5Minutes_OnlyRecent2ConsideredButNoPair()
         {
             // This test checks if only one recent file within limit is handled correctly (no duplicate pair)
-            var fileVeryRecent = new FileEntry("c:\\dummy\\very_recent.mp4") 
-            { 
+            var fileVeryRecent = new FileEntry("c:\\dummy\\very_recent.mp4")
+            {
                 DateModified = DateTime.UtcNow.AddMinutes(-1), // 1 minute ago
-                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } }, 
-                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) } 
+                grayBytes = new Dictionary<double, byte[]?> { { 0.5, new byte[] { 1, 2, 3 } } },
+                mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) }
             };
 
             DatabaseUtils.Database.Add(_fileOld); // 2 hours old

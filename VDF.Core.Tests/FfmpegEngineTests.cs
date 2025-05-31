@@ -27,10 +27,10 @@ namespace VDF.Core.Tests
             {
                 // Set a dummy path to satisfy initial checks in GetThumbnailsForSegment
                 // This assumes tests here are not actually executing FFmpeg processes.
-                Environment.SetEnvironmentVariable("FFMPEG_PATH", Path.GetTempFileName()); 
+                Environment.SetEnvironmentVariable("FFMPEG_PATH", Path.GetTempFileName());
                 // Re-trigger static constructor or manually set FFmpegPath if possible/needed.
                 // For simplicity, we assume the environment variable is picked up or FFmpegPath is settable.
-                // If FfmpegEngine.FFmpegPath is not easily settable after static init, 
+                // If FfmpegEngine.FFmpegPath is not easily settable after static init,
                 // tests relying on it being non-empty might need FFMPEG_PATH set before test run.
             }
         }
@@ -71,7 +71,7 @@ namespace VDF.Core.Tests
             var result = FfmpegEngine.GetThumbnailsForSegment("dummy.mp4", TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), 5, false);
             Assert.AreEqual(0, result.Count);
         }
-        
+
         [TestMethod]
         public void GetThumbnailsForSegment_NullVideoPath_ReturnsEmptyDictionary()
         {

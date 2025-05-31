@@ -238,7 +238,7 @@ namespace VDF.GUI.ViewModels {
 					Percent = SettingsFile.Instance.Percent,
 					IgnoreBlackPixels = SettingsFile.Instance.IgnoreBlackPixels,
 					IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels,
-					ThumbnailCount = SettingsFile.Instance.Thumbnails 
+					ThumbnailCount = SettingsFile.Instance.Thumbnails
 					// Add any other relevant settings from SettingsFile to Core.Settings if needed by FindSubClipMatches
 				};
 
@@ -281,14 +281,14 @@ namespace VDF.GUI.ViewModels {
         // The actual method to open the window
 		private void OpenSegmentComparisonWindow() {
 		   var view = new SegmentComparisonView();
-		   view.DataContext = new SegmentComparisonVM(); 
+		   view.DataContext = new SegmentComparisonVM();
 		   // For Avalonia, showing a window might need to be done via a window manager service or by ShowDialog(owner)
 		   // For simplicity, and if ApplicationHelpers.MainWindow is accessible and appropriate:
-           if (ApplicationHelpers.MainWindow != null) 
+           if (ApplicationHelpers.MainWindow != null)
            {
                 view.ShowDialog(ApplicationHelpers.MainWindow);
-           } 
-           else 
+           }
+           else
            {
                 view.Show(); // Fallback if no owner can be determined easily
            }
@@ -298,11 +298,11 @@ namespace VDF.GUI.ViewModels {
 		// For the purpose of this task, I'm adding a placeholder initialization.
 		// This should be integrated into the actual MainWindowVM constructor.
 		public void EnsureCommandsInitialized() {
-        	// This is a conceptual method. Command should be initialized in constructor.
-        	// if (OpenSegmentComparisonCommand == null) {
-        	//     OpenSegmentComparisonCommand = ReactiveCommand.Create(OpenSegmentComparisonWindow); // This line should be in the constructor
-        	// }
-    	}
+		// This is a conceptual method. Command should be initialized in constructor.
+		// if (OpenSegmentComparisonCommand == null) {
+		//     OpenSegmentComparisonCommand = ReactiveCommand.Create(OpenSegmentComparisonWindow); // This line should be in the constructor
+		// }
+	}
 
 
 		// Constructor for MainWindowVM (or the part of it in MainWindowVM_Settings.cs)
@@ -320,7 +320,7 @@ namespace VDF.GUI.ViewModels {
 
             // Call to ensure other commands are initialized if they follow a similar pattern.
             // This is a conceptual placeholder for where other command initializations might exist.
-            EnsureCommandsInitialized(); 
+            EnsureCommandsInitialized();
 		}
 	}
 }

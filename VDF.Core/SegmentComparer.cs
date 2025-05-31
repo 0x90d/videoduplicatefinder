@@ -100,20 +100,20 @@ namespace VDF.Core {
                      return result;
                 }
             }
-            
+
             float differenceLimit = 1.0f - currentSettings.Percent / 100f;
 
             if (compParams.Method == ComparisonParameters.ComparisonMethod.DirectSequenceMatch) {
                 float totalDifference = 0;
                 int comparablePairs = 0;
                 // NumberOfThumbnails is used as the loop bound because we've already validated counts match
-                for (int i = 0; i < compParams.NumberOfThumbnails; i++) { 
+                for (int i = 0; i < compParams.NumberOfThumbnails; i++) {
                     byte[]? currentThumbnailA = thumbnailsA[i];
                     byte[]? currentThumbnailB = thumbnailsB[i];
 
                     if (currentThumbnailA != null && currentThumbnailB != null) {
                         float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
-                                        currentThumbnailA, currentThumbnailB, 
+                                        currentThumbnailA, currentThumbnailB,
                                         currentSettings.IgnoreBlackPixels, currentSettings.IgnoreWhitePixels);
                         totalDifference += diff;
                         comparablePairs++;
@@ -121,12 +121,12 @@ namespace VDF.Core {
                     // If one is null, this pair is skipped. The comparablePairs count will be lower.
                 }
 
-                if (comparablePairs == 0) { 
+                if (comparablePairs == 0) {
                     result.IsSuccess = false;
                     result.Message = "No comparable thumbnail pairs found for direct sequence match (all pairs had at least one null thumbnail).";
                     return result;
                 }
-                
+
                 float averageDifference = totalDifference / comparablePairs;
                 result.SimilarityScore = 1.0f - averageDifference;
                 result.IsSuccess = true;
@@ -159,7 +159,7 @@ namespace VDF.Core {
                 result.IsSuccess = true;
                 result.Message = $"Search complete. Found {result.MatchStartTimesInB.Count} potential match(es).";
             }
-            
+
             return result;
         }
     }

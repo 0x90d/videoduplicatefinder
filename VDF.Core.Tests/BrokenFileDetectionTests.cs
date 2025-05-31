@@ -93,7 +93,7 @@ namespace VDF.Core.Tests
             entryThumbError.Flags.Set(EntryFlags.ThumbnailError);
             var entryBothError = new FileEntry("both.mp4");
             entryBothError.Flags.Set(EntryFlags.MetadataError | EntryFlags.ThumbnailError);
-            
+
             DatabaseUtils.Database.Add(entryOk);
             DatabaseUtils.Database.Add(entryMetaError);
             DatabaseUtils.Database.Add(entryThumbError);

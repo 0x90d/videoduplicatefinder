@@ -57,7 +57,7 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 2, Method = ComparisonParameters.ComparisonMethod.DirectSequenceMatch };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1, T2);
             var thumbnailsB = CreateThumbnailDict(T1, T2);
             var mediaInfoA = CreateDummyMediaInfo(20);
@@ -78,14 +78,14 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 2, Method = ComparisonParameters.ComparisonMethod.DirectSequenceMatch };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1, T2);
             var thumbnailsB = CreateThumbnailDict(T3, T4); // Completely different
             var mediaInfoA = CreateDummyMediaInfo(20);
             var mediaInfoB = CreateDummyMediaInfo(20);
 
             var result = _comparer.CompareSegmentsForTest(segADef, segBDef, compParams, _currentSettings, thumbnailsA, thumbnailsB, mediaInfoA, mediaInfoB);
-            
+
             Assert.IsTrue(result.IsSuccess); // Comparison itself succeeds
             Assert.IsTrue(result.SimilarityScore < 0.5f); // Expect low similarity
         }
@@ -97,19 +97,19 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 2, Method = ComparisonParameters.ComparisonMethod.DirectSequenceMatch };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1, T2);
             var thumbnailsB = CreateThumbnailDict(T1, T1_Variant); // One match, one partial
             var mediaInfoA = CreateDummyMediaInfo(20);
             var mediaInfoB = CreateDummyMediaInfo(20);
 
             var result = _comparer.CompareSegmentsForTest(segADef, segBDef, compParams, _currentSettings, thumbnailsA, thumbnailsB, mediaInfoA, mediaInfoB);
-            
+
             Assert.IsTrue(result.IsSuccess);
             // Exact score depends on GrayBytesUtils.PercentageDifference. T1 vs T1 is 1.0. T2 vs T1_Variant will be less.
             // For T1_Variant (1 byte diff in 16 bytes): 1 - ( (200-16) / (16*255) ) = 1 - (184 / 4080) = 1 - 0.045 = 0.955
             // Average: (1.0 + 0.955) / 2 = 0.9775
-            Assert.AreEqual(0.97794f, result.SimilarityScore, 0.001f); 
+            Assert.AreEqual(0.97794f, result.SimilarityScore, 0.001f);
         }
 
         [TestMethod]
@@ -118,14 +118,14 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(10) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 2, Method = ComparisonParameters.ComparisonMethod.DirectSequenceMatch };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1); // Only 1 thumbnail
             var thumbnailsB = CreateThumbnailDict(T1, T2);
             var mediaInfoA = CreateDummyMediaInfo(20);
             var mediaInfoB = CreateDummyMediaInfo(20);
 
             var result = _comparer.CompareSegmentsForTest(segADef, segBDef, compParams, _currentSettings, thumbnailsA, thumbnailsB, mediaInfoA, mediaInfoB);
-            
+
             Assert.IsFalse(result.IsSuccess);
             Assert.IsTrue(result.Message.Contains("requires exactly 2 thumbnails"));
         }
@@ -137,7 +137,7 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(5) }; // Shorter segment A
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(20) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 2, Method = ComparisonParameters.ComparisonMethod.SearchASinB };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1, T2);
             var thumbnailsB = CreateThumbnailDict(T1, T2, T3, T4); // B is longer
             var mediaInfoA = CreateDummyMediaInfo(10);
@@ -149,14 +149,14 @@ namespace VDF.Core.Tests
             Assert.AreEqual(1, result.MatchStartTimesInB.Count);
             Assert.AreEqual(TimeSpan.FromSeconds(0 * 0.1), result.MatchStartTimesInB[0]); // Key of first thumbnail in B
         }
-        
+
         [TestMethod]
         public void CompareSegmentsForTest_SearchASinB_MatchInMiddle()
         {
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(5) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(20) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 2, Method = ComparisonParameters.ComparisonMethod.SearchASinB };
-            
+
             var thumbnailsA = CreateThumbnailDict(T2, T3);
             var thumbnailsB = CreateThumbnailDict(T1, T2, T3, T4);
             var mediaInfoA = CreateDummyMediaInfo(10);
@@ -175,7 +175,7 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(5) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(20) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 2, Method = ComparisonParameters.ComparisonMethod.SearchASinB };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1, T4); // No consecutive T1, T4 in B
             var thumbnailsB = CreateThumbnailDict(T1, T2, T3, T4);
             var mediaInfoA = CreateDummyMediaInfo(10);
@@ -186,14 +186,14 @@ namespace VDF.Core.Tests
             Assert.IsTrue(result.IsSuccess);
             Assert.AreEqual(0, result.MatchStartTimesInB.Count);
         }
-        
+
         [TestMethod]
         public void CompareSegmentsForTest_SearchASinB_MultipleMatches()
         {
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(5) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(30) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 1, Method = ComparisonParameters.ComparisonMethod.SearchASinB };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1);
             var thumbnailsB = CreateThumbnailDict(T1, T2, T1, T3, T1); // T1 appears 3 times
             var mediaInfoA = CreateDummyMediaInfo(10);
@@ -214,7 +214,7 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "a.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(20) };
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4", Mode = SegmentDefinition.DefinitionMode.AbsoluteTime, AbsoluteStartTime = TimeSpan.Zero, AbsoluteEndTime = TimeSpan.FromSeconds(5) };
             var compParams = new ComparisonParameters { NumberOfThumbnails = 3, Method = ComparisonParameters.ComparisonMethod.SearchASinB };
-            
+
             var thumbnailsA = CreateThumbnailDict(T1, T2, T3);
             var thumbnailsB = CreateThumbnailDict(T1, T2); // B is shorter
             var mediaInfoA = CreateDummyMediaInfo(30);
@@ -235,10 +235,10 @@ namespace VDF.Core.Tests
             var segADef = new SegmentDefinition { VideoPath = "nonexistent_a.mp4" }; // Path doesn't matter for this test variant
             var segBDef = new SegmentDefinition { VideoPath = "b.mp4" };
             var compParams = new ComparisonParameters();
-            
+
             // For the testable method, we directly pass null MediaInfo
-            var result = _comparer.CompareSegmentsForTest(segADef, segBDef, compParams, _currentSettings, 
-                                                          CreateThumbnailDict(T1), CreateThumbnailDict(T1), 
+            var result = _comparer.CompareSegmentsForTest(segADef, segBDef, compParams, _currentSettings,
+                                                          CreateThumbnailDict(T1), CreateThumbnailDict(T1),
                                                           null, CreateDummyMediaInfo(10));
             Assert.IsFalse(result.IsSuccess);
             Assert.IsTrue(result.Message.Contains("Could not retrieve valid media information for Video A"));
@@ -252,8 +252,8 @@ namespace VDF.Core.Tests
             var compParams = new ComparisonParameters();
             var mediaInfoA = CreateDummyMediaInfo(30);
 
-            var result = _comparer.CompareSegmentsForTest(segADef, segBDef, compParams, _currentSettings, 
-                                                          CreateThumbnailDict(T1), CreateThumbnailDict(T1), 
+            var result = _comparer.CompareSegmentsForTest(segADef, segBDef, compParams, _currentSettings,
+                                                          CreateThumbnailDict(T1), CreateThumbnailDict(T1),
                                                           mediaInfoA, CreateDummyMediaInfo(10));
             Assert.IsFalse(result.IsSuccess);
             Assert.IsTrue(result.Message.Contains("Invalid segment definition for Video A"));
