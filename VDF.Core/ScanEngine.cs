@@ -452,7 +452,7 @@ namespace VDF.Core {
                                 entry.grayBytes.Clear();
                             }
                             needsExtraction = Settings.ThumbnailPositions.Any() && (entry.mediaInfo?.Duration.TotalSeconds ?? 0) > 0; // Re-evaluate after clearing
-                            entry.Flags.Remove(EntryFlags.ThumbnailError, out _);
+                            entry.Flags &= ~EntryFlags.ThumbnailError; // Correct way to remove a flag
                         }
 
                         if (needsExtraction && positionListForThisVideo.Any()) {
@@ -718,7 +718,9 @@ namespace VDF.Core {
 					// If ScanEngine has a copy or direct access to the HashSet<FileEntry> used in scanning (e.g. a filtered list like ScanList), that could be used too.
 					// Let's assume DatabaseUtils.Database is the source of truth for FileEntries.
 					if (File.Exists(entry.Path)) { // Check if file exists before trying to get from DB
-						DatabaseUtils.GetFromDatabase(entry.Path, out fileEntryFromDb);
+						// DatabaseUtils.GetFromDatabase(entry.Path, out fileEntryFromDb); // Incorrect call
+						var keyFileEntry = new FileEntry(entry.Path); // Create a FileEntry key for lookup
+						DatabaseUtils.Database.TryGetValue(keyFileEntry, out fileEntryFromDb);
 					}
 
 					if (fileEntryFromDb == null || (!entry.IsImage && fileEntryFromDb.mediaInfo == null)) { // For videos, mediaInfo is essential
