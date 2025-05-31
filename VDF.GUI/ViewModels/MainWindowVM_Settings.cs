@@ -303,24 +303,6 @@ namespace VDF.GUI.ViewModels {
 		//     OpenSegmentComparisonCommand = ReactiveCommand.Create(OpenSegmentComparisonWindow); // This line should be in the constructor
 		// }
 	}
-
-
-		// Constructor for MainWindowVM (or the part of it in MainWindowVM_Settings.cs)
-		// This is where commands like OpenSegmentComparisonCommand should be initialized.
-		// If MainWindowVM is a partial class, this constructor might be part of another file,
-		// or this partial class might have its own constructor.
-		// For the purpose of this subtask, I'm adding the initialization here.
-		// In a real application, ensure this is called once when MainWindowVM is created.
-		public MainWindowVM() {
-			// ... any existing initializations for MainWindowVM ...
-
-			OpenSegmentComparisonCommand = ReactiveCommand.Create(OpenSegmentComparisonWindow);
-
-			// ... any other existing initializations ...
-
-            // Call to ensure other commands are initialized if they follow a similar pattern.
-            // This is a conceptual placeholder for where other command initializations might exist.
-            EnsureCommandsInitialized();
-		}
+		// Removed duplicate constructor and EnsureCommandsInitialized method
 	}
 }

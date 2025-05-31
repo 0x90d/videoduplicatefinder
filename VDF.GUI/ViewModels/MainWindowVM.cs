@@ -209,6 +209,8 @@ namespace VDF.GUI.ViewModels {
 				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
 			};
 			_SortOrder = SortOrders[0];
+
+			OpenSegmentComparisonCommand = ReactiveCommand.Create(OpenSegmentComparisonWindow);
 		}
 
 		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
