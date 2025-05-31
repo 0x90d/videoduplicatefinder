@@ -30,6 +30,9 @@ using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
+		// Command for opening the segment comparison window
+		public ReactiveCommand<Unit, Unit> OpenSegmentComparisonCommand { get; }
+
 #pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
@@ -238,7 +241,9 @@ namespace VDF.GUI.ViewModels {
 					Percent = SettingsFile.Instance.Percent,
 					IgnoreBlackPixels = SettingsFile.Instance.IgnoreBlackPixels,
 					IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels,
-					ThumbnailCount = SettingsFile.Instance.Thumbnails
+                    // ThumbnailCount = SettingsFile.Instance.Thumbnails, // Obsolete: Remove this line
+                    ThumbnailPositions = new List<Core.ThumbnailPositionSetting>(SettingsFile.Instance.ThumbnailPositions),
+					ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging
 					// Add any other relevant settings from SettingsFile to Core.Settings if needed by FindSubClipMatches
 				};
 
