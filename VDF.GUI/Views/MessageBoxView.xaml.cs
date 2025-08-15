@@ -57,6 +57,7 @@ namespace VDF.GUI.Views {
 
 			DataContext = vm;
 			InitializeComponent();
+			Owner = ApplicationHelpers.MainWindow;
 			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 			//Opened += MessageBoxView_Opened;
