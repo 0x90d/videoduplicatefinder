@@ -421,19 +421,18 @@ namespace VDF.Core {
 				return difference <= differenceLimit;
 			}
 
-			float diff, diffSum = 0;
+			differenceLimit *= positionList.Count;
+			float diffSum = 0;
 			for (int j = 0; j < positionList.Count; j++) {
-				diff = ignoreBlackPixels || ignoreWhitePixels ?
+				diffSum += ignoreBlackPixels || ignoreWhitePixels ?
 							GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
 							GrayBytesUtils.PercentageDifference(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-				if (diff > differenceLimit)
+				if (diffSum > differenceLimit) // already exceeding maximum tolerated diff -> exit early
 					return false;
-				else
-					diffSum += diff;
 			}
 			difference = diffSum / positionList.Count;
 			return !float.IsNaN(difference);
