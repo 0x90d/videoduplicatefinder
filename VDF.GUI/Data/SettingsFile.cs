@@ -76,7 +76,7 @@ namespace VDF.GUI.Data {
 			get => _IgnoreWhitePixels;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreWhitePixels, value);
 		}
-		int _MaxDegreeOfParallelism = 1;
+		int _MaxDegreeOfParallelism = -1;
 		[JsonPropertyName("MaxDegreeOfParallelism")]
 		public int MaxDegreeOfParallelism {
 			get => _MaxDegreeOfParallelism;
@@ -159,6 +159,12 @@ namespace VDF.GUI.Data {
 		public bool ScanAgainstEntireDatabase {
 			get => _ScanAgainstEntireDatabase;
 			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
+		}
+		bool _UsePHash;
+		[JsonPropertyName("UsePHash")]
+		public bool UsePHash {
+			get => _UsePHash;
+			set => this.RaiseAndSetIfChanged(ref _UsePHash, value);
 		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]

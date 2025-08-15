@@ -23,7 +23,11 @@ using VDF.GUI.Views;
 
 namespace VDF.GUI {
 	public class App : Application {
-		public override void Initialize() => AvaloniaXamlLoader.Load(this);
+		public static LanguageService Lang { get; } = new();
+		public override void Initialize() {
+			Lang.LoadLanguage("en"); // Standard
+			AvaloniaXamlLoader.Load(this);
+		}
 
 		public override void OnFrameworkInitializationCompleted() {
 			if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {

@@ -18,6 +18,7 @@ using System.Globalization;
 using ActiproSoftware.UI.Avalonia.Themes;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using VDF.GUI.Data;
 
@@ -32,9 +33,9 @@ namespace VDF.GUI.Mvvm {
 		public static readonly SolidColorBrush RedBrush = new();
 		static Values() {
 			App.Current!.TryGetResource(ThemeResourceKind.ControlBackgroundBrushSolidSuccess.ToResourceKey(), SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light, out var greenBrush);
-			GreenBrush.Color = ((SolidColorBrush)greenBrush!).Color;
+			GreenBrush.Color = ((ImmutableSolidColorBrush)greenBrush!).Color;
 			App.Current.TryGetResource(ThemeResourceKind.ControlBackgroundBrushSolidDanger.ToResourceKey(), SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light, out var redBrush);
-			RedBrush.Color = ((SolidColorBrush)redBrush!).Color;
+			RedBrush.Color = ((ImmutableSolidColorBrush)redBrush!).Color;
 		}
 
 	}

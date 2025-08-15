@@ -34,6 +34,7 @@ namespace VDF.Core {
 		public bool CompareHorizontallyFlipped;
 		public bool IncludeNonExistingFiles = true;
 		public bool ScanAgainstEntireDatabase;
+		public bool UsePHashing;
 
 		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 

@@ -52,6 +52,7 @@ namespace VDF.GUI.Views {
 			((InputBoxVM)DataContext).HasYesButton = (buttons & MessageBoxButtons.Yes) != 0;
 
 			InitializeComponent();
+			Owner = ApplicationHelpers.MainWindow;
 
 			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;

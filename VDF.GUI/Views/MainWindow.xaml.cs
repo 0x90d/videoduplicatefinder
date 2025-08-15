@@ -25,6 +25,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
+using VDF.Core.Utils;
 using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
 
@@ -73,6 +74,24 @@ namespace VDF.GUI.Views {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
 			}
+			ShowAlgoView();
+		}
+		async void ShowAlgoView() {
+
+			if (File.Exists(Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)
+					? FileUtils.SafePathCombine(SettingsFile.Instance.CustomDatabaseFolder,
+					"ScannedFiles.db")
+					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
+					"ScannedFiles.db")))
+					return;
+
+			var dlg = new Views.ChooseAlgoView();
+			while (!this.IsVisible) {
+				await Task.Delay(200);
+			}
+			await dlg.ShowDialog(this);
+			if (dlg.FindControl<RadioButton>("Cb16x16")?.IsChecked == true)
+				VDF.Core.Utils.DatabaseUtils.Create16x16Database();
 		}
 
 		private void MainWindow_Opened(object? sender, EventArgs e) {

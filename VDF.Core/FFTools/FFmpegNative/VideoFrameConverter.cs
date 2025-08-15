@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 
@@ -25,9 +26,35 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		private readonly int_array4 _dstLinesize;
 		private readonly SwsContext* _pConvertContext;
 
-		public VideoFrameConverter(Size sourceSize, AVPixelFormat sourcePixelFormat,
-			Size destinationSize, AVPixelFormat destinationPixelFormat) {
+		public enum ScaleQuality {
+			FastBilinear,
+			Bilinear,
+			Bicubic,   // empfohlen
+			Lanczos,
+			Spline,
+			Area
+		}
+
+		public VideoFrameConverter(Size sourceSize,
+			AVPixelFormat sourcePixelFormat,
+			Size destinationSize,
+			AVPixelFormat destinationPixelFormat,
+			ScaleQuality quality = ScaleQuality.Bicubic,
+			bool bitExact = false) {
+
 			_destinationSize = destinationSize;
+
+			int flags = quality switch {
+				ScaleQuality.FastBilinear => ffmpeg.SWS_FAST_BILINEAR,
+				ScaleQuality.Bilinear => ffmpeg.SWS_BILINEAR,
+				ScaleQuality.Bicubic => ffmpeg.SWS_BICUBIC,
+				ScaleQuality.Lanczos => ffmpeg.SWS_LANCZOS,
+				ScaleQuality.Spline => ffmpeg.SWS_SPLINE,
+				ScaleQuality.Area => ffmpeg.SWS_AREA,
+				_ => ffmpeg.SWS_BICUBIC
+			};
+
+			if (bitExact) flags |= ffmpeg.SWS_BITEXACT;
 
 			_pConvertContext = ffmpeg.sws_getContext(sourceSize.Width,
 				sourceSize.Height,
@@ -35,12 +62,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				destinationSize.Width,
 				destinationSize.Height,
 				destinationPixelFormat,
-				ffmpeg.SWS_FAST_BILINEAR,
+				flags,
 				null,
 				null,
 				null);
 			if (_pConvertContext == null)
 				throw new FFInvalidExitCodeException("Could not initialize the conversion context.");
+
 
 			int convertedFrameBufferSize = ffmpeg.av_image_get_buffer_size(destinationPixelFormat,
 				destinationSize.Width,
@@ -85,5 +113,6 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				height = _destinationSize.Height
 			};
 		}
+
 	}
 }

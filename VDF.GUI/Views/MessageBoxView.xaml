@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
+    xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
     Title="{Binding Title}"
     MinWidth="400"
     MaxWidth="600"
@@ -10,7 +11,6 @@
     CanResize="false"
     SizeToContent="WidthAndHeight"
     WindowStartupLocation="CenterOwner">
-
     <ScrollViewer x:Name="ScrollViewerMessageboxContent" VerticalScrollBarVisibility="Auto">
         <Grid x:Name="GridMessageboxContent" RowDefinitions="Auto, Auto">
             <TextBlock
@@ -33,28 +33,28 @@
                     Width="100"
                     Margin="5"
                     Command="{Binding OKCommand}"
-                    Content="OK"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.OK]}"
                     IsVisible="{Binding HasOKButton}" />
                 <Button
                     Grid.Column="2"
                     Width="100"
                     Margin="5"
                     Command="{Binding YesCommand}"
-                    Content="Yes"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Yes]}"
                     IsVisible="{Binding HasYesButton}" />
                 <Button
                     Grid.Column="3"
                     Width="100"
                     Margin="5"
                     Command="{Binding NoCommand}"
-                    Content="No"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.No]}"
                     IsVisible="{Binding HasNoButton}" />
                 <Button
                     Grid.Column="4"
                     Width="100"
                     Margin="5"
                     Command="{Binding CancelCommand}"
-                    Content="Cancel"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Cancel]}"
                     IsVisible="{Binding HasCancelButton}" />
             </Grid>
         </Grid>

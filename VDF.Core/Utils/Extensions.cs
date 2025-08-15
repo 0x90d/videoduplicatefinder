@@ -27,14 +27,20 @@ namespace VDF.Core.Utils {
 		}
 		public static TimeSpan TrimMiliseconds(this TimeSpan ts) => new(ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
 
-		static readonly string[] suf = { " B", " KB", " MB", " GB", " TB", " PB", " EB" };
+		static readonly string[] SizeSuffixes = { " B", " KB", " MB", " GB", " TB", " PB", " EB" };
 		public static string BytesToString(this long byteCount) {
 			if (byteCount == 0)
-				return "0" + suf[0];
-			var bytes = Math.Abs(byteCount);
-			var place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
-			var num = Math.Round(bytes / Math.Pow(1024, place), 1);
-			return (Math.Sign(byteCount) * num).ToString(CultureInfo.InvariantCulture) + suf[place];
+				return "0 B";
+
+			int place = 0;
+			double value = byteCount;
+
+			while (value >= 1024 && place < SizeSuffixes.Length - 1) {
+				value /= 1024;
+				place++;
+			}
+
+			return string.Create(CultureInfo.InvariantCulture, $"{value:0.0}{SizeSuffixes[place]}");
 		}
 		public static long BytesToMegaBytes(this long byteCount) => (long)((byteCount / 1024f) / 1024f);
 	}

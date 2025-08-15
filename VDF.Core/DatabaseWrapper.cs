@@ -14,15 +14,20 @@
 // */
 //
 
-using System.Runtime.InteropServices;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ProtoBuf;
 
-namespace VDF.Core.Utils {
-	public static class CoreUtils {
-		public static bool IsWindows;
-		public static string CurrentFolder;
-		static CoreUtils() {
-			IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-			CurrentFolder = Path.GetDirectoryName(Environment.ProcessPath)!;
-		}
+namespace VDF.Core {
+	[ProtoContract]
+	public class DatabaseWrapper {
+		[ProtoMember(1)]
+		public int Version { get; set; } = 2;
+
+		[ProtoMember(2)]
+		public HashSet<FileEntry> Entries { get; set; } = new();
 	}
 }

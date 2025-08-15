@@ -27,6 +27,7 @@ namespace VDF.GUI.Views {
 		public ThumbnailComparer(List<LargeThumbnailDuplicateItem> duplicateItemVMs) {
 			DataContext = new ThumbnailComparerVM(duplicateItemVMs);
 			InitializeComponent();
+			Owner = ApplicationHelpers.MainWindow;
 			this.Loaded += ThumbnailComparer_Loaded;
 
 			if (SettingsFile.Instance.UseMica &&

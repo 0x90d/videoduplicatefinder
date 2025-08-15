@@ -209,6 +209,7 @@ namespace VDF.GUI.ViewModels {
 				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
 			};
 			_SortOrder = SortOrders[0];
+
 		}
 
 		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -825,6 +826,7 @@ namespace VDF.GUI.ViewModels {
 			Scanner.Settings.FilePathContainsTexts = SettingsFile.Instance.FilePathContainsTexts.ToList();
 			Scanner.Settings.FilterByFilePathNotContains = SettingsFile.Instance.FilterByFilePathNotContains;
 			Scanner.Settings.ScanAgainstEntireDatabase = SettingsFile.Instance.ScanAgainstEntireDatabase;
+			Scanner.Settings.UsePHashing = SettingsFile.Instance.UsePHash;
 			Scanner.Settings.FilePathNotContainsTexts = SettingsFile.Instance.FilePathNotContainsTexts.ToList();
 			Scanner.Settings.FilterByFileSize = SettingsFile.Instance.FilterByFileSize;
 			Scanner.Settings.MaximumFileSize = SettingsFile.Instance.MaximumFileSize;

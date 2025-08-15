@@ -15,40 +15,101 @@
 //
 
 
+using System.Runtime.InteropServices;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace VDF.GUI.Utils {
 	static class ImageUtils {
-		public static Bitmap? JoinImages(List<Image> pImgList) {
-			if (pImgList == null || pImgList.Count == 0) return null;
+		private static readonly JpegEncoder JpegEncoder = new() { Quality = 90 };
+		public static unsafe Bitmap? JoinImages(IReadOnlyList<Image> images) {
+			if (images == null || images.Count == 0) return null;
 
-			int height = pImgList[0].Height;
+			int height = images[0].Height;
 			int width = 0;
-			for (int i = 0; i <= pImgList.Count - 1; i++)
-				width += pImgList[i].Width;
+			for (int i = 0; i <= images.Count - 1; i++)
+				width += images[i].Width;
 
-			using var img = new Image<Rgba32>(width, height); // create output image of the correct dimensions
+			using var img = new Image<Rgba32>(width, height);
 
-			List<Point> locations = new(pImgList.Count);
-			int tmpwidth = 0;
-			for (int i = 0; i <= pImgList.Count - 1; i++) {
-				img.Mutate(a => a.DrawImage(pImgList[i], new Point(tmpwidth, 0), 1f));
-				tmpwidth += pImgList[i].Width;
+			img.Mutate(ctx =>
+			{
+				int offsetX = 0;
+				foreach (var img in images) {
+					ctx.DrawImage(img, new Point(offsetX, 0), 1f);
+					offsetX += img.Width;
+				}
+			});
+
+			// Resize-Limits
+			const int MaxDisplayableCompositeWidth = 4096; // UI-Limit
+			const int AbsoluteMaxWidth = 32767;            // Hard-Limit (z.B. Texture-Limits)
+
+			if (img.Width > AbsoluteMaxWidth) {
+				img.Mutate(x => x.Resize(new ResizeOptions {
+					Size = new Size(AbsoluteMaxWidth, 0),
+					Mode = ResizeMode.Max,
+					Sampler = KnownResamplers.Lanczos3
+				}));
 			}
 
-			// Check if the resulting image exceeds the maximum width
-			if (width > 65535 || width*height*4 > 128*1024*1024) {
-				// Resize to fit within the maximum width and max memory in ImageShart (128M)
-				img.Mutate(x => x.Resize((int)(width/((width * height * 4)/(128*1024*1024))), 0, KnownResamplers.Lanczos3));
+			if (img.Width > MaxDisplayableCompositeWidth) {
+				img.Mutate(x => x.Resize(new ResizeOptions {
+					Size = new Size(MaxDisplayableCompositeWidth, 0),
+					Mode = ResizeMode.Max,
+					Sampler = KnownResamplers.Lanczos3
+				}));
 			}
 
-			using MemoryStream ms = new();
-			img.Save(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
-			ms.Position = 0;
-			return new Bitmap(ms);
+			try {
+				using var bgraImage = img.CloneAs<Bgra32>();
+
+				if (!bgraImage.DangerousTryGetSinglePixelMemory(out var pixelMemory))
+					return null;
+
+				Span<byte> sourcePixelData = MemoryMarshal.AsBytes(pixelMemory.Span);
+
+				var writeableBitmap = new WriteableBitmap(
+					new Avalonia.PixelSize(bgraImage.Width, bgraImage.Height),
+					new Avalonia.Vector(96, 96),
+					PixelFormat.Bgra8888,
+					AlphaFormat.Unpremul
+				);
+
+				using (var lockedFramebuffer = writeableBitmap.Lock()) {
+					Span<byte> destinationSpan = new Span<byte>(
+						(void*)lockedFramebuffer.Address,
+						lockedFramebuffer.Size.Height * lockedFramebuffer.RowBytes
+					);
+
+					int expectedSourceLength = bgraImage.Width * bgraImage.Height * 4;
+
+					if (sourcePixelData.Length == expectedSourceLength && destinationSpan.Length == expectedSourceLength) {
+						sourcePixelData.CopyTo(destinationSpan);
+					}
+					else if (sourcePixelData.Length == destinationSpan.Length) {
+						int sourceStride = bgraImage.Width * 4;
+						int destStride = lockedFramebuffer.RowBytes;
+						for (int y = 0; y < bgraImage.Height; y++) {
+							Span<byte> sourceRow = sourcePixelData.Slice(y * sourceStride, sourceStride);
+							Span<byte> destRow = destinationSpan.Slice(y * destStride, sourceStride);
+							sourceRow.CopyTo(destRow);
+						}
+					}
+					else {
+						return null; // sizes do not fit
+					}
+				}
+
+				return writeableBitmap;
+			}
+			catch {
+				return null;
+			}
 		}
 
 		public static byte[] ToByteArray(this Bitmap image) {
@@ -58,7 +119,7 @@ namespace VDF.GUI.Utils {
 		}
 		public static byte[] ToByteArray(this Image image) {
 			using MemoryStream ms = new();
-			image.Save(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
+			image.Save(ms, JpegEncoder);
 			return ms.ToArray();
 		}
 	}

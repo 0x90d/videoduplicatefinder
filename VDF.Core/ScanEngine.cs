@@ -182,6 +182,9 @@ namespace VDF.Core {
 		Task BuildFileList() => Task.Run(() => {
 
 			DatabaseUtils.LoadDatabase();
+			if (DatabaseUtils.DbVersion < 2)
+				Settings.UsePHashing = false;
+
 			int oldFileCount = DatabaseUtils.Database.Count;
 
 			foreach (string path in Settings.IncludeList) {
@@ -397,11 +400,11 @@ namespace VDF.Core {
 		Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
 			Dictionary<double, byte[]?>? flippedGrayBytes = new();
 			if (entry.IsImage)
-				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
+				flippedGrayBytes.Add(0, DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(entry.grayBytes[0]!) : GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
 			else {
 				for (int j = 0; j < positionList.Count; j++) {
 					double idx = entry.GetGrayBytesIndex(positionList[j]);
-					flippedGrayBytes.Add(idx, GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
+					flippedGrayBytes.Add(idx, DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(entry.grayBytes[idx]!) : GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
 				}
 			}
 			return flippedGrayBytes;
@@ -409,9 +412,9 @@ namespace VDF.Core {
 
 		bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
 			grayBytes ??= entry.grayBytes;
+			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
 			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
-			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			difference = 1f;
 
 			if (entry.IsImage) {
@@ -421,19 +424,31 @@ namespace VDF.Core {
 				return difference <= differenceLimit;
 			}
 
-			float diff, diffSum = 0;
+			if (Settings.UsePHashing) {
+				float differenceLimitpHash = Settings.Percent / 100f;
+
+				if (!entry.PHashes.TryGetValue(entry.GetGrayBytesIndex(positionList[0]), out ulong? phash))
+					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(grayBytes.First().Value!);
+				if (!compItem.PHashes.TryGetValue(compItem.GetGrayBytesIndex(positionList[0]), out ulong? phash_comp))
+					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes.First().Value!);
+				return pHash.PHashCompare.IsDuplicateByPercent(phash!.Value, phash_comp!.Value, differenceLimitpHash, strict: true);
+
+			}
+
+
+
+			differenceLimit *= positionList.Count;
+			float diffSum = 0;
 			for (int j = 0; j < positionList.Count; j++) {
-				diff = ignoreBlackPixels || ignoreWhitePixels ?
+				diffSum += ignoreBlackPixels || ignoreWhitePixels ?
 							GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
 							GrayBytesUtils.PercentageDifference(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-				if (diff > differenceLimit)
+				if (diffSum > differenceLimit) // already exceeding maximum tolerated diff -> exit early
 					return false;
-				else
-					diffSum += diff;
 			}
 			difference = diffSum / positionList.Count;
 			return !float.IsNaN(difference);
@@ -620,9 +635,14 @@ namespace VDF.Core {
 							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
 						}
 				};
-				bitmapImage.Mutate(a => a.Resize(16, 16));
+				int size = DatabaseUtils.DbVersion < 2 ?
+								16 :
+								GrayBytesUtils.Side;
+				bitmapImage.Mutate(a => a.Resize(size, size));
 
-				var d = GrayBytesUtils.GetGrayScaleValues(bitmapImage);
+				var d = DatabaseUtils.DbVersion < 2 ?
+							GrayBytesUtils.GetGrayScaleValues16x16(bitmapImage) :
+							GrayBytesUtils.GetGrayScaleValues(bitmapImage);
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
 					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");

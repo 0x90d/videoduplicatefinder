@@ -1,0 +1,12 @@
+{
+	"App.Title": "Video Duplicate Finder - Cross-platform",
+	"Dialog.OK": "OK",
+	"Dialog.Yes": "Yes",
+	"Dialog.No": "No",
+	"Dialog.Cancel": "Cancel",
+	"QualityOrderDialog.Title": "Select the order of quality criteria",
+	"QualityOrderDialog.BtnMoveUp": "Move Up",
+	"QualityOrderDialog.BtnMoveDown": "Move Down",
+	"QualityOrderDialog.Description": "Please arrange the quality criteria in order of priority (highest quality first)"
+
+}

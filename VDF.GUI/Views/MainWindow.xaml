@@ -16,7 +16,7 @@
     xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:Name="MainWindow"
-    Title="Video Duplicate Finder - Cross-platform"
+    Title="{Binding Source={x:Static local:App.Lang}, Path=[App.Title]}"
     Width="1020"
     Height="950"
     d:DesignHeight="750"
@@ -394,8 +394,7 @@
                                             <MenuItem.Header>
                                                 <TextBlock
                                                     VerticalAlignment="Center"
-                                                    Text="Select Lowest Duration / Quality"
-                                                    ToolTip.Tip="Keep longest / Best Quality. The order is: Duration, Resolution, FPS, Bitrate, Audio Bitrate" />
+                                                    Text="Select Lowest Quality" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Header="Date">
@@ -848,6 +847,7 @@
                                                 Width="1*"
                                                 Binding="{Binding ItemInfo.Similarity}"
                                                 Header="Similarity"
+                                                IsReadOnly="true"
                                                 IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
                                         </DataGrid.Columns>
                                         <DataGrid.ContextMenu>
@@ -1242,6 +1242,12 @@
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
+                                                    <CheckBox
+                                                        VerticalAlignment="Center"
+                                                        Content="Use pHash instead of visual similarity"
+                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}"
+                                                        IsThreeState="False"
+                                                        ToolTip.Tip="pHash = slower but more robust to re-encoding, resizing, contrast changes etc. Visual similarity = faster, also works on reencoded videos, watermarks etc but less robust. Ignored if you're using an old database with 16x16 graybyte values." />
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Margin="15,5,0,0">
                                                     <TextBlock VerticalAlignment="Center" Text="Percent:" />
@@ -1287,7 +1293,7 @@
                                                         VerticalAlignment="Center"
                                                         Maximum="100"
                                                         Minimum="-1"
-                                                        ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable."
+                                                        ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide (takes full speed), a value of 1 is most stable (lets you interact with your system while scan runs in background). Maximum should be the amount of physical cores of your CPU."
                                                         Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
                                                     <TextBlock VerticalAlignment="Center" Text="Custom FF Arguments:" />
                                                     <TextBox

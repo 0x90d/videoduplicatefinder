@@ -35,6 +35,7 @@ namespace VDF.Core {
 			var extension = fileInfo.Extension;
 			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
 			grayBytes = new Dictionary<double, byte[]?>();
+			PHashes = new Dictionary<double, ulong?>();
 			DateCreated = fileInfo.CreationTimeUtc;
 			DateModified = fileInfo.LastWriteTimeUtc;
 			FileSize = fileInfo.Length;
@@ -65,6 +66,8 @@ namespace VDF.Core {
 		public DateTime DateModified;
 		[ProtoMember(8)]
 		public long FileSize;
+		[ProtoMember(9)]
+		public Dictionary<double, ulong?> PHashes;
 
 		[ProtoIgnore]
 		internal bool invalid = true;

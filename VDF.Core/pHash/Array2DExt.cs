@@ -14,21 +14,21 @@
 // */
 //
 
-using ProtoBuf;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace VDF.Core {
-
-
-	[ProtoContract]
-	public class FileEntry_old {
-#pragma warning disable CS8618 // Non-nullable field is uninitialized.
-		protected FileEntry_old() { }
-#pragma warning restore CS8618 // Non-nullable field is uninitialized.
-		[ProtoMember(1)]
-		public string Path { get; set; }
-		[ProtoMember(4)]
-		public MediaInfo? mediaInfo;
-		[ProtoMember(5)]
-		public EntryFlags Flags;
+namespace VDF.Core.pHash {
+	internal static class Array2DExt {
+		public static float[,] ToArray2D(this Span<float> span, int rows, int cols) {
+			var arr = new float[rows, cols];
+			int idx = 0;
+			for (int r = 0; r < rows; r++)
+				for (int c = 0; c < cols; c++)
+					arr[r, c] = span[idx++];
+			return arr;
+		}
 	}
 }
