@@ -36,9 +36,10 @@ namespace VDF.Core.pHash {
 		/// <param name="strict">true → floor (at least X%); strict=false → round (approximately X%)</param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public static bool IsDuplicateByPercent(ulong a, ulong b, double percent = 0.90, bool strict = true) {
+		public static bool IsDuplicateByPercent(ulong a, ulong b, out float similarity, double percent = 0.90,  bool strict = true) {
 			if (percent < 0 || percent > 1) throw new ArgumentOutOfRangeException(nameof(percent));
 			int d = Hamming(a, b);
+			similarity = 1f - (d / 64f);
 			double bits = (1.0 - percent) * 64.0;
 			int maxBits = strict ? (int)Math.Floor(bits) : (int)Math.Round(bits);
 			return d <= maxBits;

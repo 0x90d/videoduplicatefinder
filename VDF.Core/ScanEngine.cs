@@ -431,7 +431,10 @@ namespace VDF.Core {
 					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(grayBytes.First().Value!);
 				if (!compItem.PHashes.TryGetValue(compItem.GetGrayBytesIndex(positionList[0]), out ulong? phash_comp))
 					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes.First().Value!);
-				return pHash.PHashCompare.IsDuplicateByPercent(phash!.Value, phash_comp!.Value, differenceLimitpHash, strict: true);
+
+				bool isDup = pHash.PHashCompare.IsDuplicateByPercent(phash!.Value, phash_comp!.Value, out float similarity, differenceLimitpHash, strict: true);
+				difference = 1f - similarity;
+				return isDup;
 
 			}
 
