@@ -392,9 +392,7 @@
                                         </MenuItem>
                                         <MenuItem Command="{Binding CheckLowestQualityCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock
-                                                    VerticalAlignment="Center"
-                                                    Text="Select Lowest Quality" />
+                                                <TextBlock VerticalAlignment="Center" Text="Select Lowest Quality" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Header="Date">
@@ -700,7 +698,7 @@
                                                         <TextBlock
                                                             x:Name="TextBlockPath"
                                                             Margin="10,0,0,0"
-                                                            Text="{Binding ItemInfo.Path}"
+                                                            Text="{Binding ItemInfo.Path, TargetNullValue=''}"
                                                             TextWrapping="Wrap">
                                                             <i:Interaction.Behaviors>
                                                                 <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #TextBlockPath}">
@@ -736,31 +734,31 @@
                                                                 Grid.Row="0"
                                                                 Margin="2"
                                                                 IsVisible="{Binding ItemInfo.IsImage}"
-                                                                Text="{Binding ItemInfo.Format, Mode=OneWay}"
+                                                                Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="0"
                                                                 Margin="2"
                                                                 Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}}"
                                                                 IsVisible="{Binding !ItemInfo.IsImage}"
-                                                                Text="{Binding ItemInfo.Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
+                                                                Text="{Binding ItemInfo.Duration, TargetNullValue='', StringFormat=\{0:hh\\:mm\\:ss\}}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="1"
                                                                 Margin="2"
                                                                 Foreground="{Binding ItemInfo.IsBestFrameSize, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.FrameSize}"
+                                                                Text="{Binding ItemInfo.FrameSize, TargetNullValue=''}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="2"
                                                                 Margin="2"
                                                                 Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.Size}"
+                                                                Text="{Binding ItemInfo.Size, TargetNullValue=''}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="3"
                                                                 Margin="2"
-                                                                Text="{Binding ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}"
+                                                                Text="{Binding ItemInfo.DateCreated, TargetNullValue='', Converter={StaticResource ExtraShortDateTimeConverter}}"
                                                                 TextWrapping="Wrap" />
                                                         </Grid>
                                                     </DataTemplate>
@@ -787,19 +785,19 @@
                                                             <TextBlock
                                                                 Grid.Row="0"
                                                                 Margin="2"
-                                                                Text="{Binding ItemInfo.Format, Mode=OneWay}"
+                                                                Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="1"
                                                                 Margin="2"
                                                                 Foreground="{Binding ItemInfo.IsBestFps, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.Fps, Mode=OneWay, StringFormat=\{0\} fps}"
+                                                                Text="{Binding ItemInfo.Fps, TargetNullValue='', Mode=OneWay, StringFormat=\{0\} fps}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="2"
                                                                 Margin="2"
                                                                 Foreground="{Binding ItemInfo.IsBestBitRateKbs, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
+                                                                Text="{Binding ItemInfo.BitRateKbs, TargetNullValue='', Mode=OneWay, StringFormat=\{0\} kbps}"
                                                                 TextWrapping="Wrap" />
                                                         </Grid>
                                                     </DataTemplate>
@@ -826,18 +824,18 @@
                                                             <TextBlock
                                                                 Grid.Row="0"
                                                                 Margin="2"
-                                                                Text="{Binding ItemInfo.AudioFormat}"
+                                                                Text="{Binding ItemInfo.AudioFormat, TargetNullValue=''}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="1"
                                                                 Margin="2"
-                                                                Text="{Binding ItemInfo.AudioChannel}"
+                                                                Text="{Binding ItemInfo.AudioChannel, TargetNullValue=''}"
                                                                 TextWrapping="Wrap" />
                                                             <TextBlock
                                                                 Grid.Row="2"
                                                                 Margin="2"
                                                                 Foreground="{Binding ItemInfo.IsBestAudioSampleRate, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.AudioSampleRate}"
+                                                                Text="{Binding ItemInfo.AudioSampleRate, TargetNullValue=''}"
                                                                 TextWrapping="Wrap" />
                                                         </Grid>
                                                     </DataTemplate>
@@ -845,7 +843,7 @@
                                             </DataGridTemplateColumn>
                                             <DataGridTextColumn
                                                 Width="1*"
-                                                Binding="{Binding ItemInfo.Similarity}"
+                                                Binding="{Binding ItemInfo.Similarity, TargetNullValue=''}"
                                                 Header="Similarity"
                                                 IsReadOnly="true"
                                                 IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
