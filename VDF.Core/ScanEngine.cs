@@ -428,11 +428,15 @@ namespace VDF.Core {
 				float differenceLimitpHash = Settings.Percent / 100f;
 
 				if (!entry.PHashes.TryGetValue(entry.GetGrayBytesIndex(positionList[0]), out ulong? phash))
-					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(grayBytes.First().Value!);
+					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(grayBytes[positionList[0]]);
 				if (!compItem.PHashes.TryGetValue(compItem.GetGrayBytesIndex(positionList[0]), out ulong? phash_comp))
-					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes.First().Value!);
-
-				bool isDup = pHash.PHashCompare.IsDuplicateByPercent(phash!.Value, phash_comp!.Value, out float similarity, differenceLimitpHash, strict: true);
+					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes[positionList[0]]);
+				if (phash == null || phash_comp == null) {
+					Logger.Instance.Info($"Failed to compute pHash for {entry.Path} or {compItem.Path}");
+					difference = 1f;
+					return false;
+				}
+				bool isDup = pHash.PHashCompare.IsDuplicateByPercent(phash.Value, phash_comp.Value, out float similarity, differenceLimitpHash, strict: true);
 				difference = 1f - similarity;
 				return isDup;
 
