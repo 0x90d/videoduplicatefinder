@@ -6,7 +6,7 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 - Fast scanning speed
 - Ultra fast rescan
 - Optional calling ffmpeg functions natively for even more speed
-- Finds duplicate videos / images based on similarity
+- Finds duplicate videos / images based on similarity (new: optional scan against pHash at zero cost)
 - Windows, Linux and MacOS GUI
 
 # Binaries
@@ -17,6 +17,8 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 # Requirements
 
 #### FFmpeg & FFprobe:
+
+Native ffmpeg binding works only with a specific ffmpeg version. Never use master version. Currently it works with ffmpeg 7.x (might change)
 
 #### Windows user:
 Get latest package from https://ffmpeg.org/download.html I recommend the full (GPL) shared version. If you want to use native ffmpeg binding you **must** use the shared version.
@@ -55,7 +57,7 @@ Video Duplicate Finder is licensed under GPLv3
 - [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp)
 
 # Building
-- .NET 7.x
+- .NET 9.x
 - Visual Studio 2022 is recommended
 
 # Committing
