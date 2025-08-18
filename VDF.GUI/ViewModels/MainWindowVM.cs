@@ -573,34 +573,41 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
-		public static void OpenItems() {
+		public static async void OpenItems() {
 			if (AlternativeOpen(SettingsFile.Instance.CustomCommands.OpenItem,
 								SettingsFile.Instance.CustomCommands.OpenMultiple))
 				return;
 
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
-			if (CoreUtils.IsWindows) {
-				Process.Start(new ProcessStartInfo {
-					FileName = currentItem.ItemInfo.Path,
-					UseShellExecute = true
-				});
+			try {
+				if (CoreUtils.IsWindows) {
+					Process.Start(new ProcessStartInfo {
+						FileName = currentItem.ItemInfo.Path,
+						UseShellExecute = true
+					});
+				}
+				else {
+					Process.Start(new ProcessStartInfo {
+						FileName = currentItem.ItemInfo.Path,
+						UseShellExecute = true,
+						Verb = "open"
+					});
+				}
 			}
-			else {
-				Process.Start(new ProcessStartInfo {
-					FileName = currentItem.ItemInfo.Path,
-					UseShellExecute = true,
-					Verb = "open"
-				});
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Failed to open files: {ex.Message}");
+				return;
 			}
 		}
 
-		public static void OpenItemsInFolder() {
+		public static async void OpenItemsInFolder() {
 			if (AlternativeOpen(SettingsFile.Instance.CustomCommands.OpenItemInFolder,
 								SettingsFile.Instance.CustomCommands.OpenMultipleInFolder))
 				return;
 
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
-			if (CoreUtils.IsWindows) {
+			try {
+				if (CoreUtils.IsWindows) {
 				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
 					UseShellExecute = true
 				});
@@ -611,6 +618,11 @@ namespace VDF.GUI.ViewModels {
 					UseShellExecute = true,
 					Verb = "open"
 				});
+				}
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Failed to open files: {ex.Message}");
+				return;
 			}
 		}
 
