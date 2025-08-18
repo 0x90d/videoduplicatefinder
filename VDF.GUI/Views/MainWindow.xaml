@@ -1063,9 +1063,9 @@
                                         Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
                                         Value="{Binding ScanProgressValue, Mode=OneWay}" />
                                     <Separator Width="1" Margin="5" />
-                                    <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                                    <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: {0:c}}" />
                                     <Separator Width="1" Margin="5" />
-                                    <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
+                                    <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~{0:c}}" />
                                     <Separator Width="1" Margin="5" />
                                     <TextBlock Text="{Binding ScanProgressText, Mode=OneWay} TextTrimming=CharacterEllipsis" />
                                 </StackPanel>
@@ -1254,6 +1254,7 @@
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Center"
                                                         FormatString="\{0\}%"
+                                                        Increment="0.1"
                                                         Maximum="100"
                                                         Minimum="1"
                                                         ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
@@ -1264,6 +1265,7 @@
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Center"
                                                         FormatString="\{0\}%"
+                                                        Increment="0.1"
                                                         Maximum="100"
                                                         Minimum="0"
                                                         ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"

@@ -132,7 +132,7 @@ namespace VDF.GUI.Views {
 			// Only allow Copy or Link as Drop Operations.
 			e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 
-			// Only allow if the dragged data contains text or filenames.
+			// Only allow if the dragged data contains filenames.
 			if (!e.Data.Contains(DataFormats.Files))
 				e.DragEffects = DragDropEffects.None;
 		}
