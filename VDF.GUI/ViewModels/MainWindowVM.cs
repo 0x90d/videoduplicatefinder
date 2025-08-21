@@ -545,6 +545,12 @@ namespace VDF.GUI.ViewModels {
 				IsBusy = false;
 				stream.Close();
 			}
+			catch (JsonException) {
+				IsBusy = false;
+				string error = $"Importing scan results has failed because it's likely corrupted";
+				Logger.Instance.Info(error);
+				await MessageBoxService.Show(error);
+			}
 			catch (Exception ex) {
 				IsBusy = false;
 				string error = $"Importing scan results has failed because of {ex}";
@@ -952,6 +958,8 @@ namespace VDF.GUI.ViewModels {
 			long freedBytes = 0;
 			foreach (var dub in toDelete) {
 				try {
+
+					var fe = new FileEntry(dub.ItemInfo.Path);
 					if (fromDisk) {
 						if (createSymbolLinksInstead) {
 							var keeper = keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var k) ? k : null;
@@ -980,7 +988,6 @@ namespace VDF.GUI.ViewModels {
 						}
 					}
 
-					var fe = new FileEntry(dub.ItemInfo.Path);
 					ScanEngine.RemoveFromDatabase(fe);
 					if (blackList)
 						ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
@@ -996,7 +1003,6 @@ namespace VDF.GUI.ViewModels {
 				TotalSizeRemovedInternal += freedBytes;
 
 
-			using (view?.DeferRefresh()) {
 				if (actuallyDeleted.Count == 0)
 					return;
 
@@ -1011,9 +1017,7 @@ namespace VDF.GUI.ViewModels {
 
 				Duplicates.Clear();
 				Duplicates.AddRange(remaining);
-			}
-			// Now *one* refresh for the view
-			view?.Refresh();
+			
 
 			ScanEngine.SaveDatabase();
 
