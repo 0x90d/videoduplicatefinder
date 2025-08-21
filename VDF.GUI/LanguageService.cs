@@ -17,9 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Avalonia.Platform;
 using ReactiveUI;
 
 namespace VDF.GUI {
@@ -38,11 +40,20 @@ namespace VDF.GUI {
 		}
 
 		public void LoadLanguage(string langCode) {
-			var path = Path.Combine("Assets", "Locales", $"{langCode}.json");
-			if (File.Exists(path)) {
-				var json = File.ReadAllText(path);
+			try {
+				var asmName = Assembly.GetExecutingAssembly().GetName().Name;
+				var uri = new Uri($"avares://{asmName}/Assets/Locales/{langCode}.json");
+				using var stream = AssetLoader.Open(uri);           // IAssetLoader in Avalonia
+				using var reader = new StreamReader(stream);
+				var json = reader.ReadToEnd();
 				_translations = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
 				this.RaisePropertyChanged("Item[]");
+			}
+			catch (Exception) {
+				if (langCode != "en")
+					LoadLanguage("en");
+				else
+					_translations = new();
 			}
 		}
 

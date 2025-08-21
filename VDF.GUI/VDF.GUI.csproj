@@ -29,14 +29,6 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <AvaloniaResource Remove="Assets\Locales\en.json" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Assets\Locales\en.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="25.2.0" />
     <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="25.2.0" />
     <PackageReference Include="Avalonia" Version="11.3.3" />
@@ -49,6 +41,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Update="Assets\Locales\en.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </AvaloniaResource>
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Views\QualityOrderDialog.xaml.cs">
