@@ -26,17 +26,24 @@ namespace VDF.GUI.ViewModels {
 		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; private set; }
 		public sealed class CheckedGroupsComparer : System.Collections.IComparer {
 			readonly MainWindowVM mainVM;
+			readonly Dictionary<Guid, bool> _hasChecked = new();
 			public CheckedGroupsComparer(MainWindowVM vm) => mainVM = vm;
 			public int Compare(object? x, object? y) {
-				if (x == null || y == null)
-					return -1;
-				var dupX = (DuplicateItemVM)x;
-				var dupY = (DuplicateItemVM)y;
-				bool xHasChecked = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Where(a => a.Checked).Any();
-				bool yHasChecked = dupY.ItemInfo.GroupId == dupX.ItemInfo.GroupId ?
-					xHasChecked :
-					mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupY.ItemInfo.GroupId).Where(a => a.Checked).Any();
-				return xHasChecked.CompareTo(yHasChecked);
+				if (x is not DuplicateItemVM dx || y is not DuplicateItemVM dy) return -1;
+
+				bool X() => _hasChecked.TryGetValue(dx.ItemInfo.GroupId, out var b)
+					? b
+					: (_hasChecked[dx.ItemInfo.GroupId] =
+						mainVM.Duplicates.Any(a => a.ItemInfo.GroupId == dx.ItemInfo.GroupId && a.Checked));
+
+				bool Y() => dx.ItemInfo.GroupId == dy.ItemInfo.GroupId
+							? X()
+							: (_hasChecked.TryGetValue(dy.ItemInfo.GroupId, out var b)
+							   ? b
+							   : (_hasChecked[dy.ItemInfo.GroupId] =
+								   mainVM.Duplicates.Any(a => a.ItemInfo.GroupId == dy.ItemInfo.GroupId && a.Checked)));
+
+				return X().CompareTo(Y());
 			}
 		}
 		public sealed class GroupSizeComparer : System.Collections.IComparer {
@@ -97,15 +104,25 @@ namespace VDF.GUI.ViewModels {
 				view?.Refresh();
 			}
 		}
-		string _FilterByPath = string.Empty;
 
-		public string FilterByPath {
+		private HashSet<Guid> _groupsWithPathHit = new();
+		void RebuildSearchPathIndex() {
+			var needle = FilterByPath;
+			if (string.IsNullOrEmpty(needle)) { _groupsWithPathHit.Clear(); return; }
+
+			_groupsWithPathHit = Duplicates
+				.Where(d => d.ItemInfo.Path.Contains(needle, StringComparison.OrdinalIgnoreCase))
+				.Select(d => d.ItemInfo.GroupId)
+				.ToHashSet();
+		}
+
+		string _FilterByPath = string.Empty;
+				public string FilterByPath {
 			get => _FilterByPath;
 			set {
 				if (value == _FilterByPath) return;
 				_FilterByPath = value;
 				this.RaisePropertyChanged(nameof(FilterByPath));
-				view?.Refresh();
 			}
 		}
 		int _FilterSimilarityFrom = 0;
@@ -129,22 +146,20 @@ namespace VDF.GUI.ViewModels {
 
 		bool DuplicatesFilter(object obj) {
 			if (obj is not DuplicateItemVM data) return false;
-			var success = true;
+			bool ok = true;
 			if (!string.IsNullOrEmpty(FilterByPath)) {
-				success = data.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase);
-				//see if a group member matches, then this should be considered as match too
-				if (!success)
-					success = Duplicates.Any(s =>
-						s.ItemInfo.GroupId == data.ItemInfo.GroupId &&
-						s.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase));
+				ok = data.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase)
+					 || _groupsWithPathHit.Contains(data.ItemInfo.GroupId);
 			}
-			if (success && FileType.Value != FileTypeFilter.All)
-				success = FileType.Value == FileTypeFilter.Images ? data.ItemInfo.IsImage : !data.ItemInfo.IsImage;
-			if (success) {
-				success = data.ItemInfo.Similarity >= FilterSimilarityFrom && data.ItemInfo.Similarity <= FilterSimilarityTo;
-			}
-			data.IsVisibleInFilter = success;
-			return success;
+
+			if (ok && FileType.Value != FileTypeFilter.All)
+				ok = FileType.Value == FileTypeFilter.Images ? data.ItemInfo.IsImage : !data.ItemInfo.IsImage;
+
+			if (ok)
+				ok = data.ItemInfo.Similarity >= FilterSimilarityFrom && data.ItemInfo.Similarity <= FilterSimilarityTo;
+
+			data.IsVisibleInFilter = ok;
+			return ok;
 		}
 	}
 }

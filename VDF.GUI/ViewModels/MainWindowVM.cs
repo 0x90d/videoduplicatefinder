@@ -20,6 +20,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -48,7 +49,7 @@ namespace VDF.GUI.ViewModels {
 			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
 			Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
-		public ObservableCollection<DuplicateItemVM> Duplicates { get; } = new();
+		public AvaloniaList<DuplicateItemVM> Duplicates { get; } = new();
 
 
 		bool _IsScanning;
@@ -210,6 +211,9 @@ namespace VDF.GUI.ViewModels {
 			};
 			_SortOrder = SortOrders[0];
 
+			this.WhenAnyValue(vm => vm.FilterByPath)
+					.Throttle(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
+						.Subscribe(_ => { RebuildSearchPathIndex(); view?.Refresh(); });
 		}
 
 		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -343,6 +347,7 @@ namespace VDF.GUI.ViewModels {
 				if (SettingsFile.Instance.GeneratePreviewThumbnails)
 					Scanner.RetrieveThumbnails();
 
+				RebuildSearchPathIndex();
 				BuildDuplicatesView();
 			});
 		void BuildDuplicatesView() {
@@ -608,16 +613,16 @@ namespace VDF.GUI.ViewModels {
 			if (GetDataGrid.SelectedItem is not DuplicateItemVM currentItem) return;
 			try {
 				if (CoreUtils.IsWindows) {
-				Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
-					UseShellExecute = true
-				});
-			}
-			else {
-				Process.Start(new ProcessStartInfo {
-					FileName = currentItem.ItemInfo.Folder,
-					UseShellExecute = true,
-					Verb = "open"
-				});
+					Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
+						UseShellExecute = true
+					});
+				}
+				else {
+					Process.Start(new ProcessStartInfo {
+						FileName = currentItem.ItemInfo.Folder,
+						UseShellExecute = true,
+						Verb = "open"
+					});
 				}
 			}
 			catch (Exception ex) {
@@ -923,6 +928,11 @@ namespace VDF.GUI.ViewModels {
 								  bool permanently = false) {
 			if (Duplicates.Count == 0) return;
 
+			var toDelete = Duplicates
+								.Where(d => d.Checked && d.IsVisibleInFilter)
+								.ToList();
+			if (toDelete.Count == 0) return;
+
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
 				fromDisk
 					? $"Are you sure you want to{(CoreUtils.IsWindows && !permanently ? " move" : " permanently delete")} the selected files{(CoreUtils.IsWindows && !permanently ? " to recycle bin (only if supported, i.e. network files will be deleted instead)" : " from disk")}?"
@@ -930,60 +940,80 @@ namespace VDF.GUI.ViewModels {
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult != MessageBoxButtons.Yes) return;
 
-			for (var i = Duplicates.Count - 1; i >= 0; i--) {
-				DuplicateItemVM dub = Duplicates[i];
-				if (dub.Checked == false || !dub.IsVisibleInFilter) continue;
-				if (fromDisk)
-					try {
-						FileEntry dubFileEntry = new FileEntry(dub.ItemInfo.Path);
+			var keepByGroup = Duplicates
+				   .GroupBy(d => d.ItemInfo.GroupId)
+				   .ToDictionary(
+					   g => g.Key,
+					   g => g.FirstOrDefault(x => !x.Checked)  // can be null if all are checked
+				   );
+
+
+			var actuallyDeleted = new List<DuplicateItemVM>(toDelete.Count);
+			long freedBytes = 0;
+			foreach (var dub in toDelete) {
+				try {
+					if (fromDisk) {
 						if (createSymbolLinksInstead) {
-							DuplicateItemVM? fileToKeep = Duplicates.FirstOrDefault(s =>
-							s.ItemInfo.GroupId == dub.ItemInfo.GroupId &&
-							s.Checked == false);
-							if (fileToKeep == default(DuplicateItemVM)) {
-								throw new Exception($"Cannot create a symbol link for '{dub.ItemInfo.Path}' because all items in this group are selected/checked");
-							}
-							File.CreateSymbolicLink(dub.ItemInfo.Path, fileToKeep.ItemInfo.Path);
-							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
+							var keeper = keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var k) ? k : null;
+							if (keeper == default(DuplicateItemVM))
+								throw new Exception($"Cannot create symlink for '{dub.ItemInfo.Path}' because all items in this group are selected");
+							File.CreateSymbolicLink(dub.ItemInfo.Path, keeper.ItemInfo.Path);
+							freedBytes += dub.ItemInfo.SizeLong;
 						}
 						else if (CoreUtils.IsWindows && !permanently) {
-							//Try moving files to recycle bin
 							var fs = new FileUtils.SHFILEOPSTRUCT {
 								wFunc = FileUtils.FileOperationType.FO_DELETE,
 								pFrom = dub.ItemInfo.Path + '\0' + '\0',
 								fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
-								FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
-								FileUtils.FileOperationFlags.FOF_NOERRORUI |
-								FileUtils.FileOperationFlags.FOF_SILENT
+										 FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
+										 FileUtils.FileOperationFlags.FOF_NOERRORUI |
+										 FileUtils.FileOperationFlags.FOF_SILENT
 							};
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
 								throw new Exception($"SHFileOperation returned: {result:X}");
-
-							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
+							freedBytes += dub.ItemInfo.SizeLong;
 						}
 						else {
 							File.Delete(dub.ItemInfo.Path);
-							TotalSizeRemovedInternal += dub.ItemInfo.SizeLong;
+							freedBytes += dub.ItemInfo.SizeLong;
 						}
-						ScanEngine.RemoveFromDatabase(dubFileEntry);
 					}
-					catch (Exception ex) {
-						Logger.Instance.Info(
-							$"Failed to delete file '{dub.ItemInfo.Path}', reason: {ex.Message}, Stacktrace {ex.StackTrace}");
-						continue;
-					}
-				if (blackList)
-					ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
-				Duplicates.RemoveAt(i);
+
+					var fe = new FileEntry(dub.ItemInfo.Path);
+					ScanEngine.RemoveFromDatabase(fe);
+					if (blackList)
+						ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
+
+					actuallyDeleted.Add(dub);
+				}
+				catch (Exception ex) {
+					Logger.Instance.Info($"Failed to delete '{dub.ItemInfo.Path}': {ex.Message}\n{ex.StackTrace}");
+				}
 			}
 
-			//Remove groups with just one item left
-			for (var i = Duplicates.Count - 1; i >= 0; i--) {
-				var first = Duplicates[i];
-				if (Duplicates.Any(s => s.ItemInfo.GroupId == first.ItemInfo.GroupId && s.ItemInfo.Path != first.ItemInfo.Path)) continue;
-				Duplicates.RemoveAt(i);
+			if (freedBytes > 0)
+				TotalSizeRemovedInternal += freedBytes;
+
+
+			using (view?.DeferRefresh()) {
+				if (actuallyDeleted.Count == 0)
+					return;
+
+				// Remove in one go: build a new list instead of using lots of RemoveAt
+				var remaining = Duplicates.Where(d => !actuallyDeleted.Contains(d)).ToList();
+
+				// Remove groups with only one element – but O(n):
+				var counts = remaining
+								.GroupBy(d => d.ItemInfo.GroupId)
+								.ToDictionary(g => g.Key, g => g.Count());
+				remaining = remaining.Where(d => counts[d.ItemInfo.GroupId] > 1).ToList();
+
+				Duplicates.Clear();
+				Duplicates.AddRange(remaining);
 			}
+			// Now *one* refresh for the view
+			view?.Refresh();
 
 			ScanEngine.SaveDatabase();
 
