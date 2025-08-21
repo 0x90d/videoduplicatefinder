@@ -43,7 +43,7 @@ namespace VDF.GUI {
 			try {
 				var asmName = Assembly.GetExecutingAssembly().GetName().Name;
 				var uri = new Uri($"avares://{asmName}/Assets/Locales/{langCode}.json");
-				using var stream = AssetLoader.Open(uri);           // IAssetLoader in Avalonia
+				using var stream = AssetLoader.Open(uri);
 				using var reader = new StreamReader(stream);
 				var json = reader.ReadToEnd();
 				_translations = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
