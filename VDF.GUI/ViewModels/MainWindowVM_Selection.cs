@@ -1,23 +1,25 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
 
 using System.Linq;
 using System.Reactive;
+using ActiproSoftware.Properties.Shared;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using DynamicData;
 using DynamicExpresso;
 using DynamicExpresso.Exceptions;
 using ReactiveUI;
@@ -29,7 +31,7 @@ using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
-        // Stores the user-defined order for quality criteria
+
         public List<string> QualityCriteriaOrder { get; set; } = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
 
 		public ReactiveCommand<Unit, Unit> OpenCustomSelectionCommand => ReactiveCommand.Create(() => {
@@ -55,7 +57,7 @@ namespace VDF.GUI.ViewModels {
 			var interpreter = new Interpreter()
 				.ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
 
-			var groups = Duplicates
+			var groups = EnumerateAllItems()
 							.Where(d => d.IsVisibleInFilter)
 							.GroupBy(d => d.ItemInfo.GroupId)
 							.ToList();
@@ -94,10 +96,10 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in EnumerateAllItems()) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
 
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsFull(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = EnumerateAllItems().Where(d => d.IsVisibleInFilter && d.EqualsFull(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 
 				var dupMods = l as DuplicateItemVM[] ?? l.ToArray();
 				if (!dupMods.Any()) continue;
@@ -105,16 +107,15 @@ namespace VDF.GUI.ViewModels {
 					dup.Checked = true;
 				first.Checked = false;
 				blackListGroupID.Add(first.ItemInfo.GroupId);
-
 			}
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in EnumerateAllItems()) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = EnumerateAllItems().Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -126,14 +127,13 @@ namespace VDF.GUI.ViewModels {
 
 				blackListGroupID.Add(first.ItemInfo.GroupId);
 			}
-
 		});
 		public ReactiveCommand<Unit, Unit> CheckOldestCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in EnumerateAllItems()) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = EnumerateAllItems().Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -145,14 +145,13 @@ namespace VDF.GUI.ViewModels {
 
 				blackListGroupID.Add(first.ItemInfo.GroupId);
 			}
-
 		});
 		public ReactiveCommand<Unit, Unit> CheckNewestCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
 
-			foreach (var first in Duplicates) {
-				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue; //Dup has been handled already
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+			foreach (var first in EnumerateAllItems()) {
+				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
+				var l = EnumerateAllItems().Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -164,7 +163,6 @@ namespace VDF.GUI.ViewModels {
 
 				blackListGroupID.Add(first.ItemInfo.GroupId);
 			}
-
 		});
 		public ReactiveCommand<Unit, Unit> CheckLowestQualityCommand => ReactiveCommand.CreateFromTask(async () => {
 			var dlg = new QualityOrderDialog();
@@ -174,10 +172,10 @@ namespace VDF.GUI.ViewModels {
 
 			HashSet<Guid> blackListGroupID = new();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in EnumerateAllItems()) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
 
-				var dupMods = Duplicates
+				var dupMods = EnumerateAllItems()
 					.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && d.ItemInfo.Path != first.ItemInfo.Path)
 					.ToList();
 				if (dupMods.Count == 0) continue;
@@ -212,37 +210,21 @@ namespace VDF.GUI.ViewModels {
 
 				blackListGroupID.Add(first.ItemInfo.GroupId);
 			}
-
-			// --- Helpers ---
-
-			static bool HasTieOn(string lastCriterion, List<DuplicateItemVM> list, DuplicateItemVM keep) => lastCriterion switch {
-				"Duration" => list.Count(d => d.ItemInfo.Duration == keep.ItemInfo.Duration) > 1,
-				"Resolution" => list.Count(d => d.ItemInfo.FrameSizeInt == keep.ItemInfo.FrameSizeInt) > 1,
-				"FPS" => list.Count(d => d.ItemInfo.Fps == keep.ItemInfo.Fps) > 1,
-				"Bitrate" => list.Count(d => d.ItemInfo.BitRateKbs == keep.ItemInfo.BitRateKbs) > 1,
-				"Audio Bitrate" => list.Count(d => d.ItemInfo.AudioSampleRate == keep.ItemInfo.AudioSampleRate) > 1,
-				_ => false
-			};
-
-			static DuplicateItemVM ApplyCriterion(string criterion, List<DuplicateItemVM> list) => criterion switch {
-				"Duration" => list.OrderByDescending(d => d.ItemInfo.Duration).First(),
-				"Resolution" => list.OrderByDescending(d => d.ItemInfo.FrameSizeInt).First(),
-				"FPS" => list.OrderByDescending(d => d.ItemInfo.Fps).First(),
-				"Bitrate" => list.OrderByDescending(d => d.ItemInfo.BitRateKbs).First(),
-				"Audio Bitrate" => list.OrderByDescending(d => d.ItemInfo.AudioSampleRate).First(),
-				_ => list[0]
-			};
-
 		});
 
 		public ReactiveCommand<Unit, Unit> ClearSelectionCommand => ReactiveCommand.Create(() => {
-			for (var i = 0; i < Duplicates.Count; i++)
-				Duplicates[i].Checked = false;
+			foreach (var vm in Duplicates
+								.SelectMany(g => g.Children)
+								.Select(c => c.Item)
+								.Select(it => it!)) {
+				vm.Checked = false;
+			}
 		});
 
-		public ReactiveCommand<Unit, Unit> DeleteHighlitedCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.SelectedItem == null) return;
-			Duplicates.Remove((DuplicateItemVM)GetDataGrid.SelectedItem);
+		public ReactiveCommand<Unit, Unit> DeleteHighlightedCommand => ReactiveCommand.Create(() => {
+			if (GetSelectedDuplicateItem() == null) return;
+			var sel = TreeSource.RowSelection?.SelectedItems?.ToArray() ?? Array.Empty<RowNode>();
+			RemoveSelectionFromTree(TreeSource.RowSelection?.SelectedItems);
 		});
 		public ReactiveCommand<Unit, Unit> DeleteSelectionWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show("Delete files also from DISK?",
@@ -297,7 +279,7 @@ namespace VDF.GUI.ViewModels {
 
 			if (result == null || result.Count == 0) return;
 
-			Utils.FileUtils.CopyFile(Duplicates.Where(s => s.Checked), result[0], true, false, out var errorCounter);
+			Utils.FileUtils.CopyFile(EnumerateAllItems().Where(s => s.Checked), result[0], true, false, out var errorCounter);
 			if (errorCounter > 0)
 				await MessageBoxService.Show("Failed to copy some files. Please check log!");
 		});
@@ -309,7 +291,7 @@ namespace VDF.GUI.ViewModels {
 
 			if (result == null || result.Count == 0) return;
 
-			var selectedItems = Duplicates.Where(s => s.Checked).ToList();
+			var selectedItems = EnumerateAllItems().Where(s => s.Checked).ToList();
 			List<Tuple<DuplicateItemVM, FileEntry>> itemsToUpdate = new();
 			foreach (var item in selectedItems) {
 				if (ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry))
@@ -326,7 +308,7 @@ namespace VDF.GUI.ViewModels {
 
 		internal void RunCustomSelection(CustomSelectionData data) {
 
-			IEnumerable<DuplicateItemVM> dups = Duplicates.Where(x => x.IsVisibleInFilter);
+			IEnumerable<DuplicateItemVM> dups = EnumerateAllItems().Where(x => x.IsVisibleInFilter);
 #if DEBUG
 			int itemsCount = dups.Count();
 			System.Diagnostics.Trace.WriteLine($"Custom selection items count: {itemsCount}");

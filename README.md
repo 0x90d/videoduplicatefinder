@@ -47,7 +47,7 @@ If the process is immediately killed (something like `zsh: killed`), the binary 
 <img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
 
 # License
-Video Duplicate Finder is licensed under GPLv3
+Video Duplicate Finder is licensed under AGPLv3
 
 # Credits / Third Party
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia)

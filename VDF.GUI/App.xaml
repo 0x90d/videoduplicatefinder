@@ -2,15 +2,13 @@
     x:Class="VDF.GUI.App"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:local="clr-namespace:VDF.GUI"
-	xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     RequestedThemeVariant="Dark">
 
     <Application.Styles>
-        <!--<FluentTheme />
-        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
-        --><!--<StyleInclude Source="resm:Avalonia.Controls.DataGrid.Themes.Fluent.xaml?assembly=Avalonia.Controls.DataGrid" />--><!--
-        <StyleInclude Source="/Styles/Styles.xaml" />-->
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.TreeDataGrid/Themes/Fluent.axaml" />
         <actipro:ModernTheme />
         <actipro:ModernTheme Includes="NativeDataGrid" />
     </Application.Styles>
