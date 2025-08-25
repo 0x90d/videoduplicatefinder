@@ -34,8 +34,6 @@ namespace VDF.Core {
 			Folder = fileInfo.Directory?.FullName ?? string.Empty;
 			var extension = fileInfo.Extension;
 			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
-			grayBytes = new Dictionary<double, byte[]?>();
-			PHashes = new Dictionary<double, ulong?>();
 			DateCreated = fileInfo.CreationTimeUtc;
 			DateModified = fileInfo.LastWriteTimeUtc;
 			FileSize = fileInfo.Length;
@@ -55,7 +53,7 @@ namespace VDF.Core {
 		[ProtoMember(2)]
 		public string Folder;
 		[ProtoMember(3)]
-		public Dictionary<double, byte[]?> grayBytes;
+		public Dictionary<double, byte[]?> grayBytes = new();
 		[ProtoMember(4)]
 		public MediaInfo? mediaInfo;
 		[ProtoMember(5)]
@@ -67,7 +65,7 @@ namespace VDF.Core {
 		[ProtoMember(8)]
 		public long FileSize;
 		[ProtoMember(9)]
-		public Dictionary<double, ulong?> PHashes;
+		public Dictionary<double, ulong?> PHashes = new();
 
 		[ProtoIgnore]
 		internal bool invalid = true;

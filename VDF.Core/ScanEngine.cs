@@ -377,8 +377,10 @@ namespace VDF.Core {
 
 						entry.mediaInfo = info;
 					}
-					// 08/17/21: This is for people upgrading from an older VDF version
+					// This is for people upgrading from an older VDF version
+					// Or if you create a new database, start and immediately stop the scan and then try to scan again
 					entry.grayBytes ??= new Dictionary<double, byte[]?>();
+					entry.PHashes ??= new Dictionary<double, ulong?>();
 
 
 					if (entry.IsImage && entry.grayBytes.Count == 0) {
