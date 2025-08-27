@@ -83,7 +83,7 @@
                                 FontSize="12"
                                 Text="Scanner" />
                         </TabItem.Header>
-                        <Grid Margin="0,0,0,10" RowDefinitions="Auto, *, Auto, Auto">
+                        <Grid Margin="0,0,0,10" RowDefinitions="Auto, *, Auto, Auto, Auto">
                             <Menu Grid.Row="0" MinHeight="30">
                                 <MenuItem
                                     Command="{Binding StartScanCommand}"
@@ -346,7 +346,7 @@
                                     </MenuItem>
                                 </MenuItem>
                             </Menu>
-                            <Grid Grid.Row="1">
+                            <Grid Grid.Row="1" IsVisible="{Binding ShowTreeDataGrid}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -606,6 +606,8 @@
                                         <TreeDataGrid.KeyBindings>
                                             <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2" />
                                             <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space" />
+                                            <KeyBinding Command="{Binding OpenItemCommand}" Gesture="Enter" />
+                                            <KeyBinding Command="{Binding OpenItemInFolderCommand}" Gesture="Shift+Enter" />
                                             <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete" />
                                             <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete" />
                                             <KeyBinding Command="{Binding DeleteHighlightedCommand}" Gesture="Control+Delete" />
@@ -613,7 +615,14 @@
                                         </TreeDataGrid.KeyBindings>
                                         <TreeDataGrid.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Command="{Binding OpenItemInFolderCommand}" Header="Open In Folder" />
+                                                <MenuItem
+                                                    Command="{Binding OpenItemInFolderCommand}"
+                                                    Header="Open File"
+                                                    InputGesture="Return" />
+                                                <MenuItem
+                                                    Command="{Binding OpenItemInFolderCommand}"
+                                                    Header="Open In Folder"
+                                                    InputGesture="Shift+Return" />
                                                 <MenuItem
                                                     Command="{Binding RenameFileCommand}"
                                                     Header="Rename File"
@@ -806,49 +815,61 @@
                                 <StackPanel
                                     Grid.Row="0"
                                     MinHeight="20"
+                                    Margin="0,5,0,0"
                                     Orientation="Horizontal">
-                                    <TextBlock Text="{Binding DuplicatesSelectedCounter, Mode=OneWay, StringFormat=Total Selected Duplicates: \{0\}}" />
+                                    <TextBlock Text="{Binding DuplicatesSelectedCounter, Mode=OneWay, StringFormat=Selected Duplicates: \{0\}}" />
                                 </StackPanel>
                                 <StackPanel
                                     Grid.Row="1"
                                     MinHeight="20"
+                                    Margin="0,5,0,0"
                                     Orientation="Horizontal">
-                                    <TextBlock Text="{Binding #dataGridGrouping.Items.Count, Mode=OneWay, StringFormat=Visible Duplicates: \{0\}}" />
-                                    <Separator
+                                    <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Duplicates: \{0\}}" />
+                                    <Border
                                         Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Total Duplicates: \{0\}}" />
-                                    <Separator
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TotalDuplicateGroups, Mode=OneWay, StringFormat=Duplicate Groups: \{0\}}" />
+                                    <Border
                                         Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalDuplicateGroups, Mode=OneWay, StringFormat=Total Duplicate Groups: \{0\}}" />
-                                    <Separator
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TotalDuplicatesSize, Mode=OneWay, StringFormat=Size: \{0\}}" />
+                                    <Border
                                         Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalDuplicatesSize, Mode=OneWay, StringFormat=Total Size: \{0\}}" />
-                                    <Separator
-                                        Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalSizeRemoved, Mode=OneWay, StringFormat=Total Size Removed: \{0\}}" />
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TotalSizeRemoved, Mode=OneWay, StringFormat=Size Removed: \{0\}}" />
                                 </StackPanel>
                             </Grid>
-                            <Grid Grid.Row="3">
+                            <Grid Grid.Row="3" Margin="0,5,0,0">
                                 <StackPanel MinHeight="20" Orientation="Horizontal">
                                     <ProgressBar
                                         Name="PbScanProgress"
                                         MinWidth="100"
                                         Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
                                         Value="{Binding ScanProgressValue, Mode=OneWay}" />
-                                    <Separator Width="1" Margin="5" />
+                                    <Border
+                                        Width="1"
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: {0:c}}" />
-                                    <Separator Width="1" Margin="5" />
+                                    <Border
+                                        Width="1"
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~{0:c}}" />
-                                    <Separator Width="1" Margin="5" />
+                                    <Border
+                                        Width="1"
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock Text="{Binding ScanProgressText, Mode=OneWay} TextTrimming=CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Grid.Row="4" IsVisible="{Binding ShowThumbnailRetrievalProgress}">
+                                <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                                    <ProgressBar MinWidth="100" IsIndeterminate="{Binding ShowThumbnailRetrievalProgressBar}" />
+                                    <TextBlock Margin="5,0" Text="{Binding ThumbnailRetrievalProgressText}" />
                                 </StackPanel>
                             </Grid>
                         </Grid>

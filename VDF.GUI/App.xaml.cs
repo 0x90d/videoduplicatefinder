@@ -25,7 +25,7 @@ namespace VDF.GUI {
 	public class App : Application {
 		public static LanguageService Lang { get; } = new();
 		public override void Initialize() {
-			Lang.LoadLanguage("en"); // Standard
+			Lang.LoadLanguage("en");
 			AvaloniaXamlLoader.Load(this);
 		}
 
@@ -34,9 +34,26 @@ namespace VDF.GUI {
 				desktop.MainWindow = new MainWindow {
 					DataContext = new MainWindowVM(),
 				};
+				desktop.ShutdownRequested += OnShutdownRequested;
+				desktop.Exit += OnExitCleanup; //fallback
+				AppDomain.CurrentDomain.ProcessExit += (_, __) => SafeCleanup();
+				AppDomain.CurrentDomain.UnhandledException += (_, __) => SafeCleanup();
 			}
 
 			base.OnFrameworkInitializationCompleted();
+		}
+		private void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e) => SafeCleanup();
+		private void OnExitCleanup(object? sender, ControlledApplicationLifetimeExitEventArgs e) => SafeCleanup();
+		private static void SafeCleanup() {
+			try {
+				try { VDF.GUI.Utils.ThumbCacheHelpers.Provider?.Dispose(); }
+				catch { /* ignore */ }
+				VDF.GUI.Utils.ThumbCacheHelpers.Provider = null;
+
+				try { TempExtractionManager.DisposeAll(); }
+				catch { /* ignore */ }
+			}
+			catch { /* last resort */ }
 		}
 	}
 }

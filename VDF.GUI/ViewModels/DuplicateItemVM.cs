@@ -17,6 +17,7 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Avalonia;
+using Avalonia.Controls.Primitives;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using ReactiveUI;
@@ -34,15 +35,63 @@ namespace VDF.GUI.ViewModels {
 		public DuplicateItemVM(DuplicateItem item) {
 			ItemInfo = item;
 			ItemInfo.ThumbnailsUpdated += () => {
-				Thumbnail = ImageUtils.JoinImages(ItemInfo.ImageList)!;
-				Dispatcher.UIThread.Post(() => {
-					this.RaisePropertyChanged(nameof(Thumbnail));
-				}, DispatcherPriority.Render); // DispatcherPriority.Layout was removed in https://github.com/AvaloniaUI/Avalonia/commit/f300a24402afc9f7f3c177e835a0cec10ce52e6c
+				try {
+
+					var key = ThumbCacheHelpers.XxHash64Hex(ItemInfo.Path);
+
+					ThumbCacheHelpers.Provider!.AppendIfMissing(key, stream => {
+						var uiBmp = ImageUtils.JoinImages(ItemInfo.ImageList, stream);
+						if (uiBmp != null) {
+							LRUBitmapCache.GetOrCreate(key, () => uiBmp);
+						}
+					});
+					ThumbnailKey = key;
+
+				}
+				catch { /* ignore */ }
+				Dispatcher.UIThread.Post(() => this.RaisePropertyChanged(nameof(Thumbnail)), DispatcherPriority.Render);
+
 			};
 		}
 		public DuplicateItem ItemInfo { get; set; }
 
-		public Bitmap Thumbnail { get; set; }
+		[JsonInclude]
+		public string ThumbnailKey { get; set; }
+
+		[JsonIgnore]
+		private Bitmap? _thumbnail;
+
+		[JsonIgnore]
+		public Bitmap? Thumbnail {
+			get {
+				if (string.IsNullOrEmpty(ThumbnailKey)) return null;
+				if (ThumbCacheHelpers.Provider == null)
+#if DEBUG
+					throw new InvalidOperationException("No active thumbnail provider");
+#else
+					return null;
+#endif
+				try {
+					return LRUBitmapCache.GetOrCreate(ThumbnailKey, () => {
+						using var s = ThumbCacheHelpers.Provider.OpenKey(ThumbnailKey) ??
+#if DEBUG
+						throw new FileNotFoundException($"Thumbnail {ThumbnailKey} not found");
+#else
+						null;
+#endif
+						return new Avalonia.Media.Imaging.Bitmap(s);
+
+					});
+				}
+				catch {
+#if DEBUG
+					throw;
+#endif
+					return null;
+				}
+			}
+			set => this.RaiseAndSetIfChanged(ref _thumbnail, value);
+		}
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		bool _Checked;

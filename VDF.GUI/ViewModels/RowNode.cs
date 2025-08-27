@@ -25,7 +25,7 @@ using Avalonia.Collections;
 using ReactiveUI;
 
 namespace VDF.GUI.ViewModels {
-	[DebuggerDisplay("{Header,nq} - {Id}")]
+	[DebuggerDisplay("{Header,nq}")]
 	public sealed class RowNode : ReactiveObject {
 		[JsonInclude]
 		public bool IsGroup { get; private set; }

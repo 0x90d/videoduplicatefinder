@@ -39,6 +39,7 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.4" />
     <PackageReference Include="Avalonia.Xaml.Behaviors" Version="11.3.0.6" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.19.2" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />

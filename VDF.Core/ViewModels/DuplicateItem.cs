@@ -89,6 +89,7 @@ namespace VDF.Core.ViewModels {
 		}
 
 		public Guid GroupId { get; set; }
+		[JsonIgnore]
 		public List<Image> ImageList { get; private set; } = new List<Image>();
 		[JsonInclude]
 		public List<TimeSpan> ThumbnailTimestamps { get; private set; } = new List<TimeSpan>();

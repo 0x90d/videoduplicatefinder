@@ -17,6 +17,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -58,8 +59,10 @@ namespace VDF.GUI.ViewModels {
 		private readonly Dictionary<Guid, RowNode> _groupIndex = new();
 		public HierarchicalTreeDataGridSource<RowNode> TreeSource { get; }
 
+		private TempDir? TempDirectory;
+
 		static readonly string[] BusyMessages =
-		{ 
+		{
 			App.Lang["BusyMessages1"],
 			App.Lang["BusyMessages2"],
 			App.Lang["BusyMessages3"],
@@ -115,7 +118,20 @@ namespace VDF.GUI.ViewModels {
 			get => _IsPaused;
 			set => this.RaiseAndSetIfChanged(ref _IsPaused, value);
 		}
-
+		bool _ShowThumbnailRetrievalProgressBar;
+		public bool ShowThumbnailRetrievalProgressBar {
+			get => _ShowThumbnailRetrievalProgressBar;
+			set => this.RaiseAndSetIfChanged(ref _ShowThumbnailRetrievalProgressBar, value);
+		}
+		public bool ShowThumbnailRetrievalProgress => !string.IsNullOrEmpty(ThumbnailRetrievalProgressText);
+		string _ThumbnailRetrievalProgressText = string.Empty;
+		public string ThumbnailRetrievalProgressText {
+			get => _ThumbnailRetrievalProgressText;
+			set {
+				this.RaiseAndSetIfChanged(ref _ThumbnailRetrievalProgressText, value);
+				this.RaisePropertyChanged(nameof(ShowThumbnailRetrievalProgress));
+			}
+		}
 		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
 			get => _ScanProgressText;
@@ -197,10 +213,18 @@ namespace VDF.GUI.ViewModels {
 			Scanner.ScanAborted += Scanner_ScanAborted;
 			Scanner.ScanDone += Scanner_ScanDone;
 			Scanner.Progress += Scanner_Progress;
+			Scanner.ThumbnailProgress += Scanner_ThumbnailProgress;
 			Scanner.ThumbnailsRetrieved += Scanner_ThumbnailsRetrieved;
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
 			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(AssetLoader.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
+
+			try {
+				TempDirectory = TempExtractionManager.Register(new("VDF-"));
+				Utils.ThumbCacheHelpers.Provider = Utils.ThumbPack.Open(TempDirectory.Path);
+			}
+
+			catch { Utils.ThumbCacheHelpers.Provider = null; }
 
 			try {
 				File.Delete(Path.Combine(CoreUtils.CurrentFolder, "log.txt"));
@@ -262,7 +286,7 @@ namespace VDF.GUI.ViewModels {
 									return tb;
 								}
 
-								var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+								var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0,3) };
 
 								var cb = new CheckBox();
 								cb.Bind(CheckBox.IsCheckedProperty, new Binding("Item.Checked"));
@@ -279,8 +303,6 @@ namespace VDF.GUI.ViewModels {
 								};
 
 								ToolTip.SetTip(img, new TextBlock { Text = App.Lang["DuplicateList.Thumbnail.Tooltip.OpenFile"] });
-
-
 
 								panel.Children.Add(cb);
 								panel.Children.Add(img);
@@ -428,13 +450,40 @@ namespace VDF.GUI.ViewModels {
 							tb.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Similarity"));
 							tb.HorizontalAlignment = HorizontalAlignment.Center;
 							return tb;
-						}, supportsRecycling: false)
+						}, supportsRecycling: false),
+						options: new TemplateColumnOptions<RowNode>
+						{
+							CanUserSortColumn = true,
+							CompareAscending = (a, b) =>
+							{
+								bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
+								bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
+								if (aHas && bHas)
+									return a!.Item!.ItemInfo!.Similarity.CompareTo(b!.Item!.ItemInfo!.Similarity);
+								if (aHas && !bHas) return 1;
+								if (!aHas && bHas) return -1;
+								return 0;
+							},
+							CompareDescending = (a, b) =>
+							{
+								bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
+								bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
+								if (aHas && bHas)
+									return b!.Item!.ItemInfo!.Similarity.CompareTo(a!.Item!.ItemInfo!.Similarity);
+								if (aHas && !bHas) return 1;
+								if (!aHas && bHas) return -1;
+								return 0;
+							}
+						}
 					)
 				}
 			};
 			TreeSource.RowSelection!.SingleSelect = false;
 		}
 
+		private void Scanner_ThumbnailProgress(int arg1, int arg2) => Dispatcher.UIThread.Post(() => {
+			ThumbnailRetrievalProgressText = $"Retrieving thumbnails for preview: {arg1}/{arg2}";
+		});
 
 		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
 			bool isReadyToCompare = IsGathered;
@@ -450,9 +499,11 @@ namespace VDF.GUI.ViewModels {
 			RemainingTime = new TimeSpan();
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
+			ThumbnailRetrievalProgressText = "Finished generating thumbnails for preview";
+			ShowThumbnailRetrievalProgressBar = false;
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 			if (SettingsFile.Instance.BackupAfterListChanged)
-				ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
+				ExportScanResults(BackupScanResultsFile);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
@@ -465,6 +516,7 @@ namespace VDF.GUI.ViewModels {
 
 		public async Task<bool> SaveScanResults() {
 			if (_allGroups.Count == 0 || !SettingsFile.Instance.AskToSaveResultsOnExit) {
+				try { Utils.ThumbCacheHelpers.Provider?.FlushIndex(); } catch { }
 				return true;
 			}
 			MessageBoxButtons? result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
@@ -476,10 +528,9 @@ namespace VDF.GUI.ViewModels {
 			if (result != MessageBoxButtons.Yes) {
 				return true;
 			}
-			await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
+			await ExportScanResults(BackupScanResultsFile);
 			return true;
 		}
-
 
 
 		public async void LoadDatabase() {
@@ -517,6 +568,9 @@ namespace VDF.GUI.ViewModels {
 				IsBusy = false;
 				IsReadyToCompare = true;
 				IsGathered = true;
+				ScanProgressText = string.Empty;
+				RemainingTime = TimeSpan.Zero;
+				ScanProgressValue = 0;
 
 				Scanner.Duplicates.RemoveWhere(a => {
 					foreach (HashSet<string> blackListedGroup in GroupBlacklist) {
@@ -535,8 +589,11 @@ namespace VDF.GUI.ViewModels {
 
 				FillDuplicatesFromScanner(Scanner.Duplicates);
 
-				if (SettingsFile.Instance.GeneratePreviewThumbnails)
+				if (SettingsFile.Instance.GeneratePreviewThumbnails) {
+					ShowThumbnailRetrievalProgressBar = true;
+					ThumbnailRetrievalProgressText = "Starting to retrieve thumbnails for preview";
 					Scanner.RetrieveThumbnails();
+				}
 
 				RebuildSearchPathIndex();
 				RefreshGroupStats();
@@ -697,61 +754,31 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show("Exporting database has failed, please see log");
 		}
 
-		public ReactiveCommand<Unit, Unit> ExportScanResultsCommand => ReactiveCommand.Create(() => {
-			ExportScanResultsToJson(new JsonSerializerOptions {
+		public ReactiveCommand<Unit, Unit> ExportScanResultsCommand => ReactiveCommand.CreateFromTask(async () => {
+			await ExportScanResults(serializerOptions: new JsonSerializerOptions {
 				IncludeFields = true,
 			});
 		});
 
-		public ReactiveCommand<Unit, Unit> ExportScanResultsPrettyCommand => ReactiveCommand.Create(() => {
-			ExportScanResultsToJson(new JsonSerializerOptions {
+		public ReactiveCommand<Unit, Unit> ExportScanResultsPrettyCommand => ReactiveCommand.CreateFromTask(async () => {
+			await ExportScanResults(serializerOptions: new JsonSerializerOptions {
 				IncludeFields = true,
 				WriteIndented = true,
 			});
 		});
 
-		async void ExportScanResultsToJson(JsonSerializerOptions options) {
-			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
-				DefaultExtension = ".json",
-				FileTypeChoices = [new FilePickerFileType("Json Files") { Patterns = ["*.json"] }]
-			});
-			if (string.IsNullOrEmpty(result)) return;
-
-			options.Converters.Add(new ImageJsonConverter());
-			try {
-				List<DuplicateItem> list = _allGroups
-												.Where(g => g.IsGroup)
-												.SelectMany(g => g.Children)
-												.Where(c => !c.IsGroup && c.Item != null)
-												.Select(c => c.Item!.ItemInfo)
-												.OrderBy(x => x.GroupId)
-												.ToList();
-				using var stream = File.OpenWrite(result);
-				await JsonSerializer.SerializeAsync(stream, list, options);
-				stream.Close();
-			}
-			catch (Exception ex) {
-				await MessageBoxService.Show($"Exporting scan results has failed because of {ex}");
-			}
-		}
 		public ReactiveCommand<Unit, Unit> ExportScanResultsToFileCommand => ReactiveCommand.CreateFromTask(async () => {
-			await ExportScanResultsIncludingThumbnails();
+			await ExportScanResults();
 		});
 
-		private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
-		private static JsonSerializerOptions CreateJsonOptions() {
-			var o = new JsonSerializerOptions {
-				IncludeFields = true,
-			};
-			o.Converters.Add(new BitmapJsonConverter());
-			o.Converters.Add(new ImageJsonConverter());
-			return o;
-		}
-		async Task ExportScanResultsIncludingThumbnails(string? path = null) {
+		private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions {
+			IncludeFields = true,
+		};
+		async Task ExportScanResults(string? path = null, bool includeThumbnails = true, int thumbMaxEdge = 160, JsonSerializerOptions? serializerOptions = null) {
 			path ??= await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
-				DefaultExtension = ".json",
-				FileTypeChoices = [new FilePickerFileType("Scan Results") { Patterns = ["*.scanresults"] }]
+				DefaultExtension = includeThumbnails ? ".zip" : ".json",
+				FileTypeChoices = [new FilePickerFileType("Scan Results") { Patterns = [includeThumbnails ? "*.zip" : ".scanresults"] }]
 			});
 
 			if (string.IsNullOrEmpty(path)) return;
@@ -763,14 +790,50 @@ namespace VDF.GUI.ViewModels {
 			var tmp = Path.Combine(dir, Path.GetFileName(path) + ".tmp");
 
 			try {
+
 				var snapshot = new List<RowNode>(_allGroups);
 
-				await using (var stream = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true)) {
-					await JsonSerializer.SerializeAsync(stream, snapshot, JsonOptions);
-					await stream.FlushAsync();
+				if (!includeThumbnails) {
+					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
+					await JsonSerializer.SerializeAsync(fs, snapshot, serializerOptions ?? JsonOptions);
+				}
+				else {
+
+					// Write ZIP
+					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
+					using var zip = new ZipArchive(fs, ZipArchiveMode.Create, leaveOpen: false);
+					// JSON
+					var jsonEntry = zip.CreateEntry("scan.json", CompressionLevel.NoCompression);
+					await using (var es = jsonEntry.Open()) {
+						await JsonSerializer.SerializeAsync(es, snapshot, serializerOptions ?? JsonOptions);
+						await es.FlushAsync();
+					}
+
+					Utils.ThumbCacheHelpers.Provider?.FlushIndex();
+
+					if (TempDirectory != null) {
+						// Thumbnails
+						var packPath = Path.Combine(TempDirectory.Path, "thumbs.pack");
+						var idxPath = Path.Combine(TempDirectory.Path, "thumbs.idx");
+
+						if (File.Exists(packPath) && Utils.ThumbCacheHelpers.Provider != null) {
+							var packEntry = zip.CreateEntry("thumbs.pack", CompressionLevel.NoCompression);
+							using var es = packEntry.Open();
+							Utils.ThumbCacheHelpers.Provider.CopyTo(es);
+						}
+
+						if (File.Exists(idxPath)) {
+							var idxEntry = zip.CreateEntry("thumbs.idx", CompressionLevel.NoCompression);
+							using var es = idxEntry.Open();
+							using var fs2 = File.OpenRead(idxPath);
+							fs2.CopyTo(es);
+						}
+					}
+
 				}
 
 				File.Move(tmp, path, overwrite: true);
+
 			}
 			catch (Exception ex) {
 				IsBusy = false;
@@ -786,7 +849,7 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> ImportScanResultsFromFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions {
 				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
-				FileTypeFilter = [new FilePickerFileType("Scan Results") { Patterns = ["*.scanresults"] }]
+				FileTypeFilter = [new FilePickerFileType("Scan Results") { Patterns = ["*.zip"] }]
 			});
 			if (string.IsNullOrEmpty(result)) return;
 			ImportScanResultsIncludingThumbnails(result);
@@ -800,7 +863,7 @@ namespace VDF.GUI.ViewModels {
 			if (path == null) {
 				path = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions() {
 					SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
-					FileTypeFilter = [new FilePickerFileType("Scan Results") { Patterns = ["*.scanresults"] }]
+					FileTypeFilter = [new FilePickerFileType("Scan Results") { Patterns = ["*.zip"] }]
 				});
 			}
 			if (string.IsNullOrEmpty(path)) return;
@@ -809,8 +872,23 @@ namespace VDF.GUI.ViewModels {
 				using var stream = File.OpenRead(path);
 				IsBusy = true;
 				IsBusyOverlayText = "Importing scan results from disk...";
-				var list = await JsonSerializer.DeserializeAsync<AvaloniaList<RowNode>>(stream, JsonOptions);
-				FillDuplicates(list);
+
+
+				using var zip = ZipFile.OpenRead(path);
+				var json = zip.GetEntry("scan.json") ?? throw new Exception("scan.json missing");
+				await using var js = json.Open();
+				var groups = await JsonSerializer.DeserializeAsync<List<RowNode>>(js, JsonOptions) ?? new();
+
+				TempDirectory = TempExtractionManager.Register(new("VDF-"));
+
+
+				zip.GetEntry("thumbs.pack")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.pack"), true);
+				zip.GetEntry("thumbs.idx")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.idx"), true);
+
+				Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));
+
+
+				FillDuplicates(groups);
 
 				RefreshGroupStats();
 				IsBusy = false;
@@ -1145,9 +1223,17 @@ Non-Windows setup:
 			Duplicates.Clear();
 			_groupIndex.Clear();
 
+			TempDirectory = TempExtractionManager.Register(new("VDF-"));
+			Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));
+
 			IsScanning = true;
 			IsReadyToCompare = false;
 			IsGathered = false;
+			TotalDuplicateGroups = 0;
+			TotalDuplicates = 0;
+			TotalDuplicatesSize = string.Empty;
+			TotalDuplicatesSize = string.Empty;
+
 			SettingsFile.SaveSettings();
 			//Set scan settings
 			Scanner.Settings.IncludeSubDirectories = SettingsFile.Instance.IncludeSubDirectories;
@@ -1342,7 +1428,7 @@ Non-Windows setup:
 			ScanEngine.SaveDatabase();
 
 			if (SettingsFile.Instance.BackupAfterListChanged)
-				await ExportScanResultsIncludingThumbnails(BackupScanResultsFile);
+				await ExportScanResults(BackupScanResultsFile);
 		}
 
 		public ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {

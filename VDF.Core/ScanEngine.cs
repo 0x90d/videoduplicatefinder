@@ -37,6 +37,7 @@ namespace VDF.Core {
 		public event EventHandler? ScanDone;
 		public event EventHandler? ScanAborted;
 		public event EventHandler? ThumbnailsRetrieved;
+		public event Action<int, int>? ThumbnailProgress;
 		public event EventHandler? FilesEnumerated;
 		public event EventHandler? DatabaseCleaned;
 
@@ -578,11 +579,24 @@ namespace VDF.Core {
 		public static bool ImportDataBaseFromJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ImportDatabaseFromJson(jsonFile, options);
 		public async void RetrieveThumbnails() {
 			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
+			int total = dupList.Count;
+			int done = 0;
+			int lastNotified = 0;
+
+			var sw = Stopwatch.StartNew();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<Image>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
+
+					int current = Interlocked.Increment(ref done);
+					if (sw.ElapsedMilliseconds > 300)
+						if (Interlocked.Exchange(ref lastNotified, current) < current) {
+							sw.Restart(); // only this thread resets the stopwatch
+							ThumbnailProgress?.Invoke(current, total);
+						}
+
 					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						timeStamps = new(0);
@@ -626,6 +640,7 @@ namespace VDF.Core {
 					}
 					Debug.Assert(timeStamps != null);
 					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps!);
+
 					return ValueTask.CompletedTask;
 				});
 			}
