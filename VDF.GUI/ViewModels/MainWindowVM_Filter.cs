@@ -108,6 +108,7 @@ namespace VDF.GUI.ViewModels {
 				if (value.Key == _FileType.Key) return;
 				_FileType = value;
 				this.RaisePropertyChanged(nameof(FileType));
+				ApplyFilter();
 				RefreshGroupStats();
 			}
 		}
