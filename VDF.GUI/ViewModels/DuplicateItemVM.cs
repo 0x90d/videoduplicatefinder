@@ -39,7 +39,7 @@ namespace VDF.GUI.ViewModels {
 
 					var key = ThumbCacheHelpers.XxHash64Hex(ItemInfo.Path);
 
-					ThumbCacheHelpers.Provider!.AppendIfMissing(key, stream => {
+					ThumbCacheHelpers.Provider?.AppendIfMissing(key, stream => {
 						var uiBmp = ImageUtils.JoinImages(ItemInfo.ImageList, stream);
 						if (uiBmp != null) {
 							LRUBitmapCache.GetOrCreate(key, () => uiBmp);

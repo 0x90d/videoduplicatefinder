@@ -186,32 +186,30 @@ namespace VDF.GUI.ViewModels {
 			if (!Dispatcher.UIThread.CheckAccess()) { Dispatcher.UIThread.Post(ApplyFilter); return; }
 
 			RebuildSearchPathIndex();
-
-			// Set visible children per group
-			foreach (var g in _allGroups) {
-				g.Children.Clear();
-				foreach (var leaf in g.AllChildren)
-					if (leaf.Item is { } vm && Matches(vm))
-						g.Children.Add(leaf);
-
-				UpdateGroupHeader(g);
-			}
-
-			// Remove what is empty
-			foreach (var g in Duplicates.ToList())
-				if (g.Children.Count == 0)
-					Duplicates.Remove(g);
-
-			// Insert what should be visible
-			foreach (var g in _allGroups)
-				if (g.Children.Count > 0 && !Duplicates.Contains(g)) {
-					// Insert at old position (according to _allGroups order)
-					var idx = 0;
-					while (idx < Duplicates.Count && _allGroups.IndexOf(Duplicates[idx]) < _allGroups.IndexOf(g))
-						idx++;
-					Duplicates.Insert(idx, g);
+			using (Dispatcher.UIThread.DisableProcessing()) {
+				// Set visible children per group
+				foreach (var g in _allGroups) {
+					var newKids = new List<RowNode>(g.AllChildren.Count);
+					foreach (var leaf in g.AllChildren)
+						if (leaf.Item is { } vm && Matches(vm))
+							newKids.Add(leaf);
+					g.Children.Clear();
+					if (newKids.Count > 0)
+						g.Children.AddRange(newKids);
+					UpdateGroupHeader(g);
 				}
 
+				// Remove what is empty
+				var newGroups = new List<RowNode>(_allGroups.Count);
+				foreach (var g in _allGroups)
+					if (g.Children.Count > 0)
+						newGroups.Add(g);
+
+				Duplicates.Clear();
+				if (newGroups.Count > 0)
+					Duplicates.AddRange(newGroups);
+
+			}
 		}
 	}
 }
