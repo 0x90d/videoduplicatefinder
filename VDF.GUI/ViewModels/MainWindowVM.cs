@@ -325,7 +325,7 @@ namespace VDF.GUI.ViewModels {
 								TextWrapping = TextWrapping.Wrap,
 								Margin = new Thickness(4, 0, 0, 0),
 							};
-							path.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Path"));
+							path.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Path") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 
 							path.DoubleTapped += (_, e) =>
 							{
@@ -351,25 +351,29 @@ namespace VDF.GUI.ViewModels {
 							// Row 0: Image -> Format
 							var tFormat = new TextBlock();
 							tFormat.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"));
-							tFormat.Bind(TextBlock.TextProperty,   new Binding("Item.ItemInfo.Format"));
+							tFormat.Bind(TextBlock.TextProperty,   new Binding("Item.ItemInfo.Format") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							sp.Children.Add(tFormat);
 
 							// Row 0 (alternativ): Video -> Duration
 							var tDur = new TextBlock();
 							tDur.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"){ Converter = NegateBoolConverter });
-							tDur.Bind(TextBlock.TextProperty,   new Binding("Item.ItemInfo.Duration"){ StringFormat = "{0:hh\\:mm\\:ss}"});
+							tDur.Bind(TextBlock.TextProperty,   new Binding("Item.ItemInfo.Duration"){
+								StringFormat = "{0:hh\\:mm\\:ss}",
+								TargetNullValue = string.Empty,
+								FallbackValue = string.Empty
+							});
 							tDur.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestDuration"){ Converter = IsBestConverter });
 							sp.Children.Add(tDur);
 
 							//Resolution
 							var tRes = new TextBlock { Margin = new Thickness(0) };
-							tRes.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.FrameSize"));
+							tRes.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.FrameSize") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							tRes.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFrameSize"){ Converter = IsBestConverter });
 							sp.Children.Add(tRes);
 
 							//Size
 							var tSize = new TextBlock();
-							tSize.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Size"));
+							tSize.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Size") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							tSize.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestSize"){ Converter = IsBestConverter });
 							sp.Children.Add(tSize);
 
@@ -377,7 +381,9 @@ namespace VDF.GUI.ViewModels {
 							var tDate = new TextBlock();
 							tDate.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.DateCreated")
 							{
-								Converter = ExtraShortDateTimeConverterInstance
+								Converter = ExtraShortDateTimeConverterInstance,
+								TargetNullValue = string.Empty,
+								FallbackValue = string.Empty
 							});
 							sp.Children.Add(tDate);
 
@@ -396,16 +402,24 @@ namespace VDF.GUI.ViewModels {
 							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"){ Converter = NegateBoolConverter });
 
 							var tFmt = new TextBlock();
-							tFmt.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Format"));
+							tFmt.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Format") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							sp.Children.Add(tFmt);
 
 							var tFps = new TextBlock();
-							tFps.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Fps"){ StringFormat = "{0} fps" });
-								tFps.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFps"){ Converter = IsBestConverter });
+							tFps.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Fps"){
+								StringFormat = "{0} fps",
+								TargetNullValue = string.Empty,
+								FallbackValue = string.Empty
+							});
+							tFps.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFps"){ Converter = IsBestConverter });
 							sp.Children.Add(tFps);
 
 							var tBr = new TextBlock();
-							tBr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.BitRateKbs"){ StringFormat = "{0} kbps" });
+							tBr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.BitRateKbs"){
+								StringFormat = "{0} kbps",
+								TargetNullValue = string.Empty,
+								FallbackValue = string.Empty
+							});
 							tBr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestBitRateKbs"){ Converter = IsBestConverter });
 							sp.Children.Add(tBr);
 
@@ -424,15 +438,15 @@ namespace VDF.GUI.ViewModels {
 							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"){ Converter = NegateBoolConverter });
 
 							var tAf = new TextBlock();
-							tAf.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioFormat"));
+							tAf.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioFormat") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							sp.Children.Add(tAf);
 
 							var tCh = new TextBlock();
-							tCh.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioChannel"));
+							tCh.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioChannel") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							sp.Children.Add(tCh);
 
 							var tSr = new TextBlock();
-							tSr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioSampleRate"));
+							tSr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioSampleRate") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							tSr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestAudioSampleRate"){ Converter = IsBestConverter });
 							sp.Children.Add(tSr);
 
@@ -447,7 +461,7 @@ namespace VDF.GUI.ViewModels {
 						{
 							if (n is null || n.IsGroup) return new Panel();
 							var tb = new TextBlock();
-							tb.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Similarity"));
+							tb.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Similarity") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							tb.HorizontalAlignment = HorizontalAlignment.Center;
 							return tb;
 						}, supportsRecycling: false),

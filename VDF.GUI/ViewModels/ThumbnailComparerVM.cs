@@ -50,10 +50,10 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		public void LoadThumbnail() {
-			List<Image> l = new(Item.ItemInfo.IsImage ? 1 : Item.ItemInfo.ThumbnailTimestamps.Count);
+			List<Bitmap> l = new(Item.ItemInfo.IsImage ? 1 : Item.ItemInfo.ThumbnailTimestamps.Count);
 
 			if (Item.ItemInfo.IsImage) {
-				l.Add(Image.Load(Item.ItemInfo.Path));
+				l.Add(new Bitmap(Item.ItemInfo.Path));
 			}
 			else {
 				for (int i = 0; i < Item.ItemInfo.ThumbnailTimestamps.Count; i++) {
@@ -65,7 +65,7 @@ namespace VDF.GUI.ViewModels {
 					}, SettingsFile.Instance.ExtendedFFToolsLogging);
 					if (b != null && b.Length > 0) {
 						using var byteStream = new MemoryStream(b);
-						l.Add(Image.Load(byteStream));
+						l.Add(new Bitmap(byteStream));
 					}
 				}
 			}

@@ -121,13 +121,33 @@ namespace VDF.GUI.Utils {
 				return null;
 			}
 		}
+		public static unsafe Bitmap? JoinImages(IReadOnlyList<Bitmap> images, Stream? jpegOut = null) {
+			if (images == null || images.Count == 0) return null;
+
+			int h = images[0].PixelSize.Height;
+			int w = 0; for (int i = 0; i < images.Count; i++) w += images[i].PixelSize.Width;
+
+			RenderTargetBitmap rtb = new(new PixelSize(w, h));
+
+			using var dc = rtb.CreateDrawingContext();
+			//dc.FillRectangle(Brushes.Transparent, new Rect(0, 0, w, h));
+
+			double x = 0;
+			foreach (var bmp in images) {
+				var src = new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
+				var dst = new Rect(x, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
+				dc.DrawImage(bmp, src, dst);
+				x += bmp.PixelSize.Width;
+			}
+			return rtb;
+		}
 
 		public static byte[] ToByteArray(this Bitmap image) {
 			using MemoryStream ms = new();
 			image.Save(ms);
 			return ms.ToArray();
 		}
-		public static byte[] ToByteArray(this Image image) {
+		public static byte[] ToByteArray(this SixLabors.ImageSharp.Image image) {
 			using MemoryStream ms = new();
 			image.Save(ms, JpegEncoder);
 			return ms.ToArray();
