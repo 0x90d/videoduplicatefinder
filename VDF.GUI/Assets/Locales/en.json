@@ -8,6 +8,7 @@
 	"QualityOrderDialog.BtnMoveUp": "Move Up",
 	"QualityOrderDialog.BtnMoveDown": "Move Down",
 	"QualityOrderDialog.Description": "Please arrange the quality criteria in order of priority (highest quality first)",
+	"ThumbnailComparerDialog.SelectTwoElementsMessage": "Please select two items first to use this mode.",
 	"DuplicateList.FilePath.Tooltip.OpenInExplorer": "Double click to open the file in explorer/shell",
 	"DuplicateList.Thumbnail.Tooltip.OpenFile": "Double click to open the file",
 	"DuplicateList.Header.DurationType": "Duration / type",

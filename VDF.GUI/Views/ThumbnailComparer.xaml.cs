@@ -15,7 +15,9 @@
 //
 
 using System.Runtime.InteropServices;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
@@ -47,12 +49,31 @@ namespace VDF.GUI.Views {
 			}
 			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
 		}
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
 		private void ThumbnailComparer_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
-			if (DataContext != null)
-				((ThumbnailComparerVM)DataContext).LoadThumbnails();
+			if (DataContext is ThumbnailComparerVM vm) {
+				vm.LoadThumbnailsAsync();
+				var canvas = this.FindControl<Grid>("CompareCanvas");
+				if (canvas != null) {
+					var b = canvas.Bounds;
+					vm.ViewportWidth = b.Width;
+					vm.ViewportHeight = b.Height;
+
+					canvas.GetObservable(Layoutable.BoundsProperty).Subscribe(b => {
+						vm.ViewportWidth = b.Width;
+						vm.ViewportHeight = b.Height;
+					});
+
+					canvas.GetObservable(Visual.IsVisibleProperty).Subscribe(visible => {
+						var cb = canvas.Bounds;
+						vm.ViewportWidth = cb.Width;
+						vm.ViewportHeight = cb.Height;
+					});
+				}
+			}
 		}
 	}
 }
