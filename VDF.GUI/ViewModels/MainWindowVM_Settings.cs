@@ -74,7 +74,7 @@ namespace VDF.GUI.ViewModels {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					AllowMultiple = true,
-					Title = "Select folder"
+					Title = App.Lang["Dialog.SelectFolder"]
 				}
 				);
 
@@ -129,7 +129,7 @@ namespace VDF.GUI.ViewModels {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					AllowMultiple = true,
-					Title = "Select folder"
+					Title = App.Lang["Dialog.SelectFolder"]
 				});
 
 			if (result == null || result.Count == 0) return;

@@ -274,7 +274,7 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
-					Title = "Select folder"
+					Title = App.Lang["Dialog.SelectFolder"]
 				});
 
 			if (result == null || result.Count == 0) return;
@@ -286,7 +286,7 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> MoveSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
-					Title = "Select folder"
+					Title = App.Lang["Dialog.SelectFolder"]
 				});
 
 			if (result == null || result.Count == 0) return;

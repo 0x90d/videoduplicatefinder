@@ -1482,5 +1482,9 @@ Non-Windows setup:
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 		});
 
+		public ReactiveCommand<Unit, Unit> RelocateDatabaseFilesCommand => ReactiveCommand.Create(() => {
+			var dlg = new RelocateFilesDialog();
+			dlg.ShowDialog(ApplicationHelpers.MainWindow);
+		});
 	}
 }

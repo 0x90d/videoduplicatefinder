@@ -4,6 +4,7 @@
 	"Dialog.Yes": "Yes",
 	"Dialog.No": "No",
 	"Dialog.Cancel": "Cancel",
+	"Dialog.SelectFolder": "Select Folder",
 	"QualityOrderDialog.Title": "Select the order of quality criteria",
 	"QualityOrderDialog.BtnMoveUp": "Move Up",
 	"QualityOrderDialog.BtnMoveDown": "Move Down",
