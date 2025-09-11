@@ -85,10 +85,10 @@ namespace VDF.GUI.Views {
 					"ScannedFiles.db")))
 					return;
 
-			var dlg = new Views.ChooseAlgoView();
 			while (!this.IsVisible) {
 				await Task.Delay(200);
 			}
+			var dlg = new Views.ChooseAlgoView();
 			await dlg.ShowDialog(this);
 			if (dlg.FindControl<RadioButton>("Cb16x16")?.IsChecked == true)
 				VDF.Core.Utils.DatabaseUtils.Create16x16Database();
