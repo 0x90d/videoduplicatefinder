@@ -225,6 +225,7 @@ namespace VDF.GUI.ViewModels {
 			if (GetSelectedDuplicateItem() == null) return;
 			var sel = TreeSource.RowSelection?.SelectedItems?.ToArray() ?? Array.Empty<RowNode>();
 			RemoveSelectionFromTree(TreeSource.RowSelection?.SelectedItems);
+			RefreshGroupStats();
 		});
 		public ReactiveCommand<Unit, Unit> DeleteSelectionWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show("Delete files also from DISK?",

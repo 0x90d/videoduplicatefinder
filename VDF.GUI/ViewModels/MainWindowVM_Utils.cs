@@ -144,7 +144,7 @@ namespace VDF.GUI.ViewModels {
 				if (grp == null || !grp.IsGroup) continue;
 				RemoveGroupCompletely(grp);
 			}
-
+			RecomputeSelectionCounter();
 		}
 		private void RemoveGroupCompletely(RowNode g) {
 			foreach (var leaf in g.AllChildren)
@@ -192,6 +192,7 @@ namespace VDF.GUI.ViewModels {
 				// 3) Group remains: Update header
 				UpdateGroupHeader(g);
 			}
+			RecomputeSelectionCounter();
 		}
 		private static void UpdateGroupHeader(RowNode g) => g.Header = $"{g.Header.AsSpan().Slice(0, g.Header.LastIndexOf('('))}({g.Children.Count})";
 

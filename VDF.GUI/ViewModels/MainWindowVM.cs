@@ -663,6 +663,7 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		private void DetachChecked(DuplicateItemVM vm) {
+			vm.Checked = false;
 			vm.PropertyChanged -= Vm_PropertyChanged;
 		}
 		private void DetachAllCheckedHandlers() {
