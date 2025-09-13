@@ -818,22 +818,16 @@
                                     </Border>
                                 </Grid>
                             </Grid>
-                            <Grid
-                                Grid.Row="2"
-                                IsVisible="{Binding !Duplicates.Count}"
-                                RowDefinitions="Auto, Auto">
+                            <Grid Grid.Row="2" IsVisible="{Binding !Duplicates.Count}">
                                 <StackPanel
-                                    Grid.Row="0"
                                     MinHeight="20"
                                     Margin="0,5,0,0"
                                     Orientation="Horizontal">
                                     <TextBlock Text="{Binding DuplicatesSelectedCounter, Mode=OneWay, StringFormat=Selected Duplicates: \{0\}}" />
-                                </StackPanel>
-                                <StackPanel
-                                    Grid.Row="1"
-                                    MinHeight="20"
-                                    Margin="0,5,0,0"
-                                    Orientation="Horizontal">
+                                    <Border
+                                        Width="1"
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Duplicates: \{0\}}" />
                                     <Border
                                         Width="1"

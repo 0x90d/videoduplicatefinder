@@ -15,6 +15,7 @@
 //
 
 using System.Globalization;
+using System.Text;
 using ActiproSoftware.UI.Avalonia.Themes;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
@@ -63,5 +64,66 @@ namespace VDF.GUI.Mvvm {
 		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => ExtraShortDateTimeFormater.DateToString((DateTime)value!);
 
 		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+	}
+	public sealed class PathDisplaySanitizer : IValueConverter {
+		public static readonly PathDisplaySanitizer Instance = new();
+
+		public object Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) {
+			// Always return a non-null string
+			if (value is null) return string.Empty;
+			var s = value.ToString() ?? string.Empty;
+
+			// 1) Normalize to NFC (helps with composed characters)
+			s = s.Normalize(NormalizationForm.FormC);
+
+			// 2) Strip bidi/format control chars that can destabilize wrapping
+			//    Cf = "Other, Format" (includes LRM/RLM/LRE/RLE/RLO/PDF, ZWJ/ZWNJ, etc.)
+			s = RemoveFormatControls(s);
+
+			// 3) Fix or drop isolated surrogate halves
+			s = RemoveIsolatedSurrogates(s);
+
+			return s;
+		}
+
+		public object ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+			=> Avalonia.Data.BindingOperations.DoNothing;
+
+		// --- helpers ---
+		private static string RemoveFormatControls(string s) {
+			// Fast path: no control char present
+			bool hasCf = false;
+			foreach (var ch in s) {
+				if (char.GetUnicodeCategory(ch) == System.Globalization.UnicodeCategory.Format) { hasCf = true; break; }
+			}
+			if (!hasCf) return s;
+
+			var sb = new System.Text.StringBuilder(s.Length);
+			foreach (var ch in s) {
+				if (char.GetUnicodeCategory(ch) != System.Globalization.UnicodeCategory.Format)
+					sb.Append(ch);
+			}
+			return sb.ToString();
+		}
+
+		private static string RemoveIsolatedSurrogates(string s) {
+			var sb = new System.Text.StringBuilder(s.Length);
+			for (int i = 0; i < s.Length; i++) {
+				char c = s[i];
+				if (!char.IsSurrogate(c)) { sb.Append(c); continue; }
+
+				// High surrogate must be followed by low surrogate
+				if (char.IsHighSurrogate(c)) {
+					if (i + 1 < s.Length && char.IsLowSurrogate(s[i + 1])) {
+						sb.Append(c);
+						sb.Append(s[i + 1]);
+						i++; // skip the low surrogate
+					}
+					// else: drop isolated high surrogate
+				}
+				// Low surrogate without preceding high surrogate → drop
+			}
+			return sb.ToString();
+		}
 	}
 }

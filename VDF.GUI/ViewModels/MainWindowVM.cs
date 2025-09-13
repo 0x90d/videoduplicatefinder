@@ -280,9 +280,13 @@ namespace VDF.GUI.ViewModels {
 									var tb = new TextBlock
 									{
 										FontWeight = FontWeight.Bold,
-										Margin = new Thickness(8, 0, 0, 0)
+										Margin = new Thickness(8, 0, 0, 0),
+										Text = string.Empty
 									};
-									tb.Bind(TextBlock.TextProperty, new Binding(nameof(RowNode.Header)));
+									tb.Bind(TextBlock.TextProperty, new Binding(nameof(RowNode.Header)) {
+										TargetNullValue = string.Empty,
+										FallbackValue  = string.Empty
+									});
 									return tb;
 								}
 
@@ -320,12 +324,26 @@ namespace VDF.GUI.ViewModels {
 						{
 							if (n is null || n.IsGroup) return new Panel();
 
-							var path = new TextBlock
+							//var path = new TextBlock
+							//{
+							//	TextWrapping = TextWrapping.Wrap,
+							//	Margin = new Thickness(4, 0, 0, 0),
+							//	Text = string.Empty,
+
+							//};
+							var path = new SelectableTextBlock
 							{
-								TextWrapping = TextWrapping.Wrap,
-								Margin = new Thickness(4, 0, 0, 0),
+								Text            = string.Empty,
+								TextWrapping    = TextWrapping.WrapWithOverflow,
+								Margin          = new Thickness(4, 0, 0, 0),
+								FlowDirection   = FlowDirection.LeftToRight,
 							};
-							path.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Path") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
+							path.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Path") {
+								Converter = PathDisplaySanitizer.Instance,
+								TargetNullValue = string.Empty,
+								FallbackValue = string.Empty
+							});
+
 
 							path.DoubleTapped += (_, e) =>
 							{
@@ -366,7 +384,7 @@ namespace VDF.GUI.ViewModels {
 							sp.Children.Add(tDur);
 
 							//Resolution
-							var tRes = new TextBlock { Margin = new Thickness(0) };
+							var tRes = new TextBlock();
 							tRes.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.FrameSize") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							tRes.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFrameSize"){ Converter = IsBestConverter });
 							sp.Children.Add(tRes);
