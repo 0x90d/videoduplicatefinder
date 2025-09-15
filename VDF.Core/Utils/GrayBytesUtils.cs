@@ -24,6 +24,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace VDF.Core.Utils {
 	static class GrayBytesUtils {
+		internal const int OldSide = 16;
 		internal const int Side = 32;
 		const int GrayByteValueLength = Side * Side; //1024
 		const byte BlackPixelLimit = 0x20;
@@ -69,16 +70,16 @@ namespace VDF.Core.Utils {
 		public static unsafe byte[]? GetGrayScaleValues16x16(Image original, double darkPercent = 80) {
 			const int graybyteLength = 256;
 			using var img = original.CloneAs<L8>();
-			img.Mutate(ctx => ctx.Resize(Side, Side).Grayscale());
+			img.Mutate(ctx => ctx.Resize(OldSide, OldSide).Grayscale());
 
 			byte[] buffer = new byte[graybyteLength];
 
 			int dark = 0;
 			img.ProcessPixelRows(accessor => {
-				for (int y = 0; y < Side; y++) {
+				for (int y = 0; y < OldSide; y++) {
 					Span<L8> row = accessor.GetRowSpan(y);
-					int baseIdx = y * Side;
-					for (int x = 0; x < Side; x++) {
+					int baseIdx = y * OldSide;
+					for (int x = 0; x < OldSide; x++) {
 						byte lum = row[x].PackedValue;
 						buffer[baseIdx + x] = lum;
 						if (lum <= BlackPixelLimit) dark++;
