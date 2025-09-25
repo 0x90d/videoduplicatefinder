@@ -14,9 +14,10 @@
     xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
     xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
+    xmlns:tdg="using:Avalonia.Controls.Models.TreeDataGrid"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:Name="MainWindow"
-    Title="Video Duplicate Finder - Cross-platform"
+    Title="{Binding Source={x:Static local:App.Lang}, Path=[App.Title]}"
     Width="1020"
     Height="950"
     d:DesignHeight="750"
@@ -82,10 +83,7 @@
                                 FontSize="12"
                                 Text="Scanner" />
                         </TabItem.Header>
-                        <Grid
-                            Margin="0,0,0,10"
-                            Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}"
-                            RowDefinitions="Auto, *, Auto, Auto">
+                        <Grid Margin="0,0,0,10" RowDefinitions="Auto, *, Auto, Auto, Auto">
                             <Menu Grid.Row="0" MinHeight="30">
                                 <MenuItem
                                     Command="{Binding StartScanCommand}"
@@ -206,6 +204,14 @@
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Text="Edit..." />
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <MenuItem Command="{Binding RelocateDatabaseFilesCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="Relocate Files" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <Separator />
@@ -348,7 +354,7 @@
                                     </MenuItem>
                                 </MenuItem>
                             </Menu>
-                            <Grid Grid.Row="1">
+                            <Grid Grid.Row="1" IsVisible="{Binding ShowTreeDataGrid}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -392,10 +398,7 @@
                                         </MenuItem>
                                         <MenuItem Command="{Binding CheckLowestQualityCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock
-                                                    VerticalAlignment="Center"
-                                                    Text="Select Lowest Duration / Quality"
-                                                    ToolTip.Tip="Keep longest / Best Quality. The order is: Duration, Resolution, FPS, Bitrate, Audio Bitrate" />
+                                                <TextBlock VerticalAlignment="Center" Text="Select Lowest Quality" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Header="Date">
@@ -501,50 +504,6 @@
                                                 Text="Filter / Sort" />
                                         </StackPanel>
                                     </CheckBox>
-
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock
-                                            Margin="5,0,0,0"
-                                            VerticalAlignment="Center"
-                                            IsEnabled="False"
-                                            Text="Zoom All:" />
-                                        <Slider
-                                            x:Name="ZoomSlider"
-                                            MinWidth="100"
-                                            Margin="5,0,0,0"
-                                            Padding="0"
-                                            VerticalAlignment="Center"
-                                            Classes="theme-solid"
-                                            IsSnapToTickEnabled="True"
-                                            LargeChange="0.5"
-                                            Maximum="4.0"
-                                            Minimum="0.5"
-                                            Orientation="Horizontal"
-                                            SmallChange="0.1"
-                                            TickFrequency="0.5"
-                                            Value="1.0" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock
-                                            Margin="5,0,0,0"
-                                            VerticalAlignment="Center"
-                                            IsEnabled="False"
-                                            Text="Zoom Thumbnails:" />
-                                        <Slider
-                                            x:Name="ZoomSliderThumbnails"
-                                            MinWidth="100"
-                                            Margin="5,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Classes="theme-solid"
-                                            IsSnapToTickEnabled="True"
-                                            LargeChange="0.5"
-                                            Maximum="4.0"
-                                            Minimum="0.5"
-                                            Orientation="Horizontal"
-                                            SmallChange="0.1"
-                                            TickFrequency="0.5"
-                                            Value="1.0" />
-                                    </StackPanel>
                                 </Menu>
                                 <Grid
                                     x:Name="GridFilter"
@@ -645,214 +604,34 @@
                                             Text="Note: Any action (select, delete etc) will only apply on filtered duplicates" />
                                     </StackPanel>
                                 </Grid>
-                                <LayoutTransformControl Grid.Row="2">
-                                    <DataGrid
-                                        Name="dataGridGrouping"
-                                        Grid.Row="2"
-                                        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                                        CanUserResizeColumns="True">
-                                        <DataGrid.KeyBindings>
+                                <Grid Grid.Row="2">
+                                    <TreeDataGrid
+                                        x:Name="treeGrouping"
+                                        MaxWidth="{Binding $parent[Window].Bounds.Width}"
+                                        CanUserResizeColumns="True"
+                                        IsVisible="{Binding ShowTreeDataGrid}"
+                                        Source="{Binding TreeSource}">
+                                        <TreeDataGrid.KeyBindings>
                                             <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2" />
                                             <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space" />
-                                            <KeyBinding Command="{Binding OpenItemsByColIdCommand}" Gesture="Enter" />
+                                            <KeyBinding Command="{Binding OpenItemCommand}" Gesture="Enter" />
+                                            <KeyBinding Command="{Binding OpenItemInFolderCommand}" Gesture="Shift+Enter" />
                                             <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete" />
                                             <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete" />
-                                            <KeyBinding Command="{Binding DeleteHighlitedCommand}" Gesture="Control+Delete" />
+                                            <KeyBinding Command="{Binding DeleteHighlightedCommand}" Gesture="Control+Delete" />
                                             <KeyBinding Command="{Binding ShowGroupInThumbnailComparerCommand}" Gesture="Alt+C" />
-                                        </DataGrid.KeyBindings>
-                                        <DataGrid.Columns>
-                                            <DataGridTemplateColumn>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <CheckBox IsChecked="{Binding Checked}" />
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Header="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <LayoutTransformControl>
-                                                            <LayoutTransformControl.LayoutTransform>
-                                                                <ScaleTransform ScaleX="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" ScaleY="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" />
-                                                            </LayoutTransformControl.LayoutTransform>
-                                                            <Image
-                                                                Name="ThumbnailImage"
-                                                                Source="{Binding Thumbnail}"
-                                                                Stretch="None">
-                                                                <i:Interaction.Behaviors>
-                                                                    <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #ThumbnailImage}">
-                                                                        <ia:InvokeCommandAction Command="{Binding $parent[DataGrid].DataContext.OpenItemCommand}" CommandParameter="{Binding}" />
-                                                                    </ia:EventTriggerBehavior>
-                                                                </i:Interaction.Behaviors>
-                                                                <ToolTip.Tip>
-                                                                    <TextBlock Text="Double click to open the file" />
-                                                                </ToolTip.Tip>
-                                                            </Image>
-                                                        </LayoutTransformControl>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn
-                                                Width="1*"
-                                                Header="Path"
-                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}">
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock
-                                                            x:Name="TextBlockPath"
-                                                            Margin="10,0,0,0"
-                                                            Text="{Binding ItemInfo.Path}"
-                                                            TextWrapping="Wrap">
-                                                            <i:Interaction.Behaviors>
-                                                                <ia:EventTriggerBehavior EventName="DoubleTapped" SourceObject="{Binding #TextBlockPath}">
-                                                                    <ia:InvokeCommandAction Command="{Binding $parent[DataGrid].DataContext.OpenItemInFolderCommand}" />
-                                                                </ia:EventTriggerBehavior>
-                                                            </i:Interaction.Behaviors>
-                                                            <ToolTip.Tip>
-                                                                <TextBlock Text="Double click to open the file in explorer/shell" />
-                                                            </ToolTip.Tip>
-                                                        </TextBlock>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}">
-                                                <DataGridTemplateColumn.Header>
-                                                    <StackPanel>
-                                                        <TextBlock Text="Duration / type" />
-                                                        <TextBlock Text="Resolution" />
-                                                        <TextBlock Text="Size" />
-                                                        <TextBlock Text="Creation Date" />
-                                                    </StackPanel>
-                                                </DataGridTemplateColumn.Header>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <Grid Margin="10,0,0,0">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                            </Grid.RowDefinitions>
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                IsVisible="{Binding ItemInfo.IsImage}"
-                                                                Text="{Binding ItemInfo.Format, Mode=OneWay}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}}"
-                                                                IsVisible="{Binding !ItemInfo.IsImage}"
-                                                                Text="{Binding ItemInfo.Duration, StringFormat=\{0:hh\\:mm\\:ss\}}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="1"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestFrameSize, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.FrameSize}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="2"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.Size}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="3"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}"
-                                                                TextWrapping="Wrap" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}">
-                                                <DataGridTemplateColumn.Header>
-                                                    <StackPanel>
-                                                        <TextBlock Text="Format" />
-                                                        <TextBlock Text="Fps" />
-                                                        <TextBlock Text="Bit Rate" />
-                                                        <TextBlock Text=" " />
-                                                    </StackPanel>
-                                                </DataGridTemplateColumn.Header>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <Grid IsVisible="{Binding !ItemInfo.IsImage}">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                            </Grid.RowDefinitions>
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.Format, Mode=OneWay}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="1"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestFps, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.Fps, Mode=OneWay, StringFormat=\{0\} fps}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="2"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestBitRateKbs, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.BitRateKbs, Mode=OneWay, StringFormat=\{0\} kbps}"
-                                                                TextWrapping="Wrap" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}">
-                                                <DataGridTemplateColumn.Header>
-                                                    <StackPanel>
-                                                        <TextBlock Text="Audio Format" />
-                                                        <TextBlock Text="Audio Channel" />
-                                                        <TextBlock Text="Audio Sample Rate" />
-                                                        <TextBlock Text=" " />
-                                                    </StackPanel>
-                                                </DataGridTemplateColumn.Header>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <Grid IsVisible="{Binding !ItemInfo.IsImage}">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                            </Grid.RowDefinitions>
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.AudioFormat}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="1"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.AudioChannel}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="2"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestAudioSampleRate, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.AudioSampleRate}"
-                                                                TextWrapping="Wrap" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTextColumn
-                                                Width="1*"
-                                                Binding="{Binding ItemInfo.Similarity}"
-                                                Header="Similarity"
-                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
-                                        </DataGrid.Columns>
-                                        <DataGrid.ContextMenu>
+                                            <KeyBinding Command="{Binding MarkGroupAsNotAMatchCommand}" Gesture="Alt+X" />
+                                        </TreeDataGrid.KeyBindings>
+                                        <TreeDataGrid.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Command="{Binding OpenItemInFolderCommand}" Header="Open In Folder" />
+                                                <MenuItem
+                                                    Command="{Binding OpenItemInFolderCommand}"
+                                                    Header="Open File"
+                                                    InputGesture="Return" />
+                                                <MenuItem
+                                                    Command="{Binding OpenItemInFolderCommand}"
+                                                    Header="Open In Folder"
+                                                    InputGesture="Shift+Return" />
                                                 <MenuItem
                                                     Command="{Binding RenameFileCommand}"
                                                     Header="Rename File"
@@ -996,6 +775,7 @@
                                                     <MenuItem
                                                         Command="{Binding MarkGroupAsNotAMatchCommand}"
                                                         Header="Mark as 'Not a match'"
+                                                        InputGesture="Alt+X"
                                                         ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
                                                     <MenuItem
                                                         Command="{Binding OpenGroupCommand}"
@@ -1013,63 +793,87 @@
                                                         InputGesture="Alt+C" />
                                                 </MenuItem>
                                             </ContextMenu>
-                                        </DataGrid.ContextMenu>
-                                    </DataGrid>
-                                    <LayoutTransformControl.LayoutTransform>
-                                        <ScaleTransform ScaleX="{Binding ElementName=ZoomSlider, Path=Value}" ScaleY="{Binding ElementName=ZoomSlider, Path=Value}" />
-                                    </LayoutTransformControl.LayoutTransform>
-                                </LayoutTransformControl>
+                                        </TreeDataGrid.ContextMenu>
+                                    </TreeDataGrid>
+                                    <Border
+                                        x:Name="EmptyOverlay"
+                                        Background="Transparent"
+                                        IsVisible="{Binding !ShowTreeDataGrid}">
+                                        <StackPanel
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Spacing="6">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                FontSize="18"
+                                                IsVisible="{Binding !IsScanning}"
+                                                Opacity="0.9"
+                                                Text="Please start your first scan" />
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                IsVisible="{Binding !IsScanning}"
+                                                Opacity="0.65"
+                                                Text="Click “Scan” in the toolbar to begin." />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
                             </Grid>
-                            <Grid
-                                Grid.Row="2"
-                                IsVisible="{Binding !!Duplicates.Count}"
-                                RowDefinitions="Auto, Auto">
+                            <Grid Grid.Row="2" IsVisible="{Binding !Duplicates.Count}">
                                 <StackPanel
-                                    Grid.Row="0"
                                     MinHeight="20"
+                                    Margin="0,5,0,0"
                                     Orientation="Horizontal">
-                                    <TextBlock Text="{Binding DuplicatesSelectedCounter, Mode=OneWay, StringFormat=Total Selected Duplicates: \{0\}}" />
-                                </StackPanel>
-                                <StackPanel
-                                    Grid.Row="1"
-                                    MinHeight="20"
-                                    Orientation="Horizontal">
-                                    <TextBlock Text="{Binding #dataGridGrouping.Items.Count, Mode=OneWay, StringFormat=Visible Duplicates: \{0\}}" />
-                                    <Separator
+                                    <TextBlock Text="{Binding DuplicatesSelectedCounter, Mode=OneWay, StringFormat=Selected Duplicates: \{0\}}" />
+                                    <Border
                                         Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Total Duplicates: \{0\}}" />
-                                    <Separator
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TotalDuplicates, Mode=OneWay, StringFormat=Duplicates: \{0\}}" />
+                                    <Border
                                         Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalDuplicateGroups, Mode=OneWay, StringFormat=Total Duplicate Groups: \{0\}}" />
-                                    <Separator
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TotalDuplicateGroups, Mode=OneWay, StringFormat=Duplicate Groups: \{0\}}" />
+                                    <Border
                                         Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalDuplicatesSize, Mode=OneWay, StringFormat=Total Size: \{0\}}" />
-                                    <Separator
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TotalDuplicatesSize, Mode=OneWay, StringFormat=Size: \{0\}}" />
+                                    <Border
                                         Width="1"
-                                        Margin="5"
-                                        Background="{actipro:ThemeResource StatusBarBorderBrush}" />
-                                    <TextBlock Text="{Binding TotalSizeRemoved, Mode=OneWay, StringFormat=Total Size Removed: \{0\}}" />
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TotalSizeRemoved, Mode=OneWay, StringFormat=Size Removed: \{0\}}" />
                                 </StackPanel>
                             </Grid>
-                            <Grid Grid.Row="3">
+                            <Grid Grid.Row="3" Margin="0,5,0,0">
                                 <StackPanel MinHeight="20" Orientation="Horizontal">
                                     <ProgressBar
                                         Name="PbScanProgress"
                                         MinWidth="100"
                                         Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
                                         Value="{Binding ScanProgressValue, Mode=OneWay}" />
-                                    <Separator Width="1" Margin="5" />
-                                    <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: \{0:hh\}:\{0:mm\}:\{0:ss\}}" />
-                                    <Separator Width="1" Margin="5" />
-                                    <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~\{0:hh\}:\{0:mm\}:\{0:ss\}}" />
-                                    <Separator Width="1" Margin="5" />
+                                    <Border
+                                        Width="1"
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding TimeElapsed, Mode=OneWay, StringFormat=Elapsed time: {0:c}}" />
+                                    <Border
+                                        Width="1"
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock Text="{Binding RemainingTime, Mode=OneWay, StringFormat=Remaining time: ~{0:c}}" />
+                                    <Border
+                                        Width="1"
+                                        Margin="5,0"
+                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock Text="{Binding ScanProgressText, Mode=OneWay} TextTrimming=CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Grid.Row="4" IsVisible="{Binding ShowThumbnailRetrievalProgress}">
+                                <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                                    <ProgressBar MinWidth="100" IsIndeterminate="{Binding ShowThumbnailRetrievalProgressBar}" />
+                                    <TextBlock Margin="5,0" Text="{Binding ThumbnailRetrievalProgressText}" />
                                 </StackPanel>
                             </Grid>
                         </Grid>
@@ -1081,10 +885,7 @@
                                 FontSize="12"
                                 Text="Settings" />
                         </TabItem.Header>
-                        <Grid
-                            Margin="0,0,0,10"
-                            Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}"
-                            RowDefinitions="Auto, *">
+                        <Grid Margin="0,0,0,10" RowDefinitions="Auto, *">
                             <Menu Grid.Row="0" MinHeight="30">
                                 <MenuItem Command="{Binding SaveSettingsCommand}" ToolTip.Tip="Note: Settings are automatically saved on normal exit">
                                     <MenuItem.Header>
@@ -1242,6 +1043,12 @@
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
+                                                    <CheckBox
+                                                        VerticalAlignment="Center"
+                                                        Content="Use pHash instead of visual similarity"
+                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}"
+                                                        IsThreeState="False"
+                                                        ToolTip.Tip="pHash = slower but more robust to re-encoding, resizing, contrast changes etc. Visual similarity = faster, also works on reencoded videos, watermarks etc but less robust. Ignored if you're using an old database with 16x16 graybyte values." />
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Margin="15,5,0,0">
                                                     <TextBlock VerticalAlignment="Center" Text="Percent:" />
@@ -1250,6 +1057,7 @@
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Center"
                                                         FormatString="\{0\}%"
+                                                        Increment="0.1"
                                                         Maximum="100"
                                                         Minimum="1"
                                                         ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
@@ -1260,6 +1068,7 @@
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Center"
                                                         FormatString="\{0\}%"
+                                                        Increment="0.1"
                                                         Maximum="100"
                                                         Minimum="0"
                                                         ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
@@ -1287,7 +1096,7 @@
                                                         VerticalAlignment="Center"
                                                         Maximum="100"
                                                         Minimum="-1"
-                                                        ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide, a value of 1 is most stable."
+                                                        ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide (takes full speed), a value of 1 is most stable (lets you interact with your system while scan runs in background). Maximum should be the amount of physical cores of your CPU."
                                                         Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
                                                     <TextBlock VerticalAlignment="Center" Text="Custom FF Arguments:" />
                                                     <TextBox
@@ -1715,7 +1524,7 @@
                                 FontSize="12"
                                 Text="Log" />
                         </TabItem.Header>
-                        <Grid Margin="0,0,0,10" Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}">
+                        <Grid Margin="0,0,0,10">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition />
@@ -1764,7 +1573,6 @@
                 </TabControl>
                 <Grid
                     x:Name="BusyIndicator"
-                    Background="Silver"
                     IsVisible="{Binding IsBusy}"
                     Opacity="0.8">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -1785,7 +1593,7 @@
                             Margin="0,10,0,0"
                             HorizontalAlignment="Center"
                             FontSize="14"
-                            Text="{Binding IsBusyText}" />
+                            Text="{Binding IsBusyOverlayText}" />
                     </StackPanel>
                 </Grid>
             </Grid>

@@ -1,15 +1,15 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
@@ -57,10 +57,14 @@ namespace VDF.Core.Utils {
 			if (success == 0 && stat.st_nlink <= 1)
 				return Array.Empty<string>();
 
+			string? mountPoint = GetMountPointForDevice(stat.st_dev);
+			if (string.IsNullOrEmpty(mountPoint))
+				mountPoint = "/"; // Fallback
+
 			Process process = new() {
 				StartInfo = {
 					FileName = "find",
-					Arguments = $" {Path.GetPathRoot(filepath)} -samefile \"{filepath}\"",
+					Arguments = $" {EscapePath(mountPoint)} -xdev -type f -links +1 -samefile {EscapePath(filepath)}",
 					RedirectStandardOutput = true,
 					/*
 					 * Do not redirect error output, this makes the process run
@@ -84,6 +88,28 @@ namespace VDF.Core.Utils {
 				Logger.Instance.Info($"Failed getting hard links of file: {filepath}, reason: {ex.Message}");
 				return Array.Empty<string>();
 			}
+		}
+
+		static string EscapePath(string path) => $"\"{path.Replace("\"", "\\\"")}\"";
+
+		static string? GetMountPointForDevice(ulong deviceId) {
+			try {
+				foreach (var line in File.ReadAllLines("/proc/mounts")) {
+					var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+					if (parts.Length < 2)
+						continue;
+
+					var mountPath = parts[1];
+
+					// Check device ID of mount path
+					if (Mono.Unix.Native.Syscall.stat(mountPath, out var mpStat) == 0) {
+						if (mpStat.st_dev == deviceId)
+							return mountPath;
+					}
+				}
+			}
+			catch { }
+			return null;
 		}
 
 		static IEnumerable<string> GetHardLinksWindows(string filepath) {

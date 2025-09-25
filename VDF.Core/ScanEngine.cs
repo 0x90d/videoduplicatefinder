@@ -1,15 +1,15 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
@@ -37,6 +37,7 @@ namespace VDF.Core {
 		public event EventHandler? ScanDone;
 		public event EventHandler? ScanAborted;
 		public event EventHandler? ThumbnailsRetrieved;
+		public event Action<int, int>? ThumbnailProgress;
 		public event EventHandler? FilesEnumerated;
 		public event EventHandler? DatabaseCleaned;
 
@@ -182,6 +183,9 @@ namespace VDF.Core {
 		Task BuildFileList() => Task.Run(() => {
 
 			DatabaseUtils.LoadDatabase();
+			if (DatabaseUtils.DbVersion < 2)
+				Settings.UsePHashing = false;
+
 			int oldFileCount = DatabaseUtils.Database.Count;
 
 			foreach (string path in Settings.IncludeList) {
@@ -374,8 +378,10 @@ namespace VDF.Core {
 
 						entry.mediaInfo = info;
 					}
-					// 08/17/21: This is for people upgrading from an older VDF version
+					// This is for people upgrading from an older VDF version
+					// Or if you create a new database, start and immediately stop the scan and then try to scan again
 					entry.grayBytes ??= new Dictionary<double, byte[]?>();
+					entry.PHashes ??= new Dictionary<double, ulong?>();
 
 
 					if (entry.IsImage && entry.grayBytes.Count == 0) {
@@ -397,11 +403,11 @@ namespace VDF.Core {
 		Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
 			Dictionary<double, byte[]?>? flippedGrayBytes = new();
 			if (entry.IsImage)
-				flippedGrayBytes.Add(0, GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
+				flippedGrayBytes.Add(0, DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(entry.grayBytes[0]!) : GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
 			else {
 				for (int j = 0; j < positionList.Count; j++) {
 					double idx = entry.GetGrayBytesIndex(positionList[j]);
-					flippedGrayBytes.Add(idx, GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
+					flippedGrayBytes.Add(idx, DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(entry.grayBytes[idx]!) : GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
 				}
 			}
 			return flippedGrayBytes;
@@ -409,9 +415,9 @@ namespace VDF.Core {
 
 		bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
 			grayBytes ??= entry.grayBytes;
+			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
 			bool ignoreWhitePixels = Settings.IgnoreWhitePixels;
-			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			difference = 1f;
 
 			if (entry.IsImage) {
@@ -421,19 +427,38 @@ namespace VDF.Core {
 				return difference <= differenceLimit;
 			}
 
-			float diff, diffSum = 0;
+			if (Settings.UsePHashing) {
+				float differenceLimitpHash = Settings.Percent / 100f;
+
+				if (!entry.PHashes.TryGetValue(entry.GetGrayBytesIndex(positionList[0]), out ulong? phash))
+					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(grayBytes[positionList[0]]);
+				if (!compItem.PHashes.TryGetValue(compItem.GetGrayBytesIndex(positionList[0]), out ulong? phash_comp))
+					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes[positionList[0]]);
+				if (phash == null || phash_comp == null) {
+					Logger.Instance.Info($"Failed to compute pHash for {entry.Path} or {compItem.Path}");
+					difference = 1f;
+					return false;
+				}
+				bool isDup = pHash.PHashCompare.IsDuplicateByPercent(phash.Value, phash_comp.Value, out float similarity, differenceLimitpHash, strict: true);
+				difference = 1f - similarity;
+				return isDup;
+
+			}
+
+
+
+			differenceLimit *= positionList.Count;
+			float diffSum = 0;
 			for (int j = 0; j < positionList.Count; j++) {
-				diff = ignoreBlackPixels || ignoreWhitePixels ?
+				diffSum += ignoreBlackPixels || ignoreWhitePixels ?
 							GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
 							GrayBytesUtils.PercentageDifference(
 								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
 								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
-				if (diff > differenceLimit)
+				if (diffSum > differenceLimit) // already exceeding maximum tolerated diff -> exit early
 					return false;
-				else
-					diffSum += diff;
 			}
 			difference = diffSum / positionList.Count;
 			return !float.IsNaN(difference);
@@ -554,11 +579,24 @@ namespace VDF.Core {
 		public static bool ImportDataBaseFromJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ImportDatabaseFromJson(jsonFile, options);
 		public async void RetrieveThumbnails() {
 			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
+			int total = dupList.Count;
+			int done = 0;
+			int lastNotified = 0;
+
+			var sw = Stopwatch.StartNew();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<Image>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
+
+					int current = Interlocked.Increment(ref done);
+					if (sw.ElapsedMilliseconds > 300)
+						if (Interlocked.Exchange(ref lastNotified, current) < current) {
+							sw.Restart(); // only this thread resets the stopwatch
+							ThumbnailProgress?.Invoke(current, total);
+						}
+
 					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						timeStamps = new(0);
@@ -602,6 +640,7 @@ namespace VDF.Core {
 					}
 					Debug.Assert(timeStamps != null);
 					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps!);
+
 					return ValueTask.CompletedTask;
 				});
 			}
@@ -620,9 +659,14 @@ namespace VDF.Core {
 							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
 						}
 				};
-				bitmapImage.Mutate(a => a.Resize(16, 16));
+				int size = DatabaseUtils.DbVersion < 2 ?
+								16 :
+								GrayBytesUtils.Side;
+				bitmapImage.Mutate(a => a.Resize(size, size));
 
-				var d = GrayBytesUtils.GetGrayScaleValues(bitmapImage);
+				var d = DatabaseUtils.DbVersion < 2 ?
+							GrayBytesUtils.GetGrayScaleValues16x16(bitmapImage) :
+							GrayBytesUtils.GetGrayScaleValues(bitmapImage);
 				if (d == null) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
 					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");

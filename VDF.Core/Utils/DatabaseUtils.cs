@@ -1,15 +1,15 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
@@ -20,8 +20,11 @@ using ProtoBuf;
 
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
-		internal static HashSet<FileEntry> Database = new();
+		internal static HashSet<FileEntry> Database => DbWrapper.Entries;
+		internal static int DbVersion => DbWrapper.Version;
+		static DatabaseWrapper DbWrapper = new();
 		internal static string? CustomDatabaseFolder;
+		
 
 		static string CurrentDatabasePath => Directory.Exists(CustomDatabaseFolder)
 					? FileUtils.SafePathCombine(CustomDatabaseFolder,
@@ -51,31 +54,20 @@ namespace VDF.Core.Utils {
 			var st = Stopwatch.StartNew();
 			try {
 				using var file = new FileStream(databaseFile.FullName, FileMode.Open);
-				Database = Serializer.Deserialize<HashSet<FileEntry>>(file);
+				DbWrapper = Serializer.Deserialize<DatabaseWrapper>(file);
 			}
-			catch (ProtoException) {
-				//This could be an older database
+			catch (ProtoException ex) {
+				if (UpgradeDatabase(databaseFile.FullName)) {
+					Logger.Instance.Info("Database has been upgraded to the new format.");
+					return true;
+				}
+				Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
+				st.Stop();
 				try {
-					using var file = new FileStream(databaseFile.FullName, FileMode.Open);
-					var oldDatabase = Serializer.Deserialize<List<FileEntry_old>>(file);
-					Database = new();
-					foreach (var item in oldDatabase) {
-						Database.Add(new FileEntry(item.Path) {
-							Flags = item.Flags,
-							mediaInfo = item.mediaInfo,
-							grayBytes = new()
-						});
-					}
+					File.Move(databaseFile.FullName, Path.ChangeExtension(databaseFile.FullName, "_DAMAGED.db"), true);
 				}
-				catch (ProtoException ex) {
-					Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
-					st.Stop();
-					try {
-						File.Move(databaseFile.FullName, Path.ChangeExtension(databaseFile.FullName, "_DAMAGED.db"), true);
-					}
-					catch (Exception) { }
-					return false;
-				}
+				catch (Exception) { }
+				return false;
 			}
 			catch (EndOfStreamException) {
 				Logger.Instance.Info($"Importing previously scanned files from '{databaseFile.FullName}' has failed.");
@@ -87,6 +79,23 @@ namespace VDF.Core.Utils {
 			st.Stop();
 			Logger.Instance.Info($"Previously scanned files imported. {Database.Count:N0} files in {st.Elapsed}");
 			return true;
+		}
+		internal static void Create16x16Database() {
+			DbWrapper.Version = 1;
+			SaveDatabase();
+		}
+		static bool UpgradeDatabase(string file) {
+
+			try {
+				using var fs = new FileStream(file, FileMode.Open);
+				DbWrapper.Entries = Serializer.Deserialize<HashSet<FileEntry>>(fs);
+				DbWrapper.Version = 1;
+				return true;
+			}
+			catch (Exception ex) {
+				Logger.Instance.Info($"Upgrading database has failed because of: {ex}");
+			}
+			return false;
 		}
 		internal static void CleanupDatabase() {
 			int oldCount = Database.Count;
@@ -103,7 +112,7 @@ namespace VDF.Core.Utils {
 			Logger.Instance.Info($"Save scanned files to disk ({Database.Count:N0} files).");
 
 			FileStream stream = new(TempDatabasePath, FileMode.Create);
-			Serializer.Serialize(stream, Database);
+			Serializer.Serialize(stream, DbWrapper);
 			stream.Dispose();
 			//Reason: https://github.com/0x90d/videoduplicatefinder/issues/247
 			File.Move(TempDatabasePath, CurrentDatabasePath, true);
@@ -125,7 +134,7 @@ namespace VDF.Core.Utils {
 		internal static bool ExportDatabaseToJson(string jsonFile, JsonSerializerOptions options) {
 			try {
 				using var stream = File.OpenWrite(jsonFile);
-				JsonSerializer.Serialize(stream, Database, options);
+				JsonSerializer.Serialize(stream, DbWrapper, options);
 				stream.Close();
 			}
 			catch (JsonException e) {
@@ -141,7 +150,7 @@ namespace VDF.Core.Utils {
 		internal static bool ImportDatabaseFromJson(string jsonFile, JsonSerializerOptions options) {
 			try {
 				using var stream = File.OpenRead(jsonFile);
-				Database = JsonSerializer.Deserialize<HashSet<FileEntry>>(stream, options)!;
+				DbWrapper = JsonSerializer.Deserialize<DatabaseWrapper>(stream, options)!;
 				stream.Close();
 			}
 			catch (JsonException e) {

@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
+    xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
     Title="{Binding Title}"
     MinWidth="400"
     Width="400"
@@ -41,7 +42,7 @@
                 Width="100"
                 Margin="5"
                 Command="{Binding OKCommand}"
-                Content="OK"
+                Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.OK]}"
                 IsDefault="{Binding HasOKButton}"
                 IsVisible="{Binding HasOKButton}" />
             <Button
@@ -49,7 +50,7 @@
                 Width="100"
                 Margin="5"
                 Command="{Binding YesCommand}"
-                Content="Yes"
+                Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Yes]}"
                 IsDefault="{Binding HasYesButton}"
                 IsVisible="{Binding HasYesButton}" />
             <Button
@@ -57,7 +58,7 @@
                 Width="100"
                 Margin="5"
                 Command="{Binding NoCommand}"
-                Content="No"
+                Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.No]}"
                 IsCancel="{Binding HasNoButton}"
                 IsVisible="{Binding HasNoButton}" />
             <Button
@@ -65,7 +66,7 @@
                 Width="100"
                 Margin="5"
                 Command="{Binding CancelCommand}"
-                Content="Cancel"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Cancel]}"
                 IsCancel="{Binding HasCancelButton}"
                 IsVisible="{Binding HasCancelButton}" />
         </Grid>

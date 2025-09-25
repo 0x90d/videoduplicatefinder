@@ -1,0 +1,133 @@
+<Window
+    x:Class="VDF.GUI.RelocateFilesDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tdg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.TreeDataGrid"
+    Title="Relocate Files"
+    Width="900"
+    Height="600"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!--  Mode selector  -->
+        <StackPanel
+            Margin="10,10,0,0"
+            Orientation="Horizontal"
+            Spacing="16">
+            <RadioButton Content="A) Moved everything to a new location" IsChecked="{Binding IsModePrefix}" />
+            <RadioButton Content="B) Renamed / moved single files" IsChecked="{Binding IsModeRescan}" />
+        </StackPanel>
+
+        <!--  Mode A  -->
+        <Grid
+            Grid.Row="1"
+            Margin="10,12,0,8"
+            IsVisible="{Binding IsModePrefix}"
+            RowDefinitions="Auto,Auto">
+            <Grid Margin="0,0,0,8" ColumnDefinitions="Auto,*,Auto">
+                <TextBlock VerticalAlignment="Center" Text="From:" />
+                <TextBox
+                    Grid.Column="1"
+                    Margin="8,0"
+                    Text="{Binding OldPrefix}" />
+                <Button
+                    Grid.Column="2"
+                    Command="{Binding BrowseOldPrefix}"
+                    Content="Folder..." />
+            </Grid>
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
+                <TextBlock VerticalAlignment="Center" Text="To:" />
+                <TextBox
+                    Grid.Column="1"
+                    Margin="8,0"
+                    Text="{Binding NewPrefix}" />
+                <Button
+                    Grid.Column="2"
+                    Command="{Binding BrowseNewPrefix}"
+                    Content="Folder..." />
+            </Grid>
+        </Grid>
+
+        <!--  Mode B  -->
+        <Grid
+            Grid.Row="1"
+            Margin="10,12,0,8"
+            IsVisible="{Binding IsModeRescan}"
+            RowDefinitions="Auto,Auto,Auto">
+            <TextBlock FontWeight="Bold" Text="Scan Folders" />
+            <Grid
+                Grid.Row="1"
+                Margin="0,6,0,12"
+                RowDefinitions="*,Auto,Auto">
+                <ListBox Height="100" ItemsSource="{Binding ScanRoots}" />
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button
+                        Margin="8,0"
+                        Command="{Binding AddScanRoot}"
+                        Content="Add..." />
+                    <Button Command="{Binding RemoveScanRoot}" Content="Remove" />
+                </StackPanel>
+            </Grid>
+
+            <StackPanel
+                Grid.Row="2"
+                Orientation="Horizontal"
+                Spacing="16">
+                <TextBlock VerticalAlignment="Center" Text="If multiple candidates:" />
+                <CheckBox Content="Check LastWriteTime (±2s)" IsChecked="{Binding UseModifiedTime}" />
+                <CheckBox Content="Check duration (±0.5s)" IsChecked="{Binding UseDuration}" />
+            </StackPanel>
+        </Grid>
+
+        <!--  Preview grid  -->
+        <TreeDataGrid
+            x:Name="treeDatatGrid"
+            Grid.Row="2"
+            Margin="10,12,0,12"
+            Source="{Binding TreeSource}" />
+
+        <!--  Buttons  -->
+        <StackPanel
+            Grid.Row="3"
+            Margin="0,0,10,10"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            Spacing="8">
+            <TextBlock VerticalAlignment="Center" Text="Note: Files without a new path will remain untouched" />
+            <Button Command="{Binding CheckAllResults}" Content="Check All" />
+            <Button Command="{Binding UncheckAllResults}" Content="Uncheck All" />
+            <Button Command="{Binding BuildPreview}" Content="Create preview" />
+            <Button
+                Command="{Binding Apply}"
+                Content="Apply"
+                IsEnabled="{Binding CanApply}" />
+            <Button Command="{Binding Cancel}" Content="Cancel" />
+        </StackPanel>
+
+        <!--  Loading Indicator  -->
+        <Border
+            Grid.RowSpan="4"
+            Grid.ColumnSpan="4"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Background="#80000000"
+            IsVisible="{Binding IsLoading}">
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="8">
+                <TextBlock HorizontalAlignment="Center" Text="Enumerating files" />
+                <ProgressBar
+                    Width="300"
+                    Height="12"
+                    IsIndeterminate="{Binding IsLoading}"
+                    Maximum="1"
+                    Minimum="0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

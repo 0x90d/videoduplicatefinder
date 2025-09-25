@@ -1,15 +1,15 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
@@ -34,7 +34,6 @@ namespace VDF.Core {
 			Folder = fileInfo.Directory?.FullName ?? string.Empty;
 			var extension = fileInfo.Extension;
 			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
-			grayBytes = new Dictionary<double, byte[]?>();
 			DateCreated = fileInfo.CreationTimeUtc;
 			DateModified = fileInfo.LastWriteTimeUtc;
 			FileSize = fileInfo.Length;
@@ -54,7 +53,7 @@ namespace VDF.Core {
 		[ProtoMember(2)]
 		public string Folder;
 		[ProtoMember(3)]
-		public Dictionary<double, byte[]?> grayBytes;
+		public Dictionary<double, byte[]?> grayBytes = new();
 		[ProtoMember(4)]
 		public MediaInfo? mediaInfo;
 		[ProtoMember(5)]
@@ -65,6 +64,8 @@ namespace VDF.Core {
 		public DateTime DateModified;
 		[ProtoMember(8)]
 		public long FileSize;
+		[ProtoMember(9)]
+		public Dictionary<double, ulong?> PHashes = new();
 
 		[ProtoIgnore]
 		internal bool invalid = true;

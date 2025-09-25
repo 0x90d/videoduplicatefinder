@@ -1,19 +1,20 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 
@@ -25,9 +26,35 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		private readonly int_array4 _dstLinesize;
 		private readonly SwsContext* _pConvertContext;
 
-		public VideoFrameConverter(Size sourceSize, AVPixelFormat sourcePixelFormat,
-			Size destinationSize, AVPixelFormat destinationPixelFormat) {
+		public enum ScaleQuality {
+			FastBilinear,
+			Bilinear,
+			Bicubic,   // empfohlen
+			Lanczos,
+			Spline,
+			Area
+		}
+
+		public VideoFrameConverter(Size sourceSize,
+			AVPixelFormat sourcePixelFormat,
+			Size destinationSize,
+			AVPixelFormat destinationPixelFormat,
+			ScaleQuality quality = ScaleQuality.Bicubic,
+			bool bitExact = false) {
+
 			_destinationSize = destinationSize;
+
+			int flags = quality switch {
+				ScaleQuality.FastBilinear => ffmpeg.SWS_FAST_BILINEAR,
+				ScaleQuality.Bilinear => ffmpeg.SWS_BILINEAR,
+				ScaleQuality.Bicubic => ffmpeg.SWS_BICUBIC,
+				ScaleQuality.Lanczos => ffmpeg.SWS_LANCZOS,
+				ScaleQuality.Spline => ffmpeg.SWS_SPLINE,
+				ScaleQuality.Area => ffmpeg.SWS_AREA,
+				_ => ffmpeg.SWS_BICUBIC
+			};
+
+			if (bitExact) flags |= ffmpeg.SWS_BITEXACT;
 
 			_pConvertContext = ffmpeg.sws_getContext(sourceSize.Width,
 				sourceSize.Height,
@@ -35,12 +62,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				destinationSize.Width,
 				destinationSize.Height,
 				destinationPixelFormat,
-				ffmpeg.SWS_FAST_BILINEAR,
+				flags,
 				null,
 				null,
 				null);
 			if (_pConvertContext == null)
 				throw new FFInvalidExitCodeException("Could not initialize the conversion context.");
+
 
 			int convertedFrameBufferSize = ffmpeg.av_image_get_buffer_size(destinationPixelFormat,
 				destinationSize.Width,
@@ -85,5 +113,6 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				height = _destinationSize.Height
 			};
 		}
+
 	}
 }

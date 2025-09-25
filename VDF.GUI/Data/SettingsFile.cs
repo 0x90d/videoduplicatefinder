@@ -1,15 +1,15 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
@@ -76,7 +76,7 @@ namespace VDF.GUI.Data {
 			get => _IgnoreWhitePixels;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreWhitePixels, value);
 		}
-		int _MaxDegreeOfParallelism = 1;
+		int _MaxDegreeOfParallelism = -1;
 		[JsonPropertyName("MaxDegreeOfParallelism")]
 		public int MaxDegreeOfParallelism {
 			get => _MaxDegreeOfParallelism;
@@ -159,6 +159,12 @@ namespace VDF.GUI.Data {
 		public bool ScanAgainstEntireDatabase {
 			get => _ScanAgainstEntireDatabase;
 			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
+		}
+		bool _UsePHash;
+		[JsonPropertyName("UsePHash")]
+		public bool UsePHash {
+			get => _UsePHash;
+			set => this.RaiseAndSetIfChanged(ref _UsePHash, value);
 		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]

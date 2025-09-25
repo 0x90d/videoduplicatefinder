@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
+		xmlns:app="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="VDF.GUI.Views.ChooseAlgoView"
+		MaxWidth="600"
+		WindowStartupLocation="CenterOwner"
+		SizeToContent="WidthAndHeight"
+		Padding="20"
+        Title="Choose Algorithm View">
+		<StackPanel >
+			<TextBlock  Margin="0,5" TextWrapping="Wrap" Text="Please choose your graybyte database format. You cannot switch between them later on. The only way is to delete the entire database and start from scratch. Both use visual similarity frame check as default algorithm. In both cases you can find duplicates even if different resolution, added watermark, changes to fps / bitrate etc"/>
+			<RadioButton x:Name="Cb16x16"
+					  Margin="0,5"
+					  Content="16x16"/>
+			<TextBlock TextWrapping="Wrap" Margin="30,5" xml:space="preserve">• Fastest
+• More false positives
+• pHash algorithm is NOT available
+			</TextBlock>
+			<RadioButton  x:Name="Cb32x32"
+					   Content="32x32 (recommmended)"
+					   IsChecked="true"/>
+			<TextBlock TextWrapping="Wrap" Margin="30,5" xml:space="preserve">• Slower than 16x16 (theoretically 4x slower but practically in most cases +40-60% additional scan time)
+• Less false positives
+• pHash algorithm is available. More robust when duplicates differ due to changes in contrast, brightness, scaling, or minor edits (but not automatically better, it just works differently)
+• When a video is first added to the database, pHash signature is automatically generated, making the initial scan slower. On subsequent rescans, you can switch between both algorithms with negligible performance cost, enabling highly efficient duplicate detection
+			</TextBlock>
+			<Button MaxWidth="300" Margin="0,5" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.OK]}" Click="Button_Click"/>
+		</StackPanel>
+</Window>

@@ -1,15 +1,15 @@
 // /*
-//     Copyright (C) 2021 0x90d
+//     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GPLv3 as published by
+//     it under the terms of the GNU Affero General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-//     You should have received a copy of the GNU General Public License
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
@@ -25,6 +25,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
+using VDF.Core.Utils;
 using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
 
@@ -73,6 +74,24 @@ namespace VDF.GUI.Views {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
 			}
+			ShowAlgoView();
+		}
+		async void ShowAlgoView() {
+
+			if (File.Exists(Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)
+					? FileUtils.SafePathCombine(SettingsFile.Instance.CustomDatabaseFolder,
+					"ScannedFiles.db")
+					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
+					"ScannedFiles.db")))
+					return;
+
+			while (!this.IsVisible) {
+				await Task.Delay(200);
+			}
+			var dlg = new Views.ChooseAlgoView();
+			await dlg.ShowDialog(this);
+			if (dlg.FindControl<RadioButton>("Cb16x16")?.IsChecked == true)
+				VDF.Core.Utils.DatabaseUtils.Create16x16Database();
 		}
 
 		private void MainWindow_Opened(object? sender, EventArgs e) {
@@ -113,7 +132,7 @@ namespace VDF.GUI.Views {
 			// Only allow Copy or Link as Drop Operations.
 			e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 
-			// Only allow if the dragged data contains text or filenames.
+			// Only allow if the dragged data contains filenames.
 			if (!e.Data.Contains(DataFormats.Files))
 				e.DragEffects = DragDropEffects.None;
 		}

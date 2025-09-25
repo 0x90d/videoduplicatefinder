@@ -1,0 +1,41 @@
+<!-- Dialog for selecting the order of quality criteria -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:VDF.GUI.ViewModels"
+        x:Class="VDF.GUI.Views.QualityOrderDialog"
+        xmlns:app="clr-namespace:VDF.GUI;assembly=VDF.GUI"       
+        CanResize="false"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        Title="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Title]}">
+    <Window.DataContext>
+        <vm:QualityOrderVM />
+    </Window.DataContext>
+    <StackPanel Margin="16">
+        <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Description]}" Margin="0,0,0,8" />
+        <ListBox x:Name="CriteriaListBox" ItemsSource="{Binding CriteriaOrder}" 
+         SelectedItem="{Binding SelectedItem, Mode=TwoWay}" Height="180" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.BtnMoveUp]}"
+                    Margin="4"
+                    Command="{Binding MoveUpCommand}"
+                    CommandParameter="{Binding ElementName=CriteriaListBox, Path=SelectedIndex}" />
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.BtnMoveDown]}"
+                    Margin="4"
+                    Command="{Binding MoveDownCommand}"
+                    CommandParameter="{Binding ElementName=CriteriaListBox, Path=SelectedIndex}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.OK]}"
+                    Width="80"
+                    IsDefault="True"
+                    Click="Ok_Click" />
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Cancel]}"
+                    Width="80"
+                    Margin="8,0,0,0"
+                    Click="Cancel_Click"  />
+        </StackPanel>
+    </StackPanel>
+</Window>
