@@ -5,6 +5,8 @@
 > 2. 本仓库仅进行 Video Duplicate Finder 的汉化，不对功能进行修改。所有功能问题请使用 **<i>英语</i>** 在 [原始仓库](https://github.com/0x90d/videoduplicatefinder) 内提交 issue
 > 
 > 3. 所有信息以原始仓库为准，本仓库仅供参考
+>
+> 4. 若你在其他平台分享推荐该软件，请在分享时携带以上警告信息，谢谢。
 
 > [!TIP]
 > This is a repository for the Chinese-localized version of Video Duplicate Finder. We use some Python scripts to assist us in translating the software. If you want to create other language versions of the translation, you can take a look [HERE -> (Chairowell/videoduplicatefinder-translator)](https://github.com/Chairowell/videoduplicatefinder-translator).
