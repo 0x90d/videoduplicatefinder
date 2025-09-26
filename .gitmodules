@@ -1,0 +1,3 @@
+[submodule "Translator"]
+	path = Translator
+	url = https://github.com/Chairowell/videoduplicatefinder-translator.git
