@@ -2,7 +2,7 @@
     <Design.PreviewWith>
         <Border Padding="20">
             <StackPanel Spacing="5">
-                <TextBlock FontFamily="{StaticResource CodeFontFamily}" Text="Code Font Family" />
+                <TextBlock FontFamily="{StaticResource CodeFontFamily}" Text="代码字体族" />
             </StackPanel>
         </Border>
     </Design.PreviewWith>

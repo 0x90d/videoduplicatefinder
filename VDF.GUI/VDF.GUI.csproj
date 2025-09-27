@@ -45,7 +45,7 @@
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <AvaloniaResource Update="Assets\Locales\en.json">
+    <AvaloniaResource Update="Assets\Locales\zh.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </AvaloniaResource>
   </ItemGroup>

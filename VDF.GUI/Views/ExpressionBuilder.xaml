@@ -5,7 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="Expression Builder"
+    Title="表达式构建器"
     MinWidth="400"
     MaxWidth="600"
     d:DesignHeight="450"

@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
     x:Name="CustomSelectionWindow"
-    Title="Custom Selection"
+    Title="自定义选择"
     MinWidth="400"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -56,7 +56,7 @@
                             <TextBlock
                                 Margin="5,0,0,0"
                                 VerticalAlignment="Center"
-                                Text="Save To File" />
+                                Text="保存到文件" />
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
@@ -71,7 +71,7 @@
                             <TextBlock
                                 Margin="5,0,0,0"
                                 VerticalAlignment="Center"
-                                Text="Load From File" />
+                                Text="从文件加载" />
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
@@ -83,24 +83,24 @@
                 HorizontalScrollBarVisibility="Auto">
                 <StackPanel Margin="10,0">
                     <CheckBox
-                        Content="Ignore groups which contain selected items"
+                        Content="忽略包含已选项目的组"
                         IsChecked="{Binding Data.IgnoreGroupsWithSelectedItems}"
                         IsThreeState="False"
-                        ToolTip.Tip="While active any group which contain at least one selected item will be ignored" />
-                    <TextBlock Margin="0,10" Text="File type:" />
+                        ToolTip.Tip="激活时，任何包含至少一个已选项目的组都将被忽略" />
+                    <TextBlock Margin="0,10" Text="文件类型:" />
                     <ComboBox MinWidth="200" SelectedIndex="{Binding Data.FileTypeSelection}">
                         <ComboBoxItem>All</ComboBoxItem>
                         <ComboBoxItem>Videos</ComboBoxItem>
                         <ComboBoxItem>Images</ComboBoxItem>
                     </ComboBox>
-                    <TextBlock Margin="0,10" Text="Must be identical:" />
+                    <TextBlock Margin="0,10" Text="必须完全相同:" />
                     <ComboBox MinWidth="200" SelectedIndex="{Binding Data.IdenticalSelection}">
                         <ComboBoxItem>Any</ComboBoxItem>
                         <ComboBoxItem>100% Identical</ComboBoxItem>
                         <ComboBoxItem>100% Identical except size</ComboBoxItem>
                         <ComboBoxItem>Not identical</ComboBoxItem>
                     </ComboBox>
-                    <TextBlock Margin="0,10" Text="Date Time:" />
+                    <TextBlock Margin="0,10" Text="日期时间:" />
                     <ComboBox MinWidth="200" SelectedIndex="{Binding Data.DateTimeSelection}">
                         <ComboBoxItem>Ignore</ComboBoxItem>
                         <ComboBoxItem>Newest</ComboBoxItem>
@@ -110,7 +110,7 @@
                         <TextBlock
                             Margin="0,0,10,0"
                             VerticalAlignment="Center"
-                            Text="Minimum File Size (MB):" />
+                            Text="最小文件大小 (MB):" />
                         <NumericUpDown
                             x:Name="NumericUpDownMinimumFileSize"
                             Width="200"
@@ -120,7 +120,7 @@
                         <TextBlock
                             Margin="10,0"
                             VerticalAlignment="Center"
-                            Text="Maximum File Size (MB):" />
+                            Text="最大文件大小 (MB):" />
                         <NumericUpDown
                             Width="200"
                             HorizontalAlignment="Left"
@@ -132,7 +132,7 @@
                         <TextBlock
                             Margin="0,0,10,0"
                             VerticalAlignment="Center"
-                            Text="Similarity From:" />
+                            Text="相似度从:" />
                         <NumericUpDown
                             Width="200"
                             HorizontalAlignment="Left"
@@ -142,7 +142,7 @@
                         <TextBlock
                             Margin="10,0"
                             VerticalAlignment="Center"
-                            Text="Similarity To:" />
+                            Text="相似度到:" />
                         <NumericUpDown
                             Width="200"
                             HorizontalAlignment="Left"
@@ -150,7 +150,7 @@
                             Minimum="0"
                             Value="{Binding Data.SimilarityTo}" />
                     </StackPanel>
-                    <TextBlock Margin="0,10" Text="Path contains:" />
+                    <TextBlock Margin="0,10" Text="路径包含:" />
                     <Grid RowDefinitions="Auto, *, Auto">
                         <Menu Grid.Row="0" MinHeight="30">
                             <MenuItem Command="{Binding AddFilePathContainsTextToListCommand}">
@@ -164,7 +164,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Add" />
+                                            Text="添加" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -179,7 +179,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Remove" />
+                                            Text="移除" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -196,7 +196,7 @@
                             FontStyle="Italic"
                             Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
                     </Grid>
-                    <TextBlock Margin="0,10" Text="Path does NOT contain:" />
+                    <TextBlock Margin="0,10" Text="路径**不**包含:" />
                     <Grid RowDefinitions="Auto, *, Auto">
                         <Menu Grid.Row="0" MinHeight="30">
                             <MenuItem Command="{Binding AddFilePathNotContainsTextToListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathNotContainsText}">
@@ -210,7 +210,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Add" />
+                                            Text="添加" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -225,7 +225,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Remove" />
+                                            Text="移除" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -256,13 +256,13 @@
                     Width="100"
                     Margin="5"
                     Command="{Binding SelectCommand}"
-                    Content="Select" />
+                    Content="选择" />
                 <Button
                     Grid.Column="2"
                     Width="100"
                     Margin="5"
                     Command="{Binding CancelCommand}"
-                    Content="Close" />
+                    Content="关闭" />
             </Grid>
         </Grid>
     </Border>

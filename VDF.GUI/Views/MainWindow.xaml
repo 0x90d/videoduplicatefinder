@@ -81,7 +81,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="12"
-                                Text="Scanner" />
+                                Text="扫描器" />
                         </TabItem.Header>
                         <Grid Margin="0,0,0,10" RowDefinitions="Auto, *, Auto, Auto, Auto">
                             <Menu Grid.Row="0" MinHeight="30">
@@ -99,7 +99,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Scan" />
+                                                Text="扫描" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -119,7 +119,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Rescan" />
+                                                Text="重新扫描" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -134,7 +134,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Resume" />
+                                                Text="恢复" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -150,7 +150,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Pause" />
+                                                Text="暂停" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -165,7 +165,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Stop" />
+                                                Text="停止" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -175,7 +175,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Database" />
+                                                Text="数据库" />
                                             <Path
                                                 Margin="4,2,0,0"
                                                 VerticalAlignment="Center"
@@ -183,7 +183,7 @@
                                                 Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
                                         </StackPanel>
                                     </MenuItem.Header>
-                                    <MenuItem Command="{Binding CleanDatabaseCommand}" ToolTip.Tip="Removes entries which file no longer exists or which failed on ffmpeg/ffprobe">
+                                    <MenuItem Command="{Binding CleanDatabaseCommand}" ToolTip.Tip="移除文件不再存在或在 ffmpeg/ffprobe 上失败的条目">
                                         <MenuItem.Header>
                                             <StackPanel Orientation="Horizontal">
                                                 <Viewbox Width="16" Height="16">
@@ -194,7 +194,7 @@
                                                 <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
-                                                    Text="Cleanup Database" />
+                                                    Text="清理数据库" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
@@ -203,7 +203,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Edit..." />
+                                                Text="编辑..." />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <MenuItem Command="{Binding RelocateDatabaseFilesCommand}">
@@ -211,7 +211,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Relocate Files" />
+                                                Text="重新定位文件" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <Separator />
@@ -220,7 +220,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Export To Json" />
+                                                Text="导出为 Json" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <MenuItem Command="{Binding ExportDataBaseToJsonPrettyCommand}">
@@ -228,7 +228,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Export To Json (pretty)" />
+                                                Text="导出为 Json (美化)" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <Separator />
@@ -237,7 +237,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Import From Json" />
+                                                Text="从 Json 导入" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <Separator />
@@ -252,7 +252,7 @@
                                                 <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
-                                                    Text="Clear Database" />
+                                                    Text="清除数据库" />
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
@@ -268,7 +268,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Latest Release" />
+                                                Text="最新版本" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -277,7 +277,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Open Folder" />
+                                            Text="打开文件夹" />
                                     </MenuItem.Header>
                                 </MenuItem>
                                 <MenuItem IsVisible="{Binding !!Duplicates.Count}">
@@ -291,7 +291,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Export Scan Results" />
+                                                Text="导出扫描结果" />
                                             <Path
                                                 Margin="4,2,0,0"
                                                 VerticalAlignment="Center"
@@ -304,7 +304,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="To Json" />
+                                                Text="到 Json" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <MenuItem Command="{Binding ExportScanResultsPrettyCommand}">
@@ -312,7 +312,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="To Json (pretty)" />
+                                                Text="到 Json (美化)" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                     <Separator />
@@ -321,7 +321,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="To File including thumbnails" />
+                                                Text="到文件（包括缩略图）" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                 </MenuItem>
@@ -336,7 +336,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Import Scan Results" />
+                                                Text="导入扫描结果" />
                                             <Path
                                                 Margin="4,2,0,0"
                                                 VerticalAlignment="Center"
@@ -349,7 +349,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="From File including thumbnails" />
+                                                Text="从文件（包括缩略图）" />
                                         </MenuItem.Header>
                                     </MenuItem>
                                 </MenuItem>
@@ -378,7 +378,7 @@
                                                 <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
-                                                    Text="Selection" />
+                                                    Text="选择" />
                                                 <Path
                                                     Margin="4,2,0,0"
                                                     VerticalAlignment="Center"
@@ -388,49 +388,49 @@
                                         </MenuItem.Header>
                                         <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Select 100% Identical (Keep First)" />
+                                                <TextBlock VerticalAlignment="Center" Text="选择 100% 相同（保留第一个）" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Select 100% Identical Except Size (Keep Smallest)" />
+                                                <TextBlock VerticalAlignment="Center" Text="选择 100% 相同但大小不同（保留最小的）" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Command="{Binding CheckLowestQualityCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Select Lowest Quality" />
+                                                <TextBlock VerticalAlignment="Center" Text="选择最低质量" />
                                             </MenuItem.Header>
                                         </MenuItem>
-                                        <MenuItem Header="Date">
+                                        <MenuItem Header="日期">
                                             <MenuItem Command="{Binding CheckOldestCommand}">
                                                 <MenuItem.Header>
-                                                    <TextBlock VerticalAlignment="Center" Text="Select Oldest" />
+                                                    <TextBlock VerticalAlignment="Center" Text="选择最旧的" />
                                                 </MenuItem.Header>
                                             </MenuItem>
                                             <MenuItem Command="{Binding CheckNewestCommand}">
                                                 <MenuItem.Header>
-                                                    <TextBlock VerticalAlignment="Center" Text="Select Newest" />
+                                                    <TextBlock VerticalAlignment="Center" Text="选择最新的" />
                                                 </MenuItem.Header>
                                             </MenuItem>
                                         </MenuItem>
                                         <MenuItem>
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Select Custom" />
+                                                <TextBlock VerticalAlignment="Center" Text="选择自定义" />
                                             </MenuItem.Header>
                                             <MenuItem Command="{Binding CheckCustomCommand}">
                                                 <MenuItem.Header>
-                                                    <TextBlock VerticalAlignment="Center" Text="Expression Builder" />
+                                                    <TextBlock VerticalAlignment="Center" Text="表达式构建器" />
                                                 </MenuItem.Header>
                                             </MenuItem>
                                             <MenuItem Command="{Binding OpenCustomSelectionCommand}">
                                                 <MenuItem.Header>
-                                                    <TextBlock VerticalAlignment="Center" Text="Custom Selection" />
+                                                    <TextBlock VerticalAlignment="Center" Text="自定义选择" />
                                                 </MenuItem.Header>
                                             </MenuItem>
                                         </MenuItem>
                                         <MenuItem Command="{Binding ClearSelectionCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Clear Selection" />
+                                                <TextBlock VerticalAlignment="Center" Text="清除选择" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                     </MenuItem>
@@ -445,7 +445,7 @@
                                                 <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
-                                                    Text="Delete Selection" />
+                                                    Text="删除选择" />
                                                 <Path
                                                     Margin="4,2,0,0"
                                                     VerticalAlignment="Center"
@@ -455,19 +455,19 @@
                                         </MenuItem.Header>
                                         <MenuItem Command="{Binding DeleteSelectionCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Delete from disk (Shift+Delete)" />
+                                                <TextBlock VerticalAlignment="Center" Text="从磁盘删除 (Shift+Delete)" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Command="{Binding DeleteSelectionPermanentlyCommand}" IsVisible="{Binding IsWindows}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Delete permanently from disk" />
+                                                <TextBlock VerticalAlignment="Center" Text="从磁盘永久删除" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Header="-" />
 
                                         <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="From List (Keep Files)" />
+                                                <TextBlock VerticalAlignment="Center" Text="从列表移除（保留文件）" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Command="{Binding CopySelectionCommand}">
@@ -477,7 +477,7 @@
                                         </MenuItem>
                                         <MenuItem Command="{Binding MoveSelectionCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="Move To Folder" />
+                                                <TextBlock VerticalAlignment="Center" Text="移动到文件夹" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                     </MenuItem>
@@ -501,7 +501,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Filter / Sort" />
+                                                Text="过滤/排序" />
                                         </StackPanel>
                                     </CheckBox>
                                 </Menu>
@@ -512,16 +512,16 @@
                                     IsVisible="False"
                                     RowDefinitions="*, Auto">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock VerticalAlignment="Center" Text="Path:" />
+                                        <TextBlock VerticalAlignment="Center" Text="路径:" />
                                         <TextBox
                                             MinWidth="150"
                                             Margin="5,0,0,0"
                                             Text="{Binding FilterByPath}"
-                                            ToolTip.Tip="Note: if only one item of a group is matching, all group items will be shown" />
+                                            ToolTip.Tip="注意: 如果一个组中只有一个项目匹配，则该组所有项目都将被显示" />
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Sort:" />
+                                            Text="排序:" />
                                         <ComboBox
                                             MinWidth="150"
                                             Margin="5,0,0,0"
@@ -536,7 +536,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Type:" />
+                                            Text="类型:" />
                                         <ComboBox
                                             MinWidth="150"
                                             Margin="5,0,0,0"
@@ -551,7 +551,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Similarity:" />
+                                            Text="相似度:" />
                                         <NumericUpDown
                                             Width="140"
                                             FormatString="\{0\}%"
@@ -561,7 +561,7 @@
                                         <TextBlock
                                             Margin="5,0"
                                             VerticalAlignment="Center"
-                                            Text="to" />
+                                            Text="到" />
                                         <NumericUpDown
                                             Width="140"
                                             FormatString="\{0\}%"
@@ -601,7 +601,7 @@
                                             VerticalAlignment="Center"
                                             FontWeight="Bold"
                                             Foreground="Yellow"
-                                            Text="Note: Any action (select, delete etc) will only apply on filtered duplicates" />
+                                            Text="注意: 任何操作（选择、删除等）将仅对过滤后的重复项生效" />
                                     </StackPanel>
                                 </Grid>
                                 <Grid Grid.Row="2">
@@ -626,15 +626,15 @@
                                             <ContextMenu>
                                                 <MenuItem
                                                     Command="{Binding OpenItemInFolderCommand}"
-                                                    Header="Open File"
+                                                    Header="打开文件"
                                                     InputGesture="Return" />
                                                 <MenuItem
                                                     Command="{Binding OpenItemInFolderCommand}"
-                                                    Header="Open In Folder"
+                                                    Header="在文件夹中打开"
                                                     InputGesture="Shift+Return" />
                                                 <MenuItem
                                                     Command="{Binding RenameFileCommand}"
-                                                    Header="Rename File"
+                                                    Header="重命名文件"
                                                     InputGesture="F2" />
                                                 <MenuItem>
                                                     <MenuItem.Header>
@@ -647,7 +647,7 @@
                                                             <TextBlock
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
-                                                                Text="Selected Items" />
+                                                                Text="已选项目" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                     <MenuItem Command="{Binding DeleteSelectionCommand}" InputGesture="Shift+Delete">
@@ -661,7 +661,7 @@
                                                                 <TextBlock
                                                                     Margin="5,0,0,0"
                                                                     VerticalAlignment="Center"
-                                                                    Text="Delete from disk (to recycle bin if possible)" />
+                                                                    Text="从磁盘删除（如果可能，移至回收站）" />
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
@@ -676,7 +676,7 @@
                                                                 <TextBlock
                                                                     Margin="5,0,0,0"
                                                                     VerticalAlignment="Center"
-                                                                    Text="Delete permanently from disk" />
+                                                                    Text="从磁盘永久删除" />
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
@@ -692,7 +692,7 @@
                                                                 <TextBlock
                                                                     Margin="5,0,0,0"
                                                                     VerticalAlignment="Center"
-                                                                    Text="Remove from list only" />
+                                                                    Text="仅从列表中移除" />
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
@@ -707,11 +707,11 @@
                                                                 <TextBlock
                                                                     Margin="5,0,0,0"
                                                                     VerticalAlignment="Center"
-                                                                    Text="Remove from list only and exclude from future scans" />
+                                                                    Text="仅从列表中移除并排除在未来的扫描之外" />
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
-                                                    <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                    <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsCommand}" ToolTip.Tip="将每个组中所有选定的项目链接到该组中第一个未选定的项目。">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -722,11 +722,11 @@
                                                                 <TextBlock
                                                                     Margin="5,0,0,0"
                                                                     VerticalAlignment="Center"
-                                                                    Text="Remove from list only + create symbol links" />
+                                                                    Text="仅从列表中移除 + 创建符号链接" />
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
-                                                    <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsAndBlacklistCommand}" ToolTip.Tip="Links all selected items to the first unselected item in each group.">
+                                                    <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsAndBlacklistCommand}" ToolTip.Tip="将每个组中所有选定的项目链接到该组中第一个未选定的项目。">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -742,12 +742,12 @@
                                                         </MenuItem.Header>
                                                     </MenuItem>
                                                     <Separator />
-                                                    <MenuItem Command="{Binding CopySelectionCommand}" Header="Copy To Folder..." />
-                                                    <MenuItem Command="{Binding MoveSelectionCommand}" Header="Move To Folder..." />
+                                                    <MenuItem Command="{Binding CopySelectionCommand}" Header="复制到文件夹..." />
+                                                    <MenuItem Command="{Binding MoveSelectionCommand}" Header="移动到文件夹..." />
                                                     <Separator />
                                                     <MenuItem
                                                         Command="{Binding ShowGroupInThumbnailComparerCommand}"
-                                                        Header="Compare Fullsize Thumbnails"
+                                                        Header="比较全尺寸缩略图"
                                                         InputGesture="Alt+C" />
                                                 </MenuItem>
                                                 <MenuItem>
@@ -761,35 +761,35 @@
                                                             <TextBlock
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
-                                                                Text="Copy" />
+                                                                Text="复制" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
-                                                    <MenuItem Command="{Binding CopyPathsToClipboardCommand}" Header="Copy path(s) to clipboard" />
-                                                    <MenuItem Command="{Binding CopyFilenamesToClipboardCommand}" Header="Copy filename(s) to clipboard" />
+                                                    <MenuItem Command="{Binding CopyPathsToClipboardCommand}" Header="复制路径到剪贴板" />
+                                                    <MenuItem Command="{Binding CopyFilenamesToClipboardCommand}" Header="复制文件名到剪贴板" />
                                                 </MenuItem>
-                                                <MenuItem Header="Groups">
-                                                    <MenuItem Command="{Binding ExpandAllGroupsCommand}" Header="Expand all" />
-                                                    <MenuItem Command="{Binding CollapseAllGroupsCommand}" Header="Collapse all" />
+                                                <MenuItem Header="组">
+                                                    <MenuItem Command="{Binding ExpandAllGroupsCommand}" Header="展开全部" />
+                                                    <MenuItem Command="{Binding CollapseAllGroupsCommand}" Header="折叠全部" />
                                                 </MenuItem>
-                                                <MenuItem Header="Selected Group">
+                                                <MenuItem Header="已选组">
                                                     <MenuItem
                                                         Command="{Binding MarkGroupAsNotAMatchCommand}"
-                                                        Header="Mark as 'Not a match'"
+                                                        Header="标记为“不匹配”"
                                                         InputGesture="Alt+X"
-                                                        ToolTip.Tip="Hides this group and exclude it from future scans, except when there is a new duplicate." />
+                                                        ToolTip.Tip="隐藏此组并将其排除在未来的扫描之外，除非有新的重复项。" />
                                                     <MenuItem
                                                         Command="{Binding OpenGroupCommand}"
                                                         CommandParameter="0"
-                                                        Header="Open Group"
+                                                        Header="打开组"
                                                         IsVisible="{Binding IsMultiOpenSupported}" />
                                                     <MenuItem
                                                         Command="{Binding OpenGroupCommand}"
                                                         CommandParameter="1"
-                                                        Header="Open Group In Folder"
+                                                        Header="在文件夹中打开组"
                                                         IsVisible="{Binding IsMultiOpenInFolderSupported}" />
                                                     <MenuItem
                                                         Command="{Binding ShowGroupInThumbnailComparerCommand}"
-                                                        Header="Compare Fullsize Thumbnails"
+                                                        Header="比较全尺寸缩略图"
                                                         InputGesture="Alt+C" />
                                                 </MenuItem>
                                             </ContextMenu>
@@ -808,12 +808,12 @@
                                                 FontSize="18"
                                                 IsVisible="{Binding !IsScanning}"
                                                 Opacity="0.9"
-                                                Text="Please start your first scan" />
+                                                Text="请开始您的第一次扫描" />
                                             <TextBlock
                                                 HorizontalAlignment="Center"
                                                 IsVisible="{Binding !IsScanning}"
                                                 Opacity="0.65"
-                                                Text="Click “Scan” in the toolbar to begin." />
+                                                Text="点击工具栏中的“扫描”开始。" />
                                         </StackPanel>
                                     </Border>
                                 </Grid>
@@ -883,11 +883,11 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="12"
-                                Text="Settings" />
+                                Text="设置" />
                         </TabItem.Header>
                         <Grid Margin="0,0,0,10" RowDefinitions="Auto, *">
                             <Menu Grid.Row="0" MinHeight="30">
-                                <MenuItem Command="{Binding SaveSettingsCommand}" ToolTip.Tip="Note: Settings are automatically saved on normal exit">
+                                <MenuItem Command="{Binding SaveSettingsCommand}" ToolTip.Tip="注意: 正常退出时设置会自动保存">
                                     <MenuItem.Header>
                                         <StackPanel Orientation="Horizontal">
                                             <Viewbox Width="20" Height="20">
@@ -898,7 +898,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Save" />
+                                                Text="保存" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -913,7 +913,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Save To File" />
+                                                Text="保存到文件" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -928,7 +928,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Load From File" />
+                                                Text="从文件加载" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -939,7 +939,7 @@
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             FontSize="12"
-                                            Text="Misc" />
+                                            Text="杂项" />
                                     </TabItem.Header>
                                     <ScrollViewer>
                                         <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto,Auto, *">
@@ -952,106 +952,106 @@
                                                 <StackPanel Margin="5,5,0,0">
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Ignore Read Only Folders"
+                                                        Content="忽略只读文件夹"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}"
                                                         IsThreeState="False" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Include Sub Directories"
+                                                        Content="包含子目录"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}"
                                                         IsThreeState="False" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Include Images"
+                                                        Content="包含图片"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}"
                                                         IsThreeState="False" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Generate Preview Images"
+                                                        Content="生成预览图"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="Deactivate to save memory by disabling preview images of duplicates" />
+                                                        ToolTip.Tip="禁用以通过关闭重复项的预览图来节省内存" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Exclude Reparse Points"
+                                                        Content="排除重解析点"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="Symbolic links and junction only. Note this will completely skip these from file enumeration to search." />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Exclude Hard Links"
+                                                        Content="排除硬链接"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExcludeHardLinks}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="Unlike reparse points hard links are still included in search but are not considered as duplicates. WARNING: Use this option only when necessary, as it slows down the scanning process considerably!" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Extended FFTools Logging"
+                                                        Content="扩展 FFTools 日志记录"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExtendedFFToolsLogging}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="If activated ffmpeg and ffprobe errors will be written to the log" />
+                                                        ToolTip.Tip="如果激活，ffmpeg 和 ffprobe 错误将写入日志" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Always retry failed sampling"
+                                                        Content="始终重试失败的采样"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="If activated scan engine will try to generate thumbprints of failed entries each time it is run. Otherwise consecutive attempt will be taken only after cleanup of the database." />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Auto backup scan results"
+                                                        Content="自动备份扫描结果"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="If activated a backup gets created each time the scan results list gets changed" />
+                                                        ToolTip.Tip="如果激活，每次扫描结果列表更改时都会创建备份" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Use native Ffmpeg binding"
+                                                        Content="使用原生 Ffmpeg 绑定"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseNativeFfmpegBinding}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="If activated it will call ffmpeg functions natively instead of spawning a new ffmpeg.exe process. This is MUCH(!!) faster. WARNING: You must use the latest SHARED and STABLE ffmpeg version. If something goes wrong then whole VDF will crash." />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Ignore Black Pixels"
+                                                        Content="忽略黑色像素"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="Skip black pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much dark and raises the chance to detect duplicates if one of the thumbnails have black bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit." />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Ignore White Pixels"
+                                                        Content="忽略白色像素"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="Skip white pixels when comparing thumbnails. Lowers the chance for 'false positives' if thumbnails contain too much brightness and raises the chance to detect duplicates if one of the thumbnails have white bars and the others not. In rare scenarios this might raise the 'false positives' instead. Slows down the scan speed by a bit." />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Compare Horizontally Flipped"
+                                                        Content="比较水平翻转的图像"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="Select this option if your video collection might contain horizontally flipped videos and you want them to be detected reliably. Slows down the scan speed by a bit." />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Save results on exit"
+                                                        Content="退出时保存结果"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="If checked you will be asked if you want to save the results when you close VDF" />
+                                                        ToolTip.Tip="如果选中，关闭 VDF 时将询问您是否要保存结果" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Scan against non-existing files"
+                                                        Content="扫描针对不存在的文件"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
                                                         IsThreeState="False"
-                                                        ToolTip.Tip="If checked non-existing files which have all necessary information are included" />
+                                                        ToolTip.Tip="如果选中，将包含所有必需信息但文件不存在的文件" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Scan against entire database"
+                                                        Content="扫描针对整个数据库"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)" />
                                                     <CheckBox
                                                         VerticalAlignment="Center"
-                                                        Content="Use pHash instead of visual similarity"
+                                                        Content="使用 pHash 而不是视觉相似度"
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="pHash = slower but more robust to re-encoding, resizing, contrast changes etc. Visual similarity = faster, also works on reencoded videos, watermarks etc but less robust. Ignored if you're using an old database with 16x16 graybyte values." />
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Margin="15,5,0,0">
-                                                    <TextBlock VerticalAlignment="Center" Text="Percent:" />
+                                                    <TextBlock VerticalAlignment="Center" Text="百分比:" />
                                                     <NumericUpDown
                                                         Width="200"
                                                         HorizontalAlignment="Left"
@@ -1062,7 +1062,7 @@
                                                         Minimum="1"
                                                         ToolTip.Tip="Minimum percentage that thumbnails must match before they are considered duplicates"
                                                         Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="Duration Difference:" />
+                                                    <TextBlock VerticalAlignment="Center" Text="时长差异:" />
                                                     <NumericUpDown
                                                         Width="200"
                                                         HorizontalAlignment="Left"
@@ -1071,12 +1071,12 @@
                                                         Increment="0.1"
                                                         Maximum="100"
                                                         Minimum="0"
-                                                        ToolTip.Tip="Only scan videos against each other where the duration is not bigger/smaller than X %"
+                                                        ToolTip.Tip="仅扫描时长差异不超过 X % 的视频"
                                                         Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PercentDurationDifference}" />
                                                     <TextBlock
                                                         Margin="0,5,0,0"
                                                         VerticalAlignment="Center"
-                                                        Text="Thumbnails:" />
+                                                        Text="缩略图:" />
                                                     <NumericUpDown
                                                         Width="200"
                                                         HorizontalAlignment="Left"
@@ -1089,7 +1089,7 @@
                                                     <TextBlock
                                                         Margin="0,5,0,0"
                                                         VerticalAlignment="Center"
-                                                        Text="Max Degree Of Parallelism:" />
+                                                        Text="最大并行度:" />
                                                     <NumericUpDown
                                                         Width="200"
                                                         HorizontalAlignment="Left"
@@ -1098,7 +1098,7 @@
                                                         Minimum="-1"
                                                         ToolTip.Tip="Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide (takes full speed), a value of 1 is most stable (lets you interact with your system while scan runs in background). Maximum should be the amount of physical cores of your CPU."
                                                         Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="Custom FF Arguments:" />
+                                                    <TextBlock VerticalAlignment="Center" Text="自定义 FF 参数:" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
                                                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
@@ -1107,36 +1107,36 @@
                                                         <TextBlock
                                                             VerticalAlignment="Center"
                                                             FontSize="14"
-                                                            Text="Hardware Acceleration:" />
+                                                            Text="硬件加速:" />
                                                         <Button
                                                             Margin="10,0,0,0"
                                                             Classes="hyperlink"
                                                             Command="{Binding OpenHWInfoLinkCommand}"
-                                                            Content="More Info" />
+                                                            Content="更多信息" />
                                                     </StackPanel>
                                                     <ComboBox
                                                         x:Name="ComboboxHardwareAccelerationMode"
                                                         VerticalAlignment="Center"
                                                         ItemsSource="{Binding HardwareAccelerationModes}"
                                                         SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}"
-                                                        ToolTip.Tip="Hardware acceleration mode of ffmpeg" />
+                                                        ToolTip.Tip="ffmpeg 的硬件加速模式" />
                                                     <TextBlock
                                                         VerticalAlignment="Center"
                                                         FontSize="14"
-                                                        Text="Custom Commands:" />
+                                                        Text="自定义命令:" />
                                                     <ComboBox
                                                         VerticalAlignment="Center"
                                                         ItemsSource="{Binding CustomCommandList}"
                                                         SelectedItem="{Binding SelectedCustomCommand}"
-                                                        ToolTip.Tip="Enter your own commands to open single or multiple files." />
+                                                        ToolTip.Tip="输入您自己的命令来打开单个或多个文件。" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
                                                         Text="{Binding SelectedCustomCommandValue}"
-                                                        ToolTip.Tip="E.g.: 'nemo --tabs %f', where '%f' is the placeholder for the file(s)" />
+                                                        ToolTip.Tip="例如: 'nemo --tabs %f'，其中 '%f' 是文件占位符" />
                                                     <TextBlock
                                                         VerticalAlignment="Center"
                                                         FontSize="14"
-                                                        Text="Custom Database Folder:" />
+                                                        Text="自定义数据库文件夹:" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
                                                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
@@ -1151,7 +1151,7 @@
                                                 <TextBlock
                                                     Margin="5,0,0,2"
                                                     FontWeight="Bold"
-                                                    Text="Search Directories" />
+                                                    Text="搜索目录" />
                                                 <Grid Grid.Row="1" RowDefinitions="Auto, *, Auto">
                                                     <Menu Grid.Row="0" MinHeight="30">
                                                         <MenuItem Command="{Binding AddIncludesToListCommand}">
@@ -1165,7 +1165,7 @@
                                                                     <TextBlock
                                                                         Margin="5,0,0,0"
                                                                         VerticalAlignment="Center"
-                                                                        Text="Add" />
+                                                                        Text="添加" />
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>
@@ -1180,7 +1180,7 @@
                                                                     <TextBlock
                                                                         Margin="5,0,0,0"
                                                                         VerticalAlignment="Center"
-                                                                        Text="Remove" />
+                                                                        Text="移除" />
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>
@@ -1195,7 +1195,7 @@
                                                                     <TextBlock
                                                                         Margin="5,0,0,0"
                                                                         VerticalAlignment="Center"
-                                                                        Text="Clear All" />
+                                                                        Text="清除所有" />
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>
@@ -1217,7 +1217,7 @@
                                                     Grid.Column="1"
                                                     Margin="15,0,0,2"
                                                     FontWeight="Bold"
-                                                    Text="Exclude Directories" />
+                                                    Text="排除目录" />
                                                 <Grid
                                                     Grid.Row="1"
                                                     Grid.Column="1"
@@ -1235,7 +1235,7 @@
                                                                     <TextBlock
                                                                         Margin="5,0,0,0"
                                                                         VerticalAlignment="Center"
-                                                                        Text="Add" />
+                                                                        Text="添加" />
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>
@@ -1250,7 +1250,7 @@
                                                                     <TextBlock
                                                                         Margin="5,0,0,0"
                                                                         VerticalAlignment="Center"
-                                                                        Text="Remove" />
+                                                                        Text="移除" />
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>
@@ -1265,7 +1265,7 @@
                                                                     <TextBlock
                                                                         Margin="5,0,0,0"
                                                                         VerticalAlignment="Center"
-                                                                        Text="Clear All" />
+                                                                        Text="清除所有" />
                                                                 </StackPanel>
                                                             </MenuItem.Header>
                                                         </MenuItem>
@@ -1291,7 +1291,7 @@
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             FontSize="12"
-                                            Text="Files" />
+                                            Text="文件" />
                                     </TabItem.Header>
                                     <Grid
                                         ColumnDefinitions="Auto, Auto, Auto, Auto, *"
@@ -1302,13 +1302,13 @@
                                             Grid.ColumnSpan="4"
                                             Margin="10"
                                             Foreground="{actipro:ThemeResource ControlBackgroundBrushEmphasizedDanger}"
-                                            Text="Note: These settings apply when files are added to database, not when comparing files against duplicates" />
+                                            Text="注意: 这些设置在文件添加到数据库时生效，而不是在比较文件与重复项时生效" />
                                         <CheckBox
                                             x:Name="CheckboxFilterByFileSize"
                                             Grid.Row="1"
                                             Grid.Column="0"
                                             VerticalAlignment="Center"
-                                            Content="File Size (MB):"
+                                            Content="文件大小 (MB):"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFileSize}"
                                             IsThreeState="False" />
                                         <NumericUpDown
@@ -1326,7 +1326,7 @@
                                             Grid.Column="2"
                                             Margin="10,0"
                                             VerticalAlignment="Center"
-                                            Text="to" />
+                                            Text="到" />
                                         <NumericUpDown
                                             Grid.Row="1"
                                             Grid.Column="3"
@@ -1342,7 +1342,7 @@
                                             Grid.Row="2"
                                             Grid.Column="0"
                                             VerticalAlignment="Top"
-                                            Content="File Path contains:"
+                                            Content="文件路径包含:"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathContains}"
                                             IsThreeState="False" />
                                         <Grid
@@ -1365,7 +1365,7 @@
                                                             <TextBlock
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
-                                                                Text="Add" />
+                                                                Text="添加" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
@@ -1380,7 +1380,7 @@
                                                             <TextBlock
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
-                                                                Text="Remove" />
+                                                                Text="移除" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
@@ -1402,7 +1402,7 @@
                                             Grid.Row="3"
                                             Grid.Column="0"
                                             VerticalAlignment="Top"
-                                            Content="File Path does NOT contain:"
+                                            Content="文件路径**不**包含:"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathNotContains}"
                                             IsThreeState="False" />
                                         <Grid
@@ -1425,7 +1425,7 @@
                                                             <TextBlock
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
-                                                                Text="Add" />
+                                                                Text="添加" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
@@ -1440,7 +1440,7 @@
                                                             <TextBlock
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
-                                                                Text="Remove" />
+                                                                Text="移除" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
@@ -1464,52 +1464,52 @@
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             FontSize="12"
-                                            Text="Appearance" />
+                                            Text="外观" />
                                     </TabItem.Header>
                                     <StackPanel>
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Use Mica (Windows 11 only)¹"
+                                            Content="使用 Mica (仅限 Windows 11)¹"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseMica}"
                                             IsThreeState="False" />
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Dark Mode¹"
+                                            Content="深色模式¹"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DarkMode}"
                                             IsThreeState="False" />
                                         <TextBlock
                                             Margin="0,5,0,5"
                                             VerticalAlignment="Center"
                                             Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                            Text="¹ Restart VDF to apply changes" />
+                                            Text="¹ 重启 VDF 以应用更改" />
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Show Thumbnail Column"
+                                            Content="显示缩略图列"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}"
                                             IsThreeState="False" />
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Show Path Column"
+                                            Content="显示路径列"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}"
                                             IsThreeState="False" />
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Show Duration Column"
+                                            Content="显示时长列"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}"
                                             IsThreeState="False" />
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Show Format Column"
+                                            Content="显示格式列"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
                                             IsThreeState="False" />
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Show Audio Column"
+                                            Content="显示音频列"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}"
                                             IsThreeState="False" />
                                         <CheckBox
                                             VerticalAlignment="Center"
-                                            Content="Show Similarity Column"
+                                            Content="显示相似度列"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
                                             IsThreeState="False" />
                                     </StackPanel>
@@ -1522,7 +1522,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="12"
-                                Text="Log" />
+                                Text="日志" />
                         </TabItem.Header>
                         <Grid Margin="0,0,0,10">
                             <Grid.RowDefinitions>
@@ -1542,7 +1542,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Clear" />
+                                                Text="清除" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -1557,7 +1557,7 @@
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="Save To File" />
+                                                Text="保存到文件" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
@@ -1587,7 +1587,7 @@
                             HorizontalAlignment="Center"
                             FontSize="14"
                             FontWeight="ExtraBold"
-                            Text="Please Wait" />
+                            Text="请稍候" />
                         <TextBlock
                             Name="LblBusyIndicator"
                             Margin="0,10,0,0"
