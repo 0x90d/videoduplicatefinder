@@ -1477,41 +1477,36 @@
                                             Content="Dark Mode¹"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DarkMode}"
                                             IsThreeState="False" />
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            Content="Show Path Column¹"
+                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}"
+                                            IsThreeState="False" />
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            Content="Show Duration Column¹"
+                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}"
+                                            IsThreeState="False" />
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            Content="Show Format Column¹"
+                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
+                                            IsThreeState="False" />
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            Content="Show Audio Column¹"
+                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}"
+                                            IsThreeState="False" />
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            Content="Show Similarity Column¹"
+                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
+                                            IsThreeState="False" />
                                         <TextBlock
                                             Margin="0,5,0,5"
                                             VerticalAlignment="Center"
                                             Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                             Text="¹ Restart VDF to apply changes" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="Show Thumbnail Column"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="Show Path Column"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="Show Duration Column"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="Show Format Column"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="Show Audio Column"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="Show Similarity Column"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
-                                            IsThreeState="False" />
                                     </StackPanel>
                                 </TabItem>
                             </TabControl>

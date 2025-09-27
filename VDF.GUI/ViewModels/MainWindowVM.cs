@@ -316,12 +316,15 @@ namespace VDF.GUI.ViewModels {
 						n => n.Children,
 						isExpandedSelector: n => n.IsExpanded
 					),
-					
+									}
+			};
+
+			if (SettingsFile.Instance.ShowPathColumn)
+				TreeSource.Columns.Add(
 					// 2) Path
 					new TemplateColumn<RowNode>(
 						header: App.Lang["Path"],
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) =>
-						{
+						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
 							if (n is null || n.IsGroup) return new Panel();
 
 							//var path = new TextBlock
@@ -331,12 +334,11 @@ namespace VDF.GUI.ViewModels {
 							//	Text = string.Empty,
 
 							//};
-							var path = new SelectableTextBlock
-							{
-								Text            = string.Empty,
-								TextWrapping    = TextWrapping.WrapWithOverflow,
-								Margin          = new Thickness(4, 0, 0, 0),
-								FlowDirection   = FlowDirection.LeftToRight,
+							var path = new SelectableTextBlock {
+								Text = string.Empty,
+								TextWrapping = TextWrapping.WrapWithOverflow,
+								Margin = new Thickness(4, 0, 0, 0),
+								FlowDirection = FlowDirection.LeftToRight,
 							};
 							path.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Path") {
 								Converter = PathDisplaySanitizer.Instance,
@@ -345,8 +347,7 @@ namespace VDF.GUI.ViewModels {
 							});
 
 
-							path.DoubleTapped += (_, e) =>
-							{
+							path.DoubleTapped += (_, e) => {
 								if (path.DataContext is RowNode rn && rn.Item is { })
 									OpenItemsInFolder();
 								e.Handled = true;
@@ -355,13 +356,14 @@ namespace VDF.GUI.ViewModels {
 
 							return path;
 						}, supportsRecycling: false), width: new GridLength(1, GridUnitType.Star)
-					),
+					));
 
+			if (SettingsFile.Instance.ShowDurationColumn)
+				TreeSource.Columns.Add(
 					// 2) Duration / type  (Image: Format / Video: Duration)
 					new TemplateColumn<RowNode>(
 						header: MultiHeader(App.Lang["DuplicateList.Header.DurationType"], App.Lang["DuplicateList.Header.Resolution"], App.Lang["DuplicateList.Header.Size"], App.Lang["DuplicateList.Header.CreationDate"]),
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) =>
-						{
+						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
 							if (n is null || n.IsGroup) return new Panel();
 
 							var sp = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
@@ -369,36 +371,35 @@ namespace VDF.GUI.ViewModels {
 							// Row 0: Image -> Format
 							var tFormat = new TextBlock();
 							tFormat.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"));
-							tFormat.Bind(TextBlock.TextProperty,   new Binding("Item.ItemInfo.Format") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
+							tFormat.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Format") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							sp.Children.Add(tFormat);
 
 							// Row 0 (alternativ): Video -> Duration
 							var tDur = new TextBlock();
-							tDur.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"){ Converter = NegateBoolConverter });
-							tDur.Bind(TextBlock.TextProperty,   new Binding("Item.ItemInfo.Duration"){
+							tDur.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage") { Converter = NegateBoolConverter });
+							tDur.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Duration") {
 								StringFormat = "{0:hh\\:mm\\:ss}",
 								TargetNullValue = string.Empty,
 								FallbackValue = string.Empty
 							});
-							tDur.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestDuration"){ Converter = IsBestConverter });
+							tDur.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestDuration") { Converter = IsBestConverter });
 							sp.Children.Add(tDur);
 
 							//Resolution
 							var tRes = new TextBlock();
 							tRes.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.FrameSize") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tRes.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFrameSize"){ Converter = IsBestConverter });
+							tRes.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFrameSize") { Converter = IsBestConverter });
 							sp.Children.Add(tRes);
 
 							//Size
 							var tSize = new TextBlock();
 							tSize.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Size") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tSize.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestSize"){ Converter = IsBestConverter });
+							tSize.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestSize") { Converter = IsBestConverter });
 							sp.Children.Add(tSize);
 
 							//Created
 							var tDate = new TextBlock();
-							tDate.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.DateCreated")
-							{
+							tDate.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.DateCreated") {
 								Converter = ExtraShortDateTimeConverterInstance,
 								TargetNullValue = string.Empty,
 								FallbackValue = string.Empty
@@ -407,53 +408,55 @@ namespace VDF.GUI.ViewModels {
 
 							return sp;
 						}, supportsRecycling: false)
-					),
+					));
 
+			if (SettingsFile.Instance.ShowFormatColumn)
+				TreeSource.Columns.Add(
 					// 3) Format / Fps / Bitrate (only for videos)
 					new TemplateColumn<RowNode>(
 						header: MultiHeader(App.Lang["DuplicateList.Header.VideoFormat"], App.Lang["DuplicateList.Header.VideoFps"], App.Lang["DuplicateList.Header.VideoBitRate"], " "),
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) =>
-						{
+						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
 							if (n is null || n.IsGroup) return new Panel();
 
 							var sp = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
-							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"){ Converter = NegateBoolConverter });
+							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage") { Converter = NegateBoolConverter });
 
 							var tFmt = new TextBlock();
 							tFmt.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Format") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							sp.Children.Add(tFmt);
 
 							var tFps = new TextBlock();
-							tFps.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Fps"){
+							tFps.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Fps") {
 								StringFormat = "{0} fps",
 								TargetNullValue = string.Empty,
 								FallbackValue = string.Empty
 							});
-							tFps.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFps"){ Converter = IsBestConverter });
+							tFps.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFps") { Converter = IsBestConverter });
 							sp.Children.Add(tFps);
 
 							var tBr = new TextBlock();
-							tBr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.BitRateKbs"){
+							tBr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.BitRateKbs") {
 								StringFormat = "{0} kbps",
 								TargetNullValue = string.Empty,
 								FallbackValue = string.Empty
 							});
-							tBr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestBitRateKbs"){ Converter = IsBestConverter });
+							tBr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestBitRateKbs") { Converter = IsBestConverter });
 							sp.Children.Add(tBr);
 
 							return sp;
 						}, supportsRecycling: false)
-					),
+					));
 
+			if (SettingsFile.Instance.ShowAudioColumn)
+				TreeSource.Columns.Add(
 					// 4) Audio (only for videos)
 					new TemplateColumn<RowNode>(
 						header: MultiHeader(App.Lang["DuplicateList.Header.AudioFormat"], App.Lang["DuplicateList.Header.AudioChannel"], App.Lang["DuplicateList.Header.AudioSampleRate"], " "),
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) =>
-						{
+						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
 							if (n is null || n.IsGroup) return new Panel();
 
 							var sp = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
-							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"){ Converter = NegateBoolConverter });
+							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage") { Converter = NegateBoolConverter });
 
 							var tAf = new TextBlock();
 							tAf.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioFormat") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
@@ -465,51 +468,46 @@ namespace VDF.GUI.ViewModels {
 
 							var tSr = new TextBlock();
 							tSr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioSampleRate") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tSr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestAudioSampleRate"){ Converter = IsBestConverter });
+							tSr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestAudioSampleRate") { Converter = IsBestConverter });
 							sp.Children.Add(tSr);
 
 							return sp;
 						}, supportsRecycling: false)
-					),
-
-					// 5) Similarity
-					new TemplateColumn<RowNode>(
-						header: App.Lang["DuplicateList.Header.Similarity"],
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) =>
-						{
-							if (n is null || n.IsGroup) return new Panel();
-							var tb = new TextBlock();
-							tb.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Similarity") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tb.HorizontalAlignment = HorizontalAlignment.Center;
-							return tb;
-						}, supportsRecycling: false),
-						options: new TemplateColumnOptions<RowNode>
-						{
-							CanUserSortColumn = true,
-							CompareAscending = (a, b) =>
-							{
-								bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
-								bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
-								if (aHas && bHas)
-									return a!.Item!.ItemInfo!.Similarity.CompareTo(b!.Item!.ItemInfo!.Similarity);
-								if (aHas && !bHas) return 1;
-								if (!aHas && bHas) return -1;
-								return 0;
-							},
-							CompareDescending = (a, b) =>
-							{
-								bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
-								bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
-								if (aHas && bHas)
-									return b!.Item!.ItemInfo!.Similarity.CompareTo(a!.Item!.ItemInfo!.Similarity);
-								if (aHas && !bHas) return 1;
-								if (!aHas && bHas) return -1;
-								return 0;
+					));
+			if (SettingsFile.Instance.ShowSimilarityColumn)
+				TreeSource.Columns.Add(
+						// 5) Similarity
+						new TemplateColumn<RowNode>(
+							header: App.Lang["DuplicateList.Header.Similarity"],
+							cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
+								if (n is null || n.IsGroup) return new Panel();
+								var tb = new TextBlock();
+								tb.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Similarity") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
+								tb.HorizontalAlignment = HorizontalAlignment.Center;
+								return tb;
+							}, supportsRecycling: false),
+							options: new TemplateColumnOptions<RowNode> {
+								CanUserSortColumn = true,
+								CompareAscending = (a, b) => {
+									bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
+									bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
+									if (aHas && bHas)
+										return a!.Item!.ItemInfo!.Similarity.CompareTo(b!.Item!.ItemInfo!.Similarity);
+									if (aHas && !bHas) return 1;
+									if (!aHas && bHas) return -1;
+									return 0;
+								},
+								CompareDescending = (a, b) => {
+									bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
+									bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
+									if (aHas && bHas)
+										return b!.Item!.ItemInfo!.Similarity.CompareTo(a!.Item!.ItemInfo!.Similarity);
+									if (aHas && !bHas) return 1;
+									if (!aHas && bHas) return -1;
+									return 0;
+								}
 							}
-						}
-					)
-				}
-			};
+						));
 			TreeSource.RowSelection!.SingleSelect = false;
 		}
 

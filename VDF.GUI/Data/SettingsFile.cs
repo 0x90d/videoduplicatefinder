@@ -210,12 +210,6 @@ namespace VDF.GUI.Data {
 			get => _DarkMode;
 			set => this.RaiseAndSetIfChanged(ref _DarkMode, value);
 		}
-		bool _ShowThumbnailColumn = true;
-		[JsonPropertyName("ShowThumbnailColumn")]
-		public bool ShowThumbnailColumn {
-			get => _ShowThumbnailColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowThumbnailColumn, value);
-		}
 		bool _ShowPathColumn = true;
 		[JsonPropertyName("ShowPathColumn")]
 		public bool ShowPathColumn {
