@@ -41,8 +41,7 @@ namespace VDF.GUI {
 
 		public void LoadLanguage(string langCode) {
 			try {
-				var asmName = Assembly.GetExecutingAssembly().GetName().Name;
-				var uri = new Uri($"avares://{asmName}/Assets/Locales/{langCode}.json");
+				var uri = new Uri($"avares://VDF.GUI/Assets/Locales/{langCode}.json");
 				using var stream = AssetLoader.Open(uri);
 				using var reader = new StreamReader(stream);
 				var json = reader.ReadToEnd();

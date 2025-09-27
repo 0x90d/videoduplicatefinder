@@ -1434,11 +1434,12 @@ Non-Windows setup:
 						}
 					}
 
-					ScanEngine.RemoveFromDatabase(fe);
 					if (blackList)
 						ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
+                    else
+                        ScanEngine.RemoveFromDatabase(fe);
 
-					actuallyDeleted.Add(dub);
+                    actuallyDeleted.Add(dub);
 				}
 				catch (Exception ex) {
 					Logger.Instance.Info($"Failed to delete '{dub.ItemInfo.Path}': {ex.Message}\n{ex.StackTrace}");
