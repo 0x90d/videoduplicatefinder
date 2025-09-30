@@ -32,7 +32,7 @@ using VDF.GUI.Views;
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
 
-        public List<string> QualityCriteriaOrder { get; set; } = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
+		public List<string> QualityCriteriaOrder { get; set; } = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
 
 		public ReactiveCommand<Unit, Unit> OpenCustomSelectionCommand => ReactiveCommand.Create(() => {
 			CustomSelectionView dlg = new(string.Empty);
@@ -228,47 +228,52 @@ namespace VDF.GUI.ViewModels {
 			RefreshGroupStats();
 		});
 		public ReactiveCommand<Unit, Unit> DeleteSelectionWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {
+			var doDelete = PossibleItemsToDelete;
+			if (doDelete.Count == 0) {
+				await MessageBoxService.Show("There is no duplicate item which matches your filter (if set) and which is checked");
+				return;
+			}
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show("Delete files also from DISK?",
 				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 			if (dlgResult == MessageBoxButtons.Yes)
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 				Dispatcher.UIThread.InvokeAsync(() => {
-					DeleteInternal(true);
+					DeleteInternal(fromDisk: true, toDelete: doDelete);
 				});
 			else if (dlgResult == MessageBoxButtons.No)
 				Dispatcher.UIThread.InvokeAsync(() => {
-					DeleteInternal(false);
+					DeleteInternal(fromDisk: false, toDelete: doDelete);
 				});
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		});
 		public ReactiveCommand<Unit, Unit> DeleteSelectionCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
-				DeleteInternal(true);
+				DeleteInternal(fromDisk: true);
 			});
 		});
 		public ReactiveCommand<Unit, Unit> DeleteSelectionPermanentlyCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
-				DeleteInternal(true, permanently: true);
+				DeleteInternal(fromDisk: true, permanently: true);
 			});
 		});
 		public ReactiveCommand<Unit, Unit> RemoveSelectionFromListCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
-				DeleteInternal(false);
+				DeleteInternal(fromDisk: false);
 			});
 		});
 		public ReactiveCommand<Unit, Unit> RemoveSelectionFromListAndBlacklistCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
-				DeleteInternal(false, blackList: true);
+				DeleteInternal(fromDisk: false, blackList: true);
 			});
 		});
 		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForSelectedItemsCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
-				DeleteInternal(false, blackList: false, createSymbolLinksInstead: true);
+				DeleteInternal(fromDisk: false,  blackList: false, createSymbolLinksInstead: true);
 			});
 		});
 		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForSelectedItemsAndBlacklistCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
-				DeleteInternal(false, blackList: true, createSymbolLinksInstead: true);
+				DeleteInternal(fromDisk: false,  blackList: true, createSymbolLinksInstead: true);
 			});
 		});
 
@@ -354,7 +359,7 @@ namespace VDF.GUI.ViewModels {
 			});
 #if DEBUG
 			itemsCount = dups.Count();
-		 System.Diagnostics.Trace.WriteLine($"Custom selection items count: {itemsCount}");
+			System.Diagnostics.Trace.WriteLine($"Custom selection items count: {itemsCount}");
 #endif
 
 			HashSet<Guid> blackListGroupID = new();

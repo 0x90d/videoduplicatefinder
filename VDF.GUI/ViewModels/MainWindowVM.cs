@@ -1374,15 +1374,14 @@ Non-Windows setup:
 			ThumbnailComparer thumbnailComparer = new(items);
 			thumbnailComparer.Show();
 		});
+		List<DuplicateItemVM> PossibleItemsToDelete => EnumerateAllItems().Where(d => d.Checked && d.IsVisibleInFilter).ToList();
 		async void DeleteInternal(bool fromDisk,
-						  bool blackList = false,
-						  bool createSymbolLinksInstead = false,
-						  bool permanently = false) {
+									List<DuplicateItemVM>? toDelete = null,
+									bool blackList = false,
+									bool createSymbolLinksInstead = false,
+									bool permanently = false) {
 			if (_allGroups.Count == 0) return;
-
-			var toDelete = EnumerateAllItems()
-								.Where(d => d.Checked && d.IsVisibleInFilter)
-								.ToList();
+			toDelete ??= PossibleItemsToDelete;
 			if (toDelete.Count == 0) return;
 
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
