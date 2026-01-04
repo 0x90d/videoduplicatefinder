@@ -21,8 +21,10 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using SixLabors.ImageSharp;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using SixLabors.ImageSharp.Processing;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
@@ -385,7 +387,7 @@ namespace VDF.Core {
 
 
 					if (entry.IsImage && entry.grayBytes.Count == 0) {
-						if (!GetGrayBytesFromImage(entry))
+						if (!GetGrayBytesFromImage(entry, Settings.UseExifCreationDate))
 							entry.invalid = true;
 					}
 					else if (!entry.IsImage) {
@@ -648,7 +650,7 @@ namespace VDF.Core {
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
-		static bool GetGrayBytesFromImage(FileEntry imageFile) {
+		static bool GetGrayBytesFromImage(FileEntry imageFile, bool useExifIfAvailable) {
 			try {
 
 				using var byteStream = File.OpenRead(imageFile.Path);
@@ -659,6 +661,29 @@ namespace VDF.Core {
 							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
 						}
 				};
+
+				// Extract EXIF creation date if enabled
+				if (useExifIfAvailable) {
+					var exifProfile = bitmapImage.Metadata.ExifProfile;
+					if (exifProfile != null) {
+						// Try DateTimeOriginal first (when photo was taken)						
+						if (exifProfile.TryGetValue(ExifTag.DateTimeOriginal, out var dateTimeOriginal) && !string.IsNullOrWhiteSpace(dateTimeOriginal.Value)) {
+							if (TryParseExifDateTime(dateTimeOriginal.Value, out DateTime exifDate)) {
+								imageFile.DateCreated = exifDate;
+							}
+						}
+						// Fallback to DateTime if DateTimeOriginal is not available
+						else {
+							if (exifProfile.TryGetValue(ExifTag.DateTime, out var dateTime) && !string.IsNullOrWhiteSpace(dateTime.Value)) {
+								if (TryParseExifDateTime(dateTime.Value, out DateTime exifDate)) {
+									imageFile.DateCreated = exifDate;
+								}
+							}
+						}
+					}
+				}
+
+
 				int size = DatabaseUtils.DbVersion < 2 ?
 								16 :
 								GrayBytesUtils.Side;
@@ -682,6 +707,20 @@ namespace VDF.Core {
 				imageFile.Flags.Set(EntryFlags.ThumbnailError);
 				return false;
 			}
+		}
+
+		static bool TryParseExifDateTime(string exifDateTime, out DateTime result) {
+			// EXIF DateTime format: "YYYY:MM:DD HH:MM:SS"
+			result = DateTime.MinValue;
+
+			if (DateTime.TryParseExact(exifDateTime, "yyyy:MM:dd HH:mm:ss",
+				CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate)) {
+				// Convert to UTC (assuming local time in EXIF)
+				result = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
+				return true;
+			}
+
+			return false;
 		}
 
 		void HighlightBestMatches() {

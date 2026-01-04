@@ -166,6 +166,12 @@ namespace VDF.GUI.Data {
 			get => _UsePHash;
 			set => this.RaiseAndSetIfChanged(ref _UsePHash, value);
 		}
+		bool _UseExifCreationDate;
+		[JsonPropertyName("UseExifCreationDate")]
+		public bool UseExifCreationDate {
+			get => _UseExifCreationDate;
+			set => this.RaiseAndSetIfChanged(ref _UseExifCreationDate, value);
+		}
 		int _Percent = 95;
 		[JsonPropertyName("Percent")]
 		public int Percent {

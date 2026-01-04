@@ -35,6 +35,7 @@ namespace VDF.Core {
 		public bool IncludeNonExistingFiles = true;
 		public bool ScanAgainstEntireDatabase;
 		public bool UsePHashing;
+		public bool UseExifCreationDate;
 
 		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
 

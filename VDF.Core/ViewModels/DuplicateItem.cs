@@ -80,7 +80,7 @@ namespace VDF.Core.ViewModels {
 				}
 			}
 			var fi = new FileInfo(Path);
-			DateCreated = fi.CreationTimeUtc;
+			DateCreated = file.DateCreated;
 			SizeLong = fi.Exists ? fi.Length : -1;
 			if (file.IsImage)
 				Format = fi.Extension[1..];

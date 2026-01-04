@@ -1292,6 +1292,7 @@ Non-Windows setup:
 			Scanner.Settings.FilterByFilePathNotContains = SettingsFile.Instance.FilterByFilePathNotContains;
 			Scanner.Settings.ScanAgainstEntireDatabase = SettingsFile.Instance.ScanAgainstEntireDatabase;
 			Scanner.Settings.UsePHashing = SettingsFile.Instance.UsePHash;
+			Scanner.Settings.UseExifCreationDate = SettingsFile.Instance.UseExifCreationDate;
 			Scanner.Settings.FilePathNotContainsTexts = SettingsFile.Instance.FilePathNotContainsTexts.ToList();
 			Scanner.Settings.FilterByFileSize = SettingsFile.Instance.FilterByFileSize;
 			Scanner.Settings.MaximumFileSize = SettingsFile.Instance.MaximumFileSize;

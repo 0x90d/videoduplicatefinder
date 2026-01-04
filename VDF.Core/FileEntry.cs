@@ -14,10 +14,11 @@
 // */
 //
 
-using ProtoBuf;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using ProtoBuf;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using VDF.Core.Utils;
 
 namespace VDF.Core {
@@ -33,7 +34,7 @@ namespace VDF.Core {
 			_Path = fileInfo.FullName;
 			Folder = fileInfo.Directory?.FullName ?? string.Empty;
 			var extension = fileInfo.Extension;
-			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));
+			IsImage = FileUtils.ImageExtensions.Any(x => extension.EndsWith(x, StringComparison.OrdinalIgnoreCase));			
 			DateCreated = fileInfo.CreationTimeUtc;
 			DateModified = fileInfo.LastWriteTimeUtc;
 			FileSize = fileInfo.Length;
