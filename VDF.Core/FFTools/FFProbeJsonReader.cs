@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using VDF.Core.Utils;
 
@@ -140,7 +141,7 @@ namespace VDF.Core.FFTools {
 				Streams = new MediaInfo.StreamInfo[streams.Count]
 			};
 
-			if (format.ContainsKey("duration") && TimeSpan.TryParse((string)format["duration"], out var duration))
+			if (format.TryGetValue("duration", out var durationObj) && durationObj is string durationStr) {
 				/*
 				 * Trim miliseconds here as we would have done it later anyway.
 				 * Reasons are:
@@ -150,7 +151,16 @@ namespace VDF.Core.FFTools {
 				 * - Not 100% accurate if you consider a difference of e.g. 2 miliseconds makes a duplicate no longer a duplicate
 				 * - Breaking change at the moment of implementation as it doesn't apply to already scanned files
 				 */
-				info.Duration = duration.TrimMiliseconds();
+
+				// FFprobe typically returns duration as seconds with decimals (e.g. "3.456000").
+				// TimeSpan.TryParse may interpret that as days or fail depending on culture/settings.
+				if (double.TryParse(durationStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) && seconds >= 0) {
+					info.Duration = TimeSpan.FromSeconds(seconds).TrimMiliseconds();
+				}
+				else if (TimeSpan.TryParse(durationStr, CultureInfo.InvariantCulture, out var ts)) {
+					info.Duration = ts.TrimMiliseconds();
+				}
+			}
 
 			var foundBitRate = false;
 			for (int i = 0; i < streams.Count; i++) {
