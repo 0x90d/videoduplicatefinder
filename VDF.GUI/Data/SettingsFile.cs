@@ -15,6 +15,7 @@
 //
 
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -105,11 +106,11 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _ExpressionHistory, value);
 		}
 
-		string _LanguageCode = "en";
+		string _LanguageCode = ResolveDefaultLanguageCode();
 		[JsonPropertyName("LanguageCode")]
 		public string LanguageCode {
 			get => _LanguageCode;
-			set => this.RaiseAndSetIfChanged(ref _LanguageCode, value);
+			set => this.RaiseAndSetIfChanged(ref _LanguageCode, ResolveLanguageCode(value));
 		}
 		bool _IgnoreReadOnlyFolders;
 		[JsonPropertyName("IgnoreReadOnlyFolders")]
@@ -486,6 +487,19 @@ namespace VDF.GUI.Data {
 			SaveSettings(Path.ChangeExtension(path, "json"));
 			File.Delete(path);
 			return true;
+		}
+
+		static string ResolveDefaultLanguageCode() => ResolveLanguageCode(null);
+
+		static string ResolveLanguageCode(string? languageCode) {
+			if (!string.IsNullOrWhiteSpace(languageCode))
+				return languageCode;
+
+			var culture = CultureInfo.CurrentUICulture;
+			if (!string.IsNullOrWhiteSpace(culture.TwoLetterISOLanguageName))
+				return culture.TwoLetterISOLanguageName;
+
+			return "en";
 		}
 	}
 }

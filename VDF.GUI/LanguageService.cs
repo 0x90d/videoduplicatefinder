@@ -29,6 +29,8 @@ namespace VDF.GUI {
 		private Dictionary<string, string> _translations = new();
 		private string _currentLanguage = "en";
 
+		private IReadOnlyList<string>? _availableLanguages;
+		public IReadOnlyList<string> AvailableLanguages => _availableLanguages ??= LoadAvailableLanguages();
 		public string CurrentLanguage {
 			get => _currentLanguage;
 			set {
@@ -56,6 +58,22 @@ namespace VDF.GUI {
 			}
 		}
 
+		static IReadOnlyList<string> LoadAvailableLanguages() {
+			try {
+				var localeUri = new Uri("avares://VDF.GUI/Assets/Locales/");
+				var assets = AssetLoader.GetAssets(localeUri, null)
+					.Select(asset => Path.GetFileNameWithoutExtension(asset.AbsolutePath))
+					.Where(name => !string.IsNullOrWhiteSpace(name))
+					.Distinct(StringComparer.OrdinalIgnoreCase)
+					.OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+					.ToList();
+
+				return assets.Count > 0 ? assets : new List<string> { "en" };
+			}
+			catch (Exception) {
+				return new List<string> { "en" };
+			}
+		}
 		public string this[string key] => _translations.TryGetValue(key, out var val) ? val : key;
 	}
 }

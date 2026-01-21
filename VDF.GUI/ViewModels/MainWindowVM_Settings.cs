@@ -15,6 +15,7 @@
 //
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
@@ -34,6 +35,18 @@ namespace VDF.GUI.ViewModels {
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
 			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
+		public record LanguageOption(string Code, string DisplayName);
+		public IReadOnlyList<LanguageOption> LanguageOptions { get; } = BuildLanguageOptions();
+		public LanguageOption? SelectedLanguageOption {
+			get => LanguageOptions.FirstOrDefault(option =>
+				string.Equals(option.Code, SettingsFile.Instance.LanguageCode, StringComparison.OrdinalIgnoreCase));
+			set {
+				if (value == null) return;
+				if (!string.Equals(SettingsFile.Instance.LanguageCode, value.Code, StringComparison.OrdinalIgnoreCase))
+					SettingsFile.Instance.LanguageCode = value.Code;
+				this.RaisePropertyChanged();
+			}
+		}
 
 		static readonly List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
 		public List<string> CustomCommandList => _CustomCommandList;
@@ -202,6 +215,24 @@ namespace VDF.GUI.ViewModels {
 			}
 			await MessageBoxService.Show(App.Lang["Message.RestartRequired"]);
 		});
+		static IReadOnlyList<LanguageOption> BuildLanguageOptions() {
+			var languageCodes = App.Lang.AvailableLanguages.ToList();
+			var currentLanguage = SettingsFile.Instance.LanguageCode;
 
+			return languageCodes
+				.Distinct(StringComparer.OrdinalIgnoreCase)
+				.Select(code => new LanguageOption(code, GetLanguageDisplayName(code)))
+				.OrderBy(option => option.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+				.ToList();
+		}
+
+		static string GetLanguageDisplayName(string code) {
+			try {
+				return CultureInfo.GetCultureInfo(code).NativeName;
+			}
+			catch (CultureNotFoundException) {
+				return code;
+			}
+		}
 	}
 }

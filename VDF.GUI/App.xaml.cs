@@ -14,9 +14,11 @@
 // */
 //
 
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 using VDF.GUI.Views;
@@ -24,6 +26,7 @@ using VDF.GUI.Views;
 namespace VDF.GUI {
 	public class App : Application {
 		public static LanguageService Lang { get; } = new();
+
 		public override void Initialize() {
 			Lang.LoadLanguage("en");
 			AvaloniaXamlLoader.Load(this);

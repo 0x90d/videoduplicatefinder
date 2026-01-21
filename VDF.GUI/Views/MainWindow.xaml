@@ -898,7 +898,7 @@
                                         Width="1"
                                         Margin="5,0"
                                         Background="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                    <TextBlock Text="{Binding ScanProgressText, Mode=OneWay} TextTrimming=CharacterEllipsis" />
+                                    <TextBlock Text="{Binding ScanProgressText, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
                             </Grid>
                             <Grid Grid.Row="4" IsVisible="{Binding ShowThumbnailRetrievalProgress}">
@@ -1526,6 +1526,24 @@
                                             Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Appearance]}" />
                                     </TabItem.Header>
                                     <StackPanel>
+                                        <StackPanel
+                                            Margin="0,6,0,0"
+                                            Orientation="Horizontal"
+                                            Spacing="6">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Language]}" />
+                                           <ComboBox
+                                                Width="180"
+                                                ItemsSource="{Binding LanguageOptions}"
+                                                SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding DisplayName}" />
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </StackPanel>
                                         <CheckBox
                                             VerticalAlignment="Center"
                                             Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseMica]}"

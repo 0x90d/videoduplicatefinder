@@ -198,6 +198,7 @@
 	"MainWindow.Settings.FileSize": "File Size (MB):",
 	"MainWindow.Settings.Files": "Files",
 	"MainWindow.Settings.FilesNote": "Note: These settings apply when files are added to database, not when comparing files against duplicates",
+	"MainWindow.Settings.Language": "Language:",
 	"MainWindow.Settings.GeneratePreviewImages": "Generate Preview Images",
 	"MainWindow.Settings.GeneratePreviewImagesTooltip": "Deactivate to save memory by disabling preview images of duplicates",
 	"MainWindow.Settings.HardwareAcceleration": "Hardware Acceleration:",
