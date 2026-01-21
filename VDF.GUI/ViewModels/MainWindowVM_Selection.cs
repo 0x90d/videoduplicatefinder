@@ -16,12 +16,11 @@
 
 using System.Linq;
 using System.Reactive;
-using ActiproSoftware.Properties.Shared;
+using System.Text.Json;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DynamicData;
 using DynamicExpresso;
-using DynamicExpresso.Exceptions;
 using ReactiveUI;
 using VDF.Core;
 using VDF.Core.Utils;
@@ -45,8 +44,9 @@ namespace VDF.GUI.ViewModels {
 			bool res = await dlg.ShowDialog<bool>(ApplicationHelpers.MainWindow);
 			if (!res) return;
 
-			SettingsFile.Instance.LastCustomSelectExpression =
-							((ExpressionBuilderVM)dlg.DataContext).ExpressionText;
+			var expression = ((ExpressionBuilderVM)dlg.DataContext).ExpressionText;
+			SettingsFile.Instance.LastCustomSelectExpression = expression;
+			UpdateExpressionHistory(expression);
 
 			HashSet<Guid> blackListGroupID = new();
 			bool skipIfAllMatches = false;
@@ -230,10 +230,10 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> DeleteSelectionWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {
 			var doDelete = PossibleItemsToDelete;
 			if (doDelete.Count == 0) {
-				await MessageBoxService.Show("There is no duplicate item which matches your filter (if set) and which is checked");
+				await MessageBoxService.Show(App.Lang["Message.NoMatchingDuplicates"]);
 				return;
 			}
-			MessageBoxButtons? dlgResult = await MessageBoxService.Show("Delete files also from DISK?",
+			MessageBoxButtons? dlgResult = await MessageBoxService.Show(App.Lang["Message.DeleteFromDiskPrompt"],
 				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 			if (dlgResult == MessageBoxButtons.Yes)
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
@@ -277,6 +277,26 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 
+		public ReactiveCommand<Unit, Unit> ExportCleanupDryRunReportCommand => ReactiveCommand.CreateFromTask(async () => {
+			var toDelete = PossibleItemsToDelete;
+			if (toDelete.Count == 0) {
+				await MessageBoxService.Show(App.Lang["Message.NoMatchingDuplicates"]);
+				return;
+			}
+
+			var report = BuildCleanupDryRunReport(toDelete);
+			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions {
+				DefaultExtension = ".json",
+				FileTypeChoices = new FilePickerFileType[] {
+					new FilePickerFileType(App.Lang["CleanupDryRun.FileType"]) { Patterns = new[] { "*.json" } }
+				}
+			});
+			if (string.IsNullOrEmpty(result)) return;
+			var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+			File.WriteAllText(result, json);
+			await MessageBoxService.Show(App.Lang["Message.CleanupDryRunSaved"]);
+		});
+
 		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
@@ -287,7 +307,7 @@ namespace VDF.GUI.ViewModels {
 
 			Utils.FileUtils.CopyFile(EnumerateAllItems().Where(s => s.Checked), result[0], true, false, out var errorCounter);
 			if (errorCounter > 0)
-				await MessageBoxService.Show("Failed to copy some files. Please check log!");
+				await MessageBoxService.Show(App.Lang["Message.CopyFailed"]);
 		});
 		public ReactiveCommand<Unit, Unit> MoveSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
@@ -309,7 +329,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			ScanEngine.SaveDatabase();
 			if (errorCounter > 0)
-				await MessageBoxService.Show("Failed to move some files. Please check log!");
+				await MessageBoxService.Show(App.Lang["Message.MoveFailed"]);
 		});
 
 		internal void RunCustomSelection(CustomSelectionData data) {
@@ -399,6 +419,70 @@ namespace VDF.GUI.ViewModels {
 				blackListGroupID.Add(first.ItemInfo.GroupId);
 
 			}
+		}
+
+		CleanupDryRunReport BuildCleanupDryRunReport(IReadOnlyList<DuplicateItemVM> toDelete) {
+			var itemsByGroup = toDelete.GroupBy(x => x.ItemInfo.GroupId).ToList();
+			var groups = new List<CleanupDryRunGroup>();
+
+			foreach (var group in itemsByGroup) {
+				var allGroupItems = EnumerateItemsInGroup(group.Key).ToList();
+				var keepItems = allGroupItems.Except(group).ToList();
+				long savings = group.Sum(item => item.ItemInfo.SizeLong);
+				groups.Add(new CleanupDryRunGroup {
+					GroupId = group.Key,
+					EstimatedSavingsBytes = savings,
+					Reason = App.Lang["CleanupDryRun.Reason.Manual"],
+					RemoveItems = group.Select(item => new CleanupDryRunItem {
+						Path = item.ItemInfo.Path,
+						SizeBytes = item.ItemInfo.SizeLong,
+						Resolution = item.ItemInfo.FrameSize ?? string.Empty,
+						DateCreated = item.ItemInfo.DateCreated
+					}).ToList(),
+					KeepItems = keepItems.Select(item => new CleanupDryRunItem {
+						Path = item.ItemInfo.Path,
+						SizeBytes = item.ItemInfo.SizeLong,
+						Resolution = item.ItemInfo.FrameSize ?? string.Empty,
+						DateCreated = item.ItemInfo.DateCreated
+					}).ToList()
+				});
+			}
+
+			return new CleanupDryRunReport {
+				CreatedAt = DateTime.UtcNow,
+				EstimatedTotalSavingsBytes = groups.Sum(g => g.EstimatedSavingsBytes),
+				Groups = groups
+			};
+		}
+
+		static void UpdateExpressionHistory(string expression) {
+			if (string.IsNullOrWhiteSpace(expression))
+				return;
+			var history = SettingsFile.Instance.ExpressionHistory;
+			if (history.Contains(expression))
+				history.Remove(expression);
+			history.Insert(0, expression);
+		}
+
+		sealed class CleanupDryRunReport {
+			public DateTime CreatedAt { get; set; }
+			public long EstimatedTotalSavingsBytes { get; set; }
+			public List<CleanupDryRunGroup> Groups { get; set; } = new();
+		}
+
+		sealed class CleanupDryRunGroup {
+			public Guid GroupId { get; set; }
+			public long EstimatedSavingsBytes { get; set; }
+			public string Reason { get; set; } = string.Empty;
+			public List<CleanupDryRunItem> RemoveItems { get; set; } = new();
+			public List<CleanupDryRunItem> KeepItems { get; set; } = new();
+		}
+
+		sealed class CleanupDryRunItem {
+			public string Path { get; set; } = string.Empty;
+			public long SizeBytes { get; set; }
+			public string Resolution { get; set; } = string.Empty;
+			public DateTime DateCreated { get; set; }
 		}
 	}
 }

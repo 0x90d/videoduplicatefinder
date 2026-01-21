@@ -5,7 +5,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tdg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.TreeDataGrid"
-    Title="Relocate Files"
+    xmlns:app="clr-namespace:VDF.GUI"
+    Title="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.Title]}"
     Width="900"
     Height="600"
     d:DesignHeight="450"
@@ -18,8 +19,8 @@
             Margin="10,10,0,0"
             Orientation="Horizontal"
             Spacing="16">
-            <RadioButton Content="A) Moved everything to a new location" IsChecked="{Binding IsModePrefix}" />
-            <RadioButton Content="B) Renamed / moved single files" IsChecked="{Binding IsModeRescan}" />
+            <RadioButton Content="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.ModePrefix]}" IsChecked="{Binding IsModePrefix}" />
+            <RadioButton Content="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.ModeRescan]}" IsChecked="{Binding IsModeRescan}" />
         </StackPanel>
 
         <!--  Mode A  -->
@@ -29,7 +30,7 @@
             IsVisible="{Binding IsModePrefix}"
             RowDefinitions="Auto,Auto">
             <Grid Margin="0,0,0,8" ColumnDefinitions="Auto,*,Auto">
-                <TextBlock VerticalAlignment="Center" Text="From:" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.From]}" />
                 <TextBox
                     Grid.Column="1"
                     Margin="8,0"
@@ -37,10 +38,10 @@
                 <Button
                     Grid.Column="2"
                     Command="{Binding BrowseOldPrefix}"
-                    Content="Folder..." />
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.FolderPicker]}" />
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
-                <TextBlock VerticalAlignment="Center" Text="To:" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.To]}" />
                 <TextBox
                     Grid.Column="1"
                     Margin="8,0"
@@ -48,7 +49,7 @@
                 <Button
                     Grid.Column="2"
                     Command="{Binding BrowseNewPrefix}"
-                    Content="Folder..." />
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.FolderPicker]}" />
             </Grid>
         </Grid>
 
@@ -58,7 +59,7 @@
             Margin="10,12,0,8"
             IsVisible="{Binding IsModeRescan}"
             RowDefinitions="Auto,Auto,Auto">
-            <TextBlock FontWeight="Bold" Text="Scan Folders" />
+            <TextBlock FontWeight="Bold" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.ScanFolders]}" />
             <Grid
                 Grid.Row="1"
                 Margin="0,6,0,12"
@@ -68,8 +69,8 @@
                     <Button
                         Margin="8,0"
                         Command="{Binding AddScanRoot}"
-                        Content="Add..." />
-                    <Button Command="{Binding RemoveScanRoot}" Content="Remove" />
+                        Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.AddEllipsis]}" />
+                    <Button Command="{Binding RemoveScanRoot}" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Remove]}" />
                 </StackPanel>
             </Grid>
 
@@ -77,9 +78,9 @@
                 Grid.Row="2"
                 Orientation="Horizontal"
                 Spacing="16">
-                <TextBlock VerticalAlignment="Center" Text="If multiple candidates:" />
-                <CheckBox Content="Check LastWriteTime (±2s)" IsChecked="{Binding UseModifiedTime}" />
-                <CheckBox Content="Check duration (±0.5s)" IsChecked="{Binding UseDuration}" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.MultipleCandidates]}" />
+                <CheckBox Content="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.CheckLastWriteTime]}" IsChecked="{Binding UseModifiedTime}" />
+                <CheckBox Content="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.CheckDuration]}" IsChecked="{Binding UseDuration}" />
             </StackPanel>
         </Grid>
 
@@ -97,15 +98,15 @@
             HorizontalAlignment="Right"
             Orientation="Horizontal"
             Spacing="8">
-            <TextBlock VerticalAlignment="Center" Text="Note: Files without a new path will remain untouched" />
-            <Button Command="{Binding CheckAllResults}" Content="Check All" />
-            <Button Command="{Binding UncheckAllResults}" Content="Uncheck All" />
-            <Button Command="{Binding BuildPreview}" Content="Create preview" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.NoteNoPath]}" />
+            <Button Command="{Binding CheckAllResults}" Content="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.CheckAll]}" />
+            <Button Command="{Binding UncheckAllResults}" Content="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.UncheckAll]}" />
+            <Button Command="{Binding BuildPreview}" Content="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.CreatePreview]}" />
             <Button
                 Command="{Binding Apply}"
-                Content="Apply"
+                Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Apply]}"
                 IsEnabled="{Binding CanApply}" />
-            <Button Command="{Binding Cancel}" Content="Cancel" />
+            <Button Command="{Binding Cancel}" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Cancel]}" />
         </StackPanel>
 
         <!--  Loading Indicator  -->
@@ -120,7 +121,7 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Spacing="8">
-                <TextBlock HorizontalAlignment="Center" Text="Enumerating files" />
+                <TextBlock HorizontalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.EnumeratingFiles]}" />
                 <ProgressBar
                     Width="300"
                     Height="12"

@@ -6,8 +6,9 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
+    xmlns:app="clr-namespace:VDF.GUI"
     x:Name="CustomSelectionWindow"
-    Title="Custom Selection"
+    Title="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Title]}"
     MinWidth="400"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -56,7 +57,7 @@
                             <TextBlock
                                 Margin="5,0,0,0"
                                 VerticalAlignment="Center"
-                                Text="Save To File" />
+                                Text="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.SaveToFile]}" />
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
@@ -71,7 +72,7 @@
                             <TextBlock
                                 Margin="5,0,0,0"
                                 VerticalAlignment="Center"
-                                Text="Load From File" />
+                                Text="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.LoadFromFile]}" />
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
@@ -83,34 +84,34 @@
                 HorizontalScrollBarVisibility="Auto">
                 <StackPanel Margin="10,0">
                     <CheckBox
-                        Content="Ignore groups which contain selected items"
+                        Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.IgnoreGroupsWithSelectedItems]}"
                         IsChecked="{Binding Data.IgnoreGroupsWithSelectedItems}"
                         IsThreeState="False"
-                        ToolTip.Tip="While active any group which contain at least one selected item will be ignored" />
-                    <TextBlock Margin="0,10" Text="File type:" />
+                        ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.IgnoreGroupsWithSelectedItemsTooltip]}" />
+                    <TextBlock Margin="0,10" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType]}" />
                     <ComboBox MinWidth="200" SelectedIndex="{Binding Data.FileTypeSelection}">
-                        <ComboBoxItem>All</ComboBoxItem>
-                        <ComboBoxItem>Videos</ComboBoxItem>
-                        <ComboBoxItem>Images</ComboBoxItem>
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType.All]}" />
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType.Videos]}" />
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType.Images]}" />
                     </ComboBox>
-                    <TextBlock Margin="0,10" Text="Must be identical:" />
+                    <TextBlock Margin="0,10" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Identical]}" />
                     <ComboBox MinWidth="200" SelectedIndex="{Binding Data.IdenticalSelection}">
-                        <ComboBoxItem>Any</ComboBoxItem>
-                        <ComboBoxItem>100% Identical</ComboBoxItem>
-                        <ComboBoxItem>100% Identical except size</ComboBoxItem>
-                        <ComboBoxItem>Not identical</ComboBoxItem>
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Identical.Any]}" />
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Identical.Exact]}" />
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Identical.ExceptSize]}" />
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Identical.Not]}" />
                     </ComboBox>
-                    <TextBlock Margin="0,10" Text="Date Time:" />
+                    <TextBlock Margin="0,10" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.DateTime]}" />
                     <ComboBox MinWidth="200" SelectedIndex="{Binding Data.DateTimeSelection}">
-                        <ComboBoxItem>Ignore</ComboBoxItem>
-                        <ComboBoxItem>Newest</ComboBoxItem>
-                        <ComboBoxItem>Oldest</ComboBoxItem>
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.DateTime.Ignore]}" />
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.DateTime.Newest]}" />
+                        <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.DateTime.Oldest]}" />
                     </ComboBox>
                     <StackPanel Margin="0,10" Orientation="Horizontal">
                         <TextBlock
                             Margin="0,0,10,0"
                             VerticalAlignment="Center"
-                            Text="Minimum File Size (MB):" />
+                            Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.MinimumFileSize]}" />
                         <NumericUpDown
                             x:Name="NumericUpDownMinimumFileSize"
                             Width="200"
@@ -120,7 +121,7 @@
                         <TextBlock
                             Margin="10,0"
                             VerticalAlignment="Center"
-                            Text="Maximum File Size (MB):" />
+                            Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.MaximumFileSize]}" />
                         <NumericUpDown
                             Width="200"
                             HorizontalAlignment="Left"
@@ -132,7 +133,7 @@
                         <TextBlock
                             Margin="0,0,10,0"
                             VerticalAlignment="Center"
-                            Text="Similarity From:" />
+                            Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.SimilarityFrom]}" />
                         <NumericUpDown
                             Width="200"
                             HorizontalAlignment="Left"
@@ -142,7 +143,7 @@
                         <TextBlock
                             Margin="10,0"
                             VerticalAlignment="Center"
-                            Text="Similarity To:" />
+                            Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.SimilarityTo]}" />
                         <NumericUpDown
                             Width="200"
                             HorizontalAlignment="Left"
@@ -150,7 +151,7 @@
                             Minimum="0"
                             Value="{Binding Data.SimilarityTo}" />
                     </StackPanel>
-                    <TextBlock Margin="0,10" Text="Path contains:" />
+                    <TextBlock Margin="0,10" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.PathContains]}" />
                     <Grid RowDefinitions="Auto, *, Auto">
                         <Menu Grid.Row="0" MinHeight="30">
                             <MenuItem Command="{Binding AddFilePathContainsTextToListCommand}">
@@ -164,7 +165,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Add" />
+                                            Text="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Add]}" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -179,7 +180,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Remove" />
+                                            Text="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Remove]}" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -194,9 +195,9 @@
                         <TextBlock
                             Grid.Row="2"
                             FontStyle="Italic"
-                            Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
+                            Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.WildcardNote]}" />
                     </Grid>
-                    <TextBlock Margin="0,10" Text="Path does NOT contain:" />
+                    <TextBlock Margin="0,10" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.PathNotContains]}" />
                     <Grid RowDefinitions="Auto, *, Auto">
                         <Menu Grid.Row="0" MinHeight="30">
                             <MenuItem Command="{Binding AddFilePathNotContainsTextToListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathNotContainsText}">
@@ -210,7 +211,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Add" />
+                                            Text="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Add]}" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -225,7 +226,7 @@
                                         <TextBlock
                                             Margin="5,0,0,0"
                                             VerticalAlignment="Center"
-                                            Text="Remove" />
+                                            Text="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Remove]}" />
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
@@ -240,7 +241,7 @@
                         <TextBlock
                             Grid.Row="2"
                             FontStyle="Italic"
-                            Text="Note: Supports the following wildcards: '*' and '?'. The backslash character '\' escapes." />
+                            Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.WildcardNote]}" />
                     </Grid>
                 </StackPanel>
             </ScrollViewer>
@@ -256,13 +257,13 @@
                     Width="100"
                     Margin="5"
                     Command="{Binding SelectCommand}"
-                    Content="Select" />
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Select]}" />
                 <Button
                     Grid.Column="2"
                     Width="100"
                     Margin="5"
                     Command="{Binding CancelCommand}"
-                    Content="Close" />
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Close]}" />
             </Grid>
         </Grid>
     </Border>

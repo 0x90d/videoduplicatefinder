@@ -38,6 +38,7 @@ namespace VDF.GUI.Views {
 		public MainWindow() {
 			//Settings must be load before XAML is parsed
 			SettingsFile.LoadSettings();
+			App.Lang.CurrentLanguage = SettingsFile.Instance.LanguageCode;
 
 			InitializeComponent();
 			Closing += MainWindow_Closing;

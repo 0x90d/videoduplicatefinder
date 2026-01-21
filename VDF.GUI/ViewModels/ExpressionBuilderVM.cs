@@ -14,11 +14,13 @@
 // */
 //
 
+using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reflection;
 using System.Text;
 using ReactiveUI;
 using VDF.Core.ViewModels;
+using VDF.GUI.Data;
 using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
@@ -48,6 +50,7 @@ namespace VDF.GUI.ViewModels {
 			get => _ExpressionText;
 			set => this.RaiseAndSetIfChanged(ref _ExpressionText, value);
 		}
+		public ObservableCollection<string> ExpressionHistory => SettingsFile.Instance.ExpressionHistory;
 		public string AvailableProperties { get; }
 		public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
 			host.Close(false);

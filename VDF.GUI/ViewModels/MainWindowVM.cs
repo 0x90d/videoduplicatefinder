@@ -86,6 +86,11 @@ namespace VDF.GUI.ViewModels {
 		};
 		private void ChangeIsBusyMessage() => IsBusyOverlayText = BusyMessages[Random.Shared.Next(BusyMessages.Length)];
 
+		readonly DispatcherTimer scheduledScanTimer = new();
+		DateTime lastScheduledScanDate = DateTime.MinValue;
+		bool scheduledScanInProgress;
+		bool scheduleTimeInvalidNotified;
+
 		bool _ShowTreeDataGrid = false;
 		public bool ShowTreeDataGrid {
 			get => _ShowTreeDataGrid;
@@ -236,7 +241,10 @@ namespace VDF.GUI.ViewModels {
 			if (File.Exists(BackupScanResultsFile))
 				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
 
-
+			scheduledScanTimer.Interval = TimeSpan.FromMinutes(1);
+			scheduledScanTimer.Tick += (_, __) => CheckScheduledScan();
+			scheduledScanTimer.Start();
+			CheckScheduledScan();
 			SortOrders = [
 				new("None", (a, b) => 0),
 				new("Size Ascending", (a, b) => CompareBy<long>(a, b, vm => vm.ItemInfo.SizeLong)),
@@ -541,7 +549,7 @@ namespace VDF.GUI.ViewModels {
 
 		async void Scanner_DatabaseCleaned(object? sender, EventArgs e) {
 			IsBusy = false;
-			await MessageBoxService.Show("Database cleaned!");
+			await MessageBoxService.Show(App.Lang["Message.DatabaseCleaned"]);
 		}
 
 		public async Task<bool> SaveScanResults() {
@@ -549,7 +557,7 @@ namespace VDF.GUI.ViewModels {
 				try { Utils.ThumbCacheHelpers.Provider?.FlushIndex(); } catch { }
 				return true;
 			}
-			MessageBoxButtons? result = await MessageBoxService.Show("Do you want to save the results and continue next time you start VDF?",
+			MessageBoxButtons? result = await MessageBoxService.Show(App.Lang["Message.SaveResultsPrompt"],
 				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 			if (result == null || result == MessageBoxButtons.Cancel) {
 				//Can be NULL if user closed the window by clicking on 'X'
@@ -569,9 +577,64 @@ namespace VDF.GUI.ViewModels {
 			bool success = await ScanEngine.LoadDatabase();
 			IsBusy = false;
 			if (!success) {
-				await MessageBoxService.Show("Failed to load database of scanned files. Please see log file in VDF directory");
+				await MessageBoxService.Show(App.Lang["Message.LoadDatabaseFailed"]);
 				Environment.Exit(-1);
 			}
+		}
+
+		void CheckScheduledScan() {
+			if (!SettingsFile.Instance.EnableScheduledScan || IsScanning || scheduledScanInProgress)
+				return;
+			if (!TryParseScheduledTime(SettingsFile.Instance.ScheduledScanTime, out var scheduledTime)) {
+				if (!scheduleTimeInvalidNotified) {
+					Logger.Instance.Info(App.Lang["Log.InvalidScheduledScanTime"]);
+					scheduleTimeInvalidNotified = true;
+				}
+				return;
+			}
+			scheduleTimeInvalidNotified = false;
+			var now = DateTime.Now;
+			if (lastScheduledScanDate.Date == now.Date)
+				return;
+			if (now.TimeOfDay < scheduledTime)
+				return;
+			TryStartScheduledScan();
+		}
+
+		static bool TryParseScheduledTime(string value, out TimeSpan time) {
+			time = default;
+			if (string.IsNullOrWhiteSpace(value)) return false;
+			if (TimeSpan.TryParse(value, out time))
+				return true;
+			return TimeSpan.TryParseExact(value, "hh\\:mm", null, out time);
+		}
+
+		void TryStartScheduledScan() {
+			if (IsScanning) return;
+			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
+				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingDatabaseFolder"]);
+				return;
+			}
+			if (_allGroups.Count > 0) {
+				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedWithResults"]);
+				return;
+			}
+			if ((SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) ||
+				(!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists)) {
+				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingFfmpeg"]);
+				return;
+			}
+			if (!ScanEngine.FFprobeExists) {
+				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingFfprobe"]);
+				return;
+			}
+			if (SettingsFile.Instance.Includes.Count == 0) {
+				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedNoFolders"]);
+				return;
+			}
+			scheduledScanInProgress = true;
+			lastScheduledScanDate = DateTime.Now.Date;
+			Dispatcher.UIThread.Post(() => StartScanCommand.Execute("FullScan").Subscribe());
 		}
 
 		void Scanner_Progress(object? sender, ScanProgressChangedEventArgs e) =>
@@ -591,6 +654,7 @@ namespace VDF.GUI.ViewModels {
 				IsBusy = false;
 				IsReadyToCompare = false;
 				IsGathered = false;
+				scheduledScanInProgress = false;
 			});
 		void Scanner_ScanDone(object? sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
@@ -601,6 +665,8 @@ namespace VDF.GUI.ViewModels {
 				ScanProgressText = string.Empty;
 				RemainingTime = TimeSpan.Zero;
 				ScanProgressValue = 0;
+				var completedScheduledScan = scheduledScanInProgress;
+				scheduledScanInProgress = false;
 
 				Scanner.Duplicates.RemoveWhere(a => {
 					foreach (HashSet<string> blackListedGroup in GroupBlacklist) {
@@ -627,6 +693,10 @@ namespace VDF.GUI.ViewModels {
 
 				RebuildSearchPathIndex();
 				RefreshGroupStats();
+
+				if (completedScheduledScan && SettingsFile.Instance.NotifyOnScheduledScanComplete) {
+					_ = MessageBoxService.Show(App.Lang["Message.ScheduledScanCompleted"]);
+				}
 			});
 
 		private void FillDuplicatesFromScanner(IEnumerable<DuplicateItem> items) {
@@ -714,7 +784,7 @@ namespace VDF.GUI.ViewModels {
 				});
 			}
 			catch {
-				await MessageBoxService.Show("Failed to open URL: https://github.com/0x90d/videoduplicatefinder/releases");
+				await MessageBoxService.Show(App.Lang["Message.OpenReleaseFailed"]);
 			}
 		});
 
@@ -727,17 +797,17 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> CleanDatabaseCommand => ReactiveCommand.Create(() => {
 			IsBusy = true;
-			IsBusyOverlayText = "Cleaning database...";
+			IsBusyOverlayText = App.Lang["Busy.CleaningDatabase"];
 			Scanner.CleanupDatabase();
 		});
 
 		public ReactiveCommand<Unit, Unit> ClearDatabaseCommand => ReactiveCommand.CreateFromTask(async () => {
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
-				"WARNING: This will delete all stored data in your database. Do you want to continue?",
+				App.Lang["Message.ClearDatabaseWarning"],
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult != MessageBoxButtons.Yes) return;
 			ScanEngine.ClearDatabase();
-			await MessageBoxService.Show("Done!");
+			await MessageBoxService.Show(App.Lang["Message.Done"]);
 		});
 
 		public static ReactiveCommand<Unit, Unit> EditDataBaseCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -755,7 +825,7 @@ namespace VDF.GUI.ViewModels {
 				IncludeFields = true,
 			});
 			if (!success)
-				await MessageBoxService.Show("Importing database has failed, please see log");
+				await MessageBoxService.Show(App.Lang["Message.ImportDatabaseFailed"]);
 			else
 				ScanEngine.SaveDatabase();
 		});
@@ -782,7 +852,7 @@ namespace VDF.GUI.ViewModels {
 			if (string.IsNullOrEmpty(result)) return;
 
 			if (!ScanEngine.ExportDataBaseToJson(result, options))
-				await MessageBoxService.Show("Exporting database has failed, please see log");
+				await MessageBoxService.Show(App.Lang["Message.ExportDatabaseFailed"]);
 		}
 
 		public ReactiveCommand<Unit, Unit> ExportScanResultsCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -816,7 +886,7 @@ namespace VDF.GUI.ViewModels {
 
 
 			IsBusy = true;
-			IsBusyOverlayText = "Saving scan results to disk...";
+			IsBusyOverlayText = App.Lang["Busy.SavingScanResults"];
 			var dir = Path.GetDirectoryName(path)!;
 			var tmp = Path.Combine(dir, Path.GetFileName(path) + ".tmp");
 
@@ -868,7 +938,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch (Exception ex) {
 				IsBusy = false;
-				string error = $"Exporting scan results has failed because of {ex}";
+				string error = string.Format(App.Lang["Message.ExportScanResultsFailed"], ex);
 				Logger.Instance.Info(error);
 				await MessageBoxService.Show(error);
 			}
@@ -887,7 +957,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		async void ImportScanResultsIncludingThumbnails(string? path = null) {
 			if (_allGroups.Count > 0) {
-				MessageBoxButtons? result = await MessageBoxService.Show($"Importing scan results will clear the current list, continue?", MessageBoxButtons.Yes | MessageBoxButtons.No);
+				MessageBoxButtons? result = await MessageBoxService.Show(App.Lang["Message.ImportScanResultsClearConfirm"], MessageBoxButtons.Yes | MessageBoxButtons.No);
 				if (result != MessageBoxButtons.Yes) return;
 			}
 
@@ -902,7 +972,7 @@ namespace VDF.GUI.ViewModels {
 			try {
 				using var stream = File.OpenRead(path);
 				IsBusy = true;
-				IsBusyOverlayText = "Importing scan results from disk...";
+				IsBusyOverlayText = App.Lang["Busy.ImportScanResults"];
 
 
 				using var zip = ZipFile.OpenRead(path);
@@ -927,13 +997,13 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch (JsonException) {
 				IsBusy = false;
-				string error = $"Importing scan results has failed because it's likely corrupted";
+				string error = App.Lang["Message.ImportScanResultsCorrupt"];
 				Logger.Instance.Info(error);
 				await MessageBoxService.Show(error);
 			}
 			catch (Exception ex) {
 				IsBusy = false;
-				string error = $"Importing scan results has failed because of {ex}";
+				string error = string.Format(App.Lang["Message.ImportScanResultsFailed"], ex);
 				Logger.Instance.Info(error);
 				await MessageBoxService.Show(error);
 			}
@@ -977,7 +1047,7 @@ namespace VDF.GUI.ViewModels {
 				}
 			}
 			catch (Exception ex) {
-				await MessageBoxService.Show($"Failed to open files: {ex.Message}");
+				await MessageBoxService.Show(string.Format(App.Lang["Message.OpenFilesFailed"], ex.Message));
 				return;
 			}
 		}
@@ -1003,7 +1073,7 @@ namespace VDF.GUI.ViewModels {
 				}
 			}
 			catch (Exception ex) {
-				await MessageBoxService.Show($"Failed to open files: {ex.Message}");
+				await MessageBoxService.Show(string.Format(App.Lang["Message.OpenFilesFailed"], ex.Message));
 				return;
 			}
 		}
@@ -1060,7 +1130,7 @@ namespace VDF.GUI.ViewModels {
 				});
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed to run custom command: {command}\n Arguments: {args}\nException: {e.Message}");
+				Logger.Instance.Info(string.Format(App.Lang["Log.CustomCommandFailed"], command, args, e.Message));
 			}
 
 			return true;
@@ -1069,7 +1139,7 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> RenameFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
 			if (!File.Exists(currentItem.ItemInfo.Path)) {
-				await MessageBoxService.Show("The file no longer exists");
+				await MessageBoxService.Show(App.Lang["Message.FileNoLongerExists"]);
 				return;
 			}
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
@@ -1195,11 +1265,11 @@ Non-Windows setup:
 
 		public ReactiveCommand<string, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async (string command) => {
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
-				await MessageBoxService.Show("The custom database folder does not exist!");
+				await MessageBoxService.Show(App.Lang["Message.CustomDatabaseFolderMissing"]);
 				return;
 			}
 			if (_allGroups.Count > 0) {
-				if (await MessageBoxService.Show("Do you want to discard the results and start a new scan?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes) {
+				if (await MessageBoxService.Show(App.Lang["Message.DiscardResultsPrompt"], MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes) {
 					return;
 				}
 			}
@@ -1211,27 +1281,27 @@ Non-Windows setup:
 			}
 			if (!ScanEngine.FFprobeExists) {
 				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-					await MessageBoxService.Show("Cannot find FFprobe executable. The easiest solution is to download ffmpeg/ffprobe and place it in VDF 'bin' folder. Otherwise please follow instructions on Github and restart VDF");
+					await MessageBoxService.Show(App.Lang["Message.FFprobeMissingWithHint"]);
 				}
 				else {
-					await MessageBoxService.Show("Cannot find FFprobe. Please follow instructions on Github and restart VDF");
+					await MessageBoxService.Show(App.Lang["Message.FFprobeMissing"]);
 				}
 				return;
 			}
 			if (SettingsFile.Instance.UseNativeFfmpegBinding && SettingsFile.Instance.HardwareAccelerationMode == Core.FFTools.FFHardwareAccelerationMode.auto) {
-				await MessageBoxService.Show("You cannot use hardware acceleration mode 'auto' with native ffmpeg bindings. Please explicit set a mode or set it to 'none'.");
+				await MessageBoxService.Show(App.Lang["Message.NativeFfmpegAutoNotSupported"]);
 				return;
 			}
 			if (SettingsFile.Instance.Includes.Count == 0) {
-				await MessageBoxService.Show("There are no folders to scan. Please go to the settings and add at least one folder to 'Search Directories'.");
+				await MessageBoxService.Show(App.Lang["Message.NoScanFolders"]);
 				return;
 			}
 			if (SettingsFile.Instance.MaxDegreeOfParallelism == 0) {
-				await MessageBoxService.Show("MaxDegreeOfParallelism cannot be 0. Please go to the settings and change it.");
+				await MessageBoxService.Show(App.Lang["Message.MaxDegreeOfParallelismInvalid"]);
 				return;
 			}
 			if (SettingsFile.Instance.FilterByFileSize && SettingsFile.Instance.MaximumFileSize <= SettingsFile.Instance.MinimumFileSize) {
-				await MessageBoxService.Show("Filtering maximum file size cannot be greater or equal minimum file size.");
+				await MessageBoxService.Show(App.Lang["Message.FileSizeFilterInvalid"]);
 				return;
 			}
 			bool isFreshScan = true;
@@ -1241,11 +1311,11 @@ Non-Windows setup:
 				break;
 			case "CompareOnly":
 				isFreshScan = false;
-				if (await MessageBoxService.Show("Are you sure to perform a rescan?", MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+				if (await MessageBoxService.Show(App.Lang["Message.RescanConfirm"], MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
 					return;
 				break;
 			default:
-				await MessageBoxService.Show("Requested command is NOT implemented yet!");
+				await MessageBoxService.Show(App.Lang["Message.CommandNotImplemented"]);
 				break;
 			}
 
@@ -1279,6 +1349,7 @@ Non-Windows setup:
 			Scanner.Settings.MaxDegreeOfParallelism = SettingsFile.Instance.MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails;
 			Scanner.Settings.ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging;
+			Scanner.Settings.LogExcludedFiles = SettingsFile.Instance.LogExcludedFiles;
 			Scanner.Settings.AlwaysRetryFailedSampling = SettingsFile.Instance.AlwaysRetryFailedSampling;
 			Scanner.Settings.CustomFFArguments = SettingsFile.Instance.CustomFFArguments;
 			Scanner.Settings.UseNativeFfmpegBinding = SettingsFile.Instance.UseNativeFfmpegBinding;
@@ -1286,6 +1357,8 @@ Non-Windows setup:
 			Scanner.Settings.IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels;
 			Scanner.Settings.CompareHorizontallyFlipped = SettingsFile.Instance.CompareHorizontallyFlipped;
 			Scanner.Settings.CustomDatabaseFolder = SettingsFile.Instance.CustomDatabaseFolder;
+			SettingsFile.Instance.LanguageCode = App.Lang.CurrentLanguage;
+			Scanner.Settings.LanguageCode = SettingsFile.Instance.LanguageCode;
 			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
 			Scanner.Settings.FilterByFilePathContains = SettingsFile.Instance.FilterByFilePathContains;
 			Scanner.Settings.FilePathContainsTexts = SettingsFile.Instance.FilePathContainsTexts.ToList();

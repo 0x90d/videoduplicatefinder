@@ -14,5 +14,8 @@
     <PackageReference Include="protobuf-net" Version="3.2.56" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Locales\en.json" />
+  </ItemGroup>
 
 </Project>

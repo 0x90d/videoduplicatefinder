@@ -28,6 +28,8 @@ namespace VDF.GUI.Data {
 		[JsonIgnore]
 		public static SettingsFile Instance => instance ??= new SettingsFile();
 
+		public SettingsFile() { }
+
 		public class CustomActionCommands {
 			public string OpenItemInFolder { get; set; } = string.Empty;
 			public string OpenMultipleInFolder { get; set; } = string.Empty;
@@ -39,12 +41,25 @@ namespace VDF.GUI.Data {
 		public ObservableCollection<string> Includes { get; set; } = new();
 		[JsonPropertyName("Blacklists")]
 		public ObservableCollection<string> Blacklists { get; set; } = new();
-
 		string _LastCustomSelectExpression = string.Empty;
 		[JsonPropertyName("LastCustomSelectExpression")]
 		public string LastCustomSelectExpression {
 			get => _LastCustomSelectExpression;
 			set => this.RaiseAndSetIfChanged(ref _LastCustomSelectExpression, value);
+		}
+
+		ObservableCollection<string> _ExpressionHistory = new();
+		[JsonPropertyName("ExpressionHistory")]
+		public ObservableCollection<string> ExpressionHistory {
+			get => _ExpressionHistory;
+			set => this.RaiseAndSetIfChanged(ref _ExpressionHistory, value);
+		}
+
+		string _LanguageCode = "en";
+		[JsonPropertyName("LanguageCode")]
+		public string LanguageCode {
+			get => _LanguageCode;
+			set => this.RaiseAndSetIfChanged(ref _LanguageCode, value);
 		}
 		bool _IgnoreReadOnlyFolders;
 		[JsonPropertyName("IgnoreReadOnlyFolders")]
@@ -117,6 +132,12 @@ namespace VDF.GUI.Data {
 		public bool ExtendedFFToolsLogging {
 			get => _ExtendedFFToolsLogging;
 			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
+		}
+		bool _LogExcludedFiles;
+		[JsonPropertyName("LogExcludedFiles")]
+		public bool LogExcludedFiles {
+			get => _LogExcludedFiles;
+			set => this.RaiseAndSetIfChanged(ref _LogExcludedFiles, value);
 		}
 		bool _AlwaysRetryFailedSampling = false;
 		[JsonPropertyName("AlwaysRetryFailedSampling")]
@@ -287,6 +308,25 @@ namespace VDF.GUI.Data {
 		public int MinimumFileSize {
 			get => _MinimumFileSize;
 			set => this.RaiseAndSetIfChanged(ref _MinimumFileSize, value);
+		}
+
+		bool _EnableScheduledScan;
+		[JsonPropertyName("EnableScheduledScan")]
+		public bool EnableScheduledScan {
+			get => _EnableScheduledScan;
+			set => this.RaiseAndSetIfChanged(ref _EnableScheduledScan, value);
+		}
+		string _ScheduledScanTime = "02:00";
+		[JsonPropertyName("ScheduledScanTime")]
+		public string ScheduledScanTime {
+			get => _ScheduledScanTime;
+			set => this.RaiseAndSetIfChanged(ref _ScheduledScanTime, value);
+		}
+		bool _NotifyOnScheduledScanComplete = true;
+		[JsonPropertyName("NotifyOnScheduledScanComplete")]
+		public bool NotifyOnScheduledScanComplete {
+			get => _NotifyOnScheduledScanComplete;
+			set => this.RaiseAndSetIfChanged(ref _NotifyOnScheduledScanComplete, value);
 		}
 
 		public static void LoadSettings(string? path = null) {

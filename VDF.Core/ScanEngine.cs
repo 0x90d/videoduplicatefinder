@@ -15,6 +15,7 @@
 //
 
 global using System;
+global using System.Collections.Concurrent;
 global using System.Collections.Generic;
 global using System.IO;
 global using System.Threading;
@@ -57,13 +58,44 @@ namespace VDF.Core {
 		DateTime startTime = DateTime.Now;
 		DateTime lastProgressUpdate = DateTime.MinValue;
 		static readonly TimeSpan progressUpdateIntervall = TimeSpan.FromMilliseconds(300);
+		const int maxExcludedLogsPerReason = 5;
+		readonly ConcurrentDictionary<string, int> excludedReasonCounts = new();
+		readonly ConcurrentDictionary<string, int> excludedReasonLoggedCounts = new();
 
+		string T(string key, params object[] args) =>
+			LanguageService.Instance.Get(Settings.LanguageCode, key, args);
 
 		void InitProgress(int count) {
 			startTime = DateTime.UtcNow;
 			scanProgressMaxValue = count;
 			processedFiles = 0;
 			lastProgressUpdate = DateTime.MinValue;
+		}
+		void ResetExcludedLogging() {
+			excludedReasonCounts.Clear();
+			excludedReasonLoggedCounts.Clear();
+		}
+		void LogExcludedFile(FileEntry entry, string reason) {
+			if (!Settings.LogExcludedFiles)
+				return;
+			var totalCount = excludedReasonCounts.AddOrUpdate(reason, 1, (_, count) => count + 1);
+			var loggedCount = excludedReasonLoggedCounts.GetOrAdd(reason, 0);
+			if (loggedCount >= maxExcludedLogsPerReason)
+				return;
+			loggedCount = excludedReasonLoggedCounts.AddOrUpdate(reason, 1, (_, count) => count + 1);
+			if (loggedCount <= maxExcludedLogsPerReason)
+				Logger.Instance.Info(T("Log.ExcludedFile", entry.Path, reason, totalCount));
+		}
+		void LogExcludedSummary() {
+			if (!Settings.LogExcludedFiles || excludedReasonCounts.IsEmpty)
+				return;
+			Logger.Instance.Info(T("Log.ExcludedFilesSummary"));
+			foreach (var reason in excludedReasonCounts.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)) {
+				var loggedCount = excludedReasonLoggedCounts.TryGetValue(reason.Key, out var value) ? value : 0;
+				var suppressedCount = Math.Max(0, reason.Value - loggedCount);
+				var suppressionText = suppressedCount > 0 ? T("Log.ExcludedFilesSuppressed", suppressedCount) : string.Empty;
+				Logger.Instance.Info(T("Log.ExcludedFilesSummaryItem", reason.Key, reason.Value, suppressionText));
+			}
 		}
 		void IncrementProgress(string path) {
 			processedFiles++;
@@ -92,14 +124,14 @@ namespace VDF.Core {
 			SearchTimer.Start();
 			ElapsedTimer.Start();
 			Logger.Instance.InsertSeparator('-');
-			Logger.Instance.Info("Building file list...");
+			Logger.Instance.Info(T("Log.BuildingFileList"));
 			await BuildFileList();
-			Logger.Instance.Info($"Finished building file list in {SearchTimer.StopGetElapsedAndRestart()}");
+			Logger.Instance.Info(T("Log.FinishedBuildingFileList", SearchTimer.StopGetElapsedAndRestart()));
 			FilesEnumerated?.Invoke(this, new EventArgs());
-			Logger.Instance.Info("Gathering media info and buildings hashes...");
+			Logger.Instance.Info(T("Log.GatheringMediaInfo"));
 			if (!cancelationTokenSource.IsCancellationRequested)
 				await GatherInfos();
-			Logger.Instance.Info($"Finished gathering and hashing in {SearchTimer.StopGetElapsedAndRestart()}");
+			Logger.Instance.Info(T("Log.FinishedGatheringHashes", SearchTimer.StopGetElapsedAndRestart()));
 			BuildingHashesDone?.Invoke(this, new EventArgs());
 			DatabaseUtils.SaveDatabase();
 			if (!cancelationTokenSource.IsCancellationRequested) {
@@ -107,7 +139,7 @@ namespace VDF.Core {
 			}
 			else {
 				ScanAborted?.Invoke(this, new EventArgs());
-				Logger.Instance.Info("Scan aborted.");
+				Logger.Instance.Info(T("Log.ScanAborted"));
 				isScanning = false;
 			}
 		}
@@ -116,21 +148,22 @@ namespace VDF.Core {
 			PrepareCompare();
 			SearchTimer.Start();
 			ElapsedTimer.Start();
-			Logger.Instance.Info("Scan for duplicates...");
+			Logger.Instance.Info(T("Log.ScanForDuplicates"));
 			if (!cancelationTokenSource.IsCancellationRequested)
 				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
-			Logger.Instance.Info($"Finished scanning for duplicates in {SearchTimer.Elapsed}");
-			Logger.Instance.Info("Highlighting best results...");
+			Logger.Instance.Info(T("Log.FinishedScanForDuplicates", SearchTimer.Elapsed));
+			Logger.Instance.Info(T("Log.HighlightingBestResults"));
 			HighlightBestMatches();
 			ScanDone?.Invoke(this, new EventArgs());
-			Logger.Instance.Info("Scan done.");
+			Logger.Instance.Info(T("Log.ScanDone"));
 			DatabaseUtils.SaveDatabase();
 			isScanning = false;
 		}
 
 		void PrepareSearch() {
+			ResetExcludedLogging();
 			//Using VDF.GUI we know fftools exist at this point but VDF.Core might be used in other projects as well
 			if (!Settings.UseNativeFfmpegBinding && !FFmpegExists)
 				throw new FFNotFoundException("Cannot find FFmpeg");
@@ -221,11 +254,14 @@ namespace VDF.Core {
 
 		// Check if entry should be excluded from the scan for any reason
 		// Returns true if the entry is invalid (should be excluded)
-		bool InvalidEntry(FileEntry entry, out bool reportProgress) {
+		bool InvalidEntry(FileEntry entry, out bool reportProgress, out string? reason) {
 			reportProgress = true;
+			reason = null;
 
-			if (Settings.IncludeImages == false && entry.IsImage)
+			if (Settings.IncludeImages == false && entry.IsImage) {
+				reason = "image files are disabled";
 				return true;
+			}
 			if (Settings.BlackList.Any(f => {
 				if (!entry.Folder.StartsWith(f))
 					return false;
@@ -234,8 +270,10 @@ namespace VDF.Core {
 				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
 				string relativePath = Path.GetRelativePath(f, entry.Folder);
 				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
-			}))
+			})) {
+				reason = "path is in the excluded directories list";
 				return true;
+			}
 
 			if (!Settings.ScanAgainstEntireDatabase) {
 				/* Skip non-included file before checking if it exists
@@ -245,6 +283,7 @@ namespace VDF.Core {
 				if (Settings.IncludeSubDirectories == false) {
 					if (!Settings.IncludeList.Contains(entry.Folder)) {
 						reportProgress = false;
+						reason = "path is not in the included directories list";
 						return true;
 					}
 				}
@@ -258,17 +297,28 @@ namespace VDF.Core {
 					return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
 				})) {
 					reportProgress = false;
+					reason = "path is not in the included directories list";
 					return true;
 				}
 			}
 
-			if (entry.Flags.Any(EntryFlags.ManuallyExcluded | EntryFlags.TooDark))
+			if (entry.Flags.Has(EntryFlags.ManuallyExcluded)) {
+				reason = "file has been manually excluded";
 				return true;
+			}
+			if (entry.Flags.Has(EntryFlags.TooDark)) {
+				reason = "file is marked as too dark";
+				return true;
+			}
 			if (!Settings.IncludeNonExistingFiles && !File.Exists(entry.Path))
+			{
+				reason = "file does not exist";
 				return true;
+			}
 
 			if (Settings.FilterByFileSize && (entry.FileSize.BytesToMegaBytes() > Settings.MaximumFileSize ||
 				entry.FileSize.BytesToMegaBytes() < Settings.MinimumFileSize)) {
+				reason = "file size is outside the configured range";
 				return true;
 			}
 			if (Settings.FilterByFilePathContains) {
@@ -279,12 +329,16 @@ namespace VDF.Core {
 						break;
 					}
 				}
-				if (!contains)
+				if (!contains) {
+					reason = "file path does not match the required patterns";
 					return true;
+				}
 			}
 
-			if (Settings.IgnoreReparsePoints && File.Exists(entry.Path) && File.ResolveLinkTarget(entry.Path, returnFinalTarget: false) != null)
+			if (Settings.IgnoreReparsePoints && File.Exists(entry.Path) && File.ResolveLinkTarget(entry.Path, returnFinalTarget: false) != null) {
+				reason = "file is a reparse point";
 				return true;
+			}
 			if (Settings.FilterByFilePathNotContains) {
 				bool contains = false;
 				foreach (var f in Settings.FilePathNotContainsTexts) {
@@ -293,8 +347,10 @@ namespace VDF.Core {
 						break;
 					}
 				}
-				if (contains)
+				if (contains) {
+					reason = "file path matches an excluded pattern";
 					return true;
+				}
 			}
 
 			return false;
@@ -323,16 +379,25 @@ namespace VDF.Core {
 				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
 					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
 
-					entry.invalid = InvalidEntry(entry, out bool reportProgress);
+					entry.invalid = InvalidEntry(entry, out bool reportProgress, out string? invalidReason);
+					if (entry.invalid && invalidReason != null)
+						LogExcludedFile(entry, invalidReason);
 
+					bool wasInvalid = entry.invalid;
 					bool skipEntry = false;
+					string? skipReason = null;
 					skipEntry |= entry.invalid;
-					skipEntry |= entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling;
+					if (!skipEntry && entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling) {
+						skipEntry = true;
+						skipReason = "previous thumbnail sampling failed and retry is disabled";
+					}
 
 					if (!skipEntry && !Settings.ScanAgainstEntireDatabase) {
 						if (Settings.IncludeSubDirectories == false) {
-							if (!Settings.IncludeList.Contains(entry.Folder))
+							if (!Settings.IncludeList.Contains(entry.Folder)) {
 								skipEntry = true;
+								skipReason = "path is not in the included directories list";
+							}
 						}
 						else if (!Settings.IncludeList.Any(f => {
 							if (!entry.Folder.StartsWith(f))
@@ -342,12 +407,16 @@ namespace VDF.Core {
 							//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
 							string relativePath = Path.GetRelativePath(f, entry.Folder);
 							return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
-						}))
+						})) {
 							skipEntry = true;
+							skipReason = "path is not in the included directories list";
+						}
 					}
 
 					if (skipEntry) {
 						entry.invalid = true;
+						if (!wasInvalid && skipReason != null)
+							LogExcludedFile(entry, skipReason);
 						if (reportProgress)
 							IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
@@ -400,6 +469,9 @@ namespace VDF.Core {
 				});
 			}
 			catch (OperationCanceledException) { }
+			finally {
+				LogExcludedSummary();
+			}
 		}
 
 		Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
@@ -821,4 +893,3 @@ namespace VDF.Core {
 		}
 	}
 }
-

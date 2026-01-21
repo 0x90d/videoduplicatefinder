@@ -67,7 +67,7 @@ namespace VDF.GUI.ViewModels {
 				});
 			}
 			catch {
-				await MessageBoxService.Show("Failed to open URL: https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability");
+				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);
 			}
 		});
 		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -114,13 +114,13 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> ClearIncludesListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await MessageBoxService.Show("Are you sure you want to clear the list of ALL included folders?", MessageBoxButtons.Yes | MessageBoxButtons.Cancel);
+			var result = await MessageBoxService.Show(App.Lang["Message.ClearAllIncludedConfirm"], MessageBoxButtons.Yes | MessageBoxButtons.Cancel);
 			if (result == MessageBoxButtons.Yes)
 				SettingsFile.Instance.Includes.Clear();
 		});
 
 		public ReactiveCommand<Unit, Unit> ClearBlacklistListCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await MessageBoxService.Show("Are you sure you want to clear the list of ALL excluded folders?", MessageBoxButtons.Yes | MessageBoxButtons.Cancel);
+			var result = await MessageBoxService.Show(App.Lang["Message.ClearAllExcludedConfirm"], MessageBoxButtons.Yes | MessageBoxButtons.Cancel);
 			if (result == MessageBoxButtons.Yes)
 				SettingsFile.Instance.Blacklists.Clear();
 		});
@@ -200,7 +200,7 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show($"Loading settings from file has failed: {ex.Message}");
 				return;
 			}
-			await MessageBoxService.Show("Please restart VDF to apply new settings.");
+			await MessageBoxService.Show(App.Lang["Message.RestartRequired"]);
 		});
 
 	}

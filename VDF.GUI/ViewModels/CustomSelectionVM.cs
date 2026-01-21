@@ -16,8 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Text.Json;
@@ -54,7 +52,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		[JsonIgnore]
 		public ReactiveCommand<ListBox, Action> AddFilePathContainsTextToListCommand => ReactiveCommand.CreateFromTask<ListBox, Action>(async lbox => {
-			var result = await InputBoxService.Show("New Entry");
+			var result = await PromptForWildcardEntryAsync(App.Lang["Dialog.Add"], string.Empty);
 			if (string.IsNullOrEmpty(result)) return null!;
 			if (!Data.PathContains.Contains(result))
 				Data.PathContains.Add(result);
@@ -68,7 +66,7 @@ namespace VDF.GUI.ViewModels {
 		});
 		[JsonIgnore]
 		public ReactiveCommand<ListBox, Action> AddFilePathNotContainsTextToListCommand => ReactiveCommand.CreateFromTask<ListBox, Action>(async lbox => {
-			var result = await InputBoxService.Show("New Entry");
+			var result = await PromptForWildcardEntryAsync(App.Lang["Dialog.Add"], string.Empty);
 			if (string.IsNullOrEmpty(result)) return null!;
 			if (!Data.PathNotContains.Contains(result))
 				Data.PathNotContains.Add(result);
@@ -114,6 +112,22 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show($"Loading from file has failed: {ex.Message}");
 			}
 		});
+
+		static async Task<string?> PromptForWildcardEntryAsync(string title, string initialValue) {
+			var currentValue = initialValue;
+			while (true) {
+				var result = await InputBoxService.Show(App.Lang["CustomSelection.NewEntry"], currentValue, title: title);
+				if (string.IsNullOrEmpty(result))
+					return null;
+				if (HasTrailingWildcard(result))
+					return result;
+				await MessageBoxService.Show(App.Lang["CustomSelection.WildcardRequired"]);
+				currentValue = result;
+			}
+		}
+
+		static bool HasTrailingWildcard(string value) =>
+			value.EndsWith("*", StringComparison.Ordinal) || value.EndsWith("?", StringComparison.Ordinal);
 
 	}
 }

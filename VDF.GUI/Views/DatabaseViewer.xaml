@@ -5,7 +5,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="Database Editor"
+    xmlns:app="clr-namespace:VDF.GUI"
+    Title="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Title]}"
     Height="600"
     Width="800"
     d:DesignHeight="450"
@@ -14,7 +15,7 @@
     mc:Ignorable="d">
     <Grid RowDefinitions="Auto, *">
         <Grid ColumnDefinitions="Auto, *">
-            <TextBlock Text="Search:" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Search]}" VerticalAlignment="Center"/>
             <TextBox Text="{Binding SearchText}" Margin="10,0,0,0" Grid.Column="1"/>
         </Grid>
         <controls:DataGrid x:Name="datagridDatabase" Grid.Row="1" ItemsSource="{Binding DatabaseFilesView}" AutoGenerateColumns="True">
