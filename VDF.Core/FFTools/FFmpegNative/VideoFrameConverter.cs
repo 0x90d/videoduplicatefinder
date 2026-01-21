@@ -45,16 +45,16 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_destinationSize = destinationSize;
 
 			int flags = quality switch {
-				ScaleQuality.FastBilinear => ffmpeg.SWS_FAST_BILINEAR,
-				ScaleQuality.Bilinear => ffmpeg.SWS_BILINEAR,
-				ScaleQuality.Bicubic => ffmpeg.SWS_BICUBIC,
-				ScaleQuality.Lanczos => ffmpeg.SWS_LANCZOS,
-				ScaleQuality.Spline => ffmpeg.SWS_SPLINE,
-				ScaleQuality.Area => ffmpeg.SWS_AREA,
-				_ => ffmpeg.SWS_BICUBIC
+				ScaleQuality.FastBilinear => (int)SwsFlags.SWS_FAST_BILINEAR,
+				ScaleQuality.Bilinear => (int)SwsFlags.SWS_BILINEAR,
+				ScaleQuality.Bicubic => (int)SwsFlags.SWS_BICUBIC,
+				ScaleQuality.Lanczos => (int)SwsFlags.SWS_LANCZOS,
+				ScaleQuality.Spline => (int)SwsFlags.SWS_SPLINE,
+				ScaleQuality.Area => (int)SwsFlags.SWS_AREA,
+				_ => (int)SwsFlags.SWS_BICUBIC
 			};
 
-			if (bitExact) flags |= ffmpeg.SWS_BITEXACT;
+			if (bitExact) flags |= (int)SwsFlags.SWS_BITEXACT;
 
 			_pConvertContext = ffmpeg.sws_getContext(sourceSize.Width,
 				sourceSize.Height,

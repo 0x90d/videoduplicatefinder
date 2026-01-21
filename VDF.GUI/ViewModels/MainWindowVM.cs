@@ -1182,6 +1182,7 @@ namespace VDF.GUI.ViewModels {
 			int want = 0;
 			foreach (var m in majors) {
 				int v = m switch {
+					62 => 8, // FFmpeg 8.x
 					61 => 7, // FFmpeg 7.x
 					60 => 6, // FFmpeg 6.x
 					59 => 5, // FFmpeg 5.x
@@ -1274,6 +1275,11 @@ Non-Windows setup:
 				}
 			}
 
+			if ((SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) ||
+				(!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) ||
+				!ScanEngine.FFprobeExists) {
+				await DownloadSharedFfmpegAsync();
+			}
 			if ((SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) ||
 				(!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists)) {
 				await MessageBoxService.Show(GetRequiredFfmpegPackage(CoreUtils.CurrentFolder));
