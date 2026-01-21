@@ -15,6 +15,7 @@
 //
 
 using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
@@ -37,7 +38,47 @@ namespace VDF.GUI.Data {
 		}
 
 		static string ResolveSettingsPath(string? path) {
-			return path ?? settingsPath ?? FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
+			if (!string.IsNullOrWhiteSpace(path))
+				return path;
+			if (!string.IsNullOrWhiteSpace(settingsPath))
+				return settingsPath;
+
+			if (CanWriteToDirectory(CoreUtils.CurrentFolder))
+				return FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
+
+			return FileUtils.SafePathCombine(GetDefaultSettingsFolder(), "Settings.json");
+		}
+
+		static string GetDefaultSettingsFolder() {
+			string? baseFolder;
+			if (CoreUtils.IsWindows) {
+				baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Preferences");
+			}
+			else {
+				baseFolder = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+				if (string.IsNullOrWhiteSpace(baseFolder))
+					baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config");
+			}
+
+			var settingsFolder = Path.Combine(baseFolder, "VDF");
+			Directory.CreateDirectory(settingsFolder);
+			return settingsFolder;
+		}
+
+		static bool CanWriteToDirectory(string path) {
+			try {
+				Directory.CreateDirectory(path);
+				var testPath = Path.Combine(path, $".vdf_write_test_{Guid.NewGuid():N}");
+				using var stream = new FileStream(testPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose);
+				stream.WriteByte(0);
+				return true;
+			}
+			catch {
+				return false;
+			}
 		}
 		public class CustomActionCommands {
 			public string OpenItemInFolder { get; set; } = string.Empty;
