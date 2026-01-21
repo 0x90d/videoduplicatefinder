@@ -237,6 +237,36 @@ namespace VDF.GUI.Data {
 			get => _DarkMode;
 			set => this.RaiseAndSetIfChanged(ref _DarkMode, value);
 		}
+		double? _ThumbnailComparerWindowWidth;
+		[JsonPropertyName("ThumbnailComparerWindowWidth")]
+		public double? ThumbnailComparerWindowWidth {
+			get => _ThumbnailComparerWindowWidth;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowWidth, value);
+		}
+		double? _ThumbnailComparerWindowHeight;
+		[JsonPropertyName("ThumbnailComparerWindowHeight")]
+		public double? ThumbnailComparerWindowHeight {
+			get => _ThumbnailComparerWindowHeight;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowHeight, value);
+		}
+		double? _ThumbnailComparerWindowPositionX;
+		[JsonPropertyName("ThumbnailComparerWindowPositionX")]
+		public double? ThumbnailComparerWindowPositionX {
+			get => _ThumbnailComparerWindowPositionX;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowPositionX, value);
+		}
+		double? _ThumbnailComparerWindowPositionY;
+		[JsonPropertyName("ThumbnailComparerWindowPositionY")]
+		public double? ThumbnailComparerWindowPositionY {
+			get => _ThumbnailComparerWindowPositionY;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowPositionY, value);
+		}
+		int? _ThumbnailComparerWindowScreenIndex;
+		[JsonPropertyName("ThumbnailComparerWindowScreenIndex")]
+		public int? ThumbnailComparerWindowScreenIndex {
+			get => _ThumbnailComparerWindowScreenIndex;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowScreenIndex, value);
+		}
 		bool _ShowPathColumn = true;
 		[JsonPropertyName("ShowPathColumn")]
 		public bool ShowPathColumn {

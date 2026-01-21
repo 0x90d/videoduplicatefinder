@@ -19,6 +19,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform;
+using DynamicData;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 
@@ -31,6 +33,8 @@ namespace VDF.GUI.Views {
 			InitializeComponent();
 			Owner = ApplicationHelpers.MainWindow;
 			this.Loaded += ThumbnailComparer_Loaded;
+			this.Opened += ThumbnailComparer_Opened;
+			this.Closing += ThumbnailComparer_Closing;
 
 			if (SettingsFile.Instance.UseMica &&
 				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
@@ -53,6 +57,8 @@ namespace VDF.GUI.Views {
 		}
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
+		private void ThumbnailComparer_Opened(object? sender, EventArgs e) => ApplySavedWindowPlacement();
+
 		private void ThumbnailComparer_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 			if (DataContext is ThumbnailComparerVM vm) {
 				vm.LoadThumbnailsAsync();
@@ -74,6 +80,97 @@ namespace VDF.GUI.Views {
 					});
 				}
 			}
+		}
+
+		private void ThumbnailComparer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
+			SaveWindowPlacement();
+		}
+
+		private void ApplySavedWindowPlacement() {
+			var settings = SettingsFile.Instance;
+			var screens = Screens;
+			var targetScreen = ResolveScreen(screens, settings.ThumbnailComparerWindowScreenIndex);
+
+			if (settings.ThumbnailComparerWindowWidth is double savedWidth && savedWidth > 0) {
+				Width = savedWidth;
+			}
+			if (settings.ThumbnailComparerWindowHeight is double savedHeight && savedHeight > 0) {
+				Height = savedHeight;
+			}
+
+			if (targetScreen != null) {
+				var workingArea = targetScreen.WorkingArea;
+				var cappedWidth = Math.Min(Width, workingArea.Width);
+				var cappedHeight = Math.Min(Height, workingArea.Height);
+				if (cappedWidth > 0) {
+					Width = cappedWidth;
+				}
+				if (cappedHeight > 0) {
+					Height = cappedHeight;
+				}
+
+				if (settings.ThumbnailComparerWindowPositionX.HasValue && settings.ThumbnailComparerWindowPositionY.HasValue) {
+					var desiredWidth = Width;
+					var desiredHeight = Height;
+					var maxX = workingArea.Right - (int)Math.Ceiling(desiredWidth);
+					var maxY = workingArea.Bottom - (int)Math.Ceiling(desiredHeight);
+					if (maxX < workingArea.X) {
+						maxX = workingArea.X;
+					}
+					if (maxY < workingArea.Y) {
+						maxY = workingArea.Y;
+					}
+
+					var clampedX = Math.Clamp((int)Math.Round(settings.ThumbnailComparerWindowPositionX.Value), workingArea.X, maxX);
+					var clampedY = Math.Clamp((int)Math.Round(settings.ThumbnailComparerWindowPositionY.Value), workingArea.Y, maxY);
+					Position = new PixelPoint(clampedX, clampedY);
+					WindowStartupLocation = WindowStartupLocation.Manual;
+					return;
+				}
+			}
+
+			WindowStartupLocation = WindowStartupLocation.CenterScreen;
+		}
+
+		private void SaveWindowPlacement() {
+			var settings = SettingsFile.Instance;
+			settings.ThumbnailComparerWindowWidth = Width;
+			settings.ThumbnailComparerWindowHeight = Height;
+
+			if (Screens != null) {
+				var centerPoint = new PixelPoint(
+					Position.X + (int)Math.Round(Width / 2),
+					Position.Y + (int)Math.Round(Height / 2));
+				var screen = Screens.ScreenFromPoint(centerPoint) ?? Screens.Primary;
+				var screenIndex = screen != null ? Screens.All.IndexOf(screen) : -1;
+				if (screenIndex >= 0) {
+					settings.ThumbnailComparerWindowScreenIndex = screenIndex;
+					settings.ThumbnailComparerWindowPositionX = Position.X;
+					settings.ThumbnailComparerWindowPositionY = Position.Y;
+				}
+				else {
+					settings.ThumbnailComparerWindowScreenIndex = null;
+					settings.ThumbnailComparerWindowPositionX = null;
+					settings.ThumbnailComparerWindowPositionY = null;
+				}
+			}
+			else {
+				settings.ThumbnailComparerWindowScreenIndex = null;
+				settings.ThumbnailComparerWindowPositionX = null;
+				settings.ThumbnailComparerWindowPositionY = null;
+			}
+
+			SettingsFile.SaveSettings();
+		}
+
+		private static Screen? ResolveScreen(Screens? screens, int? screenIndex) {
+			if (screens == null) {
+				return null;
+			}
+			if (screenIndex is int index && index >= 0 && index < screens.All.Count) {
+				return screens.All[index];
+			}
+			return screens.Primary;
 		}
 	}
 }
