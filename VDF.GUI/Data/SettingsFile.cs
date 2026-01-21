@@ -24,12 +24,21 @@ using VDF.Core.Utils;
 namespace VDF.GUI.Data {
 	public class SettingsFile : ReactiveObject {
 		private static SettingsFile? instance;
+		private static string? settingsPath;
 
 		[JsonIgnore]
 		public static SettingsFile Instance => instance ??= new SettingsFile();
 
 		public SettingsFile() { }
 
+
+		public static void SetSettingsPath(string? path) {
+			settingsPath = string.IsNullOrWhiteSpace(path) ? null : path;
+		}
+
+		static string ResolveSettingsPath(string? path) {
+			return path ?? settingsPath ?? FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
+		}
 		public class CustomActionCommands {
 			public string OpenItemInFolder { get; set; } = string.Empty;
 			public string OpenMultipleInFolder { get; set; } = string.Empty;
@@ -221,7 +230,7 @@ namespace VDF.GUI.Data {
 		}
 
 		public static void SaveSettings(string? path = null) {
-			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
+			path = ResolveSettingsPath(path);
 			File.WriteAllText(path, JsonSerializer.Serialize(instance));
 		}
 
@@ -360,10 +369,11 @@ namespace VDF.GUI.Data {
 		}
 
 		public static void LoadSettings(string? path = null) {
-			if ((path == null || path.EndsWith(".xml")) && LoadOldSettings(path))
+			path ??= settingsPath;
+			if ((path == null || path.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)) && LoadOldSettings(path))
 				return;
 
-			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
+			path = ResolveSettingsPath(path);
 			if (!File.Exists(path)) return;
 			instance = JsonSerializer.Deserialize<SettingsFile>(File.ReadAllBytes(path));
 		}

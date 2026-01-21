@@ -18,8 +18,11 @@ global using System;
 global using System.Collections.Generic;
 global using System.IO;
 global using System.Threading.Tasks;
+using System.CommandLine;
+using System.Linq;
 using Avalonia;
-using Avalonia.ReactiveUI;
+using ReactiveUI.Avalonia;
+using VDF.GUI.Utils;
 
 namespace VDF.GUI {
 	class Program {
@@ -27,14 +30,44 @@ namespace VDF.GUI {
 		// SynchronizationContext-reliant code before AppMain is called: things aren't initialized
 		// yet and stuff might break.
 		[STAThread]
-		public static void Main(string[] args) => BuildAvaloniaApp()
-			.StartWithClassicDesktopLifetime(args);
+		public static int Main(string[] args) {
+
+			Option<FileInfo> settingsOption = new("--settings", new[] { "-s" }) {
+				Description = "Path to a settings file to load and save."
+			};
+			RootCommand rootCommand = new("VideoDuplicateFinder settings options");
+			rootCommand.Options.Add(settingsOption);
+
+			// This runs ONLY when parsing succeeded and no built-in action (like --help) took over
+			rootCommand.SetAction(parseResult =>
+			{
+				if (parseResult.GetValue(settingsOption) is FileInfo parsedFile) {
+					if (parsedFile.Exists) {
+						Data.SettingsFile.SetSettingsPath(parsedFile.FullName);
+						Console.Out.WriteLine($"Using custom settings file: '{parsedFile.FullName}'");
+					}
+					else {
+						ConsoleAttach.EnsureConsole();
+						Console.Error.WriteLine($"Settings file not found: '{parsedFile.FullName}'. Using default settings file.");
+					}
+				}
+
+				BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+			});
+			var parseResult = rootCommand.Parse(args);
+			// If help requested OR parse errors -> we want console output
+			if (parseResult.Errors.Count > 0 || args.Contains("-h") || args.Contains("--help") || args.Contains("-?")) {
+				ConsoleAttach.EnsureConsole();
+			}
+			return rootCommand.Parse(args).Invoke();
+		}
 
 		// Avalonia configuration, don't remove; also used by visual designer.
 		public static AppBuilder BuildAvaloniaApp()
 			=> AppBuilder.Configure<App>()
 				.UsePlatformDetect()
 				.With(new X11PlatformOptions {  UseDBusFilePicker = false })
-				.UseReactiveUI();
+				.UseReactiveUI()
+				.RegisterReactiveUIViewsFromEntryAssembly();
 	}
 }

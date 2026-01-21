@@ -77,6 +77,7 @@ namespace VDF.GUI.Views {
 			}
 			ShowAlgoView();
 		}
+
 		async void ShowAlgoView() {
 
 			if (File.Exists(Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)
