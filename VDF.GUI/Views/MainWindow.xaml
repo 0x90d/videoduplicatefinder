@@ -433,6 +433,11 @@
                                                 <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ClearSelection]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
+                                        <MenuItem Command="{Binding InvertSelectionCommand}">
+                                            <MenuItem.Header>
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.InvertSelection]}" />
+                                            </MenuItem.Header>
+                                        </MenuItem>
                                         <MenuItem Command="{Binding ExportCleanupDryRunReportCommand}">
                                             <MenuItem.Header>
                                                 <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ExportCleanupDryRun]}" />

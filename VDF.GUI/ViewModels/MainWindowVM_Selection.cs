@@ -220,6 +220,14 @@ namespace VDF.GUI.ViewModels {
 				vm.Checked = false;
 			}
 		});
+		public ReactiveCommand<Unit, Unit> InvertSelectionCommand => ReactiveCommand.Create(() => {
+			foreach (var vm in Duplicates
+								.SelectMany(g => g.Children)
+								.Select(c => c.Item)
+								.Select(it => it!)) {
+				vm.Checked = !vm.Checked;
+			}
+		});
 
 		public ReactiveCommand<Unit, Unit> DeleteHighlightedCommand => ReactiveCommand.Create(() => {
 			if (GetSelectedDuplicateItem() == null) return;
