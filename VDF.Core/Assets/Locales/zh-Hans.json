@@ -1,0 +1,15 @@
+{
+  "Log.BuildingFileList": "正在构建文件列表...",
+  "Log.FinishedBuildingFileList": "文件列表在 {0} 内构建完成。",
+  "Log.GatheringMediaInfo": "正在收集媒体信息并生成哈希...",
+  "Log.FinishedGatheringHashes": "收集与哈希在 {0} 内完成。",
+  "Log.ScanAborted": "扫描已中止。",
+  "Log.ScanForDuplicates": "正在扫描重复项...",
+  "Log.FinishedScanForDuplicates": "重复扫描在 {0} 内完成。",
+  "Log.HighlightingBestResults": "正在突出显示最佳结果...",
+  "Log.ScanDone": "扫描完成。",
+  "Log.ExcludedFile": "已排除 '{0}'，因为 {1}（当前 {2:N0}）。",
+  "Log.ExcludedFilesSummary": "已排除文件汇总（每个原因有限制）：",
+  "Log.ExcludedFilesSuppressed": "（已抑制 {0:N0} 条日志）",
+  "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}"
+}

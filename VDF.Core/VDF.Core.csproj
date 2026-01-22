@@ -16,6 +16,11 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\Locales\en.json" />
+    <EmbeddedResource Include="Assets\Locales\de.json" />
+    <EmbeddedResource Include="Assets\Locales\es.json" />
+    <EmbeddedResource Include="Assets\Locales\fr.json" />
+    <EmbeddedResource Include="Assets\Locales\pt.json" />
+    <EmbeddedResource Include="Assets\Locales\zh-Hans.json" />
   </ItemGroup>
 
 </Project>

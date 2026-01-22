@@ -1,0 +1,15 @@
+{
+  "Log.BuildingFileList": "Construyendo lista de archivos...",
+  "Log.FinishedBuildingFileList": "Lista de archivos creada en {0}.",
+  "Log.GatheringMediaInfo": "Recopilando información de medios y creando hashes...",
+  "Log.FinishedGatheringHashes": "Recopilación y hash completados en {0}.",
+  "Log.ScanAborted": "Escaneo abortado.",
+  "Log.ScanForDuplicates": "Buscando duplicados...",
+  "Log.FinishedScanForDuplicates": "Búsqueda de duplicados terminada en {0}.",
+  "Log.HighlightingBestResults": "Resaltando los mejores resultados...",
+  "Log.ScanDone": "Escaneo terminado.",
+  "Log.ExcludedFile": "Se excluyó '{0}' porque {1} ({2:N0} hasta ahora).",
+  "Log.ExcludedFilesSummary": "Resumen de archivos excluidos (limitado por motivo):",
+  "Log.ExcludedFilesSuppressed": " (se suprimieron {0:N0} entradas del registro)",
+  "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}"
+}
