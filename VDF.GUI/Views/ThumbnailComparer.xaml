@@ -2,6 +2,7 @@
     x:Class="VDF.GUI.Views.ThumbnailComparer"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:data="using:VDF.GUI.Data"
@@ -49,30 +50,41 @@
                 Grid.Row="1"
                 Grid.Column="0"
                 Margin="8"
-                Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}">
-                <!--  Preview thumbs  -->
-                <ListBox
-                    x:Name="ListBoxItems"
-                    ItemsSource="{Binding Items}"
-                    SelectedItems="{Binding SelectedItems}"
-                    SelectionMode="Multiple">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="6">
-                                <Image
-                                    MaxWidth="200"
-                                    MaxHeight="100"
-                                    IsVisible="{Binding !IsLoadingThumbnail}"
-                                    Source="{Binding Thumbnail}"
-                                    Stretch="Uniform" />
-                                <TextBlock
-                                    MaxWidth="220"
-                                    Text="{Binding Item.ItemInfo.Path}"
-                                    TextWrapping="Wrap" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                Background="{actipro:ThemeResource Container2BackgroundBrush}"
+                BorderBrush="{actipro:ThemeResource Container2BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock
+                        Margin="10,8,10,4"
+                        FontWeight="SemiBold"
+                        Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Thumbnail]}" />
+                    <!--  Preview thumbs  -->
+                    <ListBox
+                        x:Name="ListBoxItems"
+                        Grid.Row="1"
+                        Margin="6,0,6,6"
+                        ItemsSource="{Binding Items}"
+                        SelectedItems="{Binding SelectedItems}"
+                        SelectionMode="Multiple">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="6">
+                                    <Image
+                                        MaxWidth="200"
+                                        MaxHeight="100"
+                                        IsVisible="{Binding !IsLoadingThumbnail}"
+                                        Source="{Binding Thumbnail}"
+                                        Stretch="Uniform" />
+                                    <TextBlock
+                                        MaxWidth="220"
+                                        Text="{Binding Item.ItemInfo.Path}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
             </Border>
             <Border
                 Grid.Row="1"
@@ -88,55 +100,77 @@
                 <Border
                     Grid.Row="0"
                     Padding="8"
-                    Background="#33FF0000"
-                    BorderBrush="#AAFF0000"
+                    Background="{actipro:ThemeResource ControlBackgroundBrushEmphasizedDanger}"
+                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
                     BorderThickness="1"
                     CornerRadius="6"
                     IsVisible="{Binding IsMessageVisible}">
                     <TextBlock Text="{Binding UserMessage}" />
                 </Border>
                 <!--  Toolbar  -->
-                <StackPanel
+                <Border
                     Grid.Row="1"
-                    Orientation="Horizontal"
-                    Spacing="8">
-                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Mode]}" />
-                    <ComboBox
-                        Width="160"
-                        ItemsSource="{Binding CompareModes}"
-                        SelectedItem="{Binding SelectedCompareMode}" />
-
-                    <Button Command="{Binding FitToViewCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Fit]}" />
-                    <Button Command="{Binding ResetZoomCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ZoomReset]}" />
-                    <Button Command="{Binding ZoomOutCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ZoomOut]}" />
-                    <Button Command="{Binding ZoomInCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ZoomIn]}" />
-
-                    <StackPanel
-                        IsVisible="{Binding IsSwipe}"
-                        Orientation="Horizontal"
-                        Spacing="6">
-                        <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Swipe]}" />
-                        <Slider
-                            Width="100"
-                            Maximum="1"
-                            Minimum="0"
-                            Value="{Binding ModeSliderValue}" />
-                    </StackPanel>
-                    <StackPanel
-                        IsVisible="{Binding IsThumbnailStep}"
-                        Orientation="Horizontal"
-                        Spacing="6">
-                        <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Thumbnail]}" />
-                        <Slider
-                            Width="120"
-                            Minimum="0"
-                            Maximum="{Binding FrameIndexMax}"
-                            Value="{Binding FrameIndex}" />
-                    </StackPanel>
-                </StackPanel>
+                    Margin="0,8,8,0"
+                    Padding="8"
+                    Background="{actipro:ThemeResource Container2BackgroundBrush}"
+                    BorderBrush="{actipro:ThemeResource Container2BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                        <StackPanel
+                            Grid.Row="0"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Mode]}" />
+                            <ComboBox
+                                Width="160"
+                                ItemsSource="{Binding CompareModes}"
+                                SelectedItem="{Binding SelectedCompareMode}" />
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Command="{Binding FitToViewCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Fit]}" />
+                                <Button Command="{Binding ResetZoomCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ZoomReset]}" />
+                                <Button Command="{Binding ZoomOutCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ZoomOut]}" />
+                                <Button Command="{Binding ZoomInCommand}" Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ZoomIn]}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Row="1"
+                            Orientation="Horizontal"
+                            Spacing="12">
+                            <StackPanel
+                                IsVisible="{Binding IsSwipe}"
+                                Orientation="Horizontal"
+                                Spacing="6">
+                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Swipe]}" />
+                                <Slider
+                                    Width="120"
+                                    Maximum="1"
+                                    Minimum="0"
+                                    Value="{Binding ModeSliderValue}" />
+                            </StackPanel>
+                            <StackPanel
+                                IsVisible="{Binding IsThumbnailStep}"
+                                Orientation="Horizontal"
+                                Spacing="6">
+                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Thumbnail]}" />
+                                <Slider
+                                    Width="140"
+                                    Minimum="0"
+                                    Maximum="{Binding FrameIndexMax}"
+                                    Value="{Binding FrameIndex}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
                 <!--  Viewer  -->
-                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundChromeBlackLowBrush}">
+                <Border 
+                    Grid.Row="2"
+                    Margin="0,8,8,0"
+                    Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
                     <data:ZoomPanPresenter
                         x:Name="ZoomHost"
                         MaxZoom="8"
@@ -165,7 +199,7 @@
                                     Height="{Binding DisplayHeight}"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Top"
-                                    Background="White"
+                                    Background="Red"
                                     Opacity="0.8">
                                     <Border.RenderTransform>
                                         <TranslateTransform X="{Binding SeparatorX}" Y="{Binding TopOffset}" />

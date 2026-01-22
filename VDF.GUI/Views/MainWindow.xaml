@@ -84,7 +84,9 @@
                                 Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Scanner]}" />
                         </TabItem.Header>
                         <Grid Margin="0,0,0,10" RowDefinitions="Auto, *, Auto, Auto, Auto">
-                            <Menu Grid.Row="0" MinHeight="30">
+                            <Menu Grid.Row="0" MinHeight="30" 
+                                Background="{actipro:ThemeResource Container2BackgroundBrush}"
+                                BorderBrush="{actipro:ThemeResource Container2BorderBrush}">
                                 <MenuItem
                                     Command="{Binding StartScanCommand}"
                                     CommandParameter="FullScan"
@@ -360,7 +362,9 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
-                                <Menu Grid.Row="0" MinHeight="30">
+                                <Menu 
+                                Background="{actipro:ThemeResource Container3BackgroundBrush}"
+                                BorderBrush="{actipro:ThemeResource Container3BorderBrush}" Grid.Row="0" MinHeight="30">
                                     <Menu.Styles>
                                         <Style Selector="Separator">
                                             <Setter Property="Margin" Value="0,5,0,5" />
@@ -518,10 +522,11 @@
                                 <Grid
                                     x:Name="GridFilter"
                                     Grid.Row="1"
-                                    Margin="5"
+                                Background="{actipro:ThemeResource Container3BackgroundBrush}"
                                     IsVisible="False"
                                     RowDefinitions="*, Auto">
-                                    <StackPanel Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal"
+                                    Margin="5">
                                         <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Path]}" />
                                         <TextBox
                                             MinWidth="150"
@@ -610,7 +615,7 @@
                                             Margin="10,0"
                                             VerticalAlignment="Center"
                                             FontWeight="Bold"
-                                            Foreground="Yellow"
+                                            Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}"
                                             Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Note]}" />
                                     </StackPanel>
                                 </Grid>
@@ -917,7 +922,9 @@
                                 Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Settings]}" />
                         </TabItem.Header>
                         <Grid Margin="0,0,0,10" RowDefinitions="Auto, *">
-                            <Menu Grid.Row="0" MinHeight="30">
+                            <Menu 
+                                Background="{actipro:ThemeResource Container2BackgroundBrush}"
+                                BorderBrush="{actipro:ThemeResource Container2BorderBrush}" Grid.Row="0" MinHeight="30">
                                 <MenuItem Command="{Binding SaveSettingsCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveTooltip]}">
                                     <MenuItem.Header>
                                         <StackPanel Orientation="Horizontal">
