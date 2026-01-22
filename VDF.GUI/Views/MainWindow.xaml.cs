@@ -135,26 +135,30 @@ namespace VDF.GUI.Views {
 			e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 
 			// Only allow if the dragged data contains filenames.
-			if (!e.Data.Contains(DataFormats.Files))
+			if (!e.DataTransfer.Contains(DataFormat.File))
 				e.DragEffects = DragDropEffects.None;
 		}
 
 		private void DropInclude(object? sender, DragEventArgs e) {
-			if (!e.Data.Contains(DataFormats.Files)) return;
+			if (!e.DataTransfer.Contains(DataFormat.File)) return;
 
-			foreach (var path in e.Data.GetFiles() ?? Array.Empty<IStorageFolder>()) {
-				if (path is not IStorageFolder) continue;
-				string? localPath = path.TryGetLocalPath();
+			foreach (var path in e.DataTransfer.GetItems(DataFormat.File) ?? Array.Empty<IDataTransferItem>()) {
+				IStorageItem? fold = path.TryGetFile();
+				if (fold == null)
+					continue;
+				string? localPath = fold.TryGetLocalPath();
 				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
 					SettingsFile.Instance.Includes.Add(localPath);
 			}
 		}
 		private void DropBlacklist(object? sender, DragEventArgs e) {
-			if (!e.Data.Contains(DataFormats.Files)) return;
+			if (!e.DataTransfer.Contains(DataFormat.File)) return;
 
-			foreach (var path in e.Data.GetFiles() ?? Array.Empty<IStorageFolder>()) {
-				if (path is not IStorageFolder) continue;
-				string? localPath = path.TryGetLocalPath();
+			foreach (var path in e.DataTransfer.GetItems(DataFormat.File) ?? Array.Empty<IDataTransferItem>()) {
+				IStorageItem? fold = path.TryGetFile();
+				if (fold == null)
+					continue;
+				string? localPath = fold.TryGetLocalPath();
 				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
 					SettingsFile.Instance.Includes.Add(localPath);
 			}

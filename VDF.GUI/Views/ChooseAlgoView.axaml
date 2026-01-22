@@ -1,32 +1,143 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
 		xmlns:app="clr-namespace:VDF.GUI;assembly=VDF.GUI"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="VDF.GUI.Views.ChooseAlgoView"
-		MaxWidth="600"
+		xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		x:Class="VDF.GUI.Views.ChooseAlgoView"
+		MaxWidth="720"
 		WindowStartupLocation="CenterOwner"
 		SizeToContent="WidthAndHeight"
 		Padding="20"
-        Title="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Title]}">
-		<StackPanel >
-			<TextBlock  Margin="0,5" TextWrapping="Wrap" Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Description]}" />
-			<RadioButton x:Name="Cb16x16"
-					  Margin="0,5"
-					  Content="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option16]}" />
-			<TextBlock
-				Margin="30,5"
-				Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option16Details]}"
-				TextWrapping="Wrap" />
-			<RadioButton  x:Name="Cb32x32"
-					   Content="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option32]}"
-					   IsChecked="true"/>
-			<TextBlock
-				Margin="30,5"
-				Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option32Details]}"
-				TextWrapping="Wrap" />
-			<Button MaxWidth="300" Margin="0,5" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.OK]}" Click="Button_Click"/>
-		</StackPanel>
+		Title="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Title]}">
+	<Grid RowDefinitions="*,Auto" RowSpacing="12">
+		<TabControl SelectedIndex="{Binding StepIndex, Mode=TwoWay}">
+			<TabItem>
+				<TabItem.Header>
+					<StackPanel Orientation="Horizontal" Spacing="6">
+						<TextBlock FontWeight="SemiBold" Text="1" />
+						<TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Step.DatabaseSize]}" />
+					</StackPanel>
+				</TabItem.Header>
+				<Border
+				Padding="12"
+				Background="{actipro:ThemeResource Container1BackgroundBrush}"
+				BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+				BorderThickness="1"
+				CornerRadius="6">
+					<StackPanel>
+						<TextBlock Margin="0,5" TextWrapping="Wrap" Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Description]}" />
+						<RadioButton
+						x:Name="Cb16x16"
+						Margin="0,5"
+						Content="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option16]}" />
+						<TextBlock
+						Margin="30,5"
+						Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option16Details]}"
+						TextWrapping="Wrap" />
+						<RadioButton
+						x:Name="Cb32x32"
+						Content="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option32]}"
+						IsChecked="true" />
+						<TextBlock
+						Margin="30,5"
+						Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Option32Details]}"
+						TextWrapping="Wrap" />
+					</StackPanel>
+				</Border>
+			</TabItem>
+			<TabItem>
+				<TabItem.Header>
+					<StackPanel Orientation="Horizontal" Spacing="6">
+						<TextBlock FontWeight="SemiBold" Text="2" />
+						<TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Step.Folders]}" />
+					</StackPanel>
+				</TabItem.Header>
+				<Border
+				Padding="12"
+				Background="{actipro:ThemeResource Container1BackgroundBrush}"
+				BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+				BorderThickness="1"
+				MinHeight="300"
+				MinWidth="600"
+				CornerRadius="6">
+					<StackPanel Spacing="8">
+						<TextBlock FontWeight="SemiBold" Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.FoldersTitle]}" />
+						<TextBlock
+						Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+						Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.FoldersHint]}"
+						TextWrapping="Wrap" />
+						<Grid RowDefinitions="Auto,*,Auto" RowSpacing="6" ColumnSpacing="8">
+							<StackPanel Grid.Row="0" Spacing="6" Orientation="Horizontal">
+								<Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Add]}" Click="AddFolder_Click" />
+								<Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Remove]}" Click="RemoveFolder_Click" />
+							</StackPanel>
+							<ListBox
+							x:Name="ListboxOnboardingIncludes"
+							Grid.Row="1"
+							BorderThickness="1"
+							MinHeight="200"
+							ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}"
+							SelectionMode="Multiple" />
+							<TextBlock
+							Grid.Row="2"
+							Margin="4,6,0,0"
+							Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+							Text="{Binding Source={x:Static app:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
+						</Grid>
+					</StackPanel>
+				</Border>
+			</TabItem>
+			<TabItem>
+				<TabItem.Header>
+					<StackPanel Orientation="Horizontal" Spacing="6">
+						<TextBlock FontWeight="SemiBold" Text="3" />
+						<TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Step.BasicSettings]}" />
+					</StackPanel>
+				</TabItem.Header>
+				<Border
+				Padding="12"
+				Background="{actipro:ThemeResource Container1BackgroundBrush}"
+				BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+				BorderThickness="1"
+				MinHeight="300"
+				MinWidth="600"
+				CornerRadius="6">
+					<StackPanel Spacing="6">
+						<TextBlock FontWeight="SemiBold" Text="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.BasicSettingsTitle]}" />
+						<CheckBox
+						Content="{Binding Source={x:Static app:App.Lang}, Path=[MainWindow.Settings.IncludeSubDirectories]}"
+						IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}" />
+						<CheckBox
+						Content="{Binding Source={x:Static app:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImages]}"
+						IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}" />
+						<CheckBox
+						Content="{Binding Source={x:Static app:App.Lang}, Path=[MainWindow.Settings.IncludeImages]}"
+						IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}" />
+						<CheckBox
+						Content="{Binding Source={x:Static app:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDate]}"
+						IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseExifCreationDate}" />
+					</StackPanel>
+				</Border>
+			</TabItem>
+		</TabControl>
+		<Border
+		Grid.Row="1"
+		Padding="10"
+		Background="{actipro:ThemeResource Container1BackgroundBrush}"
+		BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+		BorderThickness="1"
+		CornerRadius="6">
+			<Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center">
+				<Button x:Name="ButtonBack" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Back]}" Click="Back_Click" />
+				<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+					<Button x:Name="ButtonSkip" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Skip]}" Click="Skip_Click" />
+					<Button x:Name="ButtonNext" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Next]}" Click="Next_Click" />
+					<Button x:Name="ButtonFinish" Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.OK]}" Click="Finish_Click" />
+				</StackPanel>
+			</Grid>
+		</Border>
+	</Grid>
 </Window>
