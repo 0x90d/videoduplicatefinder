@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11415.281 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VDF.Core", "VDF.Core\VDF.Core.csproj", "{C9D06643-CDEE-4D17-927D-4D2FE887D618}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VDF.GUI", "VDF.GUI\VDF.GUI.csproj", "{5C5517D7-18D3-4A3D-A731-4A252F7D937A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FakeDatabaseGenerator", "FakeDatabaseGenerator\FakeDatabaseGenerator.csproj", "{FA8C0D82-05D0-4320-BD21-53628883E87D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{5C5517D7-18D3-4A3D-A731-4A252F7D937A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C5517D7-18D3-4A3D-A731-4A252F7D937A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C5517D7-18D3-4A3D-A731-4A252F7D937A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA8C0D82-05D0-4320-BD21-53628883E87D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA8C0D82-05D0-4320-BD21-53628883E87D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA8C0D82-05D0-4320-BD21-53628883E87D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA8C0D82-05D0-4320-BD21-53628883E87D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

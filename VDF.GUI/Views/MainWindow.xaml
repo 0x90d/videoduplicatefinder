@@ -876,36 +876,43 @@
                                     </TextBlock>
                                 </StackPanel>
                             </Grid>
-                            <Grid Grid.Row="3" Margin="0,5,0,0">
-                                <StackPanel MinHeight="20" Orientation="Horizontal">
-                                    <ProgressBar
-                                        Name="PbScanProgress"
-                                        MinWidth="100"
-                                        Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
-                                        Value="{Binding ScanProgressValue, Mode=OneWay}" />
-                                    <Border
-                                        Width="1"
-                                        Margin="5,0"
-                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                    <TextBlock>
-                                        <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.ElapsedTime]}" />
-                                        <Run Text="{Binding TimeElapsed, Mode=OneWay, StringFormat={}{0:c}}" />
-                                    </TextBlock>
-                                    <Border
-                                        Width="1"
-                                        Margin="5,0"
-                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                    <TextBlock>
-                                        <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.RemainingTime]}" />
-                                        <Run Text="{Binding RemainingTime, Mode=OneWay, StringFormat={}{0:c}}" />
-                                    </TextBlock>
-                                    <Border
-                                        Width="1"
-                                        Margin="5,0"
-                                        Background="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                    <TextBlock Text="{Binding ScanProgressText, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
-                            </Grid>
+                            <Grid Grid.Row="3" Margin="0,5,0,0" MinHeight="20"
+                                ColumnDefinitions="Auto, Auto, Auto,Auto,Auto,Auto,*">
+                                <ProgressBar
+                                    Name="PbScanProgress"
+                                    MinWidth="100"
+                                    Grid.Column="0"
+                                    Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
+                                    Value="{Binding ScanProgressValue, Mode=OneWay}" />
+                                <Border
+                                    Width="1"
+                                    Margin="5,0"
+                                    Grid.Column="1"
+                                    Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                <TextBlock 
+                                    Grid.Column="2">
+                                    <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.ElapsedTime]}" />
+                                    <Run Text="{Binding TimeElapsed, Mode=OneWay, StringFormat={}{0:c}}" />
+                                </TextBlock>
+                                <Border
+                                    Width="1"
+                                    Grid.Column="3"
+                                    Margin="5,0"
+                                    Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                <TextBlock 
+                                    Grid.Column="4">
+                                    <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.RemainingTime]}" />
+                                    <Run Text="{Binding RemainingTime, Mode=OneWay, StringFormat={}{0:c}}" />
+                                </TextBlock>
+                                <Border
+                                    Width="1"
+                                    Grid.Column="5"
+                                    Margin="5,0"
+                                    Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                <TextBlock 
+                                    Grid.Column="6" Text="{Binding ScanProgressText, Mode=OneWay}" TextTrimming="PrefixCharacterEllipsis" />
+ 
+                        </Grid>
                             <Grid Grid.Row="4" IsVisible="{Binding ShowThumbnailRetrievalProgress}">
                                 <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                                     <ProgressBar MinWidth="100" IsIndeterminate="{Binding ShowThumbnailRetrievalProgressBar}" />
