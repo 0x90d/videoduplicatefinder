@@ -200,6 +200,8 @@
 	"MainWindow.Settings.DurationDifferenceMinSecondsTooltip": "Limita a diferença de duração baseada em porcentagem a pelo menos estes segundos (0 = desativado).",
 	"MainWindow.Settings.DurationDifferenceMaxSeconds": "Diferença máxima de duração (segundos):",
 	"MainWindow.Settings.DurationDifferenceMaxSecondsTooltip": "Limita a diferença de duração baseada em porcentagem a no máximo estes segundos (0 = desativado).",
+	"MainWindow.Settings.MaxSamplingDurationSeconds": "Duração máxima de amostragem (segundos):",
+	"MainWindow.Settings.MaxSamplingDurationSecondsTooltip": "Se um vídeo for mais longo, apenas os primeiros X segundos são usados para a amostragem (0 = desativado).",
 	"MainWindow.Settings.ExcludeDirectories": "Excluir diretórios",
 	"MainWindow.Settings.ExcludeHardLinks": "Excluir hard links",
 	"MainWindow.Settings.ExcludeHardLinksTooltip": "Diferentemente de reparse points, hard links ainda são incluídos na busca, mas não são considerados duplicados. AVISO: use esta opção somente quando necessário, pois ela reduz consideravelmente a velocidade da varredura!",

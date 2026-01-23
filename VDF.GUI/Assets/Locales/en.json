@@ -200,6 +200,8 @@
 	"MainWindow.Settings.DurationDifferenceMinSecondsTooltip": "Clamp the percent-based duration difference to at least this many seconds (0 = disable).",
 	"MainWindow.Settings.DurationDifferenceMaxSeconds": "Max duration difference (seconds):",
 	"MainWindow.Settings.DurationDifferenceMaxSecondsTooltip": "Clamp the percent-based duration difference to at most this many seconds (0 = disable).",
+	"MainWindow.Settings.MaxSamplingDurationSeconds": "Max sampling duration (seconds):",
+	"MainWindow.Settings.MaxSamplingDurationSecondsTooltip": "If a video is longer, only the first X seconds are used for sampling (0 = disable).",
 	"MainWindow.Settings.ExcludeDirectories": "Exclude Directories",
 	"MainWindow.Settings.ExcludeHardLinks": "Exclude Hard Links",
 	"MainWindow.Settings.ExcludeHardLinksTooltip": "Unlike reparse points hard links are still included in search but are not considered as duplicates. WARNING: Use this option only when necessary, as it slows down the scanning process considerably!",

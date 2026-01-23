@@ -992,7 +992,7 @@
                                             FontSize="12"
                                             Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Misc]}" />
                                     </TabItem.Header>
-                                    <ScrollViewer>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto">
                                         <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto,Auto, *">
                                             <TextBlock
                                                 Grid.Row="0"
@@ -1156,6 +1156,16 @@
                                                         Minimum="0"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMaxSecondsTooltip]}"
                                                         Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DurationDifferenceMaxSeconds}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxSamplingDurationSeconds]}" />
+                                                    <NumericUpDown
+                                                        Width="200"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center"
+                                                        Increment="1"
+                                                        Maximum="86400"
+                                                        Minimum="0"
+                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxSamplingDurationSecondsTooltip]}"
+                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxSamplingDurationSeconds}" />
                                                     <TextBlock
                                                         Margin="0,5,0,0"
                                                         VerticalAlignment="Center"
@@ -1180,8 +1190,23 @@
                                                         Maximum="100"
                                                         Minimum="-1"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxDegreeOfParallelismTooltip]}"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArguments]}" />
+                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />                                                    
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Margin="15,5,10,0" Spacing="6">
+                                                    <TextBlock FontWeight="Bold" Margin="0,10,0,0" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
+                                                    <CheckBox
+                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnableScheduledScan]}"
+                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnableScheduledScan}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTime]}" />
+                                                        <TextBox
+                                                            Width="80"
+                                                            Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScheduledScanTime}"
+                                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTimeTooltip]}" />
+                                                    </StackPanel>
+                                                    <CheckBox
+                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyScheduledScanComplete]}"
+                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScheduledScanComplete}" /><TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArguments]}" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
                                                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
@@ -1224,22 +1249,6 @@
                                                         VerticalAlignment="Center"
                                                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolderTooltip]}" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="2" Margin="15,5,10,0" Spacing="6">
-                                                    <TextBlock FontWeight="Bold" Margin="0,10,0,0" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
-                                                    <CheckBox
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnableScheduledScan]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnableScheduledScan}" />
-                                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                                        <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTime]}" />
-                                                        <TextBox
-                                                            Width="80"
-                                                            Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScheduledScanTime}"
-                                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTimeTooltip]}" />
-                                                    </StackPanel>
-                                                    <CheckBox
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyScheduledScanComplete]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScheduledScanComplete}" />
                                                 </StackPanel>
                                             </Grid>
                                             <Grid

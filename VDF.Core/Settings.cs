@@ -46,6 +46,7 @@ namespace VDF.Core {
 		public double PercentDurationDifference = 20d;
 		public double DurationDifferenceMinSeconds;
 		public double DurationDifferenceMaxSeconds;
+		public double MaxSamplingDurationSeconds;
 
 		public int ThumbnailCount = 1;
 		public int MaxDegreeOfParallelism = 1;

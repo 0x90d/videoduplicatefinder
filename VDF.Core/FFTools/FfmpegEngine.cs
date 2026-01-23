@@ -241,11 +241,11 @@ namespace VDF.Core.FFTools {
 			}
 			return bytes;
 		}
-		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, bool extendedLogging) {
+		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, double maxSamplingDurationSeconds, bool extendedLogging) {
 			int tooDarkCounter = 0;
 
 			for (int i = 0; i < positions.Count; i++) {
-				double position = videoFile.GetGrayBytesIndex(positions[i]);
+				double position = videoFile.GetGrayBytesIndex(positions[i], maxSamplingDurationSeconds);
 				if (videoFile.grayBytes.ContainsKey(position))
 					continue;
 

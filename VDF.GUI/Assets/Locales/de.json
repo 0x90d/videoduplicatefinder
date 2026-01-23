@@ -199,6 +199,8 @@
 	"MainWindow.Settings.DurationDifferenceMinSeconds": "Min. Dauerunterschied (Sekunden):",
 	"MainWindow.Settings.DurationDifferenceMinSecondsTooltip": "Begrenzt den prozentbasierten Dauerunterschied auf mindestens diese Sekunden (0 = deaktiviert).",
 	"MainWindow.Settings.DurationDifferenceMaxSeconds": "Max. Dauerunterschied (Sekunden):",
+	"MainWindow.Settings.MaxSamplingDurationSeconds": "Max. Sampling-Dauer (Sekunden):",
+	"MainWindow.Settings.MaxSamplingDurationSecondsTooltip": "Wenn ein Video länger ist, werden nur die ersten X Sekunden für das Sampling verwendet (0 = deaktiviert).",
 	"MainWindow.Settings.DurationDifferenceMaxSecondsTooltip": "Begrenzt den prozentbasierten Dauerunterschied auf höchstens diese Sekunden (0 = deaktiviert).",
 	"MainWindow.Settings.ExcludeDirectories": "Verzeichnisse ausschließen",
 	"MainWindow.Settings.ExcludeHardLinks": "Hardlinks ausschließen",

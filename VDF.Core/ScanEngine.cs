@@ -24,6 +24,7 @@ global using SixLabors.ImageSharp;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using SixLabors.ImageSharp.Processing;
@@ -191,6 +192,9 @@ namespace VDF.Core {
 
 			isScanning = true;
 		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		double GetGrayBytesIndex(FileEntry entry, float position) =>
+			entry.GetGrayBytesIndex(position, Settings.MaxSamplingDurationSeconds);
 
 		void PrepareCompare() {
 			if (Settings.ThumbnailCount != positionList.Count) {
@@ -426,7 +430,7 @@ namespace VDF.Core {
 						if (!hasAllInformation) {
 							hasAllInformation = true;
 							for (int i = 0; i < positionList.Count; i++) {
-								if (entry.grayBytes.ContainsKey(entry.GetGrayBytesIndex(positionList[i])))
+								if (entry.grayBytes.ContainsKey(GetGrayBytesIndex(entry, positionList[i])))
 									continue;
 								hasAllInformation = false;
 								break;
@@ -460,7 +464,7 @@ namespace VDF.Core {
 							entry.invalid = true;
 					}
 					else if (!entry.IsImage) {
-						if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.ExtendedFFToolsLogging))
+						if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.MaxSamplingDurationSeconds, Settings.ExtendedFFToolsLogging))
 							entry.invalid = true;
 					}
 
@@ -480,7 +484,7 @@ namespace VDF.Core {
 				flippedGrayBytes.Add(0, DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(entry.grayBytes[0]!) : GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
 			else {
 				for (int j = 0; j < positionList.Count; j++) {
-					double idx = entry.GetGrayBytesIndex(positionList[j]);
+					double idx = GetGrayBytesIndex(entry, positionList[j]);
 					flippedGrayBytes.Add(idx, DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(entry.grayBytes[idx]!) : GrayBytesUtils.FlipGrayScale(entry.grayBytes[idx]!));
 				}
 			}
@@ -504,10 +508,12 @@ namespace VDF.Core {
 			if (Settings.UsePHashing) {
 				float differenceLimitpHash = Settings.Percent / 100f;
 
-				if (!entry.PHashes.TryGetValue(entry.GetGrayBytesIndex(positionList[0]), out ulong? phash))
-					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(grayBytes[positionList[0]]);
-				if (!compItem.PHashes.TryGetValue(compItem.GetGrayBytesIndex(positionList[0]), out ulong? phash_comp))
-					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes[positionList[0]]);
+				double entryIndex = GetGrayBytesIndex(entry, positionList[0]);
+				double compIndex = GetGrayBytesIndex(compItem, positionList[0]);
+				if (!entry.PHashes.TryGetValue(entryIndex, out ulong? phash))
+					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(grayBytes[entryIndex]);
+				if (!compItem.PHashes.TryGetValue(compIndex, out ulong? phash_comp))
+					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes[compIndex]);
 				if (phash == null || phash_comp == null) {
 					Logger.Instance.Info($"Failed to compute pHash for {entry.Path} or {compItem.Path}");
 					difference = 1f;
@@ -526,11 +532,11 @@ namespace VDF.Core {
 			for (int j = 0; j < positionList.Count; j++) {
 				diffSum += ignoreBlackPixels || ignoreWhitePixels ?
 							GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(
-								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
-								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
+								grayBytes[GetGrayBytesIndex(entry, positionList[j])]!,
+								compItem.grayBytes[GetGrayBytesIndex(compItem, positionList[j])]!, ignoreBlackPixels, ignoreWhitePixels) :
 							GrayBytesUtils.PercentageDifference(
-								grayBytes[entry.GetGrayBytesIndex(positionList[j])]!,
-								compItem.grayBytes[compItem.GetGrayBytesIndex(positionList[j])]!);
+								grayBytes[GetGrayBytesIndex(entry, positionList[j])]!,
+								compItem.grayBytes[GetGrayBytesIndex(compItem, positionList[j])]!);
 				if (diffSum > differenceLimit) // already exceeding maximum tolerated diff -> exit early
 					return false;
 			}

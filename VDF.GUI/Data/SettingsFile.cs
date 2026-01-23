@@ -268,6 +268,12 @@ namespace VDF.GUI.Data {
 			get => _DurationDifferenceMaxSeconds;
 			set => this.RaiseAndSetIfChanged(ref _DurationDifferenceMaxSeconds, value);
 		}
+		int _MaxSamplingDurationSeconds = 0;
+		[JsonPropertyName("MaxSamplingDurationSeconds")]
+		public int MaxSamplingDurationSeconds {
+			get => _MaxSamplingDurationSeconds;
+			set => this.RaiseAndSetIfChanged(ref _MaxSamplingDurationSeconds, value);
+		}
 		int _Thumbnails = 1;
 		[JsonPropertyName("Thumbnails")]
 		public int Thumbnails {

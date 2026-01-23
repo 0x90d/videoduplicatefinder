@@ -200,6 +200,8 @@
 	"MainWindow.Settings.DurationDifferenceMinSecondsTooltip": "Limite la différence de durée basée sur le pourcentage à au moins ce nombre de secondes (0 = désactivé).",
 	"MainWindow.Settings.DurationDifferenceMaxSeconds": "Différence de durée max (secondes) :",
 	"MainWindow.Settings.DurationDifferenceMaxSecondsTooltip": "Limite la différence de durée basée sur le pourcentage à au plus ce nombre de secondes (0 = désactivé).",
+	"MainWindow.Settings.MaxSamplingDurationSeconds": "Durée max d’échantillonnage (secondes) :",
+	"MainWindow.Settings.MaxSamplingDurationSecondsTooltip": "Si une vidéo est plus longue, seuls les X premières secondes sont utilisées pour l’échantillonnage (0 = désactivé).",
 	"MainWindow.Settings.ExcludeDirectories": "Exclure les répertoires",
 	"MainWindow.Settings.ExcludeHardLinks": "Exclure les liens physiques",
 	"MainWindow.Settings.ExcludeHardLinksTooltip": "Contrairement aux points de réanalyse, les liens physiques sont toujours inclus dans la recherche mais ne sont pas considérés comme des doublons. AVERTISSEMENT : utilisez cette option uniquement si nécessaire, car elle ralentit considérablement l'analyse !",

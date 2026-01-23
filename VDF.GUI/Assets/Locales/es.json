@@ -200,6 +200,8 @@
 	"MainWindow.Settings.DurationDifferenceMinSecondsTooltip": "Limita la diferencia de duración basada en porcentajes a al menos estos segundos (0 = desactivado).",
 	"MainWindow.Settings.DurationDifferenceMaxSeconds": "Diferencia máxima de duración (segundos):",
 	"MainWindow.Settings.DurationDifferenceMaxSecondsTooltip": "Limita la diferencia de duración basada en porcentajes a como máximo estos segundos (0 = desactivado).",
+	"MainWindow.Settings.MaxSamplingDurationSeconds": "Duración máxima de muestreo (segundos):",
+	"MainWindow.Settings.MaxSamplingDurationSecondsTooltip": "Si un vídeo es más largo, solo se usan los primeros X segundos para el muestreo (0 = desactivado).",
 	"MainWindow.Settings.ExcludeDirectories": "Excluir directorios",
 	"MainWindow.Settings.ExcludeHardLinks": "Excluir enlaces duros",
 	"MainWindow.Settings.ExcludeHardLinksTooltip": "A diferencia de los puntos de reanálisis, los enlaces duros se incluyen en la búsqueda, pero no se consideran duplicados. ADVERTENCIA: usa esta opción solo cuando sea necesario, ya que ralentiza considerablemente el escaneo.",

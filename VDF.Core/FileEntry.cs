@@ -104,7 +104,13 @@ namespace VDF.Core {
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public double GetGrayBytesIndex(float position) => mediaInfo!.Duration.TotalSeconds * position;
-
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public double GetGrayBytesIndex(float position, double? maxSamplingDurationSeconds) {
+			double durationSeconds = mediaInfo!.Duration.TotalSeconds;
+			if (maxSamplingDurationSeconds.HasValue && maxSamplingDurationSeconds.Value > 0d && durationSeconds > maxSamplingDurationSeconds.Value)
+				durationSeconds = maxSamplingDurationSeconds.Value;
+			return durationSeconds * position;
+		}
 		public override bool Equals(object? obj) =>
 			obj is FileEntry entry &&
 			Path.Equals(entry.Path, CoreUtils.IsWindows ?
