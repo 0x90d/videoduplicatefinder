@@ -16,7 +16,10 @@
 
 using System.Buffers;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace VDF.Core.Utils {
 	/// <summary>
@@ -38,78 +41,105 @@ namespace VDF.Core.Utils {
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static partial bool GetVolumePathNameW(string lpszFileName, [Out] char[] lpszVolumePathName, int cchBufferLength);
 
+
+		[LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+		private static partial SafeFileHandle CreateFileW(
+			string lpFileName,
+			uint dwDesiredAccess,
+			FileShare dwShareMode,
+			IntPtr lpSecurityAttributes,
+			FileMode dwCreationDisposition,
+			uint dwFlagsAndAttributes,
+			IntPtr hTemplateFile);
+
+		[LibraryImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static partial bool GetFileInformationByHandle(SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
+
+		[StructLayout(LayoutKind.Sequential)]
+		private struct BY_HANDLE_FILE_INFORMATION {
+			public uint FileAttributes;
+			public FILETIME CreationTime;
+			public FILETIME LastAccessTime;
+			public FILETIME LastWriteTime;
+			public uint VolumeSerialNumber;
+			public uint FileSizeHigh;
+			public uint FileSizeLow;
+			public uint NumberOfLinks;
+			public uint FileIndexHigh;
+			public uint FileIndexLow;
+		}
+		[StructLayout(LayoutKind.Sequential)]
+		private struct FILETIME {
+			public uint dwLowDateTime;
+			public uint dwHighDateTime;
+		}
+
 		const IntPtr INVALID_HANDLE_VALUE = -1;
 		const int ERROR_MORE_DATA = 234;
+		const uint FILE_READ_ATTRIBUTES = 0x0080;
+		const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
 
-		/// <summary>
-		//// Returns enumeration of hard links for the given *file* as full file paths
-		/// </summary>
-		public static IEnumerable<string> GetHardLinks(string filepath) {
+		public static bool AreSameFile(string filepath, string otherFilepath) {
 			if (CoreUtils.IsWindows)
-				return GetHardLinksWindows(filepath);
-			else
-				return GetHardLinksPosix(filepath);
+				return AreSameFileWindows(filepath, otherFilepath);
+			return AreSameFilePosix(filepath, otherFilepath);
 		}
 
-		static IEnumerable<string> GetHardLinksPosix(string filepath) {
-			const int timeout = 30_000;
-			int success = Mono.Unix.Native.Syscall.stat(filepath, out var stat);
-			if (success == 0 && stat.st_nlink <= 1)
-				return Array.Empty<string>();
+		static bool AreSameFilePosix(string filepath, string otherFilepath) {
+			if (Mono.Unix.Native.Syscall.stat(filepath, out var statA) != 0)
+				return false;
+			if (Mono.Unix.Native.Syscall.stat(otherFilepath, out var statB) != 0)
+				return false;
+			return statA.st_ino == statB.st_ino && statA.st_dev == statB.st_dev;
+		}
 
-			string? mountPoint = GetMountPointForDevice(stat.st_dev);
-			if (string.IsNullOrEmpty(mountPoint))
-				mountPoint = "/"; // Fallback
+		static bool AreSameFileWindows(string filepath, string otherFilepath) {
+			if (!TryGetFileIdWindows(filepath, out var fileA)) {
+				return FallbackWindows(filepath, otherFilepath);
+			}
+			if ( !TryGetFileIdWindows(otherFilepath, out var fileB)) {
+				return FallbackWindows(filepath, otherFilepath);
+			}
 
-			Process process = new() {
-				StartInfo = {
-					FileName = "find",
-					Arguments = $" {EscapePath(mountPoint)} -xdev -type f -links +1 -samefile {EscapePath(filepath)}",
-					RedirectStandardOutput = true,
-					/*
-					 * Do not redirect error output, this makes the process run
-					 * much longer due to all the 'Permission denied' errors
-					 */
-					WindowStyle = ProcessWindowStyle.Hidden,
-					UseShellExecute = false
+			// Heuristic: some providers may return zeros; treat as unknown
+			if ((fileA.VolumeSerial, fileA.FileIndexHigh, fileA.FileIndexLow) == (0u, 0u, 0u))
+				return FallbackWindows(filepath, otherFilepath);
+			if ((fileB.VolumeSerial, fileB.FileIndexHigh, fileB.FileIndexLow) == (0u, 0u, 0u))
+				return FallbackWindows(filepath, otherFilepath);
+
+			return fileA.Equals(fileB);
+		}
+		static bool FallbackWindows(string filepath, string otherFilepath) {
+			foreach (var link in GetHardLinksWindows(filepath))
+				if (otherFilepath == link) {
+					return true;
 				}
-			};
+			return false;
+		}
+
+		static bool TryGetFileIdWindows(string filepath, out (uint VolumeSerial, uint FileIndexHigh, uint FileIndexLow) fileId) {
+			fileId = default;
 			try {
-				process.Start();
-				process.WaitForExit(timeout);
-				if (!process.HasExited) {
-					process.Kill();
-					throw new TimeoutException("timed out");
-				}
-				List<string> files = new(process.StandardOutput.ReadToEnd().Split(Environment.NewLine));
-				return files;
+				using SafeFileHandle handle = CreateFileW(
+					filepath,
+					FILE_READ_ATTRIBUTES,
+					FileShare.ReadWrite | FileShare.Delete,
+					IntPtr.Zero,
+					FileMode.Open,
+					FILE_FLAG_BACKUP_SEMANTICS,
+					IntPtr.Zero);
+				if (handle.IsInvalid)
+					return false;
+				if (!GetFileInformationByHandle(handle, out var info))
+					return false;
+				fileId = (info.VolumeSerialNumber, info.FileIndexHigh, info.FileIndexLow);
+				return true;
 			}
 			catch (Exception ex) {
-				Logger.Instance.Info($"Failed getting hard links of file: {filepath}, reason: {ex.Message}");
-				return Array.Empty<string>();
+				Logger.Instance.Info($"Failed getting file id for file: {filepath}, reason: {ex.Message}");
+				return false;
 			}
-		}
-
-		static string EscapePath(string path) => $"\"{path.Replace("\"", "\\\"")}\"";
-
-		static string? GetMountPointForDevice(ulong deviceId) {
-			try {
-				foreach (var line in File.ReadAllLines("/proc/mounts")) {
-					var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-					if (parts.Length < 2)
-						continue;
-
-					var mountPath = parts[1];
-
-					// Check device ID of mount path
-					if (Mono.Unix.Native.Syscall.stat(mountPath, out var mpStat) == 0) {
-						if (mpStat.st_dev == deviceId)
-							return mountPath;
-					}
-				}
-			}
-			catch { }
-			return null;
 		}
 
 		static IEnumerable<string> GetHardLinksWindows(string filepath) {

@@ -684,12 +684,9 @@ namespace VDF.Core {
 						if (isDuplicate &&
 							entry.FileSize == compItem.FileSize &&
 							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
-							Settings.ExcludeHardLinks) {
-							foreach (var link in HardLinkUtils.GetHardLinks(entry.Path))
-								if (compItem.Path == link) {
-									isDuplicate = false;
-									break;
-								}
+							Settings.ExcludeHardLinks &&
+							HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
+							isDuplicate = false;
 						}
 
 						if (isDuplicate)
@@ -758,12 +755,9 @@ namespace VDF.Core {
 						if (isDuplicate &&
 							entry.FileSize == compItem.FileSize &&
 							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
-							Settings.ExcludeHardLinks) {
-							foreach (var link in HardLinkUtils.GetHardLinks(entry.Path))
-								if (compItem.Path == link) {
-									isDuplicate = false;
-									break;
-								}
+							Settings.ExcludeHardLinks &&
+							HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
+							isDuplicate = false;
 						}
 
 						if (isDuplicate)
