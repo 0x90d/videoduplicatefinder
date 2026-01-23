@@ -555,44 +555,125 @@ namespace VDF.Core {
 
 			InitProgress(ScanList.Count);
 
-			double maxPercentDurationDifference = 100d + Settings.PercentDurationDifference;
-			double minPercentDurationDifference = 100d - Settings.PercentDurationDifference;
+			// Duration buckets are keyed by whole seconds to keep percent-based tolerance intact.
+			const int bucketSizeSeconds = 1;
+			// Avoid bucket overhead for small datasets; fall back to the linear path.
+			const int bucketActivationThreshold = 5000;
+			// scanIndex preserves original ordering so we can skip symmetric comparisons.
+			var scanIndex = new Dictionary<FileEntry, int>(ScanList.Count);
+			var imageEntries = new List<FileEntry>();
+			var videoEntries = new List<FileEntry>();
+			var videoBuckets = new Dictionary<int, List<FileEntry>>();
+			const int largeBucketThreshold = 400;
 
-			try {
-				Parallel.For(0, ScanList.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
-					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
+			for (int i = 0; i < ScanList.Count; i++) {
+				var entry = ScanList[i];
+				scanIndex[entry] = i;
+				if (entry.IsImage) {
+					imageEntries.Add(entry);
+					continue;
+				}
+				videoEntries.Add(entry);
+				// Bucket by duration seconds for candidate reduction in the large-data path.
+				int bucketKey = (int)Math.Floor(entry.mediaInfo!.Duration.TotalSeconds / bucketSizeSeconds);
+				if (!videoBuckets.TryGetValue(bucketKey, out var bucket)) {
+					bucket = new List<FileEntry>();
+					videoBuckets.Add(bucketKey, bucket);
+				}
+				bucket.Add(entry);
+			}
 
-					FileEntry? entry = ScanList[i];
-					float difference = 0;
-					DuplicateFlags flags = DuplicateFlags.None;
-					bool isDuplicate;
-					Dictionary<double, byte[]?>? flippedGrayBytes = null;
+			void MergeDuplicate(FileEntry entry, FileEntry compItem, float difference, DuplicateFlags flags) {
+				lock (duplicateDict) {
+					bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
+					bool foundComp = duplicateDict.TryGetValue(compItem.Path, out DuplicateItem? existingComp);
 
-					if (Settings.CompareHorizontallyFlipped)
-						flippedGrayBytes = CreateFlippedGrayBytes(entry);
+					if (foundBase && foundComp) {
+						//this happens with 4+ identical items:
+						//first, 2+ duplicate groups are found independently, they are merged in this branch
+						if (existingBase!.GroupId != existingComp!.GroupId) {
+							Guid groupID = existingComp!.GroupId;
+							foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
+								c.GroupId == groupID))
+								dup.GroupId = existingBase.GroupId;
+						}
+					}
+					else if (foundBase) {
+						duplicateDict.TryAdd(compItem.Path,
+							new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
+					}
+					else if (foundComp) {
+						duplicateDict.TryAdd(entry.Path,
+							new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
+					}
+					else {
+						var groupId = Guid.NewGuid();
+						duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
+						duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
+					}
+				}
+			}
 
-					for (int n = i + 1; n < ScanList.Count; n++) {
-						FileEntry? compItem = ScanList[n];
-						if (entry.IsImage != compItem.IsImage)
+			bool TryCheckDuplicate(FileEntry entry, FileEntry compItem, Dictionary<double, byte[]?>? flippedGrayBytes, out float difference, out DuplicateFlags flags) {
+				flags = DuplicateFlags.None;
+				difference = 0;
+				bool isDuplicate = CheckIfDuplicate(entry, null, compItem, out difference);
+				if (Settings.CompareHorizontallyFlipped &&
+					CheckIfDuplicate(entry, flippedGrayBytes, compItem, out float flippedDifference)) {
+					if (!isDuplicate || flippedDifference < difference) {
+						flags |= DuplicateFlags.Flipped;
+						isDuplicate = true;
+						difference = flippedDifference;
+					}
+				}
+				return isDuplicate;
+			}
+
+			// Convert percent-based duration tolerance into seconds, clamped by optional min/max.
+			double GetDurationToleranceSeconds(double durationSeconds) {
+				double percentSeconds = durationSeconds * Settings.PercentDurationDifference / 100d;
+				double toleranceSeconds = percentSeconds;
+				if (Settings.DurationDifferenceMinSeconds > 0) {
+					toleranceSeconds = Math.Max(toleranceSeconds, Settings.DurationDifferenceMinSeconds);
+				}
+				if (Settings.DurationDifferenceMaxSeconds > 0) {
+					toleranceSeconds = Math.Min(toleranceSeconds, Settings.DurationDifferenceMaxSeconds);
+				}
+				return Math.Max(0d, toleranceSeconds);
+			}
+
+			// Compare one entry against candidate buckets (bucketed path).
+			void CompareEntry(FileEntry entry, int entryIndex, IEnumerable<int> candidateBucketKeys) {
+				while (pauseTokenSource.IsPaused) Thread.Sleep(50);
+
+				float difference = 0;
+				bool isDuplicate;
+				DuplicateFlags flags;
+				Dictionary<double, byte[]?>? flippedGrayBytes = null;
+				double entryDurationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
+				double entryToleranceSeconds = GetDurationToleranceSeconds(entryDurationSeconds);
+
+				if (Settings.CompareHorizontallyFlipped)
+					flippedGrayBytes = CreateFlippedGrayBytes(entry);
+
+				foreach (int bucketKey in candidateBucketKeys) {
+					if (!videoBuckets.TryGetValue(bucketKey, out var bucketEntries))
+						continue;
+					foreach (var compItem in bucketEntries) {
+						int compIndex = scanIndex[compItem];
+						if (compIndex <= entryIndex)
 							continue;
+
 						if (!entry.IsImage) {
-							double p = entry.mediaInfo!.Duration.TotalSeconds / compItem.mediaInfo!.Duration.TotalSeconds * 100d;
-							if (p > maxPercentDurationDifference ||
-								p < minPercentDurationDifference)
+							double compDurationSeconds = compItem.mediaInfo!.Duration.TotalSeconds;
+							double compToleranceSeconds = GetDurationToleranceSeconds(compDurationSeconds);
+							double allowedSeconds = Math.Min(entryToleranceSeconds, compToleranceSeconds);
+							double diffSeconds = Math.Abs(entryDurationSeconds - compDurationSeconds);
+							if (diffSeconds > allowedSeconds)
 								continue;
 						}
 
-
-						flags = DuplicateFlags.None;
-						isDuplicate = CheckIfDuplicate(entry, null, compItem, out difference);
-						if (Settings.CompareHorizontallyFlipped &&
-							CheckIfDuplicate(entry, flippedGrayBytes, compItem, out float flippedDifference)) {
-							if (!isDuplicate || flippedDifference < difference) {
-								flags |= DuplicateFlags.Flipped;
-								isDuplicate = true;
-								difference = flippedDifference;
-							}
-						}
+						isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
 
 						if (isDuplicate &&
 							entry.FileSize == compItem.FileSize &&
@@ -605,39 +686,138 @@ namespace VDF.Core {
 								}
 						}
 
-						if (isDuplicate) {
-							lock (duplicateDict) {
-								bool foundBase = duplicateDict.TryGetValue(entry.Path, out DuplicateItem? existingBase);
-								bool foundComp = duplicateDict.TryGetValue(compItem.Path, out DuplicateItem? existingComp);
+						if (isDuplicate)
+							MergeDuplicate(entry, compItem, difference, flags);
+					}
+				}
+				IncrementProgress(entry.Path);
+			}
 
-								if (foundBase && foundComp) {
-									//this happens with 4+ identical items:
-									//first, 2+ duplicate groups are found independently, they are merged in this branch
-									if (existingBase!.GroupId != existingComp!.GroupId) {
-										Guid groupID = existingComp!.GroupId;
-										foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
-											c.GroupId == groupID))
-											dup.GroupId = existingBase.GroupId;
-									}
-								}
-								else if (foundBase) {
-									duplicateDict.TryAdd(compItem.Path,
-										new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
-								}
-								else if (foundComp) {
-									duplicateDict.TryAdd(entry.Path,
-										new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
-								}
-								else {
-									var groupId = Guid.NewGuid();
-									duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
-									duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
-								}
-							}
-						}
+			// Images are always compared linearly; bucketing is only applied to videos.
+			void CompareImages() {
+				Action<int> compareAction = i => {
+					var entry = imageEntries[i];
+					Dictionary<double, byte[]?>? flippedGrayBytes = null;
+					if (Settings.CompareHorizontallyFlipped)
+						flippedGrayBytes = CreateFlippedGrayBytes(entry);
+					for (int n = i + 1; n < imageEntries.Count; n++) {
+						var compItem = imageEntries[n];
+						float difference = 0;
+						DuplicateFlags flags;
+						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
+
+						if (isDuplicate)
+							MergeDuplicate(entry, compItem, difference, flags);
 					}
 					IncrementProgress(entry.Path);
-				});
+				};
+
+				try {
+					if (imageEntries.Count >= largeBucketThreshold) {
+						Parallel.For(0, imageEntries.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, compareAction);
+					}
+					else {
+						for (int i = 0; i < imageEntries.Count; i++)
+							compareAction(i);
+					}
+				}
+				catch (OperationCanceledException) { }
+			}
+
+			// Linear compare path for small datasets to avoid bucket bookkeeping overhead.
+			void CompareVideosLinear() {
+				Action<int> compareAction = i => {
+					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
+
+					var entry = videoEntries[i];
+					float difference = 0;
+					DuplicateFlags flags;
+					Dictionary<double, byte[]?>? flippedGrayBytes = null;
+					double entryDurationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
+					double entryToleranceSeconds = GetDurationToleranceSeconds(entryDurationSeconds);
+
+					if (Settings.CompareHorizontallyFlipped)
+						flippedGrayBytes = CreateFlippedGrayBytes(entry);
+
+					for (int n = i + 1; n < videoEntries.Count; n++) {
+						var compItem = videoEntries[n];
+						double compDurationSeconds = compItem.mediaInfo!.Duration.TotalSeconds;
+						double compToleranceSeconds = GetDurationToleranceSeconds(compDurationSeconds);
+						double allowedSeconds = Math.Min(entryToleranceSeconds, compToleranceSeconds);
+						double diffSeconds = Math.Abs(entryDurationSeconds - compDurationSeconds);
+						if (diffSeconds > allowedSeconds)
+							continue;
+
+						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
+						if (isDuplicate &&
+							entry.FileSize == compItem.FileSize &&
+							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
+							Settings.ExcludeHardLinks) {
+							foreach (var link in HardLinkUtils.GetHardLinks(entry.Path))
+								if (compItem.Path == link) {
+									isDuplicate = false;
+									break;
+								}
+						}
+
+						if (isDuplicate)
+							MergeDuplicate(entry, compItem, difference, flags);
+					}
+
+					IncrementProgress(entry.Path);
+				};
+
+				try {
+					if (videoEntries.Count >= largeBucketThreshold) {
+						Parallel.For(0, videoEntries.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, compareAction);
+					}
+					else {
+						for (int i = 0; i < videoEntries.Count; i++)
+							compareAction(i);
+					}
+				}
+				catch (OperationCanceledException) { }
+			}
+
+			try {
+				CompareImages();
+
+				if (videoEntries.Count < bucketActivationThreshold) {
+					// Small dataset: keep the simpler linear path.
+					CompareVideosLinear();
+				}
+				else {
+					// Large dataset: use buckets to reduce candidate comparisons.
+					var smallBuckets = videoBuckets.Where(kvp => kvp.Value.Count < largeBucketThreshold).ToList();
+					var largeBuckets = videoBuckets.Where(kvp => kvp.Value.Count >= largeBucketThreshold).ToList();
+
+					Parallel.ForEach(smallBuckets, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, bucket => {
+						foreach (var entry in bucket.Value) {
+							int entryIndex = scanIndex[entry];
+							double durationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
+							double maxDiffSeconds = GetDurationToleranceSeconds(durationSeconds);
+							double minDuration = Math.Max(0d, durationSeconds - maxDiffSeconds);
+							double maxDuration = durationSeconds + maxDiffSeconds;
+							int minKey = (int)Math.Floor(minDuration / bucketSizeSeconds);
+							int maxKey = (int)Math.Floor(maxDuration / bucketSizeSeconds);
+							CompareEntry(entry, entryIndex, Enumerable.Range(minKey, maxKey - minKey + 1));
+						}
+					});
+
+					foreach (var bucket in largeBuckets) {
+						Parallel.For(0, bucket.Value.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
+							var entry = bucket.Value[i];
+							int entryIndex = scanIndex[entry];
+							double durationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
+							double maxDiffSeconds = GetDurationToleranceSeconds(durationSeconds);
+							double minDuration = Math.Max(0d, durationSeconds - maxDiffSeconds);
+							double maxDuration = durationSeconds + maxDiffSeconds;
+							int minKey = (int)Math.Floor(minDuration / bucketSizeSeconds);
+							int maxKey = (int)Math.Floor(maxDuration / bucketSizeSeconds);
+							CompareEntry(entry, entryIndex, Enumerable.Range(minKey, maxKey - minKey + 1));
+						});
+					}
+				}
 			}
 			catch (OperationCanceledException) { }
 			Duplicates = new HashSet<DuplicateItem>(duplicateDict.Values);

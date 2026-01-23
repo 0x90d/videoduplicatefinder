@@ -256,6 +256,18 @@ namespace VDF.GUI.Data {
 			get => _PercentDurationDifference;
 			set => this.RaiseAndSetIfChanged(ref _PercentDurationDifference, value);
 		}
+		int _DurationDifferenceMinSeconds = 0;
+		[JsonPropertyName("DurationDifferenceMinSeconds")]
+		public int DurationDifferenceMinSeconds {
+			get => _DurationDifferenceMinSeconds;
+			set => this.RaiseAndSetIfChanged(ref _DurationDifferenceMinSeconds, value);
+		}
+		int _DurationDifferenceMaxSeconds = 0;
+		[JsonPropertyName("DurationDifferenceMaxSeconds")]
+		public int DurationDifferenceMaxSeconds {
+			get => _DurationDifferenceMaxSeconds;
+			set => this.RaiseAndSetIfChanged(ref _DurationDifferenceMaxSeconds, value);
+		}
 		int _Thumbnails = 1;
 		[JsonPropertyName("Thumbnails")]
 		public int Thumbnails {

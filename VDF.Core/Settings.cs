@@ -44,6 +44,8 @@ namespace VDF.Core {
 		public byte Threshhold = 5;
 		public float Percent = 96f;
 		public double PercentDurationDifference = 20d;
+		public double DurationDifferenceMinSeconds;
+		public double DurationDifferenceMaxSeconds;
 
 		public int ThumbnailCount = 1;
 		public int MaxDegreeOfParallelism = 1;
