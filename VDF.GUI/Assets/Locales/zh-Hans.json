@@ -144,6 +144,7 @@
 	"MainWindow.EmptyState.Subtitle": "点击工具栏中的“扫描”开始。",
 	"MainWindow.EmptyState.Title": "请开始你的第一次扫描",
 	"MainWindow.Filter.Note": "注意：任何操作（选择、删除等）只会应用到筛选后的重复项",
+	"MainWindow.Filter.GroupsWithSelection": "仅显示包含已选择项目的组",
 	"MainWindow.Filter.Path": "路径：",
 	"MainWindow.Filter.PathNote": "注意：如果组中只有一个项目匹配，将显示该组所有项目",
 	"MainWindow.Filter.Similarity": "相似度：",

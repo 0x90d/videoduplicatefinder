@@ -144,6 +144,7 @@
 	"MainWindow.EmptyState.Subtitle": "Click “Scan” in the toolbar to begin.",
 	"MainWindow.EmptyState.Title": "Please start your first scan",
 	"MainWindow.Filter.Note": "Note: Any action (select, delete etc) will only apply on filtered duplicates",
+	"MainWindow.Filter.GroupsWithSelection": "Only groups with selected items",
 	"MainWindow.Filter.Path": "Path:",
 	"MainWindow.Filter.PathNote": "Note: if only one item of a group is matching, all group items will be shown",
 	"MainWindow.Filter.Similarity": "Similarity:",

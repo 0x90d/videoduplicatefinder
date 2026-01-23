@@ -741,10 +741,22 @@ namespace VDF.GUI.ViewModels {
 
 		private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName == nameof(DuplicateItemVM.Checked)) {
-				if (!Dispatcher.UIThread.CheckAccess())
-					Dispatcher.UIThread.Post(RecomputeSelectionCounter);
-				else
+				if (!Dispatcher.UIThread.CheckAccess()) {
+					Dispatcher.UIThread.Post(() => {
+						RecomputeSelectionCounter();
+						if (FilterGroupsWithSelection) {
+							ApplyFilter();
+							RefreshGroupStats();
+						}
+					});
+				}
+				else {
 					RecomputeSelectionCounter();
+					if (FilterGroupsWithSelection) {
+						ApplyFilter();
+						RefreshGroupStats();
+					}
+				}
 			}
 		}
 

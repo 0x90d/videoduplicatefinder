@@ -525,7 +525,7 @@
                                 Background="{actipro:ThemeResource Container3BackgroundBrush}"
                                     IsVisible="False"
                                     RowDefinitions="*, Auto">
-                                    <StackPanel Orientation="Horizontal"
+                                    <WrapPanel
                                     Margin="5">
                                         <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Path]}" />
                                         <TextBox
@@ -583,7 +583,13 @@
                                             Maximum="100"
                                             Minimum="0"
                                             Value="{Binding FilterSimilarityTo}" />
-                                    </StackPanel>
+                                        <CheckBox
+                                            Margin="10,0,0,0"
+                                            VerticalAlignment="Center"
+                                            IsChecked="{Binding FilterGroupsWithSelection}">
+                                            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.GroupsWithSelection]}" />
+                                        </CheckBox>
+                                    </WrapPanel>
                                     <StackPanel
                                         Grid.Row="1"
                                         Margin="0,10"

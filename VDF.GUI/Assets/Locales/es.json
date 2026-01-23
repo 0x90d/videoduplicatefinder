@@ -144,6 +144,7 @@
 	"MainWindow.EmptyState.Subtitle": "Haz clic en “Escanear” en la barra de herramientas para comenzar.",
 	"MainWindow.EmptyState.Title": "Por favor inicia tu primer escaneo",
 	"MainWindow.Filter.Note": "Nota: cualquier acción (seleccionar, borrar, etc.) solo se aplicará a los duplicados filtrados",
+	"MainWindow.Filter.GroupsWithSelection": "Solo grupos con elementos seleccionados",
 	"MainWindow.Filter.Path": "Ruta:",
 	"MainWindow.Filter.PathNote": "Nota: si solo un elemento de un grupo coincide, se mostrarán todos los elementos del grupo",
 	"MainWindow.Filter.Similarity": "Similitud:",

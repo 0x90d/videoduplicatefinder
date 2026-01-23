@@ -131,6 +131,17 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(SortOrder));
 			}
 		}
+		bool _FilterGroupsWithSelection;
+		public bool FilterGroupsWithSelection {
+			get => _FilterGroupsWithSelection;
+			set {
+				if (value == _FilterGroupsWithSelection) return;
+				this.RaiseAndSetIfChanged(ref _FilterGroupsWithSelection, value);
+				ApplyFilter();
+				RefreshGroupStats();
+			}
+		}
+
 
 		private HashSet<Guid> _groupsWithPathHit = new();
 		void RebuildSearchPathIndex() {
@@ -197,10 +208,16 @@ namespace VDF.GUI.ViewModels {
 			using (Dispatcher.UIThread.DisableProcessing()) {
 				// Set visible children per group
 				foreach (var g in _allGroups) {
+					bool hasSelection = false;
 					var newKids = new List<RowNode>(g.AllChildren.Count);
 					foreach (var leaf in g.AllChildren)
-						if (leaf.Item is { } vm && Matches(vm))
+						if (leaf.Item is { } vm && Matches(vm)) {
 							newKids.Add(leaf);
+							if (FilterGroupsWithSelection && vm.Checked)
+								hasSelection = true;
+						}
+					if (FilterGroupsWithSelection && !hasSelection)
+						newKids.Clear();
 					g.Children.Clear();
 					if (newKids.Count > 0)
 						g.Children.AddRange(newKids);

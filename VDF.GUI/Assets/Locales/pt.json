@@ -144,6 +144,7 @@
 	"MainWindow.EmptyState.Subtitle": "Clique em “Escanear” na barra de ferramentas para começar.",
 	"MainWindow.EmptyState.Title": "Por favor, inicie sua primeira varredura",
 	"MainWindow.Filter.Note": "Nota: qualquer ação (selecionar, excluir etc.) só se aplica a duplicados filtrados",
+	"MainWindow.Filter.GroupsWithSelection": "Apenas grupos com itens selecionados",
 	"MainWindow.Filter.Path": "Caminho:",
 	"MainWindow.Filter.PathNote": "Nota: se apenas um item de um grupo corresponder, todos os itens do grupo serão exibidos",
 	"MainWindow.Filter.Similarity": "Similaridade:",

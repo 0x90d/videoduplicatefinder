@@ -144,6 +144,7 @@
 	"MainWindow.EmptyState.Subtitle": "Cliquez sur « Analyser » dans la barre d'outils pour commencer.",
 	"MainWindow.EmptyState.Title": "Veuillez lancer votre première analyse",
 	"MainWindow.Filter.Note": "Note : toute action (sélection, suppression, etc.) ne s'appliquera qu'aux doublons filtrés",
+	"MainWindow.Filter.GroupsWithSelection": "Uniquement les groupes avec des éléments sélectionnés",
 	"MainWindow.Filter.Path": "Chemin :",
 	"MainWindow.Filter.PathNote": "Note : si un seul élément d'un groupe correspond, tous les éléments du groupe seront affichés",
 	"MainWindow.Filter.Similarity": "Similarité :",
