@@ -137,10 +137,14 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(ShowThumbnailRetrievalProgress));
 			}
 		}
+		public bool ShowScanProgress => !string.IsNullOrEmpty(ScanProgressText);
 		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
 			get => _ScanProgressText;
-			set => this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
+			set {
+				this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
+				this.RaisePropertyChanged(nameof(ShowScanProgress));
+			}
 		}
 		TimeSpan _RemainingTime;
 		public TimeSpan RemainingTime {
