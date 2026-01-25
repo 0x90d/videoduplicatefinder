@@ -916,7 +916,7 @@
                                     Margin="5,0"
                                     Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                 <TextBlock 
-                                    Grid.Column="6" IsVisible="{Binding ShowScanProgress}" Text="{Binding ScanProgressText, Mode=OneWay}" TextTrimming="PrefixCharacterEllipsis" />
+                                    Grid.Column="6" Text="{Binding ScanProgressText, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
  
                         </Grid>
                             <Grid Grid.Row="4" IsVisible="{Binding ShowThumbnailRetrievalProgress}">

@@ -137,14 +137,10 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(ShowThumbnailRetrievalProgress));
 			}
 		}
-		public bool ShowScanProgress => !string.IsNullOrEmpty(ScanProgressText);
 		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
 			get => _ScanProgressText;
-			set {
-				this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
-				this.RaisePropertyChanged(nameof(ShowScanProgress));
-			}
+			set => this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
 		}
 		TimeSpan _RemainingTime;
 		public TimeSpan RemainingTime {
@@ -1534,10 +1530,10 @@ Non-Windows setup:
 
 					if (blackList)
 						ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
-                    else
-                        ScanEngine.RemoveFromDatabase(fe);
+					else
+						ScanEngine.RemoveFromDatabase(fe);
 
-                    actuallyDeleted.Add(dub);
+					actuallyDeleted.Add(dub);
 				}
 				catch (Exception ex) {
 					Logger.Instance.Info($"Failed to delete '{dub.ItemInfo.Path}': {ex.Message}\n{ex.StackTrace}");
