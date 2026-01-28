@@ -126,7 +126,7 @@ namespace VDF.Core {
 			ElapsedTimer.Start();
 			Logger.Instance.InsertSeparator('-');
 			Logger.Instance.Info(T("Log.BuildingFileList"));
-			await BuildFileList();
+			await BuildFileList(cancelationTokenSource.Token);
 			Logger.Instance.Info(T("Log.FinishedBuildingFileList", SearchTimer.StopGetElapsedAndRestart()));
 			FilesEnumerated?.Invoke(this, new EventArgs());
 			Logger.Instance.Info(T("Log.GatheringMediaInfo"));
@@ -219,7 +219,7 @@ namespace VDF.Core {
 			isScanning = false;
 		}
 
-		Task BuildFileList() => Task.Run(() => {
+		Task BuildFileList(CancellationToken cancellationToken) => Task.Run(() => {
 
 			DatabaseUtils.LoadDatabase();
 			if (DatabaseUtils.DbVersion < 2)
@@ -228,10 +228,14 @@ namespace VDF.Core {
 			int oldFileCount = DatabaseUtils.Database.Count;
 
 			foreach (string path in Settings.IncludeList) {
+				if (cancellationToken.IsCancellationRequested)
+					return;
 				if (!Directory.Exists(path)) continue;
 
 				foreach (FileInfo file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreReparsePoints,
-					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList())) {
+					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList(), cancellationToken)) {
+					if (cancellationToken.IsCancellationRequested)
+						return;
 					FileEntry fEntry;
 					try {
 						fEntry = new(file);

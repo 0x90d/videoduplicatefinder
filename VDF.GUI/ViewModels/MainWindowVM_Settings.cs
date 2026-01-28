@@ -83,6 +83,17 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);
 			}
 		});
+		public ReactiveCommand<Unit, Unit> OpenWikiLinkCommand => ReactiveCommand.CreateFromTask(async () => {
+			try {
+				Process.Start(new ProcessStartInfo {
+					FileName = "https://github.com/0x90d/videoduplicatefinder/wiki/Setup-&-Use",
+					UseShellExecute = true
+				});
+			}
+			catch {
+				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);
+			}
+		});
 		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {

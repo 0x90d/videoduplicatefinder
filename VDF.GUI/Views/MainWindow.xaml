@@ -993,13 +993,24 @@
                                             Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Misc]}" />
                                     </TabItem.Header>
                                     <ScrollViewer HorizontalScrollBarVisibility="Auto">
-                                        <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto,Auto, *">
+                                        <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto,Auto,Auto, *">
                                             <TextBlock
                                                 Grid.Row="0"
-                                                Margin="10"
+                                                Margin="10,0,0,10"
                                                 Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                                 Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscHint]}" />
-                                            <Grid Grid.Row="1" ColumnDefinitions="Auto, Auto, *">
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10,0,0,10">
+                                                <TextBlock
+                                                    Grid.Row="0"
+                                                    Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHint]}" />
+                                                <Button
+                                                    Margin="5,0,0,0"
+                                                    Classes="hyperlink"
+                                                    Command="{Binding OpenWikiLinkCommand}"
+                                                    Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHyperlink]}" />
+                                            </StackPanel>
+                                            <Grid Grid.Row="2" ColumnDefinitions="Auto, Auto, *">
                                                 <StackPanel Margin="5,5,0,0">
                                                     <CheckBox
                                                         VerticalAlignment="Center"
@@ -1209,6 +1220,8 @@
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScheduledScanComplete}" /><TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArguments]}" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
+                                                        Width="250"
+                                                        HorizontalAlignment="Left"
                                                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArgumentsTooltip]}" />
                                                     <StackPanel Orientation="Horizontal">
@@ -1225,6 +1238,8 @@
                                                     <ComboBox
                                                         x:Name="ComboboxHardwareAccelerationMode"
                                                         VerticalAlignment="Center"
+                                                        Width="250"
+                                                        HorizontalAlignment="Left"
                                                         ItemsSource="{Binding HardwareAccelerationModes}"
                                                         SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.HardwareAccelerationTooltip]}" />
@@ -1236,10 +1251,14 @@
                                                         VerticalAlignment="Center"
                                                         ItemsSource="{Binding CustomCommandList}"
                                                         SelectedItem="{Binding SelectedCustomCommand}"
+                                                        Width="250"
+                                                        HorizontalAlignment="Left"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsTooltip]}" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
                                                         Text="{Binding SelectedCustomCommandValue}"
+                                                        Width="250"
+                                                        HorizontalAlignment="Left"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsPlaceholderTooltip]}" />
                                                     <TextBlock
                                                         VerticalAlignment="Center"
@@ -1247,12 +1266,14 @@
                                                         Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolder]}" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
+                                                        Width="250"
+                                                        HorizontalAlignment="Left"
                                                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolderTooltip]}" />
                                                 </StackPanel>
                                             </Grid>
                                             <Grid
-                                                Grid.Row="2"
+                                                Grid.Row="3"
                                                 Margin="0,10,5,0"
                                                 ColumnDefinitions="*, *"
                                                 RowDefinitions="Auto, 300">

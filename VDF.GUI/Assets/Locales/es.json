@@ -232,6 +232,8 @@
 	"MainWindow.Settings.MaxDegreeOfParallelismTooltip": "Limita la cantidad de tareas concurrentes. Un valor de -1 lo deja al sistema (velocidad total), un valor de 1 es el más estable (permite interactuar mientras el escaneo se ejecuta en segundo plano). El máximo debe ser la cantidad de núcleos físicos de tu CPU.",
 	"MainWindow.Settings.Misc": "Misceláneo",
 	"MainWindow.Settings.MiscHint": "Consejo: pasa el ratón por encima para obtener más información",
+	"MainWindow.Settings.MiscWikiHint": "Sugerencia: Para obtener la mejor configuración, consulte nuestra ",
+	"MainWindow.Settings.MiscWikiHyperlink": "Wiki",
 	"MainWindow.Settings.Percent": "Porcentaje:",
 	"MainWindow.Settings.PercentTooltip": "Porcentaje mínimo que deben coincidir las miniaturas para considerarlas duplicadas",
 	"MainWindow.Settings.RestartHint": "¹ Reinicia VDF para aplicar cambios",

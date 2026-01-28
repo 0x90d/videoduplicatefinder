@@ -232,6 +232,8 @@
 	"MainWindow.Settings.MaxDegreeOfParallelismTooltip": "Begrenzt die Anzahl gleichzeitiger Aufgaben. -1 überlässt es dem System (volle Geschwindigkeit), 1 ist am stabilsten (ermöglicht Interaktion, während der Scan im Hintergrund läuft). Maximum sollte die Anzahl der physischen CPU-Kerne sein.",
 	"MainWindow.Settings.Misc": "Sonstiges",
 	"MainWindow.Settings.MiscHint": "Hinweis: Mit der Maus über Optionen fahren, um mehr Informationen zu erhalten",
+	"MainWindow.Settings.MiscWikiHint": "Hinweis: Die besten Einstellungen finden Sie unter ",
+	"MainWindow.Settings.MiscWikiHyperlink": "Wiki",
 	"MainWindow.Settings.Percent": "Prozent:",
 	"MainWindow.Settings.PercentTooltip": "Mindestprozentsatz, den Thumbnails übereinstimmen müssen, um als Duplikate zu gelten",
 	"MainWindow.Settings.RestartHint": "¹ VDF neu starten, um Änderungen zu übernehmen",

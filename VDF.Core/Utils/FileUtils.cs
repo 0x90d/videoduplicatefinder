@@ -49,7 +49,7 @@ namespace VDF.Core.Utils {
 			".rm"
 		};
 		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
-		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders) {
+		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken) {
 			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,
 				AttributesToSkip = FileAttributes.System
@@ -60,23 +60,29 @@ namespace VDF.Core.Utils {
 			if (ignoreReparsePoints)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
+			var extensions = includeImages ? AllExtensions : VideoExtensions;
+
 			List<FileInfo> files = new();
 			Queue<DirectoryInfo> subFolders = new();
 			subFolders.Enqueue(new(initial));
 
 			while (subFolders.Count > 0) {
+				if (cancellationToken.IsCancellationRequested)
+					break;
 				DirectoryInfo currentFolder = subFolders.Dequeue();
 				try {
 
 					files.AddRange(currentFolder.EnumerateFiles("*", enumerationOptions)
-					.Where(f => (includeImages ? AllExtensions : VideoExtensions)
-					.Any(x => f.FullName.EndsWith(x, StringComparison.OrdinalIgnoreCase))));
+					.Where(f => extensions.Any(x => f.FullName.EndsWith(x, StringComparison.OrdinalIgnoreCase))));
 
 					if (!recursive)
 						break;
 					foreach (DirectoryInfo subFolder in currentFolder.EnumerateDirectories("*", enumerationOptions)
-						.Where(d => !excludeFolders.Any(x => d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase))))
+						.Where(d => !excludeFolders.Any(x => d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase)))) {
+						if (cancellationToken.IsCancellationRequested)
+							break;
 						subFolders.Enqueue(subFolder);
+					}
 				}
 				catch (DirectoryNotFoundException) { }
 				catch (Exception e) {

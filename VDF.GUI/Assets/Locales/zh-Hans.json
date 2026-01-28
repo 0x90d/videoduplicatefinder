@@ -232,6 +232,8 @@
 	"MainWindow.Settings.MaxDegreeOfParallelismTooltip": "限制并发任务数量。-1 由系统决定（全速），1 最稳定（允许你在扫描后台运行时进行交互）。最大值应为 CPU 物理核心数。",
 	"MainWindow.Settings.Misc": "杂项",
 	"MainWindow.Settings.MiscHint": "提示：将鼠标悬停在选项上以获取更多信息",
+	"MainWindow.Settings.MiscWikiHint": "提示：如需最佳设置，请查看我们的 ",
+	"MainWindow.Settings.MiscWikiHyperlink": "Wiki",
 	"MainWindow.Settings.Percent": "百分比：",
 	"MainWindow.Settings.PercentTooltip": "缩略图必须匹配的最低百分比，才会被视为重复项",
 	"MainWindow.Settings.RestartHint": "¹ 重启 VDF 以应用更改",

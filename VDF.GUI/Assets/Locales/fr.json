@@ -232,6 +232,8 @@
 	"MainWindow.Settings.MaxDegreeOfParallelismTooltip": "Limite le nombre de tâches concurrentes. Une valeur de -1 laisse le système décider (vitesse maximale), une valeur de 1 est la plus stable (permet d'interagir avec le système pendant l'analyse en arrière-plan). Le maximum devrait être le nombre de cœurs physiques du CPU.",
 	"MainWindow.Settings.Misc": "Divers",
 	"MainWindow.Settings.MiscHint": "Astuce : survolez les options pour obtenir plus d'informations",
+	"MainWindow.Settings.MiscWikiHint": "Conseil : pour obtenir les meilleurs réglages, veuillez consulter notre ",
+	"MainWindow.Settings.MiscWikiHyperlink": "Wiki",
 	"MainWindow.Settings.Percent": "Pourcentage :",
 	"MainWindow.Settings.PercentTooltip": "Pourcentage minimal de correspondance des miniatures pour être considérées comme doublons",
 	"MainWindow.Settings.RestartHint": "¹ Redémarrez VDF pour appliquer les changements",

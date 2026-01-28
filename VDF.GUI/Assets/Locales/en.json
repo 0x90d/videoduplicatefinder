@@ -232,6 +232,8 @@
 	"MainWindow.Settings.MaxDegreeOfParallelismTooltip": "Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide (takes full speed), a value of 1 is most stable (lets you interact with your system while scan runs in background). Maximum should be the amount of physical cores of your CPU.",
 	"MainWindow.Settings.Misc": "Misc",
 	"MainWindow.Settings.MiscHint": "Hint: Mouse hover options to get more information about them",
+	"MainWindow.Settings.MiscWikiHint": "Hint: For best settings please check out our ",
+	"MainWindow.Settings.MiscWikiHyperlink": "Wiki",
 	"MainWindow.Settings.Percent": "Percent:",
 	"MainWindow.Settings.PercentTooltip": "Minimum percentage that thumbnails must match before they are considered duplicates",
 	"MainWindow.Settings.RestartHint": "¹ Restart VDF to apply changes",

@@ -232,6 +232,8 @@
 	"MainWindow.Settings.MaxDegreeOfParallelismTooltip": "Limita a quantidade de tarefas simultâneas. Um valor de -1 deixa a critério do sistema (velocidade total), um valor de 1 é o mais estável (permite interagir com o sistema enquanto a varredura roda em segundo plano). O máximo deve ser a quantidade de núcleos físicos da CPU.",
 	"MainWindow.Settings.Misc": "Diversos",
 	"MainWindow.Settings.MiscHint": "Dica: passe o mouse sobre as opções para obter mais informações",
+	"MainWindow.Settings.MiscWikiHint": "Dica: Para obter as melhores configurações, consulte o nosso ",
+	"MainWindow.Settings.MiscWikiHyperlink": "Wiki",
 	"MainWindow.Settings.Percent": "Percentual:",
 	"MainWindow.Settings.PercentTooltip": "Percentual mínimo de correspondência das miniaturas para serem consideradas duplicadas",
 	"MainWindow.Settings.RestartHint": "¹ Reinicie o VDF para aplicar as alterações",

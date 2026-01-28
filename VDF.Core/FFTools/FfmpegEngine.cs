@@ -31,6 +31,7 @@ namespace VDF.Core.FFTools {
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
 		public static string CustomFFArguments = string.Empty;
 		public static bool UseNativeBinding;
+		private static readonly SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder jpegEncoder = new();
 		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
 
@@ -101,9 +102,12 @@ namespace VDF.Core.FFTools {
 							throw new Exception($"Unexpected size {width}x{height}, expected {N}x{N}.");
 
 						byte[] outBuf = new byte[width * height]; // 1024
-						for (int y = 0; y < height; y++) {
-							// Source: y*stride bytes offset; Target: y*width bytes
-							Marshal.Copy(srcPtr + y * srcStride, outBuf, y * width, width);
+						fixed (byte* destPtr = outBuf) {
+							byte* sourcePtr = (byte*)srcPtr;
+							for (int y = 0; y < height; y++) {
+								// Source: y*stride bytes offset; Target: y*width bytes
+								Buffer.MemoryCopy(sourcePtr + (y * srcStride), destPtr + (y * width), width, width);
+							}
 						}
 						return outBuf;
 					}
@@ -113,22 +117,21 @@ namespace VDF.Core.FFTools {
 						var totalBytes = width * height * 4;
 						var rgbaBytes = new byte[totalBytes];
 						int stride = convertedFrame.linesize[0];
-						if (stride == width * 4) {
-							Marshal.Copy((IntPtr)convertedFrame.data[0], rgbaBytes, 0, totalBytes);
-						}
-						else {
-							var sourceOffset = 0;
-							var destOffset = 0;
-							var byteWidth = width * 4;
-							for (var y = 0; y < height; y++) {
-								Marshal.Copy((IntPtr)convertedFrame.data[0] + sourceOffset, rgbaBytes, destOffset, byteWidth);
-								sourceOffset += stride;
-								destOffset += byteWidth;
+						fixed (byte* destPtr = rgbaBytes) {
+							byte* sourcePtr = convertedFrame.data[0];
+							if (stride == width * 4) {
+								Buffer.MemoryCopy(sourcePtr, destPtr, totalBytes, totalBytes);
+							}
+							else {
+								var byteWidth = width * 4;
+								for (var y = 0; y < height; y++) {
+									Buffer.MemoryCopy(sourcePtr + (y * stride), destPtr + (y * byteWidth), byteWidth, byteWidth);
+								}
 							}
 						}
 						var image = Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Bgra32>(rgbaBytes, width, height);
 						using MemoryStream stream = new();
-						image.Save(stream, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder());
+						image.Save(stream, jpegEncoder);
 						return stream.ToArray();
 					}
 				}
@@ -155,7 +158,7 @@ namespace VDF.Core.FFTools {
 			if (HardwareAccelerationMode != FFHardwareAccelerationMode.none) {
 				psi.ArgumentList.Add("-hwaccel");
 				psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
-			}			
+			}
 
 			// -ss before -i (faster seek, may be less accurate; OK for frame sampling)
 			psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(settings.Position.ToString(null, CultureInfo.InvariantCulture));
