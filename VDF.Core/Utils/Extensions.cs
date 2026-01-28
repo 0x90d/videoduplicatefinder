@@ -26,6 +26,20 @@ namespace VDF.Core.Utils {
 			return elapsed;
 		}
 		public static TimeSpan TrimMiliseconds(this TimeSpan ts) => new(ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
+		public static string Format(this TimeSpan ts) {
+			int d = ts.Days;
+			int h = ts.Hours;
+			int m = ts.Minutes;
+			int s = ts.Seconds;
+
+			return d > 0
+				? (h > 0 ? $"{d}d, {h}h" : $"{d}d")
+				: h > 0
+					? (m > 0 ? $"{h}h, {m}m" : $"{h}h")
+					: m > 0
+						? $"{m}m, {s}s"
+						: $"{s}s";
+		}
 
 		static readonly string[] SizeSuffixes = { " B", " KB", " MB", " GB", " TB", " PB", " EB" };
 		public static string BytesToString(this long byteCount) {

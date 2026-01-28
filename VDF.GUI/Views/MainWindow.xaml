@@ -898,7 +898,7 @@
                                 <TextBlock 
                                     Grid.Column="2">
                                     <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.ElapsedTime]}" />
-                                    <Run Text="{Binding TimeElapsed, Mode=OneWay, StringFormat={}{0:c}}" />
+                                    <Run Text="{Binding TimeElapsed, Mode=OneWay}" />
                                 </TextBlock>
                                 <Border
                                     Width="1"
@@ -908,7 +908,7 @@
                                 <TextBlock 
                                     Grid.Column="4">
                                     <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.RemainingTime]}" />
-                                    <Run Text="{Binding RemainingTime, Mode=OneWay, StringFormat={}{0:c}}" />
+                                    <Run Text="{Binding RemainingTime, Mode=OneWay}" />
                                 </TextBlock>
                                 <Border
                                     Width="1"

@@ -142,14 +142,14 @@ namespace VDF.GUI.ViewModels {
 			get => _ScanProgressText;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
 		}
-		TimeSpan _RemainingTime;
-		public TimeSpan RemainingTime {
+		string _RemainingTime;
+		public string RemainingTime {
 			get => _RemainingTime;
 			set => this.RaiseAndSetIfChanged(ref _RemainingTime, value);
 		}
 
-		TimeSpan _TimeElapsed;
-		public TimeSpan TimeElapsed {
+		string _TimeElapsed;
+		public string TimeElapsed {
 			get => _TimeElapsed;
 			set => this.RaiseAndSetIfChanged(ref _TimeElapsed, value);
 		}
@@ -534,7 +534,7 @@ namespace VDF.GUI.ViewModels {
 		void Scanner_ThumbnailsRetrieved(object? sender, EventArgs e) {
 			//Reset properties
 			ScanProgressText = string.Empty;
-			RemainingTime = new TimeSpan();
+			RemainingTime = new TimeSpan().Format();
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
 			ThumbnailRetrievalProgressText = "Finished generating thumbnails for preview";
@@ -640,9 +640,9 @@ namespace VDF.GUI.ViewModels {
 		void Scanner_Progress(object? sender, ScanProgressChangedEventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				ScanProgressText = e.CurrentFile;
-				RemainingTime = e.Remaining;
+				RemainingTime = e.Remaining.Format();
 				ScanProgressValue = e.CurrentPosition;
-				TimeElapsed = e.Elapsed;
+				TimeElapsed = e.Elapsed.Format();
 				ScanProgressMaxValue = e.MaxPosition;
 			});
 
@@ -663,7 +663,7 @@ namespace VDF.GUI.ViewModels {
 				IsReadyToCompare = true;
 				IsGathered = true;
 				ScanProgressText = string.Empty;
-				RemainingTime = TimeSpan.Zero;
+				RemainingTime = TimeSpan.Zero.Format();
 				ScanProgressValue = 0;
 				var completedScheduledScan = scheduledScanInProgress;
 				scheduledScanInProgress = false;
