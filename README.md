@@ -11,14 +11,15 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 
 # Binaries
 
-[Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) (You need to download FFmpeg and FFprobe yourself, see below! Please note the attachments of this release are automatically created and replaced on every new commit.)
+[Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) (You need FFmpeg and FFprobe, see below! Please note the attachments of this release are automatically created and replaced on every new commit.)
 
 
 # Requirements
 
 #### FFmpeg & FFprobe:
 
-Native ffmpeg binding works only with a specific ffmpeg version. Never use master version. Currently it works with ffmpeg 7.x (might change)
+On first launch it automatically tries to download ffmpeg and ffprobe for you.
+Native ffmpeg binding works only with a specific ffmpeg version. Never use master version. Currently it works with ffmpeg 8.x (might change)
 
 #### Windows user:
 Get latest package from https://ffmpeg.org/download.html I recommend the full (GPL) shared version. If you want to use native ffmpeg binding you **must** use the shared version.
@@ -43,7 +44,7 @@ You may get a permission error. Open system settings of your Mac, go to `Privacy
 
 If the process is immediately killed (something like `zsh: killed`), the binary likely needs to be signed. Run `codesign --force --sign - ./VDF.GUI` and try again.
 
-# Screenshots (slightly outdated)
+# Screenshots (outdated)
 <img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
 
 # License
@@ -58,7 +59,7 @@ Video Duplicate Finder is licensed under AGPLv3
 
 # Building
 - .NET 9.x
-- Visual Studio 2022 is recommended
+- Visual Studio 2026 is recommended
 
 # Committing
 - Create a pull request for each addition or fix - do NOT merge them into one PR
