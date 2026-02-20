@@ -15,6 +15,7 @@
 //
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
@@ -24,15 +25,19 @@ namespace VDF.Core.FFTools {
 		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
 		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
+			var workingDir = Path.GetDirectoryName(FFprobePath)!;
 			var psi = new ProcessStartInfo {
 				FileName = FFprobePath,
 				CreateNoWindow = true,
 				RedirectStandardInput = false,
-				WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
+				WorkingDirectory = workingDir,
 				RedirectStandardOutput = true,
 				RedirectStandardError = extendedLogging,
 				WindowStyle = ProcessWindowStyle.Hidden
 			};
+			
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+				psi.EnvironmentVariables.Add("LD_LIBRARY_PATH", workingDir);
 
 			psi.ArgumentList.Add("-hide_banner");
 			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add((extendedLogging ? "error" : "quiet"));
