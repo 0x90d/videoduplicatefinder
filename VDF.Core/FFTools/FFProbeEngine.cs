@@ -15,6 +15,7 @@
 //
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
@@ -28,18 +29,22 @@ namespace VDF.Core.FFTools {
 			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" +
 				$" -print_format json -sexagesimal -show_format -show_streams  \"{FFToolsUtils.LongPathFix(file)}\"";
 
+			var workingDir = Path.GetDirectoryName(FFprobePath)!;
 			using var process = new Process {
 				StartInfo = new ProcessStartInfo {
 					Arguments = ffprobeArguments,
 					FileName = FFprobePath,
 					CreateNoWindow = true,
 					RedirectStandardInput = false,
-					WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
+					WorkingDirectory = workingDir,
 					RedirectStandardOutput = true,
 					RedirectStandardError = extendedLogging,
 					WindowStyle = ProcessWindowStyle.Hidden
 				}
 			};
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+				process.StartInfo.EnvironmentVariables.Add("LD_LIBRARY_PATH", workingDir);
+
 			MediaInfo? mediaInfo = null;
 			string errOut = string.Empty;
 			try {
