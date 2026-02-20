@@ -40,11 +40,14 @@ namespace VDF.Core.FFTools {
 		/// <param name="tool"></param>
 		/// <returns>path or null if not found</returns>
 		internal static string? GetPath(FFTool tool) {
-
-			if (File.Exists($"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}"))
-				return $"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}";
-			if (File.Exists(Path.Combine(CoreUtils.CurrentFolder, tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)))
-				return Path.Combine(CoreUtils.CurrentFolder, tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName);
+			var toolExecutable = tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName;
+			var toolPath = Path.Combine(CoreUtils.CurrentFolder, "bin", toolExecutable);
+			if (File.Exists(toolPath))
+				return toolPath;
+			
+			toolPath = Path.Combine(CoreUtils.CurrentFolder, toolExecutable);
+			if (File.Exists(toolPath))
+				return toolPath;
 
 			var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
 			if (environmentVariables == null) return null;
@@ -54,7 +57,7 @@ namespace VDF.Core.FFTools {
 					continue;
 
 				try {
-					FileInfo[] files = new DirectoryInfo(path).GetFiles(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName, new EnumerationOptions {
+					FileInfo[] files = new DirectoryInfo(path).GetFiles(toolExecutable, new EnumerationOptions {
 						IgnoreInaccessible = true,
 						MatchCasing = MatchCasing.CaseInsensitive
 					});
