@@ -126,21 +126,26 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		}
 
 		static bool CheckForFfmpegLibraryFilesInFolder(string path) {
-
-			foreach (KeyValuePair<string, int> item in ffmpeg.LibraryVersionMap) {
-				string libraryName =
-					RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ?
-						Path.Combine(path, $"lib{item.Key}.so.{item.Value}") :
-					RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ?
-						Path.Combine(path, $"lib{item.Key}.{item.Value}.dylib") :
-					Path.Combine(path, $"{item.Key}-{item.Value}.dll");
-
-				if (!File.Exists(libraryName))
+			foreach (var file in GenerateLibraryFileNames()) {
+				if (!File.Exists(Path.Combine(path, file)))
 					return false;
 			}
+
 			ffmpeg.RootPath = path;
 			return true;
 
 		}
+
+		public static string[] GenerateLibraryFileNames() =>
+			ffmpeg.LibraryVersionMap
+				.Select(item => {
+					if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+						return $"lib{item.Key}.so.{item.Value}";
+
+					if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+						return $"lib{item.Key}.{item.Value}.dylib";
+
+					return $"{item.Key}-{item.Value}.dll";
+				}).ToArray();
 	}
 }
