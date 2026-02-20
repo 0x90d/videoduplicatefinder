@@ -328,7 +328,7 @@
 	"Message.LoadDatabaseFailed": "Failed to load database of scanned files. Please see log file in VDF directory",
 	"Message.MaxDegreeOfParallelismInvalid": "MaxDegreeOfParallelism cannot be 0. Please go to the settings and change it.",
 	"Message.MoveFailed": "Failed to move some files. Please check log!",
-	"Message.NativeFfmpegAutoNotSupported": "You cannot use hardware acceleration mode 'auto' with native ffmpeg bindings. Please explicit set a mode or set it to 'none'.",
+	"Message.NativeFfmpegAutoNotSupported": "You cannot use hardware acceleration mode 'auto' with native ffmpeg bindings. Please explicitly set a mode or set it to 'none'.",
 	"Message.NoMatchingDuplicates": "There is no duplicate item which matches your filter (if set) and which is checked",
 	"Message.NoScanFolders": "There are no folders to scan. Please go to the settings and add at least one folder to 'Search Directories'.",
 	"Message.OpenHwAccelInfoFailed": "Failed to open URL: https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability",
