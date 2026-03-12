@@ -33,7 +33,7 @@ namespace VDF.GUI.Utils {
 			}
 			finally {
 				if (pidl != IntPtr.Zero)
-					CoTaskMemFree(pidl);
+					Marshal.FreeCoTaskMem(pidl);
 			}
 		}
 
@@ -44,8 +44,5 @@ namespace VDF.GUI.Utils {
 		[LibraryImport("shell32.dll")]
 		private static partial int SHOpenFolderAndSelectItems(
 			IntPtr pidlFolder, uint cidl, [In] IntPtr[]? apidl, uint dwFlags);
-
-		[LibraryImport("ole32.dll")]
-		private static partial void CoTaskMemFree(IntPtr pv);
 	}
 }
