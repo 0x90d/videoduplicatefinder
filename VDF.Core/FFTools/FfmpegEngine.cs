@@ -238,8 +238,10 @@ namespace VDF.Core.FFTools {
 			}
 			if (bytes == null || errOut.Length > 0) {
 				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(isGrayByte ? "graybytes" : "thumbnail")} from: {settings.File}";
-				if (extendedLogging)
-					message += $":{Environment.NewLine}{FFmpegPath} {psi.ArgumentList}";
+				if (extendedLogging) {
+					var args = string.Join(" ", psi.ArgumentList);
+					message += $":{Environment.NewLine}{FFmpegPath} {args}";
+				}
 				Logger.Instance.Info($"{message}{errOut}");
 			}
 			return bytes;
