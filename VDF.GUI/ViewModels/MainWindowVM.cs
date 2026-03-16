@@ -1072,9 +1072,7 @@ namespace VDF.GUI.ViewModels {
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
 			try {
 				if (CoreUtils.IsWindows) {
-					Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
-						UseShellExecute = true
-					});
+					Utils.ShellUtils.ShowInExplorer(currentItem.ItemInfo.Path);
 				}
 				else {
 					Process.Start(new ProcessStartInfo {
