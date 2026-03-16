@@ -646,13 +646,13 @@
                                         <TreeDataGrid.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem
-                                                    Command="{Binding OpenItemInFolderCommand}"
+                                                    Command="{Binding OpenItemCommand}"
                                                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenFile]}"
-                                                    InputGesture="Return" />
+                                                    InputGesture="Enter" />
                                                 <MenuItem
                                                     Command="{Binding OpenItemInFolderCommand}"
                                                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenInFolder]}"
-                                                    InputGesture="Shift+Return" />
+                                                    InputGesture="Shift+Enter" />
                                                 <MenuItem
                                                     Command="{Binding RenameFileCommand}"
                                                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RenameFile]}"
