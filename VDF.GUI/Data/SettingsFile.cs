@@ -44,7 +44,7 @@ namespace VDF.GUI.Data {
 			if (!string.IsNullOrWhiteSpace(settingsPath))
 				return settingsPath;
 
-			if (CanWriteToDirectory(CoreUtils.CurrentFolder))
+			if (CoreUtils.CanWriteToDirectory(CoreUtils.CurrentFolder))
 				return FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
 
 			return FileUtils.SafePathCombine(GetDefaultSettingsFolder(), "Settings.json");
@@ -69,18 +69,6 @@ namespace VDF.GUI.Data {
 			return settingsFolder;
 		}
 
-		static bool CanWriteToDirectory(string path) {
-			try {
-				Directory.CreateDirectory(path);
-				var testPath = Path.Combine(path, $".vdf_write_test_{Guid.NewGuid():N}");
-				using var stream = new FileStream(testPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose);
-				stream.WriteByte(0);
-				return true;
-			}
-			catch {
-				return false;
-			}
-		}
 		public class CustomActionCommands {
 			public string OpenItemInFolder { get; set; } = string.Empty;
 			public string OpenMultipleInFolder { get; set; } = string.Empty;
