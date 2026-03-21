@@ -13,6 +13,7 @@
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
+using System.Runtime.InteropServices;
 
 namespace VDF.Core.Utils {
 	public sealed class Logger {
@@ -28,11 +29,36 @@ namespace VDF.Core.Utils {
 		public void Info(string text) {
 			LogItemAdded?.Invoke($"{DateTime.Now:HH:mm:ss} => {text}");
 			lock (lockObject) {
-				File.AppendAllText(Path.Combine(CoreUtils.CurrentFolder, "log.txt"), $"{DateTime.Now:HH:mm:ss} => {text}{Environment.NewLine}");
+				File.AppendAllText(Path.Combine(ResolveLogFolder(), "log.txt"), $"{DateTime.Now:HH:mm:ss} => {text}{Environment.NewLine}");
 			}
 		}
 		public void InsertSeparator(char separatorChar) {
 			LogItemAdded?.Invoke($"{Environment.NewLine}{new String(separatorChar, 150)}{Environment.NewLine}");
+		}
+		static string ResolveLogFolder() {
+			if (CoreUtils.CanWriteToDirectory(CoreUtils.CurrentFolder))
+				return CoreUtils.CurrentFolder;
+
+			return GetDefaultStateFolder();
+		}
+		static string GetDefaultStateFolder() {
+			string? baseFolder;
+			if (CoreUtils.IsWindows) {
+				// LocalApplicationData = %LOCALAPPDATA% (local, non-roaming — appropriate for state/logs)
+				baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Application Support");
+			}
+			else {
+				baseFolder = Environment.GetEnvironmentVariable("XDG_STATE_HOME");
+				if (string.IsNullOrWhiteSpace(baseFolder))
+					baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "state");
+			}
+
+			var stateFolder = Path.Combine(baseFolder, "VDF");
+			Directory.CreateDirectory(stateFolder);
+			return stateFolder;
 		}
 	}
 

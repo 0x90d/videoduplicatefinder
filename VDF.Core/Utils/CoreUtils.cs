@@ -24,5 +24,17 @@ namespace VDF.Core.Utils {
 			IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 			CurrentFolder = Path.GetDirectoryName(Environment.ProcessPath)!;
 		}
+		public static bool CanWriteToDirectory(string path) {
+			try {
+				Directory.CreateDirectory(path);
+				var testPath = Path.Combine(path, $".vdf_write_test_{Guid.NewGuid():N}");
+				using var stream = new FileStream(testPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose);
+				stream.WriteByte(0);
+				return true;
+			}
+			catch {
+				return false;
+			}
+		}
 	}
 }
