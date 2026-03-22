@@ -25,17 +25,17 @@ namespace VDF.Core.Utils {
 		static DatabaseWrapper DbWrapper = new();
 		internal static string? CustomDatabaseFolder;
 		
+		static string ResolveDatabaseFolder() {
+		    foreach (var candidate in new[] { CustomDatabaseFolder, CoreUtils.CurrentFolder, CoreUtils.GetDefaultStateFolder() }) {
+		        if (!string.IsNullOrEmpty(candidate) && CoreUtils.CanWriteToDirectory(candidate))
+		            return candidate;
+		    }
+		    // GetDefaultStateFolder() guarantees creation and should always succeed, but just in case:
+		    throw new InvalidOperationException("No writable directory found for database storage.");
+		}
 
-		static string CurrentDatabasePath => Directory.Exists(CustomDatabaseFolder)
-					? FileUtils.SafePathCombine(CustomDatabaseFolder,
-					"ScannedFiles.db")
-					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
-					"ScannedFiles.db");
-		static string TempDatabasePath => Directory.Exists(CustomDatabaseFolder)
-					? FileUtils.SafePathCombine(CustomDatabaseFolder,
-					"ScannedFiles_new.db")
-					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
-					"ScannedFiles_new.db");
+		static string CurrentDatabasePath => FileUtils.SafePathCombine(ResolveDatabaseFolder(), "ScannedFiles.db");
+		static string TempDatabasePath    => FileUtils.SafePathCombine(ResolveDatabaseFolder(), "ScannedFiles_new.db");
 
 		internal static bool LoadDatabase() {
 			FileInfo databaseFile = new(TempDatabasePath);

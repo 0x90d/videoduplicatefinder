@@ -36,5 +36,43 @@ namespace VDF.Core.Utils {
 				return false;
 			}
 		}
+		public static string GetDefaultStateFolder() {
+			string? baseFolder;
+			if (CoreUtils.IsWindows) {
+				// LocalApplicationData = %LOCALAPPDATA% (local, non-roaming — appropriate for state/logs)
+				baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Application Support");
+			}
+			else {
+				baseFolder = Environment.GetEnvironmentVariable("XDG_STATE_HOME");
+				if (string.IsNullOrWhiteSpace(baseFolder))
+					baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "state");
+			}
+
+			var stateFolder = Path.Combine(baseFolder, "VDF");
+			Directory.CreateDirectory(stateFolder);
+			return stateFolder;
+		}
+		public static string GetDefaultSettingsFolder() {
+			string? baseFolder;
+			if (CoreUtils.IsWindows) {
+				baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Preferences");
+			}
+			else {
+				baseFolder = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+				if (string.IsNullOrWhiteSpace(baseFolder))
+					baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config");
+			}
+
+			var settingsFolder = Path.Combine(baseFolder, "VDF");
+			Directory.CreateDirectory(settingsFolder);
+			return settingsFolder;
+		}
+
 	}
 }

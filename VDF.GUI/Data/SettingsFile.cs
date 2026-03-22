@@ -16,7 +16,6 @@
 
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
@@ -47,26 +46,7 @@ namespace VDF.GUI.Data {
 			if (CoreUtils.CanWriteToDirectory(CoreUtils.CurrentFolder))
 				return FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.json");
 
-			return FileUtils.SafePathCombine(GetDefaultSettingsFolder(), "Settings.json");
-		}
-
-		static string GetDefaultSettingsFolder() {
-			string? baseFolder;
-			if (CoreUtils.IsWindows) {
-				baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-			}
-			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-				baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Preferences");
-			}
-			else {
-				baseFolder = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
-				if (string.IsNullOrWhiteSpace(baseFolder))
-					baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config");
-			}
-
-			var settingsFolder = Path.Combine(baseFolder, "VDF");
-			Directory.CreateDirectory(settingsFolder);
-			return settingsFolder;
+			return FileUtils.SafePathCombine(CoreUtils.GetDefaultSettingsFolder(), "Settings.json");
 		}
 
 		public class CustomActionCommands {
