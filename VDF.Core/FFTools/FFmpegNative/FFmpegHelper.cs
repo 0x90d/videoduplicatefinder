@@ -99,7 +99,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 						}
 					}
 				}
-				var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
+				var environmentVariables = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")?.Split(Path.PathSeparator);
 				if (environmentVariables == null)
 					return false;
 

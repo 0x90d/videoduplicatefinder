@@ -40,7 +40,6 @@ namespace VDF.Core.FFTools {
 		/// <param name="tool"></param>
 		/// <returns>path or null if not found</returns>
 		internal static string? GetPath(FFTool tool) {
-
 			if (File.Exists($"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}"))
 				return $"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}";
 			if (File.Exists(Path.Combine(CoreUtils.CurrentFolder, tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)))
@@ -59,8 +58,10 @@ namespace VDF.Core.FFTools {
 						MatchCasing = MatchCasing.CaseInsensitive
 					});
 
-					if (files.Length > 0)
+					if (files.Length > 0) {
+						Logger.Instance.Info($"Found {tool} binary: {files[0].FullName}");
 						return files[0].FullName;
+					}
 				}
 				catch (Exception) {
 #if DEBUG
