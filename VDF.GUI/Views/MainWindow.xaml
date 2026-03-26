@@ -14,6 +14,7 @@
     xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
     xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
+    xmlns:views="clr-namespace:VDF.GUI.Views;assembly=VDF.GUI"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:Name="MainWindow"
     Title="{Binding Source={x:Static local:App.Lang}, Path=[App.Title]}"
@@ -628,17 +629,7 @@
                                     <DataGrid
                                         Name="dataGridGrouping"
                                         CanUserResizeColumns="True">
-                                        <DataGrid.KeyBindings>
-                                            <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2" />
-                                            <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space" />
-                                            <KeyBinding Command="{Binding OpenItemsByColIdCommand}" Gesture="Enter" />
-                                            <KeyBinding Command="{Binding OpenItemInFolderCommand}" Gesture="Shift+Enter" />
-                                            <KeyBinding Command="{Binding DeleteCheckedItemsWithPromptCommand}" Gesture="Delete" />
-                                            <KeyBinding Command="{Binding DeleteCheckedItemsCommand}" Gesture="Shift+Delete" />
-                                            <KeyBinding Command="{Binding DeleteHighlightedCommand}" Gesture="Control+Delete" />
-                                            <KeyBinding Command="{Binding ShowGroupInThumbnailComparerCommand}" Gesture="Alt+C" />
-                                            <KeyBinding Command="{Binding MarkGroupAsNotAMatchCommand}" Gesture="Alt+X" />
-                                        </DataGrid.KeyBindings>
+                                        <!-- KeyBindings are applied programmatically by KeyboardShortcutManager -->
                                         <DataGrid.Columns>
                                             <DataGridTemplateColumn>
                                                 <DataGridTemplateColumn.CellTemplate>
@@ -832,15 +823,15 @@
                                                 <MenuItem
                                                     Command="{Binding OpenItemCommand}"
                                                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenFile]}"
-                                                    InputGesture="Enter" />
+                                                    InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[OpenItemsByColId]}" />
                                                 <MenuItem
                                                     Command="{Binding OpenItemInFolderCommand}"
                                                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenInFolder]}"
-                                                    InputGesture="Shift+Enter" />
+                                                    InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[OpenItemInFolder]}" />
                                                 <MenuItem
                                                     Command="{Binding RenameFileCommand}"
                                                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RenameFile]}"
-                                                    InputGesture="F2" />
+                                                    InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[RenameFile]}" />
                                                 <MenuItem>
                                                     <MenuItem.Header>
                                                         <StackPanel Orientation="Horizontal">
@@ -855,7 +846,7 @@
                                                                 Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CheckedItems]}" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
-                                                    <MenuItem Command="{Binding DeleteCheckedItemsCommand}" InputGesture="Shift+Delete">
+                                                    <MenuItem Command="{Binding DeleteCheckedItemsCommand}" InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[DeleteCheckedItems]}">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -886,7 +877,7 @@
                                                         </MenuItem.Header>
                                                     </MenuItem>
                                                     <Separator />
-                                                    <MenuItem Command="{Binding RemoveCheckedItemsFromListCommand}" InputGesture="Delete">
+                                                    <MenuItem Command="{Binding RemoveCheckedItemsFromListCommand}" InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[DeleteCheckedItemsWithPrompt]}">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -977,7 +968,7 @@
                                                     <MenuItem
                                                         Command="{Binding MarkGroupAsNotAMatchCommand}"
                                                         Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MarkNotMatch]}"
-                                                        InputGesture="Alt+X"
+                                                        InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[MarkGroupAsNotAMatch]}"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MarkNotMatchTooltip]}" />
                                                     <MenuItem
                                                         Command="{Binding OpenGroupCommand}"
@@ -993,7 +984,7 @@
                                                     <MenuItem
                                                         Command="{Binding ShowGroupInThumbnailComparerCommand}"
                                                         Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CompareFullsizeThumbnails]}"
-                                                        InputGesture="Alt+C" />
+                                                        InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[ShowGroupInThumbnailComparer]}" />
                                                 </MenuItem>
                                             </ContextMenu>
                                         </DataGrid.ContextMenu>
@@ -1903,6 +1894,68 @@
                                             Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                             Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RestartHint]}" />
                                     </StackPanel>
+                                </TabItem>
+                                <TabItem x:Name="TabItemSettingsKeyboardShortcuts">
+                                    <TabItem.Header>
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts]}" />
+                                    </TabItem.Header>
+                                    <Grid RowDefinitions="Auto, Auto, *" Margin="10">
+                                        <Button
+                                            Grid.Row="0"
+                                            Margin="0,0,0,10"
+                                            HorizontalAlignment="Left"
+                                            Command="{Binding ResetAllShortcutsCommand}"
+                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.ResetAll]}" />
+                                        <Grid Grid.Row="1" ColumnDefinitions="250, 200, *" Margin="0,0,0,4">
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                FontWeight="Bold"
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Action]}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                FontWeight="Bold"
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Shortcut]}" />
+                                        </Grid>
+                                        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+                                            <ItemsControl ItemsSource="{Binding ShortcutBindings}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid ColumnDefinitions="250, 200, *" Margin="0,2">
+                                                            <TextBlock
+                                                                Grid.Column="0"
+                                                                VerticalAlignment="Center"
+                                                                Text="{Binding DisplayName}" />
+                                                            <views:HotKeyBox
+                                                                Grid.Column="1"
+                                                                Margin="0,0,8,0"
+                                                                GestureText="{Binding CurrentGesture, Mode=TwoWay}" />
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
+                                                                <Button
+                                                                    Command="{Binding ResetCommand}"
+                                                                    Content="&#x21BA;"
+                                                                    ToolTip.Tip="Reset to Default"
+                                                                    Padding="6,2"
+                                                                    IsVisible="{Binding IsModified}" />
+                                                                <Button
+                                                                    Command="{Binding ClearCommand}"
+                                                                    Content="&#x2715;"
+                                                                    ToolTip.Tip="Clear"
+                                                                    Padding="6,2" />
+                                                                <TextBlock
+                                                                    VerticalAlignment="Center"
+                                                                    Foreground="Orange"
+                                                                    Text="{Binding ConflictText}"
+                                                                    IsVisible="{Binding ConflictText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Grid>
                                 </TabItem>
                             </TabControl>
                         </Grid>

@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -70,6 +71,23 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(IsMultiOpenInFolderSupported));
 			}
 		}
+		public ObservableCollection<ShortcutBindingVM> ShortcutBindings { get; } = BuildShortcutBindings();
+
+		static ObservableCollection<ShortcutBindingVM> BuildShortcutBindings() {
+			var collection = new ObservableCollection<ShortcutBindingVM>();
+			foreach (var id in KeyboardShortcutDefaults.MainWindowDefaults.Keys)
+				collection.Add(new ShortcutBindingVM(id, collection));
+			return collection;
+		}
+
+		public ReactiveCommand<Unit, Unit> ResetAllShortcutsCommand => ReactiveCommand.Create(() => {
+			KeyboardShortcutManager.Instance.ResetAll();
+			foreach (var binding in ShortcutBindings) {
+				binding.CurrentGesture = binding.DefaultGesture;
+				binding.ConflictText = null;
+			}
+		});
+
 		void Instance_LogItemAdded(string message) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				if (string.IsNullOrEmpty(message)) return;

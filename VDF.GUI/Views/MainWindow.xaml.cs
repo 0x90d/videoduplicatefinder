@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Windows.Input;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
@@ -99,12 +100,40 @@ namespace VDF.GUI.Views {
 		private void MainWindow_Opened(object? sender, EventArgs e) {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 				/*
-				 * Due to Avalonia bug, window is bigger than screen size. 
+				 * Due to Avalonia bug, window is bigger than screen size.
 				 * Status bar is hidden by MacOS launch bar,
 				 * see https://github.com/0x90d/videoduplicatefinder/issues/391
 				 */
 				Height = 750d;
 			}
+
+			ApplyKeyboardShortcuts();
+			KeyboardShortcutManager.Instance.ShortcutsChanged += ApplyKeyboardShortcuts;
+		}
+
+		void ApplyKeyboardShortcuts() {
+			var vm = ApplicationHelpers.MainWindowDataContext;
+			var commandMap = new Dictionary<string, ICommand> {
+				["RenameFile"] = vm.RenameFileCommand,
+				["ToggleCheckbox"] = vm.ToggleCheckboxCommand,
+				["OpenItemsByColId"] = vm.OpenItemsByColIdCommand,
+				["OpenItemInFolder"] = vm.OpenItemInFolderCommand,
+				["DeleteCheckedItemsWithPrompt"] = vm.DeleteCheckedItemsWithPromptCommand,
+				["DeleteCheckedItems"] = vm.DeleteCheckedItemsCommand,
+				["DeleteHighlighted"] = vm.DeleteHighlightedCommand,
+				["ShowGroupInThumbnailComparer"] = vm.ShowGroupInThumbnailComparerCommand,
+				["MarkGroupAsNotAMatch"] = vm.MarkGroupAsNotAMatchCommand,
+				["CopyCheckedItems"] = vm.CopyCheckedItemsCommand,
+				["MoveCheckedItems"] = vm.MoveCheckedItemsCommand,
+				["CheckLowestQuality"] = vm.CheckLowestQualityCommand,
+				["ClearCheckedItems"] = vm.ClearCheckedItemsCommand,
+				["InvertCheckedItems"] = vm.InvertCheckedItemsCommand,
+				["ExpandAllGroups"] = vm.ExpandAllGroupsCommand,
+				["CollapseAllGroups"] = vm.CollapseAllGroupsCommand,
+				["RemoveCheckedItemsFromList"] = vm.RemoveCheckedItemsFromListCommand,
+			};
+			var dataGrid = this.FindControl<DataGrid>("dataGridGrouping")!;
+			KeyboardShortcutManager.Instance.ApplyBindings(dataGrid, commandMap);
 		}
 
 		void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {

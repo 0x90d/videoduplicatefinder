@@ -479,6 +479,13 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _NotifyOnScanComplete, value);
 		}
 
+		Dictionary<string, string> _KeyboardShortcuts = new();
+		[JsonPropertyName("KeyboardShortcuts")]
+		public Dictionary<string, string> KeyboardShortcuts {
+			get => _KeyboardShortcuts;
+			set => this.RaiseAndSetIfChanged(ref _KeyboardShortcuts, value);
+		}
+
 		public static void LoadSettings(string? path = null) {
 			path ??= settingsPath;
 			if ((path == null || path.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)) && LoadOldSettings(path))
