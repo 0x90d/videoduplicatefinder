@@ -1,4 +1,4 @@
-// /*
+﻿// /*
 //     Copyright (C) 2025 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
@@ -164,26 +164,45 @@ namespace VDF.Core.FFTools {
 			psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(settings.Position.ToString(null, CultureInfo.InvariantCulture));
 			psi.ArgumentList.Add("-i"); psi.ArgumentList.Add(FFToolsUtils.LongPathFix(settings.File));
 
+			// Parse CustomFFArguments up front so we can detect a user-supplied -vf and merge it
+			// into our own filter chain rather than letting a second -vf silently override the
+			// scale filter (last -vf wins in ffmpeg). See: https://github.com/0x90d/videoduplicatefinder/issues/588
+			string? userVfFilter = null;
+			var remainingCustomArgs = new List<string>();
+			if (!string.IsNullOrWhiteSpace(CustomFFArguments)) {
+				var tokens = TokenizeArgs(CustomFFArguments);
+				for (int ti = 0; ti < tokens.Count; ti++) {
+					if ((tokens[ti] == "-vf" || tokens[ti] == "-filter:v") && ti + 1 < tokens.Count)
+						userVfFilter = tokens[++ti];
+					else
+						remainingCustomArgs.Add(tokens[ti]);
+				}
+			}
+
 			// Filter chain: scale + gray
 			if (isGrayByte) {
-				psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add($"scale={N}:{N}:flags=bicubic,format=gray");
+				string vfChain = $"scale={N}:{N}:flags=bicubic,format=gray";
+				if (userVfFilter != null) vfChain = $"{userVfFilter},{vfChain}";
+				psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
 				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
 				psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("gray");
 			}
 			else {
 				if (settings.Fullsize != 1) {
-					psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add("scale=100:-1");
+					string vfChain = "scale=100:-1";
+					if (userVfFilter != null) vfChain = $"{vfChain},{userVfFilter}";
+					psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
+				}
+				else if (userVfFilter != null) {
+					psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(userVfFilter);
 				}
 				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("mjpeg");
 			}
 
 			psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
 
-			if (!string.IsNullOrWhiteSpace(CustomFFArguments)) {
-				foreach (var item in CustomFFArguments.Split(' ', StringSplitOptions.RemoveEmptyEntries)) {
-					psi.ArgumentList.Add(item);
-				}
-			}
+			foreach (var item in remainingCustomArgs)
+				psi.ArgumentList.Add(item);
 			psi.ArgumentList.Add("pipe:1"); // stdout
 
 			////https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
@@ -274,6 +293,29 @@ namespace VDF.Core.FFTools {
 				return false;
 			}
 			return true;
+		}
+
+		private static List<string> TokenizeArgs(string args) {
+			var tokens = new List<string>();
+			var current = new System.Text.StringBuilder();
+			bool inQuotes = false;
+			foreach (char c in args) {
+				if (c == '"') {
+					inQuotes = !inQuotes;
+				}
+				else if (c == ' ' && !inQuotes) {
+					if (current.Length > 0) {
+						tokens.Add(current.ToString());
+						current.Clear();
+					}
+				}
+				else {
+					current.Append(c);
+				}
+			}
+			if (current.Length > 0)
+				tokens.Add(current.ToString());
+			return tokens;
 		}
 	}
 
