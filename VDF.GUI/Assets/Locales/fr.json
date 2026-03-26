@@ -246,7 +246,7 @@
 	"MainWindow.Settings.SaveTooltip": "Note : les paramètres sont enregistrés automatiquement lors d'une fermeture normale",
 	"MainWindow.Settings.ScanAgainstEntireDatabase": "Analyser l'ensemble de la base de données",
 	"MainWindow.Settings.ScanAgainstEntireDatabaseTooltip": "Si coché, l'analyse est également effectuée sur l'ensemble de la base de données, sauf si des fichiers de la base de données sont exclus (liste d'exclusion, le chemin doit contenir, etc.)",
-	"MainWindow.Settings.OnlySameFolderDuplicates": "Doublons dans le même dossier uniquement, profondeur :",
+	"MainWindow.Settings.OnlySameFolderDuplicates": "Mode de correspondance des dossiers, profondeur :",
 	"MainWindow.Settings.OnlySameFolderDuplicatesTooltip": "Lorsqu'activé, deux fichiers ne sont considérés comme doublons que si leurs noms de dossier correspondent à la profondeur spécifiée (1 = dossier parent immédiat uniquement, 2 = dossier + parent, etc.). Aucun impact sur les performances lorsque désactivé.",
 	"MainWindow.Settings.ScanAgainstNonExistingFiles": "Analyser les fichiers inexistants",
 	"MainWindow.Settings.ScanAgainstNonExistingFilesTooltip": "Si coché, les fichiers inexistants qui ont toutes les informations nécessaires sont inclus",

@@ -248,12 +248,16 @@ namespace VDF.GUI.Data {
 			get => _ScanAgainstEntireDatabase;
 			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
 		}
-		bool _OnlySameFolderDuplicates;
-		[JsonPropertyName("OnlySameFolderDuplicates")]
-		public bool OnlySameFolderDuplicates {
-			get => _OnlySameFolderDuplicates;
-			set => this.RaiseAndSetIfChanged(ref _OnlySameFolderDuplicates, value);
+		Core.FolderMatchMode _FolderMatchMode;
+		[JsonPropertyName("FolderMatchMode")]
+		public Core.FolderMatchMode FolderMatchMode {
+			get => _FolderMatchMode;
+			set {
+				this.RaiseAndSetIfChanged(ref _FolderMatchMode, value);
+				this.RaisePropertyChanged(nameof(IsFolderMatchModeActive));
+			}
 		}
+		public bool IsFolderMatchModeActive => FolderMatchMode != Core.FolderMatchMode.None;
 		int _SameFolderDepth = 1;
 		[JsonPropertyName("SameFolderDepth")]
 		public int SameFolderDepth {

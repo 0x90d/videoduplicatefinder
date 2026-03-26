@@ -1302,12 +1302,14 @@
                                                         IsThreeState="False"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabaseTooltip]}" />
                                                     <StackPanel Orientation="Horizontal" Spacing="4">
-                                                        <CheckBox
-                                                            x:Name="ChkOnlySameFolder"
+                                                        <TextBlock
                                                             VerticalAlignment="Center"
-                                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicates]}"
-                                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=OnlySameFolderDuplicates}"
-                                                            IsThreeState="False"
+                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicates]}"
+                                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicatesTooltip]}" />
+                                                        <ComboBox
+                                                            VerticalAlignment="Center"
+                                                            ItemsSource="{Binding FolderMatchModes}"
+                                                            SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FolderMatchMode}"
                                                             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicatesTooltip]}" />
                                                         <NumericUpDown
                                                             Width="70"
@@ -1315,7 +1317,7 @@
                                                             Increment="1"
                                                             Maximum="20"
                                                             Minimum="1"
-                                                            IsEnabled="{Binding #ChkOnlySameFolder.IsChecked}"
+                                                            IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IsFolderMatchModeActive}"
                                                             Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=SameFolderDepth}" />
                                                     </StackPanel>
                                                     <CheckBox

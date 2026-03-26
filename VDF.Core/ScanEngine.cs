@@ -731,8 +731,11 @@ namespace VDF.Core {
 								continue;
 						}
 
-						if (Settings.OnlySameFolderDuplicates &&
+						if (Settings.FolderMatchMode == FolderMatchMode.SameFolderOnly &&
 							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+							continue;
+						if (Settings.FolderMatchMode == FolderMatchMode.DifferentFolderOnly &&
+							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
 							continue;
 
 						isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
@@ -763,8 +766,11 @@ namespace VDF.Core {
 						var compItem = imageEntries[n];
 						float difference = 0;
 						DuplicateFlags flags;
-						if (Settings.OnlySameFolderDuplicates &&
+						if (Settings.FolderMatchMode == FolderMatchMode.SameFolderOnly &&
 							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+							continue;
+						if (Settings.FolderMatchMode == FolderMatchMode.DifferentFolderOnly &&
+							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
 							continue;
 						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
 
@@ -810,8 +816,11 @@ namespace VDF.Core {
 						if (diffSeconds > allowedSeconds)
 							continue;
 
-						if (Settings.OnlySameFolderDuplicates &&
+						if (Settings.FolderMatchMode == FolderMatchMode.SameFolderOnly &&
 							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+							continue;
+						if (Settings.FolderMatchMode == FolderMatchMode.DifferentFolderOnly &&
+							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
 							continue;
 
 						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);

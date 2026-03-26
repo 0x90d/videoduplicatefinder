@@ -35,6 +35,10 @@ namespace VDF.GUI.ViewModels {
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
 			Enum.GetValues<Core.FFTools.FFHardwareAccelerationMode>();
+#pragma warning disable CA1822 // Mark members as static
+		public IEnumerable<Core.FolderMatchMode> FolderMatchModes =>
+#pragma warning restore CA1822 // Mark members as static
+			Enum.GetValues<Core.FolderMatchMode>();
 		public record LanguageOption(string Code, string DisplayName);
 		public IReadOnlyList<LanguageOption> LanguageOptions { get; } = BuildLanguageOptions();
 		public LanguageOption? SelectedLanguageOption {

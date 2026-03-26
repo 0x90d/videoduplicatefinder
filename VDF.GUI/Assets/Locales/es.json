@@ -246,7 +246,7 @@
 	"MainWindow.Settings.SaveTooltip": "Nota: los ajustes se guardan automáticamente al salir normalmente",
 	"MainWindow.Settings.ScanAgainstEntireDatabase": "Escanear contra toda la base de datos",
 	"MainWindow.Settings.ScanAgainstEntireDatabaseTooltip": "Si está marcado, el escaneo también se realiza contra toda la base de datos a menos que se excluyan archivos de base de datos (p. ej., lista de exclusión, la ruta debe contener, etc.)",
-	"MainWindow.Settings.OnlySameFolderDuplicates": "Solo duplicados en la misma carpeta, profundidad:",
+	"MainWindow.Settings.OnlySameFolderDuplicates": "Modo de coincidencia de carpeta, profundidad:",
 	"MainWindow.Settings.OnlySameFolderDuplicatesTooltip": "Cuando está activado, dos archivos solo se consideran duplicados si sus nombres de carpeta coinciden a la profundidad especificada (1 = solo carpeta padre inmediata, 2 = carpeta + padre, etc.). Sin impacto en el rendimiento cuando está desactivado.",
 	"MainWindow.Settings.ScanAgainstNonExistingFiles": "Escanear contra archivos no existentes",
 	"MainWindow.Settings.ScanAgainstNonExistingFilesTooltip": "Si está marcado, se incluyen archivos no existentes que tienen toda la información necesaria",
