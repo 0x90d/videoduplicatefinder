@@ -1076,6 +1076,9 @@ namespace VDF.GUI.ViewModels {
 						UseShellExecute = true
 					});
 				}
+				else if (OperatingSystem.IsMacOS()) {
+					Process.Start("open", $"-R \"{currentItem.ItemInfo.Path}\"");
+				}
 				else {
 					Process.Start(new ProcessStartInfo {
 						FileName = currentItem.ItemInfo.Folder,
