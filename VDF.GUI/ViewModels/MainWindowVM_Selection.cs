@@ -54,8 +54,15 @@ namespace VDF.GUI.ViewModels {
 
 			const string shortIdentifier = "item";
 
-			var interpreter = new Interpreter()
-				.ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
+			Func<DuplicateItem, bool> interpreter;
+			try {
+				interpreter = new Interpreter()
+					.ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Expression error: {ex.Message}");
+				return;
+			}
 
 			var groups = EnumerateAllItems()
 							.Where(d => d.IsVisibleInFilter)

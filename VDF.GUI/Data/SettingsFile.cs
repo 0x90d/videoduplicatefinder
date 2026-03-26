@@ -106,6 +106,20 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _ExpressionHistory, value);
 		}
 
+		ObservableCollection<ExpressionPreset> _ExpressionPresets = new();
+		[JsonPropertyName("ExpressionPresets")]
+		public ObservableCollection<ExpressionPreset> ExpressionPresets {
+			get => _ExpressionPresets;
+			set => this.RaiseAndSetIfChanged(ref _ExpressionPresets, value);
+		}
+
+		ObservableCollection<CustomSelectionPreset> _CustomSelectionPresets = new();
+		[JsonPropertyName("CustomSelectionPresets")]
+		public ObservableCollection<CustomSelectionPreset> CustomSelectionPresets {
+			get => _CustomSelectionPresets;
+			set => this.RaiseAndSetIfChanged(ref _CustomSelectionPresets, value);
+		}
+
 		string _LanguageCode = ResolveDefaultLanguageCode();
 		[JsonPropertyName("LanguageCode")]
 		public string LanguageCode {

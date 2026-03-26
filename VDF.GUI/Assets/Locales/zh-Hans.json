@@ -373,5 +373,10 @@
 	"Message.OpenFilesFailed": "打开文件失败：{0}",
 	"Message.ScheduledScanCompleted": "计划扫描已完成。",
 	"ThumbnailComparerDialog.Thumbnail": "缩略图：",
-	"CleanupDryRun.FileType": "清理报告"
+	"CleanupDryRun.FileType": "清理报告",
+	"Preset.Label": "预设：",
+	"Preset.Save": "保存预设",
+	"Preset.Delete": "删除预设",
+	"Preset.NamePrompt": "输入预设名称：",
+	"Preset.SaveTitle": "保存预设"
 }

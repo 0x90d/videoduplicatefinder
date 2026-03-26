@@ -373,5 +373,10 @@
 	"Message.OpenFilesFailed": "Falha ao abrir arquivos: {0}",
 	"Message.ScheduledScanCompleted": "Varredura agendada concluída.",
 	"ThumbnailComparerDialog.Thumbnail": "Miniatura:",
-	"CleanupDryRun.FileType": "Relatório de limpeza"
+	"CleanupDryRun.FileType": "Relatório de limpeza",
+	"Preset.Label": "Predefinição:",
+	"Preset.Save": "Salvar predefinição",
+	"Preset.Delete": "Excluir predefinição",
+	"Preset.NamePrompt": "Digite o nome da predefinição:",
+	"Preset.SaveTitle": "Salvar predefinição"
 }

@@ -373,5 +373,10 @@
 	"Message.OpenFilesFailed": "Dateien konnten nicht geöffnet werden: {0}",
 	"Message.ScheduledScanCompleted": "Geplanter Scan abgeschlossen.",
 	"ThumbnailComparerDialog.Thumbnail": "Thumbnail:",
-	"CleanupDryRun.FileType": "Bereinigungsbericht"
+	"CleanupDryRun.FileType": "Bereinigungsbericht",
+	"Preset.Label": "Vorlage:",
+	"Preset.Save": "Vorlage speichern",
+	"Preset.Delete": "Vorlage löschen",
+	"Preset.NamePrompt": "Vorlagenname eingeben:",
+	"Preset.SaveTitle": "Vorlage speichern"
 }

@@ -373,5 +373,10 @@
 	"Message.OpenFilesFailed": "Échec de l'ouverture des fichiers : {0}",
 	"Message.ScheduledScanCompleted": "Analyse planifiée terminée.",
 	"ThumbnailComparerDialog.Thumbnail": "Miniature :",
-	"CleanupDryRun.FileType": "Rapport de nettoyage"
+	"CleanupDryRun.FileType": "Rapport de nettoyage",
+	"Preset.Label": "Préréglage :",
+	"Preset.Save": "Enregistrer le préréglage",
+	"Preset.Delete": "Supprimer le préréglage",
+	"Preset.NamePrompt": "Entrez le nom du préréglage :",
+	"Preset.SaveTitle": "Enregistrer le préréglage"
 }

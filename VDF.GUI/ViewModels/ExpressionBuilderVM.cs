@@ -15,6 +15,7 @@
 //
 
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Reflection;
 using System.Text;
@@ -51,12 +52,41 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _ExpressionText, value);
 		}
 		public ObservableCollection<string> ExpressionHistory => SettingsFile.Instance.ExpressionHistory;
+		public ObservableCollection<ExpressionPreset> ExpressionPresets => SettingsFile.Instance.ExpressionPresets;
 		public string AvailableProperties { get; }
+
+		ExpressionPreset? _SelectedPreset;
+		public ExpressionPreset? SelectedPreset {
+			get => _SelectedPreset;
+			set {
+				this.RaiseAndSetIfChanged(ref _SelectedPreset, value);
+				if (value != null)
+					ExpressionText = value.Expression;
+			}
+		}
+
+		public ReactiveCommand<Unit, Unit> SavePresetCommand => ReactiveCommand.CreateFromTask(async () => {
+			var name = await InputBoxService.Show(App.Lang["Preset.NamePrompt"], _SelectedPreset?.Name ?? string.Empty, title: App.Lang["Preset.SaveTitle"]);
+			if (string.IsNullOrWhiteSpace(name)) return;
+			var existing = ExpressionPresets.FirstOrDefault(p => p.Name == name);
+			if (existing != null)
+				existing.Expression = ExpressionText;
+			else
+				ExpressionPresets.Add(new ExpressionPreset { Name = name, Expression = ExpressionText });
+		});
+
+		public ReactiveCommand<Unit, Unit> DeletePresetCommand => ReactiveCommand.Create(() => {
+			if (_SelectedPreset != null) {
+				ExpressionPresets.Remove(_SelectedPreset);
+				SelectedPreset = null;
+			}
+		});
+
 		public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => {
 			host.Close(false);
 		});
 		public ReactiveCommand<Unit, Unit> OKCommand => ReactiveCommand.Create(() => {
 			host.Close(true);
-		});
+		}, this.WhenAnyValue(x => x.ExpressionText, t => !string.IsNullOrWhiteSpace(t)));
 	}
 }

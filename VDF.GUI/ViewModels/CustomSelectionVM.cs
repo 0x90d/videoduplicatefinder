@@ -16,8 +16,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -41,6 +42,41 @@ namespace VDF.GUI.ViewModels {
 			get => _Data;
 			set => this.RaiseAndSetIfChanged(ref _Data, value);
 		}
+
+		[JsonIgnore]
+		public ObservableCollection<CustomSelectionPreset> CustomSelectionPresets => SettingsFile.Instance.CustomSelectionPresets;
+
+		[JsonIgnore]
+		CustomSelectionPreset? _SelectedPreset;
+		[JsonIgnore]
+		public CustomSelectionPreset? SelectedPreset {
+			get => _SelectedPreset;
+			set {
+				this.RaiseAndSetIfChanged(ref _SelectedPreset, value);
+				if (value != null)
+					Data = JsonSerializer.Deserialize<CustomSelectionData>(JsonSerializer.Serialize(value.Data))!;
+			}
+		}
+
+		[JsonIgnore]
+		public ReactiveCommand<Unit, Unit> SavePresetCommand => ReactiveCommand.CreateFromTask(async () => {
+			var name = await InputBoxService.Show(App.Lang["Preset.NamePrompt"], _SelectedPreset?.Name ?? string.Empty, title: App.Lang["Preset.SaveTitle"]);
+			if (string.IsNullOrWhiteSpace(name)) return;
+			var dataCopy = JsonSerializer.Deserialize<CustomSelectionData>(JsonSerializer.Serialize(Data))!;
+			var existing = CustomSelectionPresets.FirstOrDefault(p => p.Name == name);
+			if (existing != null)
+				existing.Data = dataCopy;
+			else
+				CustomSelectionPresets.Add(new CustomSelectionPreset { Name = name, Data = dataCopy });
+		});
+
+		[JsonIgnore]
+		public ReactiveCommand<Unit, Unit> DeletePresetCommand => ReactiveCommand.Create(() => {
+			if (_SelectedPreset != null) {
+				CustomSelectionPresets.Remove(_SelectedPreset);
+				SelectedPreset = null;
+			}
+		});
 
 		[JsonIgnore]
 		public ReactiveCommand<Unit, Unit> SelectCommand => ReactiveCommand.Create(() => {

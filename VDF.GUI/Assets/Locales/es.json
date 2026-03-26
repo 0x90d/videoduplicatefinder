@@ -373,5 +373,10 @@
 	"Message.OpenFilesFailed": "No se pudieron abrir los archivos: {0}",
 	"Message.ScheduledScanCompleted": "Escaneo programado completado.",
 	"ThumbnailComparerDialog.Thumbnail": "Miniatura:",
-	"CleanupDryRun.FileType": "Informe de limpieza"
+	"CleanupDryRun.FileType": "Informe de limpieza",
+	"Preset.Label": "Plantilla:",
+	"Preset.Save": "Guardar plantilla",
+	"Preset.Delete": "Eliminar plantilla",
+	"Preset.NamePrompt": "Ingrese el nombre de la plantilla:",
+	"Preset.SaveTitle": "Guardar plantilla"
 }
