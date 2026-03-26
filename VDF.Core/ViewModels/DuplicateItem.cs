@@ -134,6 +134,8 @@ namespace VDF.Core.ViewModels {
 		public string HdrFormat { get; private set; } = string.Empty;
 		public bool IsBestHdrFormat { get; set; }
 		[JsonIgnore]
+		public int FolderDepth => Path.Count(c => c == System.IO.Path.DirectorySeparatorChar || c == System.IO.Path.AltDirectorySeparatorChar);
+		[JsonIgnore]
 		public int HdrFormatRank => HdrFormat switch {
 			"Dolby Vision" => 4,
 			"HDR10+" => 3,
