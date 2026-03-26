@@ -950,6 +950,7 @@
                                                     <MenuItem Command="{Binding CopySelectionCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyToFolderEllipsis]}" />
                                                     <MenuItem Command="{Binding MoveSelectionCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
                                                     <Separator />
+                                                    <MenuItem Command="{Binding LoadThumbnailsForSelectionCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForSelection]}" />
                                                     <MenuItem
                                                         Command="{Binding ShowGroupInThumbnailComparerCommand}"
                                                         Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CompareFullsizeThumbnails]}"
@@ -992,6 +993,7 @@
                                                         CommandParameter="1"
                                                         Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenGroupInFolder]}"
                                                         IsVisible="{Binding IsMultiOpenInFolderSupported}" />
+                                                    <MenuItem Command="{Binding LoadThumbnailsForGroupCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForGroup]}" />
                                                     <MenuItem
                                                         Command="{Binding ShowGroupInThumbnailComparerCommand}"
                                                         Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CompareFullsizeThumbnails]}"

@@ -129,6 +129,8 @@
 	"MainWindow.ContextMenu.DeletePermanently": "Delete permanently from disk",
 	"MainWindow.ContextMenu.ExpandAll": "Expand all",
 	"MainWindow.ContextMenu.Groups": "Groups",
+	"MainWindow.ContextMenu.LoadThumbnailsForGroup": "Load Thumbnails for Group",
+	"MainWindow.ContextMenu.LoadThumbnailsForSelection": "Load Thumbnails for Selection",
 	"MainWindow.ContextMenu.MarkNotMatch": "Mark as 'Not a match'",
 	"MainWindow.ContextMenu.MarkNotMatchTooltip": "Hides this group and exclude it from future scans, except when there is a new duplicate.",
 	"MainWindow.ContextMenu.MoveToFolderEllipsis": "Move To Folder...",

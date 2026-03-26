@@ -124,6 +124,8 @@
 	"MainWindow.ContextMenu.DeletePermanently": "Dauerhaft von der Festplatte löschen",
 	"MainWindow.ContextMenu.ExpandAll": "Alle ausklappen",
 	"MainWindow.ContextMenu.Groups": "Gruppen",
+	"MainWindow.ContextMenu.LoadThumbnailsForGroup": "Load Thumbnails for Group",
+	"MainWindow.ContextMenu.LoadThumbnailsForSelection": "Load Thumbnails for Selection",
 	"MainWindow.ContextMenu.MarkNotMatch": "Als „Kein Treffer“ markieren",
 	"MainWindow.ContextMenu.MarkNotMatchTooltip": "Blendet diese Gruppe aus und schließt sie von zukünftigen Scans aus, außer wenn es ein neues Duplikat gibt.",
 	"MainWindow.ContextMenu.MoveToFolderEllipsis": "In Ordner verschieben...",

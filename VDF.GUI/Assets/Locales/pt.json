@@ -124,6 +124,8 @@
 	"MainWindow.ContextMenu.DeletePermanently": "Excluir permanentemente do disco",
 	"MainWindow.ContextMenu.ExpandAll": "Expandir tudo",
 	"MainWindow.ContextMenu.Groups": "Grupos",
+	"MainWindow.ContextMenu.LoadThumbnailsForGroup": "Load Thumbnails for Group",
+	"MainWindow.ContextMenu.LoadThumbnailsForSelection": "Load Thumbnails for Selection",
 	"MainWindow.ContextMenu.MarkNotMatch": "Marcar como 'Não corresponde'",
 	"MainWindow.ContextMenu.MarkNotMatchTooltip": "Oculta este grupo e o exclui de varreduras futuras, exceto quando houver um novo duplicado.",
 	"MainWindow.ContextMenu.MoveToFolderEllipsis": "Mover para pasta...",

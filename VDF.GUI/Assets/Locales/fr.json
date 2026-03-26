@@ -124,6 +124,8 @@
 	"MainWindow.ContextMenu.DeletePermanently": "Supprimer définitivement du disque",
 	"MainWindow.ContextMenu.ExpandAll": "Tout développer",
 	"MainWindow.ContextMenu.Groups": "Groupes",
+	"MainWindow.ContextMenu.LoadThumbnailsForGroup": "Load Thumbnails for Group",
+	"MainWindow.ContextMenu.LoadThumbnailsForSelection": "Load Thumbnails for Selection",
 	"MainWindow.ContextMenu.MarkNotMatch": "Marquer comme « Ne correspond pas »",
 	"MainWindow.ContextMenu.MarkNotMatchTooltip": "Masque ce groupe et l'exclut des analyses futures, sauf en cas de nouveau doublon.",
 	"MainWindow.ContextMenu.MoveToFolderEllipsis": "Déplacer vers le dossier...",

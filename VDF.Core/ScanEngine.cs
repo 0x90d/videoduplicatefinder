@@ -903,6 +903,60 @@ namespace VDF.Core {
 		public static void ClearDatabase() => DatabaseUtils.ClearDatabase();
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public static bool ImportDataBaseFromJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ImportDatabaseFromJson(jsonFile, options);
+		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {
+			var dupList = items.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
+			try {
+				await Parallel.ForEachAsync(dupList, new ParallelOptions { MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
+					List<Image>? list = null;
+					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
+					List<TimeSpan>? timeStamps = null;
+
+					if (needsThumbnails && entry.IsImage) {
+						timeStamps = new(0);
+						list = new List<Image>(1);
+						try {
+							Image bitmapImage = Image.Load(entry.Path);
+							float resizeFactor = 1f;
+							if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
+								float widthFactor = bitmapImage.Width / 100f;
+								float heightFactor = bitmapImage.Height / 100f;
+								resizeFactor = Math.Max(widthFactor, heightFactor);
+							}
+							int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
+							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
+							bitmapImage.Mutate(i => i.Resize(width, height));
+							list.Add(bitmapImage);
+						}
+						catch (Exception ex) {
+							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
+							return ValueTask.CompletedTask;
+						}
+					}
+					else if (needsThumbnails) {
+						list = new List<Image>(positionList.Count);
+						timeStamps = new List<TimeSpan>(positionList.Count);
+						for (int j = 0; j < positionList.Count; j++) {
+							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
+							timeStamps.Add(timestamp);
+							var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+								File = entry.Path,
+								Position = timestamp,
+								GrayScale = 0,
+							}, Settings.ExtendedFFToolsLogging);
+							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
+							using var byteStream = new MemoryStream(b);
+							var bitmapImage = Image.Load(byteStream);
+							list.Add(bitmapImage);
+						}
+					}
+					Debug.Assert(timeStamps != null);
+					entry.SetThumbnails(list ?? (NoThumbnailImage != null ? new() { NoThumbnailImage } : new()), timeStamps!);
+
+					return ValueTask.CompletedTask;
+				});
+			}
+			catch (OperationCanceledException) { }
+		}
 		public async void RetrieveThumbnails() {
 			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
 			int total = dupList.Count;

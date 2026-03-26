@@ -124,6 +124,8 @@
 	"MainWindow.ContextMenu.DeletePermanently": "从磁盘永久删除",
 	"MainWindow.ContextMenu.ExpandAll": "全部展开",
 	"MainWindow.ContextMenu.Groups": "组",
+	"MainWindow.ContextMenu.LoadThumbnailsForGroup": "Load Thumbnails for Group",
+	"MainWindow.ContextMenu.LoadThumbnailsForSelection": "Load Thumbnails for Selection",
 	"MainWindow.ContextMenu.MarkNotMatch": "标记为“非匹配”",
 	"MainWindow.ContextMenu.MarkNotMatchTooltip": "隐藏此组并在未来扫描中排除，除非出现新的重复项。",
 	"MainWindow.ContextMenu.MoveToFolderEllipsis": "移动到文件夹...",

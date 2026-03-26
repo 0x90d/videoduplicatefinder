@@ -1209,6 +1209,18 @@ Non-Windows setup:
 			thumbnailComparer.Show();
 		});
 
+	public ReactiveCommand<Unit, Unit> LoadThumbnailsForSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
+		var items = GetSelectedDuplicates().Select(vm => vm.ItemInfo).ToList();
+		if (items.Count == 0) return;
+		await Scanner.RetrieveThumbnailsForItems(items);
+	});
+
+	public ReactiveCommand<Unit, Unit> LoadThumbnailsForGroupCommand => ReactiveCommand.CreateFromTask(async () => {
+		if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
+		var items = Duplicates.Where(d => d.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).Select(d => d.ItemInfo).ToList();
+		await Scanner.RetrieveThumbnailsForItems(items);
+	});
+
 		List<DuplicateItemVM> PossibleItemsToDelete => Duplicates.Where(d => d.Checked && d.IsVisibleInFilter).ToList();
 
 		async void DeleteInternal(bool fromDisk,
