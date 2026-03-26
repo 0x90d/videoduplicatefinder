@@ -134,7 +134,15 @@ namespace VDF.Core.ViewModels {
 		public string HdrFormat { get; private set; } = string.Empty;
 		public bool IsBestHdrFormat { get; set; }
 		[JsonIgnore]
-		public int FolderDepth => Path.Count(c => c == System.IO.Path.DirectorySeparatorChar || c == System.IO.Path.AltDirectorySeparatorChar);
+		public int FolderDepth {
+			get {
+				var span = _Path.AsSpan();
+				int count = span.Count(System.IO.Path.DirectorySeparatorChar);
+				if (System.IO.Path.DirectorySeparatorChar != System.IO.Path.AltDirectorySeparatorChar)
+					count += span.Count(System.IO.Path.AltDirectorySeparatorChar);
+				return count;
+			}
+		}
 		[JsonIgnore]
 		public int HdrFormatRank => HdrFormat switch {
 			"Dolby Vision" => 4,
