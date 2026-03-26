@@ -1301,6 +1301,23 @@
                                                         IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
                                                         IsThreeState="False"
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabaseTooltip]}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <CheckBox
+                                                            x:Name="ChkOnlySameFolder"
+                                                            VerticalAlignment="Center"
+                                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicates]}"
+                                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=OnlySameFolderDuplicates}"
+                                                            IsThreeState="False"
+                                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicatesTooltip]}" />
+                                                        <NumericUpDown
+                                                            Width="70"
+                                                            VerticalAlignment="Center"
+                                                            Increment="1"
+                                                            Maximum="20"
+                                                            Minimum="1"
+                                                            IsEnabled="{Binding #ChkOnlySameFolder.IsChecked}"
+                                                            Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=SameFolderDepth}" />
+                                                    </StackPanel>
                                                     <CheckBox
                                                         VerticalAlignment="Center"
                                                         Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UsePHashing]}"

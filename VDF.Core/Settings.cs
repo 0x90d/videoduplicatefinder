@@ -35,6 +35,8 @@ namespace VDF.Core {
 		public bool CompareHorizontallyFlipped;
 		public bool IncludeNonExistingFiles = true;
 		public bool ScanAgainstEntireDatabase;
+		public bool OnlySameFolderDuplicates;
+		public int SameFolderDepth = 1;
 		public bool UsePHashing;
 		public bool UseExifCreationDate;
 		public string LanguageCode = "en";

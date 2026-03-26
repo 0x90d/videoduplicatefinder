@@ -495,7 +495,38 @@ namespace VDF.Core {
 			return flippedGrayBytes;
 		}
 
-		bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
+		/// <summary>Returns true if the last <paramref name="depth"/> path segments of both folder paths are equal (case-insensitive).</summary>
+	static bool SameFolderAtDepth(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int depth) {
+		for (int i = 0; i < depth; i++) {
+			while (a.Length > 0 && (a[^1] == Path.DirectorySeparatorChar || a[^1] == Path.AltDirectorySeparatorChar))
+				a = a[..^1];
+			while (b.Length > 0 && (b[^1] == Path.DirectorySeparatorChar || b[^1] == Path.AltDirectorySeparatorChar))
+				b = b[..^1];
+
+			int sepA = a.LastIndexOf(Path.DirectorySeparatorChar);
+			if (Path.DirectorySeparatorChar != Path.AltDirectorySeparatorChar) {
+				int alt = a.LastIndexOf(Path.AltDirectorySeparatorChar);
+				if (alt > sepA) sepA = alt;
+			}
+			int sepB = b.LastIndexOf(Path.DirectorySeparatorChar);
+			if (Path.DirectorySeparatorChar != Path.AltDirectorySeparatorChar) {
+				int alt = b.LastIndexOf(Path.AltDirectorySeparatorChar);
+				if (alt > sepB) sepB = alt;
+			}
+
+			var segA = sepA >= 0 ? a[(sepA + 1)..] : a;
+			var segB = sepB >= 0 ? b[(sepB + 1)..] : b;
+
+			if (!segA.Equals(segB, StringComparison.OrdinalIgnoreCase))
+				return false;
+
+			a = sepA >= 0 ? a[..sepA] : ReadOnlySpan<char>.Empty;
+			b = sepB >= 0 ? b[..sepB] : ReadOnlySpan<char>.Empty;
+		}
+		return true;
+	}
+
+	bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
 			grayBytes ??= entry.grayBytes;
 			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
@@ -683,6 +714,10 @@ namespace VDF.Core {
 								continue;
 						}
 
+						if (Settings.OnlySameFolderDuplicates &&
+							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+							continue;
+
 						isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
 
 						if (isDuplicate &&
@@ -711,6 +746,9 @@ namespace VDF.Core {
 						var compItem = imageEntries[n];
 						float difference = 0;
 						DuplicateFlags flags;
+						if (Settings.OnlySameFolderDuplicates &&
+							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+							continue;
 						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
 
 						if (isDuplicate)
@@ -753,6 +791,10 @@ namespace VDF.Core {
 						double allowedSeconds = Math.Min(entryToleranceSeconds, compToleranceSeconds);
 						double diffSeconds = Math.Abs(entryDurationSeconds - compDurationSeconds);
 						if (diffSeconds > allowedSeconds)
+							continue;
+
+						if (Settings.OnlySameFolderDuplicates &&
+							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
 							continue;
 
 						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);

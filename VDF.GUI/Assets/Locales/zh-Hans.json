@@ -244,6 +244,8 @@
 	"MainWindow.Settings.SaveTooltip": "注意：设置会在正常退出时自动保存",
 	"MainWindow.Settings.ScanAgainstEntireDatabase": "扫描整个数据库",
 	"MainWindow.Settings.ScanAgainstEntireDatabaseTooltip": "选中后，扫描也会针对整个数据库进行，除非数据库文件被排除（如排除列表、路径必须包含等）",
+	"MainWindow.Settings.OnlySameFolderDuplicates": "仅同文件夹重复，深度：",
+	"MainWindow.Settings.OnlySameFolderDuplicatesTooltip": "启用后，只有当两个文件的文件夹名称在指定深度匹配时才视为重复（1 = 仅直接父文件夹，2 = 文件夹+父级，以此类推）。禁用时不影响扫描性能。",
 	"MainWindow.Settings.ScanAgainstNonExistingFiles": "扫描不存在的文件",
 	"MainWindow.Settings.ScanAgainstNonExistingFilesTooltip": "选中后，将包含不存在但拥有完整信息的文件",
 	"MainWindow.Settings.SearchDirectories": "搜索目录",

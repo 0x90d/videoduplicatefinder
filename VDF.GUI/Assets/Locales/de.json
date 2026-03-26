@@ -244,6 +244,8 @@
 	"MainWindow.Settings.SaveTooltip": "Hinweis: Einstellungen werden beim normalen Beenden automatisch gespeichert",
 	"MainWindow.Settings.ScanAgainstEntireDatabase": "Gegen gesamte Datenbank scannen",
 	"MainWindow.Settings.ScanAgainstEntireDatabaseTooltip": "Wenn aktiviert, wird auch gegen die gesamte Datenbank gescannt, sofern Datenbankdateien nicht ausgeschlossen sind (z. B. Ausschlussliste, Dateipfad muss enthalten usw.).",
+	"MainWindow.Settings.OnlySameFolderDuplicates": "Nur Duplikate im gleichen Ordner, Tiefe:",
+	"MainWindow.Settings.OnlySameFolderDuplicatesTooltip": "Wenn aktiviert, gelten zwei Dateien nur dann als Duplikate, wenn ihre Ordnernamen bis zur angegebenen Tiefe übereinstimmen (1 = nur direkt übergeordneter Ordner, 2 = Ordner + übergeordneter Ordner usw.). Keine Auswirkung auf die Scan-Geschwindigkeit, wenn deaktiviert.",
 	"MainWindow.Settings.ScanAgainstNonExistingFiles": "Gegen nicht vorhandene Dateien scannen",
 	"MainWindow.Settings.ScanAgainstNonExistingFilesTooltip": "Wenn aktiviert, werden nicht vorhandene Dateien einbezogen, die alle notwendigen Informationen haben",
 	"MainWindow.Settings.SearchDirectories": "Suchverzeichnisse",

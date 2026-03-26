@@ -244,6 +244,8 @@
 	"MainWindow.Settings.SaveTooltip": "Nota: as configurações são salvas automaticamente ao sair normalmente",
 	"MainWindow.Settings.ScanAgainstEntireDatabase": "Escanear contra todo o banco de dados",
 	"MainWindow.Settings.ScanAgainstEntireDatabaseTooltip": "Se marcado, a varredura também é feita contra todo o banco de dados, a menos que arquivos do banco estejam excluídos (ex.: lista de exclusão, caminho deve conter, etc.)",
+	"MainWindow.Settings.OnlySameFolderDuplicates": "Apenas duplicatas na mesma pasta, profundidade:",
+	"MainWindow.Settings.OnlySameFolderDuplicatesTooltip": "Quando ativado, dois arquivos só são considerados duplicatas se os nomes de suas pastas coincidirem na profundidade especificada (1 = apenas pasta pai imediata, 2 = pasta + pai, etc.). Sem impacto no desempenho quando desativado.",
 	"MainWindow.Settings.ScanAgainstNonExistingFiles": "Escanear contra arquivos inexistentes",
 	"MainWindow.Settings.ScanAgainstNonExistingFilesTooltip": "Se marcado, arquivos inexistentes que possuem todas as informações necessárias são incluídos",
 	"MainWindow.Settings.SearchDirectories": "Diretórios de pesquisa",

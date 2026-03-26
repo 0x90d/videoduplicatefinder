@@ -248,6 +248,18 @@ namespace VDF.GUI.Data {
 			get => _ScanAgainstEntireDatabase;
 			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
 		}
+		bool _OnlySameFolderDuplicates;
+		[JsonPropertyName("OnlySameFolderDuplicates")]
+		public bool OnlySameFolderDuplicates {
+			get => _OnlySameFolderDuplicates;
+			set => this.RaiseAndSetIfChanged(ref _OnlySameFolderDuplicates, value);
+		}
+		int _SameFolderDepth = 1;
+		[JsonPropertyName("SameFolderDepth")]
+		public int SameFolderDepth {
+			get => _SameFolderDepth;
+			set => this.RaiseAndSetIfChanged(ref _SameFolderDepth, value);
+		}
 		bool _UsePHash;
 		[JsonPropertyName("UsePHash")]
 		public bool UsePHash {

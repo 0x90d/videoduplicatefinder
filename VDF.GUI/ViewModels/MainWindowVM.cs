@@ -1106,6 +1106,8 @@ Non-Windows setup:
 			Scanner.Settings.FilePathContainsTexts = SettingsFile.Instance.FilePathContainsTexts.ToList();
 			Scanner.Settings.FilterByFilePathNotContains = SettingsFile.Instance.FilterByFilePathNotContains;
 			Scanner.Settings.ScanAgainstEntireDatabase = SettingsFile.Instance.ScanAgainstEntireDatabase;
+			Scanner.Settings.OnlySameFolderDuplicates = SettingsFile.Instance.OnlySameFolderDuplicates;
+			Scanner.Settings.SameFolderDepth = SettingsFile.Instance.SameFolderDepth;
 			Scanner.Settings.UsePHashing = SettingsFile.Instance.UsePHash;
 			Scanner.Settings.UseExifCreationDate = SettingsFile.Instance.UseExifCreationDate;
 			Scanner.Settings.FilePathNotContainsTexts = SettingsFile.Instance.FilePathNotContainsTexts.ToList();

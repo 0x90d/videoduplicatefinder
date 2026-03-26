@@ -249,6 +249,8 @@
 	"MainWindow.Settings.SaveTooltip": "Note: Settings are automatically saved on normal exit",
 	"MainWindow.Settings.ScanAgainstEntireDatabase": "Scan against entire database",
 	"MainWindow.Settings.ScanAgainstEntireDatabaseTooltip": "If checked scan is also performed against your entire database unless database files are excluded otherwise (i.e. exclude list, file path must contain, etc)",
+	"MainWindow.Settings.OnlySameFolderDuplicates": "Only same-folder duplicates, depth:",
+	"MainWindow.Settings.OnlySameFolderDuplicatesTooltip": "When enabled, two files are only considered duplicates if their folder names match at the specified depth (1 = immediate parent folder only, 2 = folder + parent, etc.). No performance impact when disabled.",
 	"MainWindow.Settings.ScanAgainstNonExistingFiles": "Scan against non-existing files",
 	"MainWindow.Settings.ScanAgainstNonExistingFilesTooltip": "If checked non-existing files which have all necessary information are included",
 	"MainWindow.Settings.SearchDirectories": "Search Directories",
