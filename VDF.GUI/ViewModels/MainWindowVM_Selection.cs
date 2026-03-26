@@ -223,12 +223,12 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
-		public ReactiveCommand<Unit, Unit> ClearSelectionCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> ClearCheckedItemsCommand => ReactiveCommand.Create(() => {
 			for (var i = 0; i < Duplicates.Count; i++)
 				Duplicates[i].Checked = false;
 		});
 
-		public ReactiveCommand<Unit, Unit> InvertSelectionCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> InvertCheckedItemsCommand => ReactiveCommand.Create(() => {
 			for (var i = 0; i < Duplicates.Count; i++)
 				Duplicates[i].Checked = !Duplicates[i].Checked;
 		});
@@ -242,8 +242,8 @@ namespace VDF.GUI.ViewModels {
 			view?.Refresh();
 		});
 
-		public ReactiveCommand<Unit, Unit> DeleteSelectionWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {
-			var doDelete = PossibleItemsToDelete;
+		public ReactiveCommand<Unit, Unit> DeleteCheckedItemsWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {
+			var doDelete = CheckedItemsToDelete;
 			if (doDelete.Count == 0) {
 				await MessageBoxService.Show(App.Lang["Message.NoMatchingDuplicates"]);
 				return;
@@ -262,44 +262,44 @@ namespace VDF.GUI.ViewModels {
 #pragma warning restore CS4014
 		});
 
-		public ReactiveCommand<Unit, Unit> DeleteSelectionCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> DeleteCheckedItemsCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(fromDisk: true);
 			});
 		});
 
-		public ReactiveCommand<Unit, Unit> DeleteSelectionPermanentlyCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> DeleteCheckedItemsPermanentlyCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(fromDisk: true, permanently: true);
 			});
 		});
 
-		public ReactiveCommand<Unit, Unit> RemoveSelectionFromListCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> RemoveCheckedItemsFromListCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(fromDisk: false);
 			});
 		});
 
-		public ReactiveCommand<Unit, Unit> RemoveSelectionFromListAndBlacklistCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> RemoveCheckedItemsFromListAndBlacklistCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(fromDisk: false, blackList: true);
 			});
 		});
 
-		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForSelectedItemsCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForCheckedItemsCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(fromDisk: false, blackList: false, createSymbolLinksInstead: true);
 			});
 		});
 
-		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForSelectedItemsAndBlacklistCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> CreateSymbolLinksForCheckedItemsAndBlacklistCommand => ReactiveCommand.Create(() => {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				DeleteInternal(fromDisk: false, blackList: true, createSymbolLinksInstead: true);
 			});
 		});
 
-		public ReactiveCommand<Unit, Unit> ExportCleanupDryRunReportCommand => ReactiveCommand.CreateFromTask(async () => {
-			var toDelete = PossibleItemsToDelete;
+		public ReactiveCommand<Unit, Unit> ExportCheckedItemsCleanupDryRunReportCommand => ReactiveCommand.CreateFromTask(async () => {
+			var toDelete = CheckedItemsToDelete;
 			if (toDelete.Count == 0) {
 				await MessageBoxService.Show(App.Lang["Message.NoMatchingDuplicates"]);
 				return;
@@ -318,7 +318,7 @@ namespace VDF.GUI.ViewModels {
 			await MessageBoxService.Show(App.Lang["Message.CleanupDryRunSaved"]);
 		});
 
-		public ReactiveCommand<Unit, Unit> CopySelectionCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> CopyCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					Title = App.Lang["Dialog.SelectFolder"]
@@ -331,7 +331,7 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show(App.Lang["Message.CopyFailed"]);
 		});
 
-		public ReactiveCommand<Unit, Unit> MoveSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
+		public ReactiveCommand<Unit, Unit> MoveCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(
 				new FolderPickerOpenOptions() {
 					Title = App.Lang["Dialog.SelectFolder"]
@@ -357,7 +357,7 @@ namespace VDF.GUI.ViewModels {
 		internal void RunCustomSelection(CustomSelectionData data) {
 
 			IEnumerable<DuplicateItemVM> dups = Duplicates.Where(x => x.IsVisibleInFilter);
-			if (data.IgnoreGroupsWithSelectedItems) {
+			if (data.IgnoreGroupsWithCheckedItems) {
 				HashSet<Guid> blackList = new();
 				foreach (var first in dups.Where(x => x.Checked)) {
 					if (blackList.Contains(first.ItemInfo.GroupId)) continue;

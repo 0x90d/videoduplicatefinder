@@ -24,10 +24,10 @@ using ReactiveUI;
 
 namespace VDF.GUI.Data {
 	public sealed class CustomSelectionData : ReactiveObject {
-		bool _IgnoreGroupsWithSelectedItems = true;
-		public bool IgnoreGroupsWithSelectedItems {
-			get => _IgnoreGroupsWithSelectedItems;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreGroupsWithSelectedItems, value);
+		bool _IgnoreGroupsWithCheckedItems = true;
+		public bool IgnoreGroupsWithCheckedItems {
+			get => _IgnoreGroupsWithCheckedItems;
+			set => this.RaiseAndSetIfChanged(ref _IgnoreGroupsWithCheckedItems, value);
 		}
 		int _FileTypeSelection = 0;
 		public int FileTypeSelection {

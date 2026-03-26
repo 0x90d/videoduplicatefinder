@@ -111,10 +111,10 @@
                 HorizontalScrollBarVisibility="Auto">
                 <StackPanel Margin="10,0">
                     <CheckBox
-                        Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.IgnoreGroupsWithSelectedItems]}"
-                        IsChecked="{Binding Data.IgnoreGroupsWithSelectedItems}"
+                        Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.IgnoreGroupsWithCheckedItems]}"
+                        IsChecked="{Binding Data.IgnoreGroupsWithCheckedItems}"
                         IsThreeState="False"
-                        ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.IgnoreGroupsWithSelectedItemsTooltip]}" />
+                        ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.IgnoreGroupsWithCheckedItemsTooltip]}" />
                     <TextBlock Margin="0,10" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType]}" />
                     <ComboBox MinWidth="200" SelectedIndex="{Binding Data.FileTypeSelection}">
                         <ComboBoxItem Content="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType.All]}" />

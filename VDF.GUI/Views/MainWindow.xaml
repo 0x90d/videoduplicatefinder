@@ -391,34 +391,34 @@
                                         </MenuItem.Header>
                                         <MenuItem Command="{Binding CheckWhenIdenticalCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.SelectIdenticalKeepFirst]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckIdenticalKeepFirst]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Command="{Binding CheckWhenIdenticalButSizeCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.SelectIdenticalExceptSizeKeepSmallest]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckIdenticalExceptSizeKeepSmallest]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Command="{Binding CheckLowestQualityCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.SelectLowestQuality]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckLowestQuality]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DateMenu]}">
                                             <MenuItem Command="{Binding CheckOldestCommand}">
                                                 <MenuItem.Header>
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.SelectOldest]}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckOldest]}" />
                                                 </MenuItem.Header>
                                             </MenuItem>
                                             <MenuItem Command="{Binding CheckNewestCommand}">
                                                 <MenuItem.Header>
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.SelectNewest]}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckNewest]}" />
                                                 </MenuItem.Header>
                                             </MenuItem>
                                         </MenuItem>
                                         <MenuItem>
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.SelectCustom]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckCustom]}" />
                                             </MenuItem.Header>
                                             <MenuItem Command="{Binding CheckCustomCommand}">
                                                 <MenuItem.Header>
@@ -431,19 +431,19 @@
                                                 </MenuItem.Header>
                                             </MenuItem>
                                         </MenuItem>
-                                        <MenuItem Command="{Binding ClearSelectionCommand}">
+                                        <MenuItem Command="{Binding ClearCheckedItemsCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ClearSelection]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ClearCheckedItems]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
-                                        <MenuItem Command="{Binding InvertSelectionCommand}">
+                                        <MenuItem Command="{Binding InvertCheckedItemsCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.InvertSelection]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.InvertCheckedItems]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
-                                        <MenuItem Command="{Binding ExportCleanupDryRunReportCommand}">
+                                        <MenuItem Command="{Binding ExportCheckedItemsCleanupDryRunReportCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ExportCleanupDryRun]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ExportCheckedItemsCleanupDryRun]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                     </MenuItem>
@@ -458,7 +458,7 @@
                                                 <TextBlock
                                                     Margin="5,0,0,0"
                                                     VerticalAlignment="Center"
-                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteSelection]}" />
+                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteCheckedItems]}" />
                                                 <Path
                                                     Margin="4,2,0,0"
                                                     VerticalAlignment="Center"
@@ -466,31 +466,31 @@
                                                     Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
                                             </StackPanel>
                                         </MenuItem.Header>
-                                        <MenuItem Command="{Binding DeleteSelectionCommand}">
+                                        <MenuItem Command="{Binding DeleteCheckedItemsCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteFromDisk]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteCheckedItemsFromDisk]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
-                                        <MenuItem Command="{Binding DeleteSelectionPermanentlyCommand}" IsVisible="{Binding IsWindows}">
+                                        <MenuItem Command="{Binding DeleteCheckedItemsPermanentlyCommand}" IsVisible="{Binding IsWindows}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeletePermanently]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteCheckedItemsPermanently]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <MenuItem Header="-" />
 
-                                        <MenuItem Command="{Binding RemoveSelectionFromListCommand}">
+                                        <MenuItem Command="{Binding RemoveCheckedItemsFromListCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.RemoveFromListKeepFiles]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.RemoveCheckedItemsFromList]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
-                                        <MenuItem Command="{Binding CopySelectionCommand}">
+                                        <MenuItem Command="{Binding CopyCheckedItemsCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CopyToFolderKeepFiles]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CopyCheckedItemsToFolder]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
-                                        <MenuItem Command="{Binding MoveSelectionCommand}">
+                                        <MenuItem Command="{Binding MoveCheckedItemsCommand}">
                                             <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.MoveToFolder]}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.MoveCheckedItemsToFolder]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
                                     </MenuItem>
@@ -585,8 +585,8 @@
                                         <CheckBox
                                             Margin="10,0,0,0"
                                             VerticalAlignment="Center"
-                                            IsChecked="{Binding FilterGroupsWithSelection}">
-                                            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.GroupsWithSelection]}" />
+                                            IsChecked="{Binding FilterGroupsWithCheckedItems}">
+                                            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.GroupsWithCheckedItems]}" />
                                         </CheckBox>
                                     </WrapPanel>
                                     <StackPanel
@@ -633,8 +633,8 @@
                                             <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space" />
                                             <KeyBinding Command="{Binding OpenItemsByColIdCommand}" Gesture="Enter" />
                                             <KeyBinding Command="{Binding OpenItemInFolderCommand}" Gesture="Shift+Enter" />
-                                            <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete" />
-                                            <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete" />
+                                            <KeyBinding Command="{Binding DeleteCheckedItemsWithPromptCommand}" Gesture="Delete" />
+                                            <KeyBinding Command="{Binding DeleteCheckedItemsCommand}" Gesture="Shift+Delete" />
                                             <KeyBinding Command="{Binding DeleteHighlightedCommand}" Gesture="Control+Delete" />
                                             <KeyBinding Command="{Binding ShowGroupInThumbnailComparerCommand}" Gesture="Alt+C" />
                                             <KeyBinding Command="{Binding MarkGroupAsNotAMatchCommand}" Gesture="Alt+X" />
@@ -852,10 +852,10 @@
                                                             <TextBlock
                                                                 Margin="5,0,0,0"
                                                                 VerticalAlignment="Center"
-                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SelectedItems]}" />
+                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CheckedItems]}" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
-                                                    <MenuItem Command="{Binding DeleteSelectionCommand}" InputGesture="Shift+Delete">
+                                                    <MenuItem Command="{Binding DeleteCheckedItemsCommand}" InputGesture="Shift+Delete">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -870,7 +870,7 @@
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
-                                                    <MenuItem Command="{Binding DeleteSelectionPermanentlyCommand}" IsVisible="{Binding IsWindows}">
+                                                    <MenuItem Command="{Binding DeleteCheckedItemsPermanentlyCommand}" IsVisible="{Binding IsWindows}">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -886,7 +886,7 @@
                                                         </MenuItem.Header>
                                                     </MenuItem>
                                                     <Separator />
-                                                    <MenuItem Command="{Binding RemoveSelectionFromListCommand}" InputGesture="Delete">
+                                                    <MenuItem Command="{Binding RemoveCheckedItemsFromListCommand}" InputGesture="Delete">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -901,7 +901,7 @@
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
-                                                    <MenuItem Command="{Binding RemoveSelectionFromListAndBlacklistCommand}">
+                                                    <MenuItem Command="{Binding RemoveCheckedItemsFromListAndBlacklistCommand}">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -916,7 +916,7 @@
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
-                                                    <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SymbolLinkTooltip]}">
+                                                    <MenuItem Command="{Binding CreateSymbolLinksForCheckedItemsCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SymbolLinkTooltip]}">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -931,7 +931,7 @@
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
-                                                    <MenuItem Command="{Binding CreateSymbolLinksForSelectedItemsAndBlacklistCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SymbolLinkTooltip]}">
+                                                    <MenuItem Command="{Binding CreateSymbolLinksForCheckedItemsAndBlacklistCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SymbolLinkTooltip]}">
                                                         <MenuItem.Header>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Viewbox Width="16" Height="16">
@@ -947,14 +947,10 @@
                                                         </MenuItem.Header>
                                                     </MenuItem>
                                                     <Separator />
-                                                    <MenuItem Command="{Binding CopySelectionCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyToFolderEllipsis]}" />
-                                                    <MenuItem Command="{Binding MoveSelectionCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
+                                                    <MenuItem Command="{Binding CopyCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyToFolderEllipsis]}" />
+                                                    <MenuItem Command="{Binding MoveCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
                                                     <Separator />
-                                                    <MenuItem Command="{Binding LoadThumbnailsForSelectionCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForSelection]}" />
-                                                    <MenuItem
-                                                        Command="{Binding ShowGroupInThumbnailComparerCommand}"
-                                                        Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CompareFullsizeThumbnails]}"
-                                                        InputGesture="Alt+C" />
+                                                    <MenuItem Command="{Binding LoadThumbnailsForCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForCheckedItems]}" />
                                                 </MenuItem>
                                                 <MenuItem>
                                                     <MenuItem.Header>
@@ -1031,8 +1027,8 @@
                                     Margin="0,5,0,0"
                                     Orientation="Horizontal">
                                     <TextBlock>
-                                        <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.SelectedDuplicates]}" />
-                                        <Run Text="{Binding DuplicatesSelectedCounter, Mode=OneWay}" />
+                                        <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.CheckedDuplicates]}" />
+                                        <Run Text="{Binding DuplicatesCheckedCounter, Mode=OneWay}" />
                                     </TextBlock>
                                     <Border
                                         Width="1"

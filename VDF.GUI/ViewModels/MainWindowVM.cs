@@ -176,10 +176,10 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(TotalSizeRemoved));
 			}
 		}
-		int _DuplicatesSelectedCounter;
-		public int DuplicatesSelectedCounter {
-			get => _DuplicatesSelectedCounter;
-			set => this.RaiseAndSetIfChanged(ref _DuplicatesSelectedCounter, value);
+		int _DuplicatesCheckedCounter;
+		public int DuplicatesCheckedCounter {
+			get => _DuplicatesCheckedCounter;
+			set => this.RaiseAndSetIfChanged(ref _DuplicatesCheckedCounter, value);
 		}
 		public bool IsMultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
 		public bool IsMultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
@@ -279,7 +279,7 @@ namespace VDF.GUI.ViewModels {
 				foreach (INotifyPropertyChanged item in e.OldItems) {
 					item.PropertyChanged -= DuplicateItemVM_PropertyChanged;
 					if (((DuplicateItemVM)item).Checked)
-						DuplicatesSelectedCounter--;
+						DuplicatesCheckedCounter--;
 				}
 			}
 			if (e.NewItems != null) {
@@ -287,15 +287,15 @@ namespace VDF.GUI.ViewModels {
 					item.PropertyChanged += DuplicateItemVM_PropertyChanged;
 			}
 			if (e.Action == NotifyCollectionChangedAction.Reset)
-				DuplicatesSelectedCounter = 0;
+				DuplicatesCheckedCounter = 0;
 		}
 
 		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName != nameof(DuplicateItemVM.Checked) || sender == null) return;
 			if (((DuplicateItemVM)sender).Checked)
-				DuplicatesSelectedCounter++;
+				DuplicatesCheckedCounter++;
 			else
-				DuplicatesSelectedCounter--;
+				DuplicatesCheckedCounter--;
 		}
 
 		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
@@ -1209,8 +1209,8 @@ Non-Windows setup:
 			thumbnailComparer.Show();
 		});
 
-	public ReactiveCommand<Unit, Unit> LoadThumbnailsForSelectionCommand => ReactiveCommand.CreateFromTask(async () => {
-		var items = GetSelectedDuplicates().Select(vm => vm.ItemInfo).ToList();
+	public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
+		var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
 		if (items.Count == 0) return;
 		await Scanner.RetrieveThumbnailsForItems(items);
 	});
@@ -1221,7 +1221,7 @@ Non-Windows setup:
 		await Scanner.RetrieveThumbnailsForItems(items);
 	});
 
-		List<DuplicateItemVM> PossibleItemsToDelete => Duplicates.Where(d => d.Checked && d.IsVisibleInFilter).ToList();
+		List<DuplicateItemVM> CheckedItemsToDelete => Duplicates.Where(d => d.Checked && d.IsVisibleInFilter).ToList();
 
 		async void DeleteInternal(bool fromDisk,
 									List<DuplicateItemVM>? toDelete = null,
@@ -1229,7 +1229,7 @@ Non-Windows setup:
 									bool createSymbolLinksInstead = false,
 									bool permanently = false) {
 			if (Duplicates.Count == 0) return;
-			toDelete ??= PossibleItemsToDelete;
+			toDelete ??= CheckedItemsToDelete;
 			if (toDelete.Count == 0) return;
 
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(

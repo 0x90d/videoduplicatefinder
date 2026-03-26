@@ -135,12 +135,12 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		bool _FilterGroupsWithSelection;
-		public bool FilterGroupsWithSelection {
-			get => _FilterGroupsWithSelection;
+		bool _FilterGroupsWithCheckedItems;
+		public bool FilterGroupsWithCheckedItems {
+			get => _FilterGroupsWithCheckedItems;
 			set {
-				if (value == _FilterGroupsWithSelection) return;
-				this.RaiseAndSetIfChanged(ref _FilterGroupsWithSelection, value);
+				if (value == _FilterGroupsWithCheckedItems) return;
+				this.RaiseAndSetIfChanged(ref _FilterGroupsWithCheckedItems, value);
 				view?.Refresh();
 			}
 		}
@@ -198,7 +198,7 @@ namespace VDF.GUI.ViewModels {
 			if (ok)
 				ok = data.ItemInfo.Similarity >= FilterSimilarityFrom && data.ItemInfo.Similarity <= FilterSimilarityTo;
 
-			if (ok && FilterGroupsWithSelection)
+			if (ok && FilterGroupsWithCheckedItems)
 				ok = Duplicates.Any(d => d.ItemInfo.GroupId == data.ItemInfo.GroupId && d.Checked);
 
 			data.IsVisibleInFilter = ok;
