@@ -49,7 +49,34 @@ namespace VDF.GUI.ViewModels {
 				return X().CompareTo(Y());
 			}
 		}
-		public sealed class GroupSizeComparer : System.Collections.IComparer {
+		public sealed class GroupTotalSizeComparer : System.Collections.IComparer {
+		readonly MainWindowVM mainVM;
+		private readonly Dictionary<Guid, long> guidMap = new();
+		public GroupTotalSizeComparer(MainWindowVM vm) => mainVM = vm;
+		public int Compare(object? x, object? y) {
+			if (x == null || y == null)
+				return -1;
+			var dupX = (DuplicateItemVM)x;
+			var dupY = (DuplicateItemVM)y;
+			long totalSizeX, totalSizeY;
+			if (guidMap.ContainsKey(dupX.ItemInfo.GroupId)) {
+				totalSizeX = guidMap[dupX.ItemInfo.GroupId];
+			}
+			else {
+				totalSizeX = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupX.ItemInfo.GroupId).Sum(a => a.ItemInfo.SizeLong);
+				guidMap[dupX.ItemInfo.GroupId] = totalSizeX;
+			}
+			if (guidMap.ContainsKey(dupY.ItemInfo.GroupId)) {
+				totalSizeY = guidMap[dupY.ItemInfo.GroupId];
+			}
+			else {
+				totalSizeY = mainVM.Duplicates.Where(a => a.ItemInfo.GroupId == dupY.ItemInfo.GroupId).Sum(a => a.ItemInfo.SizeLong);
+				guidMap[dupY.ItemInfo.GroupId] = totalSizeY;
+			}
+			return totalSizeX.CompareTo(totalSizeY);
+		}
+	}
+	public sealed class GroupSizeComparer : System.Collections.IComparer {
 			readonly MainWindowVM mainVM;
 			private readonly Dictionary<Guid, int> guidMap = new();
 			public GroupSizeComparer(MainWindowVM vm) => mainVM = vm;

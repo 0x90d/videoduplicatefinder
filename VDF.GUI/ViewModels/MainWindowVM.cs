@@ -262,6 +262,10 @@ namespace VDF.GUI.ViewModels {
 				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Ascending)),
 				new KeyValuePair<string, DataGridSortDescription>("Group Size Descending",
 				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Total Size Ascending",
+				DataGridSortDescription.FromComparer(new GroupTotalSizeComparer(this), ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Total Size Descending",
+				DataGridSortDescription.FromComparer(new GroupTotalSizeComparer(this), ListSortDirection.Descending)),
 			};
 			_SortOrder = SortOrders[0];
 
