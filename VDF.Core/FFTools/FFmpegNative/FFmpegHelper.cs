@@ -99,7 +99,16 @@ namespace VDF.Core.FFTools.FFmpegNative {
 						}
 					}
 				}
-				var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
+				// On Linux, prefer LD_LIBRARY_PATH for shared library discovery; on macOS use DYLD_LIBRARY_PATH;
+				// on Windows use PATH. Fall back to PATH if the OS-specific var is unset (e.g. standard Linux distros
+				// that rely on the linker cache and don't set LD_LIBRARY_PATH).
+				string libPathVarName =
+					RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "LD_LIBRARY_PATH" :
+					RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "DYLD_LIBRARY_PATH" :
+					"PATH";
+				var environmentVariables = Environment.GetEnvironmentVariable(libPathVarName)?.Split(Path.PathSeparator);
+				if ((environmentVariables == null || environmentVariables.Length == 0) && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+					environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
 				if (environmentVariables == null)
 					return false;
 
