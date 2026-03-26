@@ -383,5 +383,9 @@
 	"Preset.Save": "Enregistrer le préréglage",
 	"Preset.Delete": "Supprimer le préréglage",
 	"Preset.NamePrompt": "Entrez le nom du préréglage :",
-	"Preset.SaveTitle": "Enregistrer le préréglage"
+	"Preset.SaveTitle": "Enregistrer le préréglage",
+	"Message.DeleteToTrashConfirm": "Are you sure you want to move the selected files to trash/recycle bin (if unsupported, e.g. network files, they will be permanently deleted instead)?",
+	"Message.DeletePermanentlyConfirm": "Are you sure you want to permanently delete the selected files from disk?",
+	"Message.DeleteFromListConfirm": "Are you sure to delete selected from list (keep files)?",
+	"Message.DeleteFromListBlacklistConfirm": "Are you sure to delete selected from list (keep files) and blacklist them?"
 }

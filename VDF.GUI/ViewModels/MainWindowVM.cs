@@ -1210,8 +1210,8 @@ Non-Windows setup:
 
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
 				fromDisk
-					? $"Are you sure you want to{(CoreUtils.IsWindows && !permanently ? " move" : " permanently delete")} the selected files{(CoreUtils.IsWindows && !permanently ? " to recycle bin (only if supported, i.e. network files will be deleted instead)" : " from disk")}?"
-					: $"Are you sure to delete selected from list (keep files){(blackList ? " and blacklist them" : string.Empty)}?",
+					? (!permanently ? App.Lang["Message.DeleteToTrashConfirm"] : App.Lang["Message.DeletePermanentlyConfirm"])
+					: (blackList ? App.Lang["Message.DeleteFromListBlacklistConfirm"] : App.Lang["Message.DeleteFromListConfirm"]),
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult != MessageBoxButtons.Yes) return;
 
@@ -1235,7 +1235,7 @@ Non-Windows setup:
 							File.CreateSymbolicLink(dub.ItemInfo.Path, keeper.ItemInfo.Path);
 							freedBytes += dub.ItemInfo.SizeLong;
 						}
-						else if (CoreUtils.IsWindows && !permanently) {
+						else if (!permanently && CoreUtils.IsWindows) {
 							var fs = new FileUtils.SHFILEOPSTRUCT {
 								wFunc = FileUtils.FileOperationType.FO_DELETE,
 								pFrom = dub.ItemInfo.Path + '\0' + '\0',
@@ -1247,6 +1247,12 @@ Non-Windows setup:
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
 								throw new Exception($"SHFileOperation returned: {result:X}");
+							freedBytes += dub.ItemInfo.SizeLong;
+						}
+						else if (!permanently) {
+							// Linux/macOS: attempt to move to system trash, fall back to permanent delete
+							if (!FileUtils.MoveToTrash(dub.ItemInfo.Path))
+								File.Delete(dub.ItemInfo.Path);
 							freedBytes += dub.ItemInfo.SizeLong;
 						}
 						else {
