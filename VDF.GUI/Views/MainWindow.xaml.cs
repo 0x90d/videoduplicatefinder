@@ -81,10 +81,8 @@ namespace VDF.GUI.Views {
 
 		async void ShowAlgoView() {
 
-			if (File.Exists(Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)
-					? FileUtils.SafePathCombine(SettingsFile.Instance.CustomDatabaseFolder,
-					"ScannedFiles.db")
-					: FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
+			if (File.Exists(FileUtils.SafePathCombine(
+					CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder),
 					"ScannedFiles.db")))
 					return;
 

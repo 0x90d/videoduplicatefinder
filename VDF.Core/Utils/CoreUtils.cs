@@ -24,5 +24,87 @@ namespace VDF.Core.Utils {
 			IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 			CurrentFolder = Path.GetDirectoryName(Environment.ProcessPath)!;
 		}
+
+		static readonly Lazy<string> _StateFolder = new(ResolveStateFolder);
+		static readonly Lazy<string> _SettingsFolder = new(ResolveSettingsFolder);
+		static readonly Lazy<bool> _CurrentFolderWritable = new(() => CanWriteToDirectory(CurrentFolder!));
+
+		public static string StateFolder => _StateFolder.Value;
+		public static string SettingsFolder => _SettingsFolder.Value;
+		public static bool IsCurrentFolderWritable => _CurrentFolderWritable.Value;
+
+		public static bool CanWriteToDirectory(string path) {
+			try {
+				if (!Directory.Exists(path))
+					return false;
+				var testFile = Path.Combine(path, $".vdf_write_test_{Guid.NewGuid():N}");
+				using var stream = new FileStream(testFile, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose);
+				stream.WriteByte(0);
+				return true;
+			}
+			catch {
+				return false;
+			}
+		}
+
+		public static string ResolveDatabaseFolder(string? customFolder) {
+			if (Directory.Exists(customFolder))
+				return customFolder!;
+			return StateFolder;
+		}
+
+		static string ResolveStateFolder() {
+			if (IsCurrentFolderWritable)
+				return CurrentFolder;
+			return GetDefaultStateFolder();
+		}
+
+		static string ResolveSettingsFolder() {
+			if (IsCurrentFolderWritable)
+				return CurrentFolder;
+			return GetDefaultSettingsFolder();
+		}
+
+		public static string GetDefaultStateFolder() {
+			string baseFolder;
+			if (IsWindows) {
+				baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				baseFolder = Path.Combine(
+					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+					"Library", "Application Support");
+			}
+			else {
+				baseFolder = Environment.GetEnvironmentVariable("XDG_STATE_HOME")
+					?? Path.Combine(
+						Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+						".local", "state");
+			}
+			var folder = Path.Combine(baseFolder, "VDF");
+			Directory.CreateDirectory(folder);
+			return folder;
+		}
+
+		public static string GetDefaultSettingsFolder() {
+			string baseFolder;
+			if (IsWindows) {
+				baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				baseFolder = Path.Combine(
+					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+					"Library", "Preferences");
+			}
+			else {
+				baseFolder = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME")
+					?? Path.Combine(
+						Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+						".config");
+			}
+			var folder = Path.Combine(baseFolder, "VDF");
+			Directory.CreateDirectory(folder);
+			return folder;
+		}
 	}
 }

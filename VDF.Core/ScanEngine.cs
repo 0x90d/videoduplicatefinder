@@ -179,6 +179,7 @@ namespace VDF.Core {
 			FfmpegEngine.CustomFFArguments = Settings.CustomFFArguments;
 			FfmpegEngine.UseNativeBinding = Settings.UseNativeFfmpegBinding;
 			DatabaseUtils.CustomDatabaseFolder = Settings.CustomDatabaseFolder;
+			DatabaseUtils.InvalidateDatabaseFolder();
 			Duplicates.Clear();
 			positionList.Clear();
 			ElapsedTimer.Reset();

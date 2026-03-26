@@ -45,9 +45,7 @@ namespace VDF.GUI.ViewModels {
 		public ObservableCollection<string> LogItems { get; } = new();
 		List<HashSet<string>> GroupBlacklist = new();
 		public string BackupScanResultsFile =>
-			Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder) ?
-			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
-			Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
+			Path.Combine(CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder), "backup.scanresults");
 
 		public AvaloniaList<DuplicateItemVM> Duplicates { get; } = new();
 
