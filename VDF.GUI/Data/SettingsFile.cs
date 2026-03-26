@@ -468,6 +468,12 @@ namespace VDF.GUI.Data {
 			get => _NotifyOnScheduledScanComplete;
 			set => this.RaiseAndSetIfChanged(ref _NotifyOnScheduledScanComplete, value);
 		}
+		bool _NotifyOnScanComplete;
+		[JsonPropertyName("NotifyOnScanComplete")]
+		public bool NotifyOnScanComplete {
+			get => _NotifyOnScanComplete;
+			set => this.RaiseAndSetIfChanged(ref _NotifyOnScanComplete, value);
+		}
 
 		public static void LoadSettings(string? path = null) {
 			path ??= settingsPath;

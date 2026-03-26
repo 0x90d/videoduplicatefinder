@@ -1418,7 +1418,11 @@
                                                     </StackPanel>
                                                     <CheckBox
                                                         Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyScheduledScanComplete]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScheduledScanComplete}" /><TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArguments]}" />
+                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScheduledScanComplete}" />
+                                                    <CheckBox
+                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyOnScanComplete]}"
+                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScanComplete}"
+                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyOnScanCompleteTooltip]}" /><TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArguments]}" />
                                                     <TextBox
                                                         VerticalAlignment="Center"
                                                         Width="250"

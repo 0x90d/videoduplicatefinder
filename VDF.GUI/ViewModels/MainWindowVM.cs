@@ -475,6 +475,12 @@ namespace VDF.GUI.ViewModels {
 				if (completedScheduledScan && SettingsFile.Instance.NotifyOnScheduledScanComplete) {
 					_ = MessageBoxService.Show(App.Lang["Message.ScheduledScanCompleted"]);
 				}
+
+				if (SettingsFile.Instance.NotifyOnScanComplete) {
+					VDF.GUI.Utils.DesktopNotificationHelper.Notify(
+						App.Lang["Notification.ScanComplete.Title"],
+						string.Format(App.Lang["Notification.ScanComplete.Message"], TotalDuplicateGroups));
+				}
 			});
 
 		void BuildDuplicatesView() {
