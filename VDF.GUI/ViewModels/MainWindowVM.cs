@@ -1347,6 +1347,46 @@ Non-Windows setup:
 					GetDataGrid.CollapseRowGroup(g, true);
 		});
 
+		public ReactiveCommand<Unit, Unit> NavigateNextGroupCommand => ReactiveCommand.Create(() => {
+			NavigateGroup(forward: true);
+		});
+
+		public ReactiveCommand<Unit, Unit> NavigatePreviousGroupCommand => ReactiveCommand.Create(() => {
+			NavigateGroup(forward: false);
+		});
+
+		void NavigateGroup(bool forward) {
+			if (view?.Groups == null) return;
+			var groups = view.Groups.OfType<DataGridCollectionViewGroup>().ToList();
+			if (groups.Count == 0) return;
+
+			var dataGrid = GetDataGrid;
+			var currentItem = dataGrid.SelectedItem as DuplicateItemVM;
+			int currentGroupIndex = -1;
+
+			if (currentItem != null) {
+				for (int i = 0; i < groups.Count; i++) {
+					if (groups[i].Items.OfType<DuplicateItemVM>()
+						.Any(item => item.ItemInfo.GroupId == currentItem.ItemInfo.GroupId)) {
+						currentGroupIndex = i;
+						break;
+					}
+				}
+			}
+
+			int targetIndex = forward
+				? (currentGroupIndex + 1 < groups.Count ? currentGroupIndex + 1 : 0)
+				: (currentGroupIndex - 1 >= 0 ? currentGroupIndex - 1 : groups.Count - 1);
+
+			var targetGroup = groups[targetIndex];
+			dataGrid.ExpandRowGroup(targetGroup, true);
+			var firstItem = targetGroup.Items.OfType<DuplicateItemVM>().FirstOrDefault();
+			if (firstItem != null) {
+				dataGrid.SelectedItem = firstItem;
+				dataGrid.ScrollIntoView(firstItem, null);
+			}
+		}
+
 		public ReactiveCommand<Unit, Unit> CopyPathsToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
 			StringBuilder sb = new();
 			foreach (var item in GetSelectedDuplicates()) {

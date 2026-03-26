@@ -129,6 +129,8 @@ namespace VDF.GUI.Views {
 				["ExpandAllGroups"] = vm.ExpandAllGroupsCommand,
 				["CollapseAllGroups"] = vm.CollapseAllGroupsCommand,
 				["RemoveCheckedItemsFromList"] = vm.RemoveCheckedItemsFromListCommand,
+				["NavigateNextGroup"] = vm.NavigateNextGroupCommand,
+				["NavigatePreviousGroup"] = vm.NavigatePreviousGroupCommand,
 			};
 			var dataGrid = this.FindControl<DataGrid>("dataGridGrouping")!;
 			KeyboardShortcutManager.Instance.ApplyBindings(dataGrid, commandMap);

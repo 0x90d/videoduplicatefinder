@@ -36,6 +36,8 @@ namespace VDF.GUI.Data {
 			["ExpandAllGroups"] = "",
 			["CollapseAllGroups"] = "",
 			["RemoveCheckedItemsFromList"] = "",
+			["NavigateNextGroup"] = "Ctrl+Down",
+			["NavigatePreviousGroup"] = "Ctrl+Up",
 		};
 
 		public static readonly Dictionary<string, string> DatabaseViewerDefaults = new() {
