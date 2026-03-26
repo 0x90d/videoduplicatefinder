@@ -92,6 +92,8 @@
 	"Dialog.Skip": "Omitir",
 	"Dialog.Add": "Añadir",
 	"Dialog.AddEllipsis": "Añadir...",
+	"Dialog.AddPattern": "Add Pattern...",
+	"Dialog.AddPatternPrompt": "Enter a wildcard pattern to exclude matching directory names",
 	"Dialog.Apply": "Aplicar",
 	"Dialog.Clear": "Borrar",
 	"Dialog.ClearAll": "Borrar todo",

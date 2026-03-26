@@ -162,6 +162,14 @@ namespace VDF.GUI.ViewModels {
 					SettingsFile.Instance.Blacklists.Add(item);
 			}
 		});
+		
+		public ReactiveCommand<Unit, Unit> AddBlacklistPatternToListCommand => ReactiveCommand.CreateFromTask(async () => {
+			var result = await Views.InputBoxService.Show(App.Lang["Dialog.AddPatternPrompt"],
+				waterMark: "*.actors", title: App.Lang["Dialog.AddPattern"]);
+			if (string.IsNullOrWhiteSpace(result)) return;
+			if (!SettingsFile.Instance.Blacklists.Contains(result))
+				SettingsFile.Instance.Blacklists.Add(result);
+		});
 		public ReactiveCommand<ListBox, Action> RemoveBlacklistFromListCommand => ReactiveCommand.Create<ListBox, Action>(lbox => {
 			while (lbox.SelectedItems?.Count > 0)
 				SettingsFile.Instance.Blacklists.Remove((string)lbox.SelectedItems[0]!);

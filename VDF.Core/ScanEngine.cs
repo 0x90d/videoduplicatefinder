@@ -270,15 +270,7 @@ namespace VDF.Core {
 				reason = "image files are disabled";
 				return true;
 			}
-			if (Settings.BlackList.Any(f => {
-				if (!entry.Folder.StartsWith(f))
-					return false;
-				if (entry.Folder.Length == f.Length)
-					return true;
-				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
-				string relativePath = Path.GetRelativePath(f, entry.Folder);
-				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
-			})) {
+			if (Settings.BlackList.Any(f => IsBlackListed(entry.Folder, f))) {
 				reason = "path is in the excluded directories list";
 				return true;
 			}
@@ -380,6 +372,31 @@ namespace VDF.Core {
 		}
 #pragma warning restore CS8601 // Possible null reference assignment
 		public static void BlackListFileEntry(string filePath) => DatabaseUtils.BlacklistFileEntry(filePath);
+
+		// Returns true if folderPath is covered by blacklistEntry.
+		// Supports wildcard patterns (*, ?) in blacklistEntry — see https://github.com/0x90d/videoduplicatefinder/issues/582
+		static bool IsBlackListed(string folderPath, string blacklistEntry) {
+			bool hasWildcard = blacklistEntry.IndexOfAny(['*', '?']) >= 0;
+			if (!hasWildcard) {
+				if (!folderPath.StartsWith(blacklistEntry, StringComparison.OrdinalIgnoreCase))
+					return false;
+				if (folderPath.Length == blacklistEntry.Length)
+					return true;
+				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
+				string relativePath = Path.GetRelativePath(blacklistEntry, folderPath);
+				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
+			}
+			// Wildcard pattern without path separators: match against each individual segment of folderPath
+			bool hasSeparator = blacklistEntry.Contains(Path.DirectorySeparatorChar) ||
+			                    blacklistEntry.Contains(Path.AltDirectorySeparatorChar);
+			if (!hasSeparator) {
+				string[] segments = folderPath.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+					StringSplitOptions.RemoveEmptyEntries);
+				return segments.Any(s => System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(blacklistEntry, s));
+			}
+			// Wildcard pattern with path separators: match against the full path
+			return System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(blacklistEntry, folderPath);
+		}
 
 		async Task GatherInfos() {
 			try {

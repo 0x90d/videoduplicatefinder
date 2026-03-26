@@ -78,7 +78,14 @@ namespace VDF.Core.Utils {
 					if (!recursive)
 						break;
 					foreach (DirectoryInfo subFolder in currentFolder.EnumerateDirectories("*", enumerationOptions)
-						.Where(d => !excludeFolders.Any(x => d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase)))) {
+						.Where(d => !excludeFolders.Any(x => {
+							if (x.IndexOfAny(['*', '?']) < 0)
+								return d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase);
+							bool hasSeparator = x.Contains(Path.DirectorySeparatorChar) || x.Contains(Path.AltDirectorySeparatorChar);
+							return hasSeparator
+								? System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(x, d.FullName)
+								: System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(x, d.Name);
+						}))) {
 						if (cancellationToken.IsCancellationRequested)
 							break;
 						subFolders.Enqueue(subFolder);

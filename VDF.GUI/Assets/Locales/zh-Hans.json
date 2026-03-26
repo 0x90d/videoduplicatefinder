@@ -92,6 +92,8 @@
 	"Dialog.Skip": "跳过",
 	"Dialog.Add": "添加",
 	"Dialog.AddEllipsis": "添加...",
+	"Dialog.AddPattern": "Add Pattern...",
+	"Dialog.AddPatternPrompt": "Enter a wildcard pattern to exclude matching directory names",
 	"Dialog.Apply": "应用",
 	"Dialog.Clear": "清除",
 	"Dialog.ClearAll": "全部清除",
