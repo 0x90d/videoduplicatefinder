@@ -431,6 +431,13 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _MinimumFileSize, value);
 		}
 
+		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
+		[JsonPropertyName("QualityCriteriaOrder")]
+		public List<string> QualityCriteriaOrder {
+			get => _QualityCriteriaOrder;
+			set => this.RaiseAndSetIfChanged(ref _QualityCriteriaOrder, value);
+		}
+
 		bool _EnableScheduledScan;
 		[JsonPropertyName("EnableScheduledScan")]
 		public bool EnableScheduledScan {

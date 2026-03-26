@@ -31,7 +31,10 @@ using VDF.GUI.Views;
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
 
-		public List<string> QualityCriteriaOrder { get; set; } = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
+		public List<string> QualityCriteriaOrder {
+			get => SettingsFile.Instance.QualityCriteriaOrder;
+			set => SettingsFile.Instance.QualityCriteriaOrder = value;
+		}
 
 		public ReactiveCommand<Unit, Unit> OpenCustomSelectionCommand => ReactiveCommand.Create(() => {
 			CustomSelectionView dlg = new(string.Empty);
