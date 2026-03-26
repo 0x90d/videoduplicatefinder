@@ -126,7 +126,7 @@ namespace VDF.GUI.ViewModels {
 
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -145,7 +145,7 @@ namespace VDF.GUI.ViewModels {
 
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -164,7 +164,7 @@ namespace VDF.GUI.ViewModels {
 
 			foreach (var first in Duplicates) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButSize(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
