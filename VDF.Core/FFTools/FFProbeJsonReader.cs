@@ -92,7 +92,11 @@ namespace VDF.Core.FFTools {
 					break;
 				case JsonTokenType.String:
 					if (currentObject == JsonObjects.Streams && lastKey != null) {
-						streams[currentStream][lastKey] = json.GetString()!;
+						var strVal = json.GetString()!;
+						if (lastKey == "side_data_type" && streams[currentStream].TryGetValue("side_data_type", out var existingSdt) && existingSdt is string existingSdtStr && existingSdtStr.Length > 0)
+							streams[currentStream][lastKey] = existingSdtStr + "|" + strVal;
+						else
+							streams[currentStream][lastKey] = strVal;
 					}
 					else if (currentObject == JsonObjects.Format && lastKey != null) {
 						format[lastKey] = json.GetString()!;
@@ -200,12 +204,29 @@ namespace VDF.Core.FFTools {
 					}
 				}
 
+
+				string? colorTransfer = streams[i].TryGetValue("color_transfer", out var ctObj) && ctObj is string ctStr ? ctStr : null;
+
+				string? sideDataTypes = streams[i].TryGetValue("side_data_type", out var sdtObj) && sdtObj is string sdtStr && sdtStr.Length > 0 ? sdtStr : null;
+				info.Streams[i].HdrFormat = ComputeHdrFormat(colorTransfer, sideDataTypes);
 			}
 			//Workaround if video stream bitrate is not set but in format
 			if (!foundBitRate && info.Streams.Length > 0 && format.ContainsKey("bit_rate") && long.TryParse((string)format["bit_rate"], out var formatBitrate))
 				info.Streams[0].BitRate = formatBitrate;
 
 			return info;
+		}
+		static string ComputeHdrFormat(string? colorTransfer, string? sideDataTypes) {
+			if (string.IsNullOrEmpty(colorTransfer)) return string.Empty;
+			if (colorTransfer.Equals("arib-std-b67", StringComparison.OrdinalIgnoreCase)) return "HLG";
+			if (colorTransfer.Equals("smpte2084", StringComparison.OrdinalIgnoreCase)) {
+				if (sideDataTypes != null) {
+					if (sideDataTypes.Contains("DOVI", StringComparison.OrdinalIgnoreCase)) return "Dolby Vision";
+					if (sideDataTypes.Contains("SMPTE2094", StringComparison.OrdinalIgnoreCase)) return "HDR10+";
+				}
+				return "HDR10";
+			}
+			return string.Empty;
 		}
 	}
 }

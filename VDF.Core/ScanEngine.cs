@@ -1038,11 +1038,33 @@ namespace VDF.Core {
 						otherItem.IsBestAudioSampleRate = true;
 					}
 				}
-				//FrameSizeInt
+				//AudioBitRateKbs
+				if (!groupItems.First().IsImage) {
+					groupItems = groupItems.OrderByDescending(d => d.AudioBitRateKbs);
+					bestMatch = groupItems.First();
+					bestMatch.IsBestAudioBitRateKbs = true;
+					foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+						if (otherItem.AudioBitRateKbs < bestMatch.AudioBitRateKbs)
+							break;
+						otherItem.IsBestAudioBitRateKbs = true;
+					}
+				}
+				//HdrFormat
+				if (!groupItems.First().IsImage) {
+					groupItems = groupItems.OrderByDescending(d => d.HdrFormatRank);
+					bestMatch = groupItems.First();
+					bestMatch.IsBestHdrFormat = true;
+					foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+						if (otherItem.HdrFormatRank < bestMatch.HdrFormatRank)
+							break;
+						otherItem.IsBestHdrFormat = true;
+					}
+				}
+			//FrameSizeInt
 				groupItems = groupItems.OrderByDescending(d => d.FrameSizeInt);
 				bestMatch = groupItems.First();
 				bestMatch.IsBestFrameSize = true;
-				foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
+					foreach (DuplicateItem otherItem in groupItems.Skip(1)) {
 					if (otherItem.FrameSizeInt < bestMatch.FrameSizeInt)
 						break;
 					otherItem.IsBestFrameSize = true;

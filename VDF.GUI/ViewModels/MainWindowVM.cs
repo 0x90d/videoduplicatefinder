@@ -422,7 +422,7 @@ namespace VDF.GUI.ViewModels {
 				TreeSource.Columns.Add(
 					// 3) Format / Fps / Bitrate (only for videos)
 					new TemplateColumn<RowNode>(
-						header: MultiHeader(App.Lang["DuplicateList.Header.VideoFormat"], App.Lang["DuplicateList.Header.VideoFps"], App.Lang["DuplicateList.Header.VideoBitRate"], " "),
+						header: MultiHeader(App.Lang["DuplicateList.Header.VideoFormat"], App.Lang["DuplicateList.Header.VideoFps"], App.Lang["DuplicateList.Header.VideoBitRate"], App.Lang["DuplicateList.Header.VideoHdr"]),
 						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
 							if (n is null || n.IsGroup) return new Panel();
 
@@ -451,6 +451,11 @@ namespace VDF.GUI.ViewModels {
 							tBr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestBitRateKbs") { Converter = IsBestConverter });
 							sp.Children.Add(tBr);
 
+							var tHdr = new TextBlock();
+							tHdr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.HdrFormat") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
+							tHdr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestHdrFormat") { Converter = IsBestConverter });
+							sp.Children.Add(tHdr);
+
 							return sp;
 						}, supportsRecycling: false)
 					));
@@ -459,7 +464,7 @@ namespace VDF.GUI.ViewModels {
 				TreeSource.Columns.Add(
 					// 4) Audio (only for videos)
 					new TemplateColumn<RowNode>(
-						header: MultiHeader(App.Lang["DuplicateList.Header.AudioFormat"], App.Lang["DuplicateList.Header.AudioChannel"], App.Lang["DuplicateList.Header.AudioSampleRate"], " "),
+						header: MultiHeader(App.Lang["DuplicateList.Header.AudioFormat"], App.Lang["DuplicateList.Header.AudioChannel"], App.Lang["DuplicateList.Header.AudioSampleRate"], App.Lang["DuplicateList.Header.AudioBitRate"]),
 						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
 							if (n is null || n.IsGroup) return new Panel();
 
@@ -478,6 +483,11 @@ namespace VDF.GUI.ViewModels {
 							tSr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioSampleRate") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
 							tSr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestAudioSampleRate") { Converter = IsBestConverter });
 							sp.Children.Add(tSr);
+
+							var tAbr = new TextBlock();
+							tAbr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioBitRateKbs") { StringFormat = "{0} kbps", TargetNullValue = string.Empty, FallbackValue = string.Empty });
+							tAbr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestAudioBitRateKbs") { Converter = IsBestConverter });
+							sp.Children.Add(tAbr);
 
 							return sp;
 						}, supportsRecycling: false)

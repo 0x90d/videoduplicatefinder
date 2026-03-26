@@ -66,6 +66,8 @@ namespace VDF.Core {
 
 			[ProtoMember(12)]
 			public int Channels { get; set; }
+			[ProtoMember(13)]
+			public string HdrFormat { get; set; }
 		}
 	}
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.

@@ -63,12 +63,14 @@ namespace VDF.Core.ViewModels {
 					BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
 					FrameSize = file.mediaInfo.Streams[i].Width + "x" + file.mediaInfo.Streams[i].Height;
 					FrameSizeInt = file.mediaInfo.Streams[i].Width + file.mediaInfo.Streams[i].Height;
+					HdrFormat = file.mediaInfo.Streams[i].HdrFormat ?? string.Empty;
 				}
 				if (selAudio[0] >= 0) {
 					int i = selAudio[0];
 					AudioFormat = file.mediaInfo.Streams[i].CodecName ?? "<Unknown>";
 					AudioChannel = file.mediaInfo.Streams[i].ChannelLayout ?? "<Unknown>";
 					AudioSampleRate = file.mediaInfo.Streams[i].SampleRate;
+					AudioBitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
 				}
 
 			}
@@ -123,8 +125,22 @@ namespace VDF.Core.ViewModels {
 		public int AudioSampleRate { get; private set; }
 		public bool IsBestAudioSampleRate { get; set; }
 		[JsonInclude]
+		public decimal AudioBitRateKbs { get; private set; }
+		public bool IsBestAudioBitRateKbs { get; set; }
+		[JsonInclude]
 		public decimal BitRateKbs { get; private set; }
 		public bool IsBestBitRateKbs { get; set; }
+		[JsonInclude]
+		public string HdrFormat { get; private set; } = string.Empty;
+		public bool IsBestHdrFormat { get; set; }
+		[JsonIgnore]
+		public int HdrFormatRank => HdrFormat switch {
+			"Dolby Vision" => 4,
+			"HDR10+" => 3,
+			"HDR10" => 2,
+			"HLG" => 1,
+			_ => 0
+		};
 		[JsonInclude]
 		public float Fps { get; private set; }
 		public bool IsBestFps { get; set; }
