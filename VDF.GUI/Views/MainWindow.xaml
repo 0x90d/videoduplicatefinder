@@ -7,14 +7,13 @@
     xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:datagrid="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
-    xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
-    xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
+    xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Xaml.Behaviors.Interactivity"
+    xmlns:ic="clr-namespace:Avalonia.Xaml.Interactions.Custom;assembly=Xaml.Behaviors.Interactions.Custom"
     xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
     xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
-    xmlns:tdg="using:Avalonia.Controls.Models.TreeDataGrid"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:Name="MainWindow"
     Title="{Binding Source={x:Static local:App.Lang}, Path=[App.Title]}"
@@ -356,7 +355,7 @@
                                     </MenuItem>
                                 </MenuItem>
                             </Menu>
-                            <Grid Grid.Row="1" IsVisible="{Binding ShowTreeDataGrid}">
+                            <Grid Grid.Row="1">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -626,24 +625,209 @@
                                     </StackPanel>
                                 </Grid>
                                 <Grid Grid.Row="2">
-                                    <TreeDataGrid
-                                        x:Name="treeGrouping"
-                                        MaxWidth="{Binding $parent[Window].Bounds.Width}"
-                                        CanUserResizeColumns="True"
-                                        IsVisible="{Binding ShowTreeDataGrid}"
-                                        Source="{Binding TreeSource}">
-                                        <TreeDataGrid.KeyBindings>
+                                    <DataGrid
+                                        Name="dataGridGrouping"
+                                        CanUserResizeColumns="True">
+                                        <DataGrid.KeyBindings>
                                             <KeyBinding Command="{Binding RenameFileCommand}" Gesture="F2" />
                                             <KeyBinding Command="{Binding ToggleCheckboxCommand}" Gesture="Space" />
-                                            <KeyBinding Command="{Binding OpenItemCommand}" Gesture="Enter" />
+                                            <KeyBinding Command="{Binding OpenItemsByColIdCommand}" Gesture="Enter" />
                                             <KeyBinding Command="{Binding OpenItemInFolderCommand}" Gesture="Shift+Enter" />
                                             <KeyBinding Command="{Binding DeleteSelectionWithPromptCommand}" Gesture="Delete" />
                                             <KeyBinding Command="{Binding DeleteSelectionCommand}" Gesture="Shift+Delete" />
                                             <KeyBinding Command="{Binding DeleteHighlightedCommand}" Gesture="Control+Delete" />
                                             <KeyBinding Command="{Binding ShowGroupInThumbnailComparerCommand}" Gesture="Alt+C" />
                                             <KeyBinding Command="{Binding MarkGroupAsNotAMatchCommand}" Gesture="Alt+X" />
-                                        </TreeDataGrid.KeyBindings>
-                                        <TreeDataGrid.ContextMenu>
+                                        </DataGrid.KeyBindings>
+                                        <DataGrid.Columns>
+                                            <DataGridTemplateColumn>
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <CheckBox IsChecked="{Binding Checked}" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <LayoutTransformControl>
+                                                            <LayoutTransformControl.LayoutTransform>
+                                                                <ScaleTransform ScaleX="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" ScaleY="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" />
+                                                            </LayoutTransformControl.LayoutTransform>
+                                                            <Image
+                                                                Name="ThumbnailImage"
+                                                                Source="{Binding Thumbnail}"
+                                                                Stretch="None">
+                                                                <i:Interaction.Behaviors>
+                                                                    <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].DataContext.ThumbnailDoubleClickCommand}" />
+                                                                </i:Interaction.Behaviors>
+                                                            </Image>
+                                                        </LayoutTransformControl>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn
+                                                Width="1*"
+                                                Header="Path"
+                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock
+                                                            Margin="10,0,0,0"
+                                                            Text="{Binding ItemInfo.Path, TargetNullValue=''}"
+                                                            TextWrapping="Wrap" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}">
+                                                <DataGridTemplateColumn.Header>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.DurationType]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.Resolution]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.Size]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.CreationDate]}" />
+                                                    </StackPanel>
+                                                </DataGridTemplateColumn.Header>
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="10,0,0,0">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                            </Grid.RowDefinitions>
+                                                            <TextBlock
+                                                                Grid.Row="0"
+                                                                Margin="2"
+                                                                IsVisible="{Binding ItemInfo.IsImage}"
+                                                                Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="0"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}}"
+                                                                IsVisible="{Binding !ItemInfo.IsImage}"
+                                                                Text="{Binding ItemInfo.Duration, TargetNullValue='', StringFormat=\{0:hh\\:mm\\:ss\}}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="1"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestFrameSize, Converter={StaticResource IsBestConverter}}"
+                                                                Text="{Binding ItemInfo.FrameSize, TargetNullValue=''}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="2"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
+                                                                Text="{Binding ItemInfo.Size, TargetNullValue=''}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="3"
+                                                                Margin="2"
+                                                                Text="{Binding ItemInfo.DateCreated, TargetNullValue='', Converter={StaticResource ExtraShortDateTimeConverter}}"
+                                                                TextWrapping="Wrap" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}">
+                                                <DataGridTemplateColumn.Header>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.VideoFormat]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.VideoFps]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.VideoBitRate]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.VideoHdr]}" />
+                                                    </StackPanel>
+                                                </DataGridTemplateColumn.Header>
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="10,0,0,0" IsVisible="{Binding !ItemInfo.IsImage}">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                            </Grid.RowDefinitions>
+                                                            <TextBlock
+                                                                Grid.Row="0"
+                                                                Margin="2"
+                                                                Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="1"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestFps, Converter={StaticResource IsBestConverter}}"
+                                                                Text="{Binding ItemInfo.Fps, TargetNullValue='', Mode=OneWay, StringFormat=\{0\} fps}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="2"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestBitRateKbs, Converter={StaticResource IsBestConverter}}"
+                                                                Text="{Binding ItemInfo.BitRateKbs, TargetNullValue='', Mode=OneWay, StringFormat=\{0\} kbps}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="3"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestHdrFormat, Converter={StaticResource IsBestConverter}}"
+                                                                Text="{Binding ItemInfo.HdrFormat, TargetNullValue=''}"
+                                                                TextWrapping="Wrap" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}">
+                                                <DataGridTemplateColumn.Header>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.AudioFormat]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.AudioChannel]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.AudioSampleRate]}" />
+                                                        <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.AudioBitRate]}" />
+                                                    </StackPanel>
+                                                </DataGridTemplateColumn.Header>
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="10,0,0,0" IsVisible="{Binding !ItemInfo.IsImage}">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                                <RowDefinition />
+                                                            </Grid.RowDefinitions>
+                                                            <TextBlock
+                                                                Grid.Row="0"
+                                                                Margin="2"
+                                                                Text="{Binding ItemInfo.AudioFormat, TargetNullValue=''}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="1"
+                                                                Margin="2"
+                                                                Text="{Binding ItemInfo.AudioChannel, TargetNullValue=''}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="2"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestAudioSampleRate, Converter={StaticResource IsBestConverter}}"
+                                                                Text="{Binding ItemInfo.AudioSampleRate, TargetNullValue=''}"
+                                                                TextWrapping="Wrap" />
+                                                            <TextBlock
+                                                                Grid.Row="3"
+                                                                Margin="2"
+                                                                Foreground="{Binding ItemInfo.IsBestAudioBitRateKbs, Converter={StaticResource IsBestConverter}}"
+                                                                Text="{Binding ItemInfo.AudioBitRateKbs, TargetNullValue='', StringFormat=\{0\} kbps}"
+                                                                TextWrapping="Wrap" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTextColumn
+                                                Width="1*"
+                                                Binding="{Binding ItemInfo.Similarity, TargetNullValue=''}"
+                                                Header="Similarity"
+                                                IsReadOnly="True"
+                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
+                                        </DataGrid.Columns>
+                                        <DataGrid.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem
                                                     Command="{Binding OpenItemCommand}"
@@ -814,12 +998,12 @@
                                                         InputGesture="Alt+C" />
                                                 </MenuItem>
                                             </ContextMenu>
-                                        </TreeDataGrid.ContextMenu>
-                                    </TreeDataGrid>
+                                        </DataGrid.ContextMenu>
+                                    </DataGrid>
                                     <Border
                                         x:Name="EmptyOverlay"
                                         Background="Transparent"
-                                        IsVisible="{Binding !ShowTreeDataGrid}">
+                                        IsVisible="{Binding !Duplicates.Count}">
                                         <StackPanel
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
@@ -839,7 +1023,7 @@
                                     </Border>
                                 </Grid>
                             </Grid>
-                            <Grid Grid.Row="2" IsVisible="{Binding !Duplicates.Count}">
+                            <Grid Grid.Row="2" IsVisible="{Binding !!Duplicates.Count}">
                                 <StackPanel
                                     MinHeight="20"
                                     Margin="0,5,0,0"
@@ -1649,6 +1833,25 @@
                                             Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowSimilarityColumn]}"
                                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
                                             IsThreeState="False" />
+                                        <StackPanel
+                                            Margin="0,6,0,0"
+                                            Orientation="Horizontal"
+                                            Spacing="6">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailDoubleClick]}" />
+                                            <ComboBox
+                                                MinWidth="200"
+                                                ItemsSource="{Binding ThumbnailDoubleClickOptions}"
+                                                SelectedValueBinding="{Binding Value}"
+                                                SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailDoubleClickAction, Mode=TwoWay}">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Key}" />
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </StackPanel>
                                         <TextBlock
                                             Margin="0,5,0,5"
                                             VerticalAlignment="Center"

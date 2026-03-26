@@ -1,20 +1,21 @@
 // /*
-//     Copyright (C) 2025 0x90d
+//     Copyright (C) 2021 0x90d
 //     This file is part of VideoDuplicateFinder
 //     VideoDuplicateFinder is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU Affero General Public License as published by
+//     it under the terms of the GPLv3 as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
 //     VideoDuplicateFinder is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU Affero General Public License for more details.
-//     You should have received a copy of the GNU Affero General Public License
+//     GNU General Public License for more details.
+//     You should have received a copy of the GNU General Public License
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
 
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Compression;
@@ -27,11 +28,6 @@ using System.Text.Json;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
-using Avalonia.Controls.Models.TreeDataGrid;
-using Avalonia.Controls.Templates;
-using Avalonia.Data;
-using Avalonia.Layout;
-using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -41,7 +37,6 @@ using VDF.Core;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 using VDF.GUI.Data;
-using VDF.GUI.Mvvm;
 using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
@@ -54,10 +49,7 @@ namespace VDF.GUI.ViewModels {
 			Path.Combine(SettingsFile.Instance.CustomDatabaseFolder, "backup.scanresults") :
 			Path.Combine(CoreUtils.CurrentFolder, "backup.scanresults");
 
-		private readonly AvaloniaList<RowNode> Duplicates = new() { ResetBehavior = ResetBehavior.Reset }; //For TreeDataGrid
-		private readonly List<RowNode> _allGroups = new(); //Master list of all groups (for filtering)
-		private readonly Dictionary<Guid, RowNode> _groupIndex = new();
-		public HierarchicalTreeDataGridSource<RowNode> TreeSource { get; }
+		public AvaloniaList<DuplicateItemVM> Duplicates { get; } = new();
 
 		private TempDir? TempDirectory;
 
@@ -91,17 +83,10 @@ namespace VDF.GUI.ViewModels {
 		bool scheduledScanInProgress;
 		bool scheduleTimeInvalidNotified;
 
-		bool _ShowTreeDataGrid = false;
-		public bool ShowTreeDataGrid {
-			get => _ShowTreeDataGrid;
-			set => this.RaiseAndSetIfChanged(ref _ShowTreeDataGrid, value);
-		}
 		bool _IsScanning;
 		public bool IsScanning {
 			get => _IsScanning;
-			set {
-				this.RaiseAndSetIfChanged(ref _IsScanning, value);
-			}
+			set => this.RaiseAndSetIfChanged(ref _IsScanning, value);
 		}
 		string _IsBusyOverlayText = string.Empty;
 		public string IsBusyOverlayText {
@@ -199,14 +184,14 @@ namespace VDF.GUI.ViewModels {
 		public bool IsMultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
 		public bool IsMultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
 
-
 		public bool IsWindows => CoreUtils.IsWindows;
 
 		public string TotalSizeRemoved => TotalSizeRemovedInternal.BytesToString();
-
-		private static readonly Mvvm.ExtraShortDateTimeConverter ExtraShortDateTimeConverterInstance = new();
-		private static readonly Mvvm.IsBestConverter IsBestConverter = new();
-		private static readonly Mvvm.NegateBoolConverter NegateBoolConverter = new();
+#if DEBUG
+		public static bool IsDebug => true;
+#else
+		public static bool IsDebug => false;
+#endif
 
 		public MainWindowVM() {
 			FileInfo groupBlacklistFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistedGroups.json"));
@@ -228,7 +213,6 @@ namespace VDF.GUI.ViewModels {
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));
 				Utils.ThumbCacheHelpers.Provider = Utils.ThumbPack.Open(TempDirectory.Path);
 			}
-
 			catch { Utils.ThumbCacheHelpers.Provider = null; }
 
 			try {
@@ -241,297 +225,74 @@ namespace VDF.GUI.ViewModels {
 			if (File.Exists(BackupScanResultsFile))
 				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
 
+			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
+
 			scheduledScanTimer.Interval = TimeSpan.FromMinutes(1);
 			scheduledScanTimer.Tick += (_, __) => CheckScheduledScan();
 			scheduledScanTimer.Start();
 			CheckScheduledScan();
-			SortOrders = [
-				new("None", (a, b) => 0),
-				new("Size Ascending", (a, b) => CompareBy<long>(a, b, vm => vm.ItemInfo.SizeLong)),
-				new("Size Descending", (a, b) => CompareBy<long>(a, b, vm => vm.ItemInfo.SizeLong, desc: true)),
-				new("Resolution Ascending", (a, b) => CompareBy<int>(a, b, vm => vm.ItemInfo.FrameSizeInt)),
-				new("Resolution Descending", (a, b) => CompareBy<int>(a, b, vm => vm.ItemInfo.FrameSizeInt, desc: true)),
-				new("Duration Ascending", (a, b) => CompareBy<TimeSpan>(a, b, vm => vm.ItemInfo.Duration)),
-				new("Duration Descending", (a, b) => CompareBy<TimeSpan>(a, b, vm => vm.ItemInfo.Duration, desc: true)),
-				new("Date Created Ascending", (a, b) => CompareBy<DateTime>(a, b, vm => vm.ItemInfo.DateCreated)),
-				new("Date Created Descending", (a, b) => CompareBy<DateTime>(a, b, vm => vm.ItemInfo.DateCreated, desc: true)),
-				new("Similarity Ascending", (a, b) => CompareBy<float>(a, b, vm => vm.ItemInfo.Similarity)),
-				new("Similarity Descending", (a, b) => CompareBy<float>(a, b, vm => vm.ItemInfo.Similarity, desc: true)),
-				new("Group Has Selected Items Ascending",  (ga,gb) => CompareGroupsByInt(ga, gb, g => GroupHasChecked(g) ? 1 : 0)),
-				new("Group Has Selected Items Descending", (ga,gb) => CompareGroupsByInt(ga, gb, g => GroupHasChecked(g) ? 1 : 0, desc:true)),
-				new("Group Size Ascending",  (ga,gb) => CompareGroupsByInt(ga, gb, g => g.Children.Count)),
-				new("Group Size Descending", (ga,gb) => CompareGroupsByInt(ga, gb, g => g.Children.Count, desc:true))
-			];
 
+			SortOrders = new KeyValuePair<string, DataGridSortDescription>[] {
+				new KeyValuePair<string, DataGridSortDescription>("None", null!),
+				new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Size Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Resolution Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Resolution Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Duration Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Duration Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Date Created Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Date Created Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Similarity Ascending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Similarity Descending",
+				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Ascending",
+				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Descending",
+				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Descending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Size Ascending",
+				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Ascending)),
+				new KeyValuePair<string, DataGridSortDescription>("Group Size Descending",
+				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
+			};
 			_SortOrder = SortOrders[0];
 
 			this.WhenAnyValue(vm => vm.FilterByPath)
 					.Throttle(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
-						.Subscribe(_ => {
-							RebuildSearchPathIndex();
-							ApplyFilter();
-							RefreshGroupStats();
-						});
-
-
-			TreeSource = new HierarchicalTreeDataGridSource<RowNode>(Duplicates) {
-				Columns =
-					{
-					new HierarchicalExpanderColumn<RowNode>(
-						new TemplateColumn<RowNode>(
-							header:  App.Lang["DuplicateList.Header.GroupItem"],
-							cellTemplate: new FuncDataTemplate<RowNode>((node, _) =>
-							{
-								if (node is null) return new Panel();
-								if (node.IsGroup)
-								{
-									var tb = new TextBlock
-									{
-										FontWeight = FontWeight.Bold,
-										Margin = new Thickness(8, 0, 0, 0),
-										Text = string.Empty
-									};
-									tb.Bind(TextBlock.TextProperty, new Binding(nameof(RowNode.Header)) {
-										TargetNullValue = string.Empty,
-										FallbackValue  = string.Empty
-									});
-									return tb;
-								}
-
-								var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0,3) };
-
-								var cb = new CheckBox();
-								cb.Bind(CheckBox.IsCheckedProperty, new Binding("Item.Checked"));
-
-								var img = new Image { Stretch = Stretch.None };
-								img.Bind(Image.SourceProperty, new Binding("Item.Thumbnail"));
-								img.DoubleTapped += (_, e) =>
-								{
-									if (img.DataContext is RowNode rn && rn.Item is { } item)
-									{
-										OpenItems();
-									}
-									e.Handled = true;
-								};
-
-								ToolTip.SetTip(img, new TextBlock { Text = App.Lang["DuplicateList.Thumbnail.Tooltip.OpenFile"] });
-
-								panel.Children.Add(cb);
-								panel.Children.Add(img);
-								return panel;
-							}, supportsRecycling: false)
-						, width: GridLength.Auto),
-						n => n.Children,
-						isExpandedSelector: n => n.IsExpanded
-					),
-									}
-			};
-
-			if (SettingsFile.Instance.ShowPathColumn)
-				TreeSource.Columns.Add(
-					// 2) Path
-					new TemplateColumn<RowNode>(
-						header: App.Lang["Path"],
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
-							if (n is null || n.IsGroup) return new Panel();
-
-							//var path = new TextBlock
-							//{
-							//	TextWrapping = TextWrapping.Wrap,
-							//	Margin = new Thickness(4, 0, 0, 0),
-							//	Text = string.Empty,
-
-							//};
-							var path = new SelectableTextBlock {
-								Text = string.Empty,
-								TextWrapping = TextWrapping.WrapWithOverflow,
-								Margin = new Thickness(4, 0, 0, 0),
-								FlowDirection = FlowDirection.LeftToRight,
-							};
-							path.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Path") {
-								Converter = PathDisplaySanitizer.Instance,
-								TargetNullValue = string.Empty,
-								FallbackValue = string.Empty
-							});
-
-
-							path.DoubleTapped += (_, e) => {
-								if (path.DataContext is RowNode rn && rn.Item is { })
-									OpenItemsInFolder();
-								e.Handled = true;
-							};
-							ToolTip.SetTip(path, new TextBlock { Text = App.Lang["DuplicateList.FilePath.Tooltip.OpenInExplorer"] });
-
-							return path;
-						}, supportsRecycling: false), width: new GridLength(1, GridUnitType.Star)
-					));
-
-			if (SettingsFile.Instance.ShowDurationColumn)
-				TreeSource.Columns.Add(
-					// 2) Duration / type  (Image: Format / Video: Duration)
-					new TemplateColumn<RowNode>(
-						header: MultiHeader(App.Lang["DuplicateList.Header.DurationType"], App.Lang["DuplicateList.Header.Resolution"], App.Lang["DuplicateList.Header.Size"], App.Lang["DuplicateList.Header.CreationDate"]),
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
-							if (n is null || n.IsGroup) return new Panel();
-
-							var sp = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
-
-							// Row 0: Image -> Format
-							var tFormat = new TextBlock();
-							tFormat.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage"));
-							tFormat.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Format") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							sp.Children.Add(tFormat);
-
-							// Row 0 (alternativ): Video -> Duration
-							var tDur = new TextBlock();
-							tDur.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage") { Converter = NegateBoolConverter });
-							tDur.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Duration") {
-								StringFormat = "{0:hh\\:mm\\:ss}",
-								TargetNullValue = string.Empty,
-								FallbackValue = string.Empty
-							});
-							tDur.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestDuration") { Converter = IsBestConverter });
-							sp.Children.Add(tDur);
-
-							//Resolution
-							var tRes = new TextBlock();
-							tRes.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.FrameSize") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tRes.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFrameSize") { Converter = IsBestConverter });
-							sp.Children.Add(tRes);
-
-							//Size
-							var tSize = new TextBlock();
-							tSize.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Size") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tSize.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestSize") { Converter = IsBestConverter });
-							sp.Children.Add(tSize);
-
-							//Created
-							var tDate = new TextBlock();
-							tDate.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.DateCreated") {
-								Converter = ExtraShortDateTimeConverterInstance,
-								TargetNullValue = string.Empty,
-								FallbackValue = string.Empty
-							});
-							sp.Children.Add(tDate);
-
-							return sp;
-						}, supportsRecycling: false)
-					));
-
-			if (SettingsFile.Instance.ShowFormatColumn)
-				TreeSource.Columns.Add(
-					// 3) Format / Fps / Bitrate (only for videos)
-					new TemplateColumn<RowNode>(
-						header: MultiHeader(App.Lang["DuplicateList.Header.VideoFormat"], App.Lang["DuplicateList.Header.VideoFps"], App.Lang["DuplicateList.Header.VideoBitRate"], App.Lang["DuplicateList.Header.VideoHdr"]),
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
-							if (n is null || n.IsGroup) return new Panel();
-
-							var sp = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
-							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage") { Converter = NegateBoolConverter });
-
-							var tFmt = new TextBlock();
-							tFmt.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Format") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							sp.Children.Add(tFmt);
-
-							var tFps = new TextBlock();
-							tFps.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Fps") {
-								StringFormat = "{0} fps",
-								TargetNullValue = string.Empty,
-								FallbackValue = string.Empty
-							});
-							tFps.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestFps") { Converter = IsBestConverter });
-							sp.Children.Add(tFps);
-
-							var tBr = new TextBlock();
-							tBr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.BitRateKbs") {
-								StringFormat = "{0} kbps",
-								TargetNullValue = string.Empty,
-								FallbackValue = string.Empty
-							});
-							tBr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestBitRateKbs") { Converter = IsBestConverter });
-							sp.Children.Add(tBr);
-
-							var tHdr = new TextBlock();
-							tHdr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.HdrFormat") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tHdr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestHdrFormat") { Converter = IsBestConverter });
-							sp.Children.Add(tHdr);
-
-							return sp;
-						}, supportsRecycling: false)
-					));
-
-			if (SettingsFile.Instance.ShowAudioColumn)
-				TreeSource.Columns.Add(
-					// 4) Audio (only for videos)
-					new TemplateColumn<RowNode>(
-						header: MultiHeader(App.Lang["DuplicateList.Header.AudioFormat"], App.Lang["DuplicateList.Header.AudioChannel"], App.Lang["DuplicateList.Header.AudioSampleRate"], App.Lang["DuplicateList.Header.AudioBitRate"]),
-						cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
-							if (n is null || n.IsGroup) return new Panel();
-
-							var sp = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
-							sp.Bind(Visual.IsVisibleProperty, new Binding("Item.ItemInfo.IsImage") { Converter = NegateBoolConverter });
-
-							var tAf = new TextBlock();
-							tAf.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioFormat") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							sp.Children.Add(tAf);
-
-							var tCh = new TextBlock();
-							tCh.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioChannel") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							sp.Children.Add(tCh);
-
-							var tSr = new TextBlock();
-							tSr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioSampleRate") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tSr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestAudioSampleRate") { Converter = IsBestConverter });
-							sp.Children.Add(tSr);
-
-							var tAbr = new TextBlock();
-							tAbr.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.AudioBitRateKbs") { StringFormat = "{0} kbps", TargetNullValue = string.Empty, FallbackValue = string.Empty });
-							tAbr.Bind(TextBlock.ForegroundProperty, new Binding("Item.ItemInfo.IsBestAudioBitRateKbs") { Converter = IsBestConverter });
-							sp.Children.Add(tAbr);
-
-							return sp;
-						}, supportsRecycling: false)
-					));
-			if (SettingsFile.Instance.ShowSimilarityColumn)
-				TreeSource.Columns.Add(
-						// 5) Similarity
-						new TemplateColumn<RowNode>(
-							header: App.Lang["DuplicateList.Header.Similarity"],
-							cellTemplate: new FuncDataTemplate<RowNode>((n, _) => {
-								if (n is null || n.IsGroup) return new Panel();
-								var tb = new TextBlock();
-								tb.Bind(TextBlock.TextProperty, new Binding("Item.ItemInfo.Similarity") { TargetNullValue = string.Empty, FallbackValue = string.Empty });
-								tb.HorizontalAlignment = HorizontalAlignment.Center;
-								return tb;
-							}, supportsRecycling: false),
-							options: new TemplateColumnOptions<RowNode> {
-								CanUserSortColumn = true,
-								CompareAscending = (a, b) => {
-									bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
-									bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
-									if (aHas && bHas)
-										return a!.Item!.ItemInfo!.Similarity.CompareTo(b!.Item!.ItemInfo!.Similarity);
-									if (aHas && !bHas) return 1;
-									if (!aHas && bHas) return -1;
-									return 0;
-								},
-								CompareDescending = (a, b) => {
-									bool aHas = a != null && !a.IsGroup && a.Item?.ItemInfo != null;
-									bool bHas = b != null && !b.IsGroup && b.Item?.ItemInfo != null;
-									if (aHas && bHas)
-										return b!.Item!.ItemInfo!.Similarity.CompareTo(a!.Item!.ItemInfo!.Similarity);
-									if (aHas && !bHas) return 1;
-									if (!aHas && bHas) return -1;
-									return 0;
-								}
-							}
-						));
-			TreeSource.RowSelection!.SingleSelect = false;
+						.Subscribe(_ => { RebuildSearchPathIndex(); view?.Refresh(); });
 		}
 
-		private void Scanner_ThumbnailProgress(int arg1, int arg2) => Dispatcher.UIThread.Post(() => {
-			ThumbnailRetrievalProgressText = $"Retrieving thumbnails for preview: {arg1}/{arg2}";
-		});
+		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
+			if (e.OldItems != null) {
+				foreach (INotifyPropertyChanged item in e.OldItems) {
+					item.PropertyChanged -= DuplicateItemVM_PropertyChanged;
+					if (((DuplicateItemVM)item).Checked)
+						DuplicatesSelectedCounter--;
+				}
+			}
+			if (e.NewItems != null) {
+				foreach (INotifyPropertyChanged item in e.NewItems)
+					item.PropertyChanged += DuplicateItemVM_PropertyChanged;
+			}
+			if (e.Action == NotifyCollectionChangedAction.Reset)
+				DuplicatesSelectedCounter = 0;
+		}
+
+		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
+			if (e.PropertyName != nameof(DuplicateItemVM.Checked) || sender == null) return;
+			if (((DuplicateItemVM)sender).Checked)
+				DuplicatesSelectedCounter++;
+			else
+				DuplicatesSelectedCounter--;
+		}
 
 		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
 			bool isReadyToCompare = IsGathered;
@@ -541,6 +302,10 @@ namespace VDF.GUI.ViewModels {
 			ApplicationHelpers.MainWindowDataContext.IsReadyToCompare = isReadyToCompare;
 		}
 
+		private void Scanner_ThumbnailProgress(int arg1, int arg2) => Dispatcher.UIThread.Post(() => {
+			ThumbnailRetrievalProgressText = $"Retrieving thumbnails for preview: {arg1}/{arg2}";
+		});
+
 		void Scanner_ThumbnailsRetrieved(object? sender, EventArgs e) {
 			//Reset properties
 			ScanProgressText = string.Empty;
@@ -549,10 +314,10 @@ namespace VDF.GUI.ViewModels {
 			ScanProgressMaxValue = 100;
 			ThumbnailRetrievalProgressText = "Finished generating thumbnails for preview";
 			ShowThumbnailRetrievalProgressBar = false;
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#pragma warning disable CS4014
 			if (SettingsFile.Instance.BackupAfterListChanged)
 				ExportScanResults(BackupScanResultsFile);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#pragma warning restore CS4014
 		}
 
 		void Scanner_FilesEnumerated(object? sender, EventArgs e) => ChangeIsBusyMessage();
@@ -563,14 +328,13 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		public async Task<bool> SaveScanResults() {
-			if (_allGroups.Count == 0 || !SettingsFile.Instance.AskToSaveResultsOnExit) {
+			if (Duplicates.Count == 0 || !SettingsFile.Instance.AskToSaveResultsOnExit) {
 				try { Utils.ThumbCacheHelpers.Provider?.FlushIndex(); } catch { }
 				return true;
 			}
 			MessageBoxButtons? result = await MessageBoxService.Show(App.Lang["Message.SaveResultsPrompt"],
 				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 			if (result == null || result == MessageBoxButtons.Cancel) {
-				//Can be NULL if user closed the window by clicking on 'X'
 				return false;
 			}
 			if (result != MessageBoxButtons.Yes) {
@@ -579,7 +343,6 @@ namespace VDF.GUI.ViewModels {
 			await ExportScanResults(BackupScanResultsFile);
 			return true;
 		}
-
 
 		public async void LoadDatabase() {
 			IsBusy = true;
@@ -625,7 +388,7 @@ namespace VDF.GUI.ViewModels {
 				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingDatabaseFolder"]);
 				return;
 			}
-			if (_allGroups.Count > 0) {
+			if (Duplicates.Count > 0) {
 				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedWithResults"]);
 				return;
 			}
@@ -656,8 +419,6 @@ namespace VDF.GUI.ViewModels {
 				ScanProgressMaxValue = e.MaxPosition;
 			});
 
-
-
 		void Scanner_ScanAborted(object? sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
@@ -666,6 +427,7 @@ namespace VDF.GUI.ViewModels {
 				IsGathered = false;
 				scheduledScanInProgress = false;
 			});
+
 		void Scanner_ScanDone(object? sender, EventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				IsScanning = false;
@@ -693,7 +455,8 @@ namespace VDF.GUI.ViewModels {
 					return false;
 				});
 
-				FillDuplicatesFromScanner(Scanner.Duplicates);
+				foreach (var item in Scanner.Duplicates)
+					Duplicates.Add(new DuplicateItemVM(item));
 
 				if (SettingsFile.Instance.GeneratePreviewThumbnails) {
 					ShowThumbnailRetrievalProgressBar = true;
@@ -701,6 +464,7 @@ namespace VDF.GUI.ViewModels {
 					Scanner.RetrieveThumbnails();
 				}
 
+				BuildDuplicatesView();
 				RebuildSearchPathIndex();
 				RefreshGroupStats();
 
@@ -709,94 +473,29 @@ namespace VDF.GUI.ViewModels {
 				}
 			});
 
-		private void FillDuplicatesFromScanner(IEnumerable<DuplicateItem> items) {
-			int groupCounter = 0;
-			var groups = items
-						   .GroupBy(x => x.GroupId)
-						   .Select(g => {
-							   var node = RowNode.Group(
-								   header: $"Group #{groupCounter} ({g.Count()})",
-								   items: g.Select(x => new DuplicateItemVM(x)));
-							   groupCounter++;
-							   return node;
-						   })
-						   .ToList();
-			FillDuplicates(groups);
-		}
-		private void FillDuplicates(IEnumerable<RowNode>? items) {
-			if (items == null) return;
-			DetachAllCheckedHandlers();
-			Duplicates.Clear();
-			_allGroups.Clear();
-			_groupIndex.Clear();
-
-			foreach (var item in items) {
-				if (item.AllChildren.Count == 0 ||
-					item.AllChildren[0].Item == null) continue;
-				_groupIndex[item.AllChildren[0].Item!.ItemInfo.GroupId] = item;
-				foreach (var child in item.AllChildren)
-					if (child.Item != null)
-						AttachCheckedHandlers(child.Item);
-			}
-
-			_allGroups.AddRange(items);
-			Duplicates.AddRange(items);
-			ApplyFilter();
+		void BuildDuplicatesView() {
+			view = new DataGridCollectionView(Duplicates);
+			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
+			view.Filter += DuplicatesFilter;
+			GetDataGrid.ItemsSource = view;
 			TotalSizeRemovedInternal = 0;
-			ShowTreeDataGrid = true;
-		}
-		void AttachCheckedHandlers(DuplicateItemVM vm) {
-			vm.PropertyChanged += Vm_PropertyChanged;
 		}
 
-		private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
-			if (e.PropertyName == nameof(DuplicateItemVM.Checked)) {
-				if (!Dispatcher.UIThread.CheckAccess()) {
-					Dispatcher.UIThread.Post(() => {
-						RecomputeSelectionCounter();
-						if (FilterGroupsWithSelection) {
-							ApplyFilter();
-							RefreshGroupStats();
-						}
-					});
-				}
-				else {
-					RecomputeSelectionCounter();
-					if (FilterGroupsWithSelection) {
-						ApplyFilter();
-						RefreshGroupStats();
-					}
-				}
-			}
-		}
+		static DataGrid GetDataGrid => ApplicationHelpers.MainWindow.FindControl<DataGrid>("dataGridGrouping")!;
 
-		private void DetachChecked(DuplicateItemVM vm) {
-			vm.Checked = false;
-			vm.PropertyChanged -= Vm_PropertyChanged;
-		}
-		private void DetachAllCheckedHandlers() {
-			foreach (var vm in EnumerateAllItems())
-				vm.PropertyChanged -= Vm_PropertyChanged;
-		}
-		void RecomputeSelectionCounter() => DuplicatesSelectedCounter = _allGroups.Sum(g => g.AllChildren.Count(n => n.Item?.Checked == true));
-		private void RefreshGroupStats() {
-			TotalDuplicates = Duplicates.Sum(x => x.Children.Count);
-			TotalDuplicatesSize = Duplicates.Sum(x => x.Children.Sum(y => y.Item!.ItemInfo.SizeLong)).BytesToString();
-			TotalDuplicateGroups = Duplicates.Count;
+		void RefreshGroupStats() {
+			TotalDuplicates = Duplicates.Count;
+			TotalDuplicatesSize = Duplicates.Sum(x => x.ItemInfo.SizeLong).BytesToString();
+			TotalDuplicateGroups = Duplicates.GroupBy(x => x.ItemInfo.GroupId).Count();
 		}
 
 		private DuplicateItemVM? GetSelectedDuplicateItem() {
-			var selection = GetSelectedDuplicates();
-			if (selection.Count == 0)
-				return null;
-			return selection[0];
+			return GetDataGrid.SelectedItem as DuplicateItemVM;
 		}
 
-		private List<DuplicateItemVM> GetSelectedDuplicates() => (TreeSource.RowSelection?.SelectedItems ?? Array.Empty<RowNode>())
-																		   .Where(n => n != null && !n.IsGroup && n.Item is not null)
-																		   .Select(n => n!.Item!)
-																		   .ToList();
-
+		private List<DuplicateItemVM> GetSelectedDuplicates() {
+			return GetDataGrid.SelectedItems?.Cast<DuplicateItemVM>().ToList() ?? new();
+		}
 
 		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.CreateFromTask(async () => {
 			try {
@@ -866,7 +565,6 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		async static void ExportDbToJson(JsonSerializerOptions options) {
-
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				DefaultExtension = ".json",
 				FileTypeChoices = [new FilePickerFileType("Json Files") { Patterns = ["*.json"] }]
@@ -897,6 +595,7 @@ namespace VDF.GUI.ViewModels {
 		private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions {
 			IncludeFields = true,
 		};
+
 		async Task ExportScanResults(string? path = null, bool includeThumbnails = true, int thumbMaxEdge = 160, JsonSerializerOptions? serializerOptions = null) {
 			path ??= await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
@@ -906,27 +605,23 @@ namespace VDF.GUI.ViewModels {
 
 			if (string.IsNullOrEmpty(path)) return;
 
-
 			IsBusy = true;
 			IsBusyOverlayText = App.Lang["Busy.SavingScanResults"];
 			var dir = Path.GetDirectoryName(path)!;
 			var tmp = Path.Combine(dir, Path.GetFileName(path) + ".tmp");
 
 			try {
-
-				var snapshot = new List<RowNode>(_allGroups);
+				var snapshot = Duplicates.ToList();
 
 				if (!includeThumbnails) {
 					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
 					await JsonSerializer.SerializeAsync(fs, snapshot, serializerOptions ?? JsonOptions);
 				}
 				else {
-
-					// Write ZIP
 					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
 					using var zip = new ZipArchive(fs, ZipArchiveMode.Create, leaveOpen: false);
-					// JSON
 					var jsonEntry = zip.CreateEntry("scan.json", CompressionLevel.NoCompression);
+
 					await using (var es = jsonEntry.Open()) {
 						await JsonSerializer.SerializeAsync(es, snapshot, serializerOptions ?? JsonOptions);
 						await es.FlushAsync();
@@ -935,7 +630,6 @@ namespace VDF.GUI.ViewModels {
 					Utils.ThumbCacheHelpers.Provider?.FlushIndex();
 
 					if (TempDirectory != null) {
-						// Thumbnails
 						var packPath = Path.Combine(TempDirectory.Path, "thumbs.pack");
 						var idxPath = Path.Combine(TempDirectory.Path, "thumbs.idx");
 
@@ -952,11 +646,9 @@ namespace VDF.GUI.ViewModels {
 							fs2.CopyTo(es);
 						}
 					}
-
 				}
 
 				File.Move(tmp, path, overwrite: true);
-
 			}
 			catch (Exception ex) {
 				IsBusy = false;
@@ -969,6 +661,7 @@ namespace VDF.GUI.ViewModels {
 				IsBusy = false;
 			}
 		}
+
 		public ReactiveCommand<Unit, Unit> ImportScanResultsFromFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions {
 				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
@@ -977,8 +670,9 @@ namespace VDF.GUI.ViewModels {
 			if (string.IsNullOrEmpty(result)) return;
 			ImportScanResultsIncludingThumbnails(result);
 		});
+
 		async void ImportScanResultsIncludingThumbnails(string? path = null) {
-			if (_allGroups.Count > 0) {
+			if (Duplicates.Count > 0) {
 				MessageBoxButtons? result = await MessageBoxService.Show(App.Lang["Message.ImportScanResultsClearConfirm"], MessageBoxButtons.Yes | MessageBoxButtons.No);
 				if (result != MessageBoxButtons.Yes) return;
 			}
@@ -996,23 +690,23 @@ namespace VDF.GUI.ViewModels {
 				IsBusy = true;
 				IsBusyOverlayText = App.Lang["Busy.ImportScanResults"];
 
-
 				using var zip = ZipFile.OpenRead(path);
 				var json = zip.GetEntry("scan.json") ?? throw new Exception("scan.json missing");
 				await using var js = json.Open();
-				var groups = await JsonSerializer.DeserializeAsync<List<RowNode>>(js, JsonOptions) ?? new();
+				var items = await JsonSerializer.DeserializeAsync<List<DuplicateItemVM>>(js, JsonOptions) ?? new();
 
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));
-
 
 				zip.GetEntry("thumbs.pack")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.pack"), true);
 				zip.GetEntry("thumbs.idx")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.idx"), true);
 
 				Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));
 
+				Duplicates.Clear();
+				foreach (var item in items)
+					Duplicates.Add(item);
 
-				FillDuplicates(groups);
-
+				BuildDuplicatesView();
 				RefreshGroupStats();
 				IsBusy = false;
 				stream.Close();
@@ -1035,11 +729,30 @@ namespace VDF.GUI.ViewModels {
 			OpenItems();
 		});
 
+		public ReactiveCommand<Unit, Unit> OpenItemsByColIdCommand => ReactiveCommand.Create(() => {
+			if (GetDataGrid.CurrentColumn?.DisplayIndex == 1)
+				OpenItems();
+			else if (GetDataGrid.CurrentColumn?.DisplayIndex == 2)
+				OpenItemsInFolder();
+		});
+
+		public ReactiveCommand<Unit, Unit> ThumbnailDoubleClickCommand => ReactiveCommand.Create(() => {
+			if (SettingsFile.Instance.ThumbnailDoubleClickAction == Data.ThumbnailDoubleClickAction.OpenThumbnailComparer)
+				ShowGroupInThumbnailComparerCommand.Execute().Subscribe();
+			else
+				OpenItems();
+		});
+
+		public KeyValuePair<string, Data.ThumbnailDoubleClickAction>[] ThumbnailDoubleClickOptions { get; } = {
+			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenFile"], Data.ThumbnailDoubleClickAction.OpenFile),
+			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenThumbnailComparer"], Data.ThumbnailDoubleClickAction.OpenThumbnailComparer),
+		};
+
 		public ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(OpenItemsInFolder);
 
 		public ReactiveCommand<string, Unit> OpenGroupCommand => ReactiveCommand.Create<string>(openInFolder => {
 			if (GetSelectedDuplicateItem() is DuplicateItemVM currentItem) {
-				List<DuplicateItemVM> items = EnumerateItemsInGroup(currentItem.ItemInfo.GroupId).ToList();
+				List<DuplicateItemVM> items = Duplicates.Where(d => d.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).ToList();
 				if (openInFolder == "0")
 					AlternativeOpen(String.Empty, SettingsFile.Instance.CustomCommands.OpenMultiple, items);
 				else
@@ -1127,7 +840,7 @@ namespace VDF.GUI.ViewModels {
 			else if (items.Count > 1)
 				command = cmdMulti;
 			if (!string.IsNullOrEmpty(command)) {
-				if (command[0] == '"' || command[0] == '\'') {  // -> when spaces in command part: "c:/my folder/prog.exe"
+				if (command[0] == '"' || command[0] == '\'') {
 					cmd = command.Split(command[0] + " ", 2);
 					cmd[0] += command[0];
 				}
@@ -1142,9 +855,9 @@ namespace VDF.GUI.ViewModels {
 			items.ForEach(item => args += $"\"{item.ItemInfo.Path}\" ");
 			if (cmd.Length == 2)
 				if (cmd[1].Contains("%f"))
-					args = cmd[1].Replace("%f", args);  // %f in user command string is the placeholder for the file(s)
+					args = cmd[1].Replace("%f", args);
 				else
-					args = cmd[1] + " " + args;         // otherwise simply attach
+					args = cmd[1] + " " + args;
 
 			try {
 				Process.Start(new ProcessStartInfo {
@@ -1207,16 +920,17 @@ namespace VDF.GUI.ViewModels {
 			int want = 0;
 			foreach (var m in majors) {
 				int v = m switch {
-					62 => 8, // FFmpeg 8.x
-					61 => 7, // FFmpeg 7.x
-					60 => 6, // FFmpeg 6.x
-					59 => 5, // FFmpeg 5.x
-					_ => 0  // unknown
+					62 => 8,
+					61 => 7,
+					60 => 6,
+					59 => 5,
+					_ => 0
 				};
 				if (v > want) want = v;
 			}
 			return want;
 		}
+
 		static string ArchString(Architecture a) => a switch {
 			Architecture.X64 => "x64 (64-bit)",
 			Architecture.X86 => "x86 (32-bit)",
@@ -1224,6 +938,7 @@ namespace VDF.GUI.ViewModels {
 			Architecture.Arm => "arm (32-bit ARM)",
 			_ => a.ToString()
 		};
+
 		public static string GetRequiredFfmpegPackage(string? vdfFolderPath = null) {
 			int avcodec = ffmpeg.LIBAVCODEC_VERSION_MAJOR;
 			int avformat = ffmpeg.LIBAVFORMAT_VERSION_MAJOR;
@@ -1255,7 +970,6 @@ Notes:
   • On ARM64 systems (e.g., Windows/macOS ARM): if your app runs as x64 (emulation/Rosetta), use x64 FFmpeg.
     If it runs natively as ARM64, use ARM64 FFmpeg.";
 
-			// Windows-specific placement instructions (VDF\bin)
 			if (OperatingSystem.IsWindows()) {
 				string target = string.IsNullOrWhiteSpace(vdfFolderPath)
 					? @"<YourApp>\VDF\bin"
@@ -1272,7 +986,6 @@ Windows setup:
        avcodec-*.dll, avformat-*.dll, avutil-*.dll, swresample-*.dll, swscale-*.dll";
 			}
 			else {
-				// macOS/Linux hints
 				msg +=
 	@"
 
@@ -1294,7 +1007,7 @@ Non-Windows setup:
 				await MessageBoxService.Show(App.Lang["Message.CustomDatabaseFolderMissing"]);
 				return;
 			}
-			if (_allGroups.Count > 0) {
+			if (Duplicates.Count > 0) {
 				if (await MessageBoxService.Show(App.Lang["Message.DiscardResultsPrompt"], MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes) {
 					return;
 				}
@@ -1350,10 +1063,7 @@ Non-Windows setup:
 				break;
 			}
 
-
-			_allGroups.Clear();
 			Duplicates.Clear();
-			_groupIndex.Clear();
 
 			TempDirectory = TempExtractionManager.Register(new("VDF-"));
 			Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));
@@ -1364,10 +1074,8 @@ Non-Windows setup:
 			TotalDuplicateGroups = 0;
 			TotalDuplicates = 0;
 			TotalDuplicatesSize = string.Empty;
-			TotalDuplicatesSize = string.Empty;
 
 			SettingsFile.SaveSettings();
-			//Set scan settings
 			Scanner.Settings.IncludeSubDirectories = SettingsFile.Instance.IncludeSubDirectories;
 			Scanner.Settings.IncludeImages = SettingsFile.Instance.IncludeImages;
 			Scanner.Settings.GeneratePreviewThumbnails = SettingsFile.Instance.GeneratePreviewThumbnails;
@@ -1411,12 +1119,9 @@ Non-Windows setup:
 			foreach (var s in SettingsFile.Instance.Blacklists)
 				Scanner.Settings.BlackList.Add(s);
 
-			ShowTreeDataGrid = false;
 			ChangeIsBusyMessage();
-
 			IsBusy = true;
 
-			//Start scan
 			if (isFreshScan) {
 				Scanner.StartSearch();
 			}
@@ -1449,7 +1154,7 @@ Non-Windows setup:
 				var gid = data.ItemInfo.GroupId;
 
 				HashSet<string> blacklist = new HashSet<string>();
-				foreach (DuplicateItemVM duplicateItem in EnumerateItemsInGroup(data.ItemInfo.GroupId))
+				foreach (DuplicateItemVM duplicateItem in Duplicates.Where(d => d.ItemInfo.GroupId == gid))
 					blacklist.Add(duplicateItem.ItemInfo.Path);
 				GroupBlacklist.Add(blacklist);
 				try {
@@ -1461,17 +1166,26 @@ Non-Windows setup:
 					GroupBlacklist.Remove(blacklist);
 					await MessageBoxService.Show(e.Message);
 				}
-				RemovePathsFromGroup(gid, blacklist);
+
+				// Remove all items in this group from the list
+				foreach (var path in blacklist.ToList())
+					for (int i = Duplicates.Count - 1; i >= 0; i--)
+						if (Duplicates[i].ItemInfo.GroupId == gid && Duplicates[i].ItemInfo.Path == path)
+							Duplicates.RemoveAt(i);
+
+				// Drop singleton groups
+				DropSingletonGroups();
+				RefreshGroupStats();
+				view?.Refresh();
 			});
 		});
 
 		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
-
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
 			List<LargeThumbnailDuplicateItem> items = new();
 
 			if (GetSelectedDuplicates().Count == 1) {
-				foreach (DuplicateItemVM duplicateItem in EnumerateItemsInGroup(data.ItemInfo.GroupId))
+				foreach (DuplicateItemVM duplicateItem in Duplicates.Where(d => d.ItemInfo.GroupId == data.ItemInfo.GroupId))
 					items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
 			}
 			else {
@@ -1482,13 +1196,15 @@ Non-Windows setup:
 			ThumbnailComparer thumbnailComparer = new(items);
 			thumbnailComparer.Show();
 		});
-		List<DuplicateItemVM> PossibleItemsToDelete => EnumerateAllItems().Where(d => d.Checked && d.IsVisibleInFilter).ToList();
+
+		List<DuplicateItemVM> PossibleItemsToDelete => Duplicates.Where(d => d.Checked && d.IsVisibleInFilter).ToList();
+
 		async void DeleteInternal(bool fromDisk,
 									List<DuplicateItemVM>? toDelete = null,
 									bool blackList = false,
 									bool createSymbolLinksInstead = false,
 									bool permanently = false) {
-			if (_allGroups.Count == 0) return;
+			if (Duplicates.Count == 0) return;
 			toDelete ??= PossibleItemsToDelete;
 			if (toDelete.Count == 0) return;
 
@@ -1499,19 +1215,17 @@ Non-Windows setup:
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult != MessageBoxButtons.Yes) return;
 
-			var keepByGroup = EnumerateAllItems()
+			var keepByGroup = Duplicates
 				   .GroupBy(d => d.ItemInfo.GroupId)
 				   .ToDictionary(
 					   g => g.Key,
-					   g => g.FirstOrDefault(x => !x.Checked)  // can be null if all are checked
+					   g => g.FirstOrDefault(x => !x.Checked)
 				   );
-
 
 			var actuallyDeleted = new HashSet<DuplicateItemVM>(toDelete.Count, ReferenceEqualityComparer<DuplicateItemVM>.Instance);
 			long freedBytes = 0;
 			foreach (var dub in toDelete) {
 				try {
-
 					var fe = new FileEntry(dub.ItemInfo.Path);
 					if (fromDisk) {
 						if (createSymbolLinksInstead) {
@@ -1556,13 +1270,20 @@ Non-Windows setup:
 			if (freedBytes > 0)
 				TotalSizeRemovedInternal += freedBytes;
 
-
 			if (actuallyDeleted.Count == 0)
 				return;
 
-			ApplyDeletionsAndDropSingles(actuallyDeleted);
-			RefreshGroupStats();
+			// Remove deleted items from flat list
+			foreach (var item in actuallyDeleted) {
+				for (int i = Duplicates.Count - 1; i >= 0; i--)
+					if (ReferenceEquals(Duplicates[i], item)) { Duplicates.RemoveAt(i); break; }
+			}
 
+			// Drop groups that have only one item left (no longer duplicates)
+			DropSingletonGroups();
+
+			RefreshGroupStats();
+			view?.Refresh();
 
 			ScanEngine.SaveDatabase();
 
@@ -1570,41 +1291,58 @@ Non-Windows setup:
 				await ExportScanResults(BackupScanResultsFile);
 		}
 
+		private void DropSingletonGroups() {
+			var singletonGroups = Duplicates
+				.GroupBy(d => d.ItemInfo.GroupId)
+				.Where(g => g.Count() <= 1)
+				.Select(g => g.Key)
+				.ToHashSet();
+
+			if (singletonGroups.Count == 0) return;
+
+			for (int i = Duplicates.Count - 1; i >= 0; i--)
+				if (singletonGroups.Contains(Duplicates[i].ItemInfo.GroupId))
+					Duplicates.RemoveAt(i);
+		}
+
 		public ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {
-			foreach (var item in Duplicates) {
-				if (item.IsGroup)
-					item.IsExpanded = true;
-			}
+			if (view == null) return;
+			foreach (var group in view.Groups ?? Enumerable.Empty<object>())
+				if (group is DataGridCollectionViewGroup g)
+					GetDataGrid.ExpandRowGroup(g, true);
 		});
+
 		public ReactiveCommand<Unit, Unit> CollapseAllGroupsCommand => ReactiveCommand.Create(() => {
-			foreach (var item in Duplicates) {
-				if (item.IsGroup)
-					item.IsExpanded = false;
-			}
+			if (view == null) return;
+			foreach (var group in view.Groups ?? Enumerable.Empty<object>())
+				if (group is DataGridCollectionViewGroup g)
+					GetDataGrid.CollapseRowGroup(g, true);
 		});
+
 		public ReactiveCommand<Unit, Unit> CopyPathsToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
 			StringBuilder sb = new();
 			foreach (var item in GetSelectedDuplicates()) {
 				if (item is not DuplicateItemVM currentItem) return;
 				sb.AppendLine(currentItem.ItemInfo.Path);
 			}
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600
+#pragma warning disable CS8602
 			await (ApplicationHelpers.MainWindow.Clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' })));
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning restore CS8602
+#pragma warning restore CS8600
 		});
+
 		public ReactiveCommand<Unit, Unit> CopyFilenamesToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
 			StringBuilder sb = new();
 			foreach (var item in GetSelectedDuplicates()) {
 				if (item is not DuplicateItemVM currentItem) return;
 				sb.AppendLine(Path.GetFileName(currentItem.ItemInfo.Path));
 			}
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600
+#pragma warning disable CS8602
 			await (ApplicationHelpers.MainWindow.Clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' })));
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning restore CS8602
+#pragma warning restore CS8600
 		});
 
 		public ReactiveCommand<Unit, Unit> RelocateDatabaseFilesCommand => ReactiveCommand.Create(() => {

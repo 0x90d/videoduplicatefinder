@@ -8,8 +8,7 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://Avalonia.Controls.TreeDataGrid/Themes/Fluent.axaml" />
-        <actipro:ModernTheme />
+<actipro:ModernTheme />
         <actipro:ModernTheme Includes="NativeDataGrid" />
     </Application.Styles>
 </Application>

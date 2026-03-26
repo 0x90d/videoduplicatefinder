@@ -24,6 +24,8 @@ using ReactiveUI;
 using VDF.Core.Utils;
 
 namespace VDF.GUI.Data {
+	public enum ThumbnailDoubleClickAction { OpenFile, OpenThumbnailComparer }
+
 	public class SettingsFile : ReactiveObject {
 		private static SettingsFile? instance;
 		private static string? settingsPath;
@@ -379,6 +381,12 @@ namespace VDF.GUI.Data {
 		public bool ShowSimilarityColumn {
 			get => _ShowSimilarityColumn;
 			set => this.RaiseAndSetIfChanged(ref _ShowSimilarityColumn, value);
+		}
+		ThumbnailDoubleClickAction _ThumbnailDoubleClickAction = ThumbnailDoubleClickAction.OpenFile;
+		[JsonPropertyName("ThumbnailDoubleClickAction")]
+		public ThumbnailDoubleClickAction ThumbnailDoubleClickAction {
+			get => _ThumbnailDoubleClickAction;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailDoubleClickAction, value);
 		}
 		bool _FilterByFilePathContains;
 		[JsonPropertyName("FilterByFilePathContains")]

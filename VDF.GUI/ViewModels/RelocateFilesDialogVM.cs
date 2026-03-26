@@ -25,8 +25,6 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Avalonia.Collections;
 using Avalonia.Controls;
-using Avalonia.Controls.Models.TreeDataGrid;
-using Avalonia.Controls.Templates;
 using Avalonia.Platform.Storage;
 using ReactiveUI;
 using VDF.Core;
@@ -84,47 +82,12 @@ namespace VDF.GUI.ViewModels {
 		static readonly JsonSerializerOptions serializerOptions = new() {
 			IncludeFields = true,
 		};
-		public FlatTreeDataGridSource<RelocateCandidate> TreeSource { get; }
-
 		public RelocateFilesDialogVM(Window owner) {
 			_owner = owner;
 			TempDatabaseFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 			ScanEngine.ExportDataBaseToJson(TempDatabaseFile, serializerOptions);
 			DbWrapper = JsonSerializer.Deserialize<DatabaseWrapper>(File.ReadAllBytes(TempDatabaseFile), serializerOptions)!;
 			_entries = [.. DbWrapper.Entries];
-
-
-			TreeSource = new FlatTreeDataGridSource<RelocateCandidate>(Preview) {
-				Columns =
-					{
-					new CheckBoxColumn<RelocateCandidate>(
-						header: App.Lang["Apply"],
-						getter: n => n.Selected,
-						setter: (n,v) => n.Selected = v
-					),
-					// 1) Old Path
-					new TextColumn<RelocateCandidate, string>(
-						header: App.Lang["Path"],
-						getter: n => n.OldPath ?? string.Empty
-					),
-					// 2) New Path
-					new TextColumn<RelocateCandidate, string>(
-						header: App.Lang["NewPath"],
-						getter: n => n.NewPath ?? string.Empty
-					),
-					// 3) Confidence
-					new TextColumn<RelocateCandidate, string>(
-						header: App.Lang["Confidence"],
-						getter: n => n.ConfidenceString ?? string.Empty
-					),
-					// 4) Notes
-					new TextColumn<RelocateCandidate, string>(
-						header: App.Lang["Note"],
-						getter: n => n.Note ?? string.Empty
-					),
-				}
-			};
-			TreeSource.RowSelection!.SingleSelect = false;
 		}
 
 		// Mode toggles
