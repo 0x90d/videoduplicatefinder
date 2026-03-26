@@ -269,20 +269,25 @@ namespace VDF.GUI.ViewModels {
 				return;
 			}
 
-			string arguments = type switch {
-				ArchiveType.TarXz => $"-xJf \"{archivePath}\" -C \"{targetFolder}\"",
-				ArchiveType.TarGz => $"-xzf \"{archivePath}\" -C \"{targetFolder}\"",
-				_ => throw new InvalidOperationException("Unsupported archive type")
+			var psi = new ProcessStartInfo {
+				FileName = "tar",
+				UseShellExecute = false,
+				RedirectStandardError = true,
+				RedirectStandardOutput = true
 			};
+			if (type == ArchiveType.TarXz) {
+				psi.ArgumentList.Add("-xJf");
+			} else if (type == ArchiveType.TarGz) {
+				psi.ArgumentList.Add("-xzf");
+			} else {
+				throw new InvalidOperationException("Unsupported archive type");
+			}
+			psi.ArgumentList.Add(archivePath);
+			psi.ArgumentList.Add("-C");
+			psi.ArgumentList.Add(targetFolder);
 
 			using var process = new Process {
-				StartInfo = new ProcessStartInfo {
-					FileName = "tar",
-					Arguments = arguments,
-					UseShellExecute = false,
-					RedirectStandardError = true,
-					RedirectStandardOutput = true
-				}
+				StartInfo = psi
 			};
 			process.Start();
 			process.WaitForExit();

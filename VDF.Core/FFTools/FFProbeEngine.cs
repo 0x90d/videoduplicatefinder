@@ -24,21 +24,26 @@ namespace VDF.Core.FFTools {
 		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
 		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
-			//https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
-			string ffprobeArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" +
-				$" -print_format json -sexagesimal -show_format -show_streams  \"{FFToolsUtils.LongPathFix(file)}\"";
+			var psi = new ProcessStartInfo {
+				FileName = FFprobePath,
+				CreateNoWindow = true,
+				RedirectStandardInput = false,
+				WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
+				RedirectStandardOutput = true,
+				RedirectStandardError = extendedLogging,
+				WindowStyle = ProcessWindowStyle.Hidden
+			};
+
+			psi.ArgumentList.Add("-hide_banner");
+			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add((extendedLogging ? "error" : "quiet"));
+			psi.ArgumentList.Add("-print_format"); psi.ArgumentList.Add("json");
+			psi.ArgumentList.Add("-sexagesimal");
+			psi.ArgumentList.Add("-show_format");
+			psi.ArgumentList.Add("-show_streams");
+			psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
 
 			using var process = new Process {
-				StartInfo = new ProcessStartInfo {
-					Arguments = ffprobeArguments,
-					FileName = FFprobePath,
-					CreateNoWindow = true,
-					RedirectStandardInput = false,
-					WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
-					RedirectStandardOutput = true,
-					RedirectStandardError = extendedLogging,
-					WindowStyle = ProcessWindowStyle.Hidden
-				}
+				StartInfo = psi
 			};
 			MediaInfo? mediaInfo = null;
 			string errOut = string.Empty;
@@ -75,8 +80,10 @@ namespace VDF.Core.FFTools {
 			}
 			if (mediaInfo == null || errOut.Length > 0) {
 				string message = $"{((mediaInfo == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} media info from: {file}";
-				if (extendedLogging)
-					message += $":{Environment.NewLine}{FFprobePath} {ffprobeArguments}";
+				if (extendedLogging) {
+					var args = string.Join(" ", process.StartInfo.ArgumentList);
+					message += $":{Environment.NewLine}{FFprobePath} {args}";
+				}
 				Logger.Instance.Info($"{message}{errOut}");
 			}
 			return mediaInfo;
