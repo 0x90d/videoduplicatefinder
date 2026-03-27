@@ -155,6 +155,7 @@ namespace VDF.Core {
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
 			Logger.Instance.Info(T("Log.FinishedScanForDuplicates", SearchTimer.Elapsed));
+			LogGroupStatistics();
 			Logger.Instance.Info(T("Log.HighlightingBestResults"));
 			HighlightBestMatches();
 			ScanDone?.Invoke(this, new EventArgs());
@@ -599,6 +600,10 @@ namespace VDF.Core {
 
 		void ScanForDuplicates() {
 			Dictionary<string, DuplicateItem>? duplicateDict = new();
+			// Maps GroupId -> representative FileEntry for that group.
+			// Used to prevent merging groups whose representatives aren't similar.
+			Dictionary<Guid, FileEntry> groupRepresentatives = new();
+			int mergesBlocked = 0;
 
 			//Exclude existing database entries which not met current scan settings
 			List<FileEntry> ScanList = new();
@@ -651,17 +656,41 @@ namespace VDF.Core {
 						//this happens with 4+ identical items:
 						//first, 2+ duplicate groups are found independently, they are merged in this branch
 						if (existingBase!.GroupId != existingComp!.GroupId) {
+							// Before merging two groups, verify that the representative
+							// of each group is similar to the other group's representative.
+							// This prevents daisy-chain merging where a single bridging
+							// pair pulls two unrelated groups together.
+							if (groupRepresentatives.TryGetValue(existingBase.GroupId, out var repBase) &&
+								groupRepresentatives.TryGetValue(existingComp.GroupId, out var repComp) &&
+								!CheckIfDuplicate(repBase, null, repComp, out _)) {
+								mergesBlocked++;
+								return; // Representatives aren't similar — don't merge.
+							}
 							Guid groupID = existingComp!.GroupId;
 							foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
 								c.GroupId == groupID))
 								dup.GroupId = existingBase.GroupId;
+							// Keep the representative of the absorbing group; remove the merged one.
+							groupRepresentatives.Remove(groupID);
 						}
 					}
 					else if (foundBase) {
+						// New item joining an existing group — verify it matches the representative.
+						if (groupRepresentatives.TryGetValue(existingBase!.GroupId, out var rep) &&
+							!CheckIfDuplicate(rep, null, compItem, out _)) {
+							mergesBlocked++;
+							return;
+						}
 						duplicateDict.TryAdd(compItem.Path,
 							new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
 					}
 					else if (foundComp) {
+						// New item joining an existing group — verify it matches the representative.
+						if (groupRepresentatives.TryGetValue(existingComp!.GroupId, out var rep) &&
+							!CheckIfDuplicate(rep, null, entry, out _)) {
+							mergesBlocked++;
+							return;
+						}
 						duplicateDict.TryAdd(entry.Path,
 							new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
 					}
@@ -669,6 +698,7 @@ namespace VDF.Core {
 						var groupId = Guid.NewGuid();
 						duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
 						duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
+						groupRepresentatives[groupId] = entry;
 					}
 				}
 			}
@@ -893,8 +923,207 @@ namespace VDF.Core {
 				}
 			}
 			catch (OperationCanceledException) { }
+			if (mergesBlocked > 0)
+				Logger.Instance.Info($"Group merge validation: blocked {mergesBlocked} merge(s) where group representatives were not similar");
 			Duplicates = new HashSet<DuplicateItem>(duplicateDict.Values);
+			SplitDaisyChainGroups();
 		}
+
+		/// <summary>
+		/// Post-processes duplicate groups to break apart "daisy chains" where transitive
+		/// merging created groups containing items that aren't actually similar to each other.
+		/// For each group with 3+ members, builds a pairwise similarity graph, then
+		/// iteratively prunes members that are similar to fewer than half the group.
+		/// Pruned items are re-clustered into their own groups if they still have matches.
+		/// </summary>
+		void SplitDaisyChainGroups() {
+			// Build a fast lookup from path -> FileEntry for re-comparing pairs.
+			var dbLookup = new Dictionary<string, FileEntry>(
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+			foreach (FileEntry fe in DatabaseUtils.Database)
+				dbLookup[fe.Path] = fe;
+
+			// Group duplicates by GroupId; only process groups with 3+ members.
+			var groups = Duplicates
+				.GroupBy(d => d.GroupId)
+				.Where(g => g.Count() >= 3)
+				.ToList();
+
+			if (groups.Count == 0) return;
+
+			int groupsSplit = 0;
+			int itemsRemoved = 0;
+
+			foreach (var group in groups) {
+				var members = group.ToList();
+				int n = members.Count;
+
+				// Resolve FileEntry for each member; skip group if any entry is missing.
+				var entries = new FileEntry[n];
+				bool allFound = true;
+				for (int i = 0; i < n; i++) {
+					if (!dbLookup.TryGetValue(members[i].Path, out var fe)) {
+						allFound = false;
+						break;
+					}
+					entries[i] = fe;
+				}
+				if (!allFound) continue;
+
+				// Build pairwise similarity matrix.
+				var similar = new bool[n, n];
+				for (int i = 0; i < n; i++) {
+					similar[i, i] = true;
+					for (int j = i + 1; j < n; j++) {
+						bool isSimilar = CheckIfDuplicate(entries[i], null, entries[j], out _);
+						similar[i, j] = isSimilar;
+						similar[j, i] = isSimilar;
+					}
+				}
+
+				// Iterative pruning: remove the least-connected member until every
+				// remaining member is similar to at least half of the other members.
+				var active = new List<int>(Enumerable.Range(0, n));
+				var pruned = new List<int>();
+
+				bool changed = true;
+				while (changed && active.Count >= 2) {
+					changed = false;
+					int worstIdx = -1;
+					int worstConnections = int.MaxValue;
+
+					for (int ai = 0; ai < active.Count; ai++) {
+						int idx = active[ai];
+						int connections = 0;
+						for (int aj = 0; aj < active.Count; aj++) {
+							if (ai != aj && similar[idx, active[aj]])
+								connections++;
+						}
+						if (connections < worstConnections) {
+							worstConnections = connections;
+							worstIdx = ai;
+						}
+					}
+
+					// Prune if the least-connected member is similar to fewer than half.
+					int requiredConnections = (active.Count - 1 + 1) / 2; // ceiling of (count-1)/2
+					if (worstConnections < requiredConnections) {
+						pruned.Add(active[worstIdx]);
+						active.RemoveAt(worstIdx);
+						changed = true;
+					}
+				}
+
+				if (pruned.Count == 0) continue;
+
+				groupsSplit++;
+
+				// Assign a new GroupId to the surviving core group (if 2+ members remain).
+				if (active.Count >= 2) {
+					var coreGroupId = Guid.NewGuid();
+					foreach (int idx in active)
+						members[idx].GroupId = coreGroupId;
+				}
+				else {
+					// Core collapsed to a single item — remove it too.
+					foreach (int idx in active) {
+						Duplicates.Remove(members[idx]);
+						itemsRemoved++;
+					}
+					active.Clear();
+				}
+
+				// Re-cluster pruned items among themselves: form groups from connected
+				// components using the same similarity matrix.
+				var visited = new HashSet<int>();
+				foreach (int seed in pruned) {
+					if (visited.Contains(seed)) continue;
+					var component = new List<int>();
+					var queue = new Queue<int>();
+					queue.Enqueue(seed);
+					visited.Add(seed);
+					while (queue.Count > 0) {
+						int cur = queue.Dequeue();
+						component.Add(cur);
+						foreach (int other in pruned) {
+							if (!visited.Contains(other) && similar[cur, other]) {
+								visited.Add(other);
+								queue.Enqueue(other);
+							}
+						}
+					}
+
+					if (component.Count >= 2) {
+						// Recursively validate this sub-group too: apply the same
+						// majority-pruning before accepting it.
+						var subActive = new List<int>(component);
+						bool subChanged = true;
+						while (subChanged && subActive.Count >= 2) {
+							subChanged = false;
+							int subWorstIdx = -1;
+							int subWorstConn = int.MaxValue;
+							for (int ai = 0; ai < subActive.Count; ai++) {
+								int idx = subActive[ai];
+								int conn = 0;
+								for (int aj = 0; aj < subActive.Count; aj++) {
+									if (ai != aj && similar[idx, subActive[aj]])
+										conn++;
+								}
+								if (conn < subWorstConn) {
+									subWorstConn = conn;
+									subWorstIdx = ai;
+								}
+							}
+							int subRequired = (subActive.Count - 1 + 1) / 2;
+							if (subWorstConn < subRequired) {
+								// Remove this item entirely — it doesn't fit anywhere.
+								Duplicates.Remove(members[subActive[subWorstIdx]]);
+								itemsRemoved++;
+								subActive.RemoveAt(subWorstIdx);
+								subChanged = true;
+							}
+						}
+
+						if (subActive.Count >= 2) {
+							var subGroupId = Guid.NewGuid();
+							foreach (int idx in subActive)
+								members[idx].GroupId = subGroupId;
+						}
+						else {
+							foreach (int idx in subActive) {
+								Duplicates.Remove(members[idx]);
+								itemsRemoved++;
+							}
+						}
+					}
+					else {
+						// Single pruned item with no matches among other pruned items.
+						Duplicates.Remove(members[component[0]]);
+						itemsRemoved++;
+					}
+				}
+			}
+
+			if (groupsSplit > 0)
+				Logger.Instance.Info($"Daisy-chain validation: split {groupsSplit} group(s), removed {itemsRemoved} singleton item(s)");
+		}
+
+		void LogGroupStatistics() {
+			var groupSizes = Duplicates
+				.GroupBy(d => d.GroupId)
+				.Select(g => g.Count())
+				.ToList();
+			if (groupSizes.Count == 0) return;
+			int totalItems = groupSizes.Sum();
+			int maxSize = groupSizes.Max();
+			double avgSize = groupSizes.Average();
+			int groupsOver5 = groupSizes.Count(s => s > 5);
+			int groupsOver10 = groupSizes.Count(s => s > 10);
+			Logger.Instance.Info($"Group statistics: {groupSizes.Count} groups, {totalItems} items, " +
+				$"avg size {avgSize:F1}, max size {maxSize}, " +
+				$"groups with >5 items: {groupsOver5}, >10 items: {groupsOver10}");
+		}
+
 		public async void CleanupDatabase() {
 			await Task.Run(() => {
 				DatabaseUtils.CleanupDatabase();
