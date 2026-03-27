@@ -62,23 +62,27 @@ namespace VDF.GUI.Views {
 		private void ThumbnailComparer_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 			if (DataContext is ThumbnailComparerVM vm) {
 				vm.LoadThumbnailsAsync();
-				var canvas = this.FindControl<Grid>("CompareCanvas");
-				if (canvas != null) {
-					var b = canvas.Bounds;
-					vm.ViewportWidth = b.Width;
-					vm.ViewportHeight = b.Height;
 
-					canvas.GetObservable(Layoutable.BoundsProperty).Subscribe(b => {
-						vm.ViewportWidth = b.Width;
-						vm.ViewportHeight = b.Height;
-					});
-
-					canvas.GetObservable(Visual.IsVisibleProperty).Subscribe(visible => {
-						var cb = canvas.Bounds;
-						vm.ViewportWidth = cb.Width;
-						vm.ViewportHeight = cb.Height;
-					});
+				void TrackCanvas(string name) {
+					var canvas = this.FindControl<Grid>(name);
+					if (canvas != null) {
+						canvas.GetObservable(Layoutable.BoundsProperty).Subscribe(b => {
+							if (canvas.IsVisible) {
+								vm.ViewportWidth = b.Width;
+								vm.ViewportHeight = b.Height;
+							}
+						});
+						canvas.GetObservable(Visual.IsVisibleProperty).Subscribe(_ => {
+							if (canvas.IsVisible) {
+								vm.ViewportWidth = canvas.Bounds.Width;
+								vm.ViewportHeight = canvas.Bounds.Height;
+							}
+						});
+					}
 				}
+
+				TrackCanvas("CompareCanvas");
+				TrackCanvas("StackedCanvas");
 			}
 		}
 

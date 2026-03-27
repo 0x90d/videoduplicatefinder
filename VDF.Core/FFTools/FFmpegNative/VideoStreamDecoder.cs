@@ -85,28 +85,30 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		public bool TryDecodeFrame(out AVFrame frame, TimeSpan position) {
 			ffmpeg.av_frame_unref(_pFrame);
 			ffmpeg.av_frame_unref(_pReceivedFrame);
-			int error;
 
 			AVRational timebase = _pFormatContext->streams[_streamIndex]->time_base;
-			float AV_TIME_BASE = (float)timebase.den / timebase.num;
-			long tc = Convert.ToInt64(position.TotalSeconds * AV_TIME_BASE);
+			double AV_TIME_BASE = (double)timebase.den / timebase.num;
+			long targetPts = Convert.ToInt64(position.TotalSeconds * AV_TIME_BASE);
 
-			if (ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, tc, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0)
-				ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, tc, ffmpeg.AVSEEK_FLAG_ANY).ThrowExceptionIfError();
-			do {
+			if (ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, targetPts, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0)
+				ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, targetPts, ffmpeg.AVSEEK_FLAG_ANY).ThrowExceptionIfError();
+
+			ffmpeg.avcodec_flush_buffers(_pCodecContext);
+
+			// Decode forward from keyframe until we reach the target PTS
+			while (true) {
+				int error;
+				do {
+					ffmpeg.av_packet_unref(_pPacket);
+					error = ffmpeg.av_read_frame(_pFormatContext, _pPacket);
+					if (error == ffmpeg.AVERROR_EOF) {
+						frame = *_pFrame;
+						return false;
+					}
+					error.ThrowExceptionIfError();
+				} while (_pPacket->stream_index != _streamIndex);
+
 				try {
-					do {
-						ffmpeg.av_packet_unref(_pPacket);
-						error = ffmpeg.av_read_frame(_pFormatContext, _pPacket);
-
-						if (error == ffmpeg.AVERROR_EOF) {
-							frame = *_pFrame;
-							return false;
-						}
-
-						error.ThrowExceptionIfError();
-					} while (_pPacket->stream_index != _streamIndex);
-
 					ffmpeg.avcodec_send_packet(_pCodecContext, _pPacket).ThrowExceptionIfError();
 				}
 				finally {
@@ -114,9 +116,20 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				}
 
 				error = ffmpeg.avcodec_receive_frame(_pCodecContext, _pFrame);
-			} while (error == ffmpeg.AVERROR(ffmpeg.EAGAIN));
+				if (error == ffmpeg.AVERROR(ffmpeg.EAGAIN))
+					continue;
+				if (error < 0) {
+					frame = *_pFrame;
+					return false;
+				}
 
-			error.ThrowExceptionIfError();
+				// Check if we've reached or passed the target position
+				if (_pFrame->pts >= targetPts || _pFrame->pts == ffmpeg.AV_NOPTS_VALUE)
+					break;
+
+				// Not at target yet - discard this frame and decode the next
+				ffmpeg.av_frame_unref(_pFrame);
+			}
 
 			if (_pCodecContext->hw_device_ctx != null) {
 				ffmpeg.av_hwframe_transfer_data(_pReceivedFrame, _pFrame, 0).ThrowExceptionIfError();
