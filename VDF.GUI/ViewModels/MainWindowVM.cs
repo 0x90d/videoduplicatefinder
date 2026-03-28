@@ -314,7 +314,7 @@ namespace VDF.GUI.ViewModels {
 			RemainingTime = new TimeSpan().Format();
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
-			ThumbnailRetrievalProgressText = "Finished generating thumbnails for preview";
+			ThumbnailRetrievalProgressText = string.Empty;
 			ShowThumbnailRetrievalProgressBar = false;
 #pragma warning disable CS4014
 			if (SettingsFile.Instance.BackupAfterListChanged)
