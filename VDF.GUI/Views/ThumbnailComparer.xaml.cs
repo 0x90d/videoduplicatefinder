@@ -61,7 +61,7 @@ namespace VDF.GUI.Views {
 
 		private void ThumbnailComparer_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 			if (DataContext is ThumbnailComparerVM vm) {
-				vm.LoadThumbnailsAsync();
+				_ = vm.LoadThumbnailsAsync();
 
 				void TrackCanvas(string name) {
 					var canvas = this.FindControl<Grid>(name);

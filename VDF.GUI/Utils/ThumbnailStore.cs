@@ -71,7 +71,6 @@ namespace VDF.GUI.Utils {
 		readonly string _idxPath;
 		readonly Dictionary<string, (long off, int len)> _idx;
 		readonly object _gate = new();
-		bool _dirty;
 		public readonly string Folder;
 
 		private ThumbPack(FileStream fs, string idxPath, Dictionary<string, (long, int)> idx, string packPath, string folder) {
@@ -106,7 +105,6 @@ namespace VDF.GUI.Utils {
 					limiting.Flush();
 					int len = checked((int)limiting.BytesWritten);
 					_idx[key] = (off, len);
-					_dirty = true;
 					return (off, len);
 				}
 			}
@@ -130,7 +128,6 @@ namespace VDF.GUI.Utils {
 			lock (_gate) {
 				var json = System.Text.Json.JsonSerializer.Serialize(_idx, IdxJson);
 				File.WriteAllText(_idxPath, json);
-				_dirty = false;
 			}
 		}
 

@@ -87,7 +87,9 @@ namespace VDF.GUI.ViewModels {
 #if DEBUG
 					throw;
 #endif
+#pragma warning disable CS0162 // Unreachable code detected
 					return null;
+#pragma warning restore CS0162 // Unreachable code detected
 				}
 			}
 			set => this.RaiseAndSetIfChanged(ref _thumbnail, value);
