@@ -17,7 +17,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -27,6 +26,7 @@ using ReactiveUI;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using System.Reactive;
+using VDF.Core.FFTools.FFmpegNative;
 using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
@@ -316,20 +316,12 @@ namespace VDF.GUI.ViewModels {
 				CopyFile(file, Path.Combine(targetFolder, fileName));
 			}
 
-			string[] libraryPrefixes = { "avcodec", "avformat", "avutil", "swresample", "swscale" };
-			string[] libraryExtensions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-				? new[] { ".dll" }
-				: RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-					? new[] { ".dylib" }
-					: new[] { ".so" };
-
+			var libraryFiles = FFmpegHelper.GenerateLibraryFileNames();
 			foreach (var file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories)) {
-				string fileName = Path.GetFileName(file);
-				if (!libraryExtensions.Any(ext => fileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
-					continue;
-				if (!libraryPrefixes.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
-					continue;
-				CopyFile(file, Path.Combine(targetFolder, fileName));
+				var fileName = Path.GetFileName(file);
+				if (libraryFiles.Contains(fileName, StringComparer.OrdinalIgnoreCase)) {
+					CopyFile(file, Path.Combine(targetFolder, fileName));
+				}
 			}
 		}
 
