@@ -76,7 +76,11 @@ namespace VDF.GUI.ViewModels {
 
 						targetFolder = Path.Combine(CoreUtils.CurrentFolder, "bin");
 						Directory.CreateDirectory(targetFolder);
-						CopyFfmpegFiles(extractedFolder, targetFolder);
+						var targetLibFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+							? Path.Combine(CoreUtils.CurrentFolder, "lib")
+							: targetFolder;
+						Directory.CreateDirectory(targetLibFolder);
+						CopyFfmpegFiles(extractedFolder, targetFolder, targetLibFolder);
 						downloadSucceeded = true;
 						break;
 					}
@@ -297,7 +301,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		static void CopyFfmpegFiles(string sourceRoot, string targetFolder) {
+		static void CopyFfmpegFiles(string sourceRoot, string targetFolder, string targetLibFolder) {
 			string ffmpegName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "ffmpeg";
 			string ffprobeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffprobe.exe" : "ffprobe";
 
@@ -320,7 +324,7 @@ namespace VDF.GUI.ViewModels {
 			foreach (var file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories)) {
 				var fileName = Path.GetFileName(file);
 				if (libraryFiles.Contains(fileName, StringComparer.OrdinalIgnoreCase)) {
-					CopyFile(file, Path.Combine(targetFolder, fileName));
+					CopyFile(file, Path.Combine(targetLibFolder, fileName));
 				}
 			}
 		}
