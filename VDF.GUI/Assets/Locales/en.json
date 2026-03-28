@@ -242,6 +242,9 @@
 	"MainWindow.Settings.MaxDegreeOfParallelism": "Max Degree Of Parallelism:",
 	"MainWindow.Settings.MaxDegreeOfParallelismTooltip": "Limits the amount of concurrent tasks. A value of -1 leaves it up to the system to decide (takes full speed), a value of 1 is most stable (lets you interact with your system while scan runs in background). Maximum should be the amount of physical cores of your CPU.",
 	"MainWindow.Settings.Misc": "Misc",
+	"MainWindow.Settings.Scanning": "Scanning",
+	"MainWindow.Settings.Directories": "Directories",
+	"MainWindow.Settings.Processing": "Processing",
 	"MainWindow.Settings.MiscHint": "Hint: Mouse hover options to get more information about them",
 	"MainWindow.Settings.MiscWikiHint": "Hint: For best settings please check out our ",
 	"MainWindow.Settings.MiscWikiHyperlink": "Wiki",
@@ -433,5 +436,7 @@
 	"Shortcut.InvertCheckedItems": "Invert Checked Items",
 	"Shortcut.ExpandAllGroups": "Expand All Groups",
 	"Shortcut.CollapseAllGroups": "Collapse All Groups",
-	"Shortcut.RemoveCheckedItemsFromList": "Remove Checked from List"
+	"Shortcut.RemoveCheckedItemsFromList": "Remove Checked from List",
+	"Shortcut.NavigateNextGroup": "Navigate to Next Group",
+	"Shortcut.NavigatePreviousGroup": "Navigate to Previous Group"
 }

@@ -1157,553 +1157,158 @@
                                     </MenuItem.Header>
                                 </MenuItem>
                             </Menu>
-                            <TabControl Grid.Row="1">
-                                <TabItem x:Name="TabItemSettingsMisc">
+                            <TabControl Grid.Row="1" TabStripPlacement="Left">
+                                <TabControl.Styles>
+                                    <Style Selector="TabItem">
+                                        <Setter Property="MinWidth" Value="160" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Left" />
+                                        <Setter Property="Padding" Value="14,10" />
+                                    </Style>
+                                </TabControl.Styles>
+
+                                <!-- ═══════════════ SCANNING ═══════════════ -->
+                                <TabItem IsEnabled="{Binding !IsScanning}">
                                     <TabItem.Header>
-                                        <TextBlock
-                                            VerticalAlignment="Center"
-                                            FontSize="12"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Misc]}" />
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Scanning]}" />
                                     </TabItem.Header>
-                                    <ScrollViewer HorizontalScrollBarVisibility="Auto">
-                                        <Grid IsEnabled="{Binding !IsScanning}" RowDefinitions="Auto,Auto,Auto, *">
-                                            <TextBlock
-                                                Grid.Row="0"
-                                                Margin="10,0,0,10"
-                                                Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscHint]}" />
-                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10,0,0,10">
-                                                <TextBlock
-                                                    Grid.Row="0"
-                                                    Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHint]}" />
-                                                <Button
-                                                    Margin="5,0,0,0"
-                                                    Classes="hyperlink"
-                                                    Command="{Binding OpenWikiLinkCommand}"
-                                                    Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHyperlink]}" />
+                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel Margin="16,12,16,16" Spacing="12">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                           Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHint]}" />
+                                                <Button Classes="hyperlink" Command="{Binding OpenWikiLinkCommand}"
+                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHyperlink]}" />
                                             </StackPanel>
-                                            <Grid Grid.Row="2" ColumnDefinitions="Auto, Auto, *">
-                                                <StackPanel Margin="5,5,0,0">
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreReadOnlyFolders]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}"
-                                                        IsThreeState="False" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeSubDirectories]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}"
-                                                        IsThreeState="False" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeImages]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}"
-                                                        IsThreeState="False" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDate]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseExifCreationDate}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDateTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImages]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImagesTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePoints]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePointsTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinks]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExcludeHardLinks}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinksTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExtendedFFToolsLogging]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExtendedFFToolsLogging}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExtendedFFToolsLoggingTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.LogExcludedFiles]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=LogExcludedFiles}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.LogExcludedFilesTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSampling]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSamplingTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResults]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResultsTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseNativeFfmpegBinding]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseNativeFfmpegBinding}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseNativeFfmpegBindingTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreBlackPixels]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreBlackPixelsTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreWhitePixels]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreWhitePixelsTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CompareHorizontallyFlipped]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CompareHorizontallyFlippedTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExit]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExitTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFiles]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFilesTooltip]}" />
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabase]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabaseTooltip]}" />
-                                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                                        <TextBlock
-                                                            VerticalAlignment="Center"
-                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicates]}"
-                                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicatesTooltip]}" />
-                                                        <ComboBox
-                                                            VerticalAlignment="Center"
-                                                            ItemsSource="{Binding FolderMatchModes}"
-                                                            SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FolderMatchMode}"
-                                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicatesTooltip]}" />
-                                                        <NumericUpDown
-                                                            Width="70"
-                                                            VerticalAlignment="Center"
-                                                            Increment="1"
-                                                            Maximum="20"
-                                                            Minimum="1"
-                                                            IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IsFolderMatchModeActive}"
-                                                            Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=SameFolderDepth}" />
+
+                                            <!-- Comparison Parameters -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Percent]}" />
+                                                    <NumericUpDown Width="200" HorizontalAlignment="Left" FormatString="\{0\}%"
+                                                                   Increment="0.1" Maximum="100" Minimum="1"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PercentTooltip]}"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifference]}" />
+                                                    <NumericUpDown Width="200" HorizontalAlignment="Left" FormatString="\{0\}%"
+                                                                   Increment="0.1" Maximum="100" Minimum="0"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceTooltip]}"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PercentDurationDifference}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMinSeconds]}" />
+                                                    <NumericUpDown Width="200" HorizontalAlignment="Left"
+                                                                   Increment="1" Maximum="3600" Minimum="0"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMinSecondsTooltip]}"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DurationDifferenceMinSeconds}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMaxSeconds]}" />
+                                                    <NumericUpDown Width="200" HorizontalAlignment="Left"
+                                                                   Increment="1" Maximum="86400" Minimum="0"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMaxSecondsTooltip]}"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DurationDifferenceMaxSeconds}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxSamplingDurationSeconds]}" />
+                                                    <NumericUpDown Width="200" HorizontalAlignment="Left"
+                                                                   Increment="1" Maximum="86400" Minimum="0"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxSamplingDurationSecondsTooltip]}"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxSamplingDurationSeconds}" />
+                                                    <TextBlock Margin="0,4,0,0" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Thumbnails]}" />
+                                                    <NumericUpDown Width="200" HorizontalAlignment="Left"
+                                                                   Maximum="100" Minimum="1"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailsTooltip]}"
+                                                                   ValueChanged="Thumbnails_ValueChanged"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxDegreeOfParallelism]}" />
+                                                    <NumericUpDown Width="200" HorizontalAlignment="Left"
+                                                                   Maximum="100" Minimum="-1"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxDegreeOfParallelismTooltip]}"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                                        <TextBlock VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicates]}"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicatesTooltip]}" />
+                                                        <ComboBox VerticalAlignment="Center"
+                                                                  ItemsSource="{Binding FolderMatchModes}"
+                                                                  SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FolderMatchMode}"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.OnlySameFolderDuplicatesTooltip]}" />
+                                                        <NumericUpDown Width="70" VerticalAlignment="Center" Increment="1" Maximum="20" Minimum="1"
+                                                                       IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IsFolderMatchModeActive}"
+                                                                       Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=SameFolderDepth}" />
                                                     </StackPanel>
-                                                    <CheckBox
-                                                        VerticalAlignment="Center"
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UsePHashing]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}"
-                                                        IsThreeState="False"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UsePHashingTooltip]}" />
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="1" Margin="15,5,0,0">
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Percent]}" />
-                                                    <NumericUpDown
-                                                        Width="200"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        FormatString="\{0\}%"
-                                                        Increment="0.1"
-                                                        Maximum="100"
-                                                        Minimum="1"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PercentTooltip]}"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Percent}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifference]}" />
-                                                    <NumericUpDown
-                                                        Width="200"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        FormatString="\{0\}%"
-                                                        Increment="0.1"
-                                                        Maximum="100"
-                                                        Minimum="0"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceTooltip]}"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PercentDurationDifference}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMinSeconds]}" />
-                                                    <NumericUpDown
-                                                        Width="200"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        Increment="1"
-                                                        Maximum="3600"
-                                                        Minimum="0"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMinSecondsTooltip]}"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DurationDifferenceMinSeconds}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMaxSeconds]}" />
-                                                    <NumericUpDown
-                                                        Width="200"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        Increment="1"
-                                                        Maximum="86400"
-                                                        Minimum="0"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DurationDifferenceMaxSecondsTooltip]}"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DurationDifferenceMaxSeconds}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxSamplingDurationSeconds]}" />
-                                                    <NumericUpDown
-                                                        Width="200"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        Increment="1"
-                                                        Maximum="86400"
-                                                        Minimum="0"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxSamplingDurationSecondsTooltip]}"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxSamplingDurationSeconds}" />
-                                                    <TextBlock
-                                                        Margin="0,5,0,0"
-                                                        VerticalAlignment="Center"
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Thumbnails]}" />
-                                                    <NumericUpDown
-                                                        Width="200"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        Maximum="100"
-                                                        Minimum="1"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailsTooltip]}"
-                                                        ValueChanged="Thumbnails_ValueChanged"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Thumbnails}" />
-                                                    <TextBlock
-                                                        Margin="0,5,0,0"
-                                                        VerticalAlignment="Center"
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxDegreeOfParallelism]}" />
-                                                    <NumericUpDown
-                                                        Width="200"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        Maximum="100"
-                                                        Minimum="-1"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxDegreeOfParallelismTooltip]}"
-                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />                                                    
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="2" Margin="15,5,10,0" Spacing="6">
-                                                    <TextBlock FontWeight="Bold" Margin="0,10,0,0" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
-                                                    <CheckBox
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnableScheduledScan]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnableScheduledScan}" />
-                                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                                        <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTime]}" />
-                                                        <TextBox
-                                                            Width="80"
-                                                            Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScheduledScanTime}"
-                                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTimeTooltip]}" />
+                                            </Border>
+
+                                            <!-- Options (2-column checkboxes) -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                                    <StackPanel Grid.Column="0" Spacing="4">
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeSubDirectories]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}" IsThreeState="False" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeImages]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}" IsThreeState="False" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UsePHashing]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UsePHashingTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CompareHorizontallyFlipped]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CompareHorizontallyFlipped}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CompareHorizontallyFlippedTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreBlackPixels]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreBlackPixelsTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreWhitePixels]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreWhitePixelsTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDate]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseExifCreationDate}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDateTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImages]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImagesTooltip]}" />
                                                     </StackPanel>
-                                                    <CheckBox
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyScheduledScanComplete]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScheduledScanComplete}" />
-                                                    <CheckBox
-                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyOnScanComplete]}"
-                                                        IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScanComplete}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyOnScanCompleteTooltip]}" /><TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArguments]}" />
-                                                    <TextBox
-                                                        VerticalAlignment="Center"
-                                                        Width="250"
-                                                        HorizontalAlignment="Left"
-                                                        Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArgumentsTooltip]}" />
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock
-                                                            VerticalAlignment="Center"
-                                                            FontSize="14"
-                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.HardwareAcceleration]}" />
-                                                        <Button
-                                                            Margin="10,0,0,0"
-                                                            Classes="hyperlink"
-                                                            Command="{Binding OpenHWInfoLinkCommand}"
-                                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.MoreInfo]}" />
-                                                    </StackPanel>
-                                                    <ComboBox
-                                                        x:Name="ComboboxHardwareAccelerationMode"
-                                                        VerticalAlignment="Center"
-                                                        Width="250"
-                                                        HorizontalAlignment="Left"
-                                                        ItemsSource="{Binding HardwareAccelerationModes}"
-                                                        SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.HardwareAccelerationTooltip]}" />
-                                                    <TextBlock
-                                                        VerticalAlignment="Center"
-                                                        FontSize="14"
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommands]}" />
-                                                    <ComboBox
-                                                        VerticalAlignment="Center"
-                                                        ItemsSource="{Binding CustomCommandList}"
-                                                        SelectedItem="{Binding SelectedCustomCommand}"
-                                                        Width="250"
-                                                        HorizontalAlignment="Left"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsTooltip]}" />
-                                                    <TextBox
-                                                        VerticalAlignment="Center"
-                                                        Text="{Binding SelectedCustomCommandValue}"
-                                                        Width="250"
-                                                        HorizontalAlignment="Left"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsPlaceholderTooltip]}" />
-                                                    <TextBlock
-                                                        VerticalAlignment="Center"
-                                                        FontSize="14"
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolder]}" />
-                                                    <TextBox
-                                                        VerticalAlignment="Center"
-                                                        Width="250"
-                                                        HorizontalAlignment="Left"
-                                                        Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolderTooltip]}" />
-                                                </StackPanel>
-                                            </Grid>
-                                            <Grid
-                                                Grid.Row="3"
-                                                Margin="0,10,5,0"
-                                                ColumnDefinitions="*, *"
-                                                RowDefinitions="Auto, 300">
-                                                <TextBlock
-                                                    Margin="5,0,0,2"
-                                                    FontWeight="Bold"
-                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SearchDirectories]}" />
-                                                <Grid Grid.Row="1" RowDefinitions="Auto, *, Auto">
-                                                    <Menu Grid.Row="0" MinHeight="30">
-                                                        <MenuItem Command="{Binding AddIncludesToListCommand}">
-                                                            <MenuItem.Header>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Viewbox Width="16" Height="16">
-                                                                        <Canvas Width="24" Height="24">
-                                                                            <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                    <TextBlock
-                                                                        Margin="5,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
-                                                                </StackPanel>
-                                                            </MenuItem.Header>
-                                                        </MenuItem>
-                                                        <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
-                                                            <MenuItem.Header>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Viewbox Width="16" Height="16">
-                                                                        <Canvas Width="24" Height="24">
-                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                    <TextBlock
-                                                                        Margin="5,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
-                                                                </StackPanel>
-                                                            </MenuItem.Header>
-                                                        </MenuItem>
-                                                        <MenuItem Command="{Binding ClearIncludesListCommand}">
-                                                            <MenuItem.Header>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Viewbox Width="16" Height="16">
-                                                                        <Canvas Width="24" Height="24">
-                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                    <TextBlock
-                                                                        Margin="5,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.ClearAll]}" />
-                                                                </StackPanel>
-                                                            </MenuItem.Header>
-                                                        </MenuItem>
-                                                    </Menu>
-                                                    <ListBox
-                                                        Name="ListboxIncludelist"
-                                                        Grid.Row="1"
-                                                        BorderThickness="1"
-                                                        DragDrop.AllowDrop="True"
-                                                        ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
-                                                    <StackPanel Grid.Row="2">
-                                                        <TextBlock
-                                                            Margin="5"
-                                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
-                                                        <TextBlock
-                                                            Margin="5"
-                                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
+                                                    <StackPanel Grid.Column="1" Spacing="4">
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSampling]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSamplingTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabase]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabaseTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFiles]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFilesTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreReadOnlyFolders]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}" IsThreeState="False" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePoints]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePointsTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinks]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExcludeHardLinks}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinksTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResults]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResultsTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExit]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExitTooltip]}" />
                                                     </StackPanel>
                                                 </Grid>
-                                                <TextBlock
-                                                    Grid.Row="0"
-                                                    Grid.Column="1"
-                                                    Margin="15,0,0,2"
-                                                    FontWeight="Bold"
-                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeDirectories]}" />
-                                                <Grid
-                                                    Grid.Row="1"
-                                                    Grid.Column="1"
-                                                    Margin="10,0,0,0"
-                                                    RowDefinitions="Auto, *, Auto, Auto">
-                                                    <Menu Grid.Row="0" MinHeight="30">
-                                                        <MenuItem Command="{Binding AddBlacklistToListCommand}">
-                                                            <MenuItem.Header>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Viewbox Width="16" Height="16">
-                                                                        <Canvas Width="24" Height="24">
-                                                                            <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                    <TextBlock
-                                                                        Margin="5,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
-                                                                </StackPanel>
-                                                            </MenuItem.Header>
-                                                        </MenuItem>
-                                                        <MenuItem Command="{Binding AddBlacklistPatternToListCommand}">
-                                                            <MenuItem.Header>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Viewbox Width="16" Height="16">
-                                                                        <Canvas Width="24" Height="24">
-                                                                            <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                    <TextBlock
-                                                                        Margin="5,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.AddPattern]}" />
-                                                                </StackPanel>
-                                                            </MenuItem.Header>
-                                                        </MenuItem>
-                                                        <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
-                                                            <MenuItem.Header>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Viewbox Width="16" Height="16">
-                                                                        <Canvas Width="24" Height="24">
-                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                    <TextBlock
-                                                                        Margin="5,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
-                                                                </StackPanel>
-                                                            </MenuItem.Header>
-                                                        </MenuItem>
-                                                        <MenuItem Command="{Binding ClearBlacklistListCommand}">
-                                                            <MenuItem.Header>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Viewbox Width="16" Height="16">
-                                                                        <Canvas Width="24" Height="24">
-                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                    <TextBlock
-                                                                        Margin="5,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.ClearAll]}" />
-                                                                </StackPanel>
-                                                            </MenuItem.Header>
-                                                        </MenuItem>
-                                                    </Menu>
-                                                    <ListBox
-                                                        Name="ListboxBlacklist"
-                                                        Grid.Row="1"
-                                                        BorderThickness="1"
-                                                        DragDrop.AllowDrop="True"
-                                                        ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
-                                                    <TextBlock
-                                                        Grid.Row="2"
-                                                        Margin="5"
-                                                        Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
-                                                    <TextBlock Grid.Row="3"
-                                                            Margin="5"
-                                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
-                                                </Grid>
-                                            </Grid>
-                                        </Grid>
+                                            </Border>
+                                        </StackPanel>
                                     </ScrollViewer>
                                 </TabItem>
-                                <TabItem x:Name="TabItemSettingsFiles">
+
+                                <!-- ═══════════════ DIRECTORIES ═══════════════ -->
+                                <TabItem IsEnabled="{Binding !IsScanning}">
                                     <TabItem.Header>
-                                        <TextBlock
-                                            VerticalAlignment="Center"
-                                            FontSize="12"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Files]}" />
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Directories]}" />
                                     </TabItem.Header>
-                                    <Grid
-                                        ColumnDefinitions="Auto, Auto, Auto, Auto, *"
-                                        IsEnabled="{Binding !IsScanning}"
-                                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*">
-                                        <TextBlock
-                                            Grid.Row="0"
-                                            Grid.ColumnSpan="4"
-                                            Margin="10"
-                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushEmphasizedDanger}"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilesNote]}" />
-                                        <CheckBox
-                                            x:Name="CheckboxFilterByFileSize"
-                                            Grid.Row="1"
-                                            Grid.Column="0"
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FileSize]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFileSize}"
-                                            IsThreeState="False" />
-                                        <NumericUpDown
-                                            Grid.Row="1"
-                                            Grid.Column="1"
-                                            Width="200"
-                                            Margin="10,0"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center"
-                                            IsEnabled="{Binding #CheckboxFilterByFileSize.IsChecked}"
-                                            Minimum="0"
-                                            Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MinimumFileSize}" />
-                                        <TextBlock
-                                            Grid.Row="1"
-                                            Grid.Column="2"
-                                            Margin="10,0"
-                                            VerticalAlignment="Center"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.To]}" />
-                                        <NumericUpDown
-                                            Grid.Row="1"
-                                            Grid.Column="3"
-                                            Width="200"
-                                            Margin="10,0"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center"
-                                            IsEnabled="{Binding #CheckboxFilterByFileSize.IsChecked}"
-                                            Minimum="0"
-                                            Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaximumFileSize}" />
-                                        <CheckBox
-                                            x:Name="CheckboxFilterByFilePathContains"
-                                            Grid.Row="2"
-                                            Grid.Column="0"
-                                            VerticalAlignment="Top"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilePathContains]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathContains}"
-                                            IsThreeState="False" />
-                                        <Grid
-                                            Grid.Row="2"
-                                            Grid.Column="1"
-                                            Grid.ColumnSpan="3"
-                                            RowDefinitions="Auto, *, Auto">
-                                            <Menu
-                                                Grid.Row="0"
-                                                MinHeight="30"
-                                                IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}">
-                                                <MenuItem Command="{Binding AddFilePathContainsTextToListCommand}">
+                                    <Grid Margin="12,12,12,10" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,*,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold" Margin="0,0,0,4"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SearchDirectories]}" />
+                                        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,*,Auto">
+                                            <Menu Grid.Row="0" MinHeight="30">
+                                                <MenuItem Command="{Binding AddIncludesToListCommand}">
                                                     <MenuItem.Header>
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
@@ -1711,14 +1316,12 @@
                                                                     <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
                                                                 </Canvas>
                                                             </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
+                                                            <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
-                                                <MenuItem Command="{Binding RemoveFilePathContainsTextFromListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathContainsText}">
+                                                <MenuItem Command="{Binding RemoveIncludesFromListCommand}" CommandParameter="{Binding ElementName=ListboxIncludelist}">
                                                     <MenuItem.Header>
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
@@ -1726,44 +1329,40 @@
                                                                     <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
                                                                 </Canvas>
                                                             </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
+                                                            <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding ClearIncludesListCommand}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.ClearAll]}" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
                                             </Menu>
-                                            <ListBox
-                                                Name="ListboxFilePathContainsText"
-                                                Grid.Row="1"
-                                                MinHeight="70"
-                                                BorderThickness="1"
-                                                IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}"
-                                                ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsTexts}" />
-                                                <TextBlock
-                                                    Grid.Row="2"
-                                                    Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
+                                            <ListBox Name="ListboxIncludelist" Grid.Row="1" BorderThickness="1"
+                                                     DragDrop.AllowDrop="True"
+                                                     ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
+                                            <StackPanel Grid.Row="2">
+                                                <TextBlock Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                           Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
+                                                <TextBlock Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                           Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
+                                            </StackPanel>
                                         </Grid>
-                                        <CheckBox
-                                            x:Name="CheckboxFilterByFilePathNotContains"
-                                            Grid.Row="3"
-                                            Grid.Column="0"
-                                            VerticalAlignment="Top"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilePathNotContains]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathNotContains}"
-                                            IsThreeState="False" />
-                                        <Grid
-                                            Grid.Row="3"
-                                            Grid.Column="1"
-                                            Grid.ColumnSpan="3"
-                                            RowDefinitions="Auto, *, Auto">
-                                            <Menu
-                                                Grid.Row="0"
-                                                MinHeight="30"
-                                                IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}">
-                                                <MenuItem Command="{Binding AddFilePathNotContainsTextToListCommand}">
+                                        <TextBlock Grid.Row="0" Grid.Column="1" FontWeight="Bold" Margin="0,0,0,4"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeDirectories]}" />
+                                        <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,*,Auto,Auto">
+                                            <Menu Grid.Row="0" MinHeight="30">
+                                                <MenuItem Command="{Binding AddBlacklistToListCommand}">
                                                     <MenuItem.Header>
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
@@ -1771,14 +1370,25 @@
                                                                     <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
                                                                 </Canvas>
                                                             </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
+                                                            <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
-                                                <MenuItem Command="{Binding RemoveFilePathNotContainsTextFromListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathNotContainsText}">
+                                                <MenuItem Command="{Binding AddBlacklistPatternToListCommand}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.AddPattern]}" />
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding RemoveBlacklistFromListCommand}" CommandParameter="{Binding ElementName=ListboxBlacklist}">
                                                     <MenuItem.Header>
                                                         <StackPanel Orientation="Horizontal">
                                                             <Viewbox Width="16" Height="16">
@@ -1786,169 +1396,354 @@
                                                                     <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
                                                                 </Canvas>
                                                             </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
+                                                            <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
+                                                        </StackPanel>
+                                                    </MenuItem.Header>
+                                                </MenuItem>
+                                                <MenuItem Command="{Binding ClearBlacklistListCommand}">
+                                                    <MenuItem.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.ClearAll]}" />
                                                         </StackPanel>
                                                     </MenuItem.Header>
                                                 </MenuItem>
                                             </Menu>
-                                            <ListBox
-                                                Name="ListboxFilePathNotContainsText"
-                                                Grid.Row="1"
-                                                MinHeight="70"
-                                                BorderThickness="1"
-                                                IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}"
-                                                ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsTexts}" />
-                                                <TextBlock
-                                                    Grid.Row="2"
-                                                    Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
+                                            <ListBox Name="ListboxBlacklist" Grid.Row="1" BorderThickness="1"
+                                                     DragDrop.AllowDrop="True"
+                                                     ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
+                                            <TextBlock Grid.Row="2" Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
+                                            <TextBlock Grid.Row="3" Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
                                         </Grid>
                                     </Grid>
                                 </TabItem>
+
+                                <!-- ═══════════════ FILES ═══════════════ -->
+                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                    <TabItem.Header>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Files]}" />
+                                    </TabItem.Header>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel Margin="16,12,16,16" Spacing="12">
+                                            <TextBlock Foreground="{actipro:ThemeResource ControlBackgroundBrushEmphasizedDanger}"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilesNote]}" />
+                                            <!-- File Size -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="8">
+                                                    <CheckBox x:Name="CheckboxFilterByFileSize"
+                                                              Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FileSize]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFileSize}"
+                                                              IsThreeState="False" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <NumericUpDown Width="200" HorizontalAlignment="Left"
+                                                                       IsEnabled="{Binding #CheckboxFilterByFileSize.IsChecked}"
+                                                                       Minimum="0"
+                                                                       Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MinimumFileSize}" />
+                                                        <TextBlock VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.To]}" />
+                                                        <NumericUpDown Width="200" HorizontalAlignment="Left"
+                                                                       IsEnabled="{Binding #CheckboxFilterByFileSize.IsChecked}"
+                                                                       Minimum="0"
+                                                                       Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaximumFileSize}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                            <!-- File Path Contains -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <Grid RowDefinitions="Auto,Auto,*,Auto">
+                                                    <CheckBox x:Name="CheckboxFilterByFilePathContains" Grid.Row="0" VerticalAlignment="Top"
+                                                              Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilePathContains]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathContains}"
+                                                              IsThreeState="False" />
+                                                    <Menu Grid.Row="1" MinHeight="30" IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}">
+                                                        <MenuItem Command="{Binding AddFilePathContainsTextToListCommand}">
+                                                            <MenuItem.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Viewbox Width="16" Height="16">
+                                                                        <Canvas Width="24" Height="24">
+                                                                            <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                    <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                               Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
+                                                                </StackPanel>
+                                                            </MenuItem.Header>
+                                                        </MenuItem>
+                                                        <MenuItem Command="{Binding RemoveFilePathContainsTextFromListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathContainsText}">
+                                                            <MenuItem.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Viewbox Width="16" Height="16">
+                                                                        <Canvas Width="24" Height="24">
+                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                    <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                               Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
+                                                                </StackPanel>
+                                                            </MenuItem.Header>
+                                                        </MenuItem>
+                                                    </Menu>
+                                                    <ListBox x:Name="ListboxFilePathContainsText" Grid.Row="2" MinHeight="70" BorderThickness="1"
+                                                             IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}"
+                                                             ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsTexts}" />
+                                                    <TextBlock Grid.Row="3" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                               Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
+                                                </Grid>
+                                            </Border>
+                                            <!-- File Path Not Contains -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <Grid RowDefinitions="Auto,Auto,*,Auto">
+                                                    <CheckBox x:Name="CheckboxFilterByFilePathNotContains" Grid.Row="0" VerticalAlignment="Top"
+                                                              Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilePathNotContains]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilterByFilePathNotContains}"
+                                                              IsThreeState="False" />
+                                                    <Menu Grid.Row="1" MinHeight="30" IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}">
+                                                        <MenuItem Command="{Binding AddFilePathNotContainsTextToListCommand}">
+                                                            <MenuItem.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Viewbox Width="16" Height="16">
+                                                                        <Canvas Width="24" Height="24">
+                                                                            <Path Data="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16 12.75H12.75V16C12.75 16.41 12.41 16.75 12 16.75C11.59 16.75 11.25 16.41 11.25 16V12.75H8C7.59 12.75 7.25 12.41 7.25 12C7.25 11.59 7.59 11.25 8 11.25H11.25V8C11.25 7.59 11.59 7.25 12 7.25C12.41 7.25 12.75 7.59 12.75 8V11.25H16C16.41 11.25 16.75 11.59 16.75 12C16.75 12.41 16.41 12.75 16 12.75Z" Fill="LimeGreen" />
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                    <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                               Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Add]}" />
+                                                                </StackPanel>
+                                                            </MenuItem.Header>
+                                                        </MenuItem>
+                                                        <MenuItem Command="{Binding RemoveFilePathNotContainsTextFromListCommand}" CommandParameter="{Binding ElementName=ListboxFilePathNotContainsText}">
+                                                            <MenuItem.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Viewbox Width="16" Height="16">
+                                                                        <Canvas Width="24" Height="24">
+                                                                            <Path Data="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM7 13H17V11H7V13Z" Fill="Red" />
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                    <TextBlock Margin="5,0,0,0" VerticalAlignment="Center"
+                                                                               Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Remove]}" />
+                                                                </StackPanel>
+                                                            </MenuItem.Header>
+                                                        </MenuItem>
+                                                    </Menu>
+                                                    <ListBox x:Name="ListboxFilePathNotContainsText" Grid.Row="2" MinHeight="70" BorderThickness="1"
+                                                             IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}"
+                                                             ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsTexts}" />
+                                                    <TextBlock Grid.Row="3" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                               Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </TabItem>
+
+                                <!-- ═══════════════ PROCESSING ═══════════════ -->
+                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                    <TabItem.Header>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Processing]}" />
+                                    </TabItem.Header>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel Margin="16,12,16,16" Spacing="12">
+                                            <!-- FFmpeg -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="8">
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseNativeFfmpegBinding]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseNativeFfmpegBinding}" IsThreeState="False"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseNativeFfmpegBindingTooltip]}" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExtendedFFToolsLogging]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExtendedFFToolsLogging}" IsThreeState="False"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExtendedFFToolsLoggingTooltip]}" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.LogExcludedFiles]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=LogExcludedFiles}" IsThreeState="False"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.LogExcludedFilesTooltip]}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                                        <TextBlock VerticalAlignment="Center" FontSize="14"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.HardwareAcceleration]}" />
+                                                        <Button Classes="hyperlink" Command="{Binding OpenHWInfoLinkCommand}"
+                                                                Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.MoreInfo]}" />
+                                                    </StackPanel>
+                                                    <ComboBox Width="250" HorizontalAlignment="Left"
+                                                              ItemsSource="{Binding HardwareAccelerationModes}"
+                                                              SelectedItem="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HardwareAccelerationMode}"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.HardwareAccelerationTooltip]}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArguments]}" />
+                                                    <TextBox Width="250" HorizontalAlignment="Left"
+                                                             Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
+                                                             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArgumentsTooltip]}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <!-- Custom Commands & Advanced -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock FontSize="14" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommands]}" />
+                                                    <ComboBox Width="250" HorizontalAlignment="Left"
+                                                              ItemsSource="{Binding CustomCommandList}"
+                                                              SelectedItem="{Binding SelectedCustomCommand}"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsTooltip]}" />
+                                                    <TextBox Width="250" HorizontalAlignment="Left"
+                                                             Text="{Binding SelectedCustomCommandValue}"
+                                                             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsPlaceholderTooltip]}" />
+                                                    <TextBlock FontSize="14" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolder]}" />
+                                                    <TextBox Width="250" HorizontalAlignment="Left"
+                                                             Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
+                                                             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolderTooltip]}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </TabItem>
+
+                                <!-- ═══════════════ SCHEDULE ═══════════════ -->
+                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                    <TabItem.Header>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
+                                    </TabItem.Header>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel Margin="16,12,16,16" Spacing="12">
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="8">
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnableScheduledScan]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnableScheduledScan}" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTime]}" />
+                                                        <TextBox Width="80"
+                                                                 Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScheduledScanTime}"
+                                                                 ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScheduledScanTimeTooltip]}" />
+                                                    </StackPanel>
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyScheduledScanComplete]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScheduledScanComplete}" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyOnScanComplete]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=NotifyOnScanComplete}"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.NotifyOnScanCompleteTooltip]}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </TabItem>
+
+                                <!-- ═══════════════ APPEARANCE ═══════════════ -->
                                 <TabItem>
                                     <TabItem.Header>
-                                        <TextBlock
-                                            VerticalAlignment="Center"
-                                            FontSize="12"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Appearance]}" />
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Appearance]}" />
                                     </TabItem.Header>
-                                    <StackPanel>
-                                        <StackPanel
-                                            Margin="0,6,0,0"
-                                            Orientation="Horizontal"
-                                            Spacing="6">
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Language]}" />
-                                           <ComboBox
-                                                Width="180"
-                                                ItemsSource="{Binding LanguageOptions}"
-                                                SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding DisplayName}" />
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel Margin="16,12,16,16" Spacing="12">
+                                            <!-- Display options -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="8">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Language]}" />
+                                                        <ComboBox Width="180"
+                                                                  ItemsSource="{Binding LanguageOptions}"
+                                                                  SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DarkMode]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DarkMode}" IsThreeState="False" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseMica]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseMica}" IsThreeState="False" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                                        <TextBlock VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailDoubleClick]}" />
+                                                        <ComboBox MinWidth="200"
+                                                                  ItemsSource="{Binding ThumbnailDoubleClickOptions}"
+                                                                  SelectedValueBinding="{Binding Value}"
+                                                                  SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailDoubleClickAction, Mode=TwoWay}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding Key}" />
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                            <!-- Column visibility -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="4">
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowPathColumn]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}" IsThreeState="False" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowDurationColumn]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}" IsThreeState="False" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowFormatColumn]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}" IsThreeState="False" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowAudioColumn]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}" IsThreeState="False" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowSimilarityColumn]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" IsThreeState="False" />
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock Margin="0,2,0,4" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RestartHint]}" />
                                         </StackPanel>
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseMica]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseMica}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DarkMode]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DarkMode}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowPathColumn]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowDurationColumn]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowFormatColumn]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowAudioColumn]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}"
-                                            IsThreeState="False" />
-                                        <CheckBox
-                                            VerticalAlignment="Center"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowSimilarityColumn]}"
-                                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
-                                            IsThreeState="False" />
-                                        <StackPanel
-                                            Margin="0,6,0,0"
-                                            Orientation="Horizontal"
-                                            Spacing="6">
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailDoubleClick]}" />
-                                            <ComboBox
-                                                MinWidth="200"
-                                                ItemsSource="{Binding ThumbnailDoubleClickOptions}"
-                                                SelectedValueBinding="{Binding Value}"
-                                                SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailDoubleClickAction, Mode=TwoWay}">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Key}" />
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
-                                        </StackPanel>
-                                        <TextBlock
-                                            Margin="0,5,0,5"
-                                            VerticalAlignment="Center"
-                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RestartHint]}" />
-                                    </StackPanel>
+                                    </ScrollViewer>
                                 </TabItem>
+
+                                <!-- ═══════════════ SHORTCUTS ═══════════════ -->
                                 <TabItem x:Name="TabItemSettingsKeyboardShortcuts">
                                     <TabItem.Header>
-                                        <TextBlock
-                                            VerticalAlignment="Center"
-                                            FontSize="12"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts]}" />
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts]}" />
                                     </TabItem.Header>
-                                    <Grid RowDefinitions="Auto, Auto, *" Margin="10">
-                                        <Button
-                                            Grid.Row="0"
-                                            Margin="0,0,0,10"
-                                            HorizontalAlignment="Left"
-                                            Command="{Binding ResetAllShortcutsCommand}"
-                                            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.ResetAll]}" />
-                                        <Grid Grid.Row="1" ColumnDefinitions="250, 200, *" Margin="0,0,0,4">
-                                            <TextBlock
-                                                Grid.Column="0"
-                                                FontWeight="Bold"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Action]}" />
-                                            <TextBlock
-                                                Grid.Column="1"
-                                                FontWeight="Bold"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Shortcut]}" />
+                                    <Grid RowDefinitions="Auto,Auto,*" Margin="10">
+                                        <Button Grid.Row="0" Margin="0,0,0,10" HorizontalAlignment="Left"
+                                                Command="{Binding ResetAllShortcutsCommand}"
+                                                Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.ResetAll]}" />
+                                        <Grid Grid.Row="1" ColumnDefinitions="250,200,*" Margin="0,0,0,4">
+                                            <TextBlock Grid.Column="0" FontWeight="Bold"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Action]}" />
+                                            <TextBlock Grid.Column="1" FontWeight="Bold"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Shortcut]}" />
                                         </Grid>
                                         <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
                                             <ItemsControl ItemsSource="{Binding ShortcutBindings}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Grid ColumnDefinitions="250, 200, *" Margin="0,2">
-                                                            <TextBlock
-                                                                Grid.Column="0"
-                                                                VerticalAlignment="Center"
-                                                                Text="{Binding DisplayName}" />
-                                                            <views:HotKeyBox
-                                                                Grid.Column="1"
-                                                                Margin="0,0,8,0"
-                                                                GestureText="{Binding CurrentGesture, Mode=TwoWay}" />
+                                                        <Grid ColumnDefinitions="250,200,*" Margin="0,2">
+                                                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{Binding DisplayName}" />
+                                                            <views:HotKeyBox Grid.Column="1" Margin="0,0,8,0"
+                                                                             GestureText="{Binding CurrentGesture, Mode=TwoWay}" />
                                                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
-                                                                <Button
-                                                                    Command="{Binding ResetCommand}"
-                                                                    Content="&#x21BA;"
-                                                                    ToolTip.Tip="Reset to Default"
-                                                                    Padding="6,2"
-                                                                    IsVisible="{Binding IsModified}" />
-                                                                <Button
-                                                                    Command="{Binding ClearCommand}"
-                                                                    Content="&#x2715;"
-                                                                    ToolTip.Tip="Clear"
-                                                                    Padding="6,2" />
-                                                                <TextBlock
-                                                                    VerticalAlignment="Center"
-                                                                    Foreground="Orange"
-                                                                    Text="{Binding ConflictText}"
-                                                                    IsVisible="{Binding ConflictText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                                <Button Command="{Binding ResetCommand}" Content="&#x21BA;" ToolTip.Tip="Reset to Default"
+                                                                        Padding="6,2" IsVisible="{Binding IsModified}" />
+                                                                <Button Command="{Binding ClearCommand}" Content="&#x2715;" ToolTip.Tip="Clear" Padding="6,2" />
+                                                                <TextBlock VerticalAlignment="Center" Foreground="Orange"
+                                                                           Text="{Binding ConflictText}"
+                                                                           IsVisible="{Binding ConflictText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                                             </StackPanel>
                                                         </Grid>
                                                     </DataTemplate>
