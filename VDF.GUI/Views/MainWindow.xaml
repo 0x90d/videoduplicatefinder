@@ -817,6 +817,11 @@
                                                 Header="Similarity"
                                                 IsReadOnly="True"
                                                 IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
+                                            <DataGridTextColumn
+                                                Width="1*"
+                                                Binding="{Binding ItemInfo.PartialClipOffsetDisplay, TargetNullValue=''}"
+                                                Header="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.ClipOffset]}"
+                                                IsReadOnly="True" />
                                         </DataGrid.Columns>
                                         <DataGrid.ContextMenu>
                                             <ContextMenu>
@@ -1292,6 +1297,37 @@
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExitTooltip]}" />
                                                     </StackPanel>
                                                 </Grid>
+                                            </Border>
+                                            <!-- Partial Clip Detection -->
+                                            <Border Margin="0,8,0,0"
+                                                    Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock FontWeight="Bold"
+                                                               Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipDetection]}" />
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnablePartialClipDetection]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnablePartialClipDetection}"
+                                                              IsThreeState="False"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnablePartialClipDetectionTooltip]}" />
+                                                    <Grid ColumnDefinitions="Auto,8,80,16,Auto,8,80"
+                                                          IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnablePartialClipDetection}">
+                                                        <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipMinRatio]}"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipMinRatioTooltip]}" />
+                                                        <NumericUpDown Grid.Column="2"
+                                                                       Width="80" Increment="1" Minimum="1" Maximum="94"
+                                                                       Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipMinRatioPercent}"
+                                                                       ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipMinRatioTooltip]}" />
+                                                        <TextBlock Grid.Column="4" VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipSimilarityThreshold]}"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipSimilarityThresholdTooltip]}" />
+                                                        <NumericUpDown Grid.Column="6"
+                                                                       Width="80" Increment="1" Minimum="1" Maximum="100"
+                                                                       Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipSimilarityThresholdPercent}"
+                                                                       ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipSimilarityThresholdTooltip]}" />
+                                                    </Grid>
+                                                </StackPanel>
                                             </Border>
                                         </StackPanel>
                                     </ScrollViewer>
@@ -1799,12 +1835,30 @@
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <MenuItem Command="{Binding CopyLogSelectionCommand}"
+                                          CommandParameter="{Binding #LogListBox.SelectedItems}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Viewbox Width="20" Height="20">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.CopySelected]}" />
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </Menu>
                             <ListBox
+                                x:Name="LogListBox"
                                 Grid.Row="1"
                                 MinHeight="70"
                                 Margin="5"
                                 ItemsSource="{Binding LogItems}"
+                                SelectionMode="Multiple"
                                 ScrollViewer.HorizontalScrollBarVisibility="Visible" />
                         </Grid>
                     </TabItem>

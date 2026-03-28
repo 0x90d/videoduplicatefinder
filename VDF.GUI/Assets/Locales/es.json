@@ -400,7 +400,7 @@
 	"ThumbnailComparerDialog.ResetOffsets": "Restablecer",
 	"ThumbnailComparerDialog.ExtractingFrame": "Extrayendo fotograma...",
 	"ThumbnailComparerDialog.FitTooltip": "Ajustar a la vista",
-	"ThumbnailComparerDialog.SwipeHint": "Arrastrar divisor para comparar \u2022 Rueda para zoom",
+	"ThumbnailComparerDialog.SwipeHint": "Arrastrar divisor para comparar • Rueda para zoom",
 	"ThumbnailComparerDialog.ThumbnailLoadFailed": "{0} miniatura(s) no se pudieron cargar. Se reintentará cuando la ventana principal termine de cargar miniaturas...",
 	"ThumbnailComparerDialog.WaitingForScan": "Esperando a que finalice el escaneo para cargar miniaturas...",
 	"CleanupDryRun.FileType": "Informe de limpieza",
@@ -438,5 +438,14 @@
 	"Shortcut.CollapseAllGroups": "Contraer Todos los Grupos",
 	"Shortcut.RemoveCheckedItemsFromList": "Eliminar Marcados de la Lista",
 	"Shortcut.NavigateNextGroup": "Navegar al Siguiente Grupo",
-	"Shortcut.NavigatePreviousGroup": "Navegar al Grupo Anterior"
+	"Shortcut.NavigatePreviousGroup": "Navegar al Grupo Anterior",
+	"DuplicateList.Header.ClipOffset": "Desplazamiento de clip",
+	"MainWindow.Settings.PartialClipDetection": "Detección de clip parcial",
+	"MainWindow.Settings.EnablePartialClipDetection": "Habilitar detección de clip parcial",
+	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Detecta cuando un video más corto es un clip parcial de uno más largo usando huella dactilar de audio.",
+	"MainWindow.Settings.PartialClipMinRatio": "Ratio mín. clip/fuente (%):",
+	"MainWindow.Settings.PartialClipMinRatioTooltip": "Duración mínima del clip como porcentaje de la duración de la fuente.",
+	"MainWindow.Settings.PartialClipSimilarityThreshold": "Similitud de audio mín. (%):",
+	"MainWindow.Settings.PartialClipSimilarityThresholdTooltip": "Similitud de Hamming mínima para la comparación de huella dactilar de audio.",
+	"Dialog.CopySelected": "Copiar seleccionado"
 }

@@ -400,7 +400,7 @@
 	"ThumbnailComparerDialog.ResetOffsets": "Zurücksetzen",
 	"ThumbnailComparerDialog.ExtractingFrame": "Bild wird extrahiert...",
 	"ThumbnailComparerDialog.FitTooltip": "An Ansicht anpassen",
-	"ThumbnailComparerDialog.SwipeHint": "Trennlinie ziehen zum Vergleichen \u2022 Scrollen zum Zoomen",
+	"ThumbnailComparerDialog.SwipeHint": "Trennlinie ziehen zum Vergleichen • Scrollen zum Zoomen",
 	"ThumbnailComparerDialog.ThumbnailLoadFailed": "{0} Vorschaubild(er) konnten nicht geladen werden. Erneuter Versuch, sobald das Hauptfenster die Vorschaubilder fertig geladen hat...",
 	"ThumbnailComparerDialog.WaitingForScan": "Warte auf Scan-Ende, bevor Vorschaubilder geladen werden...",
 	"CleanupDryRun.FileType": "Bereinigungsbericht",
@@ -438,5 +438,14 @@
 	"Shortcut.CollapseAllGroups": "Alle Gruppen reduzieren",
 	"Shortcut.RemoveCheckedItemsFromList": "Markierte aus Liste entfernen",
 	"Shortcut.NavigateNextGroup": "Zur nächsten Gruppe navigieren",
-	"Shortcut.NavigatePreviousGroup": "Zur vorherigen Gruppe navigieren"
+	"Shortcut.NavigatePreviousGroup": "Zur vorherigen Gruppe navigieren",
+	"DuplicateList.Header.ClipOffset": "Clip-Offset",
+	"MainWindow.Settings.PartialClipDetection": "Teilclip-Erkennung",
+	"MainWindow.Settings.EnablePartialClipDetection": "Teilclip-Erkennung aktivieren",
+	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Erkennt, wenn ein kürzeres Video ein Teilclip eines längeren Videos ist, mithilfe von Audio-Fingerprinting.",
+	"MainWindow.Settings.PartialClipMinRatio": "Min. Clip/Quell-Verhältnis (%):",
+	"MainWindow.Settings.PartialClipMinRatioTooltip": "Mindestdauer des Clips als Prozentsatz der Quelldauer.",
+	"MainWindow.Settings.PartialClipSimilarityThreshold": "Min. Audio-Ähnlichkeit (%):",
+	"MainWindow.Settings.PartialClipSimilarityThresholdTooltip": "Minimale durchschnittliche Hamming-Ähnlichkeit für den Audio-Fingerprint-Vergleich.",
+	"Dialog.CopySelected": "Auswahl kopieren"
 }

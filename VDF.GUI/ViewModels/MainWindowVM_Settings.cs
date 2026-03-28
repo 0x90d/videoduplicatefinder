@@ -200,6 +200,13 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> ClearLogCommand => ReactiveCommand.Create(() => {
 			LogItems.Clear();
 		});
+		public ReactiveCommand<System.Collections.IList, Unit> CopyLogSelectionCommand => ReactiveCommand.Create<System.Collections.IList>(selected => {
+			if (selected == null || selected.Count == 0) return;
+			var sb = new StringBuilder();
+			foreach (var item in selected)
+				sb.AppendLine(item?.ToString());
+			ApplicationHelpers.MainWindow.Clipboard?.SetTextAsync(sb.ToString());
+		});
 		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				DefaultExtension = ".txt",

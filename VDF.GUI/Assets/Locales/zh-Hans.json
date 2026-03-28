@@ -400,7 +400,7 @@
 	"ThumbnailComparerDialog.ResetOffsets": "重置",
 	"ThumbnailComparerDialog.ExtractingFrame": "正在提取帧...",
 	"ThumbnailComparerDialog.FitTooltip": "适配视图",
-	"ThumbnailComparerDialog.SwipeHint": "拖拽分割线比较 \u2022 滚轮缩放",
+	"ThumbnailComparerDialog.SwipeHint": "拖拽分割线比较 • 滚轮缩放",
 	"ThumbnailComparerDialog.ThumbnailLoadFailed": "{0} 个缩略图加载失败。主窗口缩略图加载完成后将自动重试...",
 	"ThumbnailComparerDialog.WaitingForScan": "等待扫描完成后加载缩略图...",
 	"CleanupDryRun.FileType": "清理报告",
@@ -438,5 +438,14 @@
 	"Shortcut.CollapseAllGroups": "折叠所有组",
 	"Shortcut.RemoveCheckedItemsFromList": "从列表中删除已选中",
 	"Shortcut.NavigateNextGroup": "导航到下一组",
-	"Shortcut.NavigatePreviousGroup": "导航到上一组"
+	"Shortcut.NavigatePreviousGroup": "导航到上一组",
+	"DuplicateList.Header.ClipOffset": "片段偏移",
+	"MainWindow.Settings.PartialClipDetection": "部分片段检测",
+	"MainWindow.Settings.EnablePartialClipDetection": "启用部分片段检测",
+	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "使用音频指纹检测较短视频是否为较长视频的片段。",
+	"MainWindow.Settings.PartialClipMinRatio": "最小片段/源比例 (%):",
+	"MainWindow.Settings.PartialClipMinRatioTooltip": "片段时长占源视频时长的最小百分比。",
+	"MainWindow.Settings.PartialClipSimilarityThreshold": "最小音频相似度 (%):",
+	"MainWindow.Settings.PartialClipSimilarityThresholdTooltip": "音频指纹滑动窗口匹配接受的最小汉明相似度。",
+	"Dialog.CopySelected": "复制所选"
 }

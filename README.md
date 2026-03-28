@@ -258,6 +258,7 @@ Video Duplicate Finder is licensed under AGPLv3
 - [FFmpeg.AutoGen](https://github.com/Ruslan-B/FFmpeg.AutoGen)
 - [protobuf-net](https://github.com/protobuf-net/protobuf-net)
 - [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp)
+- [AcoustID.NET by wo80](https://github.com/wo80/AcoustID.NET) — the audio fingerprinting pipeline (Chromaprint-style chroma extraction, FIR smoothing, and fingerprint encoding) used for partial clip detection is derived from this library, licensed under LGPL 2.1
 
 # Building
 - .NET 9.x

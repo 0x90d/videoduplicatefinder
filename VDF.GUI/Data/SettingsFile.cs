@@ -411,6 +411,25 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _MinimumFileSize, value);
 		}
 
+		bool _EnablePartialClipDetection;
+		[JsonPropertyName("EnablePartialClipDetection")]
+		public bool EnablePartialClipDetection {
+			get => _EnablePartialClipDetection;
+			set => this.RaiseAndSetIfChanged(ref _EnablePartialClipDetection, value);
+		}
+		int _PartialClipMinRatioPercent = 10;
+		[JsonPropertyName("PartialClipMinRatioPercent")]
+		public int PartialClipMinRatioPercent {
+			get => _PartialClipMinRatioPercent;
+			set => this.RaiseAndSetIfChanged(ref _PartialClipMinRatioPercent, value);
+		}
+		int _PartialClipSimilarityThresholdPercent = 80;
+		[JsonPropertyName("PartialClipSimilarityThresholdPercent")]
+		public int PartialClipSimilarityThresholdPercent {
+			get => _PartialClipSimilarityThresholdPercent;
+			set => this.RaiseAndSetIfChanged(ref _PartialClipSimilarityThresholdPercent, value);
+		}
+
 		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
 		[JsonPropertyName("QualityCriteriaOrder")]
 		public List<string> QualityCriteriaOrder {
