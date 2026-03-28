@@ -260,5 +260,4 @@ paket-files/
 __pycache__/
 *.pyc
 .vscode/launch.json
-.claude/settings.local.json
 .vscode/
