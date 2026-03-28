@@ -47,7 +47,7 @@ namespace VDF.CLI.Output {
 
 		static string FormatCsv(IEnumerable<DuplicateItem> duplicates) {
 			var sb = new StringBuilder();
-			sb.AppendLine("GroupId,Similarity,Path,Size,Duration,FrameSize,Format,Fps,BitRateKbs,AudioFormat,DateCreated,IsImage");
+			sb.AppendLine("GroupId,Similarity,Path,Size,Duration,FrameSize,Format,Fps,BitRateKbs,AudioFormat,DateCreated,IsImage,Flags,PartialClipOffset");
 			foreach (var d in duplicates.OrderBy(d => d.GroupId).ThenByDescending(d => d.Similarity)) {
 				sb.AppendLine(string.Join(",",
 					d.GroupId,
@@ -61,7 +61,9 @@ namespace VDF.CLI.Output {
 					d.BitRateKbs,
 					CsvEscape(d.AudioFormat ?? string.Empty),
 					d.DateCreated.ToString("O"),
-					d.IsImage
+					d.IsImage,
+					d.Flags,
+					d.PartialClipOffset.TotalSeconds.ToString("F0")
 				));
 			}
 			return sb.ToString();
@@ -82,7 +84,8 @@ namespace VDF.CLI.Output {
 				sb.AppendLine($"Group {groupNum++} ({group.Count()} files):");
 				foreach (var item in group.OrderByDescending(d => d.Similarity)) {
 					string best = item.IsBestBitRateKbs || item.IsBestFrameSize ? " [best]" : string.Empty;
-					sb.AppendLine($"  {item.Similarity,6:F1}%  {item.Path}{best}");
+					string partial = item.PartialClipOffsetDisplay.Length > 0 ? $" [partial clip {item.PartialClipOffsetDisplay}]" : string.Empty;
+					sb.AppendLine($"  {item.Similarity,6:F1}%  {item.Path}{best}{partial}");
 					if (!item.IsImage) {
 						string details = $"         {item.FrameSize ?? "?"}, {item.Format ?? "?"}, {item.Fps:F2} fps, {item.BitRateKbs} kbps, {item.Duration:hh\\:mm\\:ss}";
 						sb.AppendLine(details);

@@ -91,6 +91,9 @@ namespace VDF.CLI.Commands {
 			dest.HardwareAccelerationMode = source.HardwareAccelerationMode;
 			dest.CustomFFArguments = source.CustomFFArguments;
 			dest.CustomDatabaseFolder = source.CustomDatabaseFolder;
+			dest.EnablePartialClipDetection = source.EnablePartialClipDetection;
+			dest.PartialClipMinRatio = source.PartialClipMinRatio;
+			dest.PartialClipSimilarityThreshold = source.PartialClipSimilarityThreshold;
 		}
 
 		static void WriteOutput(string content, FileInfo? outFile) {

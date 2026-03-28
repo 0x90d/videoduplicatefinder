@@ -42,6 +42,9 @@ namespace VDF.Web.Services {
 			public bool IgnoreBlackPixels { get; set; }
 			public bool IgnoreWhitePixels { get; set; }
 			public bool ScanAgainstEntireDatabase { get; set; }
+			public bool EnablePartialClipDetection { get; set; }
+			public double PartialClipMinRatio { get; set; } = 0.10;
+			public double PartialClipSimilarityThreshold { get; set; } = 0.80;
 		}
 
 		static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
@@ -83,6 +86,9 @@ namespace VDF.Web.Services {
 				s.IgnoreBlackPixels = dto.IgnoreBlackPixels;
 				s.IgnoreWhitePixels = dto.IgnoreWhitePixels;
 				s.ScanAgainstEntireDatabase = dto.ScanAgainstEntireDatabase;
+				s.EnablePartialClipDetection = dto.EnablePartialClipDetection;
+				s.PartialClipMinRatio = dto.PartialClipMinRatio;
+				s.PartialClipSimilarityThreshold = dto.PartialClipSimilarityThreshold;
 				return true;
 			}
 			catch { return false; }
@@ -110,6 +116,9 @@ namespace VDF.Web.Services {
 					IgnoreBlackPixels = s.IgnoreBlackPixels,
 					IgnoreWhitePixels = s.IgnoreWhitePixels,
 					ScanAgainstEntireDatabase = s.ScanAgainstEntireDatabase,
+					EnablePartialClipDetection = s.EnablePartialClipDetection,
+					PartialClipMinRatio = s.PartialClipMinRatio,
+					PartialClipSimilarityThreshold = s.PartialClipSimilarityThreshold,
 				};
 				File.WriteAllText(SettingsPath, JsonSerializer.Serialize(dto, JsonOpts));
 				return true;

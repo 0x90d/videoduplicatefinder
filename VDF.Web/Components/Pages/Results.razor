@@ -146,6 +146,9 @@ else {
                             @if (item.IsBestBitRateKbs || item.IsBestFrameSize) {
                                 <span class="badge-best">best quality</span>
                             }
+                            @if (item.Flags.HasFlag(VDF.Core.DuplicateFlags.PartialClip)) {
+                                <span class="badge-partial-clip">partial clip @item.PartialClipOffsetDisplay</span>
+                            }
                         </div>
                     </div>
                 </div>

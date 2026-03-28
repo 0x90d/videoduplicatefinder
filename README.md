@@ -138,6 +138,9 @@ vdf-cli scan-and-compare \
 | `--parallelism <n>` | Parallel hashing threads | 1 |
 | `--include-images` | Also scan image files | off |
 | `--use-phash` | Use perceptual hashing | off |
+| `--partial-clip-detection` | Enable partial clip detection (audio fingerprinting) | off |
+| `--partial-clip-min-ratio <n>` | Min clip/source duration ratio (0.0–1.0) | 0.10 |
+| `--partial-clip-similarity <n>` | Min audio fingerprint similarity (0.0–1.0) | 0.80 |
 | `--format json\|text\|csv` | Output format | text |
 | `--output <file>` | Write results to file instead of stdout | stdout |
 | `--settings <file>` | Load full settings from a JSON file | — |

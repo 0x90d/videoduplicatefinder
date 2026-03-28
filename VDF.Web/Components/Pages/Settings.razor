@@ -105,6 +105,30 @@
 </section>
 
 <section class="settings-section">
+    <h2>Partial Clip Detection</h2>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.EnablePartialClipDetection"
+               @onchange="e => Scan.Settings.EnablePartialClipDetection = (bool)e.Value!" />
+        Enable partial clip detection (audio fingerprinting)
+    </label>
+    @if (Scan.Settings.EnablePartialClipDetection) {
+        <label>
+            Min clip / source ratio %
+            <input type="number" min="1" max="100" step="1"
+                   value="@((int)(Scan.Settings.PartialClipMinRatio * 100))"
+                   @onchange="e => Scan.Settings.PartialClipMinRatio = int.Parse(e.Value!.ToString()!) / 100.0" />
+        </label>
+        <label>
+            Min audio similarity %
+            <input type="number" min="1" max="100" step="1"
+                   value="@((int)(Scan.Settings.PartialClipSimilarityThreshold * 100))"
+                   @onchange="e => Scan.Settings.PartialClipSimilarityThreshold = int.Parse(e.Value!.ToString()!) / 100.0" />
+        </label>
+    }
+</section>
+
+<section class="settings-section">
     <h2>Database</h2>
     <label>
         Custom database folder

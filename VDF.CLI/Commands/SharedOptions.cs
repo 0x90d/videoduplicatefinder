@@ -77,6 +77,20 @@ namespace VDF.CLI.Commands {
 			Description = "Additional custom FFmpeg arguments."
 		};
 
+		internal static readonly Option<bool> EnablePartialClipDetection = new("--partial-clip-detection") {
+			Description = "Enable partial clip detection via audio fingerprinting."
+		};
+
+		internal static readonly Option<double> PartialClipMinRatio = new("--partial-clip-min-ratio") {
+			Description = "Minimum clip/source duration ratio (0.0–1.0). Default: 0.10.",
+			DefaultValueFactory = _ => 0.10
+		};
+
+		internal static readonly Option<double> PartialClipSimilarityThreshold = new("--partial-clip-similarity") {
+			Description = "Minimum audio fingerprint similarity threshold (0.0–1.0). Default: 0.80.",
+			DefaultValueFactory = _ => 0.80
+		};
+
 		internal static readonly Option<FileInfo?> SettingsFile = new("--settings", "-s") {
 			Description = "Path to a VDF settings JSON file. Individual flags override values from this file."
 		};
@@ -113,6 +127,10 @@ namespace VDF.CLI.Commands {
 
 			var ffArgs = r.GetValue(CustomFfArgs);
 			if (ffArgs != null) s.CustomFFArguments = ffArgs;
+
+			s.EnablePartialClipDetection = r.GetValue(EnablePartialClipDetection);
+			s.PartialClipMinRatio = r.GetValue(PartialClipMinRatio);
+			s.PartialClipSimilarityThreshold = r.GetValue(PartialClipSimilarityThreshold);
 		}
 
 		internal static void AddScanOptions(Command cmd) {
@@ -128,6 +146,9 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(NativeFfmpeg);
 			cmd.Options.Add(HardwareAccel);
 			cmd.Options.Add(CustomFfArgs);
+			cmd.Options.Add(EnablePartialClipDetection);
+			cmd.Options.Add(PartialClipMinRatio);
+			cmd.Options.Add(PartialClipSimilarityThreshold);
 			cmd.Options.Add(SettingsFile);
 			cmd.Options.Add(Format);
 			cmd.Options.Add(Output);
