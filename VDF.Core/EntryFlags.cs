@@ -25,6 +25,8 @@ namespace VDF.Core {
 		ThumbnailError = 4,
 		MetadataError = 8,
 		TooDark = 16,
+		NoAudioTrack = 32,           // File has no audio stream; skip audio fingerprinting
+		AudioFingerprintError = 64,  // Audio extraction/fingerprinting failed
 
 		AllErrors = ThumbnailError | MetadataError | TooDark
 	}

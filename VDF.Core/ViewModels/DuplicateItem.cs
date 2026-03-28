@@ -161,6 +161,19 @@ namespace VDF.Core.ViewModels {
 
 		[JsonInclude]
 		public bool IsImage { get; private set; }
+		/// <summary>
+		/// For <see cref="DuplicateFlags.PartialClip"/> items: the time position within the
+		/// source (longer) video where this clip begins.  Zero for all other items.
+		/// </summary>
+		[JsonInclude]
+		public TimeSpan PartialClipOffset { get; set; }
+
+		[JsonIgnore]
+		public string PartialClipOffsetDisplay =>
+			Flags.HasFlag(DuplicateFlags.PartialClip) && PartialClipOffset > TimeSpan.Zero
+				? $"@ {PartialClipOffset:hh\\:mm\\:ss}"
+				: string.Empty;
+
 		[JsonIgnore]
 		public Action? ThumbnailsUpdated;
 		public void SetThumbnails(List<Image>? images, List<TimeSpan> timeSpans) {

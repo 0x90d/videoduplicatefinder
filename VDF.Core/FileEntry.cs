@@ -67,6 +67,12 @@ namespace VDF.Core {
 		public long FileSize;
 		[ProtoMember(9)]
 		public Dictionary<double, ulong?> PHashes = new();
+		/// <summary>
+		/// Aggregated audio fingerprint: one <c>uint</c> per second of audio.
+		/// <c>null</c> = not yet extracted; empty array = file has no audio track.
+		/// </summary>
+		[ProtoMember(10)]
+		public uint[]? AudioFingerprint;
 
 		[ProtoIgnore]
 		internal bool invalid = true;

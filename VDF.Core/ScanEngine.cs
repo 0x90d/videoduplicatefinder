@@ -24,6 +24,7 @@ global using SixLabors.ImageSharp;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
@@ -152,6 +153,8 @@ namespace VDF.Core {
 			Logger.Instance.Info(T("Log.ScanForDuplicates"));
 			if (!cancelationTokenSource.IsCancellationRequested)
 				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
+			if (!cancelationTokenSource.IsCancellationRequested && Settings.EnablePartialClipDetection)
+				await Task.Run(ScanForPartialDuplicates, cancelationTokenSource.Token);
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
 			Logger.Instance.Info(T("Log.FinishedScanForDuplicates", SearchTimer.Elapsed));
@@ -460,6 +463,14 @@ namespace VDF.Core {
 							}
 						}
 						if (hasAllInformation) {
+							// Thumbnails are cached but audio fingerprint might still be needed
+							if (Settings.EnablePartialClipDetection &&
+								!entry.IsImage &&
+								!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
+								!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
+								entry.AudioFingerprint == null) {
+								ExtractAudioFingerprint(entry);
+							}
 							IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
 						}
@@ -491,6 +502,16 @@ namespace VDF.Core {
 							entry.invalid = true;
 					}
 
+					// Audio fingerprint — videos only, only when enabled,
+					// skipped if already cached or flagged as having no audio track.
+					if (Settings.EnablePartialClipDetection &&
+						!entry.IsImage &&
+						!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
+						!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
+						entry.AudioFingerprint == null) {
+						ExtractAudioFingerprint(entry);
+					}
+
 					IncrementProgress(entry.Path);
 					return ValueTask.CompletedTask;
 				});
@@ -501,7 +522,25 @@ namespace VDF.Core {
 			}
 		}
 
-		Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
+	
+	static void ExtractAudioFingerprint(FileEntry entry) {
+		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false);
+		if (fp == null) {
+			// null = extraction failed (error or no audio stream)
+			entry.Flags.Set(EntryFlags.AudioFingerprintError);
+			entry.AudioFingerprint = Array.Empty<uint>();
+		}
+		else if (fp.Length == 0) {
+			// FFmpeg ran but produced no samples (file has no usable audio)
+			entry.Flags.Set(EntryFlags.NoAudioTrack);
+			entry.AudioFingerprint = Array.Empty<uint>();
+		}
+		else {
+			entry.AudioFingerprint = fp;
+		}
+	}
+
+	Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
 			Dictionary<double, byte[]?>? flippedGrayBytes = new();
 			if (entry.IsImage)
 				flippedGrayBytes.Add(0, DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(entry.grayBytes[0]!) : GrayBytesUtils.FlipGrayScale(entry.grayBytes[0]!));
@@ -927,6 +966,138 @@ namespace VDF.Core {
 				Logger.Instance.Info($"Group merge validation: blocked {mergesBlocked} merge(s) where group representatives were not similar");
 			Duplicates = new HashSet<DuplicateItem>(duplicateDict.Values);
 			SplitDaisyChainGroups();
+		}
+
+
+		/// <summary>
+		/// Phase 2 comparison: find pairs where a shorter video is a partial clip of a longer one,
+		/// using audio fingerprint sliding-window matching.  Results are added to Duplicates.
+		/// </summary>
+		void ScanForPartialDuplicates() {
+			Logger.Instance.Info("Partial clip detection: building fingerprint index...");
+
+			// Build a quick lookup for paths already covered by visual duplicate groups.
+			var alreadyGrouped = new HashSet<string>(
+				Duplicates.Select(d => d.Path),
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+
+			// Collect eligible videos: not an image, has a usable fingerprint, not already grouped.
+			var videos = DatabaseUtils.Database
+				.Where(e => !e.invalid && !e.IsImage &&
+						e.AudioFingerprint != null && e.AudioFingerprint.Length >= 2 &&
+						!alreadyGrouped.Contains(e.Path))
+				.OrderByDescending(e => e.mediaInfo?.Duration ?? TimeSpan.Zero)
+				.ToList();
+
+			if (videos.Count < 2) {
+				Logger.Instance.Info("Partial clip detection: fewer than 2 eligible videos, skipping.");
+				return;
+			}
+
+			Logger.Instance.Info($"Partial clip detection: comparing {videos.Count} video(s)...");
+			if (Settings.ExtendedFFToolsLogging) {
+				// Log fingerprint block counts for eligible videos only
+				foreach (var e in videos)
+					Logger.Instance.Info($"[Fingerprint] {System.IO.Path.GetFileName(e.Path)}: {e.AudioFingerprint!.Length} blocks");
+			}
+
+			// sourceGroupId: path of source → Guid of the group it anchors
+			var sourceGroupId = new Dictionary<string, Guid>(
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+			// assignedClips: paths already assigned as clips (avoid adding same clip twice)
+			var assignedClips = new HashSet<string>(
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+
+			int pairsChecked = 0;
+			int matchesFound = 0;
+
+			for (int i = 0; i < videos.Count - 1; i++) {
+				if (cancelationTokenSource.IsCancellationRequested) break;
+				FileEntry source = videos[i];
+				double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+				if (sourceSec < 1.0) continue;
+
+				for (int j = i + 1; j < videos.Count; j++) {
+					if (cancelationTokenSource.IsCancellationRequested) break;
+					FileEntry clip = videos[j];
+					double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+					if (clipSec < 1.0) continue;
+
+					// Pre-filter 1: clip must be at least PartialClipMinRatio of source
+					if (clipSec / sourceSec < Settings.PartialClipMinRatio) continue;
+
+					// Pre-filter 2: clip must be shorter than 95% of source (visual dup handles the rest)
+					if (clipSec / sourceSec >= 0.95) continue;
+
+					// Fingerprint block sanity (each block ≈ 1 second)
+					uint[] fpSource = source.AudioFingerprint!;
+					uint[] fpClip = clip.AudioFingerprint!;
+					if (fpClip.Length >= fpSource.Length) continue;
+
+					pairsChecked++;
+					var (sim, offsetSec) = SlidingWindowCompare(fpClip, fpSource);
+
+					if (Settings.ExtendedFFToolsLogging)
+						Logger.Instance.Info($"[Partial] {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {fpClip.Length}/{fpSource.Length} blocks)");
+
+					if (sim < (float)Settings.PartialClipSimilarityThreshold) continue;
+
+					// We have a match: source[i] contains clip[j] at offsetSec.
+					matchesFound++;
+
+					if (!sourceGroupId.TryGetValue(source.Path, out Guid groupId)) {
+						groupId = Guid.NewGuid();
+						sourceGroupId[source.Path] = groupId;
+						// Add the source as the anchor member (no PartialClip flag)
+						Duplicates.Add(new DuplicateItem(source, 0f, groupId, DuplicateFlags.None));
+					}
+
+					if (!assignedClips.Contains(clip.Path)) {
+						assignedClips.Add(clip.Path);
+						var clipItem = new DuplicateItem(clip, 1f - sim, groupId, DuplicateFlags.PartialClip) {
+							PartialClipOffset = TimeSpan.FromSeconds(offsetSec)
+						};
+						Duplicates.Add(clipItem);
+					}
+					else {
+						// Clip already belongs to another source group — update its GroupId to this one
+						// so everything lands in the same group (longest source wins as anchor).
+						var existing = Duplicates.FirstOrDefault(d => d.Path == clip.Path && d.Flags.HasFlag(DuplicateFlags.PartialClip));
+						if (existing != null) existing.GroupId = groupId;
+					}
+				}
+			}
+
+			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matchesFound} match(es).");
+		}
+
+		/// <summary>
+		/// Slides <paramref name="shorter"/> over <paramref name="longer"/> and returns the
+		/// best average Hamming similarity (0–1) and the offset (in seconds / blocks) at which
+		/// it occurs.
+		/// </summary>
+		static (float similarity, int offsetBlocks) SlidingWindowCompare(uint[] shorter, uint[] longer) {
+			int lenS = shorter.Length;
+			int lenL = longer.Length;
+			int maxOffset = lenL - lenS;
+
+			float bestSim = 0f;
+			int bestOffset = 0;
+
+			for (int offset = 0; offset <= maxOffset; offset++) {
+				int totalBits = 0;
+				for (int k = 0; k < lenS; k++)
+					totalBits += BitOperations.PopCount(shorter[k] ^ longer[offset + k]);
+				// Average Hamming distance per block (max 32 bits each)
+				float avgDist = (float)totalBits / (lenS * 32);
+				float sim = 1f - avgDist;
+				if (sim > bestSim) {
+					bestSim = sim;
+					bestOffset = offset;
+				}
+			}
+
+			return (bestSim, bestOffset);
 		}
 
 		/// <summary>

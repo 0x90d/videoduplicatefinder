@@ -25,7 +25,7 @@ namespace VDF.Core {
 	[ProtoContract]
 	public class DatabaseWrapper {
 		[ProtoMember(1)]
-		public int Version { get; set; } = 2;
+		public int Version { get; set; } = 3;
 
 		[ProtoMember(2)]
 		public HashSet<FileEntry> Entries { get; set; } = new();

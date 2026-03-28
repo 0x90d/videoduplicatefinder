@@ -13,13 +13,27 @@
 //     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
 // */
 //
+// Derived from AcoustID.NET by wo80 (https://github.com/wo80/AcoustID.NET), LGPL 2.1.
 
-namespace VDF.Core {
-	[Flags]
-	public enum DuplicateFlags : short
-	{
-		None = 0,
-		Flipped = 1,
-		PartialClip = 2,  // This item is an audio-matched partial clip of another item in the same group
-	};
+namespace VDF.Core.Chromaprint.Pipeline {
+
+	/// <summary>L2-normalises a 12-element chroma vector in-place.</summary>
+	internal static class ChromaNormalizer {
+		private const double Epsilon = 1e-10;
+
+		internal static void Normalize(double[] chroma) {
+			double sumSq = 0.0;
+			for (int i = 0; i < 12; i++)
+				sumSq += chroma[i] * chroma[i];
+
+			if (sumSq < Epsilon) {
+				Array.Clear(chroma, 0, 12);
+				return;
+			}
+
+			double invNorm = 1.0 / Math.Sqrt(sumSq);
+			for (int i = 0; i < 12; i++)
+				chroma[i] *= invNorm;
+		}
+	}
 }
