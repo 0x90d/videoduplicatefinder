@@ -7,10 +7,30 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 - Ultra fast rescan
 - Optional calling ffmpeg functions natively for even more speed
 - Finds duplicate videos / images based on similarity (optional scan against pHash at zero cost)
+- Partial clip detection — finds when a shorter video is a partial clip of a longer one (audio fingerprinting)
 - Desktop GUI (Windows, Linux, macOS)
 - Headless CLI for scripting and automation
 - Web UI for remote/headless/NAS use
 - Docker image for easy self-hosting
+
+# Partial Clip Detection
+
+VDF can detect when a shorter video is a partial clip of a longer one — for example, a scene ripped from a movie, or a clip saved from a longer recording. This works even when there is no visual overlap between the two files.
+
+It runs as an **optional second phase** after the normal visual duplicate scan, using an audio fingerprinting pipeline (Chromaprint-style chroma extraction + sliding-window Hamming similarity matching). Matched pairs appear in the duplicate list with a **Clip Offset** column showing where in the source the clip starts.
+
+### Enabling it
+
+In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detection** and adjust:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Min clip / source ratio (%) | 10 | Minimum clip duration as a percentage of the source duration. Clips shorter than this are ignored. |
+| Min audio similarity (%) | 80 | Minimum average Hamming similarity for the sliding-window fingerprint match to be accepted. |
+
+> **Note:** Partial clip detection requires audio tracks in both files. Videos without audio are skipped.
+
+---
 
 # Downloads
 
