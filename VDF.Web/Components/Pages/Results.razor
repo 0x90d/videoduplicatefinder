@@ -1,54 +1,150 @@
 @page "/results"
 @rendermode InteractiveServer
-@inject VDF.Web.Services.ScanService Scan
+@inject ScanService Scan
+@inject IJSRuntime JS
 @implements IDisposable
 
 <PageTitle>Results — Video Duplicate Finder</PageTitle>
 
 <h1>Duplicate Groups</h1>
 
+@* Thumbnail retrieval progress *@
+@if (Scan.State == ScanState.RetrievingThumbnails && Scan.ThumbnailMax > 0) {
+    int tpct = (int)(100L * Scan.ThumbnailCurrent / Scan.ThumbnailMax);
+    <div class="thumb-progress">
+        <span class="spinner"></span>
+        Retrieving thumbnails @Scan.ThumbnailCurrent / @Scan.ThumbnailMax
+        <div class="progress-bar-track inline-bar">
+            <div class="progress-bar-fill" style="width:@tpct%"></div>
+        </div>
+    </div>
+}
+
 @{
-    var groups = Scan.Duplicates
+    var allDuplicates = Scan.Duplicates;
+    var filteredGroups = allDuplicates
         .GroupBy(d => d.GroupId)
+        .Where(g => string.IsNullOrEmpty(_search) ||
+                    g.Any(i => i.Path.Contains(_search, StringComparison.OrdinalIgnoreCase)))
         .OrderBy(g => g.Key)
         .ToList();
 }
 
-@if (groups.Count == 0) {
+@if (!allDuplicates.Any()) {
     <p>No duplicates found. <a href="/">Run a scan</a> first.</p>
 }
 else {
-    <p>@groups.Count group(s), @Scan.Duplicates.Count total file(s).</p>
+    <div class="results-toolbar">
+        <input class="search-box" @bind="_search" @bind:event="oninput"
+               placeholder="Filter by path..." />
+        @if (!string.IsNullOrEmpty(_search)) {
+            <button @onclick="() => _search = string.Empty">✕</button>
+        }
+        <span class="result-count">
+            @filteredGroups.Count group(s), @filteredGroups.SelectMany(g => g).Count() file(s)
+            @if (_selected.Count > 0) { <text> — @_selected.Count selected</text> }
+        </span>
 
-    @foreach (var group in groups) {
+        @* Auto-select dropdown *@
+        <div class="dropdown-wrap">
+            <button @onclick="() => _autoSelectOpen = !_autoSelectOpen">Select ▾</button>
+            @if (_autoSelectOpen) {
+                <div class="dropdown-overlay" @onclick="() => _autoSelectOpen = false"></div>
+                <div class="dropdown-menu">
+                    <button @onclick="() => AutoSelect(AutoSelectMode.LowestQuality)">Lowest quality</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.SmallestFile)">Smallest file</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.Oldest)">Oldest (keep newest)</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.Newest)">Newest (keep oldest)</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.HundredPercentEqual)">100% equal groups</button>
+                    <hr />
+                    <button @onclick="InvertSelection">Invert selection</button>
+                    <button @onclick="ClearSelection">Deselect all</button>
+                </div>
+            }
+        </div>
+
+        @if (_selected.Count > 0) {
+            <div class="action-group">
+                <button @onclick="RemoveSelected">Remove from list</button>
+                <button @onclick="() => _confirmDelete = true" class="danger-outline">Delete (trash)</button>
+                <button @onclick="() => _confirmDeletePermanent = true" class="danger">Delete permanently</button>
+                <button @onclick="() => _showMovePanel = !_showMovePanel">Move to folder…</button>
+                <button @onclick="ClearSelection">Deselect all</button>
+            </div>
+        }
+    </div>
+
+    @* Move panel *@
+    @if (_showMovePanel) {
+        <div class="action-panel">
+            <label>Destination folder:
+                <input @bind="_moveDestination" placeholder="/path/to/destination" class="@(Directory.Exists(_moveDestination) ? "input-valid" : "")" />
+            </label>
+            <button class="primary" @onclick="MoveSelected" disabled="@string.IsNullOrWhiteSpace(_moveDestination)">Move @_selected.Count file(s)</button>
+            <button @onclick="() => _showMovePanel = false">Cancel</button>
+        </div>
+    }
+
+    @* Delete confirmation *@
+    @if (_confirmDelete || _confirmDeletePermanent) {
+        bool perm = _confirmDeletePermanent;
+        <div class="confirm-panel">
+            <strong>⚠ @(perm ? "Permanently delete" : "Move to trash")  @_selected.Count file(s)?</strong>
+            @if (perm) { <span class="warn-text">This cannot be undone.</span> }
+            <button class="danger" @onclick="() => ExecuteDelete(perm)">Confirm</button>
+            <button @onclick="() => { _confirmDelete = false; _confirmDeletePermanent = false; }">Cancel</button>
+        </div>
+    }
+
+    @* Operation result feedback *@
+    @if (_operationMsg != null) {
+        <div class="@(_operationFailed ? "error-box" : "info-box")">@_operationMsg</div>
+    }
+
+    @foreach (var group in filteredGroups) {
+        var items = group.OrderByDescending(i => i.Similarity).ToList();
+        bool allGroupSelected = items.All(i => _selected.Contains(i));
         <div class="dup-group">
-            <div class="dup-group-header">Group — @group.Count() file(s)</div>
-            @foreach (var item in group.OrderByDescending(i => i.Similarity)) {
-                <div class="dup-item @(item.IsBestBitRateKbs || item.IsBestFrameSize ? "best" : "")">
-                    <div class="dup-thumb">
-                        @if (item.IsImage) {
-                            <img src="/thumbnail?path=@Uri.EscapeDataString(item.Path)"
-                                 alt="thumbnail" loading="lazy" />
-                        }
+            <div class="dup-group-header">
+                <label class="group-select-all">
+                    <input type="checkbox" checked="@allGroupSelected"
+                           @onchange="() => ToggleGroup(items, !allGroupSelected)" />
+                    @items.Count file(s)
+                </label>
+            </div>
+            @foreach (var item in items) {
+                bool sel = _selected.Contains(item);
+                <div class="dup-item @(item.IsBestBitRateKbs || item.IsBestFrameSize ? "best" : "") @(sel ? "selected" : "")"
+                     @onclick="() => ToggleItem(item)"
+                     @oncontextmenu="e => ShowContextMenu(e, item, items)"
+                     @oncontextmenu:preventDefault>
+                    <label class="item-check" @onclick:stopPropagation>
+                        <input type="checkbox" checked="@sel"
+                               @onchange="() => ToggleItem(item)" />
+                    </label>
+                    <div class="dup-thumb" @onclick:stopPropagation>
+                        <img src="/thumbnail?path=@Uri.EscapeDataString(item.Path)"
+                             alt="thumbnail" loading="lazy"
+                             onerror="this.style.display='none'" />
                     </div>
                     <div class="dup-info">
                         <div class="dup-path" title="@item.Path">@item.Path</div>
                         <div class="dup-meta">
                             <span class="similarity">@item.Similarity.ToString("F1")%</span>
                             @if (!item.IsImage) {
-                                <span>@item.FrameSize</span>
-                                <span>@item.Format</span>
+                                <span>@(item.FrameSize ?? "?")</span>
+                                <span>@(item.Format ?? "?")</span>
                                 <span>@item.Fps.ToString("F2") fps</span>
                                 <span>@item.BitRateKbs kbps</span>
                                 <span>@item.Duration.ToString(@"hh\:mm\:ss")</span>
                             }
                             else {
-                                <span>@item.FrameSize</span>
-                                <span>@item.Format</span>
+                                <span>@(item.FrameSize ?? "?")</span>
+                                <span>@(item.Format ?? "?")</span>
                             }
                             <span>@FormatSize(item.SizeLong)</span>
                             @if (item.IsBestBitRateKbs || item.IsBestFrameSize) {
-                                <span class="badge-best">best</span>
+                                <span class="badge-best">best quality</span>
                             }
                         </div>
                     </div>
@@ -58,11 +154,243 @@ else {
     }
 }
 
+@* Context menu overlay + popup *@
+@if (_menuVisible && _menuItem != null) {
+    <div class="ctx-overlay" @onclick="HideContextMenu"></div>
+    <div class="ctx-menu" style="left:@(_menuX.ToString("F0"))px;top:@(_menuY.ToString("F0"))px">
+        <button @onclick="() => OpenFile(_menuItem)">Open file</button>
+        <button @onclick="() => OpenFolder(_menuItem)">Open folder</button>
+        <button @onclick="() => CopyPath(_menuItem)">Copy path</button>
+        <hr />
+        <button @onclick="() => { ToggleItem(_menuItem); HideContextMenu(); }">
+            @(_selected.Contains(_menuItem) ? "Deselect" : "Select")
+        </button>
+        @if (_menuGroup != null) {
+            bool allSel = _menuGroup.All(i => _selected.Contains(i));
+            <button @onclick="() => { ToggleGroup(_menuGroup, !allSel); HideContextMenu(); }">
+                @(allSel ? "Deselect group" : "Select group")
+            </button>
+        }
+        <hr />
+        <button @onclick="() => RemoveSingle(_menuItem)">Remove from list</button>
+    </div>
+}
+
 @code {
+    string _search = string.Empty;
+    readonly HashSet<DuplicateItem> _selected = new();
+    bool _confirmDelete;
+    bool _confirmDeletePermanent;
+    bool _showMovePanel;
+    string _moveDestination = string.Empty;
+    string? _operationMsg;
+    bool _operationFailed;
+
+    // Context menu
+    bool _menuVisible;
+    double _menuX, _menuY;
+    DuplicateItem? _menuItem;
+    List<DuplicateItem>? _menuGroup;
+
+    // Auto-select dropdown
+    bool _autoSelectOpen;
+
+    enum AutoSelectMode { LowestQuality, SmallestFile, Oldest, Newest, HundredPercentEqual }
+
     protected override void OnInitialized() =>
         Scan.StateChanged += OnStateChanged;
 
-    void OnStateChanged() => InvokeAsync(StateHasChanged);
+    void OnStateChanged() {
+        try { _ = InvokeAsync(StateHasChanged); }
+        catch { }
+    }
+
+    void ToggleItem(DuplicateItem item) {
+        if (!_selected.Remove(item))
+            _selected.Add(item);
+    }
+
+    void ToggleGroup(IEnumerable<DuplicateItem> items, bool select) {
+        foreach (var item in items) {
+            if (select) _selected.Add(item);
+            else _selected.Remove(item);
+        }
+    }
+
+    void InvertSelection() {
+        _autoSelectOpen = false;
+        foreach (var item in Scan.Duplicates.ToList()) {
+            if (!_selected.Remove(item))
+                _selected.Add(item);
+        }
+    }
+
+    void ClearSelection() {
+        _autoSelectOpen = false;
+        _selected.Clear();
+    }
+
+    void RemoveSelected() {
+        Scan.RemoveFromResults(_selected.ToList());
+        _selected.Clear();
+        ShowMsg("Removed from results list.", false);
+    }
+
+    void RemoveSingle(DuplicateItem item) {
+        HideContextMenu();
+        Scan.RemoveFromResults(new List<DuplicateItem> { item });
+        _selected.Remove(item);
+        ShowMsg("Removed from results list.", false);
+    }
+
+    void ExecuteDelete(bool permanent) {
+        var (deleted, failed, errors) = Scan.DeleteItems(_selected.ToList(), permanent);
+        _selected.Clear();
+        _confirmDelete = false;
+        _confirmDeletePermanent = false;
+        string verb = permanent ? "permanently deleted" : "moved to trash";
+        string msg = $"{deleted} file(s) {verb}.";
+        if (failed > 0) msg += $" {failed} failed: {string.Join("; ", errors.Take(3))}";
+        ShowMsg(msg, failed > 0);
+    }
+
+    void MoveSelected() {
+        var (moved, failed, errors) = Scan.MoveItems(_selected.ToList(), _moveDestination);
+        _selected.Clear();
+        _showMovePanel = false;
+        string msg = $"{moved} file(s) moved to '{_moveDestination}'.";
+        if (failed > 0) msg += $" {failed} failed: {string.Join("; ", errors.Take(3))}";
+        ShowMsg(msg, failed > 0);
+    }
+
+    void ShowMsg(string msg, bool failed) {
+        _operationMsg = msg;
+        _operationFailed = failed;
+        _ = Task.Delay(5000).ContinueWith(_ => InvokeAsync(() => {
+            _operationMsg = null;
+            StateHasChanged();
+        }));
+    }
+
+    // Context menu
+    void ShowContextMenu(MouseEventArgs e, DuplicateItem item, List<DuplicateItem> group) {
+        _menuItem = item;
+        _menuGroup = group;
+        _menuX = e.ClientX;
+        _menuY = e.ClientY;
+        _menuVisible = true;
+        _autoSelectOpen = false;
+    }
+
+    void HideContextMenu() {
+        _menuVisible = false;
+        _menuItem = null;
+        _menuGroup = null;
+    }
+
+    void OpenFile(DuplicateItem item) {
+        HideContextMenu();
+        try {
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(item.Path) { UseShellExecute = true });
+        }
+        catch { }
+    }
+
+    void OpenFolder(DuplicateItem item) {
+        HideContextMenu();
+        try {
+            var dir = Path.GetDirectoryName(item.Path);
+            if (dir != null)
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(dir) { UseShellExecute = true });
+        }
+        catch { }
+    }
+
+    async Task CopyPath(DuplicateItem item) {
+        HideContextMenu();
+        try { await JS.InvokeVoidAsync("vdf.copyToClipboard", item.Path); }
+        catch { }
+    }
+
+    // Auto-select
+    void AutoSelect(AutoSelectMode mode) {
+        _autoSelectOpen = false;
+        var all = Scan.Duplicates;
+        var processed = new HashSet<Guid>();
+
+        if (mode == AutoSelectMode.HundredPercentEqual) {
+            foreach (var grp in all.GroupBy(d => d.GroupId)) {
+                var items = grp.ToList();
+                if (items.All(i => i.Similarity >= 100f)) {
+                    // Keep first item (lowest index / first encountered), select rest
+                    for (int i = 1; i < items.Count; i++)
+                        _selected.Add(items[i]);
+                }
+            }
+            return;
+        }
+
+        foreach (var first in all) {
+            if (processed.Contains(first.GroupId)) continue;
+            var groupItems = all.Where(d => d.GroupId == first.GroupId).ToList();
+            if (groupItems.Count < 2) { processed.Add(first.GroupId); continue; }
+
+            DuplicateItem keeper = mode switch {
+                AutoSelectMode.LowestQuality => PickHighestQuality(groupItems),
+                AutoSelectMode.SmallestFile  => groupItems.OrderByDescending(d => d.SizeLong).First(),
+                AutoSelectMode.Oldest        => groupItems.OrderByDescending(d => d.DateCreated).First(),
+                AutoSelectMode.Newest        => groupItems.OrderBy(d => d.DateCreated).First(),
+                _                            => groupItems[0]
+            };
+
+            foreach (var item in groupItems)
+                if (item.Path != keeper.Path)
+                    _selected.Add(item);
+
+            processed.Add(first.GroupId);
+        }
+    }
+
+    // Mirrors GUI's CheckLowestQualityCommand with fixed default criteria order
+    static DuplicateItem PickHighestQuality(List<DuplicateItem> items) {
+        string[] criteria = { "Duration", "Resolution", "Bitrate", "FPS", "Audio Bitrate" };
+        var keep = items[0];
+        bool anyApplied = false;
+        string? lastCriterion = null;
+
+        foreach (var criterion in criteria) {
+            if (criterion is "Duration" or "FPS" or "Bitrate" or "Audio Bitrate" && keep.IsImage)
+                continue;
+
+            bool tieOnLast = anyApplied && HasTie(lastCriterion!, items, keep);
+            if (!anyApplied || tieOnLast) {
+                keep = ApplyCriterion(criterion, items);
+                anyApplied = true;
+                lastCriterion = criterion;
+            }
+        }
+        return keep;
+    }
+
+    static bool HasTie(string criterion, List<DuplicateItem> items, DuplicateItem keep) => criterion switch {
+        "Duration"     => items.Count(d => d.Duration == keep.Duration) > 1,
+        "Resolution"   => items.Count(d => d.FrameSizeInt == keep.FrameSizeInt) > 1,
+        "FPS"          => items.Count(d => d.Fps == keep.Fps) > 1,
+        "Bitrate"      => items.Count(d => d.BitRateKbs == keep.BitRateKbs) > 1,
+        "Audio Bitrate"=> items.Count(d => d.AudioSampleRate == keep.AudioSampleRate) > 1,
+        _              => false
+    };
+
+    static DuplicateItem ApplyCriterion(string criterion, List<DuplicateItem> items) => criterion switch {
+        "Duration"     => items.OrderByDescending(d => d.Duration).First(),
+        "Resolution"   => items.OrderByDescending(d => d.FrameSizeInt).First(),
+        "FPS"          => items.OrderByDescending(d => d.Fps).First(),
+        "Bitrate"      => items.OrderByDescending(d => d.BitRateKbs).First(),
+        "Audio Bitrate"=> items.OrderByDescending(d => d.AudioSampleRate).First(),
+        _              => items[0]
+    };
 
     static string FormatSize(long bytes) {
         if (bytes < 0) return "?";

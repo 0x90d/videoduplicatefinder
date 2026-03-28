@@ -1,14 +1,14 @@
 services:
   vdf-web:
-    build:
-      context: .
-      dockerfile: VDF.Web/Dockerfile
+    image: ghcr.io/0x90d/vdf-web:latest
     ports:
       - "8080:8080"
     volumes:
-      # Mount media directories here, e.g.:
-      # - /mnt/media:/mnt/media:ro
-      - vdf-db:/root/.config/VDF
+      # Mount your media directories here (read-only recommended).
+      # Add as many as you need, e.g.:
+      # - /mnt/nas/movies:/mnt/nas/movies:ro
+      # - /mnt/nas/series:/mnt/nas/series:ro
+      - vdf-db:/root/.config/VDF   # persists settings and scan database
 
 volumes:
   vdf-db:

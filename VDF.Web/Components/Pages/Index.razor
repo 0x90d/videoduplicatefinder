@@ -1,26 +1,53 @@
 @page "/"
 @rendermode InteractiveServer
-@inject VDF.Web.Services.ScanService Scan
+@inject ScanService Scan
 @implements IDisposable
 
 <PageTitle>Scan — Video Duplicate Finder</PageTitle>
 
 <h1>Scan</h1>
 
-@if (Scan.State == ScanState.Scanning || Scan.State == ScanState.Comparing) {
+@if (Scan.State == ScanState.Error) {
+    <div class="error-box">
+        <strong>Error</strong>
+        <p>@Scan.ErrorMessage</p>
+        <button @onclick="Scan.Reset">Dismiss</button>
+    </div>
+}
+
+@if (Scan.State == ScanState.Scanning || Scan.State == ScanState.Comparing || Scan.State == ScanState.RetrievingThumbnails) {
     <div class="progress-section">
-        <p class="state-label">@(Scan.State == ScanState.Scanning ? "Hashing files..." : "Comparing hashes...")</p>
-        @if (Scan.LastProgress is { } p && p.Max > 0) {
-            int pct = (int)(100L * p.Current / p.Max);
-            <div class="progress-bar-track">
-                <div class="progress-bar-fill" style="width:@pct%"></div>
-            </div>
-            <p>@p.Current / @p.Max &nbsp;|&nbsp; ETA @FormatEta(p.Remaining)</p>
-            <p class="file-path">@TruncatePath(p.CurrentFile, 80)</p>
+        @if (Scan.State == ScanState.Scanning) {
+            <p class="state-label">Hashing files...</p>
+            @if (Scan.LastProgress is { } p && p.Max > 0) {
+                int pct = (int)(100L * p.Current / p.Max);
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" style="width:@pct%"></div>
+                </div>
+                <p>@p.Current / @p.Max &nbsp;|&nbsp; ETA @FormatEta(p.Remaining)</p>
+                <p class="file-path">@TruncatePath(p.CurrentFile, 80)</p>
+            }
+        }
+        else if (Scan.State == ScanState.Comparing) {
+            <p class="state-label">
+                <span class="spinner"></span>
+                Comparing @(Scan.FilesHashed > 0 ? $"{Scan.FilesHashed:N0} hashed files" : "files") for duplicates...
+            </p>
+            <p class="comparing-note">This may take a while depending on library size.</p>
+        }
+        else {
+            <p class="state-label">Retrieving thumbnails...</p>
+            @if (Scan.ThumbnailMax > 0) {
+                int pct = (int)(100L * Scan.ThumbnailCurrent / Scan.ThumbnailMax);
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" style="width:@pct%"></div>
+                </div>
+                <p>@Scan.ThumbnailCurrent / @Scan.ThumbnailMax</p>
+            }
         }
         <div class="actions">
-            <button @onclick="Scan.Pause">Pause</button>
-            <button @onclick="Scan.Resume">Resume</button>
+            <button @onclick="Scan.Pause" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">Pause</button>
+            <button @onclick="Scan.Resume" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">Resume</button>
             <button class="danger" @onclick="Scan.Stop">Stop</button>
         </div>
     </div>
@@ -30,41 +57,51 @@ else {
         <h2>Include paths</h2>
         <div class="path-list">
             @foreach (var path in Scan.Settings.IncludeList.ToList()) {
+                bool valid = Directory.Exists(path);
                 <div class="path-entry">
+                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found or not accessible")">@(valid ? "✓" : "✗")</span>
                     <span>@path</span>
-                    <button @onclick="() => Scan.Settings.IncludeList.Remove(path)">✕</button>
+                    <button @onclick="() => RemoveInclude(path)">✕</button>
                 </div>
             }
         </div>
         <div class="add-path">
-            <input @bind="_newInclude" placeholder="/path/to/scan" />
-            <button @onclick="AddInclude">Add</button>
+            <input @bind="_newInclude" @bind:event="oninput" @onkeydown="OnIncludeKeyDown"
+                   placeholder="/path/to/scan" class="@PathInputClass(_newInclude)" />
+            <button @onclick="AddInclude" disabled="@string.IsNullOrWhiteSpace(_newInclude)">Add</button>
         </div>
 
         <h2>Exclude paths</h2>
         <div class="path-list">
             @foreach (var path in Scan.Settings.BlackList.ToList()) {
+                bool valid = Directory.Exists(path);
                 <div class="path-entry">
+                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found")">@(valid ? "✓" : "✗")</span>
                     <span>@path</span>
                     <button @onclick="() => Scan.Settings.BlackList.Remove(path)">✕</button>
                 </div>
             }
         </div>
         <div class="add-path">
-            <input @bind="_newExclude" placeholder="/path/to/exclude" />
-            <button @onclick="AddExclude">Add</button>
+            <input @bind="_newExclude" @bind:event="oninput" @onkeydown="OnExcludeKeyDown"
+                   placeholder="/path/to/exclude" />
+            <button @onclick="AddExclude" disabled="@string.IsNullOrWhiteSpace(_newExclude)">Add</button>
         </div>
 
         <div class="start-row">
-            @if (Scan.State == ScanState.Done || Scan.State == ScanState.Aborted) {
+            @if (Scan.State == ScanState.Done || Scan.State == ScanState.Aborted || Scan.State == ScanState.Error) {
                 <button @onclick="Scan.Reset">Reset</button>
             }
+            <button @onclick="SaveSettings" title="Save current settings to disk">Save settings</button>
             <button class="primary" @onclick="Scan.StartScanAndCompare"
                     disabled="@(Scan.Settings.IncludeList.Count == 0)">
                 Start Scan
             </button>
         </div>
 
+        @if (_saveMsg != null) {
+            <p class="@(_saveFailed ? "aborted-msg" : "done-msg")">@_saveMsg</p>
+        }
         @if (Scan.State == ScanState.Done) {
             <p class="done-msg">Scan complete — <a href="/results">view @Scan.Duplicates.Count result(s)</a></p>
         }
@@ -77,24 +114,58 @@ else {
 @code {
     string _newInclude = string.Empty;
     string _newExclude = string.Empty;
+    string? _saveMsg;
+    bool _saveFailed;
 
     protected override void OnInitialized() =>
         Scan.StateChanged += OnStateChanged;
 
-    void OnStateChanged() => InvokeAsync(StateHasChanged);
+    void OnStateChanged() {
+        try { _ = InvokeAsync(StateHasChanged); }
+        catch { }
+    }
 
     void AddInclude() {
-        if (!string.IsNullOrWhiteSpace(_newInclude)) {
-            Scan.Settings.IncludeList.Add(_newInclude.Trim());
+        var path = _newInclude.Trim();
+        if (!string.IsNullOrEmpty(path)) {
+            Scan.Settings.IncludeList.Add(path);
             _newInclude = string.Empty;
         }
     }
 
+    void RemoveInclude(string path) {
+        Scan.Settings.IncludeList.Remove(path);
+    }
+
     void AddExclude() {
-        if (!string.IsNullOrWhiteSpace(_newExclude)) {
-            Scan.Settings.BlackList.Add(_newExclude.Trim());
+        var path = _newExclude.Trim();
+        if (!string.IsNullOrEmpty(path)) {
+            Scan.Settings.BlackList.Add(path);
             _newExclude = string.Empty;
         }
+    }
+
+    void OnIncludeKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Enter") AddInclude();
+    }
+
+    void OnExcludeKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Enter") AddExclude();
+    }
+
+    string PathInputClass(string path) {
+        if (string.IsNullOrWhiteSpace(path)) return string.Empty;
+        return Directory.Exists(path.Trim()) ? "input-valid" : "input-invalid";
+    }
+
+    void SaveSettings() {
+        bool ok = Scan.SaveSettings();
+        _saveMsg = ok ? "Settings saved." : "Failed to save settings.";
+        _saveFailed = !ok;
+        _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => {
+            _saveMsg = null;
+            StateHasChanged();
+        }));
     }
 
     static string FormatEta(TimeSpan eta) =>

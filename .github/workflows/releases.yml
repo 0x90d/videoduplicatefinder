@@ -59,13 +59,26 @@ jobs:
             7z a -tzip "GUI-${{ matrix.target }}.zip" "./outputGUI/*"
             7z a -tzip "CLI-${{ matrix.target }}.zip" "./outputCLI/*"
             7z a -tzip "Web-${{ matrix.target }}.zip" "./outputWeb/*"
+          elif [[ "${{ matrix.target }}" == osx-* ]]; then
+            # Wrap the GUI in a proper macOS .app bundle
+            mkdir -p "Video Duplicate Finder.app/Contents/MacOS"
+            mkdir -p "Video Duplicate Finder.app/Contents/Resources"
+            cp -r outputGUI/. "Video Duplicate Finder.app/Contents/MacOS/"
+            cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
+            cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
+            tar czvf "GUI-${{ matrix.target }}.tar.gz" "Video Duplicate Finder.app"
+            tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
+            tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
           else
+            # Bundle .desktop file and icon for Linux desktop integration
+            cp "VDF.GUI/Assets/Linux/icon.png" "outputGUI/icon.png"
+            cp "VDF.GUI/Assets/Linux/videoduplicatefinder.desktop" "outputGUI/videoduplicatefinder.desktop"
             tar czvf "GUI-${{ matrix.target }}.tar.gz" "outputGUI"
             tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
             tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
           fi
           # Clean up
-          rm -rf "outputGUI" "outputCLI" "outputWeb"
+          rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
           
     - name: Publish
       uses: softprops/action-gh-release@v2
