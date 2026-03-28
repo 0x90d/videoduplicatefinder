@@ -23,8 +23,9 @@ namespace VDF.GUI.Views {
 
 	public static class InputBoxService {
 		public static async Task<String> Show(string message, string defaultInput = "", string waterMark = "",
-			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string? title = null) {
-			var dlg = new InputBoxView(message, defaultInput, waterMark, buttons, title) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string? title = null,
+			string? readOnlyInfo = null) {
+			var dlg = new InputBoxView(message, defaultInput, waterMark, buttons, title, readOnlyInfo) {
 				Icon = ApplicationHelpers.MainWindow.Icon
 			};
 			return await dlg.ShowDialog<String>(ApplicationHelpers.MainWindow);
@@ -38,12 +39,14 @@ namespace VDF.GUI.Views {
 		public InputBoxView() => InitializeComponent();
 
 		public InputBoxView(string message, string defaultInput = "", string waterMark = "",
-			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string? title = null) {
+			MessageBoxButtons buttons = MessageBoxButtons.Ok | MessageBoxButtons.Cancel, string? title = null,
+			string? readOnlyInfo = null) {
 			DataContext = new InputBoxVM();
 			((InputBoxVM)DataContext).host = this;
 			((InputBoxVM)DataContext).Message = message;
 			((InputBoxVM)DataContext).Input = defaultInput;
 			((InputBoxVM)DataContext).WaterMark = waterMark;
+			((InputBoxVM)DataContext).ReadOnlyInfo = readOnlyInfo ?? string.Empty;
 			if (!string.IsNullOrEmpty(title))
 				((InputBoxVM)DataContext).Title = title;
 			((InputBoxVM)DataContext).HasCancelButton = (buttons & MessageBoxButtons.Cancel) != 0;

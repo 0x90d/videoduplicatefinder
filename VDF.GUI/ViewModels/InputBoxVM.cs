@@ -23,6 +23,9 @@ namespace VDF.GUI.ViewModels {
 
 		public InputBoxView? host;
 
+		public string ReadOnlyInfo { get; set; } = string.Empty;
+		public bool HasReadOnlyInfo => !string.IsNullOrEmpty(ReadOnlyInfo);
+
 		bool _HasOKButton;
 		public bool HasOKButton {
 			get => _HasOKButton;

@@ -890,7 +890,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			var fi = new FileInfo(currentItem.ItemInfo.Path);
 			Debug.Assert(fi.Directory != null, "fi.Directory != null");
-			string newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(fi.FullName), title: "Rename File");
+			string newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(fi.FullName), title: "Rename File", readOnlyInfo: fi.FullName);
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName!, newName + fi.Extension);
 			while (File.Exists(newName)) {
@@ -899,7 +899,7 @@ namespace VDF.GUI.ViewModels {
 					return;
 				if (result == MessageBoxButtons.Yes)
 					break;
-				newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(newName), title: "Rename File");
+				newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(newName), title: "Rename File", readOnlyInfo: fi.FullName);
 				if (string.IsNullOrEmpty(newName))
 					return;
 				newName = FileUtils.SafePathCombine(fi.DirectoryName!, newName + fi.Extension);
