@@ -13,5 +13,9 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '9.0.x'
-    - name: Build with dotnet
-      run: dotnet publish -c Release -v q --self-contained -r win-x64
+    - name: Build GUI
+      run: dotnet publish VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r win-x64
+    - name: Build CLI
+      run: dotnet publish VDF.CLI/VDF.CLI.csproj -c Release -v q --self-contained -r win-x64
+    - name: Build Web
+      run: dotnet publish VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r win-x64

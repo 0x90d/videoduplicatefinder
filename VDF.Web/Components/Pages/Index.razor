@@ -1,0 +1,108 @@
+@page "/"
+@rendermode InteractiveServer
+@inject VDF.Web.Services.ScanService Scan
+@implements IDisposable
+
+<PageTitle>Scan — Video Duplicate Finder</PageTitle>
+
+<h1>Scan</h1>
+
+@if (Scan.State == ScanState.Scanning || Scan.State == ScanState.Comparing) {
+    <div class="progress-section">
+        <p class="state-label">@(Scan.State == ScanState.Scanning ? "Hashing files..." : "Comparing hashes...")</p>
+        @if (Scan.LastProgress is { } p && p.Max > 0) {
+            int pct = (int)(100L * p.Current / p.Max);
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" style="width:@pct%"></div>
+            </div>
+            <p>@p.Current / @p.Max &nbsp;|&nbsp; ETA @FormatEta(p.Remaining)</p>
+            <p class="file-path">@TruncatePath(p.CurrentFile, 80)</p>
+        }
+        <div class="actions">
+            <button @onclick="Scan.Pause">Pause</button>
+            <button @onclick="Scan.Resume">Resume</button>
+            <button class="danger" @onclick="Scan.Stop">Stop</button>
+        </div>
+    </div>
+}
+else {
+    <section class="scan-config">
+        <h2>Include paths</h2>
+        <div class="path-list">
+            @foreach (var path in Scan.Settings.IncludeList.ToList()) {
+                <div class="path-entry">
+                    <span>@path</span>
+                    <button @onclick="() => Scan.Settings.IncludeList.Remove(path)">✕</button>
+                </div>
+            }
+        </div>
+        <div class="add-path">
+            <input @bind="_newInclude" placeholder="/path/to/scan" />
+            <button @onclick="AddInclude">Add</button>
+        </div>
+
+        <h2>Exclude paths</h2>
+        <div class="path-list">
+            @foreach (var path in Scan.Settings.BlackList.ToList()) {
+                <div class="path-entry">
+                    <span>@path</span>
+                    <button @onclick="() => Scan.Settings.BlackList.Remove(path)">✕</button>
+                </div>
+            }
+        </div>
+        <div class="add-path">
+            <input @bind="_newExclude" placeholder="/path/to/exclude" />
+            <button @onclick="AddExclude">Add</button>
+        </div>
+
+        <div class="start-row">
+            @if (Scan.State == ScanState.Done || Scan.State == ScanState.Aborted) {
+                <button @onclick="Scan.Reset">Reset</button>
+            }
+            <button class="primary" @onclick="Scan.StartScanAndCompare"
+                    disabled="@(Scan.Settings.IncludeList.Count == 0)">
+                Start Scan
+            </button>
+        </div>
+
+        @if (Scan.State == ScanState.Done) {
+            <p class="done-msg">Scan complete — <a href="/results">view @Scan.Duplicates.Count result(s)</a></p>
+        }
+        @if (Scan.State == ScanState.Aborted) {
+            <p class="aborted-msg">Scan was stopped.</p>
+        }
+    </section>
+}
+
+@code {
+    string _newInclude = string.Empty;
+    string _newExclude = string.Empty;
+
+    protected override void OnInitialized() =>
+        Scan.StateChanged += OnStateChanged;
+
+    void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    void AddInclude() {
+        if (!string.IsNullOrWhiteSpace(_newInclude)) {
+            Scan.Settings.IncludeList.Add(_newInclude.Trim());
+            _newInclude = string.Empty;
+        }
+    }
+
+    void AddExclude() {
+        if (!string.IsNullOrWhiteSpace(_newExclude)) {
+            Scan.Settings.BlackList.Add(_newExclude.Trim());
+            _newExclude = string.Empty;
+        }
+    }
+
+    static string FormatEta(TimeSpan eta) =>
+        eta == TimeSpan.Zero ? "..." : eta.ToString(@"m\mss\s");
+
+    static string TruncatePath(string path, int max) =>
+        path.Length <= max ? path : "..." + path[^(max - 3)..];
+
+    public void Dispose() =>
+        Scan.StateChanged -= OnStateChanged;
+}

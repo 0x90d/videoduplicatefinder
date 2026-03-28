@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Video Duplicate Finder
+GenericName=Duplicate File Finder
+Comment=Find duplicate video and image files based on visual similarity
+Exec=/opt/videoduplicatefinder/VDF.GUI
+Icon=/opt/videoduplicatefinder/icon.png
+Type=Application
+Categories=Utility;FileManager;
+Keywords=duplicate;video;image;finder;similarity;
+StartupNotify=true

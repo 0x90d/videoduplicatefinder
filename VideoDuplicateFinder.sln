@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VDF.GUI", "VDF.GUI\VDF.GUI.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FakeDatabaseGenerator", "FakeDatabaseGenerator\FakeDatabaseGenerator.csproj", "{FA8C0D82-05D0-4320-BD21-53628883E87D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VDF.CLI", "VDF.CLI\VDF.CLI.csproj", "{B2E4F1A3-9C7D-4E5F-8B1A-2D3E4F5A6B7C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VDF.Web", "VDF.Web\VDF.Web.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{FA8C0D82-05D0-4320-BD21-53628883E87D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA8C0D82-05D0-4320-BD21-53628883E87D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA8C0D82-05D0-4320-BD21-53628883E87D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2E4F1A3-9C7D-4E5F-8B1A-2D3E4F5A6B7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2E4F1A3-9C7D-4E5F-8B1A-2D3E4F5A6B7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2E4F1A3-9C7D-4E5F-8B1A-2D3E4F5A6B7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2E4F1A3-9C7D-4E5F-8B1A-2D3E4F5A6B7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,77 @@
+@page "/results"
+@rendermode InteractiveServer
+@inject VDF.Web.Services.ScanService Scan
+@implements IDisposable
+
+<PageTitle>Results — Video Duplicate Finder</PageTitle>
+
+<h1>Duplicate Groups</h1>
+
+@{
+    var groups = Scan.Duplicates
+        .GroupBy(d => d.GroupId)
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+
+@if (groups.Count == 0) {
+    <p>No duplicates found. <a href="/">Run a scan</a> first.</p>
+}
+else {
+    <p>@groups.Count group(s), @Scan.Duplicates.Count total file(s).</p>
+
+    @foreach (var group in groups) {
+        <div class="dup-group">
+            <div class="dup-group-header">Group — @group.Count() file(s)</div>
+            @foreach (var item in group.OrderByDescending(i => i.Similarity)) {
+                <div class="dup-item @(item.IsBestBitRateKbs || item.IsBestFrameSize ? "best" : "")">
+                    <div class="dup-thumb">
+                        @if (item.IsImage) {
+                            <img src="/thumbnail?path=@Uri.EscapeDataString(item.Path)"
+                                 alt="thumbnail" loading="lazy" />
+                        }
+                    </div>
+                    <div class="dup-info">
+                        <div class="dup-path" title="@item.Path">@item.Path</div>
+                        <div class="dup-meta">
+                            <span class="similarity">@item.Similarity.ToString("F1")%</span>
+                            @if (!item.IsImage) {
+                                <span>@item.FrameSize</span>
+                                <span>@item.Format</span>
+                                <span>@item.Fps.ToString("F2") fps</span>
+                                <span>@item.BitRateKbs kbps</span>
+                                <span>@item.Duration.ToString(@"hh\:mm\:ss")</span>
+                            }
+                            else {
+                                <span>@item.FrameSize</span>
+                                <span>@item.Format</span>
+                            }
+                            <span>@FormatSize(item.SizeLong)</span>
+                            @if (item.IsBestBitRateKbs || item.IsBestFrameSize) {
+                                <span class="badge-best">best</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    protected override void OnInitialized() =>
+        Scan.StateChanged += OnStateChanged;
+
+    void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    static string FormatSize(long bytes) {
+        if (bytes < 0) return "?";
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        if (bytes < 1024L * 1024 * 1024) return $"{bytes / (1024.0 * 1024):F1} MB";
+        return $"{bytes / (1024.0 * 1024 * 1024):F2} GB";
+    }
+
+    public void Dispose() =>
+        Scan.StateChanged -= OnStateChanged;
+}

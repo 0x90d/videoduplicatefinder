@@ -1,0 +1,104 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: system-ui, sans-serif;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+a { color: #7eb8f7; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1 { font-size: 1.4rem; margin-bottom: 1rem; }
+h2 { font-size: 1rem; margin: 1rem 0 0.5rem; color: #aaa; }
+
+/* Layout */
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+    width: 140px;
+    background: #111;
+    padding: 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+.brand { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.75rem; color: #fff; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+    color: #ccc;
+}
+.sidebar a:hover, .sidebar a.active { background: #222; color: #fff; text-decoration: none; }
+
+.content { flex: 1; padding: 1.5rem; overflow-y: auto; }
+
+/* Buttons */
+button {
+    padding: 0.35rem 0.9rem;
+    border: 1px solid #555;
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+button:hover { background: #383838; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { background: #1a6ab5; border-color: #1a6ab5; color: #fff; }
+button.primary:hover { background: #1e7fd0; }
+button.danger { background: #8b1a1a; border-color: #8b1a1a; color: #fff; }
+button.danger:hover { background: #a82020; }
+
+/* Scan config */
+.scan-config { max-width: 680px; }
+.path-list { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.5rem; }
+.path-entry { display: flex; align-items: center; gap: 0.5rem; background: #222; padding: 0.3rem 0.6rem; border-radius: 4px; }
+.path-entry span { flex: 1; word-break: break-all; }
+.path-entry button { padding: 0.15rem 0.4rem; font-size: 11px; }
+.add-path { display: flex; gap: 0.5rem; }
+.add-path input { flex: 1; background: #222; border: 1px solid #444; color: #e0e0e0; padding: 0.3rem 0.5rem; border-radius: 4px; }
+.start-row { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
+.done-msg { margin-top: 0.75rem; color: #6dbf6d; }
+.aborted-msg { margin-top: 0.75rem; color: #bf6d6d; }
+
+/* Progress */
+.progress-section { max-width: 680px; }
+.state-label { margin-bottom: 0.5rem; color: #aaa; }
+.progress-bar-track { height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-bottom: 0.4rem; }
+.progress-bar-fill { height: 100%; background: #1a6ab5; transition: width 0.3s; }
+.file-path { font-size: 12px; color: #888; word-break: break-all; margin-top: 0.3rem; }
+.actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+/* Results */
+.dup-group { background: #1e1e1e; border: 1px solid #333; border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; }
+.dup-group-header { background: #252525; padding: 0.4rem 0.75rem; font-size: 12px; color: #888; border-bottom: 1px solid #333; }
+.dup-item { display: flex; gap: 0.75rem; padding: 0.6rem 0.75rem; border-bottom: 1px solid #2a2a2a; }
+.dup-item:last-child { border-bottom: none; }
+.dup-item.best { border-left: 3px solid #1a6ab5; }
+.dup-thumb { width: 80px; flex-shrink: 0; }
+.dup-thumb img { width: 80px; height: 56px; object-fit: cover; border-radius: 3px; }
+.dup-info { flex: 1; min-width: 0; }
+.dup-path { word-break: break-all; font-size: 13px; margin-bottom: 0.3rem; }
+.dup-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; font-size: 12px; color: #888; }
+.similarity { font-weight: 700; color: #e0e0e0; }
+.badge-best { background: #1a6ab5; color: #fff; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 11px; }
+
+/* Settings */
+.settings-section { max-width: 520px; margin-bottom: 1.5rem; }
+.settings-section label { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.6rem; font-size: 13px; color: #ccc; }
+.settings-section input[type=number],
+.settings-section input[type=text],
+.settings-section select {
+    background: #222;
+    border: 1px solid #444;
+    color: #e0e0e0;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    width: 100%;
+}
+.settings-section input[type=checkbox] { width: auto; margin-right: 0.4rem; }
+.settings-section label:has(input[type=checkbox]) { flex-direction: row; align-items: center; }

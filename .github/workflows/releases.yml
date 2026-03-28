@@ -46,26 +46,35 @@ jobs:
     - name: Build
       shell: bash
       run: |
-          release_name="App-${{ matrix.target }}"
           # Add nuget sources
           dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
-          # Build everything
-            dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputFolder"
+          # Build GUI
+          dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputGUI"
+          # Build CLI
+          dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputCLI"
+          # Build Web
+          dotnet publish ./VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputWeb"
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
-            # Pack to zip for Windows
-            7z a -tzip "${release_name}.zip" "./outputFolder/*"
+            7z a -tzip "GUI-${{ matrix.target }}.zip" "./outputGUI/*"
+            7z a -tzip "CLI-${{ matrix.target }}.zip" "./outputCLI/*"
+            7z a -tzip "Web-${{ matrix.target }}.zip" "./outputWeb/*"
           else
-            tar czvf "${release_name}.tar.gz" "outputFolder"
+            tar czvf "GUI-${{ matrix.target }}.tar.gz" "outputGUI"
+            tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
+            tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
           fi
-          # Delete output directory
-          rm -r "outputFolder"
+          # Clean up
+          rm -rf "outputGUI" "outputCLI" "outputWeb"
           
     - name: Publish
       uses: softprops/action-gh-release@v2
       with:
           tag_name: 3.0.x
-          files: App*
+          files: |
+            GUI-*
+            CLI-*
+            Web-*
           body: |
             Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says. If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in VDF folder.
             Last build based on ${{ steps.vars.outputs.sha_short }}

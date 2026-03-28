@@ -1,0 +1,14 @@
+services:
+  vdf-web:
+    build:
+      context: .
+      dockerfile: VDF.Web/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount media directories here, e.g.:
+      # - /mnt/media:/mnt/media:ro
+      - vdf-db:/root/.config/VDF
+
+volumes:
+  vdf-db:

@@ -1,0 +1,13 @@
+@inherits LayoutComponentBase
+
+<div class="layout">
+    <nav class="sidebar">
+        <div class="brand">VDF</div>
+        <NavLink href="/" Match="NavLinkMatch.All">Scan</NavLink>
+        <NavLink href="/results">Results</NavLink>
+        <NavLink href="/settings">Settings</NavLink>
+    </nav>
+    <main class="content">
+        @Body
+    </main>
+</div>

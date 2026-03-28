@@ -1,0 +1,115 @@
+@page "/settings"
+@rendermode InteractiveServer
+@inject VDF.Web.Services.ScanService Scan
+
+<PageTitle>Settings — Video Duplicate Finder</PageTitle>
+
+<h1>Settings</h1>
+
+<section class="settings-section">
+    <h2>Similarity</h2>
+    <label>
+        Threshold (hash difference, 0–10, lower = stricter)
+        <input type="number" min="0" max="10"
+               value="@Scan.Settings.Threshhold"
+               @onchange="e => Scan.Settings.Threshhold = byte.Parse(e.Value!.ToString()!)" />
+    </label>
+    <label>
+        Minimum similarity %
+        <input type="number" min="0" max="100" step="0.5"
+               value="@Scan.Settings.Percent"
+               @onchange="e => Scan.Settings.Percent = float.Parse(e.Value!.ToString()!)" />
+    </label>
+    <label>
+        Duration difference tolerance %
+        <input type="number" min="0" max="100" step="1"
+               value="@Scan.Settings.PercentDurationDifference"
+               @onchange="e => Scan.Settings.PercentDurationDifference = double.Parse(e.Value!.ToString()!)" />
+    </label>
+</section>
+
+<section class="settings-section">
+    <h2>Scanning</h2>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.IncludeSubDirectories"
+               @onchange="e => Scan.Settings.IncludeSubDirectories = (bool)e.Value!" />
+        Scan subdirectories
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.IncludeImages"
+               @onchange="e => Scan.Settings.IncludeImages = (bool)e.Value!" />
+        Include images
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.UsePHashing"
+               @onchange="e => Scan.Settings.UsePHashing = (bool)e.Value!" />
+        Use perceptual hashing
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.CompareHorizontallyFlipped"
+               @onchange="e => Scan.Settings.CompareHorizontallyFlipped = (bool)e.Value!" />
+        Compare horizontally flipped
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.IgnoreBlackPixels"
+               @onchange="e => Scan.Settings.IgnoreBlackPixels = (bool)e.Value!" />
+        Ignore black pixels
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.IgnoreWhitePixels"
+               @onchange="e => Scan.Settings.IgnoreWhitePixels = (bool)e.Value!" />
+        Ignore white pixels
+    </label>
+    <label>
+        Max degree of parallelism
+        <input type="number" min="1"
+               value="@Scan.Settings.MaxDegreeOfParallelism"
+               @onchange="e => Scan.Settings.MaxDegreeOfParallelism = int.Parse(e.Value!.ToString()!)" />
+    </label>
+    <label>
+        Thumbnail count per file
+        <input type="number" min="1" max="20"
+               value="@Scan.Settings.ThumbnailCount"
+               @onchange="e => Scan.Settings.ThumbnailCount = int.Parse(e.Value!.ToString()!)" />
+    </label>
+</section>
+
+<section class="settings-section">
+    <h2>FFmpeg</h2>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.UseNativeFfmpegBinding"
+               @onchange="e => Scan.Settings.UseNativeFfmpegBinding = (bool)e.Value!" />
+        Use native FFmpeg binding
+    </label>
+    <label>
+        Hardware acceleration
+        <select @onchange="e => Scan.Settings.HardwareAccelerationMode = Enum.Parse<VDF.Core.FFTools.FFHardwareAccelerationMode>(e.Value!.ToString()!)">
+            @foreach (var mode in Enum.GetValues<VDF.Core.FFTools.FFHardwareAccelerationMode>()) {
+                <option value="@mode" selected="@(Scan.Settings.HardwareAccelerationMode == mode)">@mode</option>
+            }
+        </select>
+    </label>
+    <label>
+        Custom FFmpeg arguments
+        <input type="text"
+               value="@Scan.Settings.CustomFFArguments"
+               @onchange="e => Scan.Settings.CustomFFArguments = e.Value?.ToString() ?? string.Empty" />
+    </label>
+</section>
+
+<section class="settings-section">
+    <h2>Database</h2>
+    <label>
+        Custom database folder
+        <input type="text"
+               value="@Scan.Settings.CustomDatabaseFolder"
+               @onchange="e => Scan.Settings.CustomDatabaseFolder = e.Value?.ToString() ?? string.Empty" />
+    </label>
+</section>
