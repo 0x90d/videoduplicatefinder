@@ -449,6 +449,7 @@
 	"MainWindow.Settings.PartialClipDetection": "Partial Clip Detection",
 	"MainWindow.Settings.EnablePartialClipDetection": "Enable Partial Clip Detection",
 	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Detect when a shorter video is a partial clip of a longer one using audio fingerprinting. Runs as a second phase after visual duplicate detection.",
+	"MainWindow.Settings.PartialClipDetectionWarning": "Warning: Enabling this will significantly increase scan duration. The full audio of every video must be decoded for fingerprinting. Results are cached, so subsequent scans will be faster.",
 	"MainWindow.Settings.PartialClipMinRatio": "Min clip / source ratio (%):",
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Minimum clip duration as a percentage of the source duration. Clips shorter than this ratio are ignored.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Min audio similarity (%):",

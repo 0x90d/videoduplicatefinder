@@ -125,13 +125,13 @@ namespace VDF.GUI.ViewModels {
 			get => _ScanProgressText;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
 		}
-		string _RemainingTime;
+		string _RemainingTime = string.Empty;
 		public string RemainingTime {
 			get => _RemainingTime;
 			set => this.RaiseAndSetIfChanged(ref _RemainingTime, value);
 		}
 
-		string _TimeElapsed;
+		string _TimeElapsed = string.Empty;
 		public string TimeElapsed {
 			get => _TimeElapsed;
 			set => this.RaiseAndSetIfChanged(ref _TimeElapsed, value);

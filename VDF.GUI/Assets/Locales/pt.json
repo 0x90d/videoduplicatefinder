@@ -449,6 +449,7 @@
 	"MainWindow.Settings.PartialClipDetection": "Detecção de clipe parcial",
 	"MainWindow.Settings.EnablePartialClipDetection": "Habilitar detecção de clipe parcial",
 	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Detecta quando um vídeo mais curto é um clipe parcial de um mais longo usando impressão digital de áudio.",
+	"MainWindow.Settings.PartialClipDetectionWarning": "Aviso: Ativar isto aumentará significativamente a duração da verificação. O áudio completo de cada vídeo deve ser decodificado para a impressão digital. Os resultados são armazenados em cache, portanto as verificações subsequentes serão mais rápidas.",
 	"MainWindow.Settings.PartialClipMinRatio": "Proporção mín. clipe/fonte (%):",
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Duração mínima do clipe como percentagem da duração da fonte.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Similaridade de áudio mín. (%):",

@@ -449,6 +449,7 @@
 	"MainWindow.Settings.PartialClipDetection": "Détection de clip partiel",
 	"MainWindow.Settings.EnablePartialClipDetection": "Activer la détection de clip partiel",
 	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Détecte quand une vidéo plus courte est un clip partiel d'une plus longue grâce aux empreintes audio.",
+	"MainWindow.Settings.PartialClipDetectionWarning": "Attention : L'activation de cette option augmentera considérablement la durée de l'analyse. L'audio complet de chaque vidéo doit être décodé pour l'empreinte digitale. Les résultats sont mis en cache, les analyses suivantes seront donc plus rapides.",
 	"MainWindow.Settings.PartialClipMinRatio": "Ratio min. clip/source (%):",
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Durée minimale du clip en pourcentage de la durée de la source.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Similarité audio min. (%):",

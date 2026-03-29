@@ -449,6 +449,7 @@
 	"MainWindow.Settings.PartialClipDetection": "Detección de clip parcial",
 	"MainWindow.Settings.EnablePartialClipDetection": "Habilitar detección de clip parcial",
 	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Detecta cuando un video más corto es un clip parcial de uno más largo usando huella dactilar de audio.",
+	"MainWindow.Settings.PartialClipDetectionWarning": "Advertencia: Activar esto aumentará significativamente la duración del escaneo. El audio completo de cada video debe decodificarse para la huella digital. Los resultados se almacenan en caché, por lo que los escaneos posteriores serán más rápidos.",
 	"MainWindow.Settings.PartialClipMinRatio": "Ratio mín. clip/fuente (%):",
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Duración mínima del clip como porcentaje de la duración de la fuente.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Similitud de audio mín. (%):",

@@ -469,7 +469,7 @@ namespace VDF.Core {
 								!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
 								!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
 								entry.AudioFingerprint == null) {
-								ExtractAudioFingerprint(entry);
+								ExtractAudioFingerprint(entry, cancelationTokenSource.Token);
 							}
 							IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
@@ -509,7 +509,7 @@ namespace VDF.Core {
 						!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
 						!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
 						entry.AudioFingerprint == null) {
-						ExtractAudioFingerprint(entry);
+						ExtractAudioFingerprint(entry, cancelationTokenSource.Token);
 					}
 
 					IncrementProgress(entry.Path);
@@ -523,8 +523,8 @@ namespace VDF.Core {
 		}
 
 	
-	static void ExtractAudioFingerprint(FileEntry entry) {
-		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false);
+	static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default) {
+		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, ct);
 		if (fp == null) {
 			// null = extraction failed (error or no audio stream)
 			entry.Flags.Set(EntryFlags.AudioFingerprintError);
@@ -994,12 +994,7 @@ namespace VDF.Core {
 				return;
 			}
 
-			Logger.Instance.Info($"Partial clip detection: comparing {videos.Count} video(s)...");
-			if (Settings.ExtendedFFToolsLogging) {
-				// Log fingerprint block counts for eligible videos only
-				foreach (var e in videos)
-					Logger.Instance.Info($"[Fingerprint] {System.IO.Path.GetFileName(e.Path)}: {e.AudioFingerprint!.Length} blocks");
-			}
+			Logger.Instance.Info($"Partial clip detection: comparing {videos.Count} video(s) (fingerprint blocks: min={videos.Min(e => e.AudioFingerprint!.Length)}, max={videos.Max(e => e.AudioFingerprint!.Length)})...");
 
 			// sourceGroupId: path of source → Guid of the group it anchors
 			var sourceGroupId = new Dictionary<string, Guid>(
@@ -1037,12 +1032,11 @@ namespace VDF.Core {
 					pairsChecked++;
 					var (sim, offsetSec) = SlidingWindowCompare(fpClip, fpSource);
 
-					if (Settings.ExtendedFFToolsLogging)
-						Logger.Instance.Info($"[Partial] {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {fpClip.Length}/{fpSource.Length} blocks)");
-
 					if (sim < (float)Settings.PartialClipSimilarityThreshold) continue;
 
 					// We have a match: source[i] contains clip[j] at offsetSec.
+					if (Settings.ExtendedFFToolsLogging)
+						Logger.Instance.Info($"[Partial] {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {fpClip.Length}/{fpSource.Length} blocks)");
 					matchesFound++;
 
 					if (!sourceGroupId.TryGetValue(source.Path, out Guid groupId)) {

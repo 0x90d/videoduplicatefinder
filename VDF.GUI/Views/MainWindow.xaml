@@ -1039,6 +1039,32 @@
                                         TextTrimming="CharacterEllipsis" MaxWidth="300" />
                                 </StackPanel>
                             </WrapPanel>
+                            <Grid
+                                x:Name="BusyIndicator"
+                                Grid.RowSpan="3"
+                                IsVisible="{Binding IsBusy}"
+                                Opacity="0.8">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <ProgressBar
+                                        Height="10"
+                                        MaxWidth="200"
+                                        BorderBrush="LimeGreen"
+                                        BorderThickness="1"
+                                        IsIndeterminate="{Binding IsBusy}" />
+                                    <TextBlock
+                                        Margin="0,10,0,0"
+                                        HorizontalAlignment="Center"
+                                        FontSize="14"
+                                        FontWeight="ExtraBold"
+                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Busy.PleaseWait]}" />
+                                    <TextBlock
+                                        Name="LblBusyIndicator"
+                                        Margin="0,10,0,0"
+                                        HorizontalAlignment="Center"
+                                        FontSize="14"
+                                        Text="{Binding IsBusyOverlayText}" />
+                                </StackPanel>
+                            </Grid>
                         </Grid>
                     </TabItem>
                     <TabItem Name="TabItemSettings">
@@ -1098,7 +1124,8 @@
                                     </MenuItem.Header>
                                 </MenuItem>
                             </Menu>
-                            <TabControl Grid.Row="1" TabStripPlacement="Left">
+                            <TabControl Grid.Row="1" TabStripPlacement="Left"
+                                      IsEnabled="{Binding !IsScanning}">
                                 <TabControl.Styles>
                                     <Style Selector="TabItem">
                                         <Setter Property="MinWidth" Value="160" />
@@ -1108,7 +1135,7 @@
                                 </TabControl.Styles>
 
                                 <!-- ═══════════════ SCANNING ═══════════════ -->
-                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                <TabItem>
                                     <TabItem.Header>
                                         <TextBlock VerticalAlignment="Center" FontSize="12"
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Scanning]}" />
@@ -1246,6 +1273,10 @@
                                                               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnablePartialClipDetection}"
                                                               IsThreeState="False"
                                                               ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnablePartialClipDetectionTooltip]}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipDetectionWarning]}"
+                                                               Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}"
+                                                               FontSize="11" TextWrapping="Wrap"
+                                                               IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnablePartialClipDetection}" />
                                                     <Grid ColumnDefinitions="Auto,8,80,16,Auto,8,80"
                                                           IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnablePartialClipDetection}">
                                                         <TextBlock Grid.Column="0" VerticalAlignment="Center"
@@ -1270,7 +1301,7 @@
                                 </TabItem>
 
                                 <!-- ═══════════════ DIRECTORIES ═══════════════ -->
-                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                <TabItem>
                                     <TabItem.Header>
                                         <TextBlock VerticalAlignment="Center" FontSize="12"
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Directories]}" />
@@ -1399,7 +1430,7 @@
                                 </TabItem>
 
                                 <!-- ═══════════════ FILES ═══════════════ -->
-                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                <TabItem>
                                     <TabItem.Header>
                                         <TextBlock VerticalAlignment="Center" FontSize="12"
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Files]}" />
@@ -1524,7 +1555,7 @@
                                 </TabItem>
 
                                 <!-- ═══════════════ PROCESSING ═══════════════ -->
-                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                <TabItem>
                                     <TabItem.Header>
                                         <TextBlock VerticalAlignment="Center" FontSize="12"
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Processing]}" />
@@ -1585,7 +1616,7 @@
                                 </TabItem>
 
                                 <!-- ═══════════════ SCHEDULE ═══════════════ -->
-                                <TabItem IsEnabled="{Binding !IsScanning}">
+                                <TabItem>
                                     <TabItem.Header>
                                         <TextBlock VerticalAlignment="Center" FontSize="12"
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
@@ -1799,31 +1830,6 @@
                         </Grid>
                     </TabItem>
                 </TabControl>
-                <Grid
-                    x:Name="BusyIndicator"
-                    IsVisible="{Binding IsBusy}"
-                    Opacity="0.8">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <ProgressBar
-                            Height="10"
-                            MaxWidth="200"
-                            BorderBrush="LimeGreen"
-                            BorderThickness="1"
-                            IsIndeterminate="{Binding IsBusy}" />
-                            <TextBlock
-                                Margin="0,10,0,0"
-                                HorizontalAlignment="Center"
-                                FontSize="14"
-                                FontWeight="ExtraBold"
-                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Busy.PleaseWait]}" />
-                        <TextBlock
-                            Name="LblBusyIndicator"
-                            Margin="0,10,0,0"
-                            HorizontalAlignment="Center"
-                            FontSize="14"
-                            Text="{Binding IsBusyOverlayText}" />
-                    </StackPanel>
-                </Grid>
             </Grid>
         </Grid>
     </Border>

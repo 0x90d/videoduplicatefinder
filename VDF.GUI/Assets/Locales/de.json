@@ -449,6 +449,7 @@
 	"MainWindow.Settings.PartialClipDetection": "Teilclip-Erkennung",
 	"MainWindow.Settings.EnablePartialClipDetection": "Teilclip-Erkennung aktivieren",
 	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Erkennt, wenn ein kürzeres Video ein Teilclip eines längeren Videos ist, mithilfe von Audio-Fingerprinting.",
+	"MainWindow.Settings.PartialClipDetectionWarning": "Warnung: Die Aktivierung verlängert die Scandauer erheblich. Der gesamte Audioinhalt jedes Videos muss für das Fingerprinting dekodiert werden. Ergebnisse werden zwischengespeichert, sodass nachfolgende Scans schneller sind.",
 	"MainWindow.Settings.PartialClipMinRatio": "Min. Clip/Quell-Verhältnis (%):",
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Mindestdauer des Clips als Prozentsatz der Quelldauer.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Min. Audio-Ähnlichkeit (%):",

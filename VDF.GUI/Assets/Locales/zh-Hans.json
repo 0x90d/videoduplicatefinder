@@ -449,6 +449,7 @@
 	"MainWindow.Settings.PartialClipDetection": "部分片段检测",
 	"MainWindow.Settings.EnablePartialClipDetection": "启用部分片段检测",
 	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "使用音频指纹检测较短视频是否为较长视频的片段。",
+	"MainWindow.Settings.PartialClipDetectionWarning": "警告：启用此功能将显著增加扫描时间。每个视频的完整音频都必须解码以生成指纹。结果会被缓存，因此后续扫描会更快。",
 	"MainWindow.Settings.PartialClipMinRatio": "最小片段/源比例 (%):",
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "片段时长占源视频时长的最小百分比。",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "最小音频相似度 (%):",

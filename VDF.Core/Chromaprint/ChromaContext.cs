@@ -84,8 +84,7 @@ namespace VDF.Core.Chromaprint {
 				_samples.AsSpan(0, _sampleCount).CopyTo(newBuf);
 				_samples = newBuf;
 			}
-			for (int i = 0; i < samples.Length; i++)
-				_samples[_sampleCount + i] = samples[i];
+			samples.CopyTo(_samples.AsSpan(_sampleCount));
 			_sampleCount += samples.Length;
 
 			ProcessFrames();
