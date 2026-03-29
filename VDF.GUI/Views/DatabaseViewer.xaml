@@ -9,6 +9,8 @@
     Title="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Title]}"
     Height="600"
     Width="800"
+    MinWidth="500"
+    MinHeight="300"
     d:DesignHeight="450"
     d:DesignWidth="800"
     WindowStartupLocation="CenterOwner"

@@ -8,6 +8,8 @@
     Title="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.Title]}"
     Width="900"
     Height="600"
+    MinWidth="500"
+    MinHeight="300"
     d:DesignHeight="450"
     d:DesignWidth="800"
     WindowStartupLocation="CenterOwner"
