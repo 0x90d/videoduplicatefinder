@@ -148,6 +148,11 @@ namespace VDF.CLI.Commands {
 					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 					".local", "share", "Trash", "files");
 				Directory.CreateDirectory(trashDir);
+				// Skip trash for cross-filesystem files (e.g. network shares) to avoid downloading
+				if (!VDF.Core.Utils.FileUtils.IsOnSameFileSystem(path, trashDir)) {
+					File.Delete(path);
+					return;
+				}
 				string dest = Path.Combine(trashDir, Path.GetFileName(path));
 				// Avoid overwriting existing trash entries
 				int n = 1;
@@ -161,6 +166,11 @@ namespace VDF.CLI.Commands {
 					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 					".Trash");
 				Directory.CreateDirectory(trashDir);
+				// Skip trash for cross-volume files to avoid cross-volume copy
+				if (!VDF.Core.Utils.FileUtils.IsOnSameFileSystem(path, trashDir)) {
+					File.Delete(path);
+					return;
+				}
 				string dest = Path.Combine(trashDir, Path.GetFileName(path));
 				int n = 1;
 				while (File.Exists(dest))

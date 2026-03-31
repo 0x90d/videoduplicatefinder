@@ -219,6 +219,11 @@ namespace VDF.Web.Services {
 					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 					".local", "share", "Trash", "files");
 				Directory.CreateDirectory(trashDir);
+				// Skip trash for cross-filesystem files (e.g. network shares) to avoid downloading
+				if (!VDF.Core.Utils.FileUtils.IsOnSameFileSystem(path, trashDir)) {
+					File.Delete(path);
+					return;
+				}
 				string dest = UniqueDestPath(trashDir, path);
 				File.Move(path, dest);
 			}
@@ -226,6 +231,11 @@ namespace VDF.Web.Services {
 				string trashDir = Path.Combine(
 					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".Trash");
 				Directory.CreateDirectory(trashDir);
+				// Skip trash for cross-volume files to avoid cross-volume copy
+				if (!VDF.Core.Utils.FileUtils.IsOnSameFileSystem(path, trashDir)) {
+					File.Delete(path);
+					return;
+				}
 				string dest = UniqueDestPath(trashDir, path);
 				File.Move(path, dest);
 			}

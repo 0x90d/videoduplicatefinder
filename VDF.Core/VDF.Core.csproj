@@ -7,6 +7,8 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="VDF.GUI" />
+    <InternalsVisibleTo Include="vdf-cli" />
+    <InternalsVisibleTo Include="VDF.Web" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FFmpeg.AutoGen" Version="8.0.0" />
