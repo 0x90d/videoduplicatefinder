@@ -58,7 +58,7 @@ namespace VDF.Core.FFTools {
 		private static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, CancellationToken ct) {
 			var sw = extendedLogging ? Stopwatch.StartNew() : null;
 
-			using var decoder = new AudioStreamDecoder(filePath, TargetSampleRate);
+			using var decoder = new AudioStreamDecoder(filePath, TargetSampleRate, ct);
 			if (!decoder.HasAudioStream)
 				return Array.Empty<uint>();
 

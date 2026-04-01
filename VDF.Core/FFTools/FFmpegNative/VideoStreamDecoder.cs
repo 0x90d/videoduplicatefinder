@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Diagnostics;
 using FFmpeg.AutoGen;
 
 namespace VDF.Core.FFTools.FFmpegNative {
@@ -24,9 +25,19 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		private readonly AVPacket* _pPacket;
 		private readonly AVFrame* _pReceivedFrame;
 		private readonly int _streamIndex;
+		private readonly AVIOInterruptCB_callback _interruptCbDelegate;
+		private readonly long _deadlineTicks;
 
-		public VideoStreamDecoder(string url, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE) {
+		public VideoStreamDecoder(string url, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE, int timeoutMs = 15_000) {
 			_pFormatContext = ffmpeg.avformat_alloc_context();
+
+			// Set up an interrupt callback so FFmpeg aborts blocking I/O when the
+			// timeout expires.  This lets Dispose() run normally and release the
+			// file handle — unlike killing a thread, which would leak it.
+			_deadlineTicks = Stopwatch.GetTimestamp() + (long)(timeoutMs / 1000.0 * Stopwatch.Frequency);
+			_interruptCbDelegate = _ => Stopwatch.GetTimestamp() > _deadlineTicks ? 1 : 0;
+			_pFormatContext->interrupt_callback = new AVIOInterruptCB { callback = _interruptCbDelegate };
+
 			_pReceivedFrame = ffmpeg.av_frame_alloc();
 			var pFormatContext = _pFormatContext;
 			ffmpeg.avformat_open_input(&pFormatContext, url, null, null).ThrowExceptionIfError();

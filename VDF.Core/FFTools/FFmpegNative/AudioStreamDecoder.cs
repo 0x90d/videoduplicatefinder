@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 
@@ -31,6 +32,10 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		private readonly AVFrame* _pFrame;
 		private readonly AVPacket* _pPacket;
 		private readonly int _streamIndex;
+		private readonly AVIOInterruptCB_callback _interruptCbDelegate;
+		private readonly long _timeoutTicks;
+		private long _deadlineTicks;
+		private CancellationToken _ct;
 
 		private const AVSampleFormat TargetFormat = AVSampleFormat.AV_SAMPLE_FMT_S16;
 
@@ -40,8 +45,19 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// <summary>True if the file contained a usable audio stream.</summary>
 		public bool HasAudioStream { get; }
 
-		public AudioStreamDecoder(string url, int targetSampleRate) {
+		public AudioStreamDecoder(string url, int targetSampleRate, CancellationToken ct = default, int timeoutMs = 120_000) {
 			_pFormatContext = ffmpeg.avformat_alloc_context();
+
+			// Interrupt callback: aborts blocking I/O when the per-operation
+			// deadline expires or the scan is cancelled.  The deadline is reset
+			// after each successful av_read_frame in DecodeAll(), so total decode
+			// time for long files is not capped — only individual hung calls.
+			_ct = ct;
+			_timeoutTicks = (long)(timeoutMs / 1000.0 * Stopwatch.Frequency);
+			_deadlineTicks = Stopwatch.GetTimestamp() + _timeoutTicks;
+			_interruptCbDelegate = _ => (_ct.IsCancellationRequested || Stopwatch.GetTimestamp() > _deadlineTicks) ? 1 : 0;
+			_pFormatContext->interrupt_callback = new AVIOInterruptCB { callback = _interruptCbDelegate };
+
 			var pFormatContext = _pFormatContext;
 			ffmpeg.avformat_open_input(&pFormatContext, url, null, null).ThrowExceptionIfError();
 			ffmpeg.avformat_find_stream_info(_pFormatContext, null).ThrowExceptionIfError();
@@ -94,6 +110,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		public int DecodeAll(Action<ReadOnlySpan<short>> onSamples, CancellationToken ct) {
 			if (!HasAudioStream) return 0;
 
+			_ct = ct;
+			_deadlineTicks = Stopwatch.GetTimestamp() + _timeoutTicks;
 			int totalSamples = 0;
 
 			while (!ct.IsCancellationRequested) {
@@ -102,6 +120,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				if (readResult == ffmpeg.AVERROR_EOF)
 					break;
 				readResult.ThrowExceptionIfError();
+				_deadlineTicks = Stopwatch.GetTimestamp() + _timeoutTicks;
 
 				if (_pPacket->stream_index != _streamIndex)
 					continue;
