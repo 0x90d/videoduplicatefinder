@@ -4,7 +4,21 @@ name: Build releases
 on: [push]
     
 jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete old release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Delete all existing assets from the 3.0.x release so they get replaced with fresh builds
+          gh release view 3.0.x --json assets --jq '.assets[].name' | while read -r asset; do
+            gh release delete-asset 3.0.x "$asset" --yes
+          done
+
   build:
+    needs: cleanup
 
     strategy:
       matrix:
