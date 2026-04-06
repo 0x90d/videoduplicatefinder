@@ -802,10 +802,16 @@ namespace VDF.GUI.ViewModels {
 
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
 			try {
-				if (CoreUtils.IsWindows) {
-					Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
-						UseShellExecute = true
-					});
+				if (OperatingSystem.IsWindows()) {
+					try {
+						Utils.ShellUtils.ShowInExplorer(currentItem.ItemInfo.Path);
+					}
+					catch {
+						// Fallback to explorer.exe if shell API fails (Notepad++/Electron pattern)
+						Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
+							UseShellExecute = true
+						});
+					}
 				}
 				else if (OperatingSystem.IsMacOS()) {
 					Process.Start("open", $"-R \"{currentItem.ItemInfo.Path}\"");
