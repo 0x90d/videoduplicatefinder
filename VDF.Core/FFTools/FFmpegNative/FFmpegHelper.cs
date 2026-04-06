@@ -136,7 +136,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 		static bool CheckForFfmpegLibraryFilesInFolder(string path) {
 			foreach (var file in GenerateLibraryFileNames()) {
-				if (!File.Exists(file)) {
+				if (!File.Exists(Path.Combine(path, file))) {
 					return false;
 				}
 			}
