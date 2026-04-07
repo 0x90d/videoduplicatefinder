@@ -58,30 +58,42 @@ namespace VDF.Core.FFTools {
 		private static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, CancellationToken ct) {
 			var sw = extendedLogging ? Stopwatch.StartNew() : null;
 
-			using var decoder = new AudioStreamDecoder(filePath, TargetSampleRate, ct);
-			if (!decoder.HasAudioStream)
-				return Array.Empty<uint>();
+			// Suppress noisy FFmpeg warnings (e.g. AAC "Could not update timestamps
+			// for skipped samples") that flood the debug console and can stall threads.
+			// The CLI process path uses -loglevel quiet; match that here.
+			int prevLogLevel = FFmpeg.AutoGen.ffmpeg.av_log_get_level();
+			FFmpeg.AutoGen.ffmpeg.av_log_set_level(extendedLogging
+				? FFmpeg.AutoGen.ffmpeg.AV_LOG_ERROR
+				: FFmpeg.AutoGen.ffmpeg.AV_LOG_FATAL);
+			try {
+				using var decoder = new AudioStreamDecoder(filePath, TargetSampleRate, ct);
+				if (!decoder.HasAudioStream)
+					return Array.Empty<uint>();
 
-			var ctx = new ChromaContext();
-			ctx.Start();
-			int totalSamples = decoder.DecodeAll(samples => ctx.Feed(samples), ct);
+				var ctx = new ChromaContext();
+				ctx.Start();
+				int totalSamples = decoder.DecodeAll(samples => ctx.Feed(samples), ct);
 
-			if (ct.IsCancellationRequested)
-				return null;
+				if (ct.IsCancellationRequested)
+					return null;
 
-			if (totalSamples < Chroma.FrameSize) // too short to fingerprint
-				return null;
+				if (totalSamples < Chroma.FrameSize) // too short to fingerprint
+					return null;
 
-			ctx.Finish();
-			var result = ctx.GetRawFingerprint();
+				ctx.Finish();
+				var result = ctx.GetRawFingerprint();
 
-			if (extendedLogging)
-				Logger.Instance.Info($"[ChromaprintEngine] {Path.GetFileName(filePath)}: " +
-					$"native, total={sw!.ElapsedMilliseconds}ms, " +
-					$"samples={totalSamples}, blocks={result.Length}, " +
-					$"thread={Environment.CurrentManagedThreadId}");
+				if (extendedLogging)
+					Logger.Instance.Info($"[ChromaprintEngine] {Path.GetFileName(filePath)}: " +
+						$"native, total={sw!.ElapsedMilliseconds}ms, " +
+						$"samples={totalSamples}, blocks={result.Length}, " +
+						$"thread={Environment.CurrentManagedThreadId}");
 
-			return result;
+				return result;
+			}
+			finally {
+				FFmpeg.AutoGen.ffmpeg.av_log_set_level(prevLogLevel);
+			}
 		}
 
 		/// <summary>CLI fallback: spawns an FFmpeg process and streams PCM from stdout.</summary>

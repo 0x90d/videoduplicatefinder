@@ -125,7 +125,9 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				if (_pPacket->stream_index != _streamIndex)
 					continue;
 
-				ffmpeg.avcodec_send_packet(_pCodecContext, _pPacket).ThrowExceptionIfError();
+				int sendResult = ffmpeg.avcodec_send_packet(_pCodecContext, _pPacket);
+				if (sendResult < 0 && sendResult != ffmpeg.AVERROR(ffmpeg.EAGAIN))
+					continue; // skip corrupted / problematic packets instead of aborting
 
 				while (!ct.IsCancellationRequested) {
 					int recvResult = ffmpeg.avcodec_receive_frame(_pCodecContext, _pFrame);
