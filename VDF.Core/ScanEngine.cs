@@ -26,6 +26,8 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Text.Json;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using SixLabors.ImageSharp.Processing;
@@ -972,6 +974,7 @@ namespace VDF.Core {
 		/// <summary>
 		/// Phase 2 comparison: find pairs where a shorter video is a partial clip of a longer one,
 		/// using audio fingerprint sliding-window matching.  Results are added to Duplicates.
+		/// The comparison loop runs in parallel; grouping is applied sequentially afterward.
 		/// </summary>
 		void ScanForPartialDuplicates() {
 			Logger.Instance.Info("Partial clip detection: building fingerprint index...");
@@ -996,69 +999,78 @@ namespace VDF.Core {
 
 			Logger.Instance.Info($"Partial clip detection: comparing {videos.Count} video(s) (fingerprint blocks: min={videos.Min(e => e.AudioFingerprint!.Length)}, max={videos.Max(e => e.AudioFingerprint!.Length)})...");
 
-			// sourceGroupId: path of source → Guid of the group it anchors
+			float simThreshold = (float)Settings.PartialClipSimilarityThreshold;
+
+			// --- Parallel phase: compute all matches without mutating shared state ---
+			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
+			int pairsChecked = 0;
+
+			Parallel.For(0, videos.Count - 1,
+				new ParallelOptions {
+					CancellationToken = cancelationTokenSource.Token,
+					MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount)
+				},
+				i => {
+					FileEntry source = videos[i];
+					double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+					if (sourceSec < 1.0) return;
+
+					for (int j = i + 1; j < videos.Count; j++) {
+						if (cancelationTokenSource.IsCancellationRequested) break;
+						FileEntry clip = videos[j];
+						double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+						if (clipSec < 1.0) continue;
+
+						// Pre-filter 1: clip must be at least PartialClipMinRatio of source
+						if (clipSec / sourceSec < Settings.PartialClipMinRatio) continue;
+
+						// Pre-filter 2: clip must be shorter than 95% of source (visual dup handles the rest)
+						if (clipSec / sourceSec >= 0.95) continue;
+
+						// Fingerprint block sanity (each block ≈ 1 second)
+						uint[] fpSource = source.AudioFingerprint!;
+						uint[] fpClip = clip.AudioFingerprint!;
+						if (fpClip.Length >= fpSource.Length) continue;
+
+						Interlocked.Increment(ref pairsChecked);
+						var (sim, offsetSec) = SlidingWindowCompare(fpClip, fpSource, simThreshold);
+
+						if (sim >= simThreshold)
+							matches.Add((i, j, sim, offsetSec));
+					}
+				});
+
+			// --- Sequential phase: build groups from matches (preserving longest-source-first order) ---
 			var sourceGroupId = new Dictionary<string, Guid>(
 				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-			// assignedClips: paths already assigned as clips (avoid adding same clip twice)
 			var assignedClips = new HashSet<string>(
 				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-
-			int pairsChecked = 0;
 			int matchesFound = 0;
 
-			for (int i = 0; i < videos.Count - 1; i++) {
-				if (cancelationTokenSource.IsCancellationRequested) break;
-				FileEntry source = videos[i];
-				double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
-				if (sourceSec < 1.0) continue;
+			foreach (var (si, ci, sim, offsetSec) in matches.OrderBy(m => m.sourceIdx).ThenBy(m => m.clipIdx)) {
+				FileEntry source = videos[si];
+				FileEntry clip = videos[ci];
+				matchesFound++;
 
-				for (int j = i + 1; j < videos.Count; j++) {
-					if (cancelationTokenSource.IsCancellationRequested) break;
-					FileEntry clip = videos[j];
-					double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
-					if (clipSec < 1.0) continue;
+				if (Settings.ExtendedFFToolsLogging)
+					Logger.Instance.Info($"[Partial] {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {clip.AudioFingerprint!.Length}/{source.AudioFingerprint!.Length} blocks)");
 
-					// Pre-filter 1: clip must be at least PartialClipMinRatio of source
-					if (clipSec / sourceSec < Settings.PartialClipMinRatio) continue;
+				if (!sourceGroupId.TryGetValue(source.Path, out Guid groupId)) {
+					groupId = Guid.NewGuid();
+					sourceGroupId[source.Path] = groupId;
+					Duplicates.Add(new DuplicateItem(source, 0f, groupId, DuplicateFlags.None));
+				}
 
-					// Pre-filter 2: clip must be shorter than 95% of source (visual dup handles the rest)
-					if (clipSec / sourceSec >= 0.95) continue;
-
-					// Fingerprint block sanity (each block ≈ 1 second)
-					uint[] fpSource = source.AudioFingerprint!;
-					uint[] fpClip = clip.AudioFingerprint!;
-					if (fpClip.Length >= fpSource.Length) continue;
-
-					pairsChecked++;
-					var (sim, offsetSec) = SlidingWindowCompare(fpClip, fpSource);
-
-					if (sim < (float)Settings.PartialClipSimilarityThreshold) continue;
-
-					// We have a match: source[i] contains clip[j] at offsetSec.
-					if (Settings.ExtendedFFToolsLogging)
-						Logger.Instance.Info($"[Partial] {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {fpClip.Length}/{fpSource.Length} blocks)");
-					matchesFound++;
-
-					if (!sourceGroupId.TryGetValue(source.Path, out Guid groupId)) {
-						groupId = Guid.NewGuid();
-						sourceGroupId[source.Path] = groupId;
-						// Add the source as the anchor member (no PartialClip flag)
-						Duplicates.Add(new DuplicateItem(source, 0f, groupId, DuplicateFlags.None));
-					}
-
-					if (!assignedClips.Contains(clip.Path)) {
-						assignedClips.Add(clip.Path);
-						var clipItem = new DuplicateItem(clip, 1f - sim, groupId, DuplicateFlags.PartialClip) {
-							PartialClipOffset = TimeSpan.FromSeconds(offsetSec)
-						};
-						Duplicates.Add(clipItem);
-					}
-					else {
-						// Clip already belongs to another source group — update its GroupId to this one
-						// so everything lands in the same group (longest source wins as anchor).
-						var existing = Duplicates.FirstOrDefault(d => d.Path == clip.Path && d.Flags.HasFlag(DuplicateFlags.PartialClip));
-						if (existing != null) existing.GroupId = groupId;
-					}
+				if (!assignedClips.Contains(clip.Path)) {
+					assignedClips.Add(clip.Path);
+					var clipItem = new DuplicateItem(clip, 1f - sim, groupId, DuplicateFlags.PartialClip) {
+						PartialClipOffset = TimeSpan.FromSeconds(offsetSec)
+					};
+					Duplicates.Add(clipItem);
+				}
+				else {
+					var existing = Duplicates.FirstOrDefault(d => d.Path == clip.Path && d.Flags.HasFlag(DuplicateFlags.PartialClip));
+					if (existing != null) existing.GroupId = groupId;
 				}
 			}
 
@@ -1068,23 +1080,31 @@ namespace VDF.Core {
 		/// <summary>
 		/// Slides <paramref name="shorter"/> over <paramref name="longer"/> and returns the
 		/// best average Hamming similarity (0–1) and the offset (in seconds / blocks) at which
-		/// it occurs.
+		/// it occurs.  Uses SIMD-accelerated XOR where available and skips offsets early when
+		/// the accumulated Hamming distance already exceeds what could beat the current best.
 		/// </summary>
-		static (float similarity, int offsetBlocks) SlidingWindowCompare(uint[] shorter, uint[] longer) {
+		/// <param name="minSim">Minimum similarity the caller cares about (e.g. the user threshold).
+		/// Offsets that cannot reach this value are skipped via early exit.</param>
+		internal static (float similarity, int offsetBlocks) SlidingWindowCompare(uint[] shorter, uint[] longer, float minSim = 0f) {
 			int lenS = shorter.Length;
 			int lenL = longer.Length;
 			int maxOffset = lenL - lenS;
+			int totalBitsCapacity = lenS * 32;
 
 			float bestSim = 0f;
 			int bestOffset = 0;
 
 			for (int offset = 0; offset <= maxOffset; offset++) {
-				int totalBits = 0;
-				for (int k = 0; k < lenS; k++)
-					totalBits += BitOperations.PopCount(shorter[k] ^ longer[offset + k]);
-				// Average Hamming distance per block (max 32 bits each)
-				float avgDist = (float)totalBits / (lenS * 32);
-				float sim = 1f - avgDist;
+				// The maximum number of differing bits we can tolerate and still
+				// beat the current best (or the caller's minimum threshold).
+				int maxAllowedBits = (int)((1f - Math.Max(bestSim, minSim)) * totalBitsCapacity);
+
+				int totalBits = HammingDistance(shorter, longer, offset, lenS, maxAllowedBits);
+
+				if (totalBits > maxAllowedBits)
+					continue; // early exit triggered inside HammingDistance
+
+				float sim = 1f - (float)totalBits / totalBitsCapacity;
 				if (sim > bestSim) {
 					bestSim = sim;
 					bestOffset = offset;
@@ -1092,6 +1112,67 @@ namespace VDF.Core {
 			}
 
 			return (bestSim, bestOffset);
+		}
+
+		/// <summary>
+		/// Computes the Hamming distance (total differing bits) between
+		/// <paramref name="a"/>[0..len) and <paramref name="b"/>[offset..offset+len).
+		/// Uses 256-bit or 128-bit SIMD for the XOR when hardware support is available.
+		/// Returns early (with a value &gt; <paramref name="maxAllowedBits"/>) when the
+		/// running total exceeds the budget, avoiding unnecessary work on non-matching offsets.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		static int HammingDistance(uint[] a, uint[] b, int offset, int len, int maxAllowedBits) {
+			int totalBits = 0;
+			int k = 0;
+
+			// --- Vector256 path (8 × uint per iteration) ---
+			if (Vector256.IsHardwareAccelerated && len >= 8) {
+				ref uint aRef = ref MemoryMarshal.GetArrayDataReference(a);
+				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(b), offset);
+
+				for (; k + 8 <= len; k += 8) {
+					var va = Vector256.LoadUnsafe(ref aRef, (nuint)k);
+					var vb = Vector256.LoadUnsafe(ref bRef, (nuint)k);
+					var xored = va ^ vb;
+
+					totalBits += BitOperations.PopCount(xored.GetElement(0))
+							   + BitOperations.PopCount(xored.GetElement(1))
+							   + BitOperations.PopCount(xored.GetElement(2))
+							   + BitOperations.PopCount(xored.GetElement(3))
+							   + BitOperations.PopCount(xored.GetElement(4))
+							   + BitOperations.PopCount(xored.GetElement(5))
+							   + BitOperations.PopCount(xored.GetElement(6))
+							   + BitOperations.PopCount(xored.GetElement(7));
+
+					if (totalBits > maxAllowedBits) return totalBits;
+				}
+			}
+			// --- Vector128 path (4 × uint per iteration, e.g. ARM NEON) ---
+			else if (Vector128.IsHardwareAccelerated && len >= 4) {
+				ref uint aRef = ref MemoryMarshal.GetArrayDataReference(a);
+				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(b), offset);
+
+				for (; k + 4 <= len; k += 4) {
+					var va = Vector128.LoadUnsafe(ref aRef, (nuint)k);
+					var vb = Vector128.LoadUnsafe(ref bRef, (nuint)k);
+					var xored = va ^ vb;
+
+					totalBits += BitOperations.PopCount(xored.GetElement(0))
+							   + BitOperations.PopCount(xored.GetElement(1))
+							   + BitOperations.PopCount(xored.GetElement(2))
+							   + BitOperations.PopCount(xored.GetElement(3));
+
+					if (totalBits > maxAllowedBits) return totalBits;
+				}
+			}
+
+			// --- Scalar remainder ---
+			for (; k < len; k++) {
+				totalBits += BitOperations.PopCount(a[k] ^ b[offset + k]);
+			}
+
+			return totalBits;
 		}
 
 		/// <summary>
