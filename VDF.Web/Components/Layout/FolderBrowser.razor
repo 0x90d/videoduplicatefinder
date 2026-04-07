@@ -1,0 +1,146 @@
+@rendermode InteractiveServer
+
+@if (_visible) {
+    <div class="folder-overlay" @onclick="Close"></div>
+    <div class="folder-browser">
+        <div class="folder-header">
+            <h3>Select Folder</h3>
+            <button class="compare-close" @onclick="Close">&#x2715;</button>
+        </div>
+        <div class="folder-path-bar">
+            <button @onclick="GoUp" disabled="@(string.IsNullOrEmpty(_currentPath))" title="Go up">&#x2191;</button>
+            <input type="text" @bind="_currentPath" @bind:event="oninput" @onkeydown="OnPathKeyDown"
+                   placeholder="Enter path..." />
+            <button @onclick="NavigateTo">Go</button>
+        </div>
+        @if (_error != null) {
+            <div class="folder-error">@_error</div>
+        }
+        <div class="folder-list">
+            @if (_drives != null && string.IsNullOrEmpty(_currentPath)) {
+                @foreach (var drive in _drives) {
+                    <div class="folder-item" @ondblclick="() => OpenFolder(drive)">
+                        <span class="folder-icon">&#x1F4BD;</span>
+                        <span>@drive</span>
+                    </div>
+                }
+            }
+            else if (_directories != null) {
+                @foreach (var dir in _directories) {
+                    <div class="folder-item" @ondblclick="() => OpenFolder(dir)">
+                        <span class="folder-icon">&#x1F4C1;</span>
+                        <span>@System.IO.Path.GetFileName(dir)</span>
+                    </div>
+                }
+                @if (_directories.Length == 0) {
+                    <div class="folder-empty">No subdirectories</div>
+                }
+            }
+        </div>
+        <div class="folder-footer">
+            <span class="folder-selected" title="@_currentPath">@(_currentPath ?? "No folder selected")</span>
+            <button class="primary" @onclick="SelectCurrent" disabled="@string.IsNullOrEmpty(_currentPath)">Select</button>
+            <button @onclick="Close">Cancel</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public EventCallback<string> OnFolderSelected { get; set; }
+
+    bool _visible;
+    string? _currentPath;
+    string[]? _directories;
+    string[]? _drives;
+    string? _error;
+
+    public void Open(string? initialPath = null) {
+        _visible = true;
+        _error = null;
+        _currentPath = initialPath;
+
+        if (!string.IsNullOrEmpty(_currentPath) && Directory.Exists(_currentPath)) {
+            LoadDirectory(_currentPath);
+        }
+        else {
+            LoadDrives();
+        }
+        StateHasChanged();
+    }
+
+    void Close() {
+        _visible = false;
+        StateHasChanged();
+    }
+
+    void LoadDrives() {
+        try {
+            _drives = Directory.GetLogicalDrives();
+            _directories = null;
+            _currentPath = null;
+            _error = null;
+        }
+        catch (Exception ex) {
+            _error = ex.Message;
+            // On Linux/macOS there are no "drives", start at root
+            _currentPath = "/";
+            LoadDirectory("/");
+        }
+    }
+
+    void LoadDirectory(string path) {
+        try {
+            _directories = Directory.GetDirectories(path)
+                .OrderBy(d => System.IO.Path.GetFileName(d), StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            _drives = null;
+            _currentPath = path;
+            _error = null;
+        }
+        catch (UnauthorizedAccessException) {
+            _error = "Access denied.";
+            _directories = Array.Empty<string>();
+        }
+        catch (Exception ex) {
+            _error = ex.Message;
+            _directories = Array.Empty<string>();
+        }
+    }
+
+    void OpenFolder(string path) {
+        _currentPath = path;
+        LoadDirectory(path);
+    }
+
+    void GoUp() {
+        if (string.IsNullOrEmpty(_currentPath)) return;
+        var parent = Directory.GetParent(_currentPath);
+        if (parent != null) {
+            _currentPath = parent.FullName;
+            LoadDirectory(_currentPath);
+        }
+        else {
+            LoadDrives();
+        }
+    }
+
+    void NavigateTo() {
+        if (!string.IsNullOrEmpty(_currentPath) && Directory.Exists(_currentPath)) {
+            LoadDirectory(_currentPath);
+        }
+        else {
+            _error = "Directory not found.";
+        }
+    }
+
+    void OnPathKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Enter") NavigateTo();
+    }
+
+    async Task SelectCurrent() {
+        if (!string.IsNullOrEmpty(_currentPath)) {
+            await OnFolderSelected.InvokeAsync(_currentPath);
+            Close();
+        }
+    }
+}

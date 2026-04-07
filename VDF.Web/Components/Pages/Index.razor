@@ -1,11 +1,44 @@
 @page "/"
 @rendermode InteractiveServer
 @inject ScanService Scan
+@inject FFmpegSetupService FFmpegSetup
 @implements IDisposable
 
 <PageTitle>Scan — Video Duplicate Finder</PageTitle>
 
 <h1>Scan</h1>
+
+@* FFmpeg setup banner *@
+@if (FFmpegSetup.State == FFmpegSetupState.Checking) {
+    <div class="ffmpeg-banner checking">
+        <span class="spinner"></span>
+        Checking FFmpeg availability...
+    </div>
+}
+@if (FFmpegSetup.State == FFmpegSetupState.Downloading) {
+    <div class="ffmpeg-banner downloading">
+        <span class="spinner"></span>
+        <span>@FFmpegSetup.StatusMessage</span>
+        <div class="progress-bar-track inline-bar">
+            <div class="progress-bar-fill" style="width:@FFmpegSetup.DownloadProgress.ToString("F0")%"></div>
+        </div>
+    </div>
+}
+@if (FFmpegSetup.State == FFmpegSetupState.DockerWarning) {
+    <div class="ffmpeg-banner warning">
+        <strong>FFmpeg not found</strong>
+        <p>@FFmpegSetup.StatusMessage</p>
+    </div>
+}
+@if (FFmpegSetup.State == FFmpegSetupState.Failed) {
+    <div class="ffmpeg-banner failed">
+        <div>
+            <strong>FFmpeg download failed</strong>
+            <p>@FFmpegSetup.StatusMessage</p>
+        </div>
+        <button @onclick="RetryFfmpegSetup">Retry</button>
+    </div>
+}
 
 @if (Scan.State == ScanState.Error) {
     <div class="error-box">
@@ -59,9 +92,9 @@ else {
             @foreach (var path in Scan.Settings.IncludeList.ToList()) {
                 bool valid = Directory.Exists(path);
                 <div class="path-entry">
-                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found or not accessible")">@(valid ? "✓" : "✗")</span>
+                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found or not accessible")">@(valid ? "\u2713" : "\u2717")</span>
                     <span>@path</span>
-                    <button @onclick="() => RemoveInclude(path)">✕</button>
+                    <button @onclick="() => RemoveInclude(path)">&#x2715;</button>
                 </div>
             }
         </div>
@@ -69,6 +102,7 @@ else {
             <input @bind="_newInclude" @bind:event="oninput" @onkeydown="OnIncludeKeyDown"
                    placeholder="/path/to/scan" class="@PathInputClass(_newInclude)" />
             <button @onclick="AddInclude" disabled="@string.IsNullOrWhiteSpace(_newInclude)">Add</button>
+            <button class="browse-btn" @onclick="() => _includeBrowser?.Open()">Browse…</button>
         </div>
 
         <h2>Exclude paths</h2>
@@ -76,9 +110,9 @@ else {
             @foreach (var path in Scan.Settings.BlackList.ToList()) {
                 bool valid = Directory.Exists(path);
                 <div class="path-entry">
-                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found")">@(valid ? "✓" : "✗")</span>
+                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found")">@(valid ? "\u2713" : "\u2717")</span>
                     <span>@path</span>
-                    <button @onclick="() => Scan.Settings.BlackList.Remove(path)">✕</button>
+                    <button @onclick="() => Scan.Settings.BlackList.Remove(path)">&#x2715;</button>
                 </div>
             }
         </div>
@@ -86,7 +120,11 @@ else {
             <input @bind="_newExclude" @bind:event="oninput" @onkeydown="OnExcludeKeyDown"
                    placeholder="/path/to/exclude" />
             <button @onclick="AddExclude" disabled="@string.IsNullOrWhiteSpace(_newExclude)">Add</button>
+            <button class="browse-btn" @onclick="() => _excludeBrowser?.Open()">Browse…</button>
         </div>
+
+        <FolderBrowser @ref="_includeBrowser" OnFolderSelected="OnIncludeFolderSelected" />
+        <FolderBrowser @ref="_excludeBrowser" OnFolderSelected="OnExcludeFolderSelected" />
 
         <div class="start-row">
             @if (Scan.State == ScanState.Done || Scan.State == ScanState.Aborted || Scan.State == ScanState.Error) {
@@ -94,7 +132,7 @@ else {
             }
             <button @onclick="SaveSettings" title="Save current settings to disk">Save settings</button>
             <button class="primary" @onclick="Scan.StartScanAndCompare"
-                    disabled="@(Scan.Settings.IncludeList.Count == 0)">
+                    disabled="@(Scan.Settings.IncludeList.Count == 0 || !FFmpegSetup.IsReady)">
                 Start Scan
             </button>
         </div>
@@ -114,16 +152,22 @@ else {
 @code {
     string _newInclude = string.Empty;
     string _newExclude = string.Empty;
+    FolderBrowser? _includeBrowser;
+    FolderBrowser? _excludeBrowser;
     string? _saveMsg;
     bool _saveFailed;
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized() {
         Scan.StateChanged += OnStateChanged;
+        FFmpegSetup.StateChanged += OnStateChanged;
+    }
 
     void OnStateChanged() {
         try { _ = InvokeAsync(StateHasChanged); }
         catch { }
     }
+
+    void RetryFfmpegSetup() => _ = FFmpegSetup.CheckAndSetupAsync();
 
     void AddInclude() {
         var path = _newInclude.Trim();
@@ -131,6 +175,16 @@ else {
             Scan.Settings.IncludeList.Add(path);
             _newInclude = string.Empty;
         }
+    }
+
+    void OnIncludeFolderSelected(string path) {
+        if (!Scan.Settings.IncludeList.Contains(path))
+            Scan.Settings.IncludeList.Add(path);
+    }
+
+    void OnExcludeFolderSelected(string path) {
+        if (!Scan.Settings.BlackList.Contains(path))
+            Scan.Settings.BlackList.Add(path);
     }
 
     void RemoveInclude(string path) {
@@ -174,6 +228,8 @@ else {
     static string TruncatePath(string path, int max) =>
         path.Length <= max ? path : "..." + path[^(max - 3)..];
 
-    public void Dispose() =>
+    public void Dispose() {
         Scan.StateChanged -= OnStateChanged;
+        FFmpegSetup.StateChanged -= OnStateChanged;
+    }
 }

@@ -1,10 +1,19 @@
 @page "/settings"
 @rendermode InteractiveServer
 @inject VDF.Web.Services.ScanService Scan
+@inject VDF.Web.Services.WebSettingsService WebSettings
+@using System.Globalization
 
 <PageTitle>Settings — Video Duplicate Finder</PageTitle>
 
 <h1>Settings</h1>
+
+<div class="start-row" style="margin-bottom:1rem;margin-top:0;">
+    <button class="primary" @onclick="SaveSettings">Save Settings</button>
+    @if (_saveMsg != null) {
+        <span class="@(_saveFailed ? "aborted-msg" : "done-msg")" style="margin:0;">@_saveMsg</span>
+    }
+</div>
 
 <section class="settings-section">
     <h2>Similarity</h2>
@@ -12,19 +21,19 @@
         Threshold (hash difference, 0–10, lower = stricter)
         <input type="number" min="0" max="10"
                value="@Scan.Settings.Threshhold"
-               @onchange="e => Scan.Settings.Threshhold = byte.Parse(e.Value!.ToString()!)" />
+               @onchange="e => Scan.Settings.Threshhold = ParseByte(e.Value)" />
     </label>
     <label>
         Minimum similarity %
         <input type="number" min="0" max="100" step="0.5"
-               value="@Scan.Settings.Percent"
-               @onchange="e => Scan.Settings.Percent = float.Parse(e.Value!.ToString()!)" />
+               value="@Scan.Settings.Percent.ToString(CultureInfo.InvariantCulture)"
+               @onchange="e => Scan.Settings.Percent = ParseFloat(e.Value)" />
     </label>
     <label>
         Duration difference tolerance %
         <input type="number" min="0" max="100" step="1"
-               value="@Scan.Settings.PercentDurationDifference"
-               @onchange="e => Scan.Settings.PercentDurationDifference = double.Parse(e.Value!.ToString()!)" />
+               value="@Scan.Settings.PercentDurationDifference.ToString(CultureInfo.InvariantCulture)"
+               @onchange="e => Scan.Settings.PercentDurationDifference = ParseDouble(e.Value)" />
     </label>
 </section>
 
@@ -67,16 +76,16 @@
         Ignore white pixels
     </label>
     <label>
-        Max degree of parallelism
-        <input type="number" min="1"
+        Max degree of parallelism (-1 = all cores)
+        <input type="number" min="-1"
                value="@Scan.Settings.MaxDegreeOfParallelism"
-               @onchange="e => Scan.Settings.MaxDegreeOfParallelism = int.Parse(e.Value!.ToString()!)" />
+               @onchange="e => Scan.Settings.MaxDegreeOfParallelism = ParseInt(e.Value)" />
     </label>
     <label>
         Thumbnail count per file
         <input type="number" min="1" max="20"
                value="@Scan.Settings.ThumbnailCount"
-               @onchange="e => Scan.Settings.ThumbnailCount = int.Parse(e.Value!.ToString()!)" />
+               @onchange="e => Scan.Settings.ThumbnailCount = ParseInt(e.Value)" />
     </label>
 </section>
 
@@ -117,15 +126,37 @@
             Min clip / source ratio %
             <input type="number" min="1" max="100" step="1"
                    value="@((int)(Scan.Settings.PartialClipMinRatio * 100))"
-                   @onchange="e => Scan.Settings.PartialClipMinRatio = int.Parse(e.Value!.ToString()!) / 100.0" />
+                   @onchange="e => Scan.Settings.PartialClipMinRatio = ParseInt(e.Value) / 100.0" />
         </label>
         <label>
             Min audio similarity %
             <input type="number" min="1" max="100" step="1"
                    value="@((int)(Scan.Settings.PartialClipSimilarityThreshold * 100))"
-                   @onchange="e => Scan.Settings.PartialClipSimilarityThreshold = int.Parse(e.Value!.ToString()!) / 100.0" />
+                   @onchange="e => Scan.Settings.PartialClipSimilarityThreshold = ParseInt(e.Value) / 100.0" />
         </label>
     }
+</section>
+
+<section class="settings-section">
+    <h2>WebUI Thumbnails</h2>
+    <label>
+        <input type="checkbox"
+               checked="@WebSettings.AutoLoadThumbnails"
+               @onchange="e => WebSettings.AutoLoadThumbnails = (bool)e.Value!" />
+        Automatically load thumbnails on results page
+    </label>
+    <label>
+        Thumbnail width (px) — lower = less memory, more pixelated
+        <input type="number" min="48" max="960" step="48"
+               value="@WebSettings.ThumbnailWidth"
+               @onchange="e => WebSettings.ThumbnailWidth = Math.Clamp(ParseInt(e.Value), 48, 960)" />
+    </label>
+    <label>
+        JPEG quality (10–95) — lower = smaller files, more artifacts
+        <input type="number" min="10" max="95" step="5"
+               value="@WebSettings.ThumbnailJpegQuality"
+               @onchange="e => WebSettings.ThumbnailJpegQuality = Math.Clamp(ParseInt(e.Value), 10, 95)" />
+    </label>
 </section>
 
 <section class="settings-section">
@@ -137,3 +168,34 @@
                @onchange="e => Scan.Settings.CustomDatabaseFolder = e.Value?.ToString() ?? string.Empty" />
     </label>
 </section>
+
+@code {
+    string? _saveMsg;
+    bool _saveFailed;
+
+    void SaveSettings() {
+        bool ok = Scan.SaveSettings();
+        _saveMsg = ok ? "Settings saved." : "Failed to save settings.";
+        _saveFailed = !ok;
+        _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => {
+            _saveMsg = null;
+            StateHasChanged();
+        }));
+    }
+
+    // Culture-safe parsers: handle both comma and dot as decimal separator
+    static string Normalize(object? v) =>
+        (v?.ToString() ?? "0").Replace(',', '.');
+
+    static float ParseFloat(object? v) =>
+        float.TryParse(Normalize(v), NumberStyles.Float, CultureInfo.InvariantCulture, out var r) ? r : 0f;
+
+    static double ParseDouble(object? v) =>
+        double.TryParse(Normalize(v), NumberStyles.Float, CultureInfo.InvariantCulture, out var r) ? r : 0.0;
+
+    static int ParseInt(object? v) =>
+        int.TryParse(Normalize(v).Split('.')[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var r) ? r : 0;
+
+    static byte ParseByte(object? v) =>
+        byte.TryParse(Normalize(v).Split('.')[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var r) ? r : (byte)0;
+}

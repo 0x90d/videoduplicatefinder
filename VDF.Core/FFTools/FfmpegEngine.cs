@@ -21,6 +21,8 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
 
@@ -316,6 +318,34 @@ namespace VDF.Core.FFTools {
 			if (current.Length > 0)
 				tokens.Add(current.ToString());
 			return tokens;
+		}
+
+		/// <summary>
+		/// Extracts a single JPEG thumbnail from a video file at the given position.
+		/// Returns null if extraction fails.
+		/// </summary>
+		public static byte[]? ExtractThumbnailJpeg(string filePath, TimeSpan position, int maxWidth = 0, bool extendedLogging = false) {
+			var settings = new FfmpegSettings {
+				File = filePath,
+				Position = position,
+				GrayScale = 0,
+				Fullsize = (byte)(maxWidth == 0 ? 1 : 0),
+			};
+			var raw = GetThumbnail(maxWidth == 0 ? settings : settings with { Fullsize = 1 }, extendedLogging);
+			if (raw == null || raw.Length == 0) return null;
+
+			if (maxWidth > 0) {
+				using var ms = new MemoryStream(raw);
+				using var image = Image.Load(ms);
+				if (image.Width > maxWidth) {
+					int h = (int)(image.Height * ((double)maxWidth / image.Width));
+					image.Mutate(x => x.Resize(maxWidth, h));
+				}
+				using var outMs = new MemoryStream();
+				image.Save(outMs, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder { Quality = 90 });
+				return outMs.ToArray();
+			}
+			return raw;
 		}
 	}
 

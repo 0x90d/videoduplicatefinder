@@ -1379,6 +1379,48 @@ namespace VDF.Core {
 		public static void ClearDatabase() => DatabaseUtils.ClearDatabase();
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public static bool ImportDataBaseFromJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ImportDatabaseFromJson(jsonFile, options);
+
+		/// <summary>
+		/// Extracts a single JPEG thumbnail from a video or image file on demand.
+		/// Intended for web endpoints that need higher resolution than the default 100px scan thumbnails.
+		/// </summary>
+		/// <param name="filePath">Absolute path to the media file.</param>
+		/// <param name="position">Seek position (ignored for images).</param>
+		/// <param name="maxWidth">Target width in pixels. 0 = original resolution.</param>
+		/// <returns>JPEG bytes, or null on failure.</returns>
+		public static byte[]? ExtractThumbnailJpeg(string filePath, TimeSpan position, int maxWidth = 0) {
+			if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return null;
+
+			// For images, load and resize directly
+			var ext = Path.GetExtension(filePath);
+			if (IsImageExtension(ext)) {
+				try {
+					using var image = Image.Load(filePath);
+					if (maxWidth > 0 && image.Width > maxWidth) {
+						int h = (int)(image.Height * ((double)maxWidth / image.Width));
+						image.Mutate(x => x.Resize(maxWidth, h));
+					}
+					using var ms = new MemoryStream();
+					image.Save(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder { Quality = 90 });
+					return ms.ToArray();
+				}
+				catch { return null; }
+			}
+
+			// For videos, delegate to FFmpeg
+			return FfmpegEngine.ExtractThumbnailJpeg(filePath, position, maxWidth);
+		}
+
+		static bool IsImageExtension(string ext) =>
+			ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+			ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+			ext.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+			ext.Equals(".bmp", StringComparison.OrdinalIgnoreCase) ||
+			ext.Equals(".gif", StringComparison.OrdinalIgnoreCase) ||
+			ext.Equals(".webp", StringComparison.OrdinalIgnoreCase) ||
+			ext.Equals(".tiff", StringComparison.OrdinalIgnoreCase) ||
+			ext.Equals(".tif", StringComparison.OrdinalIgnoreCase);
+
 		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {
 			var dupList = items.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
 			try {

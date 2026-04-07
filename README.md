@@ -179,7 +179,7 @@ The Web UI runs as a local web server and is accessed from your browser. It is d
 
 ### Requirements
 
-FFmpeg and FFprobe must be on your `PATH` or in the same directory as the `VDF.Web` binary.
+FFmpeg and FFprobe are required. When running outside Docker, VDF.Web will attempt to download them automatically on first launch. You can also install them manually via your system package manager or place them on your `PATH`.
 
 ### Installation (self-contained archive)
 

@@ -72,22 +72,10 @@ namespace VDF.Web.Services {
 				Notify();
 			};
 			_engine.ScanDone += (_, _) => {
-				State = ScanState.RetrievingThumbnails;
-				LastProgress = null;
-				ThumbnailCurrent = 0;
-				ThumbnailMax = _engine.Duplicates.Count;
-				Notify();
-				try { _engine.RetrieveThumbnails(); }
-				catch (Exception ex) { SetError(ex); }
-			};
-			_engine.ThumbnailProgress += (current, max) => {
-				ThumbnailCurrent = current;
-				ThumbnailMax = max;
-				Notify();
-			};
-			_engine.ThumbnailsRetrieved += (_, _) => {
-				ThumbnailCurrent = ThumbnailMax;
+				// Skip low-res thumbnail retrieval — WebUI loads HQ thumbnails on demand
+				// via the /thumbnail/hq endpoint. This makes results available immediately.
 				State = ScanState.Done;
+				LastProgress = null;
 				Notify();
 			};
 			_engine.ScanAborted += (_, _) => {

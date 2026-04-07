@@ -1,0 +1,22 @@
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<button class="theme-toggle" @onclick="Toggle" title="Toggle dark/light mode">
+    @(_theme == "dark" ? "\u2600" : "\u263D")
+</button>
+
+@code {
+    string _theme = "dark";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            _theme = await JS.InvokeAsync<string>("vdf.getTheme");
+            StateHasChanged();
+        }
+    }
+
+    async Task Toggle() {
+        _theme = _theme == "dark" ? "light" : "dark";
+        await JS.InvokeVoidAsync("vdf.setTheme", _theme);
+    }
+}
