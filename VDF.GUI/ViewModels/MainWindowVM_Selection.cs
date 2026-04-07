@@ -223,6 +223,13 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
+		public ReactiveCommand<DuplicateItemVM, Unit> RemoveSingleItemCommand => ReactiveCommand.Create<DuplicateItemVM>(item => {
+			if (item == null) return;
+			Duplicates.Remove(item);
+			view?.Refresh();
+			RefreshGroupStats();
+		});
+
 		public ReactiveCommand<Unit, Unit> ClearCheckedItemsCommand => ReactiveCommand.Create(() => {
 			for (var i = 0; i < Duplicates.Count; i++)
 				Duplicates[i].Checked = false;

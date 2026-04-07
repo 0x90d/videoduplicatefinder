@@ -53,6 +53,8 @@ namespace VDF.Core {
 		public double MaxSamplingDurationSeconds;
 
 		public int ThumbnailCount = 1;
+		/// <summary>Maximum width in pixels for display thumbnails (0 = original resolution).</summary>
+		public int ThumbnailMaxWidth = 100;
 		public int MaxDegreeOfParallelism = 1;
 
 		public string CustomFFArguments = string.Empty;

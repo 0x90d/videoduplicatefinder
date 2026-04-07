@@ -73,6 +73,12 @@ namespace VDF.GUI.Views {
 			if (!SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = ThemeVariant.Light;
 
+			// Switch theme at runtime when the user toggles the DarkMode setting
+			SettingsFile.Instance.PropertyChanged += (_, e) => {
+				if (e.PropertyName == nameof(SettingsFile.DarkMode))
+					RequestedThemeVariant = SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
+			};
+
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
 			}

@@ -209,6 +209,8 @@ namespace VDF.GUI.ViewModels {
 
 			try {
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));
+				// Invalidate thumbnail cache if the configured width has changed
+				Utils.ThumbCacheHelpers.InvalidateIfWidthChanged(TempDirectory.Path, SettingsFile.Instance.ThumbnailMaxWidth);
 				Utils.ThumbCacheHelpers.Provider = Utils.ThumbPack.Open(TempDirectory.Path);
 			}
 			catch { Utils.ThumbCacheHelpers.Provider = null; }
@@ -1104,6 +1106,7 @@ Non-Windows setup:
 			Scanner.Settings.MaxSamplingDurationSeconds = SettingsFile.Instance.MaxSamplingDurationSeconds;
 			Scanner.Settings.MaxDegreeOfParallelism = SettingsFile.Instance.MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails;
+			Scanner.Settings.ThumbnailMaxWidth = SettingsFile.Instance.ThumbnailMaxWidth;
 			Scanner.Settings.ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging;
 			Scanner.Settings.LogExcludedFiles = SettingsFile.Instance.LogExcludedFiles;
 			Scanner.Settings.AlwaysRetryFailedSampling = SettingsFile.Instance.AlwaysRetryFailedSampling;

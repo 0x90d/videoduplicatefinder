@@ -602,7 +602,8 @@
                                 <Grid Grid.Row="1">
                                     <DataGrid
                                         Name="dataGridGrouping"
-                                        CanUserResizeColumns="True">
+                                        CanUserResizeColumns="True"
+                                        >
                                         <!-- KeyBindings are applied programmatically by KeyboardShortcutManager -->
                                         <DataGrid.Columns>
                                             <DataGridTemplateColumn>
@@ -612,22 +613,32 @@
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Width="24">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Padding="2" Margin="0" MinWidth="18" MinHeight="18" Width="18" Height="18"
+                                                                Background="Transparent" BorderThickness="0"
+                                                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                Command="{Binding $parent[DataGrid].DataContext.RemoveSingleItemCommand}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListOnly]}">
+                                                            <TextBlock Text="✕" FontSize="10" Opacity="0.4" />
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
                                             <DataGridTemplateColumn Header="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <LayoutTransformControl>
-                                                            <LayoutTransformControl.LayoutTransform>
-                                                                <ScaleTransform ScaleX="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" ScaleY="{Binding ElementName=ZoomSliderThumbnails, Path=Value}" />
-                                                            </LayoutTransformControl.LayoutTransform>
-                                                            <Image
-                                                                Name="ThumbnailImage"
-                                                                Source="{Binding Thumbnail}"
-                                                                Stretch="None">
-                                                                <i:Interaction.Behaviors>
-                                                                    <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].DataContext.ThumbnailDoubleClickCommand}" />
-                                                                </i:Interaction.Behaviors>
-                                                            </Image>
-                                                        </LayoutTransformControl>
+                                                        <Image
+                                                            Name="ThumbnailImage"
+                                                            Source="{Binding Thumbnail}"
+                                                            Stretch="Uniform"
+                                                            ToolTip.Tip="{Binding ItemInfo.Path}">
+                                                            <i:Interaction.Behaviors>
+                                                                <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].DataContext.ThumbnailDoubleClickCommand}" />
+                                                            </i:Interaction.Behaviors>
+                                                        </Image>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -1233,6 +1244,12 @@
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImages]}"
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}" IsThreeState="False"
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImagesTooltip]}" />
+                                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                                            <TextBlock VerticalAlignment="Center" Text="Thumbnail width (px)" />
+                                                            <NumericUpDown Minimum="48" Maximum="960" Increment="48"
+                                                                           Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}"
+                                                                           ToolTip.Tip="Width of preview thumbnails in pixels. Higher = sharper but uses more memory. Takes effect on next scan." />
+                                                        </StackPanel>
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="1" Spacing="4">
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSampling]}"
@@ -1676,7 +1693,8 @@
                                                     <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DarkMode]}"
                                                               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DarkMode}" IsThreeState="False" />
                                                     <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseMica]}"
-                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseMica}" IsThreeState="False" />
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseMica}" IsThreeState="False"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RestartHint]}" />
                                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
                                                         <TextBlock VerticalAlignment="Center"
                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailDoubleClick]}" />
@@ -1710,8 +1728,6 @@
                                                               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" IsThreeState="False" />
                                                 </StackPanel>
                                             </Border>
-                                            <TextBlock Margin="0,2,0,4" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
-                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RestartHint]}" />
                                         </StackPanel>
                                     </ScrollViewer>
                                 </TabItem>

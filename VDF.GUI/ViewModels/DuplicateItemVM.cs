@@ -73,23 +73,13 @@ namespace VDF.GUI.ViewModels {
 #endif
 				try {
 					return LRUBitmapCache.GetOrCreate(ThumbnailKey, () => {
-						using var s = ThumbCacheHelpers.Provider.OpenKey(ThumbnailKey) ??
-#if DEBUG
-						throw new FileNotFoundException($"Thumbnail {ThumbnailKey} not found");
-#else
-						null;
-#endif
+						using var s = ThumbCacheHelpers.Provider.OpenKey(ThumbnailKey);
+						if (s == null) return null!;
 						return new Avalonia.Media.Imaging.Bitmap(s);
-
 					});
 				}
 				catch {
-#if DEBUG
-					throw;
-#endif
-#pragma warning disable CS0162 // Unreachable code detected
 					return null;
-#pragma warning restore CS0162 // Unreachable code detected
 				}
 			}
 			set => this.RaiseAndSetIfChanged(ref _thumbnail, value);

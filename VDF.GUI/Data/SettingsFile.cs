@@ -158,6 +158,12 @@ namespace VDF.GUI.Data {
 			get => _GeneratePreviewThumbnails;
 			set => this.RaiseAndSetIfChanged(ref _GeneratePreviewThumbnails, value);
 		}
+		int _ThumbnailMaxWidth = 100;
+		[JsonPropertyName("ThumbnailMaxWidth")]
+		public int ThumbnailMaxWidth {
+			get => _ThumbnailMaxWidth;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailMaxWidth, Math.Clamp(value, 48, 960));
+		}
 		bool _ExtendedFFToolsLogging;
 		[JsonPropertyName("ExtendedFFToolsLogging")]
 		public bool ExtendedFFToolsLogging {

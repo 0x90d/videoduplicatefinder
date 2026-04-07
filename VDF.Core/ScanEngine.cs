@@ -1428,6 +1428,7 @@ namespace VDF.Core {
 					List<Image>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
+					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
 
 					if (needsThumbnails && entry.IsImage) {
 						timeStamps = new(0);
@@ -1435,9 +1436,9 @@ namespace VDF.Core {
 						try {
 							Image bitmapImage = Image.Load(entry.Path);
 							float resizeFactor = 1f;
-							if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
-								float widthFactor = bitmapImage.Width / 100f;
-								float heightFactor = bitmapImage.Height / 100f;
+							if (bitmapImage.Width > maxDim || bitmapImage.Height > maxDim) {
+								float widthFactor = bitmapImage.Width / (float)maxDim;
+								float heightFactor = bitmapImage.Height / (float)maxDim;
 								resizeFactor = Math.Max(widthFactor, heightFactor);
 							}
 							int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
@@ -1456,11 +1457,7 @@ namespace VDF.Core {
 						for (int j = 0; j < positionList.Count; j++) {
 							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
 							timeStamps.Add(timestamp);
-							var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-								File = entry.Path,
-								Position = timestamp,
-								GrayScale = 0,
-							}, Settings.ExtendedFFToolsLogging);
+							var b = FfmpegEngine.ExtractThumbnailJpeg(entry.Path, timestamp, maxDim, Settings.ExtendedFFToolsLogging);
 							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
 							using var byteStream = new MemoryStream(b);
 							var bitmapImage = Image.Load(byteStream);
@@ -1495,6 +1492,8 @@ namespace VDF.Core {
 							ThumbnailProgress?.Invoke(current, total);
 						}
 
+					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
+
 					if (needsThumbnails && entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						timeStamps = new(0);
@@ -1502,9 +1501,9 @@ namespace VDF.Core {
 						try {
 							Image bitmapImage = Image.Load(entry.Path);
 							float resizeFactor = 1f;
-							if (bitmapImage.Width > 100 || bitmapImage.Height > 100) {
-								float widthFactor = bitmapImage.Width / 100f;
-								float heightFactor = bitmapImage.Height / 100f;
+							if (bitmapImage.Width > maxDim || bitmapImage.Height > maxDim) {
+								float widthFactor = bitmapImage.Width / (float)maxDim;
+								float heightFactor = bitmapImage.Height / (float)maxDim;
 								resizeFactor = Math.Max(widthFactor, heightFactor);
 
 							}
@@ -1525,11 +1524,7 @@ namespace VDF.Core {
 						for (int j = 0; j < positionList.Count; j++) {
 							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
 							timeStamps.Add(timestamp);
-							var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-								File = entry.Path,
-								Position = timestamp,
-								GrayScale = 0,
-							}, Settings.ExtendedFFToolsLogging);
+							var b = FfmpegEngine.ExtractThumbnailJpeg(entry.Path, timestamp, maxDim, Settings.ExtendedFFToolsLogging);
 							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
 							using var byteStream = new MemoryStream(b);
 							var bitmapImage = Image.Load(byteStream);
