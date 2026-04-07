@@ -43,9 +43,9 @@ namespace VDF.GUI.Utils {
 
 			img.Mutate(ctx => {
 				int offsetX = 0;
-				foreach (var img in images) {
-					ctx.DrawImage(img, new SixLabors.ImageSharp.Point(offsetX, 0), 1f);
-					offsetX += img.Width;
+				foreach (var src in images) {
+					ctx.DrawImage(src, new SixLabors.ImageSharp.Point(offsetX, 0), 1f);
+					offsetX += src.Width;
 				}
 			});
 
