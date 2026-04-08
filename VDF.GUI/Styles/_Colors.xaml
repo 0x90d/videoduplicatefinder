@@ -1,0 +1,47 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui">
+
+    <!-- Semantic color tokens for modern UI styling -->
+    <!-- These adapt automatically to dark/light mode via ThemeResource -->
+
+    <Styles.Resources>
+        <!-- Property quality indicators -->
+        <SolidColorBrush x:Key="MetaBestForeground" Color="#4CAF50" />
+        <SolidColorBrush x:Key="MetaWorstForeground" Color="#F44336" />
+
+        <!-- Similarity badge backgrounds (Dark theme) -->
+        <SolidColorBrush x:Key="BadgeHighBackground" Color="#1B5E20" Opacity="0.85" />
+        <SolidColorBrush x:Key="BadgeHighForeground" Color="#A5D6A7" />
+        <SolidColorBrush x:Key="BadgeMediumBackground" Color="#0D47A1" Opacity="0.85" />
+        <SolidColorBrush x:Key="BadgeMediumForeground" Color="#90CAF9" />
+        <SolidColorBrush x:Key="BadgeLowBackground" Color="#E65100" Opacity="0.85" />
+        <SolidColorBrush x:Key="BadgeLowForeground" Color="#FFCC80" />
+
+        <!-- DataGrid row hover -->
+        <SolidColorBrush x:Key="RowHoverBackground" Color="#FFFFFF" Opacity="0.04" />
+        <SolidColorBrush x:Key="RowSelectedBackground" Color="#FFFFFF" Opacity="0.08" />
+
+        <!-- Best quality badge -->
+        <SolidColorBrush x:Key="BestBadgeBackground" Color="#2E7D32" Opacity="0.9" />
+        <SolidColorBrush x:Key="BestBadgeForeground" Color="#C8E6C9" />
+    </Styles.Resources>
+
+    <!-- Light theme overrides -->
+    <Style Selector="Window[RequestedThemeVariant=Light]">
+        <Style.Resources>
+            <SolidColorBrush x:Key="BadgeHighBackground" Color="#C8E6C9" />
+            <SolidColorBrush x:Key="BadgeHighForeground" Color="#1B5E20" />
+            <SolidColorBrush x:Key="BadgeMediumBackground" Color="#BBDEFB" />
+            <SolidColorBrush x:Key="BadgeMediumForeground" Color="#0D47A1" />
+            <SolidColorBrush x:Key="BadgeLowBackground" Color="#FFE0B2" />
+            <SolidColorBrush x:Key="BadgeLowForeground" Color="#E65100" />
+
+            <SolidColorBrush x:Key="RowHoverBackground" Color="#000000" Opacity="0.04" />
+            <SolidColorBrush x:Key="RowSelectedBackground" Color="#000000" Opacity="0.08" />
+
+            <SolidColorBrush x:Key="BestBadgeBackground" Color="#C8E6C9" />
+            <SolidColorBrush x:Key="BestBadgeForeground" Color="#1B5E20" />
+        </Style.Resources>
+    </Style>
+</Styles>

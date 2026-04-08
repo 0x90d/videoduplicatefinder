@@ -454,5 +454,6 @@
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Minimum clip duration as a percentage of the source duration. Clips shorter than this ratio are ignored.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Min audio similarity (%):",
 	"MainWindow.Settings.PartialClipSimilarityThresholdTooltip": "Minimum average Hamming similarity for the audio fingerprint sliding-window match to be accepted.",
-	"Dialog.CopySelected": "Copy Selected"
+	"Dialog.CopySelected": "Copy Selected",
+	"DuplicateList.HoverDiff.Best": "BEST"
 }

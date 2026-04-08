@@ -1219,6 +1219,40 @@ Non-Windows setup:
 			thumbnailComparer.Show();
 		});
 
+		public void CompareGroup(Guid groupId) {
+			var items = Duplicates
+				.Where(d => d.ItemInfo.GroupId == groupId)
+				.Select(d => new LargeThumbnailDuplicateItem(d))
+				.ToList();
+			if (items.Count == 0) return;
+			new ThumbnailComparer(items).Show();
+		}
+
+		public void KeepBestInGroup(Guid groupId) {
+			var groupItems = Duplicates.Where(d => d.ItemInfo.GroupId == groupId).ToList();
+			if (groupItems.Count < 2) return;
+
+			var keep = groupItems[0];
+			bool anyApplied = false;
+			string? lastCriterion = null;
+
+			foreach (var criterion in QualityCriteriaOrder) {
+				if (criterion is ("Duration" or "FPS" or "Bitrate" or "Audio Bitrate") && keep.ItemInfo.IsImage)
+					continue;
+				bool tieOnLast = anyApplied && HasTieOn(lastCriterion!, groupItems, keep);
+				if (!anyApplied || tieOnLast) {
+					keep = ApplyCriterion(criterion, groupItems);
+					anyApplied = true;
+					lastCriterion = criterion;
+				}
+			}
+
+			keep.Checked = false;
+			foreach (var item in groupItems)
+				if (item.ItemInfo.Path != keep.ItemInfo.Path)
+					item.Checked = true;
+		}
+
 	public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
 		var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
 		if (items.Count == 0) return;

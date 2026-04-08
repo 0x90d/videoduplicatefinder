@@ -34,6 +34,12 @@
     <Window.Resources>
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
         <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
+        <mvvm:SimilarityToBadgeBackgroundConverter x:Key="SimilarityToBadgeBackgroundConverter" />
+        <mvvm:SimilarityToBadgeForegroundConverter x:Key="SimilarityToBadgeForegroundConverter" />
+        <mvvm:SimilarityToFormattedConverter x:Key="SimilarityToFormattedConverter" />
+        <mvvm:MetricDisplayConverter x:Key="MetricDisplayConverter" />
+        <mvvm:MetricDiffForegroundConverter x:Key="MetricDiffForegroundConverter" />
+        <mvvm:ShowSkeletonConverter x:Key="ShowSkeletonConverter" />
     </Window.Resources>
     <Window.Styles>
         <Style Selector="Button.hyperlink">
@@ -603,6 +609,7 @@
                                     <DataGrid
                                         Name="dataGridGrouping"
                                         CanUserResizeColumns="True"
+                                        LoadingRowGroup="OnLoadingRowGroup"
                                         >
                                         <!-- KeyBindings are applied programmatically by KeyboardShortcutManager -->
                                         <DataGrid.Columns>
@@ -630,15 +637,31 @@
                                             <DataGridTemplateColumn Header="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <Image
-                                                            Name="ThumbnailImage"
-                                                            Source="{Binding Thumbnail}"
-                                                            Stretch="Uniform"
-                                                            ToolTip.Tip="{Binding ItemInfo.Path}">
-                                                            <i:Interaction.Behaviors>
-                                                                <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].DataContext.ThumbnailDoubleClickCommand}" />
-                                                            </i:Interaction.Behaviors>
-                                                        </Image>
+                                                        <Grid>
+                                                            <!-- Skeleton shimmer while thumbnail is loading -->
+                                                            <Border Classes="skeleton-shimmer"
+                                                                    Width="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}"
+                                                                    Height="56"
+                                                                    Margin="4"
+                                                                    Background="#18808080">
+                                                                <Border.IsVisible>
+                                                                    <MultiBinding Converter="{StaticResource ShowSkeletonConverter}">
+                                                                        <Binding Path="Thumbnail" />
+                                                                        <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="GeneratePreviewThumbnails" />
+                                                                    </MultiBinding>
+                                                                </Border.IsVisible>
+                                                            </Border>
+                                                            <!-- Actual thumbnail -->
+                                                            <Image
+                                                                Name="ThumbnailImage"
+                                                                Source="{Binding Thumbnail}"
+                                                                Stretch="Uniform"
+                                                                ToolTip.Tip="{Binding ItemInfo.Path}">
+                                                                <i:Interaction.Behaviors>
+                                                                    <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].DataContext.ThumbnailDoubleClickCommand}" />
+                                                                </i:Interaction.Behaviors>
+                                                            </Image>
+                                                        </Grid>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -676,25 +699,58 @@
                                                                 IsVisible="{Binding ItemInfo.IsImage}"
                                                                 Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
                                                                 TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestDuration, Converter={StaticResource IsBestConverter}}"
-                                                                IsVisible="{Binding !ItemInfo.IsImage}"
-                                                                Text="{Binding ItemInfo.Duration, TargetNullValue='', StringFormat=\{0:hh\\:mm\\:ss\}}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="1"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestFrameSize, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.FrameSize, TargetNullValue=''}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="2"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestSize, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.Size, TargetNullValue=''}"
-                                                                TextWrapping="Wrap" />
+                                                            <Border Grid.Row="0" Tag="duration" Background="Transparent"
+                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited"
+                                                                    IsVisible="{Binding !ItemInfo.IsImage}">
+                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
+                                                                    <TextBlock.Text>
+                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0:hh\:mm\:ss}">
+                                                                            <Binding Path="ItemInfo.Duration" />
+                                                                            <Binding Path="DurationDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                    <TextBlock.Foreground>
+                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
+                                                                            <Binding Path="ItemInfo.IsBestDuration" />
+                                                                            <Binding Path="DurationDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
+                                                            <Border Grid.Row="1" Tag="framesize" Background="Transparent"
+                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
+                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
+                                                                    <TextBlock.Text>
+                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
+                                                                            <Binding Path="ItemInfo.FrameSize" />
+                                                                            <Binding Path="FrameSizeDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                    <TextBlock.Foreground>
+                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
+                                                                            <Binding Path="ItemInfo.IsBestFrameSize" />
+                                                                            <Binding Path="FrameSizeDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
+                                                            <Border Grid.Row="2" Tag="size" Background="Transparent"
+                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
+                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
+                                                                    <TextBlock.Text>
+                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
+                                                                            <Binding Path="ItemInfo.Size" />
+                                                                            <Binding Path="SizeDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                    <TextBlock.Foreground>
+                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
+                                                                            <Binding Path="ItemInfo.IsBestSize" />
+                                                                            <Binding Path="SizeDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
                                                             <TextBlock
                                                                 Grid.Row="3"
                                                                 Margin="2"
@@ -724,18 +780,40 @@
                                                                 Margin="2"
                                                                 Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
                                                                 TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="1"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestFps, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.Fps, TargetNullValue='', Mode=OneWay, StringFormat=\{0\} fps}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="2"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestBitRateKbs, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.BitRateKbs, TargetNullValue='', Mode=OneWay, StringFormat=\{0\} kbps}"
-                                                                TextWrapping="Wrap" />
+                                                            <Border Grid.Row="1" Tag="fps" Background="Transparent"
+                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
+                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
+                                                                    <TextBlock.Text>
+                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0} fps">
+                                                                            <Binding Path="ItemInfo.Fps" />
+                                                                            <Binding Path="FpsDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                    <TextBlock.Foreground>
+                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
+                                                                            <Binding Path="ItemInfo.IsBestFps" />
+                                                                            <Binding Path="FpsDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
+                                                            <Border Grid.Row="2" Tag="bitrate" Background="Transparent"
+                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
+                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
+                                                                    <TextBlock.Text>
+                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0} kbps">
+                                                                            <Binding Path="ItemInfo.BitRateKbs" />
+                                                                            <Binding Path="BitRateDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                    <TextBlock.Foreground>
+                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
+                                                                            <Binding Path="ItemInfo.IsBestBitRateKbs" />
+                                                                            <Binding Path="BitRateDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
                                                             <TextBlock
                                                                 Grid.Row="3"
                                                                 Margin="2"
@@ -771,28 +849,67 @@
                                                                 Margin="2"
                                                                 Text="{Binding ItemInfo.AudioChannel, TargetNullValue=''}"
                                                                 TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="2"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestAudioSampleRate, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.AudioSampleRate, TargetNullValue=''}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="3"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestAudioBitRateKbs, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.AudioBitRateKbs, TargetNullValue='', StringFormat=\{0\} kbps}"
-                                                                TextWrapping="Wrap" />
+                                                            <Border Grid.Row="2" Tag="audiosamplerate" Background="Transparent"
+                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
+                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
+                                                                    <TextBlock.Text>
+                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
+                                                                            <Binding Path="ItemInfo.AudioSampleRate" />
+                                                                            <Binding Path="AudioSampleRateDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                    <TextBlock.Foreground>
+                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
+                                                                            <Binding Path="ItemInfo.IsBestAudioSampleRate" />
+                                                                            <Binding Path="AudioSampleRateDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
+                                                            <Border Grid.Row="3" Tag="audiobitrate" Background="Transparent"
+                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
+                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
+                                                                    <TextBlock.Text>
+                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0} kbps">
+                                                                            <Binding Path="ItemInfo.AudioBitRateKbs" />
+                                                                            <Binding Path="AudioBitRateDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                    <TextBlock.Foreground>
+                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
+                                                                            <Binding Path="ItemInfo.IsBestAudioBitRateKbs" />
+                                                                            <Binding Path="AudioBitRateDiff" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
                                                         </Grid>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
-                                            <DataGridTextColumn
+                                            <DataGridTemplateColumn
                                                 Width="1*"
-                                                Binding="{Binding ItemInfo.Similarity, TargetNullValue=''}"
                                                 Header="Similarity"
-                                                IsReadOnly="True"
-                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
+                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Border
+                                                            CornerRadius="4"
+                                                            Padding="6,2"
+                                                            Margin="4,2"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Background="{Binding ItemInfo.Similarity, Converter={StaticResource SimilarityToBadgeBackgroundConverter}}">
+                                                            <TextBlock
+                                                                FontSize="12"
+                                                                FontWeight="SemiBold"
+                                                                HorizontalAlignment="Center"
+                                                                Foreground="{Binding ItemInfo.Similarity, Converter={StaticResource SimilarityToBadgeForegroundConverter}}"
+                                                                Text="{Binding ItemInfo.Similarity, Converter={StaticResource SimilarityToFormattedConverter}}" />
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
                                             <DataGridTextColumn
                                                 Width="1*"
                                                 Binding="{Binding ItemInfo.PartialClipOffsetDisplay, TargetNullValue=''}"

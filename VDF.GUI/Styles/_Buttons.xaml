@@ -1,0 +1,17 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Tactile press feedback: button depresses 1px on click -->
+    <Style Selector="Button:pressed">
+        <Setter Property="RenderTransform">
+            <TranslateTransform Y="1" />
+        </Setter>
+    </Style>
+    <Style Selector="Button">
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.08" />
+            </Transitions>
+        </Setter>
+    </Style>
+</Styles>

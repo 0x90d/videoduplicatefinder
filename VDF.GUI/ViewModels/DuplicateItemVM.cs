@@ -92,6 +92,56 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _Checked, value);
 		}
 
+		// Hover-diff display: when non-null, shown instead of the normal value
+		string? _DurationDiff;
+		[JsonIgnore]
+		public string? DurationDiff {
+			get => _DurationDiff;
+			set => this.RaiseAndSetIfChanged(ref _DurationDiff, value);
+		}
+
+		string? _FrameSizeDiff;
+		[JsonIgnore]
+		public string? FrameSizeDiff {
+			get => _FrameSizeDiff;
+			set => this.RaiseAndSetIfChanged(ref _FrameSizeDiff, value);
+		}
+
+		string? _SizeDiff;
+		[JsonIgnore]
+		public string? SizeDiff {
+			get => _SizeDiff;
+			set => this.RaiseAndSetIfChanged(ref _SizeDiff, value);
+		}
+
+		string? _FpsDiff;
+		[JsonIgnore]
+		public string? FpsDiff {
+			get => _FpsDiff;
+			set => this.RaiseAndSetIfChanged(ref _FpsDiff, value);
+		}
+
+		string? _BitRateDiff;
+		[JsonIgnore]
+		public string? BitRateDiff {
+			get => _BitRateDiff;
+			set => this.RaiseAndSetIfChanged(ref _BitRateDiff, value);
+		}
+
+		string? _AudioSampleRateDiff;
+		[JsonIgnore]
+		public string? AudioSampleRateDiff {
+			get => _AudioSampleRateDiff;
+			set => this.RaiseAndSetIfChanged(ref _AudioSampleRateDiff, value);
+		}
+
+		string? _AudioBitRateDiff;
+		[JsonIgnore]
+		public string? AudioBitRateDiff {
+			get => _AudioBitRateDiff;
+			set => this.RaiseAndSetIfChanged(ref _AudioBitRateDiff, value);
+		}
+
 		/// <summary>
 		///   Returns if item matches the filter conditions
 		/// </summary>

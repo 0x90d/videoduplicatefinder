@@ -454,5 +454,6 @@
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Durée minimale du clip en pourcentage de la durée de la source.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Similarité audio min. (%):",
 	"MainWindow.Settings.PartialClipSimilarityThresholdTooltip": "Similarité de Hamming minimale pour la comparaison d'empreintes audio.",
-	"Dialog.CopySelected": "Copier la sélection"
+	"Dialog.CopySelected": "Copier la sélection",
+	"DuplicateList.HoverDiff.Best": "MEILLEUR"
 }
