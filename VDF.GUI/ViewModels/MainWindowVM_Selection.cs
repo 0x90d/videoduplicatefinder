@@ -59,7 +59,11 @@ namespace VDF.GUI.ViewModels {
 
 			Func<DuplicateItem, bool> interpreter;
 			try {
-				interpreter = new Interpreter()
+				// Use PrimitiveTypes only — avoids registering types like Convert, Activator, etc.
+				// that could be abused if a malicious expression is loaded from a crafted settings file.
+				interpreter = new Interpreter(InterpreterOptions.PrimitiveTypes | InterpreterOptions.SystemKeywords)
+					.Reference(typeof(TimeSpan))
+					.Reference(typeof(Math))
 					.ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
 			}
 			catch (Exception ex) {

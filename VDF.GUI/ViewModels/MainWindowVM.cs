@@ -707,8 +707,15 @@ namespace VDF.GUI.ViewModels {
 
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));
 
-				zip.GetEntry("thumbs.pack")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.pack"), true);
-				zip.GetEntry("thumbs.idx")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.idx"), true);
+				// Validate ZIP entry paths to prevent path traversal (Zip Slip)
+				foreach (var entryName in new[] { "thumbs.pack", "thumbs.idx" }) {
+					var entry = zip.GetEntry(entryName);
+					if (entry == null) continue;
+					string dest = Path.GetFullPath(Path.Combine(TempDirectory.Path, entryName));
+					if (!dest.StartsWith(Path.GetFullPath(TempDirectory.Path) + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+						throw new InvalidOperationException($"ZIP entry '{entryName}' would extract outside target directory");
+					entry.ExtractToFile(dest, true);
+				}
 
 				Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));
 
@@ -810,13 +817,16 @@ namespace VDF.GUI.ViewModels {
 					}
 					catch {
 						// Fallback to explorer.exe if shell API fails (Notepad++/Electron pattern)
-						Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
-							UseShellExecute = true
-						});
+						var psi = new ProcessStartInfo("explorer.exe") { UseShellExecute = false };
+						psi.ArgumentList.Add($"/select,{currentItem.ItemInfo.Path}");
+						Process.Start(psi);
 					}
 				}
 				else if (OperatingSystem.IsMacOS()) {
-					Process.Start("open", $"-R \"{currentItem.ItemInfo.Path}\"");
+					var psi = new ProcessStartInfo("open") { UseShellExecute = false };
+					psi.ArgumentList.Add("-R");
+					psi.ArgumentList.Add(currentItem.ItemInfo.Path);
+					Process.Start(psi);
 				}
 				else {
 					Process.Start(new ProcessStartInfo {
@@ -867,24 +877,32 @@ namespace VDF.GUI.ViewModels {
 				return false;
 
 			command = cmd[0];
-			string args = string.Empty;
-			items.ForEach(item => args += $"\"{item.ItemInfo.Path}\" ");
-			if (cmd.Length == 2)
-				if (cmd[1].Contains("%f"))
-					args = cmd[1].Replace("%f", args);
-				else
-					args = cmd[1] + " " + args;
+			var psi = new ProcessStartInfo {
+				FileName = command,
+				UseShellExecute = false,
+				RedirectStandardError = true,
+			};
+
+			if (cmd.Length == 2 && cmd[1].Contains("%f")) {
+				// When the user has a %f placeholder, substitute file paths into the argument template.
+				// Each file gets its own copy of the template as a separate argument to avoid injection.
+				foreach (var item in items) {
+					psi.ArgumentList.Add(cmd[1].Replace("%f", item.ItemInfo.Path));
+				}
+			}
+			else {
+				if (cmd.Length == 2)
+					psi.ArgumentList.Add(cmd[1]);
+				foreach (var item in items)
+					psi.ArgumentList.Add(item.ItemInfo.Path);
+			}
 
 			try {
-				Process.Start(new ProcessStartInfo {
-					FileName = command,
-					Arguments = args,
-					UseShellExecute = false,
-					RedirectStandardError = true,
-				});
+				Process.Start(psi);
 			}
 			catch (Exception e) {
-				Logger.Instance.Info(string.Format(App.Lang["Log.CustomCommandFailed"], command, args, e.Message));
+				Logger.Instance.Info(string.Format(App.Lang["Log.CustomCommandFailed"], command,
+					string.Join(" ", psi.ArgumentList), e.Message));
 			}
 
 			return true;

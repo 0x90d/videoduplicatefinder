@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml;
 using System.Xml.Linq;
 using ReactiveUI;
 using VDF.Core.Utils;
@@ -488,7 +489,9 @@ namespace VDF.GUI.Data {
 		static bool LoadOldSettings(string? path) {
 			path ??= FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "Settings.xml");
 			if (!File.Exists(path)) return false;
-			var xDoc = XDocument.Load(path);
+			var xmlSettings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit };
+			using var reader = XmlReader.Create(path, xmlSettings);
+			var xDoc = XDocument.Load(reader);
 			foreach (var n in xDoc.Descendants("Include"))
 				Instance.Includes.Add(n.Value);
 			foreach (var n in xDoc.Descendants("Exclude"))

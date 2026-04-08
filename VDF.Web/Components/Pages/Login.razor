@@ -1,0 +1,63 @@
+@page "/login"
+@rendermode InteractiveServer
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>Login — Video Duplicate Finder</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        <h1>Video Duplicate Finder</h1>
+        <p class="login-hint">
+            Your password was printed in the console when the app started.<br />
+            Run <code>docker logs vdf</code> to see it.
+        </p>
+
+        <form method="post" action="/auth/login">
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+
+            <div class="login-field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password"
+                       @bind="_password" @bind:event="oninput"
+                       placeholder="Enter password" autofocus required />
+            </div>
+
+            <div class="login-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" checked />
+                    Remember me (30 days)
+                </label>
+            </div>
+
+            @if (_hasError) {
+                <p class="login-error">Incorrect password. Check your console output or docker logs.</p>
+            }
+
+            <button type="submit" class="primary login-btn" disabled="@string.IsNullOrEmpty(_password)">
+                Log in
+            </button>
+        </form>
+    </div>
+</div>
+
+@code {
+    string _password = string.Empty;
+    bool _hasError;
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "error")]
+    string? Error { get; set; }
+
+    [Inject] IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
+
+    protected override void OnInitialized() {
+        if (!Auth.AuthEnabled || Auth.IsAuthenticated(HttpContextAccessor.HttpContext!)) {
+            Nav.NavigateTo("/", forceLoad: true);
+            return;
+        }
+        _hasError = Error == "1";
+    }
+}

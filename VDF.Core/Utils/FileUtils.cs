@@ -109,7 +109,7 @@ namespace VDF.Core.Utils {
 		/// <returns></returns>
 		internal static string SafePathCombine(string path1, string path2) {
 			if (!Path.IsPathRooted(path2))
-				Path.Combine(path1, path2);
+				return Path.Combine(path1, path2);
 
 			path2 = path2.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 			return Path.Combine(path1, path2);

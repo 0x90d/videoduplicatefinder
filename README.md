@@ -175,7 +175,26 @@ Available `--action` strategies:
 
 The Web UI runs as a local web server and is accessed from your browser. It is designed for headless machines, NAS devices, and remote management.
 
-> **Security note:** The Web UI has no authentication. Only run it on a trusted local network. Do not expose it to the internet.
+> **Security note:** The Web UI is password-protected but intended for local/Docker use only. Do not expose it to the internet.
+
+### Authentication
+
+On first launch, a random password is generated and printed to the console:
+
+```
+============================================
+  Web UI password:  aB3xK9mQ7p
+============================================
+```
+
+Enter this password in your browser to log in. A "Remember me" cookie keeps you logged in for 30 days.
+
+**Docker users:** Run `docker logs vdf-web` to see the password.
+
+| Environment variable | Description |
+|---------------------|-------------|
+| `VDF_WEB_PASSWORD` | Set your own password instead of the auto-generated one |
+| `VDF_WEB_AUTH=false` | Disable authentication entirely |
 
 ### Requirements
 
@@ -196,7 +215,7 @@ On Windows:
 VDF.Web.exe
 ```
 
-Then open **http://localhost:5000** in your browser.
+Then open **http://localhost:5000** in your browser and enter the password shown in the console.
 
 To change the port:
 ```bash
@@ -230,14 +249,28 @@ docker run -d \
 ```
 
 Then open **http://localhost:8080** in your browser.
+Check the password with `docker logs vdf-web` and enter it to log in.
 Inside the Web UI, add `/media` (or whatever path you mounted) as a scan directory.
+
+To set your own password:
+```bash
+docker run -d \
+  --name vdf-web \
+  -p 8080:8080 \
+  -e VDF_WEB_PASSWORD=mysecretpassword \
+  -v vdf-db:/root/.config/VDF \
+  -v /path/to/your/media:/media:ro \
+  ghcr.io/0x90d/vdf-web:latest
+```
 
 ### docker compose (recommended for permanent installs)
 
 1. Download [`docker-compose.yml`](docker-compose.yml) from this repository.
 
-2. Edit the file and add your media volume mounts:
+2. Edit the file and add your media volume mounts. Optionally set your own password:
 ```yaml
+environment:
+  - VDF_WEB_PASSWORD=mysecretpassword    # optional — otherwise check docker logs
 volumes:
   - /mnt/nas/movies:/mnt/nas/movies:ro
   - /mnt/nas/series:/mnt/nas/series:ro
@@ -248,7 +281,7 @@ volumes:
 docker compose up -d
 ```
 
-4. Open **http://localhost:8080** in your browser.
+4. Open **http://localhost:8080** in your browser and enter the password (check `docker logs` if you didn't set one).
 
 5. To update to the latest image:
 ```bash
