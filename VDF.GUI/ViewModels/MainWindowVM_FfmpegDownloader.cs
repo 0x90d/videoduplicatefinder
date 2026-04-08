@@ -20,6 +20,7 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Avalonia.Threading;
 using FFmpeg.AutoGen;
 using ReactiveUI;
@@ -71,6 +72,8 @@ namespace VDF.GUI.ViewModels {
 
 					try {
 						await DownloadFileAsync(plan.DownloadUrl, downloadPath, plan);
+						IsBusyOverlayText = App.Lang["Message.FfmpegDownloadVerifying"];
+						await VerifyChecksumAsync(plan.DownloadUrl, downloadPath, plan.ArchiveFileName);
 						IsBusyOverlayText = App.Lang["Message.FfmpegDownloadExtracting"];
 						ExtractArchive(downloadPath, extractedFolder, plan.ArchiveKind);
 
@@ -220,13 +223,18 @@ namespace VDF.GUI.ViewModels {
 			return plans;
 		}
 
+		const long MaxDownloadBytes = 500 * 1024 * 1024; // 500 MB safety cap
+
 		async Task DownloadFileAsync(Uri downloadUrl, string destinationPath, FfmpegDownloadPlan plan) {
-			using var client = new HttpClient();
+			using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
 			using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
 			if (!response.IsSuccessStatusCode)
 				throw new HttpRequestException($"{(int)response.StatusCode} {response.ReasonPhrase}");
 
 			var totalBytes = response.Content.Headers.ContentLength;
+			if (totalBytes > MaxDownloadBytes)
+				throw new HttpRequestException($"Download too large ({totalBytes} bytes, max {MaxDownloadBytes})");
+
 			await using var sourceStream = await response.Content.ReadAsStreamAsync();
 			await using var destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
 
@@ -236,6 +244,8 @@ namespace VDF.GUI.ViewModels {
 			while ((read = await sourceStream.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0) {
 				await destinationStream.WriteAsync(buffer.AsMemory(0, read));
 				totalRead += read;
+				if (totalRead > MaxDownloadBytes)
+					throw new HttpRequestException($"Download exceeded size limit ({MaxDownloadBytes} bytes)");
 				UpdateDownloadProgress(plan.DisplayName, totalRead, totalBytes);
 			}
 			UpdateDownloadProgress(plan.DisplayName, totalRead, totalBytes);
@@ -269,7 +279,7 @@ namespace VDF.GUI.ViewModels {
 
 		static void ExtractArchive(string archivePath, string targetFolder, ArchiveType type) {
 			if (type == ArchiveType.Zip) {
-				ZipFile.ExtractToDirectory(archivePath, targetFolder, true);
+				SafeExtractZip(archivePath, targetFolder);
 				return;
 			}
 
@@ -289,6 +299,7 @@ namespace VDF.GUI.ViewModels {
 			psi.ArgumentList.Add(archivePath);
 			psi.ArgumentList.Add("-C");
 			psi.ArgumentList.Add(targetFolder);
+			psi.ArgumentList.Add("--no-absolute-filenames");
 
 			using var process = new Process {
 				StartInfo = psi
@@ -334,6 +345,57 @@ namespace VDF.GUI.ViewModels {
 				? FFToolsUtils.LongPathFix(destinationPath)
 				: destinationPath;
 			File.Copy(sourcePath, targetPath, true);
+		}
+
+		static async Task VerifyChecksumAsync(Uri downloadUrl, string filePath, string archiveFileName) {
+			var checksumUrl = new Uri(downloadUrl, "checksums.sha256");
+			try {
+				using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+				var checksumText = await client.GetStringAsync(checksumUrl);
+
+				string? expectedHash = null;
+				foreach (var line in checksumText.Split('\n', StringSplitOptions.RemoveEmptyEntries)) {
+					var parts = line.Split("  ", 2, StringSplitOptions.None);
+					if (parts.Length == 2 && parts[1].Trim().Equals(archiveFileName, StringComparison.OrdinalIgnoreCase)) {
+						expectedHash = parts[0].Trim().ToLowerInvariant();
+						break;
+					}
+				}
+
+				if (expectedHash == null) {
+					Logger.Instance.Info($"FFmpeg download: no checksum entry found for '{archiveFileName}', skipping verification");
+					return;
+				}
+
+				await using var fs = File.OpenRead(filePath);
+				var hashBytes = await SHA256.HashDataAsync(fs);
+				var actualHash = Convert.ToHexStringLower(hashBytes);
+
+				if (actualHash != expectedHash)
+					throw new InvalidOperationException(
+						$"Checksum mismatch for '{archiveFileName}': expected {expectedHash}, got {actualHash}. The download may be corrupted or tampered with.");
+			}
+			catch (HttpRequestException) {
+				Logger.Instance.Info("FFmpeg download: could not fetch checksums.sha256, skipping verification");
+			}
+		}
+
+		static void SafeExtractZip(string archivePath, string targetFolder) {
+			string fullTarget = Path.GetFullPath(targetFolder);
+			using var zip = ZipFile.OpenRead(archivePath);
+			foreach (var entry in zip.Entries) {
+				string dest = Path.GetFullPath(Path.Combine(targetFolder, entry.FullName));
+				if (!dest.StartsWith(fullTarget + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+					&& dest != fullTarget)
+					throw new InvalidOperationException($"ZIP entry '{entry.FullName}' would extract outside target directory");
+				if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\')) {
+					Directory.CreateDirectory(dest);
+				}
+				else {
+					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+					entry.ExtractToFile(dest, true);
+				}
+			}
 		}
 
 		static string BuildFfmpegInstallInstructions(bool ffmpegFound, bool ffprobeFound, string? targetFolder, string? errorMessage) {

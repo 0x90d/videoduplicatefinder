@@ -305,6 +305,7 @@
 	"Message.FFprobeMissing": "找不到 FFprobe。请按照 Github 上的说明操作并重启 VDF",
 	"Message.FFprobeMissingWithHint": "找不到 FFprobe 可执行文件。最简单的解决方案是下载 ffmpeg/ffprobe 并放到 VDF 的 'bin' 文件夹中。否则请按照 Github 上的说明操作并重启 VDF",
 	"Message.FfmpegDownloadPreparing": "正在准备下载 FFmpeg...",
+	"Message.FfmpegDownloadVerifying": "正在验证下载校验和...",
 	"Message.FfmpegDownloadExtracting": "正在解压 FFmpeg 存档...",
 	"Message.FfmpegDownloadProgress": "正在下载 {0}: {1}% ({2} / {3})",
 	"Message.FfmpegDownloadFailed": "FFmpeg 下载失败：{0}",

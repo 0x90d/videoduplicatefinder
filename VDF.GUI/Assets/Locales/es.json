@@ -305,6 +305,7 @@
 	"Message.FFprobeMissing": "No se puede encontrar FFprobe. Sigue las instrucciones en Github y reinicia VDF",
 	"Message.FFprobeMissingWithHint": "No se puede encontrar el ejecutable FFprobe. La solución más fácil es descargar ffmpeg/ffprobe y colocarlo en la carpeta 'bin' de VDF. De lo contrario, sigue las instrucciones en Github y reinicia VDF",
 	"Message.FfmpegDownloadPreparing": "Preparando la descarga de FFmpeg...",
+	"Message.FfmpegDownloadVerifying": "Verificando la suma de comprobación...",
 	"Message.FfmpegDownloadExtracting": "Extrayendo el archivo de FFmpeg...",
 	"Message.FfmpegDownloadProgress": "Descargando {0}: {1}% ({2} / {3})",
 	"Message.FfmpegDownloadFailed": "La descarga de FFmpeg falló: {0}",
