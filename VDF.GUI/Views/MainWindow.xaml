@@ -1441,8 +1441,12 @@
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Directories]}" />
                                     </TabItem.Header>
                                     <Grid Margin="12,12,12,10" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,*,Auto">
-                                        <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold" Margin="0,0,0,4"
-                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SearchDirectories]}" />
+                                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,4">
+                                            <TextBlock FontWeight="Bold"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SearchDirectories]}" />
+                                            <TextBlock Opacity="0.6" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SearchDirectoriesHint]}" />
+                                        </StackPanel>
                                         <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,*,Auto">
                                             <Menu Grid.Row="0" MinHeight="30">
                                                 <MenuItem Command="{Binding AddIncludesToListCommand}">
@@ -1489,14 +1493,18 @@
                                                      DragDrop.AllowDrop="True"
                                                      ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Includes}" />
                                             <StackPanel Grid.Row="2">
-                                                <TextBlock Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                <TextBlock Margin="5" TextWrapping="Wrap" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
-                                                <TextBlock Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                <TextBlock Margin="5" TextWrapping="Wrap" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
                                             </StackPanel>
                                         </Grid>
-                                        <TextBlock Grid.Row="0" Grid.Column="1" FontWeight="Bold" Margin="0,0,0,4"
-                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeDirectories]}" />
+                                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,4">
+                                            <TextBlock FontWeight="Bold"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeDirectories]}" />
+                                            <TextBlock Opacity="0.6" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeDirectoriesHint]}" />
+                                        </StackPanel>
                                         <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,*,Auto,Auto">
                                             <Menu Grid.Row="0" MinHeight="30">
                                                 <MenuItem Command="{Binding AddBlacklistToListCommand}">
@@ -1555,9 +1563,9 @@
                                             <ListBox Name="ListboxBlacklist" Grid.Row="1" BorderThickness="1"
                                                      DragDrop.AllowDrop="True"
                                                      ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
-                                            <TextBlock Grid.Row="2" Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                            <TextBlock Grid.Row="2" Margin="5" TextWrapping="Wrap" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
-                                            <TextBlock Grid.Row="3" Margin="5" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                            <TextBlock Grid.Row="3" Margin="5" TextWrapping="Wrap" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
                                         </Grid>
                                     </Grid>
@@ -1571,7 +1579,7 @@
                                     </TabItem.Header>
                                     <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                                         <StackPanel Margin="16,12,16,16" Spacing="12">
-                                            <TextBlock Foreground="{actipro:ThemeResource ControlBackgroundBrushEmphasizedDanger}"
+                                            <TextBlock TextWrapping="Wrap" Foreground="{actipro:ThemeResource ControlBackgroundBrushEmphasizedDanger}"
                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilesNote]}" />
                                             <!-- File Size -->
                                             <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
@@ -1636,7 +1644,7 @@
                                                     <ListBox x:Name="ListboxFilePathContainsText" Grid.Row="2" MinHeight="70" BorderThickness="1"
                                                              IsEnabled="{Binding #CheckboxFilterByFilePathContains.IsChecked}"
                                                              ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathContainsTexts}" />
-                                                    <TextBlock Grid.Row="3" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                    <TextBlock Grid.Row="3" TextWrapping="Wrap" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
                                                 </Grid>
                                             </Border>
@@ -1680,7 +1688,7 @@
                                                     <ListBox x:Name="ListboxFilePathNotContainsText" Grid.Row="2" MinHeight="70" BorderThickness="1"
                                                              IsEnabled="{Binding #CheckboxFilterByFilePathNotContains.IsChecked}"
                                                              ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsTexts}" />
-                                                    <TextBlock Grid.Row="3" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                    <TextBlock Grid.Row="3" TextWrapping="Wrap" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
                                                 </Grid>
                                             </Border>
