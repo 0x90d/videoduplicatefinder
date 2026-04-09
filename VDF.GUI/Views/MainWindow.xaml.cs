@@ -208,7 +208,11 @@ namespace VDF.GUI.Views {
 				ApplicationHelpers.MainWindowDataContext.Thumbnails_ValueChanged(sender, e);
 		}
 
-		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) => ApplicationHelpers.MainWindowDataContext.LoadDatabase();
+		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) {
+			var vm = ApplicationHelpers.MainWindowDataContext;
+			vm.LoadDatabase();
+			vm.RestoreBackupScanResults();
+		}
 
 		void OnLoadingRowGroup(object? sender, DataGridRowGroupHeaderEventArgs e) {
 			var header = e.RowGroupHeader;

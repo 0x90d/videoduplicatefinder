@@ -222,8 +222,6 @@ namespace VDF.GUI.ViewModels {
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown
 			Instance_LogItemAdded(string.Empty);
-			if (File.Exists(BackupScanResultsFile))
-				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
 
 			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
 
@@ -346,6 +344,11 @@ namespace VDF.GUI.ViewModels {
 			}
 			await ExportScanResults(BackupScanResultsFile);
 			return true;
+		}
+
+		public void RestoreBackupScanResults() {
+			if (File.Exists(BackupScanResultsFile))
+				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
 		}
 
 		public async void LoadDatabase() {
