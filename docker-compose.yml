@@ -3,16 +3,16 @@ services:
     image: ghcr.io/0x90d/vdf-web:latest
     ports:
       - "8080:8080"
-    # Optional environment variables (uncomment to use):
     # environment:
-    #   - VDF_WEB_PASSWORD=changeme       # set your own password (otherwise auto-generated — check docker logs)
-    #   - VDF_WEB_AUTH=false              # disable authentication entirely
+    #   - VDF_WEB_PASSWORD=changeme   # set a password (otherwise auto-generated — check docker logs)
+    #   - VDF_WEB_AUTH=false          # set to disable authentication entirely
     volumes:
-      # Mount your media directories here (read-only recommended).
-      # Add as many as you need, e.g.:
-      # - /mnt/nas/movies:/mnt/nas/movies:ro
-      # - /mnt/nas/series:/mnt/nas/series:ro
-      - vdf-db:/root/.config/VDF   # persists settings and scan database
+      # Add your media directories below (host_path:container_path:ro)
+      # Example:
+      #   - /mnt/nas/movies:/mnt/nas/movies:ro
+      #   - "/mnt/path with spaces:/mnt/media:ro"
+      - vdf-db:/root/.config/VDF
 
 volumes:
   vdf-db:
+    driver: local
