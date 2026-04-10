@@ -3,11 +3,10 @@ services:
     image: ghcr.io/0x90d/vdf-web:latest
     ports:
       - "8080:8080"
-    environment:
-      # Uncomment to set your own password (otherwise one is auto-generated — check docker logs):
-      # - VDF_WEB_PASSWORD=changeme
-      # Uncomment to disable authentication entirely:
-      # - VDF_WEB_AUTH=false
+    # Optional environment variables (uncomment to use):
+    # environment:
+    #   - VDF_WEB_PASSWORD=changeme       # set your own password (otherwise auto-generated — check docker logs)
+    #   - VDF_WEB_AUTH=false              # disable authentication entirely
     volumes:
       # Mount your media directories here (read-only recommended).
       # Add as many as you need, e.g.:
