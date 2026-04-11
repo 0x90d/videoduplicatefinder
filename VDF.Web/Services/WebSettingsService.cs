@@ -38,6 +38,7 @@ namespace VDF.Web.Services {
 			public FFHardwareAccelerationMode HardwareAccelerationMode { get; set; }
 			public string CustomFFArguments { get; set; } = string.Empty;
 			public string CustomDatabaseFolder { get; set; } = string.Empty;
+			public int DatabaseCheckpointIntervalMinutes { get; set; } = 5;
 			public bool CompareHorizontallyFlipped { get; set; }
 			public bool IgnoreBlackPixels { get; set; }
 			public bool IgnoreWhitePixels { get; set; }
@@ -95,6 +96,7 @@ namespace VDF.Web.Services {
 				s.HardwareAccelerationMode = dto.HardwareAccelerationMode;
 				s.CustomFFArguments = dto.CustomFFArguments;
 				s.CustomDatabaseFolder = dto.CustomDatabaseFolder;
+				s.DatabaseCheckpointIntervalMinutes = dto.DatabaseCheckpointIntervalMinutes;
 				s.CompareHorizontallyFlipped = dto.CompareHorizontallyFlipped;
 				s.IgnoreBlackPixels = dto.IgnoreBlackPixels;
 				s.IgnoreWhitePixels = dto.IgnoreWhitePixels;
@@ -129,6 +131,7 @@ namespace VDF.Web.Services {
 					HardwareAccelerationMode = s.HardwareAccelerationMode,
 					CustomFFArguments = s.CustomFFArguments,
 					CustomDatabaseFolder = s.CustomDatabaseFolder,
+					DatabaseCheckpointIntervalMinutes = s.DatabaseCheckpointIntervalMinutes,
 					CompareHorizontallyFlipped = s.CompareHorizontallyFlipped,
 					IgnoreBlackPixels = s.IgnoreBlackPixels,
 					IgnoreWhitePixels = s.IgnoreWhitePixels,

@@ -65,6 +65,8 @@ namespace VDF.Core {
 		const int maxExcludedLogsPerReason = 5;
 		readonly ConcurrentDictionary<string, int> excludedReasonCounts = new();
 		readonly ConcurrentDictionary<string, int> excludedReasonLoggedCounts = new();
+		DateTime lastCheckpointTime = DateTime.MinValue;
+		readonly object checkpointLock = new();
 
 		string T(string key, params object[] args) =>
 			LanguageService.Instance.Get(Settings.LanguageCode, key, args);
@@ -74,6 +76,7 @@ namespace VDF.Core {
 			scanProgressMaxValue = count;
 			processedFiles = 0;
 			lastProgressUpdate = DateTime.MinValue;
+			lastCheckpointTime = DateTime.UtcNow;
 		}
 		void ResetExcludedLogging() {
 			excludedReasonCounts.Clear();
@@ -117,6 +120,20 @@ namespace VDF.Core {
 								Remaining = timeRemaining,
 								MaxPosition = scanProgressMaxValue
 							});
+			TryDatabaseCheckpoint();
+		}
+
+		void TryDatabaseCheckpoint() {
+			if (Settings.DatabaseCheckpointIntervalMinutes <= 0) return;
+			var interval = TimeSpan.FromMinutes(Settings.DatabaseCheckpointIntervalMinutes);
+			if (DateTime.UtcNow - lastCheckpointTime < interval) return;
+			lock (checkpointLock) {
+				// Re-check after acquiring lock to avoid duplicate saves from racing threads
+				if (DateTime.UtcNow - lastCheckpointTime < interval) return;
+				lastCheckpointTime = DateTime.UtcNow;
+				DatabaseUtils.SaveDatabase();
+				Logger.Instance.Info(T("Log.DatabaseCheckpoint", DatabaseUtils.Database.Count));
+			}
 		}
 
 		public static bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);

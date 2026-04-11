@@ -202,6 +202,8 @@
 	"MainWindow.Settings.CustomCommandsTooltip": "输入你自己的命令以打开单个或多个文件。",
 	"MainWindow.Settings.CustomDatabaseFolder": "自定义数据库文件夹：",
 	"MainWindow.Settings.CustomDatabaseFolderTooltip": "指定自定义数据库文件夹。否则将使用当前 VDF 文件夹。",
+	"MainWindow.Settings.DatabaseCheckpointInterval": "数据库检查点间隔（分钟）：",
+	"MainWindow.Settings.DatabaseCheckpointIntervalTooltip": "在哈希过程中定期保存扫描数据库，以防止崩溃时数据丢失。设为 0 禁用。",
 	"MainWindow.Settings.CustomFFArguments": "自定义 FF 参数：",
 	"MainWindow.Settings.CustomFFArgumentsTooltip": "将 FF(mpeg/probe) 参数附加到内部参数末尾。大多数用户可留空。",
 	"MainWindow.Settings.DarkMode": "深色模式¹",

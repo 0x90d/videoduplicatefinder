@@ -11,5 +11,6 @@
   "Log.ExcludedFile": "'{0}' excluído porque {1} ({2:N0} até agora).",
   "Log.ExcludedFilesSummary": "Resumo dos arquivos excluídos (limitado por motivo):",
   "Log.ExcludedFilesSuppressed": " ({0:N0} entradas de log suprimidas)",
-  "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}"
+  "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
+  "Log.DatabaseCheckpoint": "Checkpoint do banco de dados ({0:N0} arquivos salvos no disco)."
 }

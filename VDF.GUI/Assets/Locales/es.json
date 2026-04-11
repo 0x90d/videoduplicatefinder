@@ -202,6 +202,8 @@
 	"MainWindow.Settings.CustomCommandsTooltip": "Introduce tus propios comandos para abrir uno o varios archivos.",
 	"MainWindow.Settings.CustomDatabaseFolder": "Carpeta de base de datos personalizada:",
 	"MainWindow.Settings.CustomDatabaseFolderTooltip": "Especifica una carpeta de base de datos personalizada. De lo contrario, se usa la carpeta actual de VDF.",
+	"MainWindow.Settings.DatabaseCheckpointInterval": "Intervalo de checkpoint de base de datos (minutos):",
+	"MainWindow.Settings.DatabaseCheckpointIntervalTooltip": "Guardar periódicamente la base de datos durante el hashing para evitar pérdida de datos en caso de fallo. 0 = deshabilitado.",
 	"MainWindow.Settings.CustomFFArguments": "Argumentos FF personalizados:",
 	"MainWindow.Settings.CustomFFArgumentsTooltip": "Argumentos FF(mpeg/probe) añadidos al final de los argumentos internos. La mayoría de usuarios puede dejarlo vacío.",
 	"MainWindow.Settings.DarkMode": "Modo oscuro¹",

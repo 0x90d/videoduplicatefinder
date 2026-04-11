@@ -11,5 +11,6 @@
   "Log.ExcludedFile": "已排除 '{0}'，因为 {1}（当前 {2:N0}）。",
   "Log.ExcludedFilesSummary": "已排除文件汇总（每个原因有限制）：",
   "Log.ExcludedFilesSuppressed": "（已抑制 {0:N0} 条日志）",
-  "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}"
+  "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
+  "Log.DatabaseCheckpoint": "数据库检查点（{0:N0} 个文件已保存到磁盘）。"
 }

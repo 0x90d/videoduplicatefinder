@@ -291,6 +291,12 @@ namespace VDF.GUI.Data {
 			get => _CustomDatabaseFolder;
 			set => this.RaiseAndSetIfChanged(ref _CustomDatabaseFolder, value);
 		}
+		int _DatabaseCheckpointIntervalMinutes = 5;
+		[JsonPropertyName("DatabaseCheckpointIntervalMinutes")]
+		public int DatabaseCheckpointIntervalMinutes {
+			get => _DatabaseCheckpointIntervalMinutes;
+			set => this.RaiseAndSetIfChanged(ref _DatabaseCheckpointIntervalMinutes, Math.Max(0, value));
+		}
 
 		public static void SaveSettings(string? path = null) {
 			path = ResolveSettingsPath(path);

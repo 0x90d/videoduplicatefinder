@@ -202,6 +202,8 @@
 	"MainWindow.Settings.CustomCommandsTooltip": "Informe seus próprios comandos para abrir um ou vários arquivos.",
 	"MainWindow.Settings.CustomDatabaseFolder": "Pasta de banco de dados personalizada:",
 	"MainWindow.Settings.CustomDatabaseFolderTooltip": "Especifique uma pasta de banco de dados personalizada. Caso contrário, usa a pasta atual do VDF.",
+	"MainWindow.Settings.DatabaseCheckpointInterval": "Intervalo de checkpoint do banco de dados (minutos):",
+	"MainWindow.Settings.DatabaseCheckpointIntervalTooltip": "Salvar periodicamente o banco de dados durante o hashing para evitar perda de dados em caso de falha. 0 = desabilitado.",
 	"MainWindow.Settings.CustomFFArguments": "Argumentos FF personalizados:",
 	"MainWindow.Settings.CustomFFArgumentsTooltip": "Argumentos FF(mpeg/probe) passados ao final dos argumentos internos. A maioria dos usuários pode deixar isso vazio.",
 	"MainWindow.Settings.DarkMode": "Modo escuro¹",

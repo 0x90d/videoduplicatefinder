@@ -1751,6 +1751,11 @@
                                                     <TextBox Width="250" HorizontalAlignment="Left"
                                                              Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"
                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolderTooltip]}" />
+                                                    <TextBlock FontSize="14" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DatabaseCheckpointInterval]}" />
+                                                    <NumericUpDown Width="250" HorizontalAlignment="Left"
+                                                                   Minimum="0" Maximum="60" Increment="1" FormatString="0"
+                                                                   Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DatabaseCheckpointIntervalMinutes}"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DatabaseCheckpointIntervalTooltip]}" />
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>

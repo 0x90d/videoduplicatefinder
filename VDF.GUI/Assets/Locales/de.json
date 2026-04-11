@@ -202,6 +202,8 @@
 	"MainWindow.Settings.CustomCommandsTooltip": "Geben Sie eigene Befehle ein, um einzelne oder mehrere Dateien zu öffnen.",
 	"MainWindow.Settings.CustomDatabaseFolder": "Benutzerdefinierter Datenbankordner:",
 	"MainWindow.Settings.CustomDatabaseFolderTooltip": "Einen benutzerdefinierten Datenbankordner angeben. Andernfalls wird der aktuelle VDF-Ordner verwendet.",
+	"MainWindow.Settings.DatabaseCheckpointInterval": "Datenbank-Checkpoint-Intervall (Minuten):",
+	"MainWindow.Settings.DatabaseCheckpointIntervalTooltip": "Datenbank während des Hashens regelmäßig speichern, um Datenverlust bei Absturz zu vermeiden. 0 = deaktiviert.",
 	"MainWindow.Settings.CustomFFArguments": "Benutzerdefinierte FF-Argumente:",
 	"MainWindow.Settings.CustomFFArgumentsTooltip": "FF(mpeg/probe)-Argumente, die ans Ende der internen Argumente angehängt werden. Die meisten Benutzer können dies leer lassen.",
 	"MainWindow.Settings.DarkMode": "Dunkelmodus¹",

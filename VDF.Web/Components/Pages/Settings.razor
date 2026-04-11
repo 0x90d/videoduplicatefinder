@@ -167,6 +167,12 @@
                value="@Scan.Settings.CustomDatabaseFolder"
                @onchange="e => Scan.Settings.CustomDatabaseFolder = e.Value?.ToString() ?? string.Empty" />
     </label>
+    <label>
+        Database checkpoint interval (minutes, 0 = disabled)
+        <input type="number" min="0" max="60"
+               value="@Scan.Settings.DatabaseCheckpointIntervalMinutes"
+               @onchange="e => Scan.Settings.DatabaseCheckpointIntervalMinutes = ParseInt(e.Value)" />
+    </label>
 </section>
 
 @code {

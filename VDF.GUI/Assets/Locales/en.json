@@ -207,6 +207,8 @@
 	"MainWindow.Settings.CustomCommandsTooltip": "Enter your own commands to open single or multiple files.",
 	"MainWindow.Settings.CustomDatabaseFolder": "Custom Database Folder:",
 	"MainWindow.Settings.CustomDatabaseFolderTooltip": "Specify a custom database folder. Otherwise it uses the current VDF folder.",
+	"MainWindow.Settings.DatabaseCheckpointInterval": "Database Checkpoint Interval (minutes):",
+	"MainWindow.Settings.DatabaseCheckpointIntervalTooltip": "Periodically save the scan database during hashing to prevent data loss on crash. Set to 0 to disable.",
 	"MainWindow.Settings.CustomFFArguments": "Custom FF Arguments:",
 	"MainWindow.Settings.CustomFFArgumentsTooltip": "FF(mpeg/probe) arguments passed to the end of the internal arguments. Most users can leave this empty.",
 	"MainWindow.Settings.DarkMode": "Dark Mode¹",

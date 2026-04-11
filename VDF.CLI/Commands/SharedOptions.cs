@@ -91,6 +91,11 @@ namespace VDF.CLI.Commands {
 			DefaultValueFactory = _ => 0.80
 		};
 
+		internal static readonly Option<int> CheckpointInterval = new("--checkpoint-interval") {
+			Description = "Database checkpoint interval in minutes during scanning. 0 = disabled. Default: 5.",
+			DefaultValueFactory = _ => 5
+		};
+
 		internal static readonly Option<FileInfo?> SettingsFile = new("--settings", "-s") {
 			Description = "Path to a VDF settings JSON file. Individual flags override values from this file."
 		};
@@ -128,6 +133,7 @@ namespace VDF.CLI.Commands {
 			var ffArgs = r.GetValue(CustomFfArgs);
 			if (ffArgs != null) s.CustomFFArguments = ffArgs;
 
+			s.DatabaseCheckpointIntervalMinutes = r.GetValue(CheckpointInterval);
 			s.EnablePartialClipDetection = r.GetValue(EnablePartialClipDetection);
 			s.PartialClipMinRatio = r.GetValue(PartialClipMinRatio);
 			s.PartialClipSimilarityThreshold = r.GetValue(PartialClipSimilarityThreshold);
@@ -146,6 +152,7 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(NativeFfmpeg);
 			cmd.Options.Add(HardwareAccel);
 			cmd.Options.Add(CustomFfArgs);
+			cmd.Options.Add(CheckpointInterval);
 			cmd.Options.Add(EnablePartialClipDetection);
 			cmd.Options.Add(PartialClipMinRatio);
 			cmd.Options.Add(PartialClipSimilarityThreshold);

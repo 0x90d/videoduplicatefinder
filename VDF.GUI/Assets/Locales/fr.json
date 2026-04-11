@@ -202,6 +202,8 @@
 	"MainWindow.Settings.CustomCommandsTooltip": "Entrez vos propres commandes pour ouvrir un ou plusieurs fichiers.",
 	"MainWindow.Settings.CustomDatabaseFolder": "Dossier de base de données personnalisé :",
 	"MainWindow.Settings.CustomDatabaseFolderTooltip": "Spécifiez un dossier de base de données personnalisé. Sinon, le dossier VDF actuel est utilisé.",
+	"MainWindow.Settings.DatabaseCheckpointInterval": "Intervalle de sauvegarde de la base de données (minutes) :",
+	"MainWindow.Settings.DatabaseCheckpointIntervalTooltip": "Sauvegarder périodiquement la base de données pendant le hachage pour éviter la perte de données en cas de plantage. 0 = désactivé.",
 	"MainWindow.Settings.CustomFFArguments": "Arguments FF personnalisés :",
 	"MainWindow.Settings.CustomFFArgumentsTooltip": "Arguments FF(mpeg/probe) ajoutés à la fin des arguments internes. La plupart des utilisateurs peuvent laisser vide.",
 	"MainWindow.Settings.DarkMode": "Mode sombre¹",

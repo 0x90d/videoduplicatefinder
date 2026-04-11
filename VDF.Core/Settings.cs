@@ -81,5 +81,12 @@ namespace VDF.Core {
 		/// accepted as a partial clip.  Default 0.80.
 		/// </summary>
 		public double PartialClipSimilarityThreshold = 0.80;
+
+		// ── Database checkpoints ────────────────────────────────────────────
+		/// <summary>
+		/// Interval in minutes between automatic database saves during scanning.
+		/// 0 = disabled (only save at phase boundaries). Default 5.
+		/// </summary>
+		public int DatabaseCheckpointIntervalMinutes = 5;
 	}
 }
