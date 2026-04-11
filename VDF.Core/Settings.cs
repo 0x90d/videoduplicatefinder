@@ -35,7 +35,7 @@ namespace VDF.Core {
 		public bool IgnoreBlackPixels;
 		public bool IgnoreWhitePixels;
 		public bool CompareHorizontallyFlipped;
-		public bool IncludeNonExistingFiles = true;
+		public bool IncludeNonExistingFiles;
 		public bool ScanAgainstEntireDatabase;
 		public FolderMatchMode FolderMatchMode;
 		public int SameFolderDepth = 1;

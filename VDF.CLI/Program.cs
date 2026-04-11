@@ -22,4 +22,5 @@ root.Subcommands.Add(ScanAndCompareCommand.Build());
 root.Subcommands.Add(ScanCommand.Build());
 root.Subcommands.Add(CompareCommand.Build());
 root.Subcommands.Add(MarkCommand.Build());
+root.Subcommands.Add(DatabaseCommand.Build());
 return await root.Parse(args).InvokeAsync();

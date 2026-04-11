@@ -162,6 +162,12 @@
 <section class="settings-section">
     <h2>Database</h2>
     <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.IncludeNonExistingFiles"
+               @onchange="e => Scan.Settings.IncludeNonExistingFiles = (bool)e.Value!" />
+        Scan against non-existing files (compare database entries whose files have been deleted or moved)
+    </label>
+    <label>
         Custom database folder
         <input type="text"
                value="@Scan.Settings.CustomDatabaseFolder"
@@ -173,11 +179,31 @@
                value="@Scan.Settings.DatabaseCheckpointIntervalMinutes"
                @onchange="e => Scan.Settings.DatabaseCheckpointIntervalMinutes = ParseInt(e.Value)" />
     </label>
+
+    <h3>Maintenance</h3>
+    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button @onclick="CleanDatabase" disabled="@_dbBusy">Clean Database</button>
+        @if (!_confirmClear) {
+            <button class="danger" @onclick="() => _confirmClear = true" disabled="@_dbBusy">Clear Database</button>
+        }
+        else {
+            <span style="color:var(--danger-color,#d33);">This will delete ALL stored data. Are you sure?</span>
+            <button class="danger" @onclick="ClearDatabase">Yes, clear</button>
+            <button @onclick="() => _confirmClear = false">Cancel</button>
+        }
+    </div>
+    @if (_dbMsg != null) {
+        <p class="@(_dbMsgIsError ? "aborted-msg" : "done-msg")" style="margin:0.25rem 0;">@_dbMsg</p>
+    }
 </section>
 
 @code {
     string? _saveMsg;
     bool _saveFailed;
+    bool _dbBusy;
+    bool _confirmClear;
+    string? _dbMsg;
+    bool _dbMsgIsError;
 
     void SaveSettings() {
         bool ok = Scan.SaveSettings();
@@ -188,6 +214,45 @@
             StateHasChanged();
         }));
     }
+
+    async Task CleanDatabase() {
+        _dbBusy = true;
+        _dbMsg = null;
+        try {
+            int removed = await Scan.CleanDatabaseAsync();
+            _dbMsg = $"Cleanup complete — {removed} entry(ies) removed.";
+            _dbMsgIsError = false;
+        }
+        catch (Exception ex) {
+            _dbMsg = $"Cleanup failed: {ex.Message}";
+            _dbMsgIsError = true;
+        }
+        _dbBusy = false;
+        DismissDbMsg();
+    }
+
+    async Task ClearDatabase() {
+        _confirmClear = false;
+        _dbBusy = true;
+        _dbMsg = null;
+        try {
+            await Scan.ClearDatabaseAsync();
+            _dbMsg = "Database cleared.";
+            _dbMsgIsError = false;
+        }
+        catch (Exception ex) {
+            _dbMsg = $"Clear failed: {ex.Message}";
+            _dbMsgIsError = true;
+        }
+        _dbBusy = false;
+        DismissDbMsg();
+    }
+
+    void DismissDbMsg() =>
+        _ = Task.Delay(5000).ContinueWith(_ => InvokeAsync(() => {
+            _dbMsg = null;
+            StateHasChanged();
+        }));
 
     // Culture-safe parsers: handle both comma and dot as decimal separator
     static string Normalize(object? v) =>
