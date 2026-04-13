@@ -30,6 +30,15 @@ window.vdf = {
         document.documentElement.setAttribute('data-theme', theme);
     },
 
+    getCompareMode: function () {
+        var saved = localStorage.getItem('vdf-compare-mode');
+        return saved || '';
+    },
+
+    setCompareMode: function (mode) {
+        localStorage.setItem('vdf-compare-mode', mode);
+    },
+
     scrollToGroup: function (index) {
         var groups = document.querySelectorAll('.dup-group');
         if (groups[index]) {

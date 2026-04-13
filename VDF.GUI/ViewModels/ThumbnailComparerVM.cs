@@ -67,15 +67,19 @@ namespace VDF.GUI.ViewModels {
 
 		public ReadOnlyObservableCollection<CompareMode> CompareModes { get; }
 		readonly ObservableCollection<CompareMode> compareModes = new();
-		private CompareMode _selectedCompareMode = CompareMode.Swipe;
+		private CompareMode _selectedCompareMode = SettingsFile.Instance.ThumbnailComparerMode;
 		public CompareMode SelectedCompareMode {
 			get => _selectedCompareMode;
 			set {
+				bool forced = false;
 				if ((value != CompareMode.Single) && (SelectedItemA is null || SelectedItemB is null)) {
 					ShowMessage(App.Lang["ThumbnailComparerDialog.SelectTwoElementsMessage"]);
 					value = CompareMode.Single;
+					forced = true;
 				}
 				this.RaiseAndSetIfChanged(ref _selectedCompareMode, value);
+				if (!forced)
+					SettingsFile.Instance.ThumbnailComparerMode = value;
 				this.RaisePropertyChanged(nameof(IsSwipe));
 				this.RaisePropertyChanged(nameof(IsSideBySide));
 				this.RaisePropertyChanged(nameof(IsStacked));

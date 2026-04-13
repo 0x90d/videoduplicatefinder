@@ -22,6 +22,7 @@ using System.Xml;
 using System.Xml.Linq;
 using ReactiveUI;
 using VDF.Core.Utils;
+using VDF.GUI.ViewModels;
 
 namespace VDF.GUI.Data {
 	public enum ThumbnailDoubleClickAction { OpenFile, OpenThumbnailComparer }
@@ -344,6 +345,12 @@ namespace VDF.GUI.Data {
 		public int? ThumbnailComparerWindowScreenIndex {
 			get => _ThumbnailComparerWindowScreenIndex;
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowScreenIndex, value);
+		}
+		CompareMode _ThumbnailComparerMode = CompareMode.Swipe;
+		[JsonPropertyName("ThumbnailComparerMode")]
+		public CompareMode ThumbnailComparerMode {
+			get => _ThumbnailComparerMode;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerMode, value);
 		}
 		bool _ShowPathColumn = true;
 		[JsonPropertyName("ShowPathColumn")]

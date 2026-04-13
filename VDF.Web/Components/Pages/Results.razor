@@ -282,8 +282,8 @@ else {
             <button class="compare-close" @onclick="CloseCompare">&#x2715;</button>
         </div>
         <div class="compare-mode-tabs">
-            <button class="@(_compareMode == CompareMode.SideBySide ? "active" : "")" @onclick="() => _compareMode = CompareMode.SideBySide">Side by Side</button>
-            <button class="@(_compareMode == CompareMode.Swipe ? "active" : "")" @onclick="() => _compareMode = CompareMode.Swipe">Swipe</button>
+            <button class="@(_compareMode == CompareMode.SideBySide ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.SideBySide)">Side by Side</button>
+            <button class="@(_compareMode == CompareMode.Swipe ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.Swipe)">Swipe</button>
         </div>
         <div class="compare-selector">
             @for (int i = 0; i < _compareItems.Count; i++) {
@@ -412,6 +412,14 @@ else {
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         try {
+            if (firstRender && !_compareModeLoaded) {
+                _compareModeLoaded = true;
+                var saved = await JS.InvokeAsync<string>("vdf.getCompareMode");
+                if (Enum.TryParse<CompareMode>(saved, out var parsed)) {
+                    _compareMode = parsed;
+                    StateHasChanged();
+                }
+            }
             await JS.InvokeVoidAsync("vdf.initLazyThumbs");
             if (_compareVisible && _compareMode == CompareMode.Swipe)
                 await JS.InvokeVoidAsync("vdf.initSwipe");
@@ -556,14 +564,19 @@ else {
     }
 
     // === QoL: Fullsize Compare ===
+    bool _compareModeLoaded;
     void OpenCompare(List<DuplicateItem> items) {
         if (items.Count < 2) return;
         _compareItems = items;
         _compareA = 0;
         _compareB = Math.Min(1, items.Count - 1);
-        _compareMode = CompareMode.SideBySide;
         _compareSelectingB = false;
         _compareVisible = true;
+    }
+
+    void SetCompareMode(CompareMode mode) {
+        _compareMode = mode;
+        _ = JS.InvokeVoidAsync("vdf.setCompareMode", mode.ToString());
     }
 
     void CloseCompare() => _compareVisible = false;
