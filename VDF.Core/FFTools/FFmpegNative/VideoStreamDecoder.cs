@@ -54,7 +54,14 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 			CodecName = ffmpeg.avcodec_get_name(codec->id);
 			FrameSize = new Size(_pCodecContext->width, _pCodecContext->height);
-			PixelFormat = HWDeviceType == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE ? _pCodecContext->pix_fmt : GetHWPixelFormat(HWDeviceType, codec);
+			// For HW decode we intentionally defer the source pixel format until the
+			// first frame has been downloaded with av_hwframe_transfer_data — only then
+			// do we know the real sw_format (e.g. P010LE for 10-bit HEVC vs NV12 for
+			// 8-bit). Guessing before decode breaks 10-bit content.
+			PixelFormat = HWDeviceType == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
+				? _pCodecContext->pix_fmt
+				: AVPixelFormat.AV_PIX_FMT_NONE;
+			IsHardwareDecode = HWDeviceType != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 
 			_pPacket = ffmpeg.av_packet_alloc();
 			_pFrame = ffmpeg.av_frame_alloc();
@@ -63,6 +70,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		public string CodecName { get; }
 		public Size FrameSize { get; }
 		public AVPixelFormat PixelFormat { get; }
+		public bool IsHardwareDecode { get; }
 
 		protected virtual void Dispose(bool disposing) {
 			ReleaseUnmanaged();
@@ -152,38 +160,5 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			return true;
 		}
 
-		private unsafe AVPixelFormat GetHWPixelFormat(AVHWDeviceType hwDevice, AVCodec* codec) {
-			const int AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX = 1;
-			AVPixelFormat pixelFormat = AVPixelFormat.AV_PIX_FMT_NONE;
-
-			for (int i = 0; ; i++) {
-				AVCodecHWConfig* hwConfig = ffmpeg.avcodec_get_hw_config(codec, i);
-				if (hwConfig == null) {
-					throw new Exception($"Failed to find compatible pixel format for {hwDevice}");
-				}
-				if ((hwConfig->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) == 0 || hwConfig->device_type != hwDevice) {
-					continue;
-				}
-
-				AVHWFramesConstraints* hwConstraints = ffmpeg.av_hwdevice_get_hwframe_constraints(_pCodecContext->hw_device_ctx, hwConfig);
-				if (hwConstraints != null) {
-					for (AVPixelFormat* p = hwConstraints->valid_sw_formats; *p != AVPixelFormat.AV_PIX_FMT_NONE; p++) {
-						pixelFormat = *p;
-						if (ffmpeg.sws_isSupportedInput(pixelFormat) > 0) {
-							break;
-						}
-						else {
-							pixelFormat = AVPixelFormat.AV_PIX_FMT_NONE;
-						}
-					}
-
-					ffmpeg.av_hwframe_constraints_free(&hwConstraints);
-				}
-
-				if (pixelFormat != AVPixelFormat.AV_PIX_FMT_NONE) {
-					return pixelFormat;
-				}
-			}
-		}
 	}
 }

@@ -63,10 +63,21 @@ namespace VDF.Core.FFTools {
 					};
 
 					using var vsd = new VideoStreamDecoder(settings.File, HWDevice);
-					if (vsd.PixelFormat < 0 || vsd.PixelFormat >= AVPixelFormat.AV_PIX_FMT_NB)
-						throw new Exception($"Invalid source pixel format");
 
 					Size sourceSize = vsd.FrameSize;
+
+					// Decode first so we know the real source pixel format. For HW decode
+					// we can't know this up front — the downloaded sw_format depends on
+					// the stream's bit depth (NV12 for 8-bit, P010LE for 10-bit HEVC, etc.).
+					if (!vsd.TryDecodeFrame(out var srcFrame, settings.Position))
+						throw new Exception($"TryDecodeFrame failed at pos={settings.Position} for '{settings.File}'. size={sourceSize.Width}x{sourceSize.Height}");
+
+					AVPixelFormat srcPixFmt = vsd.IsHardwareDecode
+						? (AVPixelFormat)srcFrame.format
+						: vsd.PixelFormat;
+					if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB)
+						throw new Exception($"Invalid source pixel format {srcPixFmt}");
+
 					Size destinationSize = isGrayByte ? new Size(N, N) :
 						settings.Fullsize == 1 ?
 							sourceSize :
@@ -77,15 +88,13 @@ namespace VDF.Core.FFTools {
 						AVPixelFormat.AV_PIX_FMT_BGRA;
 
 					using var vfc = new VideoFrameConverter(
-										sourceSize: vsd.FrameSize,
-										sourcePixelFormat: vsd.PixelFormat,
+										sourceSize: sourceSize,
+										sourcePixelFormat: srcPixFmt,
 										destinationSize: destinationSize,
 										destinationPixelFormat: destinationPixelFrmt,
 										quality: VideoFrameConverter.ScaleQuality.Bicubic,
 										bitExact: false);
 
-					if (!vsd.TryDecodeFrame(out var srcFrame, settings.Position))
-						throw new Exception($"TryDecodeFrame failed at pos={settings.Position} for '{settings.File}'. srcPixFmt={vsd.PixelFormat} size={sourceSize.Width}x{sourceSize.Height}");
 					AVFrame convertedFrame = vfc.Convert(srcFrame);
 
 					if (convertedFrame.data[0] == null)
