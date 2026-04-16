@@ -922,7 +922,7 @@ namespace VDF.GUI.ViewModels {
 			string newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(fi.FullName), title: "Rename File", readOnlyInfo: fi.FullName);
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName!, newName + fi.Extension);
-			while (File.Exists(newName)) {
+			while (File.Exists(newName) && !string.Equals(fi.FullName, newName, StringComparison.OrdinalIgnoreCase)) {
 				MessageBoxButtons? result = await MessageBoxService.Show($"A file with the name '{Path.GetFileName(newName)}' already exists. Do you want to overwrite this file? Click on 'No' to enter a new name", MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 				if (result == null || result == MessageBoxButtons.Cancel)
 					return;
@@ -1375,6 +1375,11 @@ Non-Windows setup:
 					if (ReferenceEquals(Duplicates[i], item)) { Duplicates.RemoveAt(i); break; }
 			}
 
+			// When ExcludeHardLinks is enabled, remove items within each group
+			// that are hardlinks of another remaining item in the same group.
+			if (SettingsFile.Instance.ExcludeHardLinks)
+				DropHardLinkDuplicates();
+
 			// Drop groups that have only one item left (no longer duplicates)
 			DropSingletonGroups();
 
@@ -1399,6 +1404,38 @@ Non-Windows setup:
 			for (int i = Duplicates.Count - 1; i >= 0; i--)
 				if (singletonGroups.Contains(Duplicates[i].ItemInfo.GroupId))
 					Duplicates.RemoveAt(i);
+		}
+
+		/// <summary>
+		/// After deletion, re-check remaining groups for items that are hardlinks
+		/// of each other. Within each group, keep only one representative per set
+		/// of hardlinked files.
+		/// </summary>
+		private void DropHardLinkDuplicates() {
+			var toRemove = new List<DuplicateItemVM>();
+			foreach (var group in Duplicates.GroupBy(d => d.ItemInfo.GroupId)) {
+				var items = group.ToList();
+				if (items.Count <= 1) continue;
+				var kept = new List<DuplicateItemVM>();
+				foreach (var item in items) {
+					bool isHardLinkOfKept = false;
+					foreach (var k in kept) {
+						if (item.ItemInfo.SizeLong == k.ItemInfo.SizeLong &&
+							HardLinkUtils.AreSameFile(item.ItemInfo.Path, k.ItemInfo.Path)) {
+							isHardLinkOfKept = true;
+							break;
+						}
+					}
+					if (isHardLinkOfKept)
+						toRemove.Add(item);
+					else
+						kept.Add(item);
+				}
+			}
+
+			foreach (var item in toRemove)
+				for (int i = Duplicates.Count - 1; i >= 0; i--)
+					if (ReferenceEquals(Duplicates[i], item)) { Duplicates.RemoveAt(i); break; }
 		}
 
 		public ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {
@@ -1459,7 +1496,7 @@ Non-Windows setup:
 			StringBuilder sb = new();
 			foreach (var item in GetSelectedDuplicates()) {
 				if (item is not DuplicateItemVM currentItem) return;
-				sb.AppendLine(currentItem.ItemInfo.Path);
+				sb.AppendLine($"\"{currentItem.ItemInfo.Path}\"");
 			}
 #pragma warning disable CS8600
 #pragma warning disable CS8602

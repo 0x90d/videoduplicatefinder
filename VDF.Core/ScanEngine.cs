@@ -863,6 +863,13 @@ namespace VDF.Core {
 							continue;
 						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, out difference, out flags);
 
+						if (isDuplicate &&
+							entry.FileSize == compItem.FileSize &&
+							Settings.ExcludeHardLinks &&
+							HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
+							isDuplicate = false;
+						}
+
 						if (isDuplicate)
 							MergeDuplicate(entry, compItem, difference, flags);
 					}
