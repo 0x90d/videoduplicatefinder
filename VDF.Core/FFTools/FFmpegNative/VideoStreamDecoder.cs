@@ -30,6 +30,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 		public VideoStreamDecoder(string url, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE, int timeoutMs = 15_000) {
 			_pFormatContext = ffmpeg.avformat_alloc_context();
+			if (_pFormatContext == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVFormatContext.");
 
 			// Set up an interrupt callback so FFmpeg aborts blocking I/O when the
 			// timeout expires.  This lets Dispose() run normally and release the
@@ -39,6 +41,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_pFormatContext->interrupt_callback = new AVIOInterruptCB { callback = _interruptCbDelegate };
 
 			_pReceivedFrame = ffmpeg.av_frame_alloc();
+			if (_pReceivedFrame == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVFrame for received frame.");
 			var pFormatContext = _pFormatContext;
 			ffmpeg.avformat_open_input(&pFormatContext, url, null, null).ThrowExceptionIfError();
 			ffmpeg.avformat_find_stream_info(_pFormatContext, null).ThrowExceptionIfError();
@@ -47,6 +51,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_streamIndex = ffmpeg.av_find_best_stream(_pFormatContext,
 				AVMediaType.AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0).ThrowExceptionIfError();
 			_pCodecContext = ffmpeg.avcodec_alloc_context3(codec);
+			if (_pCodecContext == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVCodecContext.");
 			if (HWDeviceType != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
 				ffmpeg.av_hwdevice_ctx_create(&_pCodecContext->hw_device_ctx, HWDeviceType, null, null, 0).ThrowExceptionIfError();
 			ffmpeg.avcodec_parameters_to_context(_pCodecContext, _pFormatContext->streams[_streamIndex]->codecpar).ThrowExceptionIfError();
@@ -54,6 +60,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 			CodecName = ffmpeg.avcodec_get_name(codec->id);
 			FrameSize = new Size(_pCodecContext->width, _pCodecContext->height);
+			if (FrameSize.Width <= 0 || FrameSize.Height <= 0)
+				throw new FFInvalidExitCodeException($"Invalid frame dimensions {FrameSize.Width}x{FrameSize.Height}.");
 			// For HW decode we intentionally defer the source pixel format until the
 			// first frame has been downloaded with av_hwframe_transfer_data — only then
 			// do we know the real sw_format (e.g. P010LE for 10-bit HEVC vs NV12 for
@@ -64,7 +72,11 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			IsHardwareDecode = HWDeviceType != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 
 			_pPacket = ffmpeg.av_packet_alloc();
+			if (_pPacket == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVPacket.");
 			_pFrame = ffmpeg.av_frame_alloc();
+			if (_pFrame == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVFrame.");
 		}
 
 		public string CodecName { get; }
@@ -114,8 +126,10 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 			ffmpeg.avcodec_flush_buffers(_pCodecContext);
 
-			// Decode forward from keyframe until we reach the target PTS
-			while (true) {
+			// Decode forward from keyframe until we reach the target PTS.
+			// Cap iterations to prevent infinite loops on corrupt files.
+			const int maxIterations = 10_000;
+			for (int iter = 0; iter < maxIterations; iter++) {
 				int error;
 				do {
 					ffmpeg.av_packet_unref(_pPacket);

@@ -78,6 +78,9 @@ namespace VDF.Core.FFTools {
 					if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB)
 						throw new Exception($"Invalid source pixel format {srcPixFmt}");
 
+					if (sourceSize.Width <= 0 || sourceSize.Height <= 0)
+						throw new Exception($"Invalid source frame dimensions {sourceSize.Width}x{sourceSize.Height}.");
+
 					Size destinationSize = isGrayByte ? new Size(N, N) :
 						settings.Fullsize == 1 ?
 							sourceSize :
@@ -125,9 +128,16 @@ namespace VDF.Core.FFTools {
 					else {
 						int width = convertedFrame.width;
 						int height = convertedFrame.height;
-						var totalBytes = width * height * 4;
+						if (width <= 0 || height <= 0)
+							throw new Exception($"Invalid converted frame dimensions {width}x{height}.");
+						long totalBytesLong = (long)width * height * 4;
+						if (totalBytesLong > 200_000_000) // ~200 MB sanity cap
+							throw new Exception($"Frame too large: {width}x{height} ({totalBytesLong} bytes).");
+						var totalBytes = (int)totalBytesLong;
 						var rgbaBytes = new byte[totalBytes];
 						int stride = convertedFrame.linesize[0];
+						if (stride < width * 4)
+							throw new Exception($"Invalid stride ({stride}) for width {width}.");
 						fixed (byte* destPtr = rgbaBytes) {
 							byte* sourcePtr = convertedFrame.data[0];
 							if (stride == width * 4) {

@@ -47,6 +47,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 		public AudioStreamDecoder(string url, int targetSampleRate, CancellationToken ct = default, int timeoutMs = 120_000) {
 			_pFormatContext = ffmpeg.avformat_alloc_context();
+			if (_pFormatContext == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVFormatContext.");
 
 			// Interrupt callback: aborts blocking I/O when the per-operation
 			// deadline expires or the scan is cancelled.  The deadline is reset
@@ -82,6 +84,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			}
 
 			_pCodecContext = ffmpeg.avcodec_alloc_context3(codec);
+			if (_pCodecContext == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVCodecContext.");
 			ffmpeg.avcodec_parameters_to_context(_pCodecContext, _pFormatContext->streams[_streamIndex]->codecpar).ThrowExceptionIfError();
 			ffmpeg.avcodec_open2(_pCodecContext, codec, null).ThrowExceptionIfError();
 
@@ -99,7 +103,11 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_pSwrContext = swr;
 
 			_pPacket = ffmpeg.av_packet_alloc();
+			if (_pPacket == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVPacket.");
 			_pFrame = ffmpeg.av_frame_alloc();
+			if (_pFrame == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVFrame.");
 		}
 
 		/// <summary>
