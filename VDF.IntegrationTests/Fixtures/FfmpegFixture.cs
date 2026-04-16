@@ -52,10 +52,16 @@ public class FfmpegFixture : IDisposable {
 		NativeBindingAvailable = FFmpegHelper.DoFFmpegLibraryFilesExist;
 
 		if (!FfmpegCliAvailable) {
-			FfmpegNotFoundReason =
+			string message =
 				"FFmpeg not found. Integration tests require ffmpeg.exe in PATH. " +
 				"Install FFmpeg (e.g. 'choco install ffmpeg' on Windows, " +
 				"'apt install ffmpeg' on Linux, 'brew install ffmpeg' on macOS).";
+
+			// On CI, fail hard — tests silently skipping would hide real problems.
+			if (Environment.GetEnvironmentVariable("CI") != null)
+				throw new InvalidOperationException(message);
+
+			FfmpegNotFoundReason = message;
 			return;
 		}
 
