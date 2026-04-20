@@ -487,6 +487,7 @@ namespace VDF.Core {
 								!entry.IsImage &&
 								!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
 								!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
+								!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
 								entry.AudioFingerprint == null) {
 								ExtractAudioFingerprint(entry, cancelationTokenSource.Token);
 							}
@@ -527,6 +528,7 @@ namespace VDF.Core {
 						!entry.IsImage &&
 						!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
 						!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
+						!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
 						entry.AudioFingerprint == null) {
 						ExtractAudioFingerprint(entry, cancelationTokenSource.Token);
 					}
@@ -554,9 +556,28 @@ namespace VDF.Core {
 			entry.Flags.Set(EntryFlags.NoAudioTrack);
 			entry.AudioFingerprint = Array.Empty<uint>();
 		}
+		else if (IsSilentFingerprint(fp)) {
+			// Silent tracks produce all-zero fingerprints, which Hamming-match any
+			// other silent track at 100% and cause false-positive partial-clip groups.
+			entry.Flags.Set(EntryFlags.SilentAudioTrack);
+			entry.AudioFingerprint = Array.Empty<uint>();
+		}
 		else {
 			entry.AudioFingerprint = fp;
 		}
+	}
+
+	/// <summary>
+	/// Returns true when every block in the fingerprint is zero. For silent or
+	/// near-silent audio the chroma bins collapse to equal values, and the 32
+	/// comparison pairs in <see cref="Chromaprint.Pipeline.FingerprintCalculator"/>
+	/// all resolve to the non-greater branch, producing uniformly zero blocks.
+	/// </summary>
+	internal static bool IsSilentFingerprint(uint[] fp) {
+		if (fp.Length == 0) return false;
+		for (int i = 0; i < fp.Length; i++)
+			if (fp[i] != 0u) return false;
+		return true;
 	}
 
 	Dictionary<double, byte[]?> CreateFlippedGrayBytes(FileEntry entry) {
@@ -1009,9 +1030,14 @@ namespace VDF.Core {
 				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
 			// Collect eligible videos: not an image, has a usable fingerprint, not already grouped.
+			// Exclude silent/all-zero fingerprints: they Hamming-match any other silent track
+			// at 100% and produce meaningless partial-clip groups. Older scan databases written
+			// before this check may still contain all-zero fingerprints, so filter at read time.
 			var videos = DatabaseUtils.Database
 				.Where(e => !e.invalid && !e.IsImage &&
+						!e.Flags.Has(EntryFlags.SilentAudioTrack) &&
 						e.AudioFingerprint != null && e.AudioFingerprint.Length >= 2 &&
+						!IsSilentFingerprint(e.AudioFingerprint) &&
 						!alreadyGrouped.Contains(e.Path))
 				.OrderByDescending(e => e.mediaInfo?.Duration ?? TimeSpan.Zero)
 				.ToList();

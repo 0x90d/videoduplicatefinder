@@ -82,4 +82,15 @@ public class EntryFlagTests {
 		Assert.True(EntryFlags.AllErrors.Has(EntryFlags.TooDark));
 		Assert.False(EntryFlags.AllErrors.Any(EntryFlags.IsImage));
 	}
+
+	[Fact]
+	public void SilentAudioTrack_HasDistinctValue() {
+		// Regression for issue #719: SilentAudioTrack must be a unique bit so it
+		// doesn't collide with NoAudioTrack / AudioFingerprintError in the stored DB.
+		Assert.NotEqual(EntryFlags.SilentAudioTrack, EntryFlags.NoAudioTrack);
+		Assert.NotEqual(EntryFlags.SilentAudioTrack, EntryFlags.AudioFingerprintError);
+		var combined = EntryFlags.NoAudioTrack | EntryFlags.SilentAudioTrack;
+		Assert.True(combined.Has(EntryFlags.NoAudioTrack));
+		Assert.True(combined.Has(EntryFlags.SilentAudioTrack));
+	}
 }
