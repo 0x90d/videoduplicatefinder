@@ -750,9 +750,10 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> OpenItemsByColIdCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.CurrentColumn?.DisplayIndex == 1)
+			var tag = GetDataGrid.CurrentColumn?.Tag as string;
+			if (tag == "Thumbnail")
 				OpenItems();
-			else if (GetDataGrid.CurrentColumn?.DisplayIndex == 2)
+			else if (tag == "Path")
 				OpenItemsInFolder();
 		});
 

@@ -634,7 +634,7 @@
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Header="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
+                                            <DataGridTemplateColumn Header="Thumbnail" Tag="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <Grid>
@@ -668,6 +668,7 @@
                                             <DataGridTemplateColumn
                                                 Width="1*"
                                                 Header="Path"
+                                                Tag="Path"
                                                 IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
