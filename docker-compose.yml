@@ -11,8 +11,11 @@ services:
       # Example:
       #   - /mnt/nas/movies:/mnt/nas/movies:ro
       #   - "/mnt/path with spaces:/mnt/media:ro"
-      - vdf-db:/root/.config/VDF
+      - vdf-db:/root/.config/VDF         # web-settings.json, web-credentials.json
+      - vdf-state:/root/.local/state/VDF # ScannedFiles.db
 
 volumes:
   vdf-db:
+    driver: local
+  vdf-state:
     driver: local

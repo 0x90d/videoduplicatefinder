@@ -28,10 +28,15 @@ namespace VDF.Core.Utils {
 		static readonly Lazy<string> _StateFolder = new(ResolveStateFolder);
 		static readonly Lazy<string> _SettingsFolder = new(ResolveSettingsFolder);
 		static readonly Lazy<bool> _CurrentFolderWritable = new(() => CanWriteToDirectory(CurrentFolder!));
+		// Portable mode (keep data next to the executable) is a convenience for desktop/unzip installs.
+		// In Docker the working directory is writable by coincidence but is ephemeral, so skip it there.
+		static readonly Lazy<bool> _RunningInContainer = new(() =>
+			string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase));
 
 		public static string StateFolder => _StateFolder.Value;
 		public static string SettingsFolder => _SettingsFolder.Value;
 		public static bool IsCurrentFolderWritable => _CurrentFolderWritable.Value;
+		public static bool IsRunningInContainer => _RunningInContainer.Value;
 
 		public static bool CanWriteToDirectory(string path) {
 			try {
@@ -54,13 +59,13 @@ namespace VDF.Core.Utils {
 		}
 
 		static string ResolveStateFolder() {
-			if (IsCurrentFolderWritable)
+			if (!IsRunningInContainer && IsCurrentFolderWritable)
 				return CurrentFolder;
 			return GetDefaultStateFolder();
 		}
 
 		static string ResolveSettingsFolder() {
-			if (IsCurrentFolderWritable)
+			if (!IsRunningInContainer && IsCurrentFolderWritable)
 				return CurrentFolder;
 			return GetDefaultSettingsFolder();
 		}

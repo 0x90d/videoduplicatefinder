@@ -244,6 +244,7 @@ docker run -d \
   --name vdf-web \
   -p 8080:8080 \
   -v vdf-db:/root/.config/VDF \
+  -v vdf-state:/root/.local/state/VDF \
   -v /path/to/your/media:/media:ro \
   ghcr.io/0x90d/vdf-web:latest
 ```
@@ -259,6 +260,7 @@ docker run -d \
   -p 8080:8080 \
   -e VDF_WEB_PASSWORD=mysecretpassword \
   -v vdf-db:/root/.config/VDF \
+  -v vdf-state:/root/.local/state/VDF \
   -v /path/to/your/media:/media:ro \
   ghcr.io/0x90d/vdf-web:latest
 ```
@@ -292,7 +294,8 @@ docker compose pull && docker compose up -d
 
 | Volume | Purpose |
 |--------|---------|
-| `/root/.config/VDF` | Settings and scan database — mount a named volume here so data persists across container updates |
+| `/root/.config/VDF` | Settings (`web-settings.json`) and login credentials — mount a named volume here so configuration persists across container updates |
+| `/root/.local/state/VDF` | Scan database (`ScannedFiles.db`) — mount a named volume here so hashed-file data persists across container updates |
 | Your media paths | Mount each media directory you want to scan. Read-only (`:ro`) is recommended. |
 
 ### Notes
