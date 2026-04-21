@@ -12,5 +12,8 @@
   "Log.ExcludedFilesSummary": "Resumen de archivos excluidos (limitado por motivo):",
   "Log.ExcludedFilesSuppressed": " (se suprimieron {0:N0} entradas del registro)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
-  "Log.DatabaseCheckpoint": "Punto de control de base de datos ({0:N0} archivos guardados en disco)."
+  "Log.DatabaseCheckpoint": "Punto de control de base de datos ({0:N0} archivos guardados en disco).",
+  "Scan.Stage.Probing": "analizando metadatos",
+  "Scan.Stage.SamplingFrames": "muestreando fotogramas",
+  "Scan.Stage.AudioFingerprint": "huella de audio"
 }

@@ -12,5 +12,8 @@
   "Log.ExcludedFilesSummary": "已排除文件汇总（每个原因有限制）：",
   "Log.ExcludedFilesSuppressed": "（已抑制 {0:N0} 条日志）",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
-  "Log.DatabaseCheckpoint": "数据库检查点（{0:N0} 个文件已保存到磁盘）。"
+  "Log.DatabaseCheckpoint": "数据库检查点（{0:N0} 个文件已保存到磁盘）。",
+  "Scan.Stage.Probing": "读取元数据",
+  "Scan.Stage.SamplingFrames": "采样帧",
+  "Scan.Stage.AudioFingerprint": "音频指纹"
 }

@@ -12,5 +12,8 @@
   "Log.ExcludedFilesSummary": "Zusammenfassung ausgeschlossener Dateien (begrenzt pro Grund):",
   "Log.ExcludedFilesSuppressed": " ({0:N0} Logeinträge unterdrückt)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
-  "Log.DatabaseCheckpoint": "Datenbank-Checkpoint ({0:N0} Dateien auf Festplatte gespeichert)."
+  "Log.DatabaseCheckpoint": "Datenbank-Checkpoint ({0:N0} Dateien auf Festplatte gespeichert).",
+  "Scan.Stage.Probing": "Metadaten lesen",
+  "Scan.Stage.SamplingFrames": "Frames abtasten",
+  "Scan.Stage.AudioFingerprint": "Audio-Fingerabdruck"
 }
