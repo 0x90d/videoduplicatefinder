@@ -24,5 +24,10 @@ namespace VDF.Core {
 		public int MaxPosition;
 		public TimeSpan Elapsed;
 		public TimeSpan Remaining;
+		/// <summary>Short label describing what's happening to CurrentFile right now (e.g. "probing", "sampling frames", "audio fingerprint"). Empty between files.</summary>
+		public string CurrentStage;
+		/// <summary>Progress within the current stage (e.g. sample 2 of 5). Both zero when stage progress isn't tracked.</summary>
+		public int StageCurrent;
+		public int StageMax;
 	}
 }

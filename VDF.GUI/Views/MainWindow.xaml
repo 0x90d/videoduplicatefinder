@@ -1165,7 +1165,7 @@
                                     </TextBlock>
                                     <Border Width="1" Margin="3,2" Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock FontSize="12" Margin="2,0" Text="{Binding ScanProgressText, Mode=OneWay}"
-                                        TextTrimming="CharacterEllipsis" MaxWidth="300" />
+                                        TextTrimming="PrefixCharacterEllipsis" MaxWidth="500" />
                                 </StackPanel>
                             </WrapPanel>
                             <Grid

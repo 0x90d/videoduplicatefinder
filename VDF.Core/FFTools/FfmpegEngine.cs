@@ -286,13 +286,15 @@ namespace VDF.Core.FFTools {
 			}
 			return bytes;
 		}
-		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, double maxSamplingDurationSeconds, bool extendedLogging) {
+		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, double maxSamplingDurationSeconds, bool extendedLogging, Action<int>? onSampleComplete = null) {
 			int tooDarkCounter = 0;
 
 			for (int i = 0; i < positions.Count; i++) {
 				double position = videoFile.GetGrayBytesIndex(positions[i], maxSamplingDurationSeconds);
-				if (videoFile.grayBytes.ContainsKey(position))
+				if (videoFile.grayBytes.ContainsKey(position)) {
+					onSampleComplete?.Invoke(i + 1);
 					continue;
+				}
 
 				var data = GetThumbnail(new FfmpegSettings {
 					File = videoFile.Path,
@@ -307,6 +309,7 @@ namespace VDF.Core.FFTools {
 					tooDarkCounter++;
 				videoFile.grayBytes.Add(position, data);
 				videoFile.PHashes.Add(position, pHash.PerceptualHash.ComputePHashFromGray32x32(data));
+				onSampleComplete?.Invoke(i + 1);
 			}
 			if (tooDarkCounter == positions.Count) {
 				videoFile.Flags.Set(EntryFlags.TooDark);

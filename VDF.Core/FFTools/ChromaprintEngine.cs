@@ -40,10 +40,10 @@ namespace VDF.Core.FFTools {
 		/// Returns <c>null</c> when the file has no audio stream or extraction fails.
 		/// Returns an empty array when the file has no usable audio.
 		/// </summary>
-		internal static uint[]? ExtractFingerprint(string filePath, bool extendedLogging, CancellationToken ct = default) {
+		internal static uint[]? ExtractFingerprint(string filePath, bool extendedLogging, CancellationToken ct = default, Action<double>? onProgress = null) {
 			if (FfmpegEngine.UseNativeBinding) {
 				try {
-					return ExtractFingerprintNative(filePath, extendedLogging, ct);
+					return ExtractFingerprintNative(filePath, extendedLogging, ct, onProgress);
 				}
 				catch (Exception e) {
 					Logger.Instance.Info(
@@ -55,7 +55,7 @@ namespace VDF.Core.FFTools {
 		}
 
 		/// <summary>Native path: uses FFmpeg.AutoGen bindings — no process spawning.</summary>
-		private static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, CancellationToken ct) {
+		private static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, CancellationToken ct, Action<double>? onProgress) {
 			var sw = extendedLogging ? Stopwatch.StartNew() : null;
 
 			// Suppress noisy FFmpeg warnings (e.g. AAC "Could not update timestamps
@@ -72,7 +72,7 @@ namespace VDF.Core.FFTools {
 
 				var ctx = new ChromaContext();
 				ctx.Start();
-				int totalSamples = decoder.DecodeAll(samples => ctx.Feed(samples), ct);
+				int totalSamples = decoder.DecodeAll(samples => ctx.Feed(samples), ct, onProgress);
 
 				if (ct.IsCancellationRequested)
 					return null;

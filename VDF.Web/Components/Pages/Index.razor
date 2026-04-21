@@ -59,6 +59,11 @@
                 </div>
                 <p>@p.Current / @p.Max &nbsp;|&nbsp; ETA @FormatEta(p.Remaining)</p>
                 <p class="file-path">@TruncatePath(p.CurrentFile, 80)</p>
+                @if (!string.IsNullOrEmpty(p.CurrentStage)) {
+                    <p class="stage-label">
+                        @p.CurrentStage@(p.StageMax > 0 ? $" ({p.StageCurrent}/{p.StageMax})" : "")
+                    </p>
+                }
             }
         }
         else if (Scan.State == ScanState.Comparing) {

@@ -12,5 +12,8 @@
   "Log.ExcludedFilesSummary": "Excluded files summary (limited per reason):",
   "Log.ExcludedFilesSuppressed": " (suppressed {0:N0} log entries)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
-  "Log.DatabaseCheckpoint": "Database checkpoint ({0:N0} files saved to disk)."
+  "Log.DatabaseCheckpoint": "Database checkpoint ({0:N0} files saved to disk).",
+  "Scan.Stage.Probing": "probing metadata",
+  "Scan.Stage.SamplingFrames": "sampling frames",
+  "Scan.Stage.AudioFingerprint": "audio fingerprint"
 }

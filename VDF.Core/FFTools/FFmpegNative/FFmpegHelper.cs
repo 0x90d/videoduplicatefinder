@@ -134,6 +134,36 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			}
 		}
 
+		/// <summary>
+		/// Builds a diagnostic string listing the FFmpeg shared libraries the current AutoGen
+		/// binding expects, plus any mismatched major versions detected on the system. Intended
+		/// for error messages so users (particularly on Linux/Docker where the distro-packaged
+		/// FFmpeg may be older than the binding) can see the version gap at a glance.
+		/// </summary>
+		internal static string DescribeExpectedLibraries() {
+			var expected = string.Join(", ", GenerateLibraryFileNames());
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+				return $"Expected: {expected}";
+
+			// On Linux, surface nearby mismatched majors (e.g. libavcodec.so.59 present while .62 expected)
+			var found = new List<string>();
+			try {
+				foreach (var libKey in ffmpeg.LibraryVersionMap.Keys) {
+					foreach (var libDir in new[] { "/usr/lib", "/usr/lib/x86_64-linux-gnu", "/usr/lib/aarch64-linux-gnu", "/usr/lib64" }) {
+						if (!Directory.Exists(libDir)) continue;
+						foreach (var file in Directory.EnumerateFiles(libDir, $"lib{libKey}.so.*", SearchOption.TopDirectoryOnly)) {
+							var name = Path.GetFileName(file);
+							if (!found.Contains(name)) found.Add(name);
+						}
+					}
+				}
+			}
+			catch { }
+			return found.Count > 0
+				? $"Expected: {expected}. Found on system: {string.Join(", ", found)}. The installed FFmpeg major version does not match what the bundled FFmpeg.AutoGen binding expects."
+				: $"Expected: {expected}";
+		}
+
 		static bool CheckForFfmpegLibraryFilesInFolder(string path) {
 			foreach (var file in GenerateLibraryFileNames()) {
 				if (!File.Exists(Path.Combine(path, file))) {

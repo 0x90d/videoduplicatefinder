@@ -26,6 +26,9 @@ namespace VDF.Web.Services {
 		public int Max { get; init; }
 		public TimeSpan Elapsed { get; init; }
 		public TimeSpan Remaining { get; init; }
+		public string CurrentStage { get; init; } = string.Empty;
+		public int StageCurrent { get; init; }
+		public int StageMax { get; init; }
 	}
 
 	/// <summary>
@@ -67,7 +70,10 @@ namespace VDF.Web.Services {
 					Current = e.CurrentPosition,
 					Max = e.MaxPosition,
 					Elapsed = e.Elapsed,
-					Remaining = e.Remaining
+					Remaining = e.Remaining,
+					CurrentStage = e.CurrentStage ?? string.Empty,
+					StageCurrent = e.StageCurrent,
+					StageMax = e.StageMax,
 				};
 				Notify();
 			};

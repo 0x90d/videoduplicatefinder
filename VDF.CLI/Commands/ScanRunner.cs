@@ -75,7 +75,10 @@ namespace VDF.CLI.Commands {
 			engine.Progress += (_, e) => {
 				int pct = e.MaxPosition > 0 ? (int)(100L * e.CurrentPosition / e.MaxPosition) : 0;
 				string eta = e.Remaining == TimeSpan.Zero ? "..." : e.Remaining.ToString(@"m\mss\s");
-				Console.Error.Write($"\r[{pct,3}%] {e.CurrentPosition}/{e.MaxPosition}  ETA {eta}  {TruncatePath(e.CurrentFile, 60)}    ");
+				string stage = string.IsNullOrEmpty(e.CurrentStage)
+					? string.Empty
+					: e.StageMax > 0 ? $"  ({e.CurrentStage} {e.StageCurrent}/{e.StageMax})" : $"  ({e.CurrentStage})";
+				Console.Error.Write($"\r[{pct,3}%] {e.CurrentPosition}/{e.MaxPosition}  ETA {eta}  {TruncatePath(e.CurrentFile, 60)}{stage}    ");
 			};
 
 			engine.ScanDone += (_, _) => {

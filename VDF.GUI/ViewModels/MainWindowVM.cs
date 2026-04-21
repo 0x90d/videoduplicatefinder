@@ -419,7 +419,12 @@ namespace VDF.GUI.ViewModels {
 
 		void Scanner_Progress(object? sender, ScanProgressChangedEventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
-				ScanProgressText = e.CurrentFile;
+				// Stage goes at the END — the status bar's TextBlock uses PrefixCharacterEllipsis,
+				// so trimming happens at the start (leading directory path) and the filename + stage stay visible.
+				string stageSuffix = string.IsNullOrEmpty(e.CurrentStage)
+					? string.Empty
+					: e.StageMax > 0 ? $"  [{e.CurrentStage} {e.StageCurrent}/{e.StageMax}]" : $"  [{e.CurrentStage}]";
+				ScanProgressText = e.CurrentFile + stageSuffix;
 				RemainingTime = e.Remaining.Format();
 				ScanProgressValue = e.CurrentPosition;
 				TimeElapsed = e.Elapsed.Format();

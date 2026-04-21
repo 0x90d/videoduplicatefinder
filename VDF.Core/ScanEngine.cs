@@ -118,9 +118,31 @@ namespace VDF.Core {
 								CurrentFile = path,
 								Elapsed = ElapsedTimer.Elapsed,
 								Remaining = timeRemaining,
-								MaxPosition = scanProgressMaxValue
+								MaxPosition = scanProgressMaxValue,
+								CurrentStage = string.Empty,
 							});
 			TryDatabaseCheckpoint();
+		}
+
+		// Reports what's happening to a file mid-processing without advancing the file counter.
+		// Throttled to the same cadence as IncrementProgress so a stuck file's last-reported
+		// stage (e.g. "sampling frame 2/5") hints at where it froze.
+		void ReportStage(string path, string stage, int stageCurrent = 0, int stageMax = 0) {
+			if (lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) return;
+			lastProgressUpdate = DateTime.UtcNow;
+			var timeRemaining = TimeSpan.FromTicks(DateTime.UtcNow.Subtract(startTime).Ticks *
+									(scanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
+			Progress?.Invoke(this,
+							new ScanProgressChangedEventArgs {
+								CurrentPosition = processedFiles,
+								CurrentFile = path,
+								Elapsed = ElapsedTimer.Elapsed,
+								Remaining = timeRemaining,
+								MaxPosition = scanProgressMaxValue,
+								CurrentStage = stage,
+								StageCurrent = stageCurrent,
+								StageMax = stageMax,
+							});
 		}
 
 		void TryDatabaseCheckpoint() {
@@ -194,7 +216,7 @@ namespace VDF.Core {
 			if (!FFprobeExists)
 				throw new FFNotFoundException("Cannot find FFprobe");
 			if (Settings.UseNativeFfmpegBinding && !FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist)
-				throw new FFNotFoundException("Cannot find FFmpeg libraries");
+				throw new FFNotFoundException($"Cannot find FFmpeg libraries. {FFTools.FFmpegNative.FFmpegHelper.DescribeExpectedLibraries()}");
 
 			CancelAllTasks();
 
@@ -489,7 +511,11 @@ namespace VDF.Core {
 								!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
 								!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
 								entry.AudioFingerprint == null) {
-								ExtractAudioFingerprint(entry, cancelationTokenSource.Token);
+								string cachedAudioPath = entry.Path;
+								string audioStageLabel = T("Scan.Stage.AudioFingerprint");
+								ReportStage(cachedAudioPath, audioStageLabel);
+								ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
+									onProgress: p => ReportStage(cachedAudioPath, audioStageLabel, (int)(p * 100), 100));
 							}
 							IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
@@ -497,6 +523,7 @@ namespace VDF.Core {
 					}
 
 					if (entry.mediaInfo == null && !entry.IsImage) {
+						ReportStage(entry.Path, T("Scan.Stage.Probing"));
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
 						if (info == null) {
 							entry.invalid = true;
@@ -518,7 +545,12 @@ namespace VDF.Core {
 							entry.invalid = true;
 					}
 					else if (!entry.IsImage) {
-						if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.MaxSamplingDurationSeconds, Settings.ExtendedFFToolsLogging))
+						string entryPath = entry.Path;
+						int totalSamples = positionList.Count;
+						string samplingLabel = T("Scan.Stage.SamplingFrames");
+						if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.MaxSamplingDurationSeconds,
+								Settings.ExtendedFFToolsLogging,
+								onSampleComplete: (done) => ReportStage(entryPath, samplingLabel, done, totalSamples)))
 							entry.invalid = true;
 					}
 
@@ -530,7 +562,11 @@ namespace VDF.Core {
 						!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
 						!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
 						entry.AudioFingerprint == null) {
-						ExtractAudioFingerprint(entry, cancelationTokenSource.Token);
+						string audioPath = entry.Path;
+						string audioLabel = T("Scan.Stage.AudioFingerprint");
+						ReportStage(audioPath, audioLabel);
+						ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
+							onProgress: p => ReportStage(audioPath, audioLabel, (int)(p * 100), 100));
 					}
 
 					IncrementProgress(entry.Path);
@@ -544,8 +580,8 @@ namespace VDF.Core {
 		}
 
 	
-	static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default) {
-		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, ct);
+	static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default, Action<double>? onProgress = null) {
+		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, ct, onProgress);
 		if (fp == null) {
 			// null = extraction failed (error or no audio stream)
 			entry.Flags.Set(EntryFlags.AudioFingerprintError);

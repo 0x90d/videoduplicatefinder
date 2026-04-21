@@ -45,7 +45,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// <summary>True if the file contained a usable audio stream.</summary>
 		public bool HasAudioStream { get; }
 
+		/// <summary>Total stream duration in seconds, or 0 when unknown.</summary>
+		public double DurationSeconds { get; private set; }
+
+		private readonly int _targetSampleRate;
+
 		public AudioStreamDecoder(string url, int targetSampleRate, CancellationToken ct = default, int timeoutMs = 120_000) {
+			_targetSampleRate = targetSampleRate;
 			_pFormatContext = ffmpeg.avformat_alloc_context();
 			if (_pFormatContext == null)
 				throw new FFInvalidExitCodeException("Failed to allocate AVFormatContext.");
@@ -73,6 +79,18 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			}
 			HasAudioStream = true;
 			_streamIndex = streamIdx;
+
+			// Duration for progress reporting — AV_TIME_BASE is microseconds.
+			// Prefer stream duration (converted via its own time_base) over container duration, which can be 0 for some formats.
+			if (_pFormatContext->duration > 0)
+				DurationSeconds = _pFormatContext->duration / (double)ffmpeg.AV_TIME_BASE;
+			else {
+				var audioStream = _pFormatContext->streams[_streamIndex];
+				if (audioStream->duration > 0) {
+					var tb = audioStream->time_base;
+					DurationSeconds = audioStream->duration * (double)tb.num / tb.den;
+				}
+			}
 
 			// Tell the demuxer to discard all non-audio streams at the container
 			// level.  For interleaved formats (MKV, MP4, …) this lets the demuxer
@@ -115,12 +133,16 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// with each chunk of resampled mono s16 PCM samples.
 		/// </summary>
 		/// <returns>Total number of output samples produced.</returns>
-		public int DecodeAll(Action<ReadOnlySpan<short>> onSamples, CancellationToken ct) {
+		public int DecodeAll(Action<ReadOnlySpan<short>> onSamples, CancellationToken ct, Action<double>? onProgress = null) {
 			if (!HasAudioStream) return 0;
 
 			_ct = ct;
 			_deadlineTicks = Stopwatch.GetTimestamp() + _timeoutTicks;
 			int totalSamples = 0;
+			// Safety cap: a broken codec could emit unbounded frames per packet. 10K matches the video decoder cap.
+			const int maxFramesPerPacket = 10_000;
+			double expectedSamples = DurationSeconds * _targetSampleRate;
+			int lastReportedPercent = -1;
 
 			while (!ct.IsCancellationRequested) {
 				ffmpeg.av_packet_unref(_pPacket);
@@ -137,7 +159,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				if (sendResult < 0 && sendResult != ffmpeg.AVERROR(ffmpeg.EAGAIN))
 					continue; // skip corrupted / problematic packets instead of aborting
 
-				while (!ct.IsCancellationRequested) {
+				for (int iter = 0; iter < maxFramesPerPacket && !ct.IsCancellationRequested; iter++) {
 					int recvResult = ffmpeg.avcodec_receive_frame(_pCodecContext, _pFrame);
 					if (recvResult == ffmpeg.AVERROR(ffmpeg.EAGAIN) || recvResult == ffmpeg.AVERROR_EOF)
 						break;
@@ -146,12 +168,20 @@ namespace VDF.Core.FFTools.FFmpegNative {
 					totalSamples += ConvertAndDeliver(_pFrame->extended_data, _pFrame->nb_samples, onSamples);
 					ffmpeg.av_frame_unref(_pFrame);
 				}
+
+				if (onProgress != null && expectedSamples > 0) {
+					int pct = Math.Min(99, (int)(100 * totalSamples / expectedSamples));
+					if (pct != lastReportedPercent) {
+						lastReportedPercent = pct;
+						onProgress(pct / 100.0);
+					}
+				}
 			}
 
 			// Flush the decoder (send null packet)
 			if (!ct.IsCancellationRequested) {
 				ffmpeg.avcodec_send_packet(_pCodecContext, null);
-				while (true) {
+				for (int iter = 0; iter < maxFramesPerPacket; iter++) {
 					int recvResult = ffmpeg.avcodec_receive_frame(_pCodecContext, _pFrame);
 					if (recvResult == ffmpeg.AVERROR(ffmpeg.EAGAIN) || recvResult == ffmpeg.AVERROR_EOF)
 						break;
