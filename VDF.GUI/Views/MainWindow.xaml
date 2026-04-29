@@ -403,6 +403,11 @@
                                                 <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckLowestQuality]}" />
                                             </MenuItem.Header>
                                         </MenuItem>
+                                        <MenuItem Command="{Binding CheckMissingFilesCommand}">
+                                            <MenuItem.Header>
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckMissingFiles]}" />
+                                            </MenuItem.Header>
+                                        </MenuItem>
                                         <MenuItem Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DateMenu]}">
                                             <MenuItem Command="{Binding CheckOldestCommand}">
                                                 <MenuItem.Header>

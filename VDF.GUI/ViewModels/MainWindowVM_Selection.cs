@@ -227,6 +227,12 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
+		public ReactiveCommand<Unit, Unit> CheckMissingFilesCommand => ReactiveCommand.Create(() => {
+			for (var i = 0; i < Duplicates.Count; i++)
+				if (!File.Exists(Duplicates[i].ItemInfo.Path))
+					Duplicates[i].Checked = true;
+		});
+
 		public ReactiveCommand<DuplicateItemVM, Unit> RemoveSingleItemCommand => ReactiveCommand.Create<DuplicateItemVM>(item => {
 			if (item == null) return;
 			Duplicates.Remove(item);

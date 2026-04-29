@@ -1329,7 +1329,12 @@ Non-Windows setup:
 			foreach (var dub in toDelete) {
 				try {
 					var fe = new FileEntry(dub.ItemInfo.Path);
-					if (fromDisk) {
+					if (fromDisk && !File.Exists(dub.ItemInfo.Path)) {
+						// File is already gone — treat as successfully deleted
+						// so the entry is still removed from the list and database.
+						Logger.Instance.Info($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
+					}
+					else if (fromDisk) {
 						if (createSymbolLinksInstead) {
 							var keeper = keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var k) ? k : null;
 							if (keeper == null)
