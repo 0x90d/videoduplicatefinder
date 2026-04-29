@@ -89,11 +89,11 @@ jobs:
               "Video Duplicate Finder.app"
             codesign --verify --deep --strict --verbose=2 "Video Duplicate Finder.app"
             tar czvf "GUI-${{ matrix.target }}.tar.gz" "Video Duplicate Finder.app"
-            chmod +x outputCLI/VDF.CLI
+            chmod +x outputCLI/vdf-cli
             chmod +x outputWeb/VDF.Web
             codesign --force --deep --sign - \
               --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
-              outputCLI/VDF.CLI
+              outputCLI/vdf-cli
             codesign --force --deep --sign - \
               --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
               outputWeb/VDF.Web
