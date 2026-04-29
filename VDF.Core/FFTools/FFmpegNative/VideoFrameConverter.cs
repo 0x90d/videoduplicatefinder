@@ -14,22 +14,17 @@
 // */
 //
 
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 
 namespace VDF.Core.FFTools.FFmpegNative {
 	sealed unsafe class VideoFrameConverter : IDisposable {
-		private readonly IntPtr _convertedFrameBufferPtr;
-		private readonly Size _destinationSize;
-		private readonly byte_ptrArray4 _dstData;
-		private readonly int_array4 _dstLinesize;
+		private readonly AVFrame* _pConvertedFrame;
 		private readonly SwsContext* _pConvertContext;
 
 		public enum ScaleQuality {
 			FastBilinear,
 			Bilinear,
-			Bicubic,   // empfohlen
+			Bicubic,
 			Lanczos,
 			Spline,
 			Area
@@ -41,8 +36,6 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			AVPixelFormat destinationPixelFormat,
 			ScaleQuality quality = ScaleQuality.Bicubic,
 			bool bitExact = false) {
-
-			_destinationSize = destinationSize;
 
 			int flags = quality switch {
 				ScaleQuality.FastBilinear => (int)SwsFlags.SWS_FAST_BILINEAR,
@@ -69,50 +62,36 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			if (_pConvertContext == null)
 				throw new FFInvalidExitCodeException("Could not initialize the conversion context.");
 
+			_pConvertedFrame = ffmpeg.av_frame_alloc();
+			if (_pConvertedFrame == null)
+				throw new FFInvalidExitCodeException("Failed to allocate destination AVFrame.");
 
-			int convertedFrameBufferSize = ffmpeg.av_image_get_buffer_size(destinationPixelFormat,
-				destinationSize.Width,
-				destinationSize.Height,
-				1).ThrowExceptionIfError();
-			_convertedFrameBufferPtr = Marshal.AllocHGlobal(convertedFrameBufferSize);
-			_dstData = new byte_ptrArray4();
-			_dstLinesize = new int_array4();
+			_pConvertedFrame->format = (int)destinationPixelFormat;
+			_pConvertedFrame->width = destinationSize.Width;
+			_pConvertedFrame->height = destinationSize.Height;
 
-			ffmpeg.av_image_fill_arrays(ref _dstData,
-				ref _dstLinesize,
-				(byte*)_convertedFrameBufferPtr,
-				destinationPixelFormat,
-				destinationSize.Width,
-				destinationSize.Height,
-				1).ThrowExceptionIfError();
+			// Give swscale a real padded destination frame instead of a tightly packed align=1 buffer.
+			// Passing 0 lets FFmpeg pick the alignment that fits the current CPU (recommended by libavutil).
+			ffmpeg.av_frame_get_buffer(_pConvertedFrame, 0).ThrowExceptionIfError();
 		}
 
 		public void Dispose() {
-			Marshal.FreeHGlobal(_convertedFrameBufferPtr);
+			AVFrame* convertedFrame = _pConvertedFrame;
+			ffmpeg.av_frame_free(&convertedFrame);
 			ffmpeg.sws_freeContext(_pConvertContext);
 		}
 
 		public AVFrame Convert(AVFrame sourceFrame) {
+			ffmpeg.av_frame_make_writable(_pConvertedFrame).ThrowExceptionIfError();
 			ffmpeg.sws_scale(_pConvertContext,
 				sourceFrame.data,
 				sourceFrame.linesize,
 				0,
 				sourceFrame.height,
-				_dstData,
-				_dstLinesize).ThrowExceptionIfError();
+				_pConvertedFrame->data,
+				_pConvertedFrame->linesize).ThrowExceptionIfError();
 
-			byte_ptrArray8 data = new();
-			data.UpdateFrom(_dstData);
-			int_array8 linesize = new();
-			linesize.UpdateFrom(_dstLinesize);
-
-			return new AVFrame {
-				data = data,
-				linesize = linesize,
-				width = _destinationSize.Width,
-				height = _destinationSize.Height
-			};
+			return *_pConvertedFrame;
 		}
-
 	}
 }
