@@ -188,6 +188,7 @@
 	"MainWindow.Selection.CheckIdenticalExceptSizeKeepSmallest": "选择 100% 一致（除大小）（保留最小）",
 	"MainWindow.Selection.CheckIdenticalKeepFirst": "选择 100% 一致（保留第一个）",
 	"MainWindow.Selection.CheckLowestQuality": "选择最低质量",
+	"MainWindow.Selection.CheckMissingFiles": "选择缺失文件（已不在磁盘上）",
 	"MainWindow.Selection.CheckNewest": "选择最新",
 	"MainWindow.Selection.CheckOldest": "选择最旧",
 	"MainWindow.Settings.AlwaysRetryFailedSampling": "始终重试失败的取样",

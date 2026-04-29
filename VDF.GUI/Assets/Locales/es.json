@@ -188,6 +188,7 @@
 	"MainWindow.Selection.CheckIdenticalExceptSizeKeepSmallest": "Seleccionar 100% idéntico excepto tamaño (mantener el más pequeño)",
 	"MainWindow.Selection.CheckIdenticalKeepFirst": "Seleccionar 100% idéntico (mantener el primero)",
 	"MainWindow.Selection.CheckLowestQuality": "Seleccionar la calidad más baja",
+	"MainWindow.Selection.CheckMissingFiles": "Seleccionar archivos faltantes (ya no están en el disco)",
 	"MainWindow.Selection.CheckNewest": "Seleccionar el más reciente",
 	"MainWindow.Selection.CheckOldest": "Seleccionar el más antiguo",
 	"MainWindow.Settings.AlwaysRetryFailedSampling": "Reintentar siempre el muestreo fallido",
