@@ -124,15 +124,15 @@
     @if (Scan.Settings.EnablePartialClipDetection) {
         <label>
             Min clip / source ratio %
-            <input type="number" min="1" max="100" step="1"
-                   value="@((int)(Scan.Settings.PartialClipMinRatio * 100))"
-                   @onchange="e => Scan.Settings.PartialClipMinRatio = ParseInt(e.Value) / 100.0" />
+            <input type="number" min="1" max="100" step="0.1"
+                   value="@((Scan.Settings.PartialClipMinRatio * 100).ToString(CultureInfo.InvariantCulture))"
+                   @onchange="e => Scan.Settings.PartialClipMinRatio = ParseDouble(e.Value) / 100.0" />
         </label>
         <label>
             Min audio similarity %
-            <input type="number" min="1" max="100" step="1"
-                   value="@((int)(Scan.Settings.PartialClipSimilarityThreshold * 100))"
-                   @onchange="e => Scan.Settings.PartialClipSimilarityThreshold = ParseInt(e.Value) / 100.0" />
+            <input type="number" min="1" max="100" step="0.1"
+                   value="@((Scan.Settings.PartialClipSimilarityThreshold * 100).ToString(CultureInfo.InvariantCulture))"
+                   @onchange="e => Scan.Settings.PartialClipSimilarityThreshold = ParseDouble(e.Value) / 100.0" />
         </label>
     }
 </section>

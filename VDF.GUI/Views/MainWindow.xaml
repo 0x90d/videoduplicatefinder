@@ -1418,14 +1418,14 @@
                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipMinRatio]}"
                                                                    ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipMinRatioTooltip]}" />
                                                         <NumericUpDown Grid.Column="2"
-                                                                       Width="80" Increment="1" Minimum="1" Maximum="94"
+                                                                       Width="80" Increment="0.1" Minimum="1" Maximum="94"
                                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipMinRatioPercent}"
                                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipMinRatioTooltip]}" />
                                                         <TextBlock Grid.Column="4" VerticalAlignment="Center"
                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipSimilarityThreshold]}"
                                                                    ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipSimilarityThresholdTooltip]}" />
                                                         <NumericUpDown Grid.Column="6"
-                                                                       Width="80" Increment="1" Minimum="1" Maximum="100"
+                                                                       Width="80" Increment="0.1" Minimum="1" Maximum="100"
                                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipSimilarityThresholdPercent}"
                                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipSimilarityThresholdTooltip]}" />
                                                     </Grid>

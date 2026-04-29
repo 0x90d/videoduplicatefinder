@@ -248,15 +248,15 @@ namespace VDF.GUI.Data {
 			get => _UseExifCreationDate;
 			set => this.RaiseAndSetIfChanged(ref _UseExifCreationDate, value);
 		}
-		int _Percent = 95;
+		float _Percent = 95f;
 		[JsonPropertyName("Percent")]
-		public int Percent {
+		public float Percent {
 			get => _Percent;
 			set => this.RaiseAndSetIfChanged(ref _Percent, value);
 		}
-		int _PercentDurationDifference = 20;
+		double _PercentDurationDifference = 20d;
 		[JsonPropertyName("PercentDurationDifference")]
-		public int PercentDurationDifference {
+		public double PercentDurationDifference {
 			get => _PercentDurationDifference;
 			set => this.RaiseAndSetIfChanged(ref _PercentDurationDifference, value);
 		}
@@ -437,15 +437,15 @@ namespace VDF.GUI.Data {
 			get => _EnablePartialClipDetection;
 			set => this.RaiseAndSetIfChanged(ref _EnablePartialClipDetection, value);
 		}
-		int _PartialClipMinRatioPercent = 10;
+		double _PartialClipMinRatioPercent = 10d;
 		[JsonPropertyName("PartialClipMinRatioPercent")]
-		public int PartialClipMinRatioPercent {
+		public double PartialClipMinRatioPercent {
 			get => _PartialClipMinRatioPercent;
 			set => this.RaiseAndSetIfChanged(ref _PartialClipMinRatioPercent, value);
 		}
-		int _PartialClipSimilarityThresholdPercent = 80;
+		double _PartialClipSimilarityThresholdPercent = 80d;
 		[JsonPropertyName("PartialClipSimilarityThresholdPercent")]
-		public int PartialClipSimilarityThresholdPercent {
+		public double PartialClipSimilarityThresholdPercent {
 			get => _PartialClipSimilarityThresholdPercent;
 			set => this.RaiseAndSetIfChanged(ref _PartialClipSimilarityThresholdPercent, value);
 		}
