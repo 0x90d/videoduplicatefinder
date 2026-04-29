@@ -833,18 +833,8 @@ namespace VDF.Core {
 				return isDuplicate;
 			}
 
-			// Convert percent-based duration tolerance into seconds, clamped by optional min/max.
-			double GetDurationToleranceSeconds(double durationSeconds) {
-				double percentSeconds = durationSeconds * Settings.PercentDurationDifference / 100d;
-				double toleranceSeconds = percentSeconds;
-				if (Settings.DurationDifferenceMinSeconds > 0) {
-					toleranceSeconds = Math.Max(toleranceSeconds, Settings.DurationDifferenceMinSeconds);
-				}
-				if (Settings.DurationDifferenceMaxSeconds > 0) {
-					toleranceSeconds = Math.Min(toleranceSeconds, Settings.DurationDifferenceMaxSeconds);
-				}
-				return Math.Max(0d, toleranceSeconds);
-			}
+			double GetDurationToleranceSeconds(double durationSeconds) =>
+				Settings.GetDurationToleranceSeconds(durationSeconds);
 
 			// Compare one entry against candidate buckets (bucketed path).
 			void CompareEntry(FileEntry entry, int entryIndex, IEnumerable<int> candidateBucketKeys) {
