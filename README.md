@@ -87,9 +87,10 @@ Extract the archive — it contains `Video Duplicate Finder.app`. Double-click i
 
 If macOS blocks the app with "cannot be opened because the developer cannot be verified", right-click the `.app` and choose **Open**, then confirm. You only need to do this once.
 
-If the process is immediately killed (`zsh: killed`), the binary needs to be signed. Run:
+If macOS still refuses to launch the bundle (e.g. "library load disallowed by system policy" on macOS 14+ / Tahoe), clear the quarantine flag and re-sign every binary in the bundle ad-hoc:
 ```bash
-codesign --force --sign - "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
+xattr -cr "Video Duplicate Finder.app"
+codesign --force --deep --sign - "Video Duplicate Finder.app"
 ```
 
 ---

@@ -33,11 +33,11 @@ jobs:
             target: win-x64
             name: win-x64
           - kind: macOS
-            os: windows-latest
+            os: macos-latest
             target: osx-x64
             name: osx-x64
           - kind: macOSarm64
-            os: windows-latest
+            os: macos-latest
             target: osx-arm64
             name: osx-arm64
           - kind: linuxarm64
@@ -80,7 +80,23 @@ jobs:
             cp -r outputGUI/. "Video Duplicate Finder.app/Contents/MacOS/"
             cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
             cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
+            chmod +x "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
+            # Ad-hoc sign every binary in the bundle. macOS 14+ (and especially Tahoe 26)
+            # rejects unsigned dylibs under Library Validation, which previously caused
+            # "library load disallowed by system policy" on launch.
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              "Video Duplicate Finder.app"
+            codesign --verify --deep --strict --verbose=2 "Video Duplicate Finder.app"
             tar czvf "GUI-${{ matrix.target }}.tar.gz" "Video Duplicate Finder.app"
+            chmod +x outputCLI/VDF.CLI
+            chmod +x outputWeb/VDF.Web
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              outputCLI/VDF.CLI
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              outputWeb/VDF.Web
             tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
             tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
           else
