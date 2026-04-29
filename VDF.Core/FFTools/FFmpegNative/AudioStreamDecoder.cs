@@ -26,11 +26,11 @@ namespace VDF.Core.FFTools.FFmpegNative {
 	/// they become available.  Modelled after <see cref="VideoStreamDecoder"/>.
 	/// </summary>
 	unsafe sealed class AudioStreamDecoder : IDisposable {
-		private readonly AVFormatContext* _pFormatContext;
-		private readonly AVCodecContext* _pCodecContext;
-		private readonly SwrContext* _pSwrContext;
-		private readonly AVFrame* _pFrame;
-		private readonly AVPacket* _pPacket;
+		private AVFormatContext* _pFormatContext;
+		private AVCodecContext* _pCodecContext;
+		private SwrContext* _pSwrContext;
+		private AVFrame* _pFrame;
+		private AVPacket* _pPacket;
 		private readonly int _streamIndex;
 		private readonly AVIOInterruptCB_callback _interruptCbDelegate;
 		private readonly long _timeoutTicks;
@@ -66,8 +66,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_interruptCbDelegate = _ => (_ct.IsCancellationRequested || Stopwatch.GetTimestamp() > _deadlineTicks) ? 1 : 0;
 			_pFormatContext->interrupt_callback = new AVIOInterruptCB { callback = _interruptCbDelegate };
 
+			// avformat_open_input frees the context and nulls the local on failure.
+			// Sync the field with the local before checking the result so the finalizer
+			// does not later see a dangling pointer if the open fails.
 			var pFormatContext = _pFormatContext;
-			ffmpeg.avformat_open_input(&pFormatContext, url, null, null).ThrowExceptionIfError();
+			int openRet = ffmpeg.avformat_open_input(&pFormatContext, url, null, null);
+			_pFormatContext = pFormatContext;
+			openRet.ThrowExceptionIfError();
 			ffmpeg.avformat_find_stream_info(_pFormatContext, null).ThrowExceptionIfError();
 
 			AVCodec* codec = null;
@@ -227,25 +232,32 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		}
 
 		public void Dispose() {
+			// Null each field after freeing so a finalizer running after Dispose
+			// (or a double Dispose) can't pass dangling pointers back to FFmpeg.
 			if (_pFrame != null) {
 				AVFrame* pFrame = _pFrame;
 				ffmpeg.av_frame_free(&pFrame);
+				_pFrame = null;
 			}
 			if (_pPacket != null) {
 				AVPacket* pPacket = _pPacket;
 				ffmpeg.av_packet_free(&pPacket);
+				_pPacket = null;
 			}
 			if (_pSwrContext != null) {
 				SwrContext* swr = _pSwrContext;
 				ffmpeg.swr_free(&swr);
+				_pSwrContext = null;
 			}
 			if (_pCodecContext != null) {
 				AVCodecContext* pCodecContext = _pCodecContext;
 				ffmpeg.avcodec_free_context(&pCodecContext);
+				_pCodecContext = null;
 			}
 			if (_pFormatContext != null) {
 				AVFormatContext* pFormatContext = _pFormatContext;
 				ffmpeg.avformat_close_input(&pFormatContext);
+				_pFormatContext = null;
 			}
 			GC.SuppressFinalize(this);
 		}

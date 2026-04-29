@@ -19,11 +19,11 @@ using FFmpeg.AutoGen;
 
 namespace VDF.Core.FFTools.FFmpegNative {
 	unsafe class VideoStreamDecoder : IDisposable {
-		private readonly AVCodecContext* _pCodecContext;
-		private readonly AVFormatContext* _pFormatContext;
-		private readonly AVFrame* _pFrame;
-		private readonly AVPacket* _pPacket;
-		private readonly AVFrame* _pReceivedFrame;
+		private AVCodecContext* _pCodecContext;
+		private AVFormatContext* _pFormatContext;
+		private AVFrame* _pFrame;
+		private AVPacket* _pPacket;
+		private AVFrame* _pReceivedFrame;
 		private readonly int _streamIndex;
 		private readonly AVIOInterruptCB_callback _interruptCbDelegate;
 		private readonly long _deadlineTicks;
@@ -43,8 +43,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_pReceivedFrame = ffmpeg.av_frame_alloc();
 			if (_pReceivedFrame == null)
 				throw new FFInvalidExitCodeException("Failed to allocate AVFrame for received frame.");
+			// avformat_open_input frees the context and nulls the local on failure.
+			// Sync the field with the local before checking the result so the finalizer
+			// does not later see a dangling pointer if the open fails.
 			var pFormatContext = _pFormatContext;
-			ffmpeg.avformat_open_input(&pFormatContext, url, null, null).ThrowExceptionIfError();
+			int openRet = ffmpeg.avformat_open_input(&pFormatContext, url, null, null);
+			_pFormatContext = pFormatContext;
+			openRet.ThrowExceptionIfError();
 			ffmpeg.avformat_find_stream_info(_pFormatContext, null).ThrowExceptionIfError();
 			AVCodec* codec = null;
 
@@ -98,19 +103,33 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		}
 
 		public void ReleaseUnmanaged() {
-			AVFrame* pFrame = _pFrame;
-			ffmpeg.av_frame_free(&pFrame);
-			AVFrame* pReceivedFrame = _pReceivedFrame;
-			ffmpeg.av_frame_free(&pReceivedFrame);
-
-			AVPacket* pPacket = _pPacket;
-			ffmpeg.av_packet_free(&pPacket);
-
-			AVCodecContext* pCodecContext = _pCodecContext;
-			ffmpeg.avcodec_free_context(&pCodecContext);
-
-			AVFormatContext* pFormatContext = _pFormatContext;
-			ffmpeg.avformat_close_input(&pFormatContext);
+			// Null each field after freeing so a partially-constructed object's finalizer
+			// or a double-Dispose can't pass dangling pointers back to FFmpeg.
+			if (_pFrame != null) {
+				AVFrame* pFrame = _pFrame;
+				ffmpeg.av_frame_free(&pFrame);
+				_pFrame = null;
+			}
+			if (_pReceivedFrame != null) {
+				AVFrame* pReceivedFrame = _pReceivedFrame;
+				ffmpeg.av_frame_free(&pReceivedFrame);
+				_pReceivedFrame = null;
+			}
+			if (_pPacket != null) {
+				AVPacket* pPacket = _pPacket;
+				ffmpeg.av_packet_free(&pPacket);
+				_pPacket = null;
+			}
+			if (_pCodecContext != null) {
+				AVCodecContext* pCodecContext = _pCodecContext;
+				ffmpeg.avcodec_free_context(&pCodecContext);
+				_pCodecContext = null;
+			}
+			if (_pFormatContext != null) {
+				AVFormatContext* pFormatContext = _pFormatContext;
+				ffmpeg.avformat_close_input(&pFormatContext);
+				_pFormatContext = null;
+			}
 		}
 
 		public bool TryDecodeFrame(out AVFrame frame, TimeSpan position) {
