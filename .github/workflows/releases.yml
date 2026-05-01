@@ -60,8 +60,6 @@ jobs:
     - name: Build
       shell: bash
       run: |
-          # Add nuget sources
-          dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
           # Build GUI
           dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputGUI"
           # Build CLI
