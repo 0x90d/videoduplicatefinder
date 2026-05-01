@@ -14,6 +14,8 @@
 // */
 //
 
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using VDF.Core.Utils;
 
 namespace VDF.Core.Tests.Utils;
@@ -175,6 +177,51 @@ public class GrayBytesUtilsTests {
 		img1[2] = 0xEF; img2[2] = 0xEF; // just below white -> kept
 		float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(img1, img2, ignoreBlackPixels: true, ignoreWhitePixels: true);
 		Assert.Equal(0f, diff); // 3 valid pairs, all equal
+	}
+
+	[Fact]
+	public void GetGrayScaleValues_DeterministicForSameInput() {
+		// Removing the redundant .Grayscale() call after CloneAs<L8>() must not change output
+		// across runs of the same input. Lock determinism with a fixed gradient so any
+		// upstream change in ImageSharp's resize semantics surfaces as a test failure.
+		using var img = new Image<Rgba32>(64, 48);
+		img.ProcessPixelRows(accessor => {
+			for (int y = 0; y < accessor.Height; y++) {
+				var row = accessor.GetRowSpan(y);
+				for (int x = 0; x < row.Length; x++) {
+					byte v = (byte)((x * 4 + y * 5) & 0xFF);
+					row[x] = new Rgba32(v, v, v, 255);
+				}
+			}
+		});
+
+		byte[]? a = GrayBytesUtils.GetGrayScaleValues(img);
+		byte[]? b = GrayBytesUtils.GetGrayScaleValues(img);
+		Assert.NotNull(a);
+		Assert.NotNull(b);
+		Assert.Equal(1024, a.Length);
+		Assert.Equal(a, b);
+	}
+
+	[Fact]
+	public void GetGrayScaleValues_GrayInputProducesNearIdenticalLuminance() {
+		// CloneAs<L8> on a gray Rgba32 input maps each pixel to its luma.
+		// For a uniform-gray source (R=G=B=128), every output byte should be ~128
+		// (small ImageSharp resize-filter dithering aside). This is the property
+		// the dropped .Grayscale() call did NOT improve.
+		using var img = new Image<Rgba32>(128, 96);
+		img.ProcessPixelRows(accessor => {
+			for (int y = 0; y < accessor.Height; y++) {
+				var row = accessor.GetRowSpan(y);
+				for (int x = 0; x < row.Length; x++)
+					row[x] = new Rgba32(128, 128, 128, 255);
+			}
+		});
+
+		byte[]? gray = GrayBytesUtils.GetGrayScaleValues(img);
+		Assert.NotNull(gray);
+		foreach (byte b in gray)
+			Assert.InRange(b, (byte)126, (byte)130);
 	}
 
 	[Theory]

@@ -44,8 +44,11 @@ namespace VDF.Core.Utils {
 
 		public static unsafe byte[]? GetGrayScaleValues(Image original, double darkPercent = 80) {
 
+			// CloneAs<L8> already produces a single-channel luminance image, so an additional
+			// .Grayscale() call only re-applies the BT.709 luma matrix to L=L=L, leaving values
+			// unchanged. Removing it skips a full Vector4 roundtrip per pixel of the resized image.
 			using var img = original.CloneAs<L8>();
-			img.Mutate(ctx => ctx.Resize(Side, Side).Grayscale());
+			img.Mutate(ctx => ctx.Resize(Side, Side));
 
 			byte[] buffer = new byte[GrayByteValueLength];
 
@@ -69,8 +72,10 @@ namespace VDF.Core.Utils {
 		}
 		public static unsafe byte[]? GetGrayScaleValues16x16(Image original, double darkPercent = 80) {
 			const int graybyteLength = 256;
+			// See GetGrayScaleValues — CloneAs<L8> already converts to grayscale; the
+			// subsequent .Grayscale() was a no-op on values, just wasted work.
 			using var img = original.CloneAs<L8>();
-			img.Mutate(ctx => ctx.Resize(OldSide, OldSide).Grayscale());
+			img.Mutate(ctx => ctx.Resize(OldSide, OldSide));
 
 			byte[] buffer = new byte[graybyteLength];
 
