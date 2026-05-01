@@ -16,6 +16,7 @@
 
 using VDF.Core.FFTools;
 using VDF.Core.FFTools.FFmpegNative;
+using VDF.TestSupport;
 
 namespace VDF.IntegrationTests.Fixtures;
 

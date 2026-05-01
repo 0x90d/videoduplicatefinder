@@ -261,3 +261,7 @@ __pycache__/
 *.pyc
 .vscode/launch.json
 .vscode/
+
+# BenchmarkDotNet output (HTML/CSV/MD/JSON reports + intermediate build dirs)
+BenchmarkDotNet.Artifacts/
+BenchmarkLogs/
