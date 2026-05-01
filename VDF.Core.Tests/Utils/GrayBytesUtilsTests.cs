@@ -145,4 +145,81 @@ public class GrayBytesUtilsTests {
 		float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(img1, img2, ignoreBlackPixels: true, ignoreWhitePixels: false);
 		Assert.Equal(0f, diff);
 	}
+
+	[Fact]
+	public void PercentageDifferenceWithoutSpecificPixels_IgnoresWhitePixels() {
+		byte[] img1 = new byte[1024];
+		byte[] img2 = new byte[1024];
+		// All pixels are white (>=0xF0) -> should all be skipped
+		Array.Fill(img1, (byte)0xFF);
+		Array.Fill(img2, (byte)0xF8);
+
+		// One non-white pair so the counter is > 0 and we don't divide by zero.
+		img1[0] = 0x80;
+		img2[0] = 0x80;
+		float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(img1, img2, ignoreBlackPixels: false, ignoreWhitePixels: true);
+		Assert.Equal(0f, diff);
+	}
+
+	[Fact]
+	public void PercentageDifferenceWithoutSpecificPixels_BoundaryValues() {
+		// BlackPixelLimit = 0x20, WhitePixelLimit = 0xF0.
+		// Original semantics: pixel valid iff v > 0x20 AND v < 0xF0.
+		// At the boundaries (=0x20 or =0xF0) the pixel must be EXCLUDED, not kept.
+		byte[] img1 = new byte[1024];
+		byte[] img2 = new byte[1024];
+		Array.Fill(img1, (byte)0x20); // exactly at black limit -> excluded
+		Array.Fill(img2, (byte)0xF0); // exactly at white limit -> excluded
+		img1[0] = 0x80; img2[0] = 0x80;
+		img1[1] = 0x21; img2[1] = 0x21; // just above black -> kept (=valid pair, same value)
+		img1[2] = 0xEF; img2[2] = 0xEF; // just below white -> kept
+		float diff = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(img1, img2, ignoreBlackPixels: true, ignoreWhitePixels: true);
+		Assert.Equal(0f, diff); // 3 valid pairs, all equal
+	}
+
+	[Theory]
+	[InlineData(false, false)]
+	[InlineData(true, false)]
+	[InlineData(false, true)]
+	[InlineData(true, true)]
+	public void PercentageDifferenceWithoutSpecificPixels_MatchesScalarReference(bool ignoreBlack, bool ignoreWhite) {
+		// Lock the SIMD path to bit-for-bit parity with a scalar reference written here.
+		// The implementation may dispatch to AVX2 internally; this test makes sure that path
+		// produces the same result as the original scalar formula.
+		var rng = new Random(20260501);
+		for (int trial = 0; trial < 8; trial++) {
+			byte[] a = new byte[1024];
+			byte[] b = new byte[1024];
+			rng.NextBytes(a);
+			rng.NextBytes(b);
+
+			float actual = GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(a, b, ignoreBlack, ignoreWhite);
+			float expected = ScalarReference(a, b, ignoreBlack, ignoreWhite);
+
+			// Both are the same arithmetic in different order; expect exact equality (or NaN==NaN).
+			if (float.IsNaN(expected))
+				Assert.True(float.IsNaN(actual), $"Expected NaN, got {actual}");
+			else
+				Assert.Equal(expected, actual, precision: 6);
+		}
+
+		static float ScalarReference(byte[] img1, byte[] img2, bool ignoreBlackPixels, bool ignoreWhitePixels) {
+			const byte BlackPixelLimit = 0x20;
+			const byte WhitePixelLimit = 0xF0;
+			long diff = 0;
+			int counter = 0;
+			for (int i = 0; i < img1.Length; i++) {
+				bool isValid = true;
+				if (ignoreBlackPixels)
+					isValid = img1[i] > BlackPixelLimit && img2[i] > BlackPixelLimit;
+				if (!isValid) continue;
+				if (ignoreWhitePixels)
+					isValid = img1[i] < WhitePixelLimit && img2[i] < WhitePixelLimit;
+				if (!isValid) continue;
+				diff += Math.Abs(img1[i] - img2[i]);
+				counter++;
+			}
+			return (float)diff / counter / 256f;
+		}
+	}
 }
