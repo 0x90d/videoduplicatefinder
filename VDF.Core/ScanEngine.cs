@@ -1117,40 +1117,54 @@ namespace VDF.Core {
 				});
 
 			// --- Sequential phase: build groups from matches (preserving longest-source-first order) ---
-			var sourceGroupId = new Dictionary<string, Guid>(
-				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-			var assignedClips = new HashSet<string>(
-				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-			int matchesFound = 0;
+			// A clip is kept with its first (longest) matching source. Sources whose only
+			// candidate clips are already claimed are skipped entirely - adding them would
+			// produce singleton groups in the result list.
+			var assignments = AssignPartialClipGroups(matches);
+			var addedSources = new HashSet<int>();
 
-			foreach (var (si, ci, sim, offsetSec) in matches.OrderBy(m => m.sourceIdx).ThenBy(m => m.clipIdx)) {
+			foreach (var (si, ci, sim, offsetSec, groupId) in assignments) {
 				FileEntry source = videos[si];
 				FileEntry clip = videos[ci];
-				matchesFound++;
 
 				if (Settings.ExtendedFFToolsLogging)
 					Logger.Instance.Info($"[Partial] {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {clip.AudioFingerprint!.Length}/{source.AudioFingerprint!.Length} blocks)");
 
-				if (!sourceGroupId.TryGetValue(source.Path, out Guid groupId)) {
-					groupId = Guid.NewGuid();
-					sourceGroupId[source.Path] = groupId;
+				if (addedSources.Add(si))
 					Duplicates.Add(new DuplicateItem(source, 0f, groupId, DuplicateFlags.None));
-				}
 
-				if (!assignedClips.Contains(clip.Path)) {
-					assignedClips.Add(clip.Path);
-					var clipItem = new DuplicateItem(clip, 1f - sim, groupId, DuplicateFlags.PartialClip) {
-						PartialClipOffset = TimeSpan.FromSeconds(offsetSec)
-					};
-					Duplicates.Add(clipItem);
-				}
-				else {
-					var existing = Duplicates.FirstOrDefault(d => d.Path == clip.Path && d.Flags.HasFlag(DuplicateFlags.PartialClip));
-					if (existing != null) existing.GroupId = groupId;
-				}
+				Duplicates.Add(new DuplicateItem(clip, 1f - sim, groupId, DuplicateFlags.PartialClip) {
+					PartialClipOffset = TimeSpan.FromSeconds(offsetSec)
+				});
 			}
 
-			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matchesFound} match(es).");
+			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
+		}
+
+		/// <summary>
+		/// Resolves overlapping partial-clip matches into deterministic group assignments.
+		/// Matches are processed in (sourceIdx ASC, clipIdx ASC) order - since callers sort
+		/// videos by duration descending, this means each clip is bound to the longest
+		/// source that contains it. Subsequent matches for an already-assigned clip are
+		/// dropped, and their would-be source is omitted unless it has unclaimed clips of
+		/// its own. This prevents singleton groups in the output.
+		/// </summary>
+		internal static List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)>
+			AssignPartialClipGroups(IEnumerable<(int sourceIdx, int clipIdx, float sim, int offsetSec)> matches) {
+			var sourceGroupId = new Dictionary<int, Guid>();
+			var assignedClips = new HashSet<int>();
+			var assignments = new List<(int, int, float, int, Guid)>();
+
+			foreach (var (si, ci, sim, offsetSec) in matches.OrderBy(m => m.sourceIdx).ThenBy(m => m.clipIdx)) {
+				if (!assignedClips.Add(ci)) continue;
+
+				if (!sourceGroupId.TryGetValue(si, out Guid groupId)) {
+					groupId = Guid.NewGuid();
+					sourceGroupId[si] = groupId;
+				}
+				assignments.Add((si, ci, sim, offsetSec, groupId));
+			}
+			return assignments;
 		}
 
 		/// <summary>
