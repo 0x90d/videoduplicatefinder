@@ -236,14 +236,31 @@ namespace VDF.Core.FFTools {
 				StartInfo = psi
 			};
 			string errOut = string.Empty;
+			// Collapse consecutive identical stderr lines: a single broken HEVC/H.264
+			// stream can emit the same decoder error tens of thousands of times per
+			// file (e.g. "[hevc] Error constructing the frame RPS"), turning the log
+			// into noise. Track the last line and a repeat count, then flush.
+			string lastErrLine = string.Empty;
+			int repeatCount = 0;
 			byte[]? bytes = null;
 			try {
 				process.EnableRaisingEvents = true;
 				process.Start();
 				if (extendedLogging) {
 					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-						if (e.Data?.Length > 0)
-							errOut += Environment.NewLine + e.Data;
+						if (e.Data?.Length > 0) {
+							if (e.Data == lastErrLine) {
+								repeatCount++;
+							}
+							else {
+								if (repeatCount > 0) {
+									errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+									repeatCount = 0;
+								}
+								errOut += Environment.NewLine + e.Data;
+								lastErrLine = e.Data;
+							}
+						}
 					});
 					process.BeginErrorReadLine();
 				}
@@ -276,6 +293,8 @@ namespace VDF.Core.FFTools {
 				catch { }
 				bytes = null;
 			}
+			if (repeatCount > 0)
+				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
 			if (bytes == null || errOut.Length > 0) {
 				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(isGrayByte ? "graybytes" : "thumbnail")} from: {settings.File}";
 				if (extendedLogging) {

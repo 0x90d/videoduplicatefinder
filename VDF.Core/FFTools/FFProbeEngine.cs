@@ -52,7 +52,10 @@ namespace VDF.Core.FFTools {
 				process.Start();
 				if (extendedLogging) {
 					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-						if (e.Data?.Length > 0)
+						// "Referenced QT chapter track not found" is a benign QuickTime quirk
+						// emitted by ffprobe at error level. The video stream is fine; the
+						// message just floods the log on otherwise-valid MP4/MOV files.
+						if (e.Data?.Length > 0 && !e.Data.Contains("Referenced QT chapter track not found", StringComparison.Ordinal))
 							errOut += Environment.NewLine + e.Data;
 					});
 					process.BeginErrorReadLine();
