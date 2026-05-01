@@ -104,4 +104,15 @@ static class TestVideoGenerator {
 		RunFfmpeg(ffmpegPath,
 			$"-y -f lavfi -i smptebars=duration=2:size=320x240:rate=25 " +
 			$"-c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p \"{outputPath}\"");
+
+	/// <summary>
+	/// 2s H.264 with the bitstream deliberately corrupted via the noise BSF, used to
+	/// regression-test the AVERROR_INVALIDDATA tolerance added in <c>VideoStreamDecoder.TryDecodeFrame</c>.
+	/// Generates a clean clip first, then remuxes through <c>noise=amount=20:dropamount=8</c>
+	/// to inject and drop bytes — heavy enough to make the demuxer/decoder return INVALIDDATA
+	/// but not so heavy that the file is unparseable. See issue #731.
+	/// </summary>
+	public static bool GenerateH264_Corrupted(string ffmpegPath, string cleanInputPath, string outputPath) =>
+		RunFfmpeg(ffmpegPath,
+			$"-y -i \"{cleanInputPath}\" -c copy -bsf:v \"noise=amount=20:dropamount=8\" \"{outputPath}\"");
 }

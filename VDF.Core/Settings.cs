@@ -19,8 +19,11 @@ namespace VDF.Core {
 	public enum FolderMatchMode { None, SameFolderOnly, DifferentFolderOnly }
 
 	public sealed class Settings {
-		public HashSet<string> IncludeList { get; } = new HashSet<string>();
-		public HashSet<string> BlackList { get; } = new HashSet<string>();
+		// Settable so System.Text.Json can populate these from --settings JSON; without
+		// a setter STJ silently leaves them empty even with IncludeFields=true (read-only
+		// collection properties aren't repopulated by the default object converter).
+		public HashSet<string> IncludeList { get; set; } = new HashSet<string>();
+		public HashSet<string> BlackList { get; set; } = new HashSet<string>();
 
 		public bool IgnoreReadOnlyFolders;
 		public bool IgnoreReparsePoints;

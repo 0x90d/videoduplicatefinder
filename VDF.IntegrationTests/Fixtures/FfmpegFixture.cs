@@ -34,6 +34,7 @@ public class FfmpegFixture : IDisposable {
 	public string? HEVC_10bit { get; }
 	public string? VP9 { get; }
 	public string? H264_Different { get; }
+	public string? H264_Corrupted { get; }
 
 	public bool HasLibx265 { get; }
 	public bool HasLibvpxVp9 { get; }
@@ -89,6 +90,15 @@ public class FfmpegFixture : IDisposable {
 		string diffPath = Path.Combine(TempDir, "h264_different.mp4");
 		if (TestVideoGenerator.GenerateH264_Different(ffmpegPath, diffPath))
 			H264_Different = diffPath;
+
+		// Corrupted H.264 fixture: re-encode the clean H.264 through bsf=noise so the
+		// native decoder will hit AVERROR_INVALIDDATA from av_read_frame /
+		// avcodec_send_packet. Used by VideoStreamDecoderTests to verify the #731 fix.
+		if (H264_8bit != null) {
+			string corruptPath = Path.Combine(TempDir, "h264_corrupted.mp4");
+			if (TestVideoGenerator.GenerateH264_Corrupted(ffmpegPath, H264_8bit, corruptPath))
+				H264_Corrupted = corruptPath;
+		}
 	}
 
 	public void Dispose() {

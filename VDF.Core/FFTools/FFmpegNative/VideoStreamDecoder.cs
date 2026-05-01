@@ -148,24 +148,47 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			// Decode forward from keyframe until we reach the target PTS.
 			// Cap iterations to prevent infinite loops on corrupt files.
 			const int maxIterations = 10_000;
+			// AVERROR_INVALIDDATA on the first read(s) after seek is normal: the demuxer
+			// can hand us partial packets between the seek target and the next keyframe.
+			// Skip them silently rather than tearing down the decoder and falling back
+			// to the CLI process — see issue #731. Cap so a truly corrupt file still bails.
+			const int maxBadPackets = 64;
+			int badPacketCount = 0;
 			for (int iter = 0; iter < maxIterations; iter++) {
 				int error;
-				do {
+				while (true) {
 					ffmpeg.av_packet_unref(_pPacket);
 					error = ffmpeg.av_read_frame(_pFormatContext, _pPacket);
 					if (error == ffmpeg.AVERROR_EOF) {
 						frame = *_pFrame;
 						return false;
 					}
+					if (error == ffmpeg.AVERROR_INVALIDDATA) {
+						if (++badPacketCount > maxBadPackets) {
+							frame = *_pFrame;
+							return false;
+						}
+						continue;
+					}
 					error.ThrowExceptionIfError();
-				} while (_pPacket->stream_index != _streamIndex);
+					if (_pPacket->stream_index == _streamIndex) break;
+				}
 
+				int sendErr;
 				try {
-					ffmpeg.avcodec_send_packet(_pCodecContext, _pPacket).ThrowExceptionIfError();
+					sendErr = ffmpeg.avcodec_send_packet(_pCodecContext, _pPacket);
 				}
 				finally {
 					ffmpeg.av_packet_unref(_pPacket);
 				}
+				if (sendErr == ffmpeg.AVERROR_INVALIDDATA || sendErr == ffmpeg.AVERROR(ffmpeg.EINVAL)) {
+					if (++badPacketCount > maxBadPackets) {
+						frame = *_pFrame;
+						return false;
+					}
+					continue;
+				}
+				sendErr.ThrowExceptionIfError();
 
 				error = ffmpeg.avcodec_receive_frame(_pCodecContext, _pFrame);
 				if (error == ffmpeg.AVERROR(ffmpeg.EAGAIN))

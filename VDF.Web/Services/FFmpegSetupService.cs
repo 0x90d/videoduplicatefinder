@@ -165,7 +165,10 @@ public sealed class FFmpegSetupService {
 		var plans = new List<FfmpegDownloadPlan>();
 		int ffMajor = MapToFfmpegMajor(ffmpeg.LIBAVCODEC_VERSION_MAJOR, ffmpeg.LIBAVFORMAT_VERSION_MAJOR, ffmpeg.LIBAVUTIL_VERSION_MAJOR);
 		string versionTag = ffMajor switch {
-			8 => "8.0",
+			// BtbN/yt-dlp builds publish only the latest minor per major; the n8.0 tag
+			// was retired when 8.1 landed, so a hardcoded "8.0" 404s on every fresh
+			// install. Keep this aligned with whatever minor BtbN currently ships.
+			8 => "8.1",
 			7 => "7.1",
 			6 => "6.1",
 			5 => "5.1",
