@@ -188,6 +188,22 @@ namespace VDF.GUI.Data {
 			get => _CustomFFArguments;
 			set => this.RaiseAndSetIfChanged(ref _CustomFFArguments, value);
 		}
+		string _CustomFFmpegPath = string.Empty;
+		[JsonPropertyName("CustomFFmpegPath")]
+		public string CustomFFmpegPath {
+			get => _CustomFFmpegPath;
+			set { this.RaiseAndSetIfChanged(ref _CustomFFmpegPath, value);
+				VDF.Core.FFTools.FFToolsUtils.CustomFFmpegPath = value;
+			}
+		}
+		string _CustomFFprobePath = string.Empty;
+		[JsonPropertyName("CustomFFprobePath")]
+		public string CustomFFprobePath {
+			get => _CustomFFprobePath;
+			set { this.RaiseAndSetIfChanged(ref _CustomFFprobePath, value);
+				VDF.Core.FFTools.FFToolsUtils.CustomFFprobePath = value;
+			}
+		}
 		bool _BackupAfterListChanged = true;
 		[JsonPropertyName("BackupAfterListChanged")]
 		public bool BackupAfterListChanged {
@@ -538,6 +554,16 @@ namespace VDF.GUI.Data {
 					Instance.IgnoreWhitePixels = value;
 			foreach (var n in xDoc.Descendants("CustomFFArguments"))
 				Instance.CustomFFArguments = n.Value;
+			foreach (var n in xDoc.Descendants("CustomFFmpegPath")) 
+			{
+				Instance.CustomFFmpegPath = n.Value;
+				VDF.Core.FFTools.FFToolsUtils.CustomFFmpegPath = n.Value;
+			}
+			foreach (var n in xDoc.Descendants("CustomFFprobePath")) 
+			{
+				Instance.CustomFFprobePath = n.Value;
+				VDF.Core.FFTools.FFToolsUtils.CustomFFprobePath = n.Value;
+			}
 			foreach (var n in xDoc.Descendants("LastCustomSelectExpression"))
 				Instance.LastCustomSelectExpression = n.Value;
 			foreach (var n in xDoc.Descendants("CompareHorizontallyFlipped"))

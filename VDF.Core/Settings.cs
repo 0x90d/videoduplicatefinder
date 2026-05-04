@@ -21,6 +21,9 @@ namespace VDF.Core {
 	public sealed class Settings {
 		public HashSet<string> IncludeList { get; } = new HashSet<string>();
 		public HashSet<string> BlackList { get; } = new HashSet<string>();
+		
+		public string CustomFFmpegPath { get; set; } = string.Empty;
+		public string CustomFFprobePath { get; set; } = string.Empty;
 
 		public bool IgnoreReadOnlyFolders;
 		public bool IgnoreReparsePoints;
