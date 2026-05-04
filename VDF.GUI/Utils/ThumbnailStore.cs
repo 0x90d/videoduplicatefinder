@@ -51,6 +51,26 @@ namespace VDF.GUI.Utils {
 			return f;
 		}
 
+		/// <summary>
+		/// Deletes the ThumbPack if the thumbnail width setting changed since the cache was created.
+		/// Stores the current width in a marker file alongside the pack.
+		/// </summary>
+		public static void InvalidateIfWidthChanged(string packFolder, int currentWidth) {
+			try {
+				var markerPath = Path.Combine(packFolder, "thumbwidth.txt");
+				if (File.Exists(markerPath)) {
+					var stored = File.ReadAllText(markerPath).Trim();
+					if (int.TryParse(stored, out var oldWidth) && oldWidth == currentWidth)
+						return; // width unchanged, cache is valid
+				}
+				// Width changed or marker doesn't exist — delete the pack so it regenerates
+				DeletePackFolder(packFolder);
+				Directory.CreateDirectory(packFolder);
+				File.WriteAllText(Path.Combine(packFolder, "thumbwidth.txt"), currentWidth.ToString());
+			}
+			catch { /* ignore */ }
+		}
+
 		public static void SetActiveProvider(ThumbPack? provider) {
 			var path = Provider?.GetDirectory();
 			try { Provider?.Dispose(); } catch { }
@@ -109,6 +129,7 @@ namespace VDF.GUI.Utils {
 				}
 			}
 		}
+
 		public bool TryGetEntry(string key, out long off, out int len) {
 			lock (_gate) {
 				if (_idx.TryGetValue(key, out var e)) { off = e.off; len = e.len; return true; }
@@ -223,13 +244,14 @@ namespace VDF.GUI.Utils {
 		static long ApproxSize(Avalonia.Media.Imaging.Bitmap bmp)
 			=> (long)bmp.PixelSize.Width * bmp.PixelSize.Height * 4;
 
-		public static Avalonia.Media.Imaging.Bitmap GetOrCreate(string key, Func<Avalonia.Media.Imaging.Bitmap> loader) {
+		public static Avalonia.Media.Imaging.Bitmap? GetOrCreate(string key, Func<Avalonia.Media.Imaging.Bitmap?> loader) {
 			lock (gate) {
 				if (map.TryGetValue(key, out var e)) {
 					lru.Remove(e.node); lru.AddFirst(e.node); return e.bmp;
 				}
 			}
 			var bmp = loader();
+			if (bmp == null) return null;
 			var size = ApproxSize(bmp);
 			lock (gate) {
 				var node = new LinkedListNode<string>(key);

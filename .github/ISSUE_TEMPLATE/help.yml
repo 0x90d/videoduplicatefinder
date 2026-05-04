@@ -1,0 +1,42 @@
+name: Help
+description: Ask a question about Video Duplicate Finder
+title: "[Help]: "
+labels: ["question"]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: variant
+    attributes:
+      label: VDF variant
+      options:
+        - Desktop (GUI)
+        - CLI
+        - Web UI
+        - Docker
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: A clear and concise detailed question.
+    validations:
+      required: true
+
+  - type: textarea
+    id: snapshots
+    attributes:
+      label: Snapshots
+      description: Optionally include snapshots to help clarify the question.

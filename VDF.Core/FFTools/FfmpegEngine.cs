@@ -21,6 +21,8 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
 
@@ -35,6 +37,140 @@ namespace VDF.Core.FFTools {
 		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
 
+		static AVHWDeviceType GetConfiguredHardwareDeviceType() => HardwareAccelerationMode switch {
+			FFHardwareAccelerationMode.vdpau => AVHWDeviceType.AV_HWDEVICE_TYPE_VDPAU,
+			FFHardwareAccelerationMode.dxva2 => AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2,
+			FFHardwareAccelerationMode.vaapi => AVHWDeviceType.AV_HWDEVICE_TYPE_VAAPI,
+			FFHardwareAccelerationMode.qsv => AVHWDeviceType.AV_HWDEVICE_TYPE_QSV,
+			FFHardwareAccelerationMode.cuda => AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA,
+			FFHardwareAccelerationMode.videotoolbox => AVHWDeviceType.AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
+			FFHardwareAccelerationMode.d3d11va => AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA,
+			FFHardwareAccelerationMode.drm => AVHWDeviceType.AV_HWDEVICE_TYPE_DRM,
+			//FFHardwareAccelerationMode.opencl => AVHWDeviceType.AV_HWDEVICE_TYPE_OPENCL, OpenCL support is irrelevant for frame extraction
+			FFHardwareAccelerationMode.mediacodec => AVHWDeviceType.AV_HWDEVICE_TYPE_MEDIACODEC,
+			FFHardwareAccelerationMode.vulkan => AVHWDeviceType.AV_HWDEVICE_TYPE_VULKAN,
+			_ => AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
+		};
+
+		/// <summary>
+		/// Copies a 32x32 GRAY8 frame produced by <see cref="VideoFrameConverter"/> into a
+		/// freshly-allocated 1024-byte buffer. swscale uses an aligned padded destination
+		/// (linesize >= width); the common case is linesize == 32 because we asked for
+		/// align=0 and 32 is already aligned, in which case a single copy is enough.
+		/// </summary>
+		static unsafe byte[] ExtractGray32FromFrame(AVFrame convertedFrame) {
+			const int N = 32;
+			int width = convertedFrame.width;
+			int height = convertedFrame.height;
+			if (width != N || height != N)
+				throw new Exception($"Unexpected size {width}x{height}, expected {N}x{N}.");
+			if (convertedFrame.data[0] == null)
+				throw new Exception("Converted frame has no data[0] (null).");
+			int srcStride = convertedFrame.linesize[0];
+			if (srcStride < width)
+				throw new Exception($"Invalid linesize ({srcStride}) for width {width}.");
+
+			byte[] outBuf = new byte[width * height];
+			fixed (byte* destPtr = outBuf) {
+				byte* sourcePtr = convertedFrame.data[0];
+				if (srcStride == width) {
+					Buffer.MemoryCopy(sourcePtr, destPtr, width * height, width * height);
+				}
+				else {
+					for (int y = 0; y < height; y++)
+						Buffer.MemoryCopy(sourcePtr + (y * srcStride), destPtr + (y * width), width, width);
+				}
+			}
+			return outBuf;
+		}
+
+		static int CountMissingGrayBytePositions(FileEntry videoFile, List<float> positions, double maxSamplingDurationSeconds) {
+			int missing = 0;
+			for (int i = 0; i < positions.Count; i++) {
+				double position = videoFile.GetGrayBytesIndex(positions[i], maxSamplingDurationSeconds);
+				if (!videoFile.grayBytes.ContainsKey(position))
+					missing++;
+			}
+			return missing;
+		}
+
+		/// <summary>
+		/// Opens a single <see cref="VideoStreamDecoder"/> and a single <see cref="VideoFrameConverter"/>
+		/// for the file, then walks the requested positions reusing both. This avoids the per-position
+		/// avformat_open_input + sws_getContext cost of looping <see cref="GetThumbnail"/>.
+		///
+		/// On any FFmpeg error we abort and return false; the caller falls back to the per-sample
+		/// CLI/native path so partial extraction still succeeds. Already-cached positions are skipped.
+		/// </summary>
+		static unsafe bool TryGetGrayBytesFromVideoNativeBatch(
+			FileEntry videoFile,
+			List<float> positions,
+			double maxSamplingDurationSeconds,
+			ref int tooDarkCounter,
+			Action<int>? onSampleComplete) {
+			const int N = 32;
+			try {
+				using var vsd = new VideoStreamDecoder(videoFile.Path, GetConfiguredHardwareDeviceType());
+				VideoFrameConverter? converter = null;
+				Size converterSourceSize = default;
+				AVPixelFormat converterSrcFmt = AVPixelFormat.AV_PIX_FMT_NONE;
+				try {
+					for (int i = 0; i < positions.Count; i++) {
+						double position = videoFile.GetGrayBytesIndex(positions[i], maxSamplingDurationSeconds);
+						if (videoFile.grayBytes.ContainsKey(position)) {
+							onSampleComplete?.Invoke(i + 1);
+							continue;
+						}
+
+						if (!vsd.TryDecodeFrame(out var srcFrame, TimeSpan.FromSeconds(position)))
+							throw new Exception($"TryDecodeFrame failed at pos={position} for '{videoFile.Path}'");
+
+						// HW decode reports the real (downloaded) sw_format on the frame itself,
+						// not on the codec context, so we read it post-decode. SW decode keeps it
+						// stable on the codec context.
+						Size sourceSize = new(
+							srcFrame.width > 0 ? srcFrame.width : vsd.FrameSize.Width,
+							srcFrame.height > 0 ? srcFrame.height : vsd.FrameSize.Height);
+						AVPixelFormat srcPixFmt = vsd.IsHardwareDecode ? (AVPixelFormat)srcFrame.format : vsd.PixelFormat;
+						if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB)
+							throw new Exception($"Invalid source pixel format {srcPixFmt}");
+						if (sourceSize.Width <= 0 || sourceSize.Height <= 0)
+							throw new Exception($"Invalid source frame dimensions {sourceSize.Width}x{sourceSize.Height}");
+
+						// Reuse the SwsContext across positions when the source layout is unchanged.
+						// In practice this is the common case for the same file; the rebuild branch
+						// only fires if HW decode hands us a different sw_format on a later frame.
+						if (converter == null || sourceSize != converterSourceSize || srcPixFmt != converterSrcFmt) {
+							converter?.Dispose();
+							converter = new VideoFrameConverter(
+								sourceSize, srcPixFmt,
+								new Size(N, N), AVPixelFormat.AV_PIX_FMT_GRAY8,
+								VideoFrameConverter.ScaleQuality.Bicubic, bitExact: false);
+							converterSourceSize = sourceSize;
+							converterSrcFmt = srcPixFmt;
+						}
+
+						AVFrame convertedFrame = converter.Convert(srcFrame);
+						byte[] data = ExtractGray32FromFrame(convertedFrame);
+
+						if (!GrayBytesUtils.VerifyGrayScaleValues(data))
+							tooDarkCounter++;
+						videoFile.grayBytes.Add(position, data);
+						videoFile.PHashes.Add(position, pHash.PerceptualHash.ComputePHashFromGray32x32(data));
+						onSampleComplete?.Invoke(i + 1);
+					}
+				}
+				finally {
+					converter?.Dispose();
+				}
+				return true;
+			}
+			catch (Exception e) {
+				Logger.Instance.Info($"Native batch graybytes failed on '{videoFile.Path}', falling back to per-sample path. Exception: {e}");
+				return false;
+			}
+		}
+
 		public static unsafe byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
 
 			const int N = 32;
@@ -45,26 +181,27 @@ namespace VDF.Core.FFTools {
 				if (UseNativeBinding) {
 
 
-					AVHWDeviceType HWDevice = HardwareAccelerationMode switch {
-						FFHardwareAccelerationMode.vdpau => AVHWDeviceType.AV_HWDEVICE_TYPE_VDPAU,
-						FFHardwareAccelerationMode.dxva2 => AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2,
-						FFHardwareAccelerationMode.vaapi => AVHWDeviceType.AV_HWDEVICE_TYPE_VAAPI,
-						FFHardwareAccelerationMode.qsv => AVHWDeviceType.AV_HWDEVICE_TYPE_QSV,
-						FFHardwareAccelerationMode.cuda => AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA,
-						FFHardwareAccelerationMode.videotoolbox => AVHWDeviceType.AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
-						FFHardwareAccelerationMode.d3d11va => AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA,
-						FFHardwareAccelerationMode.drm => AVHWDeviceType.AV_HWDEVICE_TYPE_DRM,
-						//FFHardwareAccelerationMode.opencl => AVHWDeviceType.AV_HWDEVICE_TYPE_OPENCL, OpenCL support is irrelevant for frame extraction
-						FFHardwareAccelerationMode.mediacodec => AVHWDeviceType.AV_HWDEVICE_TYPE_MEDIACODEC,
-						FFHardwareAccelerationMode.vulkan => AVHWDeviceType.AV_HWDEVICE_TYPE_VULKAN,
-						_ => AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
-					};
+					AVHWDeviceType HWDevice = GetConfiguredHardwareDeviceType();
 
 					using var vsd = new VideoStreamDecoder(settings.File, HWDevice);
-					if (vsd.PixelFormat < 0 || vsd.PixelFormat >= AVPixelFormat.AV_PIX_FMT_NB)
-						throw new Exception($"Invalid source pixel format");
 
 					Size sourceSize = vsd.FrameSize;
+
+					// Decode first so we know the real source pixel format. For HW decode
+					// we can't know this up front — the downloaded sw_format depends on
+					// the stream's bit depth (NV12 for 8-bit, P010LE for 10-bit HEVC, etc.).
+					if (!vsd.TryDecodeFrame(out var srcFrame, settings.Position))
+						throw new Exception($"TryDecodeFrame failed at pos={settings.Position} for '{settings.File}'. size={sourceSize.Width}x{sourceSize.Height}");
+
+					AVPixelFormat srcPixFmt = vsd.IsHardwareDecode
+						? (AVPixelFormat)srcFrame.format
+						: vsd.PixelFormat;
+					if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB)
+						throw new Exception($"Invalid source pixel format {srcPixFmt}");
+
+					if (sourceSize.Width <= 0 || sourceSize.Height <= 0)
+						throw new Exception($"Invalid source frame dimensions {sourceSize.Width}x{sourceSize.Height}.");
+
 					Size destinationSize = isGrayByte ? new Size(N, N) :
 						settings.Fullsize == 1 ?
 							sourceSize :
@@ -75,15 +212,13 @@ namespace VDF.Core.FFTools {
 						AVPixelFormat.AV_PIX_FMT_BGRA;
 
 					using var vfc = new VideoFrameConverter(
-										sourceSize: vsd.FrameSize,
-										sourcePixelFormat: vsd.PixelFormat,
+										sourceSize: sourceSize,
+										sourcePixelFormat: srcPixFmt,
 										destinationSize: destinationSize,
 										destinationPixelFormat: destinationPixelFrmt,
 										quality: VideoFrameConverter.ScaleQuality.Bicubic,
 										bitExact: false);
 
-					if (!vsd.TryDecodeFrame(out var srcFrame, settings.Position))
-						throw new Exception($"TryDecodeFrame failed at pos={settings.Position} for '{settings.File}'. srcPixFmt={vsd.PixelFormat} size={sourceSize.Width}x{sourceSize.Height}");
 					AVFrame convertedFrame = vfc.Convert(srcFrame);
 
 					if (convertedFrame.data[0] == null)
@@ -114,9 +249,16 @@ namespace VDF.Core.FFTools {
 					else {
 						int width = convertedFrame.width;
 						int height = convertedFrame.height;
-						var totalBytes = width * height * 4;
+						if (width <= 0 || height <= 0)
+							throw new Exception($"Invalid converted frame dimensions {width}x{height}.");
+						long totalBytesLong = (long)width * height * 4;
+						if (totalBytesLong > 200_000_000) // ~200 MB sanity cap
+							throw new Exception($"Frame too large: {width}x{height} ({totalBytesLong} bytes).");
+						var totalBytes = (int)totalBytesLong;
 						var rgbaBytes = new byte[totalBytes];
 						int stride = convertedFrame.linesize[0];
+						if (stride < width * 4)
+							throw new Exception($"Invalid stride ({stride}) for width {width}.");
 						fixed (byte* destPtr = rgbaBytes) {
 							byte* sourcePtr = convertedFrame.data[0];
 							if (stride == width * 4) {
@@ -215,14 +357,31 @@ namespace VDF.Core.FFTools {
 				StartInfo = psi
 			};
 			string errOut = string.Empty;
+			// Collapse consecutive identical stderr lines: a single broken HEVC/H.264
+			// stream can emit the same decoder error tens of thousands of times per
+			// file (e.g. "[hevc] Error constructing the frame RPS"), turning the log
+			// into noise. Track the last line and a repeat count, then flush.
+			string lastErrLine = string.Empty;
+			int repeatCount = 0;
 			byte[]? bytes = null;
 			try {
 				process.EnableRaisingEvents = true;
 				process.Start();
 				if (extendedLogging) {
 					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-						if (e.Data?.Length > 0)
-							errOut += Environment.NewLine + e.Data;
+						if (e.Data?.Length > 0) {
+							if (e.Data == lastErrLine) {
+								repeatCount++;
+							}
+							else {
+								if (repeatCount > 0) {
+									errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+									repeatCount = 0;
+								}
+								errOut += Environment.NewLine + e.Data;
+								lastErrLine = e.Data;
+							}
+						}
 					});
 					process.BeginErrorReadLine();
 				}
@@ -255,6 +414,8 @@ namespace VDF.Core.FFTools {
 				catch { }
 				bytes = null;
 			}
+			if (repeatCount > 0)
+				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
 			if (bytes == null || errOut.Length > 0) {
 				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(isGrayByte ? "graybytes" : "thumbnail")} from: {settings.File}";
 				if (extendedLogging) {
@@ -265,13 +426,43 @@ namespace VDF.Core.FFTools {
 			}
 			return bytes;
 		}
-		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, double maxSamplingDurationSeconds, bool extendedLogging) {
+		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, double maxSamplingDurationSeconds, bool extendedLogging, Action<int>? onSampleComplete = null) {
+			// Count missing up front so the TooDark check below compares against samples
+			// we actually extracted this run, not the total positions (which may already
+			// be partially cached from a prior scan).
+			int missingPositions = CountMissingGrayBytePositions(videoFile, positions, maxSamplingDurationSeconds);
+			if (missingPositions == 0) {
+				for (int i = 0; i < positions.Count; i++)
+					onSampleComplete?.Invoke(i + 1);
+				return true;
+			}
+
 			int tooDarkCounter = 0;
 
+			// Native batch path: open file + decoder + sws context once, walk all positions.
+			// The for-loop fallback below recreates them per position, so on a 4-position scan
+			// this avoids ~3x of the per-file FFmpeg setup cost.
+			if (UseNativeBinding && TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete)) {
+				if (tooDarkCounter == missingPositions) {
+					videoFile.Flags.Set(EntryFlags.TooDark);
+					Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
+					return false;
+				}
+				return true;
+			}
+
+			// Re-count: the batch path may have populated some positions before throwing.
+			missingPositions = CountMissingGrayBytePositions(videoFile, positions, maxSamplingDurationSeconds);
+			if (missingPositions == 0)
+				return true;
+
+			tooDarkCounter = 0;
 			for (int i = 0; i < positions.Count; i++) {
 				double position = videoFile.GetGrayBytesIndex(positions[i], maxSamplingDurationSeconds);
-				if (videoFile.grayBytes.ContainsKey(position))
+				if (videoFile.grayBytes.ContainsKey(position)) {
+					onSampleComplete?.Invoke(i + 1);
 					continue;
+				}
 
 				var data = GetThumbnail(new FfmpegSettings {
 					File = videoFile.Path,
@@ -286,8 +477,9 @@ namespace VDF.Core.FFTools {
 					tooDarkCounter++;
 				videoFile.grayBytes.Add(position, data);
 				videoFile.PHashes.Add(position, pHash.PerceptualHash.ComputePHashFromGray32x32(data));
+				onSampleComplete?.Invoke(i + 1);
 			}
-			if (tooDarkCounter == positions.Count) {
+			if (tooDarkCounter == missingPositions) {
 				videoFile.Flags.Set(EntryFlags.TooDark);
 				Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
 				return false;
@@ -316,6 +508,34 @@ namespace VDF.Core.FFTools {
 			if (current.Length > 0)
 				tokens.Add(current.ToString());
 			return tokens;
+		}
+
+		/// <summary>
+		/// Extracts a single JPEG thumbnail from a video file at the given position.
+		/// Returns null if extraction fails.
+		/// </summary>
+		public static byte[]? ExtractThumbnailJpeg(string filePath, TimeSpan position, int maxWidth = 0, bool extendedLogging = false) {
+			var settings = new FfmpegSettings {
+				File = filePath,
+				Position = position,
+				GrayScale = 0,
+				Fullsize = (byte)(maxWidth == 0 ? 1 : 0),
+			};
+			var raw = GetThumbnail(maxWidth == 0 ? settings : settings with { Fullsize = 1 }, extendedLogging);
+			if (raw == null || raw.Length == 0) return null;
+
+			if (maxWidth > 0) {
+				using var ms = new MemoryStream(raw);
+				using var image = Image.Load(ms);
+				if (image.Width > maxWidth) {
+					int h = (int)(image.Height * ((double)maxWidth / image.Width));
+					image.Mutate(x => x.Resize(maxWidth, h));
+				}
+				using var outMs = new MemoryStream();
+				image.Save(outMs, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder { Quality = 90 });
+				return outMs.ToArray();
+			}
+			return raw;
 		}
 	}
 

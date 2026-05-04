@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest an idea to improve Video Duplicate Finder
+title: "[Enhancement]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: variant
+    attributes:
+      label: VDF variant
+      options:
+        - Desktop (GUI)
+        - CLI
+        - Web UI
+        - Docker
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: Describe the desired feature
+      description: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What issue does it solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: snapshots
+    attributes:
+      label: Snapshots
+      description: Optionally add images which can help describe the feature.

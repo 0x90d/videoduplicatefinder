@@ -36,6 +36,13 @@ namespace VDF.GUI.ViewModels {
 			set => SettingsFile.Instance.QualityCriteriaOrder = value;
 		}
 
+		// When more than one row is highlighted in the grid, scope Selection-menu
+		// commands to those rows; otherwise fall back to the full list.
+		List<DuplicateItemVM> ScopedDuplicates() {
+			var selected = GetSelectedDuplicates();
+			return selected.Count > 1 ? selected : Duplicates.ToList();
+		}
+
 		public ReactiveCommand<Unit, Unit> OpenCustomSelectionCommand => ReactiveCommand.Create(() => {
 			CustomSelectionView dlg = new(string.Empty);
 			dlg.Show(ApplicationHelpers.MainWindow);
@@ -59,7 +66,11 @@ namespace VDF.GUI.ViewModels {
 
 			Func<DuplicateItem, bool> interpreter;
 			try {
-				interpreter = new Interpreter()
+				// Use PrimitiveTypes only — avoids registering types like Convert, Activator, etc.
+				// that could be abused if a malicious expression is loaded from a crafted settings file.
+				interpreter = new Interpreter(InterpreterOptions.PrimitiveTypes | InterpreterOptions.SystemKeywords)
+					.Reference(typeof(TimeSpan))
+					.Reference(typeof(Math))
 					.ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
 			}
 			catch (Exception ex) {
@@ -67,7 +78,7 @@ namespace VDF.GUI.ViewModels {
 				return;
 			}
 
-			var groups = Duplicates
+			var groups = ScopedDuplicates()
 							.Where(d => d.IsVisibleInFilter)
 							.GroupBy(d => d.ItemInfo.GroupId)
 							.ToList();
@@ -106,11 +117,12 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
+			var scoped = ScopedDuplicates();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in scoped) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
 
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsFull(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsFull(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 
 				var dupMods = l as DuplicateItemVM[] ?? l.ToArray();
 				if (!dupMods.Any()) continue;
@@ -123,10 +135,11 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
+			var scoped = ScopedDuplicates();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in scoped) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -142,10 +155,11 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> CheckOldestCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
+			var scoped = ScopedDuplicates();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in scoped) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -161,10 +175,11 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> CheckNewestCommand => ReactiveCommand.Create(() => {
 			HashSet<Guid> blackListGroupID = new();
+			var scoped = ScopedDuplicates();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in scoped) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = Duplicates.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
+				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
 				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
 				if (!dupMods.Any()) continue;
 				dupMods.Add(first);
@@ -185,11 +200,12 @@ namespace VDF.GUI.ViewModels {
 			QualityCriteriaOrder = result;
 
 			HashSet<Guid> blackListGroupID = new();
+			var scoped = ScopedDuplicates();
 
-			foreach (var first in Duplicates) {
+			foreach (var first in scoped) {
 				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
 
-				var dupMods = Duplicates
+				var dupMods = scoped
 					.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && d.ItemInfo.Path != first.ItemInfo.Path)
 					.ToList();
 				if (dupMods.Count == 0) continue;
@@ -223,14 +239,27 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
+		public ReactiveCommand<Unit, Unit> CheckMissingFilesCommand => ReactiveCommand.Create(() => {
+			foreach (var item in ScopedDuplicates())
+				if (!File.Exists(item.ItemInfo.Path))
+					item.Checked = true;
+		});
+
+		public ReactiveCommand<DuplicateItemVM, Unit> RemoveSingleItemCommand => ReactiveCommand.Create<DuplicateItemVM>(item => {
+			if (item == null) return;
+			Duplicates.Remove(item);
+			view?.Refresh();
+			RefreshGroupStats();
+		});
+
 		public ReactiveCommand<Unit, Unit> ClearCheckedItemsCommand => ReactiveCommand.Create(() => {
-			for (var i = 0; i < Duplicates.Count; i++)
-				Duplicates[i].Checked = false;
+			foreach (var item in ScopedDuplicates())
+				item.Checked = false;
 		});
 
 		public ReactiveCommand<Unit, Unit> InvertCheckedItemsCommand => ReactiveCommand.Create(() => {
-			for (var i = 0; i < Duplicates.Count; i++)
-				Duplicates[i].Checked = !Duplicates[i].Checked;
+			foreach (var item in ScopedDuplicates())
+				item.Checked = !item.Checked;
 		});
 
 		public ReactiveCommand<Unit, Unit> DeleteHighlightedCommand => ReactiveCommand.Create(() => {
@@ -356,7 +385,7 @@ namespace VDF.GUI.ViewModels {
 
 		internal void RunCustomSelection(CustomSelectionData data) {
 
-			IEnumerable<DuplicateItemVM> dups = Duplicates.Where(x => x.IsVisibleInFilter);
+			IEnumerable<DuplicateItemVM> dups = ScopedDuplicates().Where(x => x.IsVisibleInFilter);
 			if (data.IgnoreGroupsWithCheckedItems) {
 				HashSet<Guid> blackList = new();
 				foreach (var first in dups.Where(x => x.Checked)) {

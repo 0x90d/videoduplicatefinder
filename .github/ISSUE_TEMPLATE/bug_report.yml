@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a bug in Video Duplicate Finder
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which OS are you running?
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: variant
+    attributes:
+      label: VDF variant
+      description: Which version of VDF are you using?
+      options:
+        - Desktop (GUI)
+        - CLI
+        - Web UI
+        - Docker
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: VDF version
+      placeholder: e.g. 3.0.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of what the bug is and steps to reproduce it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: stacktrace
+    attributes:
+      label: Stacktrace / logs
+      description: |
+        If the app crashed, include the stacktrace.
+        - Windows: open the Windows Event Viewer and look for a ".NET Runtime" crash.
+        - Linux/macOS: run the app from terminal; the stacktrace is printed there.
+        A crash report without a stacktrace might be closed without comment.
+      render: shell
+
+  - type: textarea
+    id: snapshots
+    attributes:
+      label: Snapshots
+      description: Optionally include screenshots showing the issue.

@@ -21,6 +21,7 @@ global using System.Threading.Tasks;
 using System.CommandLine;
 using System.Linq;
 using Avalonia;
+using Avalonia.Media;
 using ReactiveUI.Avalonia;
 using VDF.GUI.Utils;
 
@@ -67,6 +68,19 @@ namespace VDF.GUI {
 			=> AppBuilder.Configure<App>()
 				.UsePlatformDetect()
 				.With(new X11PlatformOptions {  UseDBusFilePicker = false })
+				.With(new FontManagerOptions {
+					// Without explicit fallbacks, Avalonia's default font on macOS does not
+					// resolve CJK glyphs through CoreText, producing U+FFFD replacement chars.
+					FontFallbacks = new[] {
+						new FontFallback { FontFamily = new FontFamily("PingFang SC") },
+						new FontFallback { FontFamily = new FontFamily("Hiragino Sans") },
+						new FontFallback { FontFamily = new FontFamily("Apple SD Gothic Neo") },
+						new FontFallback { FontFamily = new FontFamily("Microsoft YaHei") },
+						new FontFallback { FontFamily = new FontFamily("Yu Gothic") },
+						new FontFallback { FontFamily = new FontFamily("Malgun Gothic") },
+						new FontFallback { FontFamily = new FontFamily("Noto Sans CJK SC") },
+					},
+				})
 				.UseReactiveUI()
 				.RegisterReactiveUIViewsFromEntryAssembly();
 	}

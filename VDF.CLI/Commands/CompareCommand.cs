@@ -26,6 +26,7 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(SharedOptions.Threshold);
 			cmd.Options.Add(SharedOptions.Percent);
 			cmd.Options.Add(SharedOptions.Database);
+			cmd.Options.Add(SharedOptions.IncludeNonExistingFiles);
 			cmd.Options.Add(SharedOptions.SettingsFile);
 			cmd.Options.Add(SharedOptions.Format);
 			cmd.Options.Add(SharedOptions.Output);

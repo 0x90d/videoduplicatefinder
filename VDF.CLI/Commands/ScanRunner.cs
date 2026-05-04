@@ -75,7 +75,10 @@ namespace VDF.CLI.Commands {
 			engine.Progress += (_, e) => {
 				int pct = e.MaxPosition > 0 ? (int)(100L * e.CurrentPosition / e.MaxPosition) : 0;
 				string eta = e.Remaining == TimeSpan.Zero ? "..." : e.Remaining.ToString(@"m\mss\s");
-				Console.Error.Write($"\r[{pct,3}%] {e.CurrentPosition}/{e.MaxPosition}  ETA {eta}  {TruncatePath(e.CurrentFile, 60)}    ");
+				string stage = string.IsNullOrEmpty(e.CurrentStage)
+					? string.Empty
+					: e.StageMax > 0 ? $"  ({e.CurrentStage} {e.StageCurrent}/{e.StageMax})" : $"  ({e.CurrentStage})";
+				Console.Error.Write($"\r[{pct,3}%] {e.CurrentPosition}/{e.MaxPosition}  ETA {eta}  {TruncatePath(e.CurrentFile, 60)}{stage}    ");
 			};
 
 			engine.ScanDone += (_, _) => {
@@ -89,13 +92,21 @@ namespace VDF.CLI.Commands {
 			};
 		}
 
+		// Settings is field-heavy (ThumbnailCount, MaxSamplingDurationSeconds, etc. are
+		// public fields, not properties). System.Text.Json ignores fields by default —
+		// without IncludeFields the JSON load was silently dropping most settings.
+		static readonly JsonSerializerOptions SettingsJsonOptions = new() {
+			IncludeFields = true,
+			PropertyNameCaseInsensitive = true,
+		};
+
 		internal static Settings LoadOrCreateSettings(FileInfo? settingsFile) {
 			if (settingsFile == null || !settingsFile.Exists)
 				return new Settings();
 
 			try {
 				var json = File.ReadAllText(settingsFile.FullName);
-				return JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
+				return JsonSerializer.Deserialize<Settings>(json, SettingsJsonOptions) ?? new Settings();
 			}
 			catch (Exception ex) {
 				Console.Error.WriteLine($"Warning: could not load settings file '{settingsFile.FullName}': {ex.Message}");

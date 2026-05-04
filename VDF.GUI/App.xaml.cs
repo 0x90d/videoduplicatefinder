@@ -40,13 +40,21 @@ namespace VDF.GUI {
 				desktop.ShutdownRequested += OnShutdownRequested;
 				desktop.Exit += OnExitCleanup; //fallback
 				AppDomain.CurrentDomain.ProcessExit += (_, __) => SafeCleanup();
-				AppDomain.CurrentDomain.UnhandledException += (_, __) => SafeCleanup();
+				AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 			}
 
 			base.OnFrameworkInitializationCompleted();
 		}
 		private void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e) => SafeCleanup();
 		private void OnExitCleanup(object? sender, ControlledApplicationLifetimeExitEventArgs e) => SafeCleanup();
+		private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e) {
+			try {
+				string detail = e.ExceptionObject is Exception ex ? ex.ToString() : e.ExceptionObject?.ToString() ?? "<null>";
+				VDF.Core.Utils.Logger.Instance.Info($"FATAL: Unhandled exception (terminating={e.IsTerminating}): {detail}");
+			}
+			catch { /* never let logging failure mask the original crash */ }
+			SafeCleanup();
+		}
 		private static void SafeCleanup() {
 			try {
 				try { VDF.GUI.Utils.ThumbCacheHelpers.Provider?.Dispose(); }

@@ -77,6 +77,10 @@ namespace VDF.CLI.Commands {
 			Description = "Additional custom FFmpeg arguments."
 		};
 
+		internal static readonly Option<bool> IncludeNonExistingFiles = new("--include-non-existing") {
+			Description = "Compare against database entries whose files no longer exist on disk."
+		};
+
 		internal static readonly Option<bool> EnablePartialClipDetection = new("--partial-clip-detection") {
 			Description = "Enable partial clip detection via audio fingerprinting."
 		};
@@ -89,6 +93,11 @@ namespace VDF.CLI.Commands {
 		internal static readonly Option<double> PartialClipSimilarityThreshold = new("--partial-clip-similarity") {
 			Description = "Minimum audio fingerprint similarity threshold (0.0–1.0). Default: 0.80.",
 			DefaultValueFactory = _ => 0.80
+		};
+
+		internal static readonly Option<int> CheckpointInterval = new("--checkpoint-interval") {
+			Description = "Database checkpoint interval in minutes during scanning. 0 = disabled. Default: 5.",
+			DefaultValueFactory = _ => 5
 		};
 
 		internal static readonly Option<FileInfo?> SettingsFile = new("--settings", "-s") {
@@ -128,6 +137,8 @@ namespace VDF.CLI.Commands {
 			var ffArgs = r.GetValue(CustomFfArgs);
 			if (ffArgs != null) s.CustomFFArguments = ffArgs;
 
+			s.DatabaseCheckpointIntervalMinutes = r.GetValue(CheckpointInterval);
+			s.IncludeNonExistingFiles = r.GetValue(IncludeNonExistingFiles);
 			s.EnablePartialClipDetection = r.GetValue(EnablePartialClipDetection);
 			s.PartialClipMinRatio = r.GetValue(PartialClipMinRatio);
 			s.PartialClipSimilarityThreshold = r.GetValue(PartialClipSimilarityThreshold);
@@ -146,6 +157,8 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(NativeFfmpeg);
 			cmd.Options.Add(HardwareAccel);
 			cmd.Options.Add(CustomFfArgs);
+			cmd.Options.Add(CheckpointInterval);
+			cmd.Options.Add(IncludeNonExistingFiles);
 			cmd.Options.Add(EnablePartialClipDetection);
 			cmd.Options.Add(PartialClipMinRatio);
 			cmd.Options.Add(PartialClipSimilarityThreshold);

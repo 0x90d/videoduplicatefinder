@@ -209,6 +209,8 @@ namespace VDF.GUI.ViewModels {
 
 			try {
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));
+				// Invalidate thumbnail cache if the configured width has changed
+				Utils.ThumbCacheHelpers.InvalidateIfWidthChanged(TempDirectory.Path, SettingsFile.Instance.ThumbnailMaxWidth);
 				Utils.ThumbCacheHelpers.Provider = Utils.ThumbPack.Open(TempDirectory.Path);
 			}
 			catch { Utils.ThumbCacheHelpers.Provider = null; }
@@ -220,8 +222,6 @@ namespace VDF.GUI.ViewModels {
 			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
 			//Ensure items added before GUI was ready will be shown
 			Instance_LogItemAdded(string.Empty);
-			if (File.Exists(BackupScanResultsFile))
-				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
 
 			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
 
@@ -346,6 +346,11 @@ namespace VDF.GUI.ViewModels {
 			return true;
 		}
 
+		public void RestoreBackupScanResults() {
+			if (File.Exists(BackupScanResultsFile))
+				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
+		}
+
 		public async void LoadDatabase() {
 			IsBusy = true;
 			IsBusyOverlayText = "Loading database...";
@@ -414,7 +419,12 @@ namespace VDF.GUI.ViewModels {
 
 		void Scanner_Progress(object? sender, ScanProgressChangedEventArgs e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
-				ScanProgressText = e.CurrentFile;
+				// Stage goes at the END — the status bar's TextBlock uses PrefixCharacterEllipsis,
+				// so trimming happens at the start (leading directory path) and the filename + stage stay visible.
+				string stageSuffix = string.IsNullOrEmpty(e.CurrentStage)
+					? string.Empty
+					: e.StageMax > 0 ? $"  [{e.CurrentStage} {e.StageCurrent}/{e.StageMax}]" : $"  [{e.CurrentStage}]";
+				ScanProgressText = e.CurrentFile + stageSuffix;
 				RemainingTime = e.Remaining.Format();
 				ScanProgressValue = e.CurrentPosition;
 				TimeElapsed = e.Elapsed.Format();
@@ -703,10 +713,23 @@ namespace VDF.GUI.ViewModels {
 				await using var js = json.Open();
 				var items = await JsonSerializer.DeserializeAsync<List<DuplicateItemVM>>(js, JsonOptions) ?? new();
 
+				int skipped = items.RemoveAll(it => it?.ItemInfo == null);
+				if (skipped > 0)
+					Logger.Instance.Info($"Skipped {skipped} corrupt scan result entries (missing ItemInfo)");
+				if (items.Count == 0)
+					throw new JsonException("All scan result entries were corrupt");
+
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));
 
-				zip.GetEntry("thumbs.pack")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.pack"), true);
-				zip.GetEntry("thumbs.idx")?.ExtractToFile(Path.Combine(TempDirectory.Path, "thumbs.idx"), true);
+				// Validate ZIP entry paths to prevent path traversal (Zip Slip)
+				foreach (var entryName in new[] { "thumbs.pack", "thumbs.idx" }) {
+					var entry = zip.GetEntry(entryName);
+					if (entry == null) continue;
+					string dest = Path.GetFullPath(Path.Combine(TempDirectory.Path, entryName));
+					if (!dest.StartsWith(Path.GetFullPath(TempDirectory.Path) + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+						throw new InvalidOperationException($"ZIP entry '{entryName}' would extract outside target directory");
+					entry.ExtractToFile(dest, true);
+				}
 
 				Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));
 
@@ -738,9 +761,10 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> OpenItemsByColIdCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.CurrentColumn?.DisplayIndex == 1)
+			var tag = GetDataGrid.CurrentColumn?.Tag as string;
+			if (tag == "Thumbnail")
 				OpenItems();
-			else if (GetDataGrid.CurrentColumn?.DisplayIndex == 2)
+			else if (tag == "Path")
 				OpenItemsInFolder();
 		});
 
@@ -802,13 +826,22 @@ namespace VDF.GUI.ViewModels {
 
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
 			try {
-				if (CoreUtils.IsWindows) {
-					Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{currentItem.ItemInfo.Path}\"") {
-						UseShellExecute = true
-					});
+				if (OperatingSystem.IsWindows()) {
+					try {
+						Utils.ShellUtils.ShowInExplorer(currentItem.ItemInfo.Path);
+					}
+					catch {
+						// Fallback to explorer.exe if shell API fails (Notepad++/Electron pattern)
+						var psi = new ProcessStartInfo("explorer.exe") { UseShellExecute = false };
+						psi.ArgumentList.Add($"/select,{currentItem.ItemInfo.Path}");
+						Process.Start(psi);
+					}
 				}
 				else if (OperatingSystem.IsMacOS()) {
-					Process.Start("open", $"-R \"{currentItem.ItemInfo.Path}\"");
+					var psi = new ProcessStartInfo("open") { UseShellExecute = false };
+					psi.ArgumentList.Add("-R");
+					psi.ArgumentList.Add(currentItem.ItemInfo.Path);
+					Process.Start(psi);
 				}
 				else {
 					Process.Start(new ProcessStartInfo {
@@ -859,24 +892,32 @@ namespace VDF.GUI.ViewModels {
 				return false;
 
 			command = cmd[0];
-			string args = string.Empty;
-			items.ForEach(item => args += $"\"{item.ItemInfo.Path}\" ");
-			if (cmd.Length == 2)
-				if (cmd[1].Contains("%f"))
-					args = cmd[1].Replace("%f", args);
-				else
-					args = cmd[1] + " " + args;
+			var psi = new ProcessStartInfo {
+				FileName = command,
+				UseShellExecute = false,
+				RedirectStandardError = true,
+			};
+
+			if (cmd.Length == 2 && cmd[1].Contains("%f")) {
+				// When the user has a %f placeholder, substitute file paths into the argument template.
+				// Each file gets its own copy of the template as a separate argument to avoid injection.
+				foreach (var item in items) {
+					psi.ArgumentList.Add(cmd[1].Replace("%f", item.ItemInfo.Path));
+				}
+			}
+			else {
+				if (cmd.Length == 2)
+					psi.ArgumentList.Add(cmd[1]);
+				foreach (var item in items)
+					psi.ArgumentList.Add(item.ItemInfo.Path);
+			}
 
 			try {
-				Process.Start(new ProcessStartInfo {
-					FileName = command,
-					Arguments = args,
-					UseShellExecute = false,
-					RedirectStandardError = true,
-				});
+				Process.Start(psi);
 			}
 			catch (Exception e) {
-				Logger.Instance.Info(string.Format(App.Lang["Log.CustomCommandFailed"], command, args, e.Message));
+				Logger.Instance.Info(string.Format(App.Lang["Log.CustomCommandFailed"], command,
+					string.Join(" ", psi.ArgumentList), e.Message));
 			}
 
 			return true;
@@ -893,7 +934,7 @@ namespace VDF.GUI.ViewModels {
 			string newName = await InputBoxService.Show("Enter new name", Path.GetFileNameWithoutExtension(fi.FullName), title: "Rename File", readOnlyInfo: fi.FullName);
 			if (string.IsNullOrEmpty(newName)) return;
 			newName = FileUtils.SafePathCombine(fi.DirectoryName!, newName + fi.Extension);
-			while (File.Exists(newName)) {
+			while (File.Exists(newName) && !string.Equals(fi.FullName, newName, StringComparison.OrdinalIgnoreCase)) {
 				MessageBoxButtons? result = await MessageBoxService.Show($"A file with the name '{Path.GetFileName(newName)}' already exists. Do you want to overwrite this file? Click on 'No' to enter a new name", MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
 				if (result == null || result == MessageBoxButtons.Cancel)
 					return;
@@ -1098,6 +1139,7 @@ Non-Windows setup:
 			Scanner.Settings.MaxSamplingDurationSeconds = SettingsFile.Instance.MaxSamplingDurationSeconds;
 			Scanner.Settings.MaxDegreeOfParallelism = SettingsFile.Instance.MaxDegreeOfParallelism;
 			Scanner.Settings.ThumbnailCount = SettingsFile.Instance.Thumbnails;
+			Scanner.Settings.ThumbnailMaxWidth = SettingsFile.Instance.ThumbnailMaxWidth;
 			Scanner.Settings.ExtendedFFToolsLogging = SettingsFile.Instance.ExtendedFFToolsLogging;
 			Scanner.Settings.LogExcludedFiles = SettingsFile.Instance.LogExcludedFiles;
 			Scanner.Settings.AlwaysRetryFailedSampling = SettingsFile.Instance.AlwaysRetryFailedSampling;
@@ -1107,6 +1149,7 @@ Non-Windows setup:
 			Scanner.Settings.IgnoreWhitePixels = SettingsFile.Instance.IgnoreWhitePixels;
 			Scanner.Settings.CompareHorizontallyFlipped = SettingsFile.Instance.CompareHorizontallyFlipped;
 			Scanner.Settings.CustomDatabaseFolder = SettingsFile.Instance.CustomDatabaseFolder;
+			Scanner.Settings.DatabaseCheckpointIntervalMinutes = SettingsFile.Instance.DatabaseCheckpointIntervalMinutes;
 			SettingsFile.Instance.LanguageCode = App.Lang.CurrentLanguage;
 			Scanner.Settings.LanguageCode = SettingsFile.Instance.LanguageCode;
 			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
@@ -1210,6 +1253,40 @@ Non-Windows setup:
 			thumbnailComparer.Show();
 		});
 
+		public void CompareGroup(Guid groupId) {
+			var items = Duplicates
+				.Where(d => d.ItemInfo.GroupId == groupId)
+				.Select(d => new LargeThumbnailDuplicateItem(d))
+				.ToList();
+			if (items.Count == 0) return;
+			new ThumbnailComparer(items).Show();
+		}
+
+		public void KeepBestInGroup(Guid groupId) {
+			var groupItems = Duplicates.Where(d => d.ItemInfo.GroupId == groupId).ToList();
+			if (groupItems.Count < 2) return;
+
+			var keep = groupItems[0];
+			bool anyApplied = false;
+			string? lastCriterion = null;
+
+			foreach (var criterion in QualityCriteriaOrder) {
+				if (criterion is ("Duration" or "FPS" or "Bitrate" or "Audio Bitrate") && keep.ItemInfo.IsImage)
+					continue;
+				bool tieOnLast = anyApplied && HasTieOn(lastCriterion!, groupItems, keep);
+				if (!anyApplied || tieOnLast) {
+					keep = ApplyCriterion(criterion, groupItems);
+					anyApplied = true;
+					lastCriterion = criterion;
+				}
+			}
+
+			keep.Checked = false;
+			foreach (var item in groupItems)
+				if (item.ItemInfo.Path != keep.ItemInfo.Path)
+					item.Checked = true;
+		}
+
 	public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
 		var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
 		if (items.Count == 0) return;
@@ -1252,7 +1329,12 @@ Non-Windows setup:
 			foreach (var dub in toDelete) {
 				try {
 					var fe = new FileEntry(dub.ItemInfo.Path);
-					if (fromDisk) {
+					if (fromDisk && !File.Exists(dub.ItemInfo.Path)) {
+						// File is already gone — treat as successfully deleted
+						// so the entry is still removed from the list and database.
+						Logger.Instance.Info($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
+					}
+					else if (fromDisk) {
 						if (createSymbolLinksInstead) {
 							var keeper = keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var k) ? k : null;
 							if (keeper == null)
@@ -1310,6 +1392,11 @@ Non-Windows setup:
 					if (ReferenceEquals(Duplicates[i], item)) { Duplicates.RemoveAt(i); break; }
 			}
 
+			// When ExcludeHardLinks is enabled, remove items within each group
+			// that are hardlinks of another remaining item in the same group.
+			if (SettingsFile.Instance.ExcludeHardLinks)
+				DropHardLinkDuplicates();
+
 			// Drop groups that have only one item left (no longer duplicates)
 			DropSingletonGroups();
 
@@ -1334,6 +1421,38 @@ Non-Windows setup:
 			for (int i = Duplicates.Count - 1; i >= 0; i--)
 				if (singletonGroups.Contains(Duplicates[i].ItemInfo.GroupId))
 					Duplicates.RemoveAt(i);
+		}
+
+		/// <summary>
+		/// After deletion, re-check remaining groups for items that are hardlinks
+		/// of each other. Within each group, keep only one representative per set
+		/// of hardlinked files.
+		/// </summary>
+		private void DropHardLinkDuplicates() {
+			var toRemove = new List<DuplicateItemVM>();
+			foreach (var group in Duplicates.GroupBy(d => d.ItemInfo.GroupId)) {
+				var items = group.ToList();
+				if (items.Count <= 1) continue;
+				var kept = new List<DuplicateItemVM>();
+				foreach (var item in items) {
+					bool isHardLinkOfKept = false;
+					foreach (var k in kept) {
+						if (item.ItemInfo.SizeLong == k.ItemInfo.SizeLong &&
+							HardLinkUtils.AreSameFile(item.ItemInfo.Path, k.ItemInfo.Path)) {
+							isHardLinkOfKept = true;
+							break;
+						}
+					}
+					if (isHardLinkOfKept)
+						toRemove.Add(item);
+					else
+						kept.Add(item);
+				}
+			}
+
+			foreach (var item in toRemove)
+				for (int i = Duplicates.Count - 1; i >= 0; i--)
+					if (ReferenceEquals(Duplicates[i], item)) { Duplicates.RemoveAt(i); break; }
 		}
 
 		public ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {
@@ -1394,7 +1513,7 @@ Non-Windows setup:
 			StringBuilder sb = new();
 			foreach (var item in GetSelectedDuplicates()) {
 				if (item is not DuplicateItemVM currentItem) return;
-				sb.AppendLine(currentItem.ItemInfo.Path);
+				sb.AppendLine($"\"{currentItem.ItemInfo.Path}\"");
 			}
 #pragma warning disable CS8600
 #pragma warning disable CS8602

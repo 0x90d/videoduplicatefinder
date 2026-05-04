@@ -30,63 +30,75 @@ namespace VDF.Core.pHash {
 		private const int N = 32;      // working size
 		private const int K = 8;       // low-frequency block size (1..8,1..8)
 
-		// Precompute cosine matrix and alpha coefficients once
-		private static readonly float[,] Cos = BuildCos(N);
+		// Cosine table flattened to 1D: Cos[k, i] is now Cos[k * N + i]. Faster than
+		// float[,] (one bounds check instead of two) and lets dot-product loops index
+		// linearly. Precomputed once at static init.
+		private static readonly float[] Cos = BuildCos(N);
 		private static readonly float[] Alpha = BuildAlpha(N);
-
-		// Reusable buffers via ArrayPool to reduce GC pressure
-		private static readonly ArrayPool<float> Pool = ArrayPool<float>.Shared;
 
 		public static ulong ComputePHashFromGray32x32(ReadOnlySpan<byte> gray) {
 			if (gray.Length != N * N) throw new ArgumentException("expected 32x32=1024 bytes");
 			int len = N * N;
+
+			// The original implementation computed a full N×N DCT — 1024 row outputs
+			// followed by 1024 column outputs — and then read only the K×K=64 cells
+			// dct[1..K, 1..K]. ~6.4× of the multiplications were thrown away.
+			//
+			// This version computes only the cells that are read, in the same scalar
+			// accumulation order as before. Floats are bit-identical to the previous
+			// implementation so cached PHashes from older scans remain valid.
 			var pool = ArrayPool<float>.Shared;
 			float[] input = pool.Rent(len);
-			float[] temp = pool.Rent(len);
-			float[] dct = pool.Rent(len);
 			try {
-				// copy bytes -> float
 				for (int i = 0; i < len; i++) input[i] = gray[i];
 
-				// DCT rows
+				// Row DCT: for each row y, produce K outputs (u in 1..K). Compact layout
+				// temp[y * K + (u - 1)] avoids carrying the unused 24/32 columns.
+				Span<float> temp = stackalloc float[N * K];
 				for (int y = 0; y < N; y++) {
 					int yBase = y * N;
-					for (int u = 0; u < N; u++) {
+					int tBase = y * K;
+					for (int u = 1; u <= K; u++) {
+						int cosBase = u * N;
 						float sum = 0f;
-						for (int x = 0; x < N; x++) sum += input[yBase + x] * Cos[u, x];
-						temp[yBase + u] = Alpha[u] * sum;
+						for (int x = 0; x < N; x++)
+							sum += input[yBase + x] * Cos[cosBase + x];
+						temp[tBase + (u - 1)] = Alpha[u] * sum;
 					}
 				}
-				// DCT cols
-				for (int u = 0; u < N; u++) {
-					for (int v = 0; v < N; v++) {
-						float sum = 0f;
-						for (int y = 0; y < N; y++) sum += temp[y * N + u] * Cos[v, y];
-						dct[v * N + u] = Alpha[v] * sum;
-					}
-				}
-				// 8x8 AC -> Median -> Bits
+
+				// Column DCT: K×K outputs, written directly into the AC buffer.
+				// Sweep order matches the original (v outer, u inner) so the resulting
+				// bit positions in `hash` are unchanged.
 				Span<float> ac = stackalloc float[K * K];
 				int k = 0;
 				for (int v = 1; v <= K; v++) {
-					int vBase = v * N;
-					for (int u = 1; u <= K; u++) ac[k++] = dct[vBase + u];
+					int cosBase = v * N;
+					float alphaV = Alpha[v];
+					for (int u = 1; u <= K; u++) {
+						int tu = u - 1;
+						float sum = 0f;
+						for (int y = 0; y < N; y++)
+							sum += temp[y * K + tu] * Cos[cosBase + y];
+						ac[k++] = alphaV * sum;
+					}
 				}
+
 				float median = Median64(ac);
 				ulong hash = 0UL;
 				for (int i = 0; i < ac.Length; i++)
 					if (ac[i] > median) hash |= 1UL << i;
 				return hash;
 			}
-			finally { pool.Return(input); pool.Return(temp); pool.Return(dct); }
+			finally { pool.Return(input); }
 		}
 
 
-		private static float[,] BuildCos(int n) {
-			var t = new float[n, n];
+		private static float[] BuildCos(int n) {
+			var t = new float[n * n];
 			for (int k = 0; k < n; k++)
 				for (int i = 0; i < n; i++)
-					t[k, i] = (float)Math.Cos(((2 * i + 1) * k * Math.PI) / (2.0 * n));
+					t[k * n + i] = (float)Math.Cos(((2 * i + 1) * k * Math.PI) / (2.0 * n));
 			return t;
 		}
 

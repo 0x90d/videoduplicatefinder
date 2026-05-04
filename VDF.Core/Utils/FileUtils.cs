@@ -109,7 +109,7 @@ namespace VDF.Core.Utils {
 		/// <returns></returns>
 		internal static string SafePathCombine(string path1, string path2) {
 			if (!Path.IsPathRooted(path2))
-				Path.Combine(path1, path2);
+				return Path.Combine(path1, path2);
 
 			path2 = path2.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 			return Path.Combine(path1, path2);
@@ -216,6 +216,11 @@ namespace VDF.Core.Utils {
 				return false;
 			}
 
+			// If the file is on a different filesystem (e.g. network share), skip trash
+			// to avoid downloading the entire file to the local trash directory.
+			if (!IsOnSameFileSystem(filePath, filesDir))
+				return false;
+
 			string fileName = Path.GetFileName(filePath);
 			string destPath = Path.Combine(filesDir, fileName);
 			string infoPath = Path.Combine(infoDir, fileName + ".trashinfo");
@@ -240,6 +245,31 @@ namespace VDF.Core.Utils {
 			}
 		}
 
+		/// <summary>
+		/// Checks whether two paths reside on the same mounted filesystem by comparing
+		/// their mount points from <see cref="DriveInfo.GetDrives"/>.
+		/// </summary>
+		internal static bool IsOnSameFileSystem(string path1, string path2) {
+			try {
+				string fullPath1 = Path.GetFullPath(path1);
+				string fullPath2 = Path.GetFullPath(path2);
+				var drives = DriveInfo.GetDrives();
+				return GetMountPoint(fullPath1, drives) == GetMountPoint(fullPath2, drives);
+			}
+			catch {
+				return true; // assume same filesystem on error — let File.Move decide
+			}
+		}
+
+		static string GetMountPoint(string fullPath, DriveInfo[] drives) {
+			string bestMatch = "/";
+			foreach (var drive in drives) {
+				if (fullPath.StartsWith(drive.Name, StringComparison.Ordinal) && drive.Name.Length > bestMatch.Length)
+					bestMatch = drive.Name;
+			}
+			return bestMatch;
+		}
+
 		static bool MoveToTrashMacOS(string filePath) {
 			// ~/.Trash is the standard macOS trash for the home volume.
 			// For files on other volumes, macOS uses <volume>/.Trashes/<uid>/ — but that
@@ -253,6 +283,10 @@ namespace VDF.Core.Utils {
 			catch {
 				return false;
 			}
+
+			// If the file is on a different volume, skip trash to avoid cross-volume copy.
+			if (!IsOnSameFileSystem(filePath, trashDir))
+				return false;
 
 			string fileName = Path.GetFileName(filePath);
 			string destPath = Path.Combine(trashDir, fileName);

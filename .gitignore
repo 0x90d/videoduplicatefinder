@@ -262,5 +262,9 @@ __pycache__/
 .vscode/launch.json
 .vscode/
 
+# BenchmarkDotNet output (HTML/CSV/MD/JSON reports + intermediate build dirs)
+BenchmarkDotNet.Artifacts/
+BenchmarkLogs/
+
 # macOS
 .DS_Store

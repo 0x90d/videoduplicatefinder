@@ -1,0 +1,55 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Similarity badge base style -->
+    <Style Selector="Border.similarity-badge">
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.similarity-badge TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <!-- High similarity: >= 99% (green) -->
+    <Style Selector="Border.similarity-badge.badge-high">
+        <Setter Property="Background" Value="{DynamicResource BadgeHighBackground}" />
+    </Style>
+    <Style Selector="Border.similarity-badge.badge-high TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BadgeHighForeground}" />
+    </Style>
+
+    <!-- Medium similarity: >= 90% (blue) -->
+    <Style Selector="Border.similarity-badge.badge-medium">
+        <Setter Property="Background" Value="{DynamicResource BadgeMediumBackground}" />
+    </Style>
+    <Style Selector="Border.similarity-badge.badge-medium TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BadgeMediumForeground}" />
+    </Style>
+
+    <!-- Low similarity: < 90% (orange) -->
+    <Style Selector="Border.similarity-badge.badge-low">
+        <Setter Property="Background" Value="{DynamicResource BadgeLowBackground}" />
+    </Style>
+    <Style Selector="Border.similarity-badge.badge-low TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BadgeLowForeground}" />
+    </Style>
+
+    <!-- Best quality badge overlay -->
+    <Style Selector="Border.best-badge">
+        <Setter Property="Background" Value="{DynamicResource BestBadgeBackground}" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="4,1" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Margin" Value="2" />
+    </Style>
+    <Style Selector="Border.best-badge TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BestBadgeForeground}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+</Styles>

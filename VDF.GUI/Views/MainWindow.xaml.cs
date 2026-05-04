@@ -14,21 +14,25 @@
 // */
 //
 
+using System.Linq;
 using System.Windows.Input;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
+using Avalonia.VisualTree;
 using VDF.Core.Utils;
 using VDF.GUI.Data;
 using VDF.GUI.Mvvm;
+using VDF.GUI.ViewModels;
 
 namespace VDF.GUI.Views {
 	public class MainWindow : Window {
@@ -72,6 +76,12 @@ namespace VDF.GUI.Views {
 
 			if (!SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = ThemeVariant.Light;
+
+			// Switch theme at runtime when the user toggles the DarkMode setting
+			SettingsFile.Instance.PropertyChanged += (_, e) => {
+				if (e.PropertyName == nameof(SettingsFile.DarkMode))
+					RequestedThemeVariant = SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
+			};
 
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
@@ -198,7 +208,69 @@ namespace VDF.GUI.Views {
 				ApplicationHelpers.MainWindowDataContext.Thumbnails_ValueChanged(sender, e);
 		}
 
-		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) => ApplicationHelpers.MainWindowDataContext.LoadDatabase();
+		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) {
+			var vm = ApplicationHelpers.MainWindowDataContext;
+			vm.LoadDatabase();
+			vm.RestoreBackupScanResults();
+		}
+
+		void OnLoadingRowGroup(object? sender, DataGridRowGroupHeaderEventArgs e) {
+			var header = e.RowGroupHeader;
+			// Avoid adding buttons twice (recycled headers)
+			if (header.Tag is true) return;
+			header.Tag = true;
+
+			var vm = ApplicationHelpers.MainWindowDataContext;
+
+			Guid GetGroupId() {
+				if (header.DataContext is Avalonia.Collections.DataGridCollectionViewGroup g) {
+					var first = g.Items.OfType<DuplicateItemVM>().FirstOrDefault();
+					if (first != null) return first.ItemInfo.GroupId;
+				}
+				return Guid.Empty;
+			}
+
+			var compareBtn = new Button { Content = "Compare", Classes = { "group-action" } };
+			var keepBestBtn = new Button { Content = "Keep Best", Classes = { "group-action" } };
+
+			compareBtn.Click += (_, _) => {
+				var id = GetGroupId();
+				if (id != Guid.Empty) vm.CompareGroup(id);
+			};
+			keepBestBtn.Click += (_, _) => {
+				var id = GetGroupId();
+				if (id != Guid.Empty) vm.KeepBestInGroup(id);
+			};
+
+			var panel = new StackPanel {
+				Orientation = Orientation.Horizontal,
+				Spacing = 4,
+				Margin = new Thickness(8, 0, 4, 0),
+				VerticalAlignment = VerticalAlignment.Center,
+				Children = { compareBtn, keepBestBtn }
+			};
+
+			// Inject buttons into the header's visual tree once it's loaded
+			header.Loaded += (_, _) => {
+				// Walk visual tree to find the root Grid and append our button panel
+				var grid = header.GetVisualDescendants().OfType<Grid>().FirstOrDefault();
+				if (grid != null && !grid.Children.Contains(panel)) {
+					grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+					Grid.SetColumn(panel, grid.ColumnDefinitions.Count - 1);
+					grid.Children.Add(panel);
+				}
+			};
+		}
+
+		void OnMetricPointerEntered(object? sender, PointerEventArgs e) {
+			if (sender is Control ctrl && ctrl.Tag is string metric && ctrl.DataContext is DuplicateItemVM item)
+				ApplicationHelpers.MainWindowDataContext.SetHoveredMetric(item, metric);
+		}
+
+		void OnMetricPointerExited(object? sender, PointerEventArgs e) {
+			if (sender is Control ctrl && ctrl.DataContext is DuplicateItemVM item)
+				ApplicationHelpers.MainWindowDataContext.ClearHoveredMetric(item);
+		}
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}

@@ -8,7 +8,8 @@
 
     <Application.Styles>
         <FluentTheme />
-<actipro:ModernTheme />
+        <actipro:ModernTheme />
         <actipro:ModernTheme Includes="NativeDataGrid" />
+        <StyleInclude Source="avares://VDF.GUI/Styles/Styles.xaml" />
     </Application.Styles>
 </Application>

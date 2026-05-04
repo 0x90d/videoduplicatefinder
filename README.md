@@ -87,9 +87,10 @@ Extract the archive — it contains `Video Duplicate Finder.app`. Double-click i
 
 If macOS blocks the app with "cannot be opened because the developer cannot be verified", right-click the `.app` and choose **Open**, then confirm. You only need to do this once.
 
-If the process is immediately killed (`zsh: killed`), the binary needs to be signed. Run:
+If macOS still refuses to launch the bundle (e.g. "library load disallowed by system policy" on macOS 14+ / Tahoe), clear the quarantine flag and re-sign every binary in the bundle ad-hoc:
 ```bash
-codesign --force --sign - "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
+xattr -cr "Video Duplicate Finder.app"
+codesign --force --deep --sign - "Video Duplicate Finder.app"
 ```
 
 ---
@@ -175,11 +176,30 @@ Available `--action` strategies:
 
 The Web UI runs as a local web server and is accessed from your browser. It is designed for headless machines, NAS devices, and remote management.
 
-> **Security note:** The Web UI has no authentication. Only run it on a trusted local network. Do not expose it to the internet.
+> **Security note:** The Web UI is password-protected but intended for local/Docker use only. Do not expose it to the internet.
+
+### Authentication
+
+On first launch, a random password is generated and printed to the console:
+
+```
+============================================
+  Web UI password:  aB3xK9mQ7p
+============================================
+```
+
+Enter this password in your browser to log in. A "Remember me" cookie keeps you logged in for 30 days.
+
+**Docker users:** Run `docker logs vdf-web` to see the password.
+
+| Environment variable | Description |
+|---------------------|-------------|
+| `VDF_WEB_PASSWORD` | Set your own password instead of the auto-generated one |
+| `VDF_WEB_AUTH=false` | Disable authentication entirely |
 
 ### Requirements
 
-FFmpeg and FFprobe must be on your `PATH` or in the same directory as the `VDF.Web` binary.
+FFmpeg and FFprobe are required. When running outside Docker, VDF.Web will attempt to download them automatically on first launch. You can also install them manually via your system package manager or place them on your `PATH`.
 
 ### Installation (self-contained archive)
 
@@ -196,7 +216,7 @@ On Windows:
 VDF.Web.exe
 ```
 
-Then open **http://localhost:5000** in your browser.
+Then open **http://localhost:5000** in your browser and enter the password shown in the console.
 
 To change the port:
 ```bash
@@ -225,19 +245,35 @@ docker run -d \
   --name vdf-web \
   -p 8080:8080 \
   -v vdf-db:/root/.config/VDF \
+  -v vdf-state:/root/.local/state/VDF \
   -v /path/to/your/media:/media:ro \
   ghcr.io/0x90d/vdf-web:latest
 ```
 
 Then open **http://localhost:8080** in your browser.
+Check the password with `docker logs vdf-web` and enter it to log in.
 Inside the Web UI, add `/media` (or whatever path you mounted) as a scan directory.
+
+To set your own password:
+```bash
+docker run -d \
+  --name vdf-web \
+  -p 8080:8080 \
+  -e VDF_WEB_PASSWORD=mysecretpassword \
+  -v vdf-db:/root/.config/VDF \
+  -v vdf-state:/root/.local/state/VDF \
+  -v /path/to/your/media:/media:ro \
+  ghcr.io/0x90d/vdf-web:latest
+```
 
 ### docker compose (recommended for permanent installs)
 
 1. Download [`docker-compose.yml`](docker-compose.yml) from this repository.
 
-2. Edit the file and add your media volume mounts:
+2. Edit the file and add your media volume mounts. Optionally set your own password:
 ```yaml
+environment:
+  - VDF_WEB_PASSWORD=mysecretpassword    # optional — otherwise check docker logs
 volumes:
   - /mnt/nas/movies:/mnt/nas/movies:ro
   - /mnt/nas/series:/mnt/nas/series:ro
@@ -248,7 +284,7 @@ volumes:
 docker compose up -d
 ```
 
-4. Open **http://localhost:8080** in your browser.
+4. Open **http://localhost:8080** in your browser and enter the password (check `docker logs` if you didn't set one).
 
 5. To update to the latest image:
 ```bash
@@ -259,7 +295,8 @@ docker compose pull && docker compose up -d
 
 | Volume | Purpose |
 |--------|---------|
-| `/root/.config/VDF` | Settings and scan database — mount a named volume here so data persists across container updates |
+| `/root/.config/VDF` | Settings (`web-settings.json`) and login credentials — mount a named volume here so configuration persists across container updates |
+| `/root/.local/state/VDF` | Scan database (`ScannedFiles.db`) — mount a named volume here so hashed-file data persists across container updates |
 | Your media paths | Mount each media directory you want to scan. Read-only (`:ro`) is recommended. |
 
 ### Notes

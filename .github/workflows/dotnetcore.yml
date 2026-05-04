@@ -19,3 +19,11 @@ jobs:
       run: dotnet publish VDF.CLI/VDF.CLI.csproj -c Release -v q --self-contained -r win-x64
     - name: Build Web
       run: dotnet publish VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r win-x64
+    - name: Run Unit Tests
+      run: dotnet test VDF.Core.Tests/VDF.Core.Tests.csproj -c Release -v q
+    - name: Run CLI Tests
+      run: dotnet test VDF.CLI.Tests/VDF.CLI.Tests.csproj -c Release -v q
+    - name: Install FFmpeg
+      run: choco install ffmpeg -y --no-progress
+    - name: Run Integration Tests
+      run: dotnet test VDF.IntegrationTests/VDF.IntegrationTests.csproj -c Release -v normal

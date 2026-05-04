@@ -45,9 +45,11 @@ namespace VDF.CLI.Commands {
 
 			cmd.SetAction(async (parseResult, ct) => {
 				var engine = new ScanEngine();
-				var settings = ScanRunner.LoadOrCreateSettings(parseResult.GetValue(SharedOptions.SettingsFile));
-				// Copy loaded settings into engine settings
-				CopySettings(settings, engine.Settings);
+				// Replace the engine's default Settings with whatever the JSON file held
+				// (or a fresh default if no file was given). This honours every field on
+				// Settings without an opt-in copy list — earlier the manual CopySettings
+				// silently dropped fields like ThumbnailCount and MaxSamplingDurationSeconds.
+				engine.Settings = ScanRunner.LoadOrCreateSettings(parseResult.GetValue(SharedOptions.SettingsFile));
 				SharedOptions.ApplyToSettings(engine.Settings, parseResult);
 
 				if (engine.Settings.IncludeList.Count == 0) {
@@ -76,24 +78,6 @@ namespace VDF.CLI.Commands {
 			});
 
 			return cmd;
-		}
-
-		static void CopySettings(Core.Settings source, Core.Settings dest) {
-			foreach (var p in source.IncludeList) dest.IncludeList.Add(p);
-			foreach (var p in source.BlackList) dest.BlackList.Add(p);
-			dest.Threshhold = source.Threshhold;
-			dest.Percent = source.Percent;
-			dest.MaxDegreeOfParallelism = source.MaxDegreeOfParallelism;
-			dest.IncludeSubDirectories = source.IncludeSubDirectories;
-			dest.IncludeImages = source.IncludeImages;
-			dest.UsePHashing = source.UsePHashing;
-			dest.UseNativeFfmpegBinding = source.UseNativeFfmpegBinding;
-			dest.HardwareAccelerationMode = source.HardwareAccelerationMode;
-			dest.CustomFFArguments = source.CustomFFArguments;
-			dest.CustomDatabaseFolder = source.CustomDatabaseFolder;
-			dest.EnablePartialClipDetection = source.EnablePartialClipDetection;
-			dest.PartialClipMinRatio = source.PartialClipMinRatio;
-			dest.PartialClipSimilarityThreshold = source.PartialClipSimilarityThreshold;
 		}
 
 		static void WriteOutput(string content, FileInfo? outFile) {

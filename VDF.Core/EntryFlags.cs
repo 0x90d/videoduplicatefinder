@@ -27,6 +27,7 @@ namespace VDF.Core {
 		TooDark = 16,
 		NoAudioTrack = 32,           // File has no audio stream; skip audio fingerprinting
 		AudioFingerprintError = 64,  // Audio extraction/fingerprinting failed
+		SilentAudioTrack = 128,      // File has audio but it's silent; fingerprint is all zeros and unusable
 
 		AllErrors = ThumbnailError | MetadataError | TooDark
 	}

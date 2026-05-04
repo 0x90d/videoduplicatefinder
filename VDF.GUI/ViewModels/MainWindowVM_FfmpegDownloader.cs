@@ -17,16 +17,17 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Avalonia.Threading;
 using FFmpeg.AutoGen;
 using ReactiveUI;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using System.Reactive;
+using VDF.Core.FFTools.FFmpegNative;
 using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
@@ -71,12 +72,18 @@ namespace VDF.GUI.ViewModels {
 
 					try {
 						await DownloadFileAsync(plan.DownloadUrl, downloadPath, plan);
+						IsBusyOverlayText = App.Lang["Message.FfmpegDownloadVerifying"];
+						await VerifyChecksumAsync(plan.DownloadUrl, downloadPath, plan.ArchiveFileName);
 						IsBusyOverlayText = App.Lang["Message.FfmpegDownloadExtracting"];
 						ExtractArchive(downloadPath, extractedFolder, plan.ArchiveKind);
 
 						targetFolder = Path.Combine(CoreUtils.CurrentFolder, "bin");
 						Directory.CreateDirectory(targetFolder);
-						CopyFfmpegFiles(extractedFolder, targetFolder);
+						var targetLibFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+							? Path.Combine(CoreUtils.CurrentFolder, "lib")
+							: targetFolder;
+						Directory.CreateDirectory(targetLibFolder);
+						CopyFfmpegFiles(extractedFolder, targetFolder, targetLibFolder);
 						downloadSucceeded = true;
 						break;
 					}
@@ -129,7 +136,10 @@ namespace VDF.GUI.ViewModels {
 			var plans = new List<FfmpegDownloadPlan>();
 			int ffMajor = MapToFfmpegMajor(ffmpeg.LIBAVCODEC_VERSION_MAJOR, ffmpeg.LIBAVFORMAT_VERSION_MAJOR, ffmpeg.LIBAVUTIL_VERSION_MAJOR);
 			string versionTag = ffMajor switch {
-				8 => "8.0",
+				// BtbN/yt-dlp builds publish only the latest minor per major; the n8.0 tag
+				// was retired when 8.1 landed, so a hardcoded "8.0" 404s on every fresh
+				// install. Keep this aligned with whatever minor BtbN currently ships.
+				8 => "8.1",
 				7 => "7.1",
 				6 => "6.1",
 				5 => "5.1",
@@ -216,13 +226,18 @@ namespace VDF.GUI.ViewModels {
 			return plans;
 		}
 
+		const long MaxDownloadBytes = 500 * 1024 * 1024; // 500 MB safety cap
+
 		async Task DownloadFileAsync(Uri downloadUrl, string destinationPath, FfmpegDownloadPlan plan) {
-			using var client = new HttpClient();
+			using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
 			using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
 			if (!response.IsSuccessStatusCode)
 				throw new HttpRequestException($"{(int)response.StatusCode} {response.ReasonPhrase}");
 
 			var totalBytes = response.Content.Headers.ContentLength;
+			if (totalBytes > MaxDownloadBytes)
+				throw new HttpRequestException($"Download too large ({totalBytes} bytes, max {MaxDownloadBytes})");
+
 			await using var sourceStream = await response.Content.ReadAsStreamAsync();
 			await using var destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
 
@@ -232,6 +247,8 @@ namespace VDF.GUI.ViewModels {
 			while ((read = await sourceStream.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0) {
 				await destinationStream.WriteAsync(buffer.AsMemory(0, read));
 				totalRead += read;
+				if (totalRead > MaxDownloadBytes)
+					throw new HttpRequestException($"Download exceeded size limit ({MaxDownloadBytes} bytes)");
 				UpdateDownloadProgress(plan.DisplayName, totalRead, totalBytes);
 			}
 			UpdateDownloadProgress(plan.DisplayName, totalRead, totalBytes);
@@ -265,7 +282,7 @@ namespace VDF.GUI.ViewModels {
 
 		static void ExtractArchive(string archivePath, string targetFolder, ArchiveType type) {
 			if (type == ArchiveType.Zip) {
-				ZipFile.ExtractToDirectory(archivePath, targetFolder, true);
+				SafeExtractZip(archivePath, targetFolder);
 				return;
 			}
 
@@ -285,6 +302,7 @@ namespace VDF.GUI.ViewModels {
 			psi.ArgumentList.Add(archivePath);
 			psi.ArgumentList.Add("-C");
 			psi.ArgumentList.Add(targetFolder);
+			psi.ArgumentList.Add("--no-absolute-filenames");
 
 			using var process = new Process {
 				StartInfo = psi
@@ -297,7 +315,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		static void CopyFfmpegFiles(string sourceRoot, string targetFolder) {
+		static void CopyFfmpegFiles(string sourceRoot, string targetFolder, string targetLibFolder) {
 			string ffmpegName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "ffmpeg";
 			string ffprobeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffprobe.exe" : "ffprobe";
 
@@ -316,20 +334,12 @@ namespace VDF.GUI.ViewModels {
 				CopyFile(file, Path.Combine(targetFolder, fileName));
 			}
 
-			string[] libraryPrefixes = { "avcodec", "avformat", "avutil", "swresample", "swscale" };
-			string[] libraryExtensions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-				? new[] { ".dll" }
-				: RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-					? new[] { ".dylib" }
-					: new[] { ".so" };
-
+			var libraryFiles = FFmpegHelper.GenerateLibraryFileNames();
 			foreach (var file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories)) {
-				string fileName = Path.GetFileName(file);
-				if (!libraryExtensions.Any(ext => fileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
-					continue;
-				if (!libraryPrefixes.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
-					continue;
-				CopyFile(file, Path.Combine(targetFolder, fileName));
+				var fileName = Path.GetFileName(file);
+				if (libraryFiles.Contains(fileName, StringComparer.OrdinalIgnoreCase)) {
+					CopyFile(file, Path.Combine(targetLibFolder, fileName));
+				}
 			}
 		}
 
@@ -338,6 +348,57 @@ namespace VDF.GUI.ViewModels {
 				? FFToolsUtils.LongPathFix(destinationPath)
 				: destinationPath;
 			File.Copy(sourcePath, targetPath, true);
+		}
+
+		static async Task VerifyChecksumAsync(Uri downloadUrl, string filePath, string archiveFileName) {
+			var checksumUrl = new Uri(downloadUrl, "checksums.sha256");
+			try {
+				using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+				var checksumText = await client.GetStringAsync(checksumUrl);
+
+				string? expectedHash = null;
+				foreach (var line in checksumText.Split('\n', StringSplitOptions.RemoveEmptyEntries)) {
+					var parts = line.Split("  ", 2, StringSplitOptions.None);
+					if (parts.Length == 2 && parts[1].Trim().Equals(archiveFileName, StringComparison.OrdinalIgnoreCase)) {
+						expectedHash = parts[0].Trim().ToLowerInvariant();
+						break;
+					}
+				}
+
+				if (expectedHash == null) {
+					Logger.Instance.Info($"FFmpeg download: no checksum entry found for '{archiveFileName}', skipping verification");
+					return;
+				}
+
+				await using var fs = File.OpenRead(filePath);
+				var hashBytes = await SHA256.HashDataAsync(fs);
+				var actualHash = Convert.ToHexStringLower(hashBytes);
+
+				if (actualHash != expectedHash)
+					throw new InvalidOperationException(
+						$"Checksum mismatch for '{archiveFileName}': expected {expectedHash}, got {actualHash}. The download may be corrupted or tampered with.");
+			}
+			catch (HttpRequestException) {
+				Logger.Instance.Info("FFmpeg download: could not fetch checksums.sha256, skipping verification");
+			}
+		}
+
+		static void SafeExtractZip(string archivePath, string targetFolder) {
+			string fullTarget = Path.GetFullPath(targetFolder);
+			using var zip = ZipFile.OpenRead(archivePath);
+			foreach (var entry in zip.Entries) {
+				string dest = Path.GetFullPath(Path.Combine(targetFolder, entry.FullName));
+				if (!dest.StartsWith(fullTarget + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+					&& dest != fullTarget)
+					throw new InvalidOperationException($"ZIP entry '{entry.FullName}' would extract outside target directory");
+				if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\')) {
+					Directory.CreateDirectory(dest);
+				}
+				else {
+					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+					entry.ExtractToFile(dest, true);
+				}
+			}
 		}
 
 		static string BuildFfmpegInstallInstructions(bool ffmpegFound, bool ffprobeFound, string? targetFolder, string? errorMessage) {

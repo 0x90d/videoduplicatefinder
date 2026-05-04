@@ -4,7 +4,21 @@ name: Build releases
 on: [push]
     
 jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Delete old release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Delete all existing assets from the 3.0.x release so they get replaced with fresh builds
+          gh release view 3.0.x --json assets --jq '.assets[].name' | while read -r asset; do
+            gh release delete-asset 3.0.x "$asset" --yes
+          done
+
   build:
+    needs: cleanup
 
     strategy:
       matrix:
@@ -19,11 +33,11 @@ jobs:
             target: win-x64
             name: win-x64
           - kind: macOS
-            os: windows-latest
+            os: macos-latest
             target: osx-x64
             name: osx-x64
           - kind: macOSarm64
-            os: windows-latest
+            os: macos-latest
             target: osx-arm64
             name: osx-arm64
           - kind: linuxarm64
@@ -34,9 +48,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '9.0.x'
     - name: Declare some variables
@@ -46,8 +60,6 @@ jobs:
     - name: Build
       shell: bash
       run: |
-          # Add nuget sources
-          dotnet nuget add source https://www.myget.org/F/sixlabors/api/v3/index.json
           # Build GUI
           dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputGUI"
           # Build CLI
@@ -66,7 +78,23 @@ jobs:
             cp -r outputGUI/. "Video Duplicate Finder.app/Contents/MacOS/"
             cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
             cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
+            chmod +x "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
+            # Ad-hoc sign every binary in the bundle. macOS 14+ (and especially Tahoe 26)
+            # rejects unsigned dylibs under Library Validation, which previously caused
+            # "library load disallowed by system policy" on launch.
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              "Video Duplicate Finder.app"
+            codesign --verify --deep --strict --verbose=2 "Video Duplicate Finder.app"
             tar czvf "GUI-${{ matrix.target }}.tar.gz" "Video Duplicate Finder.app"
+            chmod +x outputCLI/vdf-cli
+            chmod +x outputWeb/VDF.Web
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              outputCLI/vdf-cli
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              outputWeb/VDF.Web
             tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
             tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
           else
@@ -81,7 +109,7 @@ jobs:
           rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
           
     - name: Publish
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
           tag_name: 3.0.x
           files: |
