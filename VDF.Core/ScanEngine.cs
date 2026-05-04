@@ -1561,12 +1561,24 @@ namespace VDF.Core {
 						timeStamps = new List<TimeSpan>(positionList.Count);
 						for (int j = 0; j < positionList.Count; j++) {
 							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
-							timeStamps.Add(timestamp);
 							var b = FfmpegEngine.ExtractThumbnailJpeg(entry.Path, timestamp, maxDim, Settings.ExtendedFFToolsLogging);
-							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
-							using var byteStream = new MemoryStream(b);
-							var bitmapImage = Image.Load(byteStream);
-							list.Add(bitmapImage);
+							if (b == null || b.Length == 0) {
+								Logger.Instance.Info($"Failed extracting thumbnail at {timestamp} for '{entry.Path}', skipping that position.");
+								continue;
+							}
+							try {
+								using var byteStream = new MemoryStream(b);
+								var bitmapImage = Image.Load(byteStream);
+								list.Add(bitmapImage);
+								timeStamps.Add(timestamp);
+							}
+							catch (Exception ex) {
+								Logger.Instance.Info($"Failed decoding thumbnail bytes at {timestamp} for '{entry.Path}', reason: {ex.Message}");
+							}
+						}
+						if (list.Count == 0 && NoThumbnailImage != null) {
+							list.Add(NoThumbnailImage);
+							timeStamps.Add(TimeSpan.Zero);
 						}
 					}
 					Debug.Assert(timeStamps != null);
@@ -1628,12 +1640,24 @@ namespace VDF.Core {
 						timeStamps = new List<TimeSpan>(positionList.Count);
 						for (int j = 0; j < positionList.Count; j++) {
 							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
-							timeStamps.Add(timestamp);
 							var b = FfmpegEngine.ExtractThumbnailJpeg(entry.Path, timestamp, maxDim, Settings.ExtendedFFToolsLogging);
-							if (b == null || b.Length == 0) return ValueTask.CompletedTask;
-							using var byteStream = new MemoryStream(b);
-							var bitmapImage = Image.Load(byteStream);
-							list.Add(bitmapImage);
+							if (b == null || b.Length == 0) {
+								Logger.Instance.Info($"Failed extracting thumbnail at {timestamp} for '{entry.Path}', skipping that position.");
+								continue;
+							}
+							try {
+								using var byteStream = new MemoryStream(b);
+								var bitmapImage = Image.Load(byteStream);
+								list.Add(bitmapImage);
+								timeStamps.Add(timestamp);
+							}
+							catch (Exception ex) {
+								Logger.Instance.Info($"Failed decoding thumbnail bytes at {timestamp} for '{entry.Path}', reason: {ex.Message}");
+							}
+						}
+						if (list.Count == 0 && NoThumbnailImage != null) {
+							list.Add(NoThumbnailImage);
+							timeStamps.Add(TimeSpan.Zero);
 						}
 					}
 					Debug.Assert(timeStamps != null);
