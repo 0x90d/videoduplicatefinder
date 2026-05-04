@@ -261,3 +261,6 @@ __pycache__/
 *.pyc
 .vscode/launch.json
 .vscode/
+
+# macOS
+.DS_Store
