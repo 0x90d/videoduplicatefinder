@@ -25,6 +25,10 @@ namespace VDF.Core {
 		public HashSet<string> IncludeList { get; set; } = new HashSet<string>();
 		public HashSet<string> BlackList { get; set; } = new HashSet<string>();
 
+        // Custom Path for FFmpeg and FFprobe
+		public string CustomFFprobePath { get; set; } = string.Empty;
+		public string CustomFFmpegPath { get; set; } = string.Empty;
+
 		public bool IgnoreReadOnlyFolders;
 		public bool IgnoreReparsePoints;
 		public bool ExcludeHardLinks;

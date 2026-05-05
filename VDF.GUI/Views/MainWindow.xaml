@@ -1738,6 +1738,14 @@
                                                     <TextBox Width="250" HorizontalAlignment="Left"
                                                              Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFArguments}"
                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFArgumentsTooltip]}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFmpegPath]}" />
+                                                    <TextBox Width="250" HorizontalAlignment="Left"
+                                                             Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFmpegPath}"
+                                                             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFmpegPathTooltip]}" />
+                                                    <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFprobePath]}" />
+                                                    <TextBox Width="250" HorizontalAlignment="Left"
+                                                             Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomFFprobePath}"
+                                                             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomFFprobePathTooltip]}" />
                                                 </StackPanel>
                                             </Border>
                                             <!-- Custom Commands & Advanced -->

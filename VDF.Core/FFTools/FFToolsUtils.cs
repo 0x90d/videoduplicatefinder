@@ -24,6 +24,8 @@ namespace VDF.Core.FFTools {
 		const string FFmpegExecutableName = "ffmpeg";
 		static readonly string ffProbePlatformName;
 		static readonly string ffMpegPlatformName;
+		public static string CustomFFmpegPath { get; set; } = string.Empty;
+		public static string CustomFFprobePath { get; set; } = string.Empty;
 		public enum FFTool {
 			FFProbe,
 			FFmpeg
@@ -40,37 +42,55 @@ namespace VDF.Core.FFTools {
 		/// <param name="tool"></param>
 		/// <returns>path or null if not found</returns>
 		internal static string? GetPath(FFTool tool) {
-			var toolExecutable = tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName;
-			var toolPath = Path.Combine(CoreUtils.CurrentFolder, "bin", toolExecutable);
-			if (File.Exists(toolPath))
-				return toolPath;
+
+			string customPath = tool == FFTool.FFmpeg ? CustomFFmpegPath : CustomFFprobePath;
+			if (!string.IsNullOrWhiteSpace(customPath) && File.Exists(customPath)) {
+				return customPath;
+			}
 			
-			toolPath = Path.Combine(CoreUtils.CurrentFolder, toolExecutable);
-			if (File.Exists(toolPath))
-				return toolPath;
-
+			if (File.Exists($"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}"))
+				return $"{CoreUtils.CurrentFolder}\\bin\\{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}";
+          
+			if (File.Exists(Path.Combine(CoreUtils.CurrentFolder, tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)))
+				return Path.Combine(CoreUtils.CurrentFolder, tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName);
+			
 			var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
-			if (environmentVariables == null) return null;
+			if (environmentVariables != null) {
+				foreach (var path in environmentVariables) {
+					if (!Directory.Exists(path))
+						continue;
 
-			foreach (var path in environmentVariables) {
-				if (!Directory.Exists(path))
-					continue;
+					try {
+						FileInfo[] files = new DirectoryInfo(path).GetFiles(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName, new EnumerationOptions {
+							IgnoreInaccessible = true,
+							MatchCasing = MatchCasing.CaseInsensitive
+						});
 
-				try {
-					FileInfo[] files = new DirectoryInfo(path).GetFiles(toolExecutable, new EnumerationOptions {
-						IgnoreInaccessible = true,
-						MatchCasing = MatchCasing.CaseInsensitive
-					});
-
-					if (files.Length > 0)
-						return files[0].FullName;
-				}
-				catch (Exception) {
+						if (files.Length > 0)
+							return files[0].FullName;
+					}
+					catch (Exception) {
 #if DEBUG
-					throw;
+						throw;
 #endif
+					}
 				}
 			}
+
+			// 4. FALLBACK MACOS: Se não encontrou no PATH, procura nas pastas padrão do Homebrew
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+				string[] macOsPaths = {
+					$"/opt/homebrew/bin/{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}", // Apple Silicon
+					$"/usr/local/bin/{(tool == FFTool.FFmpeg ? ffMpegPlatformName : ffProbePlatformName)}"      // Macs Intel
+				};
+
+				foreach (var macPath in macOsPaths) {
+					if (File.Exists(macPath)) {
+						return macPath;
+					}
+				}
+			}
+
 			return null;
 		}
 
@@ -88,5 +108,4 @@ namespace VDF.Core.FFTools {
 			return $"\\\\?\\{path}";
 		}
 	}
-
 }

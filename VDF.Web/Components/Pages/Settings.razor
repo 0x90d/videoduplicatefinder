@@ -106,10 +106,22 @@
         </select>
     </label>
     <label>
-        Custom FFmpeg arguments
-        <input type="text"
-               value="@Scan.Settings.CustomFFArguments"
-               @onchange="e => Scan.Settings.CustomFFArguments = e.Value?.ToString() ?? string.Empty" />
+	    Custom FFmpeg arguments
+	    <input type="text"
+	           value="@Scan.Settings.CustomFFArguments"
+	           @onchange="e => Scan.Settings.CustomFFArguments = e.Value?.ToString() ?? string.Empty" />
+    </label>
+    <label>
+	    Custom FFmpeg Path
+	    <input type="text"
+	           value="@Scan.Settings.CustomFFmpegPath"
+	           @onchange="e => Scan.Settings.CustomFFmpegPath = e.Value?.ToString() ?? string.Empty" />
+    </label>
+    <label>
+	    Custom FFprob Path
+	    <input type="text"
+	           value="@Scan.Settings.CustomFFprobePath"
+	           @onchange="e => Scan.Settings.CustomFFprobePath = e.Value?.ToString() ?? string.Empty" />
     </label>
 </section>
 
