@@ -284,22 +284,43 @@ namespace VDF.GUI.ViewModels {
 			ResetStepsCommand = ReactiveCommand.Create(() => { StepA = 0; StepB = 0; });
 		}
 
+		bool _suppressSelectionUpdates;
+
 		public void AssignDefaultSelections() {
-			if (Items.Count >= 2) {
-				SelectedItemA = Items[0];
-				SelectedItemB = Items[1];
+			_suppressSelectionUpdates = true;
+			try {
+				if (Items.Count >= 2) {
+					SelectedItemA = Items[0];
+					SelectedItemB = Items[1];
+				}
+				else if (Items.Count == 1) {
+					SelectedItemA = Items[0];
+				}
 			}
-			else if (Items.Count == 1) {
-				SelectedItemA = Items[0];
+			finally {
+				_suppressSelectionUpdates = false;
 			}
-			// Re-evaluate after thumbnails are loaded
 			UpdateShowFrameControls();
 			UpdateImages();
 		}
 
 		void OnSelectionChanged() {
+			if (_suppressSelectionUpdates) return;
 			UpdateShowFrameControls();
 			UpdateImages();
+		}
+
+		// Auto-fallback to Single when only one image is available. Must not write to
+		// settings — otherwise the persisted user preference gets clobbered on every open.
+		void ForceSingleViewWithoutPersist() {
+			if (_selectedCompareMode == CompareMode.Single) return;
+			this.RaiseAndSetIfChanged(ref _selectedCompareMode, CompareMode.Single, nameof(SelectedCompareMode));
+			this.RaisePropertyChanged(nameof(IsSwipe));
+			this.RaisePropertyChanged(nameof(IsSideBySide));
+			this.RaisePropertyChanged(nameof(IsStacked));
+			this.RaisePropertyChanged(nameof(IsSingle));
+			this.RaisePropertyChanged(nameof(IsDualView));
+			this.RaisePropertyChanged(nameof(SwipeHintVisible));
 		}
 
 		void UpdateShowFrameControls() {
@@ -336,7 +357,7 @@ namespace VDF.GUI.ViewModels {
 			}
 
 			if (SelectedCompareMode != CompareMode.Single && (ImageA is null || ImageB is null))
-				SelectedCompareMode = CompareMode.Single;
+				ForceSingleViewWithoutPersist();
 
 			this.RaisePropertyChanged(nameof(ImageSingle));
 			UpdateFrameLabels();
