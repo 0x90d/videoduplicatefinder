@@ -37,7 +37,8 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		// When more than one row is highlighted in the grid, scope Selection-menu
-		// commands to those rows; otherwise fall back to the full list.
+		// and checked-items commands (delete/remove/blacklist/symlink/dry-run) to
+		// those rows; otherwise fall back to the full list.
 		List<DuplicateItemVM> ScopedDuplicates() {
 			var selected = GetSelectedDuplicates();
 			return selected.Count > 1 ? selected : Duplicates.ToList();

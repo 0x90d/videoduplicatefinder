@@ -1289,7 +1289,7 @@ Non-Windows setup:
 		await Scanner.RetrieveThumbnailsForItems(items);
 	});
 
-		List<DuplicateItemVM> CheckedItemsToDelete => Duplicates.Where(d => d.Checked && d.IsVisibleInFilter).ToList();
+		List<DuplicateItemVM> CheckedItemsToDelete => ScopedDuplicates().Where(d => d.Checked && d.IsVisibleInFilter).ToList();
 
 		async void DeleteInternal(bool fromDisk,
 									List<DuplicateItemVM>? toDelete = null,
