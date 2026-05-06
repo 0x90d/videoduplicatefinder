@@ -361,6 +361,11 @@ namespace VDF.Core {
 				reason = "file does not exist";
 				return true;
 			}
+			if (!FileUtils.IsPathFFmpegSafe(entry.Path)) {
+				entry.Flags.Set(EntryFlags.MetadataError);
+				reason = "path contains characters not encodable to UTF-8 (e.g. lone surrogate from a mangled emoji) — FFmpeg cannot open it";
+				return true;
+			}
 
 			if (Settings.FilterByFileSize && (entry.FileSize.BytesToMegaBytes() > Settings.MaximumFileSize ||
 				entry.FileSize.BytesToMegaBytes() < Settings.MinimumFileSize)) {

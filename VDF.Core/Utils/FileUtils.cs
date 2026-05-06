@@ -115,6 +115,26 @@ namespace VDF.Core.Utils {
 			return Path.Combine(path1, path2);
 		}
 
+		// NTFS allows arbitrary UTF-16 in filenames, including lone surrogates
+		// (e.g. files dropped from a browser/messenger that mangled an emoji into a
+		// half-pair). FFmpeg expects a UTF-8 path, but lone surrogates have no UTF-8
+		// encoding — .NET's default UTF-8 encoder silently substitutes '?', and the
+		// path FFmpeg receives no longer matches the file on disk. We reject those
+		// up front so the native binding never sees an unrepresentable string.
+		internal static bool IsPathFFmpegSafe(string path) {
+			if (string.IsNullOrEmpty(path))
+				return true;
+			try {
+				_ = strictUtf8.GetByteCount(path);
+				return true;
+			}
+			catch (System.Text.EncoderFallbackException) {
+				return false;
+			}
+		}
+
+		static readonly System.Text.UTF8Encoding strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
 		/// <summary>
 		/// Possible flags for the SHFileOperation method.
 		/// </summary>
