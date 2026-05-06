@@ -301,7 +301,7 @@
 	"Message.CopyFailed": "Échec de copie de certains fichiers. Veuillez vérifier le journal !",
 	"Message.CustomDatabaseFolderMissing": "Le dossier de base de données personnalisé n'existe pas !",
 	"Message.DatabaseCleaned": "Base de données nettoyée !",
-	"Message.DeleteFromDiskPrompt": "Supprimer les fichiers du DISQUE également ?",
+	"Message.DeleteFromDiskPrompt": "Que faire des fichiers cochés ?\n\nOui — supprimer les fichiers du disque (envoyer à la corbeille)\nNon — retirer uniquement de la liste (conserver les fichiers sur le disque)\nAnnuler — ne rien faire",
 	"Message.DiscardResultsPrompt": "Voulez-vous jeter les résultats et lancer une nouvelle analyse ?",
 	"Message.Done": "Terminé !",
 	"Message.ExportDatabaseFailed": "L'export de la base de données a échoué, veuillez consulter le journal",

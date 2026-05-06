@@ -301,7 +301,7 @@
 	"Message.CopyFailed": "No se pudieron copiar algunos archivos. ¡Revisa el registro!",
 	"Message.CustomDatabaseFolderMissing": "¡La carpeta de base de datos personalizada no existe!",
 	"Message.DatabaseCleaned": "¡Base de datos limpiada!",
-	"Message.DeleteFromDiskPrompt": "¿Eliminar también los archivos del DISCO?",
+	"Message.DeleteFromDiskPrompt": "¿Qué hacer con los archivos marcados?\n\nSí — eliminar archivos del disco (enviar a la papelera)\nNo — quitar solo de la lista (conservar archivos en el disco)\nCancelar — no hacer nada",
 	"Message.DiscardResultsPrompt": "¿Quieres descartar los resultados e iniciar un nuevo escaneo?",
 	"Message.Done": "¡Hecho!",
 	"Message.ExportDatabaseFailed": "La exportación de la base de datos falló, consulta el registro",

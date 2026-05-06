@@ -29,6 +29,7 @@
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <Button
+                    x:Name="OkButton"
                     Grid.Column="1"
                     Width="100"
                     Margin="5"
@@ -36,6 +37,7 @@
                     Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.OK]}"
                     IsVisible="{Binding HasOKButton}" />
                 <Button
+                    x:Name="YesButton"
                     Grid.Column="2"
                     Width="100"
                     Margin="5"
@@ -43,6 +45,7 @@
                     Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Yes]}"
                     IsVisible="{Binding HasYesButton}" />
                 <Button
+                    x:Name="NoButton"
                     Grid.Column="3"
                     Width="100"
                     Margin="5"
@@ -50,6 +53,7 @@
                     Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.No]}"
                     IsVisible="{Binding HasNoButton}" />
                 <Button
+                    x:Name="CancelButton"
                     Grid.Column="4"
                     Width="100"
                     Margin="5"

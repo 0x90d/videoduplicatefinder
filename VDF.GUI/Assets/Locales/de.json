@@ -301,7 +301,7 @@
 	"Message.CopyFailed": "Kopieren einiger Dateien fehlgeschlagen. Bitte Log prüfen!",
 	"Message.CustomDatabaseFolderMissing": "Der benutzerdefinierte Datenbankordner existiert nicht!",
 	"Message.DatabaseCleaned": "Datenbank bereinigt!",
-	"Message.DeleteFromDiskPrompt": "Dateien auch von der FESTPLATTE löschen?",
+	"Message.DeleteFromDiskPrompt": "Was soll mit den markierten Dateien geschehen?\n\nJa — Dateien von der Festplatte löschen (in den Papierkorb verschieben)\nNein — nur aus der Liste entfernen (Dateien behalten)\nAbbrechen — nichts tun",
 	"Message.DiscardResultsPrompt": "Möchten Sie die Ergebnisse verwerfen und einen neuen Scan starten?",
 	"Message.Done": "Fertig!",
 	"Message.ExportDatabaseFailed": "Export der Datenbank fehlgeschlagen, siehe Log",

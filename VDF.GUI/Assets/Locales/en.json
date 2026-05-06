@@ -306,7 +306,7 @@
 	"Message.CopyFailed": "Failed to copy some files. Please check log!",
 	"Message.CustomDatabaseFolderMissing": "The custom database folder does not exist!",
 	"Message.DatabaseCleaned": "Database cleaned!",
-	"Message.DeleteFromDiskPrompt": "Delete files also from DISK?",
+	"Message.DeleteFromDiskPrompt": "What should happen with the checked files?\n\nYes — delete files from disk (send to recycle bin)\nNo — remove from list only (keep files on disk)\nCancel — do nothing",
 	"Message.DiscardResultsPrompt": "Do you want to discard the results and start a new scan?",
 	"Message.Done": "Done!",
 	"Message.ExportDatabaseFailed": "Exporting database has failed, please see log",

@@ -16,7 +16,9 @@
 
 using System.Runtime.InteropServices;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 
@@ -24,11 +26,11 @@ namespace VDF.GUI.Views {
 
 	public static class MessageBoxService {
 		public static async Task<MessageBoxButtons?> Show(string message, MessageBoxButtons buttons = MessageBoxButtons.Ok,
-			string? title = null) {
+			string? title = null, MessageBoxButtons defaultButton = MessageBoxButtons.None) {
 			while (ApplicationHelpers.MainWindow == null) {
 				await Task.Delay(500);
 			}
-			var dlg = new MessageBoxView(message, buttons, title) {
+			var dlg = new MessageBoxView(message, buttons, title, defaultButton) {
 				Icon = ApplicationHelpers.MainWindow.Icon
 			};
 			return await dlg.ShowDialog<MessageBoxButtons?>(ApplicationHelpers.MainWindow);
@@ -42,7 +44,8 @@ namespace VDF.GUI.Views {
 		//Designer need this
 		public MessageBoxView() => InitializeComponent();
 
-		public MessageBoxView(string message, MessageBoxButtons buttons = MessageBoxButtons.Ok, string? title = null) {
+		public MessageBoxView(string message, MessageBoxButtons buttons = MessageBoxButtons.Ok, string? title = null,
+			MessageBoxButtons defaultButton = MessageBoxButtons.None) {
 
 			MessageBoxVM vm = new() {
 				host = this,
@@ -60,6 +63,23 @@ namespace VDF.GUI.Views {
 			Owner = ApplicationHelpers.MainWindow;
 			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+			if (defaultButton != MessageBoxButtons.None && (buttons & defaultButton) != 0) {
+				string? name = defaultButton switch {
+					MessageBoxButtons.Ok => "OkButton",
+					MessageBoxButtons.Yes => "YesButton",
+					MessageBoxButtons.No => "NoButton",
+					MessageBoxButtons.Cancel => "CancelButton",
+					_ => null
+				};
+				if (name != null) {
+					var btn = this.FindControl<Button>(name);
+					if (btn != null)
+						Opened += (_, _) => Dispatcher.UIThread.Post(
+							() => btn.Focus(NavigationMethod.Tab),
+							DispatcherPriority.Background);
+				}
+			}
 		}
 
 

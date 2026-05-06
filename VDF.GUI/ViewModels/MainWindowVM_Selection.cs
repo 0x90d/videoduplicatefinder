@@ -266,7 +266,8 @@ namespace VDF.GUI.ViewModels {
 				return;
 			}
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(App.Lang["Message.DeleteFromDiskPrompt"],
-				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel);
+				MessageBoxButtons.Yes | MessageBoxButtons.No | MessageBoxButtons.Cancel,
+				defaultButton: MessageBoxButtons.Cancel);
 			if (dlgResult == MessageBoxButtons.Yes)
 #pragma warning disable CS4014
 				Dispatcher.UIThread.InvokeAsync(() => {

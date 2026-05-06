@@ -301,7 +301,7 @@
 	"Message.CopyFailed": "部分文件复制失败。请检查日志！",
 	"Message.CustomDatabaseFolderMissing": "自定义数据库文件夹不存在！",
 	"Message.DatabaseCleaned": "数据库已清理！",
-	"Message.DeleteFromDiskPrompt": "是否同时从磁盘删除文件？",
+	"Message.DeleteFromDiskPrompt": "如何处理已勾选的文件？\n\n是 — 从磁盘删除文件（移至回收站）\n否 — 仅从列表中移除（保留磁盘上的文件）\n取消 — 不执行任何操作",
 	"Message.DiscardResultsPrompt": "是否丢弃结果并开始新的扫描？",
 	"Message.Done": "完成！",
 	"Message.ExportDatabaseFailed": "导出数据库失败，请查看日志",

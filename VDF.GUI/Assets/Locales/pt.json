@@ -301,7 +301,7 @@
 	"Message.CopyFailed": "Falha ao copiar alguns arquivos. Verifique o log!",
 	"Message.CustomDatabaseFolderMissing": "A pasta de banco de dados personalizada não existe!",
 	"Message.DatabaseCleaned": "Banco de dados limpo!",
-	"Message.DeleteFromDiskPrompt": "Excluir arquivos do DISCO também?",
+	"Message.DeleteFromDiskPrompt": "O que fazer com os arquivos marcados?\n\nSim — excluir arquivos do disco (enviar para a lixeira)\nNão — remover apenas da lista (manter arquivos no disco)\nCancelar — não fazer nada",
 	"Message.DiscardResultsPrompt": "Deseja descartar os resultados e iniciar uma nova varredura?",
 	"Message.Done": "Concluído!",
 	"Message.ExportDatabaseFailed": "Falha ao exportar o banco de dados, verifique o log",
