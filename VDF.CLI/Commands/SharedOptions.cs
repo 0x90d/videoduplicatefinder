@@ -95,6 +95,16 @@ namespace VDF.CLI.Commands {
 			DefaultValueFactory = _ => 0.80
 		};
 
+		internal static readonly Option<bool> PartialClipRequireVisualMatch = new("--partial-clip-require-visual") {
+			Description = "Require an on-demand visual frame check on partial-clip matches to filter false positives from videos that share an audio track but differ visually. Default: true.",
+			DefaultValueFactory = _ => true
+		};
+
+		internal static readonly Option<double> PartialClipVisualThreshold = new("--partial-clip-visual-threshold") {
+			Description = "Minimum visual similarity (0.0–1.0) for the partial-clip visual gate. Uses pHash when --use-phash is set, else 32x32 grayscale percent diff. Default: 0.85.",
+			DefaultValueFactory = _ => 0.85
+		};
+
 		internal static readonly Option<int> CheckpointInterval = new("--checkpoint-interval") {
 			Description = "Database checkpoint interval in minutes during scanning. 0 = disabled. Default: 5.",
 			DefaultValueFactory = _ => 5
@@ -142,6 +152,8 @@ namespace VDF.CLI.Commands {
 			s.EnablePartialClipDetection = r.GetValue(EnablePartialClipDetection);
 			s.PartialClipMinRatio = r.GetValue(PartialClipMinRatio);
 			s.PartialClipSimilarityThreshold = r.GetValue(PartialClipSimilarityThreshold);
+			s.PartialClipRequireVisualMatch = r.GetValue(PartialClipRequireVisualMatch);
+			s.PartialClipVisualThreshold = r.GetValue(PartialClipVisualThreshold);
 		}
 
 		internal static void AddScanOptions(Command cmd) {
@@ -162,6 +174,8 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(EnablePartialClipDetection);
 			cmd.Options.Add(PartialClipMinRatio);
 			cmd.Options.Add(PartialClipSimilarityThreshold);
+			cmd.Options.Add(PartialClipRequireVisualMatch);
+			cmd.Options.Add(PartialClipVisualThreshold);
 			cmd.Options.Add(SettingsFile);
 			cmd.Options.Add(Format);
 			cmd.Options.Add(Output);

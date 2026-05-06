@@ -1141,6 +1141,35 @@ namespace VDF.Core {
 			// candidate clips are already claimed are skipped entirely - adding them would
 			// produce singleton groups in the result list.
 			var assignments = AssignPartialClipGroups(matches);
+
+			// Optional visual gate: drop pairs that match audio but differ visually at the
+			// matched offset (e.g. videos sharing a backing track but otherwise unrelated).
+			// Uses pHash when Settings.UsePHashing is on, else 32x32 grayscale percentage diff.
+			if (Settings.PartialClipRequireVisualMatch && assignments.Count > 0) {
+				int beforeCount = assignments.Count;
+				int dropped = 0;
+				var verified = new ConcurrentBag<(int, int, float, int, Guid)>();
+				try {
+					Parallel.ForEach(assignments, new ParallelOptions {
+						CancellationToken = cancelationTokenSource.Token,
+						MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount)
+					}, a => {
+						bool pass = VerifyPartialClipVisually(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec, out float visualSim);
+						if (pass) {
+							verified.Add(a);
+						}
+						else {
+							Interlocked.Increment(ref dropped);
+							if (Settings.ExtendedFFToolsLogging)
+								Logger.Instance.Info($"[Partial] Visual gate dropped {System.IO.Path.GetFileName(videos[a.clipIdx].Path)} in {System.IO.Path.GetFileName(videos[a.sourceIdx].Path)}: visualSim={visualSim:P1} (threshold {Settings.PartialClipVisualThreshold:P0})");
+						}
+					});
+				}
+				catch (OperationCanceledException) { }
+				assignments = verified.OrderBy(a => a.Item1).ThenBy(a => a.Item2).ToList();
+				Logger.Instance.Info($"Partial clip detection: visual gate kept {assignments.Count}/{beforeCount} assignment(s), dropped {dropped}");
+			}
+
 			var addedSources = new HashSet<int>();
 
 			foreach (var (si, ci, sim, offsetSec, groupId) in assignments) {
@@ -1159,6 +1188,77 @@ namespace VDF.Core {
 			}
 
 			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
+		}
+
+		/// <summary>
+		/// On-demand visual check for a partial-clip candidate. Decodes 1-3 frames from the
+		/// clip and the source at the matched audio offset and compares them. Returns true
+		/// when the average similarity meets <see cref="Settings.PartialClipVisualThreshold"/>,
+		/// or when no frames could be sampled (in which case audio alone decides). Uses pHash
+		/// when <see cref="Settings.UsePHashing"/> is enabled, otherwise grayscale percent diff.
+		/// </summary>
+		bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim) {
+			visualSim = 0f;
+			double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+			double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+			if (sourceSec <= 0 || clipSec <= 0) return true;
+
+			// Sample times in clip-local seconds. Avoid the very edges so intros/outros
+			// (often black or text-only) don't dominate the result.
+			var clipTimes = new List<double>(3);
+			if (clipSec >= 9.0) {
+				clipTimes.Add(clipSec * 0.25);
+				clipTimes.Add(clipSec * 0.50);
+				clipTimes.Add(clipSec * 0.75);
+			}
+			else if (clipSec >= 3.0) {
+				clipTimes.Add(clipSec * 0.33);
+				clipTimes.Add(clipSec * 0.66);
+			}
+			else {
+				clipTimes.Add(clipSec * 0.5);
+			}
+
+			bool useP = Settings.UsePHashing;
+			double threshold = Settings.PartialClipVisualThreshold;
+			int comparisons = 0;
+			float simSum = 0f;
+
+			foreach (double t in clipTimes) {
+				double srcAt = offsetSec + t;
+				if (srcAt >= sourceSec - 0.1 || t >= clipSec - 0.1) continue;
+
+				byte[]? srcFrame = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+					File = source.Path,
+					Position = TimeSpan.FromSeconds(srcAt),
+					GrayScale = 1
+				}, Settings.ExtendedFFToolsLogging);
+				if (srcFrame == null) continue;
+
+				byte[]? clipFrame = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+					File = clip.Path,
+					Position = TimeSpan.FromSeconds(t),
+					GrayScale = 1
+				}, Settings.ExtendedFFToolsLogging);
+				if (clipFrame == null) continue;
+
+				float pairSim;
+				if (useP) {
+					ulong hSrc = pHash.PerceptualHash.ComputePHashFromGray32x32(srcFrame);
+					ulong hClip = pHash.PerceptualHash.ComputePHashFromGray32x32(clipFrame);
+					pHash.PHashCompare.IsDuplicateByPercent(hSrc, hClip, out pairSim, threshold, strict: true);
+				}
+				else {
+					float diff = GrayBytesUtils.PercentageDifference(srcFrame, clipFrame);
+					pairSim = 1f - diff;
+				}
+				simSum += pairSim;
+				comparisons++;
+			}
+
+			if (comparisons == 0) return true;
+			visualSim = simSum / comparisons;
+			return visualSim >= threshold;
 		}
 
 		/// <summary>

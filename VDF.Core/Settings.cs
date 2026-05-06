@@ -84,6 +84,19 @@ namespace VDF.Core {
 		/// accepted as a partial clip.  Default 0.80.
 		/// </summary>
 		public double PartialClipSimilarityThreshold = 0.80;
+		/// <summary>
+		/// When true, partial clip matches must also pass a visual frame check at the
+		/// matched offset. Suppresses false positives from videos sharing the same audio
+		/// (e.g. TikToks reusing a song) but with different visual content.
+		/// </summary>
+		public bool PartialClipRequireVisualMatch = true;
+		/// <summary>
+		/// Minimum visual similarity (0–1) for the on-demand frame check used by
+		/// <see cref="PartialClipRequireVisualMatch"/>.  Default 0.85.
+		/// Compared via pHash when <see cref="UsePHashing"/> is enabled, otherwise via
+		/// 32×32 grayscale percentage difference.
+		/// </summary>
+		public double PartialClipVisualThreshold = 0.85;
 
 		// ── Database checkpoints ────────────────────────────────────────────
 		/// <summary>

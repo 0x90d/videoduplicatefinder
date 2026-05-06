@@ -460,6 +460,10 @@
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Minimum clip duration as a percentage of the source duration. Clips shorter than this ratio are ignored.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Min audio similarity (%):",
 	"MainWindow.Settings.PartialClipSimilarityThresholdTooltip": "Minimum average Hamming similarity for the audio fingerprint sliding-window match to be accepted.",
+	"MainWindow.Settings.PartialClipRequireVisualMatch": "Require visual match",
+	"MainWindow.Settings.PartialClipRequireVisualMatchTooltip": "Confirm partial-clip matches by also checking video frames at the matched offset. Filters false positives from videos sharing an audio track but with different visuals (e.g. TikToks reusing a song). Adds a few frame decodes per match. Uses pHash if 'Use perceptual hashing' is enabled, else 32x32 grayscale percent diff.",
+	"MainWindow.Settings.PartialClipVisualThreshold": "Min visual similarity (%):",
+	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "Minimum visual similarity at the matched offset for a partial-clip pair to be kept.",
 	"Dialog.CopySelected": "Copy Selected",
 	"DuplicateList.HoverDiff.Best": "BEST"
 }

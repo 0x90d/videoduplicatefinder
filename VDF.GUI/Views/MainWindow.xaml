@@ -1434,6 +1434,21 @@
                                                                        Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipSimilarityThresholdPercent}"
                                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipSimilarityThresholdTooltip]}" />
                                                     </Grid>
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipRequireVisualMatch]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipRequireVisualMatch}"
+                                                              IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnablePartialClipDetection}"
+                                                              IsThreeState="False"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipRequireVisualMatchTooltip]}" />
+                                                    <Grid ColumnDefinitions="Auto,8,80"
+                                                          IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipRequireVisualMatch}">
+                                                        <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipVisualThreshold]}"
+                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipVisualThresholdTooltip]}" />
+                                                        <NumericUpDown Grid.Column="2"
+                                                                       Width="80" Increment="0.1" Minimum="1" Maximum="100"
+                                                                       Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipVisualThresholdPercent}"
+                                                                       ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipVisualThresholdTooltip]}" />
+                                                    </Grid>
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>

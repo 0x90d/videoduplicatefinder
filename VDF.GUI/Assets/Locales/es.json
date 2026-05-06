@@ -460,6 +460,10 @@
 	"MainWindow.Settings.PartialClipMinRatioTooltip": "Duración mínima del clip como porcentaje de la duración de la fuente.",
 	"MainWindow.Settings.PartialClipSimilarityThreshold": "Similitud de audio mín. (%):",
 	"MainWindow.Settings.PartialClipSimilarityThresholdTooltip": "Similitud de Hamming mínima para la comparación de huella dactilar de audio.",
+	"MainWindow.Settings.PartialClipRequireVisualMatch": "Requerir coincidencia visual",
+	"MainWindow.Settings.PartialClipRequireVisualMatchTooltip": "Confirma las coincidencias de clips parciales comprobando también fotogramas de vídeo en el desplazamiento detectado. Filtra falsos positivos de vídeos que comparten audio pero difieren visualmente (p. ej. TikToks que reutilizan la misma canción). Usa pHash si 'Usar hash perceptual' está activado; en caso contrario, diferencia porcentual en escala de grises 32x32.",
+	"MainWindow.Settings.PartialClipVisualThreshold": "Similitud visual mín. (%):",
+	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "Similitud visual mínima en el desplazamiento detectado para mantener un par de clip parcial.",
 	"Dialog.CopySelected": "Copiar seleccionado",
 	"DuplicateList.HoverDiff.Best": "MEJOR"
 }

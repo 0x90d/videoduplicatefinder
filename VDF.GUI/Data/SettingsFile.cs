@@ -449,6 +449,18 @@ namespace VDF.GUI.Data {
 			get => _PartialClipSimilarityThresholdPercent;
 			set => this.RaiseAndSetIfChanged(ref _PartialClipSimilarityThresholdPercent, value);
 		}
+		bool _PartialClipRequireVisualMatch = true;
+		[JsonPropertyName("PartialClipRequireVisualMatch")]
+		public bool PartialClipRequireVisualMatch {
+			get => _PartialClipRequireVisualMatch;
+			set => this.RaiseAndSetIfChanged(ref _PartialClipRequireVisualMatch, value);
+		}
+		double _PartialClipVisualThresholdPercent = 85d;
+		[JsonPropertyName("PartialClipVisualThresholdPercent")]
+		public double PartialClipVisualThresholdPercent {
+			get => _PartialClipVisualThresholdPercent;
+			set => this.RaiseAndSetIfChanged(ref _PartialClipVisualThresholdPercent, value);
+		}
 
 		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
 		[JsonPropertyName("QualityCriteriaOrder")]
