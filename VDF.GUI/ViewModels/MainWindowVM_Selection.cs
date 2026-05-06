@@ -17,6 +17,7 @@
 using System.Linq;
 using System.Reactive;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DynamicExpresso;
@@ -72,6 +73,7 @@ namespace VDF.GUI.ViewModels {
 				interpreter = new Interpreter(InterpreterOptions.PrimitiveTypes | InterpreterOptions.SystemKeywords)
 					.Reference(typeof(TimeSpan))
 					.Reference(typeof(Math))
+					.Reference(typeof(Regex))
 					.ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
 			}
 			catch (Exception ex) {
