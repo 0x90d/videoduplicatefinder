@@ -123,52 +123,56 @@
                         FontWeight="SemiBold"
                         FontSize="13"
                         Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Files]}" />
-                    <ItemsControl
+                    <ScrollViewer
                         Grid.Row="1"
-                        Margin="6,0,6,6"
-                        ItemsSource="{Binding Items}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:LargeThumbnailDuplicateItem">
-                                <Border
-                                    Margin="2"
-                                    Padding="4"
-                                    CornerRadius="4"
-                                    BorderThickness="1"
-                                    BorderBrush="Transparent">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Grid.Column="0">
-                                            <Image
-                                                MaxWidth="160"
-                                                MaxHeight="80"
-                                                IsVisible="{Binding !IsLoadingThumbnail}"
-                                                Source="{Binding Thumbnail}"
-                                                Stretch="Uniform" />
-                                            <TextBlock
-                                                Margin="0,3,0,0"
-                                                FontSize="11"
-                                                Text="{Binding FileName}"
-                                                TextTrimming="CharacterEllipsis"
-                                                TextWrapping="NoWrap"
-                                                ToolTip.Tip="{Binding Item.ItemInfo.Path}" />
-                                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,1,0,0">
-                                                <TextBlock FontSize="10" Opacity="0.5" Text="{Binding Item.ItemInfo.FrameSize}" />
-                                                <TextBlock FontSize="10" Opacity="0.5" Text="{Binding Item.ItemInfo.Duration, StringFormat={}{0:hh\\:mm\\:ss}}" />
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+                        <ItemsControl
+                            Margin="6,0,6,6"
+                            ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:LargeThumbnailDuplicateItem">
+                                    <Border
+                                        Margin="2"
+                                        Padding="4"
+                                        CornerRadius="4"
+                                        BorderThickness="1"
+                                        BorderBrush="Transparent">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <Image
+                                                    MaxWidth="160"
+                                                    MaxHeight="80"
+                                                    IsVisible="{Binding !IsLoadingThumbnail}"
+                                                    Source="{Binding Thumbnail}"
+                                                    Stretch="Uniform" />
+                                                <TextBlock
+                                                    Margin="0,3,0,0"
+                                                    FontSize="11"
+                                                    Text="{Binding FileName}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap"
+                                                    ToolTip.Tip="{Binding Item.ItemInfo.Path}" />
+                                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,1,0,0">
+                                                    <TextBlock FontSize="10" Opacity="0.5" Text="{Binding Item.ItemInfo.FrameSize}" />
+                                                    <TextBlock FontSize="10" Opacity="0.5" Text="{Binding Item.ItemInfo.Duration, StringFormat={}{0:hh\\:mm\\:ss}}" />
+                                                </StackPanel>
                                             </StackPanel>
-                                        </StackPanel>
-                                        <!-- A/B badges -->
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="2" Margin="4,0,0,0">
-                                            <Border Classes="badge-a" IsVisible="{Binding IsSourceA}">
-                                                <TextBlock Classes="badge-text" Text="A" />
-                                            </Border>
-                                            <Border Classes="badge-b" IsVisible="{Binding IsSourceB}">
-                                                <TextBlock Classes="badge-text" Text="B" />
-                                            </Border>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                            <!-- A/B badges -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="2" Margin="4,0,0,0">
+                                                <Border Classes="badge-a" IsVisible="{Binding IsSourceA}">
+                                                    <TextBlock Classes="badge-text" Text="A" />
+                                                </Border>
+                                                <Border Classes="badge-b" IsVisible="{Binding IsSourceB}">
+                                                    <TextBlock Classes="badge-text" Text="B" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Grid>
             </Border>
 
