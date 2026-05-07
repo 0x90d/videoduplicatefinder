@@ -1632,7 +1632,12 @@ namespace VDF.Core {
 			ext.Equals(".tif", StringComparison.OrdinalIgnoreCase);
 
 		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {
-			var dupList = items.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
+			// Also retry items whose only image is the NoThumbnailImage placeholder — those
+			// represent prior extraction failures from the auto-load pass. Without this, an
+			// explicit "Load thumbnails for group" silently no-ops on the very items the
+			// user is trying to recover.
+			var dupList = items.Where(d => d.ImageList == null || d.ImageList.Count == 0
+				|| (NoThumbnailImage != null && d.ImageList.Count == 1 && d.ImageList[0] == NoThumbnailImage)).ToList();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<Image>? list = null;
