@@ -19,6 +19,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 using VDF.GUI.Views;
@@ -41,6 +42,8 @@ namespace VDF.GUI {
 				desktop.Exit += OnExitCleanup; //fallback
 				AppDomain.CurrentDomain.ProcessExit += (_, __) => SafeCleanup();
 				AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+				Dispatcher.UIThread.UnhandledException += OnDispatcherUnhandledException;
+				TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 			}
 
 			base.OnFrameworkInitializationCompleted();
@@ -54,6 +57,21 @@ namespace VDF.GUI {
 			}
 			catch { /* never let logging failure mask the original crash */ }
 			SafeCleanup();
+		}
+		private static void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e) {
+			try {
+				VDF.Core.Utils.Logger.Instance.Info($"Unhandled dispatcher exception: {e.Exception}");
+			}
+			catch { /* never let logging failure mask the original error */ }
+			// Keep the app alive so the user can save state and the log contains a stack trace.
+			e.Handled = true;
+		}
+		private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) {
+			try {
+				VDF.Core.Utils.Logger.Instance.Info($"Unobserved task exception: {e.Exception}");
+			}
+			catch { /* never let logging failure mask the original error */ }
+			e.SetObserved();
 		}
 		private static void SafeCleanup() {
 			try {

@@ -1205,8 +1205,8 @@ Non-Windows setup:
 			Scanner.Stop();
 		}, this.WhenAnyValue(x => x.IsScanning));
 
-		public ReactiveCommand<Unit, Unit> MarkGroupAsNotAMatchCommand => ReactiveCommand.Create(() => {
-			Dispatcher.UIThread.InvokeAsync(async () => {
+		public ReactiveCommand<Unit, Unit> MarkGroupAsNotAMatchCommand => ReactiveCommand.CreateFromTask(async () => {
+			try {
 				if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
 
 				var gid = data.ItemInfo.GroupId;
@@ -1223,6 +1223,7 @@ Non-Windows setup:
 				catch (Exception e) {
 					GroupBlacklist.Remove(blacklist);
 					await MessageBoxService.Show(e.Message);
+					return;
 				}
 
 				// Remove all items in this group from the list
@@ -1235,7 +1236,10 @@ Non-Windows setup:
 				DropSingletonGroups();
 				RefreshGroupStats();
 				view?.Refresh();
-			});
+			}
+			catch (Exception ex) {
+				Logger.Instance.Info($"MarkGroupAsNotAMatch failed: {ex}");
+			}
 		});
 
 		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
