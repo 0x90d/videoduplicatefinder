@@ -390,7 +390,7 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		void TryStartScheduledScan() {
-			if (IsScanning) return;
+			if (IsScanning || IsBusy) return;
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
 				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingDatabaseFolder"]);
 				return;
@@ -1186,7 +1186,7 @@ Non-Windows setup:
 			else {
 				Scanner.StartCompare();
 			}
-		});
+		}, this.WhenAnyValue(x => x.IsBusy, busy => !busy));
 
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();
