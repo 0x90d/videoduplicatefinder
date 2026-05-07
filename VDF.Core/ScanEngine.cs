@@ -1631,13 +1631,27 @@ namespace VDF.Core {
 			ext.Equals(".tiff", StringComparison.OrdinalIgnoreCase) ||
 			ext.Equals(".tif", StringComparison.OrdinalIgnoreCase);
 
+		/// <summary>
+		/// Whether an item should be (re)processed for thumbnails. Items with no thumbnails
+		/// load on first pass; items whose sole image is the NoThumbnailImage placeholder
+		/// represent a prior extraction failure and must remain eligible for explicit retry,
+		/// otherwise a "Load thumbnails for group" click silently no-ops on the very items
+		/// the user is trying to recover (issue #748).
+		/// </summary>
+		internal static bool ShouldRetryThumbnails(DuplicateItem item, Image? placeholder) {
+			if (item.ImageList == null || item.ImageList.Count == 0) return true;
+			if (placeholder != null && item.ImageList.Count == 1 && ReferenceEquals(item.ImageList[0], placeholder)) return true;
+			return false;
+		}
+
 		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {
-			// Also retry items whose only image is the NoThumbnailImage placeholder — those
-			// represent prior extraction failures from the auto-load pass. Without this, an
-			// explicit "Load thumbnails for group" silently no-ops on the very items the
-			// user is trying to recover.
-			var dupList = items.Where(d => d.ImageList == null || d.ImageList.Count == 0
-				|| (NoThumbnailImage != null && d.ImageList.Count == 1 && d.ImageList[0] == NoThumbnailImage)).ToList();
+			var dupList = items.Where(d => ShouldRetryThumbnails(d, NoThumbnailImage)).ToList();
+			if (dupList.Count == 0) {
+				Logger.Instance.Info("Explicit thumbnail retry: nothing to do (all selected items already have thumbnails).");
+				return;
+			}
+			Logger.Instance.Info($"Explicit thumbnail retry: starting for {dupList.Count} item(s).");
+			int loaded = 0, placeholders = 0, skippedMissing = 0;
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<Image>? list = null;
@@ -1645,7 +1659,10 @@ namespace VDF.Core {
 					List<TimeSpan>? timeStamps = null;
 					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
 
-					if (needsThumbnails && entry.IsImage) {
+					if (!needsThumbnails) {
+						Interlocked.Increment(ref skippedMissing);
+					}
+					else if (entry.IsImage) {
 						timeStamps = new(0);
 						list = new List<Image>(1);
 						try {
@@ -1660,19 +1677,22 @@ namespace VDF.Core {
 							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
 							bitmapImage.Mutate(i => i.Resize(width, height));
 							list.Add(bitmapImage);
+							Interlocked.Increment(ref loaded);
 						}
 						catch (Exception ex) {
 							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
 							return ValueTask.CompletedTask;
 						}
 					}
-					else if (needsThumbnails) {
+					else {
 						list = new List<Image>(positionList.Count);
 						timeStamps = new List<TimeSpan>(positionList.Count);
+						int failedPositions = 0;
 						for (int j = 0; j < positionList.Count; j++) {
 							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
 							var b = FfmpegEngine.ExtractThumbnailJpeg(entry.Path, timestamp, maxDim, Settings.ExtendedFFToolsLogging);
 							if (b == null || b.Length == 0) {
+								failedPositions++;
 								Logger.Instance.Info($"Failed extracting thumbnail at {timestamp} for '{entry.Path}', skipping that position.");
 								continue;
 							}
@@ -1683,12 +1703,22 @@ namespace VDF.Core {
 								timeStamps.Add(timestamp);
 							}
 							catch (Exception ex) {
+								failedPositions++;
 								Logger.Instance.Info($"Failed decoding thumbnail bytes at {timestamp} for '{entry.Path}', reason: {ex.Message}");
 							}
 						}
 						if (list.Count == 0 && NoThumbnailImage != null) {
 							list.Add(NoThumbnailImage);
 							timeStamps.Add(TimeSpan.Zero);
+							Logger.Instance.Info($"Using placeholder for '{entry.Path}' — all {positionList.Count} sample position(s) failed.");
+							Interlocked.Increment(ref placeholders);
+						}
+						else if (list.Count > 0 && failedPositions > 0) {
+							Logger.Instance.Info($"Loaded {list.Count}/{positionList.Count} thumbnail(s) for '{entry.Path}' ({failedPositions} position(s) failed).");
+							Interlocked.Increment(ref loaded);
+						}
+						else if (list.Count > 0) {
+							Interlocked.Increment(ref loaded);
 						}
 					}
 					Debug.Assert(timeStamps != null);
@@ -1698,13 +1728,17 @@ namespace VDF.Core {
 				});
 			}
 			catch (OperationCanceledException) { }
+			Logger.Instance.Info($"Explicit thumbnail retry complete: {loaded} fully loaded, {placeholders} placeholder, {skippedMissing} skipped (missing on disk).");
 		}
 		public async void RetrieveThumbnails() {
-			var dupList = Duplicates.Where(d => d.ImageList == null || d.ImageList.Count == 0).ToList();
+			var dupList = Duplicates.Where(d => ShouldRetryThumbnails(d, NoThumbnailImage)).ToList();
 			int total = dupList.Count;
 			int done = 0;
 			int lastNotified = 0;
+			int loaded = 0, placeholders = 0, skippedMissing = 0;
+			Logger.Instance.Info($"Thumbnail loading: starting for {total} item(s).");
 
+			var totalSw = Stopwatch.StartNew();
 			var sw = Stopwatch.StartNew();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
@@ -1721,7 +1755,10 @@ namespace VDF.Core {
 
 					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
 
-					if (needsThumbnails && entry.IsImage) {
+					if (!needsThumbnails) {
+						Interlocked.Increment(ref skippedMissing);
+					}
+					else if (entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						timeStamps = new(0);
 						list = new List<Image>(1);
@@ -1738,6 +1775,7 @@ namespace VDF.Core {
 							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
 							bitmapImage.Mutate(i => i.Resize(width, height));
 							list.Add(bitmapImage);
+							Interlocked.Increment(ref loaded);
 						}
 						catch (Exception ex) {
 							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
@@ -1745,13 +1783,15 @@ namespace VDF.Core {
 						}
 
 					}
-					else if (needsThumbnails) {
+					else {
 						list = new List<Image>(positionList.Count);
 						timeStamps = new List<TimeSpan>(positionList.Count);
+						int failedPositions = 0;
 						for (int j = 0; j < positionList.Count; j++) {
 							var timestamp = TimeSpan.FromSeconds(entry.Duration.TotalSeconds * positionList[j]);
 							var b = FfmpegEngine.ExtractThumbnailJpeg(entry.Path, timestamp, maxDim, Settings.ExtendedFFToolsLogging);
 							if (b == null || b.Length == 0) {
+								failedPositions++;
 								Logger.Instance.Info($"Failed extracting thumbnail at {timestamp} for '{entry.Path}', skipping that position.");
 								continue;
 							}
@@ -1762,12 +1802,22 @@ namespace VDF.Core {
 								timeStamps.Add(timestamp);
 							}
 							catch (Exception ex) {
+								failedPositions++;
 								Logger.Instance.Info($"Failed decoding thumbnail bytes at {timestamp} for '{entry.Path}', reason: {ex.Message}");
 							}
 						}
 						if (list.Count == 0 && NoThumbnailImage != null) {
 							list.Add(NoThumbnailImage);
 							timeStamps.Add(TimeSpan.Zero);
+							Logger.Instance.Info($"Using placeholder for '{entry.Path}' — all {positionList.Count} sample position(s) failed.");
+							Interlocked.Increment(ref placeholders);
+						}
+						else if (list.Count > 0 && failedPositions > 0) {
+							Logger.Instance.Info($"Loaded {list.Count}/{positionList.Count} thumbnail(s) for '{entry.Path}' ({failedPositions} position(s) failed).");
+							Interlocked.Increment(ref loaded);
+						}
+						else if (list.Count > 0) {
+							Interlocked.Increment(ref loaded);
 						}
 					}
 					Debug.Assert(timeStamps != null);
@@ -1777,6 +1827,7 @@ namespace VDF.Core {
 				});
 			}
 			catch (OperationCanceledException) { }
+			Logger.Instance.Info($"Thumbnail loading complete: {loaded} fully loaded, {placeholders} placeholder, {skippedMissing} skipped (missing on disk) in {totalSw.Elapsed.TotalSeconds:F1}s.");
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
