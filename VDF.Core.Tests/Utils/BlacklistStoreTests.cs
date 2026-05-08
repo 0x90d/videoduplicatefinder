@@ -130,6 +130,36 @@ public class BlacklistStoreTests : IDisposable {
 	}
 
 	[Fact]
+	public void PruneMissingFiles_DropsEntriesWithAnyMissingPath() {
+		var existing = new HashSet<string> { "/a", "/b" };
+		var groups = new List<HashSet<string>> {
+			new() { "/a", "/b" },        // both exist -> keep
+			new() { "/a", "/missing" },  // one missing -> drop
+			new() { "/gone", "/also" }   // all missing -> drop
+		};
+
+		int removed = BlacklistStore.PruneMissingFiles(groups, p => existing.Contains(p));
+
+		Assert.Equal(2, removed);
+		Assert.Single(groups);
+		Assert.True(groups[0].SetEquals(new[] { "/a", "/b" }));
+	}
+
+	[Fact]
+	public void PruneMissingFiles_OnEmptyList_ReturnsZero() {
+		var groups = new List<HashSet<string>>();
+		Assert.Equal(0, BlacklistStore.PruneMissingFiles(groups, _ => true));
+		Assert.Empty(groups);
+	}
+
+	[Fact]
+	public void PruneMissingFiles_AllPresent_KeepsAll() {
+		var groups = new List<HashSet<string>> { new() { "/a" }, new() { "/b", "/c" } };
+		Assert.Equal(0, BlacklistStore.PruneMissingFiles(groups, _ => true));
+		Assert.Equal(2, groups.Count);
+	}
+
+	[Fact]
 	public async Task Quarantine_DoesNotOverwriteExistingCorruptSibling() {
 		// Two corruption events in the same UTC second must not collide.
 		await File.WriteAllTextAsync(_path, "garbage 1");

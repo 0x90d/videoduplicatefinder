@@ -58,6 +58,24 @@ namespace VDF.Core.Utils {
 			return AtomicJsonWriter.WriteAsync(path, envelope, options: null, ct);
 		}
 
+		/// <summary>
+		/// Removes entries that contain at least one path no longer present on
+		/// disk. Such entries are dead weight: the missing path cannot be in a
+		/// future scan, so the entry's subset condition can never be satisfied.
+		/// Returns the number of entries removed. The caller is responsible for
+		/// persisting via <see cref="SaveAsync"/>.
+		/// </summary>
+		public static int PruneMissingFiles(List<HashSet<string>> groups, Func<string, bool>? exists = null) {
+			exists ??= File.Exists;
+			int before = groups.Count;
+			groups.RemoveAll(entry => {
+				foreach (var p in entry)
+					if (!exists(p)) return true;
+				return false;
+			});
+			return before - groups.Count;
+		}
+
 		internal static List<HashSet<string>> Parse(JsonElement root) {
 			List<HashSet<string>> groups;
 
