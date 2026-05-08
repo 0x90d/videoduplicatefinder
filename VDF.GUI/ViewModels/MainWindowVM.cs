@@ -452,20 +452,10 @@ namespace VDF.GUI.ViewModels {
 				var completedScheduledScan = scheduledScanInProgress;
 				scheduledScanInProgress = false;
 
-				Scanner.Duplicates.RemoveWhere(a => {
-					foreach (HashSet<string> blackListedGroup in GroupBlacklist) {
-						if (!blackListedGroup.Contains(a.Path)) continue;
-						bool isBlacklisted = true;
-						foreach (DuplicateItem blackListItem in Scanner.Duplicates.Where(b => b.GroupId == a.GroupId)) {
-							if (!blackListedGroup.Contains(blackListItem.Path)) {
-								isBlacklisted = false;
-								break;
-							}
-						}
-						if (isBlacklisted) return true;
-					}
-					return false;
-				});
+				var blacklistedGids = ComputeBlacklistedGroupIds(
+					Scanner.Duplicates.Select(d => (d.GroupId, d.Path)));
+				if (blacklistedGids.Count > 0)
+					Scanner.Duplicates.RemoveWhere(d => blacklistedGids.Contains(d.GroupId));
 
 				foreach (var item in Scanner.Duplicates)
 					Duplicates.Add(new DuplicateItemVM(item));
@@ -718,6 +708,15 @@ namespace VDF.GUI.ViewModels {
 					Logger.Instance.Info($"Skipped {skipped} corrupt scan result entries (missing ItemInfo)");
 				if (items.Count == 0)
 					throw new JsonException("All scan result entries were corrupt");
+
+				// Apply not-a-match blacklist; saved results may pre-date marks made just before a crash.
+				var importBlacklistedGids = ComputeBlacklistedGroupIds(
+					items.Select(i => (i.ItemInfo.GroupId, i.ItemInfo.Path)));
+				if (importBlacklistedGids.Count > 0) {
+					int removed = items.RemoveAll(i => importBlacklistedGids.Contains(i.ItemInfo.GroupId));
+					if (removed > 0)
+						Logger.Instance.Info($"Filtered out {removed} items in {importBlacklistedGids.Count} blacklisted groups during import");
+				}
 
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));
 
@@ -1236,11 +1235,19 @@ Non-Windows setup:
 				DropSingletonGroups();
 				RefreshGroupStats();
 				view?.Refresh();
+
+				// Mirror the deletion path: keep backup.scanresults in sync so the mark
+				// survives a crash before the user gets to a clean exit.
+				if (SettingsFile.Instance.BackupAfterListChanged)
+					await ExportScanResults(BackupScanResultsFile);
 			}
 			catch (Exception ex) {
 				Logger.Instance.Info($"MarkGroupAsNotAMatch failed: {ex}");
 			}
 		});
+
+		private HashSet<Guid> ComputeBlacklistedGroupIds(IEnumerable<(Guid GroupId, string Path)> items) =>
+			GroupBlacklistFilter.ComputeBlacklistedGroupIds(items, GroupBlacklist);
 
 		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
