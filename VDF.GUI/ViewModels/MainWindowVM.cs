@@ -46,6 +46,28 @@ namespace VDF.GUI.ViewModels {
 		List<HashSet<string>> GroupBlacklist = new();
 		public string BackupScanResultsFile =>
 			Path.Combine(CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder), "backup.scanresults");
+		public string BlacklistedGroupsFile =>
+			Path.Combine(CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder), "BlacklistedGroups.json");
+
+		// Older builds wrote BlacklistedGroups.json next to the executable; current
+		// code keeps it alongside the rest of the per-user database state. Move
+		// the file once if a legacy copy is present and the new location is empty.
+		void MigrateLegacyBlacklistLocation() {
+			try {
+				string legacy = Path.Combine(CoreUtils.CurrentFolder, "BlacklistedGroups.json");
+				string current = BlacklistedGroupsFile;
+				var cmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+				if (string.Equals(Path.GetFullPath(legacy), Path.GetFullPath(current), cmp)) return;
+				if (File.Exists(legacy) && !File.Exists(current)) {
+					Directory.CreateDirectory(Path.GetDirectoryName(current)!);
+					File.Move(legacy, current);
+					Logger.Instance.Info($"Migrated BlacklistedGroups.json from {legacy} to {current}");
+				}
+			}
+			catch (Exception ex) {
+				Logger.Instance.Info($"Failed to migrate BlacklistedGroups.json: {ex.Message}");
+			}
+		}
 
 		public AvaloniaList<DuplicateItemVM> Duplicates { get; } = new();
 
@@ -192,11 +214,8 @@ namespace VDF.GUI.ViewModels {
 #endif
 
 		public MainWindowVM() {
-			FileInfo groupBlacklistFile = new(FileUtils.SafePathCombine(CoreUtils.CurrentFolder, "BlacklistedGroups.json"));
-			if (groupBlacklistFile.Exists && groupBlacklistFile.Length > 0) {
-				using var stream = new FileStream(groupBlacklistFile.FullName, FileMode.Open);
-				GroupBlacklist = JsonSerializer.Deserialize<List<HashSet<string>>>(stream)!;
-			}
+			MigrateLegacyBlacklistLocation();
+			GroupBlacklist = BlacklistStore.Load(BlacklistedGroupsFile, msg => Logger.Instance.Info(msg));
 			_FileType = TypeFilters[0];
 			Scanner.ScanAborted += Scanner_ScanAborted;
 			Scanner.ScanDone += Scanner_ScanDone;
@@ -604,6 +623,21 @@ namespace VDF.GUI.ViewModels {
 			IncludeFields = true,
 		};
 
+		// Accepts both the v1 envelope ({version, items}) and the legacy raw array
+		// shape produced by older builds. Returns the items list.
+		private static List<DuplicateItemVM> ReadScanResultsItems(JsonElement root) {
+			if (root.ValueKind == JsonValueKind.Array)
+				return root.Deserialize<List<DuplicateItemVM>>(JsonOptions) ?? new();
+
+			if (root.ValueKind == JsonValueKind.Object &&
+				root.TryGetProperty("items", out var itemsEl) &&
+				itemsEl.ValueKind == JsonValueKind.Array) {
+				return itemsEl.Deserialize<List<DuplicateItemVM>>(JsonOptions) ?? new();
+			}
+
+			throw new JsonException("Unknown scan results format");
+		}
+
 		async Task ExportScanResults(string? path = null, bool includeThumbnails = true, int thumbMaxEdge = 160, JsonSerializerOptions? serializerOptions = null) {
 			path ??= await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
@@ -620,10 +654,11 @@ namespace VDF.GUI.ViewModels {
 
 			try {
 				var snapshot = Duplicates.ToList();
+				var envelope = new ScanResultsEnvelope { Version = ScanResultsEnvelope.CurrentVersion, Items = snapshot };
 
 				if (!includeThumbnails) {
 					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
-					await JsonSerializer.SerializeAsync(fs, snapshot, serializerOptions ?? JsonOptions);
+					await JsonSerializer.SerializeAsync(fs, envelope, serializerOptions ?? JsonOptions);
 				}
 				else {
 					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
@@ -631,7 +666,7 @@ namespace VDF.GUI.ViewModels {
 					var jsonEntry = zip.CreateEntry("scan.json", CompressionLevel.NoCompression);
 
 					await using (var es = jsonEntry.Open()) {
-						await JsonSerializer.SerializeAsync(es, snapshot, serializerOptions ?? JsonOptions);
+						await JsonSerializer.SerializeAsync(es, envelope, serializerOptions ?? JsonOptions);
 						await es.FlushAsync();
 					}
 
@@ -700,8 +735,11 @@ namespace VDF.GUI.ViewModels {
 
 				using var zip = ZipFile.OpenRead(path);
 				var json = zip.GetEntry("scan.json") ?? throw new Exception("scan.json missing");
-				await using var js = json.Open();
-				var items = await JsonSerializer.DeserializeAsync<List<DuplicateItemVM>>(js, JsonOptions) ?? new();
+				List<DuplicateItemVM> items;
+				await using (var js = json.Open()) {
+					using var doc = await JsonDocument.ParseAsync(js);
+					items = ReadScanResultsItems(doc.RootElement);
+				}
 
 				int skipped = items.RemoveAll(it => it?.ItemInfo == null);
 				if (skipped > 0)
@@ -1215,9 +1253,7 @@ Non-Windows setup:
 					blacklist.Add(duplicateItem.ItemInfo.Path);
 				GroupBlacklist.Add(blacklist);
 				try {
-					using var stream = new FileStream(FileUtils.SafePathCombine(CoreUtils.CurrentFolder,
-					"BlacklistedGroups.json"), FileMode.Create);
-					await JsonSerializer.SerializeAsync(stream, GroupBlacklist);
+					await BlacklistStore.SaveAsync(BlacklistedGroupsFile, GroupBlacklist);
 				}
 				catch (Exception e) {
 					GroupBlacklist.Remove(blacklist);
