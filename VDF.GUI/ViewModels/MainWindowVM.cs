@@ -1285,6 +1285,12 @@ Non-Windows setup:
 		private HashSet<Guid> ComputeBlacklistedGroupIds(IEnumerable<(Guid GroupId, string Path)> items) =>
 			GroupBlacklistFilter.ComputeBlacklistedGroupIds(items, GroupBlacklist);
 
+		public ReactiveCommand<Unit, Unit> OpenBlacklistManagerCommand => ReactiveCommand.Create(() => {
+			var vm = new BlacklistManagerVM(GroupBlacklist,
+				() => BlacklistStore.SaveAsync(BlacklistedGroupsFile, GroupBlacklist));
+			new BlacklistManagerView(vm).Show();
+		});
+
 		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
 			List<LargeThumbnailDuplicateItem> items = new();

@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:VDF.GUI.ViewModels"
+        xmlns:app="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+        x:Class="VDF.GUI.Views.BlacklistManagerView"
+        x:DataType="vm:BlacklistManagerVM"
+        Width="640"
+        Height="480"
+        MinWidth="420"
+        MinHeight="320"
+        WindowStartupLocation="CenterOwner"
+        Title="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.Title]}">
+    <DockPanel Margin="12">
+        <TextBlock DockPanel.Dock="Top"
+                   Text="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.Description]}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top"
+                   Text="{Binding GroupCountText}"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,8" />
+
+        <!-- Empty-state hint -->
+        <TextBlock DockPanel.Dock="Top"
+                   Text="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.Empty]}"
+                   IsVisible="{Binding IsEmpty}"
+                   Foreground="Gray"
+                   FontStyle="Italic"
+                   Margin="0,0,0,8" />
+
+        <!-- Status / result message -->
+        <TextBlock DockPanel.Dock="Bottom"
+                   Text="{Binding StatusMessage}"
+                   IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Foreground="Gray"
+                   Margin="0,8,0,0" />
+
+        <!-- Action buttons -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.UnmarkSelected]}"
+                    Margin="0,0,8,0"
+                    Command="{Binding UnmarkSelectedCommand}"
+                    CommandParameter="{Binding ElementName=EntriesListBox, Path=SelectedItems}" />
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.PruneMissing]}"
+                    Margin="0,0,8,0"
+                    ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.PruneMissingTooltip]}"
+                    Command="{Binding PruneMissingFilesCommand}" />
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.ClearAll]}"
+                    Margin="0,0,8,0"
+                    Command="{Binding ClearAllCommand}" />
+            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Close]}"
+                    Width="80"
+                    IsCancel="True"
+                    Click="Close_Click" />
+        </StackPanel>
+
+        <!-- Entries list -->
+        <Border BorderBrush="Gray" BorderThickness="1">
+            <ListBox x:Name="EntriesListBox"
+                     ItemsSource="{Binding Entries}"
+                     SelectionMode="Multiple">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BlacklistEntryVM">
+                        <StackPanel Margin="2">
+                            <TextBlock Text="{Binding PathsDisplay}"
+                                       FontFamily="Consolas, Menlo, monospace"
+                                       FontSize="12"
+                                       TextWrapping="NoWrap" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </DockPanel>
+</Window>
