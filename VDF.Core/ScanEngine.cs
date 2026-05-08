@@ -65,6 +65,11 @@ namespace VDF.Core {
 		const int maxExcludedLogsPerReason = 5;
 		readonly ConcurrentDictionary<string, int> excludedReasonCounts = new();
 		readonly ConcurrentDictionary<string, int> excludedReasonLoggedCounts = new();
+		// Files whose stored pHash for the comparison position is null. Dedupes the
+		// per-pair log spam from #754: one bad file otherwise produces a line per
+		// candidate it's compared against (thousands of lines from a handful of files).
+		readonly ConcurrentDictionary<string, byte> missingPHashFiles = new(
+			CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 		DateTime lastCheckpointTime = DateTime.MinValue;
 		readonly object checkpointLock = new();
 
@@ -680,6 +685,11 @@ namespace VDF.Core {
 		return true;
 	}
 
+	void LogMissingPHash(string path) {
+			if (missingPHashFiles.TryAdd(path, 0))
+				Logger.Instance.Info($"Missing pHash data for '{path}' — file will be skipped in pHash comparisons. Re-scan to repopulate.");
+		}
+
 	bool CheckIfDuplicate(FileEntry entry, Dictionary<double, byte[]?>? grayBytes, FileEntry compItem, out float difference) {
 			grayBytes ??= entry.grayBytes;
 			float differenceLimit = 1.0f - Settings.Percent / 100f;
@@ -704,7 +714,12 @@ namespace VDF.Core {
 				if (!compItem.PHashes.TryGetValue(compIndex, out ulong? phash_comp))
 					phash_comp = pHash.PerceptualHash.ComputePHashFromGray32x32(compItem.grayBytes[compIndex]);
 				if (phash == null || phash_comp == null) {
-					Logger.Instance.Info($"Failed to compute pHash for {entry.Path} or {compItem.Path}");
+					// Log per-file (deduplicated) rather than per-pair: a single file with
+					// a stored-null pHash entry would otherwise emit one line for every
+					// candidate it's compared against. The summary line at end of
+					// ScanForDuplicates reports how many distinct files were affected.
+					if (phash == null) LogMissingPHash(entry.Path);
+					if (phash_comp == null) LogMissingPHash(compItem.Path);
 					difference = 1f;
 					return false;
 				}
@@ -739,6 +754,7 @@ namespace VDF.Core {
 			// Used to prevent merging groups whose representatives aren't similar.
 			Dictionary<Guid, FileEntry> groupRepresentatives = new();
 			int mergesBlocked = 0;
+			missingPHashFiles.Clear();
 
 			//Exclude existing database entries which not met current scan settings
 			List<FileEntry> ScanList = new();
@@ -1057,6 +1073,8 @@ namespace VDF.Core {
 			catch (OperationCanceledException) { }
 			if (mergesBlocked > 0)
 				Logger.Instance.Info($"Group merge validation: blocked {mergesBlocked} merge(s) where group representatives were not similar");
+			if (missingPHashFiles.Count > 0)
+				Logger.Instance.Info($"pHash comparison: {missingPHashFiles.Count} file(s) had missing pHash data and were skipped in pHash comparisons. Delete the database (or rescan with 'Always retry failed sampling') to recompute.");
 			Duplicates = new HashSet<DuplicateItem>(duplicateDict.Values);
 			SplitDaisyChainGroups();
 		}
