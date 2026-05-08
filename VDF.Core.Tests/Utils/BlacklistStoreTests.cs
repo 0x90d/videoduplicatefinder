@@ -116,6 +116,20 @@ public class BlacklistStoreTests : IDisposable {
 	}
 
 	[Fact]
+	public async Task Load_AppliesPlatformPathComparer() {
+		// The on-disk file may have been written by a build that used the default
+		// (ordinal) comparer or by another OS. After Load, sets must use the
+		// current platform's path comparer so a re-scan with different-cased
+		// paths still matches on Windows/macOS.
+		await File.WriteAllTextAsync(_path, "[[\"C:\\\\Foo\\\\bar.mp4\"]]");
+
+		var groups = BlacklistStore.Load(_path);
+
+		Assert.Single(groups);
+		Assert.Same(PathComparer.ForCurrentPlatform, groups[0].Comparer);
+	}
+
+	[Fact]
 	public async Task Quarantine_DoesNotOverwriteExistingCorruptSibling() {
 		// Two corruption events in the same UTC second must not collide.
 		await File.WriteAllTextAsync(_path, "garbage 1");

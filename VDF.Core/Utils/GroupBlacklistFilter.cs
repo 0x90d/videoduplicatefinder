@@ -36,17 +36,27 @@ namespace VDF.Core.Utils {
 			if (blacklist == null || blacklist.Count == 0)
 				return new HashSet<Guid>();
 
-			var groupPaths = new Dictionary<Guid, HashSet<string>>();
+			var groupPaths = new Dictionary<Guid, List<string>>();
 			foreach (var (gid, path) in items) {
-				if (!groupPaths.TryGetValue(gid, out var set))
-					groupPaths[gid] = set = new HashSet<string>();
-				set.Add(path);
+				if (!groupPaths.TryGetValue(gid, out var list))
+					groupPaths[gid] = list = new List<string>();
+				list.Add(path);
 			}
 
+			// Manual subset check via blackListedGroup.Contains so we always defer
+			// to the blacklist set's comparer (which BlacklistStore configures with
+			// the platform's path comparer for case sensitivity).
 			var result = new HashSet<Guid>();
 			foreach (var kv in groupPaths) {
 				foreach (var blackListedGroup in blacklist) {
-					if (kv.Value.IsSubsetOf(blackListedGroup)) {
+					bool covered = true;
+					foreach (var path in kv.Value) {
+						if (!blackListedGroup.Contains(path)) {
+							covered = false;
+							break;
+						}
+					}
+					if (covered) {
 						result.Add(kv.Key);
 						break;
 					}

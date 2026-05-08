@@ -1248,7 +1248,7 @@ Non-Windows setup:
 
 				var gid = data.ItemInfo.GroupId;
 
-				HashSet<string> blacklist = new HashSet<string>();
+				HashSet<string> blacklist = new HashSet<string>(PathComparer.ForCurrentPlatform);
 				foreach (DuplicateItemVM duplicateItem in Duplicates.Where(d => d.ItemInfo.GroupId == gid))
 					blacklist.Add(duplicateItem.ItemInfo.Path);
 				GroupBlacklist.Add(blacklist);

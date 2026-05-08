@@ -132,13 +132,29 @@ public class GroupBlacklistFilterTests {
 	}
 
 	[Fact]
-	public void PathMatchingIsCaseSensitive() {
-		// Document current behavior: HashSet<string> uses ordinal comparison by
-		// default, so "A" and "a" are different paths. Path normalization is a
-		// known gap tracked separately; this test pins the present semantics so
-		// any future normalization change is a deliberate, visible decision.
+	public void PathMatching_RespectsBlacklistSetComparer_CaseInsensitive() {
+		// When the blacklist set uses a case-insensitive comparer (as production
+		// callers configure on Windows/macOS via PathComparer.ForCurrentPlatform),
+		// a re-scan that produces differently-cased paths must still be filtered.
 		var items = new[] { Item(G1, "A"), Item(G1, "B") };
-		var blacklist = new List<HashSet<string>> { new() { "a", "b" } };
+		var blacklist = new List<HashSet<string>> {
+			new(StringComparer.OrdinalIgnoreCase) { "a", "b" }
+		};
+
+		var result = GroupBlacklistFilter.ComputeBlacklistedGroupIds(items, blacklist);
+
+		Assert.Contains(G1, result);
+	}
+
+	[Fact]
+	public void PathMatching_RespectsBlacklistSetComparer_CaseSensitive() {
+		// When the blacklist set uses an ordinal comparer (as on Linux), casing
+		// differences must NOT match. Pins this code path so a future blanket
+		// "always case-insensitive" change is a deliberate, visible decision.
+		var items = new[] { Item(G1, "A"), Item(G1, "B") };
+		var blacklist = new List<HashSet<string>> {
+			new(StringComparer.Ordinal) { "a", "b" }
+		};
 
 		var result = GroupBlacklistFilter.ComputeBlacklistedGroupIds(items, blacklist);
 

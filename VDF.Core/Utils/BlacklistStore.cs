@@ -59,18 +59,28 @@ namespace VDF.Core.Utils {
 		}
 
 		internal static List<HashSet<string>> Parse(JsonElement root) {
-			// v0: legacy raw array of arrays.
-			if (root.ValueKind == JsonValueKind.Array)
-				return root.Deserialize<List<HashSet<string>>>() ?? new();
+			List<HashSet<string>> groups;
 
+			// v0: legacy raw array of arrays.
+			if (root.ValueKind == JsonValueKind.Array) {
+				groups = root.Deserialize<List<HashSet<string>>>() ?? new();
+			}
 			// v1+: { "version": N, "groups": [[...], [...]] }
-			if (root.ValueKind == JsonValueKind.Object &&
+			else if (root.ValueKind == JsonValueKind.Object &&
 				root.TryGetProperty("groups", out var groupsEl) &&
 				groupsEl.ValueKind == JsonValueKind.Array) {
-				return groupsEl.Deserialize<List<HashSet<string>>>() ?? new();
+				groups = groupsEl.Deserialize<List<HashSet<string>>>() ?? new();
+			}
+			else {
+				throw new JsonException("Unknown BlacklistedGroups.json format");
 			}
 
-			throw new JsonException("Unknown BlacklistedGroups.json format");
+			// JSON deserialization uses the default (ordinal) comparer; rebuild each
+			// set with the platform-appropriate path comparer so a different-cased
+			// re-scan still matches.
+			for (int i = 0; i < groups.Count; i++)
+				groups[i] = new HashSet<string>(groups[i], PathComparer.ForCurrentPlatform);
+			return groups;
 		}
 
 		static void QuarantineCorrupt(string path, Exception ex, Action<string>? logWarning) {
