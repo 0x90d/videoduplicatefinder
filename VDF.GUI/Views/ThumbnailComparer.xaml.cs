@@ -28,8 +28,13 @@ namespace VDF.GUI.Views {
 	public class ThumbnailComparer : Window {
 		//Designer need this
 		public ThumbnailComparer() => InitializeComponent();
-		public ThumbnailComparer(List<LargeThumbnailDuplicateItem> duplicateItemVMs) {
-			DataContext = new ThumbnailComparerVM(duplicateItemVMs);
+		public ThumbnailComparer(List<LargeThumbnailDuplicateItem> duplicateItemVMs)
+			: this(duplicateItemVMs, null, null) { }
+		public ThumbnailComparer(
+			List<LargeThumbnailDuplicateItem> duplicateItemVMs,
+			Guid? currentGroupId,
+			Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? groupNavigator) {
+			DataContext = new ThumbnailComparerVM(duplicateItemVMs, currentGroupId, groupNavigator);
 			InitializeComponent();
 			Owner = ApplicationHelpers.MainWindow;
 			this.Loaded += ThumbnailComparer_Loaded;

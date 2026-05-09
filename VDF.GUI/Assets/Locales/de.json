@@ -415,6 +415,8 @@
 	"Message.ScheduledScanCompleted": "Geplanter Scan abgeschlossen.",
 	"ThumbnailComparerDialog.Thumbnail": "Thumbnail:",
 	"ThumbnailComparerDialog.Files": "Dateien",
+	"ThumbnailComparerDialog.PreviousGroup": "Vorherige Gruppe",
+	"ThumbnailComparerDialog.NextGroup": "Nächste Gruppe",
 	"ThumbnailComparerDialog.BasePosition": "Position:",
 	"ThumbnailComparerDialog.FrameStep": "Schritt:",
 	"ThumbnailComparerDialog.PrevFrame": "Vorheriges Bild",

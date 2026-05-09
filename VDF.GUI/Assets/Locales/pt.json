@@ -415,6 +415,8 @@
 	"Message.ScheduledScanCompleted": "Varredura agendada concluída.",
 	"ThumbnailComparerDialog.Thumbnail": "Miniatura:",
 	"ThumbnailComparerDialog.Files": "Ficheiros",
+	"ThumbnailComparerDialog.PreviousGroup": "Grupo anterior",
+	"ThumbnailComparerDialog.NextGroup": "Próximo grupo",
 	"ThumbnailComparerDialog.BasePosition": "Posição:",
 	"ThumbnailComparerDialog.FrameStep": "Passo:",
 	"ThumbnailComparerDialog.PrevFrame": "Quadro anterior",

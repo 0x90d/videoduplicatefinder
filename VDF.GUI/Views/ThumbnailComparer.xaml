@@ -24,6 +24,10 @@
     Icon="/Assets/icon.ico"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+Down" Command="{Binding NextGroupCommand}" />
+        <KeyBinding Gesture="Ctrl+Up" Command="{Binding PreviousGroupCommand}" />
+    </Window.KeyBindings>
     <Window.Styles>
         <Style Selector="Button.tool-btn">
             <Setter Property="Padding" Value="6,4" />
@@ -117,14 +121,36 @@
                 Grid.Column="0"
                 Margin="8"
                 Classes="section">
-                <Grid RowDefinitions="Auto,*">
+                <Grid RowDefinitions="Auto,Auto,*">
                     <TextBlock
                         Margin="10,8,10,6"
                         FontWeight="SemiBold"
                         FontSize="13"
                         Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Files]}" />
-                    <ScrollViewer
+                    <!-- Group navigation -->
+                    <StackPanel
                         Grid.Row="1"
+                        Margin="6,0,6,4"
+                        Orientation="Horizontal"
+                        Spacing="4"
+                        IsVisible="{Binding CanNavigateGroups}">
+                        <Button
+                            Classes="tool-btn"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding PreviousGroupCommand}"
+                            ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.PreviousGroup]}">
+                            <TextBlock FontSize="11" Text="&#9664; Group" />
+                        </Button>
+                        <Button
+                            Classes="tool-btn"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding NextGroupCommand}"
+                            ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.NextGroup]}">
+                            <TextBlock FontSize="11" Text="Group &#9654;" />
+                        </Button>
+                    </StackPanel>
+                    <ScrollViewer
+                        Grid.Row="2"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto">
                         <ItemsControl
@@ -138,8 +164,13 @@
                                         CornerRadius="4"
                                         BorderThickness="1"
                                         BorderBrush="Transparent">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Grid.Column="0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <CheckBox
+                                                Grid.Column="0"
+                                                VerticalAlignment="Top"
+                                                Margin="0,2,4,0"
+                                                IsChecked="{Binding Item.Checked, Mode=TwoWay}" />
+                                            <StackPanel Grid.Column="1">
                                                 <Image
                                                     MaxWidth="160"
                                                     MaxHeight="80"
@@ -153,13 +184,22 @@
                                                     TextTrimming="CharacterEllipsis"
                                                     TextWrapping="NoWrap"
                                                     ToolTip.Tip="{Binding Item.ItemInfo.Path}" />
+                                                <TextBlock
+                                                    Margin="0,1,0,0"
+                                                    FontSize="10"
+                                                    Opacity="0.55"
+                                                    Text="{Binding Item.ItemInfo.Path}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap"
+                                                    ToolTip.Tip="{Binding Item.ItemInfo.Path}" />
                                                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,1,0,0">
+                                                    <TextBlock FontSize="10" Opacity="0.5" Text="{Binding Item.ItemInfo.Size}" />
                                                     <TextBlock FontSize="10" Opacity="0.5" Text="{Binding Item.ItemInfo.FrameSize}" />
                                                     <TextBlock FontSize="10" Opacity="0.5" Text="{Binding Item.ItemInfo.Duration, StringFormat={}{0:hh\\:mm\\:ss}}" />
                                                 </StackPanel>
                                             </StackPanel>
                                             <!-- A/B badges -->
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="2" Margin="4,0,0,0">
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Top" Spacing="2" Margin="4,0,0,0">
                                                 <Border Classes="badge-a" IsVisible="{Binding IsSourceA}">
                                                     <TextBlock Classes="badge-text" Text="A" />
                                                 </Border>

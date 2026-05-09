@@ -1294,17 +1294,19 @@ Non-Windows setup:
 		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
 			List<LargeThumbnailDuplicateItem> items = new();
+			Guid? groupId = null;
 
 			if (GetSelectedDuplicates().Count == 1) {
 				foreach (DuplicateItemVM duplicateItem in Duplicates.Where(d => d.ItemInfo.GroupId == data.ItemInfo.GroupId))
 					items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
+				groupId = data.ItemInfo.GroupId;
 			}
 			else {
 				foreach (DuplicateItemVM duplicateItem in GetSelectedDuplicates())
 					items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
 			}
 
-			ThumbnailComparer thumbnailComparer = new(items);
+			ThumbnailComparer thumbnailComparer = new(items, groupId, NavigateGroupForComparer);
 			thumbnailComparer.Show();
 		});
 
@@ -1314,7 +1316,7 @@ Non-Windows setup:
 				.Select(d => new LargeThumbnailDuplicateItem(d))
 				.ToList();
 			if (items.Count == 0) return;
-			new ThumbnailComparer(items).Show();
+			new ThumbnailComparer(items, groupId, NavigateGroupForComparer).Show();
 		}
 
 		public void KeepBestInGroup(Guid groupId) {
@@ -1522,19 +1524,20 @@ Non-Windows setup:
 			NavigateGroup(forward: false);
 		});
 
-		void NavigateGroup(bool forward) {
-			if (view?.Groups == null) return;
+		Guid? NavigateGroup(bool forward, Guid? fromGroupId = null) {
+			if (view?.Groups == null) return null;
 			var groups = view.Groups.OfType<DataGridCollectionViewGroup>().ToList();
-			if (groups.Count == 0) return;
+			if (groups.Count == 0) return null;
 
 			var dataGrid = GetDataGrid;
-			var currentItem = dataGrid.SelectedItem as DuplicateItemVM;
+			Guid? referenceGroupId = fromGroupId
+				?? (dataGrid.SelectedItem as DuplicateItemVM)?.ItemInfo.GroupId;
 			int currentGroupIndex = -1;
 
-			if (currentItem != null) {
+			if (referenceGroupId.HasValue) {
 				for (int i = 0; i < groups.Count; i++) {
 					if (groups[i].Items.OfType<DuplicateItemVM>()
-						.Any(item => item.ItemInfo.GroupId == currentItem.ItemInfo.GroupId)) {
+						.Any(item => item.ItemInfo.GroupId == referenceGroupId.Value)) {
 						currentGroupIndex = i;
 						break;
 					}
@@ -1551,7 +1554,22 @@ Non-Windows setup:
 			if (firstItem != null) {
 				dataGrid.SelectedItem = firstItem;
 				dataGrid.ScrollIntoView(firstItem, null);
+				return firstItem.ItemInfo.GroupId;
 			}
+			return null;
+		}
+
+		// Used by ThumbnailComparer to walk to the sibling group without closing the dialog.
+		// Also moves the main grid's selection so state stays consistent when the dialog closes.
+		internal (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)? NavigateGroupForComparer(Guid currentGroupId, bool forward) {
+			var newGroupId = NavigateGroup(forward, currentGroupId);
+			if (newGroupId is null) return null;
+			var items = Duplicates
+				.Where(d => d.ItemInfo.GroupId == newGroupId.Value)
+				.Select(d => new LargeThumbnailDuplicateItem(d))
+				.ToList();
+			if (items.Count == 0) return null;
+			return (newGroupId.Value, items);
 		}
 
 		public ReactiveCommand<Unit, Unit> CopyPathsToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {

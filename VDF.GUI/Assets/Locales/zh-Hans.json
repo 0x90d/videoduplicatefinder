@@ -415,6 +415,8 @@
 	"Message.ScheduledScanCompleted": "计划扫描已完成。",
 	"ThumbnailComparerDialog.Thumbnail": "缩略图：",
 	"ThumbnailComparerDialog.Files": "文件",
+	"ThumbnailComparerDialog.PreviousGroup": "上一组",
+	"ThumbnailComparerDialog.NextGroup": "下一组",
 	"ThumbnailComparerDialog.BasePosition": "位置：",
 	"ThumbnailComparerDialog.FrameStep": "步进：",
 	"ThumbnailComparerDialog.PrevFrame": "上一帧",

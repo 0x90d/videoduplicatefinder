@@ -254,9 +254,25 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		CancellationTokenSource? _frameExtractCts;
+		CancellationTokenSource? _loadCts;
 
-		public ThumbnailComparerVM(List<LargeThumbnailDuplicateItem> duplicateItemVMs) {
+		readonly Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? _groupNavigator;
+		Guid? _currentGroupId;
+		public bool CanNavigateGroups => _groupNavigator != null && _currentGroupId.HasValue;
+
+		public ReactiveCommand<Unit, Unit>? PreviousGroupCommand { get; }
+		public ReactiveCommand<Unit, Unit>? NextGroupCommand { get; }
+
+		public ThumbnailComparerVM(List<LargeThumbnailDuplicateItem> duplicateItemVMs)
+			: this(duplicateItemVMs, null, null) { }
+
+		public ThumbnailComparerVM(
+			List<LargeThumbnailDuplicateItem> duplicateItemVMs,
+			Guid? currentGroupId,
+			Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? groupNavigator) {
 			Items = new(duplicateItemVMs);
+			_currentGroupId = currentGroupId;
+			_groupNavigator = groupNavigator;
 
 			var modes = new ObservableCollection<CompareMode> {
 				CompareMode.Single, CompareMode.Swipe, CompareMode.SideBySide, CompareMode.Stacked
@@ -282,6 +298,46 @@ namespace VDF.GUI.ViewModels {
 			StepBMinusCommand = ReactiveCommand.Create(() => { StepB--; });
 			StepBPlusCommand = ReactiveCommand.Create(() => { StepB++; });
 			ResetStepsCommand = ReactiveCommand.Create(() => { StepA = 0; StepB = 0; });
+
+			if (_groupNavigator != null && _currentGroupId.HasValue) {
+				PreviousGroupCommand = ReactiveCommand.CreateFromTask(() => SwitchGroupAsync(forward: false));
+				NextGroupCommand = ReactiveCommand.CreateFromTask(() => SwitchGroupAsync(forward: true));
+			}
+		}
+
+		async Task SwitchGroupAsync(bool forward) {
+			if (_groupNavigator is null || _currentGroupId is null) return;
+			var result = _groupNavigator(_currentGroupId.Value, forward);
+			if (result is null) return;
+
+			// Cancel any in-flight thumbnail / frame work for the previous group
+			_loadCts?.Cancel();
+			_frameExtractCts?.Cancel();
+			IsExtractingFrame = false;
+
+			_suppressSelectionUpdates = true;
+			try {
+				if (_selectedItemA != null) _selectedItemA.IsSourceA = false;
+				if (_selectedItemB != null) _selectedItemB.IsSourceB = false;
+				_selectedItemA = null;
+				_selectedItemB = null;
+				this.RaisePropertyChanged(nameof(SelectedItemA));
+				this.RaisePropertyChanged(nameof(SelectedItemB));
+
+				Items.Clear();
+				foreach (var item in result.Value.Items)
+					Items.Add(item);
+			}
+			finally {
+				_suppressSelectionUpdates = false;
+			}
+
+			_currentGroupId = result.Value.GroupId;
+			ImageA = null;
+			ImageB = null;
+			this.RaisePropertyChanged(nameof(ImageSingle));
+
+			await LoadThumbnailsAsync();
 		}
 
 		bool _suppressSelectionUpdates;
@@ -491,41 +547,52 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		public async Task LoadThumbnailsAsync(int maxParallel = 2, CancellationToken ct = default) {
+		public async Task LoadThumbnailsAsync(int maxParallel = 2) {
 			if (Items.Count == 0) return;
+
+			_loadCts?.Cancel();
+			var cts = new CancellationTokenSource();
+			_loadCts = cts;
+			var ct = cts.Token;
 
 			IsLoadingThumbnails = true;
 			LoadProgress = 0;
 			this.RaisePropertyChanged(nameof(LoadProgressText));
 
-			await LoadItemsWithRetry(maxParallel, 3, ct);
+			try {
+				await LoadItemsWithRetry(maxParallel, 3, ct);
 
-			// Check for still-failed items
-			var failed = Items.Where(i => i.Thumbnail == null).ToList();
-			if (failed.Count > 0) {
-				// Show notification and wait for main window thumbnail retrieval to finish
-				ShowMessage(string.Format(App.Lang["ThumbnailComparerDialog.ThumbnailLoadFailed"], failed.Count), 60000);
+				// Check for still-failed items
+				var failed = Items.Where(i => i.Thumbnail == null).ToList();
+				if (failed.Count > 0) {
+					// Show notification and wait for main window thumbnail retrieval to finish
+					ShowMessage(string.Format(App.Lang["ThumbnailComparerDialog.ThumbnailLoadFailed"], failed.Count), 60000);
 
-				while (!ct.IsCancellationRequested) {
-					try {
-						if (!ApplicationHelpers.MainWindowDataContext.ShowThumbnailRetrievalProgressBar &&
-							!ApplicationHelpers.MainWindowDataContext.IsScanning) break;
-						await Task.Delay(1000, ct);
+					while (!ct.IsCancellationRequested) {
+						try {
+							if (!ApplicationHelpers.MainWindowDataContext.ShowThumbnailRetrievalProgressBar &&
+								!ApplicationHelpers.MainWindowDataContext.IsScanning) break;
+							await Task.Delay(1000, ct);
+						}
+						catch { break; }
 					}
-					catch { break; }
+					ct.ThrowIfCancellationRequested();
+
+					// Final retry now that main window is done
+					IsLoadingThumbnails = true;
+					LoadProgress = 0;
+					this.RaisePropertyChanged(nameof(LoadProgressText));
+					IsMessageVisible = false;
+
+					await LoadItemsWithRetry(maxParallel, 1, ct, failed);
 				}
 
-				// Final retry now that main window is done
-				IsLoadingThumbnails = true;
-				LoadProgress = 0;
-				this.RaisePropertyChanged(nameof(LoadProgressText));
-				IsMessageVisible = false;
-
-				await LoadItemsWithRetry(maxParallel, 1, ct, failed);
+				IsLoadingThumbnails = false;
+				AssignDefaultSelections();
 			}
-
-			IsLoadingThumbnails = false;
-			AssignDefaultSelections();
+			catch (OperationCanceledException) {
+				IsLoadingThumbnails = false;
+			}
 		}
 
 		async Task LoadItemsWithRetry(int maxParallel, int maxRetries, CancellationToken ct, List<LargeThumbnailDuplicateItem>? subset = null) {
