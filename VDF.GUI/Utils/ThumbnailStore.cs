@@ -114,16 +114,35 @@ namespace VDF.GUI.Utils {
 			lock (_gate) return _idx.ContainsKey(key);
 		}
 
-		/// <summary> Inserts JPEG from src into the pack (if key does not exist). Returns with (offset,length). </summary>
+		/// <summary>
+		/// Inserts JPEG from src into the pack (if key does not exist OR existing entry
+		/// is zero-length — see below). Returns with (offset, length).
+		///
+		/// Zero-length entries are treated as "missing" for two reasons (issue #751):
+		///  - A 0-byte write means the producer (e.g. JoinImages) failed to write a JPEG.
+		///    Recording a (off, 0) entry would mean the next OpenKey returns an empty slice,
+		///    Bitmap construction throws, the UI shows blank, AND the per-path key is
+		///    permanently latched, so explicit "Load thumbnails for group" would no-op
+		///    forever.
+		///  - Lets a corrupted pack from a prior session self-heal: empty entries become
+		///    overwritable, and the next attempt that actually writes bytes wins.
+		/// </summary>
 		public (long off, int len) AppendIfMissing(string key, Action<Stream> writeJpeg) {
 			lock (_gate) {
-				if (_idx.TryGetValue(key, out var e)) return e;
+				if (_idx.TryGetValue(key, out var e) && e.Item2 > 0) return e;
 				_fs.Seek(0, SeekOrigin.End);
 				long off = _fs.Position;
 				using (var limiting = new LengthCountingStream(_fs)) {
 					writeJpeg(limiting);
 					limiting.Flush();
 					int len = checked((int)limiting.BytesWritten);
+					if (len == 0) {
+						// Don't record an empty entry. Leaving _idx untouched (or unchanged
+						// if a previous empty entry existed) means OpenKey returns null, the
+						// Thumbnail getter sees no key match, and the next retry re-attempts
+						// extraction instead of serving back broken data forever.
+						return (off, 0);
+					}
 					_idx[key] = (off, len);
 					return (off, len);
 				}
