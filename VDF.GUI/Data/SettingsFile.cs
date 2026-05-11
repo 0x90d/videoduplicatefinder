@@ -462,7 +462,7 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _PartialClipVisualThresholdPercent, value);
 		}
 
-		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate"];
+		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate", "Size"];
 		[JsonPropertyName("QualityCriteriaOrder")]
 		public List<string> QualityCriteriaOrder {
 			get => _QualityCriteriaOrder;

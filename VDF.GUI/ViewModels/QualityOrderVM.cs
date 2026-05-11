@@ -28,7 +28,12 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<int, Unit> MoveDownCommand { get; }
 
 		public QualityOrderVM() {
-			CriteriaOrder = new ObservableCollection<string>(ApplicationHelpers.MainWindowDataContext.QualityCriteriaOrder);
+			var saved = ApplicationHelpers.MainWindowDataContext.QualityCriteriaOrder;
+			var merged = new List<string>(saved);
+			foreach (var name in MainWindowVM.QualityCriteriaMap.Keys)
+				if (!merged.Contains(name))
+					merged.Add(name);
+			CriteriaOrder = new ObservableCollection<string>(merged);
 			MoveUpCommand = ReactiveCommand.Create<int>(MoveUp);
 			MoveDownCommand = ReactiveCommand.Create<int>(MoveDown);
 			_selectedItem = CriteriaOrder[0];

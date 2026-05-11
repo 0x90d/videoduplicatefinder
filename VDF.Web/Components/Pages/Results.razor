@@ -764,6 +764,7 @@ else {
         new("Bitrate",       d => d.BitRateKbs,      videoOnly: true),
         new("FPS",           d => d.Fps,             videoOnly: true),
         new("Audio Bitrate", d => d.AudioSampleRate, videoOnly: true),
+        new("Size",          d => d.SizeLong,        videoOnly: false),
     };
 
     static DuplicateItem PickHighestQuality(List<DuplicateItem> items) =>
