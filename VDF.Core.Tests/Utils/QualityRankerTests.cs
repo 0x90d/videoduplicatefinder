@@ -21,6 +21,7 @@ namespace VDF.Core.Tests.Utils;
 public class QualityRankerTests {
 
 	sealed record Item(string Name, int Resolution, TimeSpan Duration, decimal Bitrate, float Fps, int AudioSampleRate, bool IsImage = false);
+	sealed record Sized(string Name, int Resolution, long Size);
 
 	static QualityRanker.Criterion<Item> Resolution = new("Resolution", i => i.Resolution, videoOnly: false);
 	static QualityRanker.Criterion<Item> Duration = new("Duration", i => i.Duration, videoOnly: true);
@@ -119,5 +120,21 @@ public class QualityRankerTests {
 
 		Assert.Equal(a, QualityRanker.PickKeeper(new[] { a, b }, new[] { Resolution, Duration }, _ => false));
 		Assert.Equal(b, QualityRanker.PickKeeper(new[] { a, b }, new[] { Duration, Resolution }, _ => false));
+	}
+
+	// Regression test for issue #765: when used as a final tiebreaker, the Size criterion
+	// is intentionally ascending - smaller file wins. The premise is that every preceding
+	// quality signal has already tied, so the larger file is just disk-space overhead.
+	[Fact]
+	public void AscendingCriterion_PicksSmallerValue() {
+		var big   = new Sized("big",   Resolution: 3000, Size: 10_000_000);
+		var small = new Sized("small", Resolution: 3000, Size:  2_000_000);
+
+		var resolution = new QualityRanker.Criterion<Sized>("Resolution", i => i.Resolution, videoOnly: false);
+		var size       = new QualityRanker.Criterion<Sized>("Size",       i => i.Size,       videoOnly: false, ascending: true);
+
+		var keeper = QualityRanker.PickKeeper(new[] { big, small }, new[] { resolution, size }, _ => false);
+
+		Assert.Equal(small, keeper);
 	}
 }

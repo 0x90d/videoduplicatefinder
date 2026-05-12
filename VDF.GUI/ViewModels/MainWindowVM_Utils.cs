@@ -27,7 +27,7 @@ namespace VDF.GUI.ViewModels {
 			["FPS"] = new("FPS", d => d.ItemInfo.Fps, videoOnly: true),
 			["Bitrate"] = new("Bitrate", d => d.ItemInfo.BitRateKbs, videoOnly: true),
 			["Audio Bitrate"] = new("Audio Bitrate", d => d.ItemInfo.AudioSampleRate, videoOnly: true),
-			["Size"] = new("Size", d => d.ItemInfo.SizeLong, videoOnly: false),
+			["Size"] = new("Size", d => d.ItemInfo.SizeLong, videoOnly: false, ascending: true),
 		};
 
 		// Yields criteria in the user's chosen order, then appends any map entries the
