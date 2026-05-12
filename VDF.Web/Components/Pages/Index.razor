@@ -112,7 +112,7 @@ else {
 
         <h2>Exclude paths</h2>
         <div class="path-list">
-            @foreach (var path in Scan.Settings.BlackList.ToList()) {
+            @foreach (var path in Scan.Settings.BlackList.Where(IsExcludePath).ToList()) {
                 bool valid = Directory.Exists(path);
                 <div class="path-entry">
                     <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found")">@(valid ? "\u2713" : "\u2717")</span>
@@ -126,6 +126,22 @@ else {
                    placeholder="/path/to/exclude" />
             <button @onclick="AddExclude" disabled="@string.IsNullOrWhiteSpace(_newExclude)">Add</button>
             <button class="browse-btn" @onclick="() => _excludeBrowser?.Open()">Browse…</button>
+        </div>
+
+        <h2>Exclude patterns</h2>
+        <div class="path-list">
+            @foreach (var pattern in Scan.Settings.BlackList.Where(IsExcludePattern).ToList()) {
+                <div class="path-entry">
+                    <span class="path-status valid" title="Pattern">P</span>
+                    <span>@pattern</span>
+                    <button @onclick="() => Scan.Settings.BlackList.Remove(pattern)">&#x2715;</button>
+                </div>
+            }
+        </div>
+        <div class="add-path">
+            <input @bind="_newExcludePattern" @bind:event="oninput" @onkeydown="OnExcludePatternKeyDown"
+                   placeholder="**/temp/* or *cache*" />
+            <button @onclick="AddExcludePattern" disabled="@string.IsNullOrWhiteSpace(_newExcludePattern)">Add</button>
         </div>
 
         <FolderBrowser @ref="_includeBrowser" OnFolderSelected="OnIncludeFolderSelected" />
@@ -157,6 +173,7 @@ else {
 @code {
     string _newInclude = string.Empty;
     string _newExclude = string.Empty;
+    string _newExcludePattern = string.Empty;
     FolderBrowser? _includeBrowser;
     FolderBrowser? _excludeBrowser;
     string? _saveMsg;
@@ -204,12 +221,34 @@ else {
         }
     }
 
+    void AddExcludePattern() {
+        var pattern = _newExcludePattern.Trim();
+        if (!string.IsNullOrEmpty(pattern)) {
+            Scan.Settings.BlackList.Add(pattern);
+            _newExcludePattern = string.Empty;
+        }
+    }
+
     void OnIncludeKeyDown(KeyboardEventArgs e) {
         if (e.Key == "Enter") AddInclude();
     }
 
     void OnExcludeKeyDown(KeyboardEventArgs e) {
         if (e.Key == "Enter") AddExclude();
+    }
+
+    void OnExcludePatternKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Enter") AddExcludePattern();
+    }
+
+    bool IsExcludePath(string item) {
+        // Consider it a path if it doesn't contain wildcards and exists as directory
+        return !item.Contains('*') && !item.Contains('?') && Directory.Exists(item);
+    }
+
+    bool IsExcludePattern(string item) {
+        // Consider it a pattern if it contains wildcards or doesn't exist as directory
+        return item.Contains('*') || item.Contains('?') || !Directory.Exists(item);
     }
 
     string PathInputClass(string path) {

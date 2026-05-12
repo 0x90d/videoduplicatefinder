@@ -199,7 +199,7 @@ namespace VDF.Core {
 			Logger.Instance.Info(T("Log.ScanForDuplicates"));
 			if (!cancelationTokenSource.IsCancellationRequested)
 				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
-			if (!cancelationTokenSource.IsCancellationRequested && Settings.EnablePartialClipDetection)
+			if (!cancelationTokenSource.IsCancellationRequested && Settings.EnablePartialClipDetection && !Settings.IgnoreAudio)
 				await Task.Run(ScanForPartialDuplicates, cancelationTokenSource.Token);
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
@@ -516,7 +516,7 @@ namespace VDF.Core {
 							}
 							if (hasAllInformation) {
 								// Thumbnails are cached but audio fingerprint might still be needed
-								if (Settings.EnablePartialClipDetection &&
+								if (Settings.EnablePartialClipDetection && !Settings.IgnoreAudio &&
 									!entry.IsImage &&
 									!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
 									!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
@@ -567,7 +567,7 @@ namespace VDF.Core {
 
 						// Audio fingerprint — videos only, only when enabled,
 						// skipped if already cached or flagged as having no audio track.
-						if (Settings.EnablePartialClipDetection &&
+						if (Settings.EnablePartialClipDetection && !Settings.IgnoreAudio &&
 							!entry.IsImage &&
 							!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
 							!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&

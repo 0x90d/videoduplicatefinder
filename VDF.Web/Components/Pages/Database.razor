@@ -1,0 +1,87 @@
+@page "/database"
+@using VDF.Web.Models
+@using VDF.Web.Services
+@inject ScanService Scan
+
+<PageTitle>Database — Video Duplicate Finder</PageTitle>
+
+<h1>Scan Database</h1>
+
+<div class="db-page-actions">
+    <button class="primary" @onclick="LoadEntries" disabled="@Loading">Refresh</button>
+    <input type="text" placeholder="Filter path, folder or flags..." @bind="SearchText" />
+    <span>@(Entries?.Count ?? 0) entries</span>
+</div>
+
+@if (Loading) {
+    <p>Loading database entries…</p>
+}
+else if (!string.IsNullOrEmpty(ErrorMessage)) {
+    <div class="error-box">
+        <p><strong>Error:</strong> @ErrorMessage</p>
+    </div>
+}
+else if (FilteredEntries.Count == 0) {
+    <p>No database entries found.</p>
+}
+else {
+    <table class="db-table">
+        <thead>
+            <tr>
+                <th>Path</th>
+                <th>Folder</th>
+                <th>Size</th>
+                <th>Modified</th>
+                <th>Created</th>
+                <th>Flags</th>
+                <th>Gray</th>
+                <th>pHash</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in FilteredEntries) {
+                <tr>
+                    <td><code>@entry.Path</code></td>
+                    <td>@entry.Folder</td>
+                    <td>@entry.FileSizeText</td>
+                    <td>@entry.DateModified.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@entry.DateCreated.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@entry.Flags</td>
+                    <td>@entry.GrayBytesCount</td>
+                    <td>@entry.PHashCount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<DatabaseEntryInfo> Entries = new();
+    string SearchText = string.Empty;
+    bool Loading;
+    string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync() {
+        await LoadEntries();
+    }
+
+    async Task LoadEntries() {
+        Loading = true;
+        ErrorMessage = null;
+        try {
+            Entries = (await Scan.GetDatabaseEntriesAsync()).ToList();
+        }
+        catch (Exception ex) {
+            ErrorMessage = ex.Message;
+        }
+        finally {
+            Loading = false;
+        }
+    }
+
+    IReadOnlyList<DatabaseEntryInfo> FilteredEntries => string.IsNullOrWhiteSpace(SearchText)
+        ? Entries
+        : Entries.Where(entry => entry.Path.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+            || entry.Folder.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+            || entry.Flags.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+}

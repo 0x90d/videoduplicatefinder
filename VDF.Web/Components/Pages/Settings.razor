@@ -76,6 +76,12 @@
         Ignore white pixels
     </label>
     <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.IgnoreAudio"
+               @onchange="e => Scan.Settings.IgnoreAudio = (bool)e.Value!" />
+        Ignore audio (video only comparison)
+    </label>
+    <label>
         Max degree of parallelism (-1 = all cores)
         <input type="number" min="-1"
                value="@Scan.Settings.MaxDegreeOfParallelism"
@@ -100,10 +106,13 @@
     <label>
         Hardware acceleration
         <select @onchange="e => Scan.Settings.HardwareAccelerationMode = Enum.Parse<VDF.Core.FFTools.FFHardwareAccelerationMode>(e.Value!.ToString()!)">
-            @foreach (var mode in Enum.GetValues<VDF.Core.FFTools.FFHardwareAccelerationMode>()) {
+            @foreach (var mode in Scan.GetSupportedHardwareAccelerationModes()) {
                 <option value="@mode" selected="@(Scan.Settings.HardwareAccelerationMode == mode)">@mode</option>
             }
         </select>
+        <small style="color: var(--text-secondary, #666); display: block; margin-top: 0.25rem;">
+            Only supported acceleration methods are shown
+        </small>
     </label>
     <label>
         Custom FFmpeg arguments

@@ -53,6 +53,70 @@ namespace VDF.Core.FFTools {
 		};
 
 		/// <summary>
+		/// Checks if the specified hardware acceleration mode is supported by FFmpeg
+		/// </summary>
+		/// <param name="mode">The hardware acceleration mode to check</param>
+		/// <returns>True if supported, false otherwise</returns>
+		public static bool IsHardwareAccelerationSupported(FFHardwareAccelerationMode mode) {
+			if (mode == FFHardwareAccelerationMode.none || mode == FFHardwareAccelerationMode.auto)
+				return true;
+
+			try {
+				// Test by running ffmpeg -hwaccels command
+				var psi = new ProcessStartInfo {
+					FileName = FFmpegPath,
+					CreateNoWindow = true,
+					RedirectStandardInput = false,
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
+					WindowStyle = ProcessWindowStyle.Hidden
+				};
+
+				psi.ArgumentList.Add("-hwaccels");
+
+				using var process = new Process {
+					StartInfo = psi
+				};
+
+				process.Start();
+				string output = process.StandardOutput.ReadToEnd();
+				string error = process.StandardError.ReadToEnd();
+
+				if (!process.WaitForExit(5000)) { // 5 second timeout
+					process.Kill();
+					return false;
+				}
+
+				if (process.ExitCode != 0)
+					return false;
+
+				// Check if the requested hardware acceleration is in the supported list
+				string hwAccelName = mode.ToString().ToLower();
+				return output.Contains(hwAccelName) || error.Contains(hwAccelName);
+			}
+			catch {
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Gets a list of all supported hardware acceleration modes
+		/// </summary>
+		/// <returns>List of supported FFHardwareAccelerationMode values</returns>
+		public static List<FFHardwareAccelerationMode> GetSupportedHardwareAccelerationModes() {
+			var supported = new List<FFHardwareAccelerationMode> { FFHardwareAccelerationMode.none };
+
+			foreach (FFHardwareAccelerationMode mode in Enum.GetValues(typeof(FFHardwareAccelerationMode))) {
+				if (mode != FFHardwareAccelerationMode.none && IsHardwareAccelerationSupported(mode)) {
+					supported.Add(mode);
+				}
+			}
+
+			return supported;
+		}
+
+		/// <summary>
 		/// Copies a 32x32 GRAY8 frame produced by <see cref="VideoFrameConverter"/> into a
 		/// freshly-allocated 1024-byte buffer. swscale uses an aligned padded destination
 		/// (linesize >= width); the common case is linesize == 32 because we asked for
@@ -122,8 +186,11 @@ namespace VDF.Core.FFTools {
 							continue;
 						}
 
-						if (!vsd.TryDecodeFrame(out var srcFrame, TimeSpan.FromSeconds(position)))
-							throw new Exception($"TryDecodeFrame failed at pos={position} for '{videoFile.Path}'");
+						if (!vsd.TryDecodeFrame(out var srcFrame, TimeSpan.FromSeconds(position))) {
+							string errorMsg = $"TryDecodeFrame failed at pos={position}s for '{videoFile.Path}' (frame size: {vsd.FrameSize.Width}x{vsd.FrameSize.Height}, duration: {videoFile.mediaInfo?.Duration.TotalSeconds:F2}s)";
+							Logger.Instance.Info($"ERROR: {errorMsg}");
+							throw new Exception(errorMsg);
+						}
 
 						// HW decode reports the real (downloaded) sw_format on the frame itself,
 						// not on the codec context, so we read it post-decode. SW decode keeps it
@@ -166,7 +233,7 @@ namespace VDF.Core.FFTools {
 				return true;
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Native batch graybytes failed on '{videoFile.Path}', falling back to per-sample path. Exception: {e}");
+				Logger.Instance.Info($"ERROR: Native batch graybytes extraction failed on '{videoFile.Path}' (duration: {videoFile.mediaInfo?.Duration.TotalSeconds:F2}s, positions: {positions.Count}), falling back to per-sample path. Exception: {e.Message}");
 				return false;
 			}
 		}
@@ -191,7 +258,7 @@ namespace VDF.Core.FFTools {
 					// we can't know this up front — the downloaded sw_format depends on
 					// the stream's bit depth (NV12 for 8-bit, P010LE for 10-bit HEVC, etc.).
 					if (!vsd.TryDecodeFrame(out var srcFrame, settings.Position))
-						throw new Exception($"TryDecodeFrame failed at pos={settings.Position} for '{settings.File}'. size={sourceSize.Width}x{sourceSize.Height}");
+						throw new Exception($"TryDecodeFrame failed at pos={settings.Position.TotalSeconds:F2}s for '{settings.File}'. size={sourceSize.Width}x{sourceSize.Height}");
 
 					AVPixelFormat srcPixFmt = vsd.IsHardwareDecode
 						? (AVPixelFormat)srcFrame.format
@@ -279,7 +346,10 @@ namespace VDF.Core.FFTools {
 				}
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}");
+				Logger.Instance.Info($"ERROR: Failed using native FFmpeg binding on '{settings.File}' at position {settings.Position.TotalSeconds:F2}s, switching to process mode. Exception: {e.Message}");
+				if (extendedLogging) {
+					Logger.Instance.Info($"Full exception details: {e}");
+				}
 			}
 
 			var psi = new ProcessStartInfo {
@@ -389,13 +459,13 @@ namespace VDF.Core.FFTools {
 				process.StandardOutput.BaseStream.CopyTo(ms);
 
 				if (!process.WaitForExit(TimeoutDuration)) {
-					throw new TimeoutException($"FFmpeg timed out on file: {settings.File}");
+					throw new TimeoutException($"FFmpeg timed out after {TimeoutDuration}ms on file: {settings.File} at position {settings.Position.TotalSeconds:F2}s");
 				}
 				else if (extendedLogging)
 					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
 
 				if (process.ExitCode != 0)
-					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
+					throw new FFInvalidExitCodeException($"FFmpeg exited with code {process.ExitCode} for file: {settings.File} at position {settings.Position.TotalSeconds:F2}s");
 
 				bytes = ms.ToArray();
 				if (bytes.Length == 0)
@@ -407,6 +477,7 @@ namespace VDF.Core.FFTools {
 			}
 			catch (Exception e) {
 				errOut += $"{Environment.NewLine}{e.Message}";
+				Logger.Instance.Info($"ERROR: FFmpeg process failed for '{settings.File}' at position {settings.Position.TotalSeconds:F2}s: {e.Message}");
 				try {
 					if (process.HasExited == false)
 						process.Kill();
@@ -417,7 +488,9 @@ namespace VDF.Core.FFTools {
 			if (repeatCount > 0)
 				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
 			if (bytes == null || errOut.Length > 0) {
-				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(isGrayByte ? "graybytes" : "thumbnail")} from: {settings.File}";
+				string operation = isGrayByte ? "graybytes" : "thumbnail";
+				string status = bytes == null ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving";
+				string message = $"{status} {operation} from: {settings.File} at position {settings.Position.TotalSeconds:F2}s";
 				if (extendedLogging) {
 					var args = string.Join(" ", psi.ArgumentList);
 					message += $":{Environment.NewLine}{FFmpegPath} {args}";
@@ -445,7 +518,7 @@ namespace VDF.Core.FFTools {
 			if (UseNativeBinding && TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete)) {
 				if (tooDarkCounter == missingPositions) {
 					videoFile.Flags.Set(EntryFlags.TooDark);
-					Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
+					Logger.Instance.Info($"ERROR: All {missingPositions} graybytes samples too dark for '{videoFile.Path}' (duration: {videoFile.mediaInfo?.Duration.TotalSeconds:F2}s)");
 					return false;
 				}
 				return true;
@@ -470,6 +543,7 @@ namespace VDF.Core.FFTools {
 					GrayScale = 1,
 				}, extendedLogging);
 				if (data == null) {
+					Logger.Instance.Info($"ERROR: Failed to extract graybytes at position {position:F2}s from '{videoFile.Path}'");
 					videoFile.Flags.Set(EntryFlags.ThumbnailError);
 					return false;
 				}
@@ -481,7 +555,7 @@ namespace VDF.Core.FFTools {
 			}
 			if (tooDarkCounter == missingPositions) {
 				videoFile.Flags.Set(EntryFlags.TooDark);
-				Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
+				Logger.Instance.Info($"ERROR: All {missingPositions} graybytes samples too dark for '{videoFile.Path}' (duration: {videoFile.mediaInfo?.Duration.TotalSeconds:F2}s) - per-sample extraction");
 				return false;
 			}
 			return true;

@@ -248,6 +248,41 @@ h2 { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spa
 	overflow-y: auto;
 }
 
+.db-page-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	margin-bottom: 1rem;
+}
+
+.db-page-actions input[type=text] {
+	min-width: 320px;
+}
+
+.db-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 1rem;
+}
+
+.db-table th,
+.db-table td {
+	padding: 0.75rem 0.9rem;
+	border-bottom: 1px solid var(--border-subtle);
+	text-align: left;
+	font-size: 13px;
+}
+
+.db-table th {
+	color: var(--text-dim);
+	font-weight: 600;
+}
+
+.db-table tr:hover {
+	background: var(--bg-surface);
+}
+
 /* ===== Buttons ===== */
 button {
 	padding: 0.45rem 1rem;
