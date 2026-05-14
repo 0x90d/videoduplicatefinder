@@ -191,9 +191,9 @@
 
     <h3>Maintenance</h3>
     <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        <button @onclick="CleanDatabase" disabled="@_dbBusy">Clean Database</button>
+        <button @onclick="CleanDatabase" disabled="@_dbBusy" title="데이터베이스에서 유효하지 않은 항목(존재하지 않는 파일, 오류 항목)을 제거합니다.">Clean Database</button>
         @if (!_confirmClear) {
-            <button class="danger" @onclick="() => _confirmClear = true" disabled="@_dbBusy">Clear Database</button>
+            <button class="danger" @onclick="() => _confirmClear = true" disabled="@_dbBusy" title="데이터베이스의 모든 항목을 완전히 삭제합니다. 이 작업은 되돌릴 수 없습니다.">Clear Database</button>
         }
         else {
             <span style="color:var(--danger-color,#d33);">This will delete ALL stored data. Are you sure?</span>
