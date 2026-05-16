@@ -37,6 +37,13 @@ public class FfmpegFixture : IDisposable {
 	public string? H264_Different { get; }
 	public string? H264_Corrupted { get; }
 
+	/// <summary>Checked-in HEIC still image (FFmpeg can decode but not mux HEIC).</summary>
+	public string? SampleHeic { get; }
+	/// <summary>H.264 clip stamped with <see cref="CreationTimeTag"/> in its container metadata.</summary>
+	public string? Mp4WithCreationTime { get; }
+	/// <summary>The creation_time value stamped into <see cref="Mp4WithCreationTime"/>.</summary>
+	public const string CreationTimeTag = "2023-08-15T12:34:56.000000Z";
+
 	public bool HasLibx265 { get; }
 	public bool HasLibvpxVp9 { get; }
 
@@ -100,6 +107,16 @@ public class FfmpegFixture : IDisposable {
 			if (TestVideoGenerator.GenerateH264_Corrupted(ffmpegPath, H264_8bit, corruptPath))
 				H264_Corrupted = corruptPath;
 		}
+
+		// HEIC support fixtures. The sample image is checked in (FFmpeg cannot mux HEIC);
+		// the creation_time clip exercises the FFprobe-based EXIF-date fallback.
+		string heicSample = Path.Combine(AppContext.BaseDirectory, "TestData", "sample.heic");
+		if (File.Exists(heicSample))
+			SampleHeic = heicSample;
+
+		string creationTimePath = Path.Combine(TempDir, "creation_time.mp4");
+		if (TestVideoGenerator.GenerateMp4WithCreationTime(ffmpegPath, creationTimePath, CreationTimeTag))
+			Mp4WithCreationTime = creationTimePath;
 	}
 
 	public void Dispose() {

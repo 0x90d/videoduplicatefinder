@@ -109,6 +109,18 @@ public static class TestVideoGenerator {
 			$"-y -i \"{cleanInputPath}\" -c copy -bsf:v \"noise=amount=20:dropamount=8\" \"{outputPath}\"");
 
 	/// <summary>
+	/// Tiny 1s 64x48 H.264 clip stamped with an explicit container <c>creation_time</c> tag.
+	/// Used to exercise <c>FFProbeEngine.GetCreationTime</c>, the HEIC EXIF-date fallback.
+	/// </summary>
+	public static bool GenerateMp4WithCreationTime(string ffmpegPath, string outputPath, string isoCreationTime) =>
+		RunFfmpeg(ffmpegPath,
+			string.Format(CultureInfo.InvariantCulture,
+				"-y -f lavfi -i testsrc2=duration=1:size=64x48:rate=5 " +
+				"-c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p " +
+				"-metadata creation_time=\"{0}\" \"{1}\"",
+				isoCreationTime, outputPath));
+
+	/// <summary>
 	/// Generic H.264 generator for benchmarks. Lets callers vary duration and resolution
 	/// to expose decode/seek scaling characteristics. Output is yuv420p, ultrafast.
 	/// </summary>
