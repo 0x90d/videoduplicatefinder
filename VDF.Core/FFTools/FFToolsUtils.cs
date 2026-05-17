@@ -50,27 +50,42 @@ namespace VDF.Core.FFTools {
 				return toolPath;
 
 			var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
-			if (environmentVariables == null) return null;
+			if (environmentVariables != null) {
+				foreach (var path in environmentVariables) {
+					if (!Directory.Exists(path))
+						continue;
 
-			foreach (var path in environmentVariables) {
-				if (!Directory.Exists(path))
-					continue;
+					try {
+						FileInfo[] files = new DirectoryInfo(path).GetFiles(toolExecutable, new EnumerationOptions {
+							IgnoreInaccessible = true,
+							MatchCasing = MatchCasing.CaseInsensitive
+						});
 
-				try {
-					FileInfo[] files = new DirectoryInfo(path).GetFiles(toolExecutable, new EnumerationOptions {
-						IgnoreInaccessible = true,
-						MatchCasing = MatchCasing.CaseInsensitive
-					});
-
-					if (files.Length > 0)
-						return files[0].FullName;
-				}
-				catch (Exception) {
+						if (files.Length > 0)
+							return files[0].FullName;
+					}
+					catch (Exception) {
 #if DEBUG
-					throw;
+						throw;
 #endif
+					}
 				}
 			}
+
+			// A GUI app launched from Finder (macOS) or a desktop launcher (Linux) can inherit
+			// a minimal PATH that omits the directory the binaries actually live in, so the
+			// scan above misses an otherwise correctly installed FFmpeg. Probe the standard
+			// install locations explicitly. See issue #764.
+			string[] wellKnownBinDirs =
+				RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"] :
+				RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? ["/usr/local/bin", "/usr/bin", "/bin", "/snap/bin"] :
+				[];
+			foreach (var binDir in wellKnownBinDirs) {
+				toolPath = Path.Combine(binDir, toolExecutable);
+				if (File.Exists(toolPath))
+					return toolPath;
+			}
+
 			return null;
 		}
 
