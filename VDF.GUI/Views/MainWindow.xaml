@@ -514,7 +514,7 @@
                                         </MenuItem>
                                     </MenuItem>
                                     <MenuItem Header="|" />
-                                    <CheckBox Margin="5,0,0,0" IsChecked="{Binding ElementName=GridFilter, Path=IsVisible}">
+                                    <CheckBox Margin="5,0,0,0" IsChecked="{Binding IsFilterEnabled}">
                                         <StackPanel Orientation="Horizontal">
                                             <Viewbox
                                                 Width="16"
@@ -545,8 +545,8 @@
                                 <Grid
                                     x:Name="GridFilter"
                                     Grid.Row="0"
-                                    Background="{actipro:ThemeResource Container3BackgroundBrush}"
-                                    IsVisible="False">
+                                    IsVisible="{Binding IsFilterEnabled}"
+                                    Background="{actipro:ThemeResource Container3BackgroundBrush}">
                                     <WrapPanel
                                     Margin="5">
                                         <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Path]}" />
