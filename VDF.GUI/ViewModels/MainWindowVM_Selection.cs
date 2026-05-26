@@ -230,7 +230,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckMissingFilesCommand => ReactiveCommand.Create(() => {
-			foreach (var item in ScopedDuplicates())
+			foreach (var item in ScopedDuplicates().Where(d => d.IsVisibleInFilter))
 				if (!File.Exists(item.ItemInfo.Path))
 					item.Checked = true;
 		});
@@ -243,12 +243,12 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> ClearCheckedItemsCommand => ReactiveCommand.Create(() => {
-			foreach (var item in ScopedDuplicates())
+			foreach (var item in ScopedDuplicates().Where(d => d.IsVisibleInFilter))
 				item.Checked = false;
 		});
 
 		public ReactiveCommand<Unit, Unit> InvertCheckedItemsCommand => ReactiveCommand.Create(() => {
-			foreach (var item in ScopedDuplicates())
+			foreach (var item in ScopedDuplicates().Where(d => d.IsVisibleInFilter))
 				item.Checked = !item.Checked;
 		});
 
