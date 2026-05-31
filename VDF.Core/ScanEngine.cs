@@ -1662,12 +1662,28 @@ namespace VDF.Core {
 			return false;
 		}
 
+		/// <summary>
+		/// The frame sample positions are populated during scan setup. When results are restored
+		/// from a saved backup without running a scan, the list is empty, so video thumbnail
+		/// re-extraction would sample zero frames and yield placeholders only (issue #775).
+		/// Rebuild it on demand from the configured thumbnail count.
+		/// </summary>
+		void EnsureThumbnailPositions() {
+			if (positionList.Count > 0) return;
+			float positionCounter = 0f;
+			for (int i = 0; i < Settings.ThumbnailCount; i++) {
+				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
+				positionList.Add(positionCounter);
+			}
+		}
+
 		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {
 			var dupList = items.Where(d => ShouldRetryThumbnails(d, NoThumbnailImage)).ToList();
 			if (dupList.Count == 0) {
 				Logger.Instance.Info("Explicit thumbnail retry: nothing to do (all selected items already have thumbnails).");
 				return;
 			}
+			EnsureThumbnailPositions();
 			Logger.Instance.Info($"Explicit thumbnail retry: starting for {dupList.Count} item(s).");
 			int loaded = 0, placeholders = 0, skippedMissing = 0;
 			try {

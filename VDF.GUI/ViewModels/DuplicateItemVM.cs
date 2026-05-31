@@ -27,13 +27,25 @@ using VDF.GUI.Utils;
 namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
-	public sealed class DuplicateItemVM : ReactiveObject {
+	public sealed class DuplicateItemVM : ReactiveObject, IJsonOnDeserialized {
 		//For JSON deserialization only
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItemVM() { }
 
 		public DuplicateItemVM(DuplicateItem item) {
 			ItemInfo = item;
+			WireThumbnailUpdates();
+		}
+
+		// When a DuplicateItemVM is restored from a saved scan results backup it is created
+		// through the parameterless constructor, so the ThumbnailsUpdated handler below would
+		// never be attached. Without it an explicit "load thumbnails" pass fills ItemInfo.ImageList
+		// but never writes the thumbnail pack, sets ThumbnailKey, or raises the UI, leaving restored
+		// rows blank forever (issue #775). Re-wire it once deserialization has populated ItemInfo.
+		public void OnDeserialized() => WireThumbnailUpdates();
+
+		void WireThumbnailUpdates() {
+			if (ItemInfo == null) return;
 			ItemInfo.ThumbnailsUpdated += () => {
 				try {
 
