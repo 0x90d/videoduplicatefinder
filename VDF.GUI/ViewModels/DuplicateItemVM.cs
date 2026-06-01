@@ -22,6 +22,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using ReactiveUI;
 using VDF.Core.ViewModels;
+using VDF.GUI.Data;
 using VDF.GUI.Utils;
 
 namespace VDF.GUI.ViewModels {
@@ -49,7 +50,12 @@ namespace VDF.GUI.ViewModels {
 			ItemInfo.ThumbnailsUpdated += () => {
 				try {
 
-					var key = ThumbCacheHelpers.XxHash64Hex(ItemInfo.Path);
+					// Width is part of the key so thumbnails generated at different
+					// ThumbnailMaxWidth values don't collide. Without it, re-scanning at a
+					// larger width keeps serving the old, lower-resolution JPEG (AppendIfMissing
+					// never overwrites), which the UI then upscales -> fuzzy/pixelated (issue #776).
+					var key = ThumbCacheHelpers.XxHash64Hex(
+						ItemInfo.Path + "|w=" + SettingsFile.Instance.ThumbnailMaxWidth);
 
 					ThumbCacheHelpers.Provider?.AppendIfMissing(key, stream => {
 						var uiBmp = ImageUtils.JoinImages(ItemInfo.ImageList, stream);
