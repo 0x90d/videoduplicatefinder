@@ -22,22 +22,40 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using ReactiveUI;
 using VDF.Core.ViewModels;
+using VDF.GUI.Data;
 using VDF.GUI.Utils;
 
 namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
-	public sealed class DuplicateItemVM : ReactiveObject {
+	public sealed class DuplicateItemVM : ReactiveObject, IJsonOnDeserialized {
 		//For JSON deserialization only
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItemVM() { }
 
 		public DuplicateItemVM(DuplicateItem item) {
 			ItemInfo = item;
+			WireThumbnailUpdates();
+		}
+
+		// When a DuplicateItemVM is restored from a saved scan results backup it is created
+		// through the parameterless constructor, so the ThumbnailsUpdated handler below would
+		// never be attached. Without it an explicit "load thumbnails" pass fills ItemInfo.ImageList
+		// but never writes the thumbnail pack, sets ThumbnailKey, or raises the UI, leaving restored
+		// rows blank forever (issue #775). Re-wire it once deserialization has populated ItemInfo.
+		public void OnDeserialized() => WireThumbnailUpdates();
+
+		void WireThumbnailUpdates() {
+			if (ItemInfo == null) return;
 			ItemInfo.ThumbnailsUpdated += () => {
 				try {
 
-					var key = ThumbCacheHelpers.XxHash64Hex(ItemInfo.Path);
+					// Width is part of the key so thumbnails generated at different
+					// ThumbnailMaxWidth values don't collide. Without it, re-scanning at a
+					// larger width keeps serving the old, lower-resolution JPEG (AppendIfMissing
+					// never overwrites), which the UI then upscales -> fuzzy/pixelated (issue #776).
+					var key = ThumbCacheHelpers.XxHash64Hex(
+						ItemInfo.Path + "|w=" + SettingsFile.Instance.ThumbnailMaxWidth);
 
 					ThumbCacheHelpers.Provider?.AppendIfMissing(key, stream => {
 						var uiBmp = ImageUtils.JoinImages(ItemInfo.ImageList, stream);

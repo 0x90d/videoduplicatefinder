@@ -25,4 +25,10 @@
     <ProjectReference Include="..\VDF.TestSupport\VDF.TestSupport.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- FFmpeg can decode HEIC but cannot mux it, so this fixture is checked in
+         rather than generated at runtime like the video fixtures. -->
+    <None Include="TestData\sample.heic" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

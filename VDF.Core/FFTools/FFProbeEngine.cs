@@ -15,6 +15,7 @@
 //
 
 using System.Diagnostics;
+using System.Globalization;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
@@ -90,6 +91,55 @@ namespace VDF.Core.FFTools {
 				Logger.Instance.Info($"{message}{errOut}");
 			}
 			return mediaInfo;
+		}
+
+		/// <summary>
+		/// Reads the container-level <c>creation_time</c> tag from a media file. Used for HEIC/HEIF
+		/// images, whose EXIF date is lost when FFmpeg transcodes them to JPEG for hashing and
+		/// thumbnails. Returns <c>null</c> when the tag is absent, empty or unparseable.
+		/// </summary>
+		public static DateTime? GetCreationTime(string file) {
+			var psi = new ProcessStartInfo {
+				FileName = FFprobePath,
+				CreateNoWindow = true,
+				RedirectStandardInput = false,
+				WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
+				RedirectStandardOutput = true,
+				RedirectStandardError = false,
+				WindowStyle = ProcessWindowStyle.Hidden
+			};
+
+			psi.ArgumentList.Add("-hide_banner");
+			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("quiet");
+			psi.ArgumentList.Add("-show_entries"); psi.ArgumentList.Add("format_tags=creation_time");
+			psi.ArgumentList.Add("-of"); psi.ArgumentList.Add("default=noprint_wrappers=1:nokey=1");
+			psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
+
+			using var process = new Process { StartInfo = psi };
+			try {
+				process.Start();
+				string output = process.StandardOutput.ReadToEnd();
+				if (!process.WaitForExit(TimeoutDuration)) {
+					try { if (!process.HasExited) process.Kill(); } catch { }
+					return null;
+				}
+				if (process.ExitCode != 0)
+					return null;
+
+				output = output.Trim();
+				if (output.Length == 0)
+					return null;
+
+				// FFprobe emits creation_time as ISO 8601, typically UTC (e.g. "2023-08-15T12:34:56.000000Z").
+				if (DateTime.TryParse(output, CultureInfo.InvariantCulture,
+						DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var parsed))
+					return DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
+			}
+			catch (Exception e) {
+				Logger.Instance.Info($"Failed reading creation_time from '{file}': {e.Message}");
+				try { if (!process.HasExited) process.Kill(); } catch { }
+			}
+			return null;
 		}
 	}
 }

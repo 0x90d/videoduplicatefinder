@@ -26,7 +26,9 @@ namespace VDF.Core.Utils {
 			".gif",
 			".bmp",
 			".tiff",
-			".webp"};
+			".webp",
+			".heic",
+			".heif"};
 		static readonly string[] VideoExtensions = {
 			".mp4",
 			".wmv",

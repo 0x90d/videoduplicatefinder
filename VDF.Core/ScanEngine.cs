@@ -1662,12 +1662,28 @@ namespace VDF.Core {
 			return false;
 		}
 
+		/// <summary>
+		/// The frame sample positions are populated during scan setup. When results are restored
+		/// from a saved backup without running a scan, the list is empty, so video thumbnail
+		/// re-extraction would sample zero frames and yield placeholders only (issue #775).
+		/// Rebuild it on demand from the configured thumbnail count.
+		/// </summary>
+		void EnsureThumbnailPositions() {
+			if (positionList.Count > 0) return;
+			float positionCounter = 0f;
+			for (int i = 0; i < Settings.ThumbnailCount; i++) {
+				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
+				positionList.Add(positionCounter);
+			}
+		}
+
 		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {
 			var dupList = items.Where(d => ShouldRetryThumbnails(d, NoThumbnailImage)).ToList();
 			if (dupList.Count == 0) {
 				Logger.Instance.Info("Explicit thumbnail retry: nothing to do (all selected items already have thumbnails).");
 				return;
 			}
+			EnsureThumbnailPositions();
 			Logger.Instance.Info($"Explicit thumbnail retry: starting for {dupList.Count} item(s).");
 			int loaded = 0, placeholders = 0, skippedMissing = 0;
 			try {
@@ -1684,7 +1700,7 @@ namespace VDF.Core {
 						timeStamps = new(0);
 						list = new List<Image>(1);
 						try {
-							Image bitmapImage = Image.Load(entry.Path);
+							Image bitmapImage = ImageLoader.Load(entry.Path);
 							float resizeFactor = 1f;
 							if (bitmapImage.Width > maxDim || bitmapImage.Height > maxDim) {
 								float widthFactor = bitmapImage.Width / (float)maxDim;
@@ -1781,7 +1797,7 @@ namespace VDF.Core {
 						timeStamps = new(0);
 						list = new List<Image>(1);
 						try {
-							Image bitmapImage = Image.Load(entry.Path);
+							Image bitmapImage = ImageLoader.Load(entry.Path);
 							float resizeFactor = 1f;
 							if (bitmapImage.Width > maxDim || bitmapImage.Height > maxDim) {
 								float widthFactor = bitmapImage.Width / (float)maxDim;
@@ -1852,8 +1868,7 @@ namespace VDF.Core {
 		static bool GetGrayBytesFromImage(FileEntry imageFile, bool useExifIfAvailable) {
 			try {
 
-				using var byteStream = File.OpenRead(imageFile.Path);
-				using var bitmapImage = Image.Load(byteStream);
+				using var bitmapImage = ImageLoader.Load(imageFile.Path);
 				//Set some props while we already loaded the image
 				imageFile.mediaInfo = new MediaInfo {
 					Streams = new[] {
@@ -1863,12 +1878,14 @@ namespace VDF.Core {
 
 				// Extract EXIF creation date if enabled
 				if (useExifIfAvailable) {
+					bool dateFound = false;
 					var exifProfile = bitmapImage.Metadata.ExifProfile;
 					if (exifProfile != null) {
-						// Try DateTimeOriginal first (when photo was taken)						
+						// Try DateTimeOriginal first (when photo was taken)
 						if (exifProfile.TryGetValue(ExifTag.DateTimeOriginal, out var dateTimeOriginal) && !string.IsNullOrWhiteSpace(dateTimeOriginal.Value)) {
 							if (TryParseExifDateTime(dateTimeOriginal.Value, out DateTime exifDate)) {
 								imageFile.DateCreated = exifDate;
+								dateFound = true;
 							}
 						}
 						// Fallback to DateTime if DateTimeOriginal is not available
@@ -1876,9 +1893,17 @@ namespace VDF.Core {
 							if (exifProfile.TryGetValue(ExifTag.DateTime, out var dateTime) && !string.IsNullOrWhiteSpace(dateTime.Value)) {
 								if (TryParseExifDateTime(dateTime.Value, out DateTime exifDate)) {
 									imageFile.DateCreated = exifDate;
+									dateFound = true;
 								}
 							}
 						}
+					}
+					// HEIC/HEIF are transcoded to JPEG via FFmpeg for hashing, which drops the
+					// EXIF profile. Fall back to the container creation_time tag read by FFprobe.
+					if (!dateFound && ImageLoader.RequiresFfmpegDecoding(imageFile.Path)) {
+						var creationTime = FFProbeEngine.GetCreationTime(imageFile.Path);
+						if (creationTime.HasValue)
+							imageFile.DateCreated = creationTime.Value;
 					}
 				}
 

@@ -778,6 +778,8 @@ namespace VDF.GUI.ViewModels {
 				RefreshGroupStats();
 				IsBusy = false;
 				stream.Close();
+
+				await PromptLoadMissingThumbnails();
 			}
 			catch (JsonException) {
 				IsBusy = false;
@@ -790,6 +792,41 @@ namespace VDF.GUI.ViewModels {
 				string error = string.Format(App.Lang["Message.ImportScanResultsFailed"], ex);
 				Logger.Instance.Info(error);
 				await MessageBoxService.Show(error);
+			}
+		}
+
+		/// <summary>
+		/// A restored item is considered missing its preview when no usable thumbnail is cached
+		/// for it — either it never got a key (thumbnails hadn't loaded before the backup was
+		/// saved) or the pack has no non-empty entry for that key.
+		/// </summary>
+		static bool IsThumbnailMissing(DuplicateItemVM item) {
+			if (string.IsNullOrEmpty(item.ThumbnailKey)) return true;
+			var provider = Utils.ThumbCacheHelpers.Provider;
+			if (provider == null) return true;
+			return !provider.TryGetEntry(item.ThumbnailKey, out _, out var len) || len <= 0;
+		}
+
+		/// <summary>
+		/// After restoring a saved scan that was interrupted before all thumbnails loaded, offer
+		/// to generate the missing previews in one pass instead of leaving rows blank (issue #775).
+		/// </summary>
+		async Task PromptLoadMissingThumbnails() {
+			var missing = Duplicates.Where(IsThumbnailMissing).ToList();
+			if (missing.Count == 0) return;
+
+			MessageBoxButtons? result = await MessageBoxService.Show(
+				string.Format(App.Lang["Message.LoadMissingThumbnailsPrompt"], missing.Count),
+				MessageBoxButtons.Yes | MessageBoxButtons.No);
+			if (result != MessageBoxButtons.Yes) return;
+
+			IsBusy = true;
+			IsBusyOverlayText = App.Lang["Busy.LoadMissingThumbnails"];
+			try {
+				await Scanner.RetrieveThumbnailsForItems(missing.Select(d => d.ItemInfo));
+			}
+			finally {
+				IsBusy = false;
 			}
 		}
 

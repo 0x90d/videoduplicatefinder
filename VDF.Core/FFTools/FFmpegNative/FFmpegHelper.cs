@@ -65,6 +65,16 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				if (CheckForFfmpegLibraryFilesInFolder(path))
 					return true;
 
+				// macOS: Homebrew installs the FFmpeg dylibs under its prefix, which a
+				// Finder-launched app does not have on its dyld search path. Probe the
+				// default Homebrew lib folders explicitly. See issue #764.
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+					foreach (var homebrewLib in new[] { "/opt/homebrew/lib", "/usr/local/lib" }) {
+						if (CheckForFfmpegLibraryFilesInFolder(homebrewLib))
+							return true;
+					}
+				}
+
 
 				//Try fast lookup first, credits: @Maltragor
 				try {

@@ -22,18 +22,23 @@ namespace VDF.Core.Utils {
 			public string Name { get; }
 			public Func<T, IComparable> Accessor { get; }
 			public bool VideoOnly { get; }
-			public Criterion(string name, Func<T, IComparable> accessor, bool videoOnly) {
+			// When true, the lower value wins instead of the higher. Used for criteria
+			// where "less is better" - e.g. file size as a disk-space tiebreaker once
+			// every quality signal has already tied.
+			public bool Ascending { get; }
+			public Criterion(string name, Func<T, IComparable> accessor, bool videoOnly, bool ascending = false) {
 				Name = name;
 				Accessor = accessor;
 				VideoOnly = videoOnly;
+				Ascending = ascending;
 			}
 		}
 
 		// Picks the item to keep from `items` by walking `criteria` in priority order.
-		// Each criterion is "higher value wins"; on a tie, the next criterion runs only
-		// against the items that tied - never against the original full list. Walking
-		// stops as soon as a criterion produces a unique winner, or when all criteria
-		// are exhausted (the first remaining tied item wins).
+		// Each criterion is "higher value wins" unless Ascending is set; on a tie, the
+		// next criterion runs only against the items that tied - never against the
+		// original full list. Walking stops as soon as a criterion produces a unique
+		// winner, or when all criteria are exhausted (the first remaining tied item wins).
 		// `isImage(keep)` skips video-only criteria for image items.
 		public static T PickKeeper<T>(IList<T> items, IEnumerable<Criterion<T>> criteria, Func<T, bool> isImage) {
 			if (items.Count == 0)
@@ -55,7 +60,9 @@ namespace VDF.Core.Utils {
 					candidates = tied;
 				}
 
-				keep = candidates.OrderByDescending(criterion.Accessor).First();
+				keep = criterion.Ascending
+					? candidates.OrderBy(criterion.Accessor).First()
+					: candidates.OrderByDescending(criterion.Accessor).First();
 				anyApplied = true;
 				last = criterion;
 			}

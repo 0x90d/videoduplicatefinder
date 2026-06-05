@@ -145,6 +145,16 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
+		bool _IsFilterEnabled;
+		public bool IsFilterEnabled {
+			get => _IsFilterEnabled;
+			set {
+				if (value == _IsFilterEnabled) return;
+				this.RaiseAndSetIfChanged(ref _IsFilterEnabled, value);
+				view?.Refresh();
+			}
+		}
+
 		private HashSet<Guid> _groupsWithPathHit = new();
 		void RebuildSearchPathIndex() {
 			var needle = FilterByPath;
@@ -186,6 +196,10 @@ namespace VDF.GUI.ViewModels {
 
 		bool DuplicatesFilter(object obj) {
 			if (obj is not DuplicateItemVM data) return false;
+			if (!IsFilterEnabled) {
+				data.IsVisibleInFilter = true;
+				return true;
+			}
 			bool ok = true;
 			if (!string.IsNullOrEmpty(FilterByPath)) {
 				ok = data.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase)
