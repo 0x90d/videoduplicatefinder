@@ -1,28 +1,26 @@
 name: Build releases
 
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch: # 允许你在 Actions 页面手动点击按钮触发编译
 
-on: [push]
-    
+env:
+  # 全局环境变量：强制 Action 使用 Node.js 24，消除旧版本警告
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Delete old release assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Delete all existing assets from the 3.0.x release so they get replaced with fresh builds
-          gh release view 3.0.x --json assets --jq '.assets[].name' | while read -r asset; do
-            gh release delete-asset 3.0.x "$asset" --yes
-          done
-
   build:
-    needs: cleanup
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write # 必须赋予写入权限，以便自动创建独立的 GitHub Release
 
     strategy:
       matrix:
-        kind: ['linux', 'windows', 'macOS', 'macOSarm64', 'linuxarm64']
+        # 在原作者的矩阵中无缝插入了 'windows-arm64'
+        kind: ['linux', 'windows', 'windows-arm64', 'macOS', 'macOSarm64', 'linuxarm64']
         include:
           - kind: linux
             os: ubuntu-latest
@@ -32,6 +30,11 @@ jobs:
             os: windows-latest
             target: win-x64
             name: win-x64
+          # 专属的高通/微软 Windows ARM64 编译节点
+          - kind: windows-arm64
+            os: windows-latest
+            target: win-arm64
+            name: win-arm64
           - kind: macOS
             os: macos-latest
             target: osx-x64
@@ -45,43 +48,42 @@ jobs:
             target: linux-arm64
             name: linux-arm64
             
-    runs-on: ${{ matrix.os }}
-
     steps:
     - uses: actions/checkout@v5
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '9.0.x'
+        
     - name: Declare some variables
       id: vars
       shell: bash
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
     - name: Build
       shell: bash
       run: |
-          # Build GUI
+          # 1. 编译 GUI 桌面端
           dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputGUI"
-          # Build CLI
+          # 2. 编译 CLI 命令行端
           dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputCLI"
-          # Build Web
+          # 3. 编译 Web 网页端
           dotnet publish ./VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputWeb"
-          # Pack files
-          if [ "${{ matrix.target }}" == "win-x64" ]; then
+          
+          # 4. 根据平台特性进行打包 (修改了 win-* 的判断条件，使 win-x64 和 win-arm64 均用 7z 压缩)
+          if [[ "${{ matrix.target }}" == win-* ]]; then
             7z a -tzip "GUI-${{ matrix.target }}.zip" "./outputGUI/*"
             7z a -tzip "CLI-${{ matrix.target }}.zip" "./outputCLI/*"
             7z a -tzip "Web-${{ matrix.target }}.zip" "./outputWeb/*"
           elif [[ "${{ matrix.target }}" == osx-* ]]; then
-            # Wrap the GUI in a proper macOS .app bundle
+            # 针对 macOS 的打包装箱与签名逻辑（保留原作者设定）
             mkdir -p "Video Duplicate Finder.app/Contents/MacOS"
             mkdir -p "Video Duplicate Finder.app/Contents/Resources"
             cp -r outputGUI/. "Video Duplicate Finder.app/Contents/MacOS/"
             cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
             cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
             chmod +x "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
-            # Ad-hoc sign every binary in the bundle. macOS 14+ (and especially Tahoe 26)
-            # rejects unsigned dylibs under Library Validation, which previously caused
-            # "library load disallowed by system policy" on launch.
             codesign --force --deep --sign - \
               --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
               "Video Duplicate Finder.app"
@@ -98,28 +100,5 @@ jobs:
             tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
             tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
           else
-            # Bundle .desktop file and icon for Linux desktop integration
-            cp "VDF.GUI/Assets/Linux/icon.png" "outputGUI/icon.png"
-            cp "VDF.GUI/Assets/Linux/videoduplicatefinder.desktop" "outputGUI/videoduplicatefinder.desktop"
-            tar czvf "GUI-${{ matrix.target }}.tar.gz" "outputGUI"
-            tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
-            tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
-          fi
-          # Clean up
-          rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
-          
-    - name: Publish
-      uses: softprops/action-gh-release@v3
-      with:
-          tag_name: 3.0.x
-          files: |
-            GUI-*
-            CLI-*
-            Web-*
-          body: |
-            Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says. If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in VDF folder.
-            Last build based on ${{ steps.vars.outputs.sha_short }}
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
+            # 针对 Linux 的打包逻辑（保留原作者设定）
+            cp "VDF.
