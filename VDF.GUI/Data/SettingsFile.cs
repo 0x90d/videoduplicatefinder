@@ -63,6 +63,13 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _VideoCompareExecutablePath, value);
 		}
 
+		string _VideoCompareArguments = string.Empty;
+		[JsonPropertyName("VideoCompareArguments")]
+		public string VideoCompareArguments {
+			get => _VideoCompareArguments;
+			set => this.RaiseAndSetIfChanged(ref _VideoCompareArguments, value);
+		}
+
 		[JsonPropertyName("Includes")]
 		public ObservableCollection<string> Includes { get; set; } = new();
 		[JsonPropertyName("Blacklists")]

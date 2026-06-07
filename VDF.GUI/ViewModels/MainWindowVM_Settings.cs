@@ -117,6 +117,17 @@ namespace VDF.GUI.ViewModels {
 				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);
 			}
 		});
+		public ReactiveCommand<Unit, Unit> OpenVideoCompareProjectLinkCommand => ReactiveCommand.CreateFromTask(async () => {
+			try {
+				Process.Start(new ProcessStartInfo {
+					FileName = "https://github.com/pixop/video-compare",
+					UseShellExecute = true
+				});
+			}
+			catch {
+				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);
+			}
+		});
 		public ReactiveCommand<Unit, Unit> BrowseVideoCompareExecutableCommand => ReactiveCommand.CreateFromTask(async () => {
 			string? startFolder = null;
 			var currentPath = SettingsFile.Instance.VideoCompareExecutablePath;

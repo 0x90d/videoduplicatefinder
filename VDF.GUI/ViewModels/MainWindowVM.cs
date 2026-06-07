@@ -894,6 +894,53 @@ namespace VDF.GUI.ViewModels {
 				return null;
 			return path;
 		}
+		static IEnumerable<string> ParseVideoCompareArguments() {
+			var raw = SettingsFile.Instance.VideoCompareArguments;
+			if (string.IsNullOrWhiteSpace(raw))
+				return [];
+
+			var args = new List<string>();
+			var token = new StringBuilder();
+			bool inDoubleQuotes = false;
+			bool inSingleQuotes = false;
+
+			for (int i = 0; i < raw.Length; i++) {
+				var c = raw[i];
+				if (c == '\\' && i + 1 < raw.Length) {
+					if ((raw[i + 1] == '"' || raw[i + 1] == '\'')) {
+						token.Append(raw[i + 1]);
+						i++;
+						continue;
+					}
+				}
+
+				if (!inSingleQuotes && c == '"') {
+					inDoubleQuotes = !inDoubleQuotes;
+					continue;
+				}
+
+				if (!inDoubleQuotes && c == '\'') {
+					inSingleQuotes = !inSingleQuotes;
+					continue;
+				}
+
+				if (!inSingleQuotes && !inDoubleQuotes && char.IsWhiteSpace(c)) {
+					if (token.Length > 0) {
+						args.Add(token.ToString());
+						token.Clear();
+					}
+
+					continue;
+				}
+
+				token.Append(c);
+			}
+
+			if (token.Length > 0)
+				args.Add(token.ToString());
+
+			return args;
+		}
 
 		public async Task OpenGroupInVideoCompare(Guid? groupId = null) {
 			var pair = ResolveVideoComparePair(groupId);
@@ -920,6 +967,8 @@ namespace VDF.GUI.ViewModels {
 				};
 				psi.ArgumentList.Add(pair[0].ItemInfo.Path);
 				psi.ArgumentList.Add(pair[1].ItemInfo.Path);
+				foreach (var argument in ParseVideoCompareArguments())
+					psi.ArgumentList.Add(argument);
 				Process.Start(psi);
 			}
 			catch (Exception ex) {
