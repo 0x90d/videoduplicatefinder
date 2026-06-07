@@ -866,6 +866,69 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
+		List<DuplicateItemVM>? ResolveVideoComparePair(Guid? groupId = null) {
+			var selected = GetSelectedDuplicates()
+				.Where(d => !d.ItemInfo.IsImage)
+				.ToList();
+			if (selected.Count == 2 && selected.Select(d => d.ItemInfo.GroupId).Distinct().Count() == 1)
+				return selected;
+
+			Guid resolvedGroupId;
+			if (groupId.HasValue)
+				resolvedGroupId = groupId.Value;
+			else {
+				if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem)
+					return null;
+				resolvedGroupId = currentItem.ItemInfo.GroupId;
+			}
+
+			var groupVideos = Duplicates
+				.Where(d => d.ItemInfo.GroupId == resolvedGroupId && !d.ItemInfo.IsImage)
+				.ToList();
+			return groupVideos.Count == 2 ? groupVideos : null;
+		}
+
+		string? ResolveVideoCompareExecutable() {
+			var path = SettingsFile.Instance.VideoCompareExecutablePath?.Trim();
+			if (string.IsNullOrWhiteSpace(path))
+				return null;
+			return path;
+		}
+
+		public async Task OpenGroupInVideoCompare(Guid? groupId = null) {
+			var pair = ResolveVideoComparePair(groupId);
+			if (pair == null) {
+				await MessageBoxService.Show("Video Compare requires exactly two video items from the same group. Select two videos, or use it on a group that contains exactly two videos.");
+				return;
+			}
+
+			var exePath = ResolveVideoCompareExecutable();
+			if (string.IsNullOrWhiteSpace(exePath)) {
+				await MessageBoxService.Show("Set the video-compare executable path in Settings before using Video Compare.");
+				return;
+			}
+			if ((exePath.Contains(Path.DirectorySeparatorChar) || exePath.Contains(Path.AltDirectorySeparatorChar)) && !File.Exists(exePath)) {
+				await MessageBoxService.Show($"video-compare was not found at '{exePath}'.");
+				return;
+			}
+
+			try {
+				var psi = new ProcessStartInfo {
+					FileName = exePath,
+					UseShellExecute = false,
+					CreateNoWindow = true,
+				};
+				psi.ArgumentList.Add(pair[0].ItemInfo.Path);
+				psi.ArgumentList.Add(pair[1].ItemInfo.Path);
+				Process.Start(psi);
+			}
+			catch (Exception ex) {
+				await MessageBoxService.Show($"Failed to start video-compare: {ex.Message}");
+			}
+		}
+
+		public ReactiveCommand<Unit, Unit> OpenGroupInVideoCompareCommand => ReactiveCommand.CreateFromTask(() => OpenGroupInVideoCompare());
+
 		public async void OpenItems() {
 			if (AlternativeOpen(SettingsFile.Instance.CustomCommands.OpenItem,
 								SettingsFile.Instance.CustomCommands.OpenMultiple))

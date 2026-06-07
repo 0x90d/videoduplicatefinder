@@ -1783,6 +1783,14 @@
                                                     <TextBox Width="250" HorizontalAlignment="Left"
                                                              Text="{Binding SelectedCustomCommandValue}"
                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsPlaceholderTooltip]}" />
+                                                    <TextBlock FontSize="14" Text="Video Compare Executable" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBox Width="250" HorizontalAlignment="Left"
+                                                                 Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=VideoCompareExecutablePath}"
+                                                                 ToolTip.Tip="Path to video-compare executable. When set, group headers show a Video Compare button." />
+                                                        <Button Content="Browse..."
+                                                                Command="{Binding BrowseVideoCompareExecutableCommand}" />
+                                                    </StackPanel>
                                                     <TextBlock FontSize="14" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolder]}" />
                                                     <TextBox Width="250" HorizontalAlignment="Left"
                                                              Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}"

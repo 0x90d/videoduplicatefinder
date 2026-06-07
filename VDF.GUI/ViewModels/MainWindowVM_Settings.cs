@@ -17,6 +17,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
@@ -115,6 +116,30 @@ namespace VDF.GUI.ViewModels {
 			catch {
 				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);
 			}
+		});
+		public ReactiveCommand<Unit, Unit> BrowseVideoCompareExecutableCommand => ReactiveCommand.CreateFromTask(async () => {
+			string? startFolder = null;
+			var currentPath = SettingsFile.Instance.VideoCompareExecutablePath;
+			if (!string.IsNullOrWhiteSpace(currentPath)) {
+				startFolder = Path.GetDirectoryName(currentPath);
+				if (string.IsNullOrWhiteSpace(startFolder) || !Directory.Exists(startFolder))
+					startFolder = null;
+			}
+
+			var result = await Utils.PickerDialogUtils.OpenFilePicker(new FilePickerOpenOptions {
+				Title = "Select video-compare executable",
+				SuggestedStartLocation = startFolder == null
+					? null
+					: await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(startFolder),
+				FileTypeFilter = OperatingSystem.IsWindows()
+					? [new FilePickerFileType("Executable") { Patterns = ["*.exe"] }]
+					: null
+			});
+
+			if (string.IsNullOrWhiteSpace(result))
+				return;
+
+			SettingsFile.Instance.VideoCompareExecutablePath = result;
 		});
 		public ReactiveCommand<Unit, Unit> AddIncludesToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Utils.PickerDialogUtils.OpenDialogPicker(

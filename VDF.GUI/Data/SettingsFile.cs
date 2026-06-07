@@ -56,6 +56,13 @@ namespace VDF.GUI.Data {
 			public string OpenMultiple { get; set; } = string.Empty;
 		}
 
+		string _VideoCompareExecutablePath = string.Empty;
+		[JsonPropertyName("VideoCompareExecutablePath")]
+		public string VideoCompareExecutablePath {
+			get => _VideoCompareExecutablePath;
+			set => this.RaiseAndSetIfChanged(ref _VideoCompareExecutablePath, value);
+		}
+
 		[JsonPropertyName("Includes")]
 		public ObservableCollection<string> Includes { get; set; } = new();
 		[JsonPropertyName("Blacklists")]
