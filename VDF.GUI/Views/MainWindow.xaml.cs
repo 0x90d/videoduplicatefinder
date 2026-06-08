@@ -21,10 +21,12 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
+using Avalonia.Controls.Primitives;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
@@ -38,6 +40,9 @@ namespace VDF.GUI.Views {
 	public class MainWindow : Window {
 		bool keepBackupFile;
 		bool hasExited;
+		Point? pendingDuplicateDragStart;
+		DuplicateItemVM? pendingDuplicateDragItem;
+		bool duplicateDragInProgress;
 
 		public readonly Core.FFTools.FFHardwareAccelerationMode InitialHwMode;
 		public MainWindow() {
@@ -57,6 +62,10 @@ namespace VDF.GUI.Views {
 			this.FindControl<ListBox>("ListboxIncludelist")!.AddHandler(DragDrop.DragOverEvent, DragOver);
 			this.FindControl<ListBox>("ListboxBlacklist")!.AddHandler(DragDrop.DropEvent, DropBlacklist);
 			this.FindControl<ListBox>("ListboxBlacklist")!.AddHandler(DragDrop.DragOverEvent, DragOver);
+			var duplicatesGrid = this.FindControl<DataGrid>("dataGridGrouping")!;
+			duplicatesGrid.AddHandler(InputElement.PointerPressedEvent, OnDuplicatesGridPointerPressed, RoutingStrategies.Tunnel);
+			duplicatesGrid.AddHandler(InputElement.PointerMovedEvent, OnDuplicatesGridPointerMoved, RoutingStrategies.Tunnel);
+			duplicatesGrid.AddHandler(InputElement.PointerReleasedEvent, OnDuplicatesGridPointerReleased, RoutingStrategies.Tunnel);
 
 			ApplicationHelpers.CurrentApplicationLifetime.Startup += MainWindow_Startup;
 			ApplicationHelpers.CurrentApplicationLifetime.Exit += MainWindow_Exit;
@@ -176,6 +185,93 @@ namespace VDF.GUI.Views {
 			// Only allow if the dragged data contains filenames.
 			if (!e.DataTransfer.Contains(DataFormat.File))
 				e.DragEffects = DragDropEffects.None;
+		}
+
+		void OnDuplicatesGridPointerPressed(object? sender, PointerPressedEventArgs e) {
+			if (IsDuplicateDragBlockedByControl(e.Source as Visual))
+				return;
+
+			if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+				ClearPendingDuplicateDrag();
+				return;
+			}
+
+			var source = e.Source as Visual;
+			pendingDuplicateDragItem = source?
+				.GetVisualAncestors()
+				.OfType<Control>()
+				.Select(c => c.DataContext)
+				.OfType<DuplicateItemVM>()
+				.FirstOrDefault()
+				?? (source as Control)?.DataContext as DuplicateItemVM;
+			pendingDuplicateDragStart = pendingDuplicateDragItem == null ? null : e.GetPosition(this);
+		}
+
+		bool IsDuplicateDragBlockedByControl(Visual? visual) {
+			if (visual == null)
+				return false;
+
+			return visual.GetVisualAncestors()
+				.Concat(new[] { visual })
+				.OfType<Control>()
+				.Any(c => c is ScrollViewer || c is ScrollBar);
+		}
+
+		async void OnDuplicatesGridPointerMoved(object? sender, PointerEventArgs e) {
+			if (duplicateDragInProgress || pendingDuplicateDragStart == null || pendingDuplicateDragItem == null)
+				return;
+			if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+				ClearPendingDuplicateDrag();
+				return;
+			}
+
+			var current = e.GetPosition(this);
+			var delta = current - pendingDuplicateDragStart.Value;
+			const double dragThreshold = 6d;
+			if (Math.Abs(delta.X) < dragThreshold && Math.Abs(delta.Y) < dragThreshold)
+				return;
+
+			var grid = this.FindControl<DataGrid>("dataGridGrouping")!;
+			var selected = grid.SelectedItems?.Cast<DuplicateItemVM>().ToList() ?? new List<DuplicateItemVM>();
+			var itemsToDrag = selected.Any(i => ReferenceEquals(i, pendingDuplicateDragItem))
+				? selected
+				: new List<DuplicateItemVM> { pendingDuplicateDragItem };
+			var files = await BuildDuplicateFileDragItemsAsync(itemsToDrag);
+			if (files.Count == 0) {
+				ClearPendingDuplicateDrag();
+				return;
+			}
+
+			var data = new DataTransfer();
+			foreach (var file in files)
+				data.Add(DataTransferItem.CreateFile(file));
+			duplicateDragInProgress = true;
+			try {
+				await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Copy);
+			}
+			finally {
+				duplicateDragInProgress = false;
+				ClearPendingDuplicateDrag();
+			}
+		}
+
+		void OnDuplicatesGridPointerReleased(object? sender, PointerReleasedEventArgs e) => ClearPendingDuplicateDrag();
+
+		void ClearPendingDuplicateDrag() {
+			pendingDuplicateDragStart = null;
+			pendingDuplicateDragItem = null;
+		}
+
+		async Task<List<IStorageItem>> BuildDuplicateFileDragItemsAsync(IEnumerable<DuplicateItemVM> items) {
+			var files = new List<IStorageItem>();
+			foreach (var path in items.Select(i => i.ItemInfo.Path).Distinct(PathComparer.ForCurrentPlatform)) {
+				if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+					continue;
+				var file = await StorageProvider.TryGetFileFromPathAsync(path);
+				if (file != null)
+					files.Add(file);
+			}
+			return files;
 		}
 
 		private void DropInclude(object? sender, DragEventArgs e) {
