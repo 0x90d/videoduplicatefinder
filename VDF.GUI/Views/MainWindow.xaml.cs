@@ -327,15 +327,28 @@ namespace VDF.GUI.Views {
 			}
 
 			var compareBtn = new Button { Content = "Compare", Classes = { "group-action" } };
+			var videoCompareBtn = new Button { Content = "Video Compare", Classes = { "group-action" } };
 			var keepBestBtn = new Button { Content = "Keep Best", Classes = { "group-action" } };
+			void UpdateVideoCompareVisibility() =>
+				videoCompareBtn.IsVisible = !string.IsNullOrWhiteSpace(SettingsFile.Instance.VideoCompareExecutablePath);
 
 			compareBtn.Click += (_, _) => {
 				var id = GetGroupId();
 				if (id != Guid.Empty) vm.CompareGroup(id);
 			};
+			videoCompareBtn.Click += async (_, _) => {
+				var id = GetGroupId();
+				if (id != Guid.Empty)
+					await vm.OpenGroupInVideoCompare(id);
+			};
 			keepBestBtn.Click += (_, _) => {
 				var id = GetGroupId();
 				if (id != Guid.Empty) vm.KeepBestInGroup(id);
+			};
+			UpdateVideoCompareVisibility();
+			SettingsFile.Instance.PropertyChanged += (_, args) => {
+				if (args.PropertyName == nameof(SettingsFile.VideoCompareExecutablePath))
+					UpdateVideoCompareVisibility();
 			};
 
 			var panel = new StackPanel {
@@ -343,7 +356,7 @@ namespace VDF.GUI.Views {
 				Spacing = 4,
 				Margin = new Thickness(8, 0, 4, 0),
 				VerticalAlignment = VerticalAlignment.Center,
-				Children = { compareBtn, keepBestBtn }
+				Children = { compareBtn, videoCompareBtn, keepBestBtn }
 			};
 
 			// Inject buttons into the header's visual tree once it's loaded

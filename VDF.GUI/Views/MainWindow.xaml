@@ -1794,6 +1794,32 @@
                                                                    ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DatabaseCheckpointIntervalTooltip]}" />
                                                 </StackPanel>
                                             </Border>
+                                            <!-- Video Compare -->
+                                            <Border Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                                                    BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="12">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="Video Compare" FontSize="14" FontWeight="Bold" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,2">
+                                                        <TextBlock FontSize="14" Text="Video Compare Path" />
+                                                        <Button Classes="hyperlink"
+                                                                HorizontalAlignment="Left"
+                                                                Command="{Binding OpenVideoCompareProjectLinkCommand}"
+                                                                Content="video-compare project" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBox Width="250" HorizontalAlignment="Left"
+                                                                 Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=VideoCompareExecutablePath}"
+                                                                 ToolTip.Tip="Path to the video-compare binary. When set, group headers show a Video Compare button." />
+                                                        <Button Content="Browse..."
+                                                                Command="{Binding BrowseVideoCompareExecutableCommand}" />
+                                                    </StackPanel>
+                                                    <TextBlock FontSize="14" Text="Custom video-compare Arguments:" />
+                                                    <TextBox Width="500" HorizontalAlignment="Left"
+                                                             Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=VideoCompareArguments}"
+                                                             ToolTip.Tip="Arguments passed to video-compare after the two selected files." />
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
                                     </ScrollViewer>
                                 </TabItem>
