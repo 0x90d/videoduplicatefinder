@@ -55,7 +55,7 @@ namespace VDF.Core.Utils {
 
 		public static Task SaveAsync(string path, List<HashSet<string>> groups, CancellationToken ct = default) {
 			var envelope = new Envelope { Version = CurrentVersion, Groups = groups };
-			return AtomicJsonWriter.WriteAsync(path, envelope, options: null, ct);
+			return AtomicJsonWriter.WriteAsync(path, envelope, CoreJsonContext.Default.Envelope, ct);
 		}
 
 		/// <summary>

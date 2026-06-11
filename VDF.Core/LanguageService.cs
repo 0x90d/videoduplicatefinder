@@ -57,7 +57,7 @@ namespace VDF.Core {
 			}
 			using var reader = new StreamReader(stream);
 			var json = reader.ReadToEnd();
-			translations = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+			translations = JsonSerializer.Deserialize(json, Utils.CoreJsonContext.Default.DictionaryStringString) ?? new Dictionary<string, string>();
 			currentLanguage = languageCode;
 		}
 	}

@@ -62,7 +62,7 @@ namespace VDF.CLI.Commands {
 				try {
 					await using var stream = inputFile.OpenRead();
 					// The JSON is an array of groups, each with an Items array
-					var groups = await JsonSerializer.DeserializeAsync<List<DuplicateGroup>>(stream, cancellationToken: ct);
+					var groups = await JsonSerializer.DeserializeAsync(stream, Output.CliJsonContext.Default.ListDuplicateGroup, ct);
 					duplicates = groups?.SelectMany(g => g.Items).ToList();
 				}
 				catch (Exception ex) {
@@ -184,10 +184,5 @@ namespace VDF.CLI.Commands {
 			}
 		}
 
-		// Matches the JSON structure written by ResultFormatter
-		private class DuplicateGroup {
-			public Guid GroupId { get; set; }
-			public List<DuplicateItem> Items { get; set; } = new();
-		}
 	}
 }

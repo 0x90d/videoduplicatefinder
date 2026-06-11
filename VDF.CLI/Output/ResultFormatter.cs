@@ -23,11 +23,6 @@ namespace VDF.CLI.Output {
 	public enum OutputFormat { Text, Json, Csv }
 
 	public static class ResultFormatter {
-		static readonly JsonSerializerOptions JsonOptions = new() {
-			WriteIndented = true,
-			Converters = { new JsonStringEnumConverter() }
-		};
-
 		public static string Format(IEnumerable<DuplicateItem> duplicates, OutputFormat format) =>
 			format switch {
 				OutputFormat.Json => FormatJson(duplicates),
@@ -38,11 +33,12 @@ namespace VDF.CLI.Output {
 		static string FormatJson(IEnumerable<DuplicateItem> duplicates) {
 			var groups = duplicates
 				.GroupBy(d => d.GroupId)
-				.Select(g => new {
+				.Select(g => new DuplicateGroup {
 					GroupId = g.Key,
 					Items = g.OrderByDescending(d => d.Similarity).ToList()
-				});
-			return JsonSerializer.Serialize(groups, JsonOptions);
+				})
+				.ToList();
+			return JsonSerializer.Serialize(groups, CliJsonContext.Default.ListDuplicateGroup);
 		}
 
 		static string FormatCsv(IEnumerable<DuplicateItem> duplicates) {

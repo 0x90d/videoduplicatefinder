@@ -92,13 +92,6 @@ namespace VDF.CLI.Commands {
 			};
 		}
 
-		// Settings is field-heavy (ThumbnailCount, MaxSamplingDurationSeconds, etc. are
-		// public fields, not properties). System.Text.Json ignores fields by default —
-		// without IncludeFields the JSON load was silently dropping most settings.
-		static readonly JsonSerializerOptions SettingsJsonOptions = new() {
-			IncludeFields = true,
-			PropertyNameCaseInsensitive = true,
-		};
 
 		internal static Settings LoadOrCreateSettings(FileInfo? settingsFile) {
 			if (settingsFile == null || !settingsFile.Exists)
@@ -106,7 +99,7 @@ namespace VDF.CLI.Commands {
 
 			try {
 				var json = File.ReadAllText(settingsFile.FullName);
-				return JsonSerializer.Deserialize<Settings>(json, SettingsJsonOptions) ?? new Settings();
+				return JsonSerializer.Deserialize(json, VDF.Core.Utils.CoreJsonContext.Default.Settings) ?? new Settings();
 			}
 			catch (Exception ex) {
 				Console.Error.WriteLine($"Warning: could not load settings file '{settingsFile.FullName}': {ex.Message}");

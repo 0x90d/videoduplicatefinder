@@ -160,10 +160,20 @@ namespace VDF.Core.Utils {
 			dbEntry.Path = newPath;
 			Database.Add(dbEntry);
 		}
+		/// <summary>
+		/// Layers the source-generated metadata over caller-supplied options (callers
+		/// control formatting like WriteIndented). Keeps serialization AOT-safe without
+		/// changing the public API.
+		/// </summary>
+		static JsonSerializerOptions WithCoreContext(JsonSerializerOptions options) =>
+			new(options) { TypeInfoResolver = CoreJsonContext.Default };
+
 		internal static bool ExportDatabaseToJson(string jsonFile, JsonSerializerOptions options) {
 			try {
-				using var stream = File.OpenWrite(jsonFile);
-				JsonSerializer.Serialize(stream, DbWrapper, options);
+				// File.Create, not OpenWrite: overwriting a previously larger export with
+				// OpenWrite leaves trailing garbage that breaks re-import.
+				using var stream = File.Create(jsonFile);
+				JsonSerializer.Serialize(stream, DbWrapper, WithCoreContext(options));
 				stream.Close();
 			}
 			catch (JsonException e) {
@@ -179,7 +189,7 @@ namespace VDF.Core.Utils {
 		internal static bool ImportDatabaseFromJson(string jsonFile, JsonSerializerOptions options) {
 			try {
 				using var stream = File.OpenRead(jsonFile);
-				DbWrapper = JsonSerializer.Deserialize<DatabaseWrapper>(stream, options)!;
+				DbWrapper = JsonSerializer.Deserialize<DatabaseWrapper>(stream, WithCoreContext(options))!;
 				stream.Close();
 			}
 			catch (JsonException e) {

@@ -43,5 +43,26 @@ namespace VDF.Core.Utils {
 				try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* ignore */ }
 			}
 		}
+
+		/// <summary>AOT-safe overload taking source-generated type metadata.</summary>
+		public static async Task WriteAsync<T>(
+			string path,
+			T value,
+			System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo,
+			CancellationToken ct = default) {
+
+			string dir = Path.GetDirectoryName(path)!;
+			string tmp = Path.Combine(dir, Path.GetFileName(path) + ".tmp");
+
+			try {
+				await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 64 * 1024, useAsync: true)) {
+					await JsonSerializer.SerializeAsync(fs, value, typeInfo, ct);
+				}
+				File.Move(tmp, path, overwrite: true);
+			}
+			finally {
+				try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* ignore */ }
+			}
+		}
 	}
 }
