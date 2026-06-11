@@ -402,6 +402,8 @@
 	"Busy.ImportScanResults": "Scan-Ergebnisse werden von der Festplatte importiert...",
 	"Busy.LoadMissingThumbnails": "Fehlende Vorschaubilder werden geladen...",
 	"Busy.Deleting": "Lösche Dateien... {0}/{1}",
+	"Busy.Copying": "Kopiere Dateien... {0}/{1}",
+	"Busy.Moving": "Verschiebe Dateien... {0}/{1}",
 	"Log.InvalidScheduledScanTime": "Geplante Scan-Zeit ist ungültig. Verwenden Sie HH:mm (z. B. 02:00).",
 	"Log.CustomCommandFailed": "Ausführen des benutzerdefinierten Befehls fehlgeschlagen: {0}\n Argumente: {1}\nAusnahme: {2}",
 	"Log.ScheduledScanSkippedMissingDatabaseFolder": "Geplanter Scan übersprungen: benutzerdefinierter Datenbankordner existiert nicht.",

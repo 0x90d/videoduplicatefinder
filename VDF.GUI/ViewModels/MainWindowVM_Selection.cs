@@ -367,7 +367,24 @@ namespace VDF.GUI.ViewModels {
 
 			if (result == null || result.Count == 0) return;
 
-			Utils.FileUtils.CopyFile(Duplicates.Where(s => s.Checked), result[0], true, false, out var errorCounter);
+			var selectedItems = Duplicates.Where(s => s.Checked).ToList();
+			if (selectedItems.Count == 0) return;
+
+			IsBusy = true;
+			IsBusyOverlayText = string.Format(App.Lang["Busy.Copying"], 0, selectedItems.Count);
+			int errorCounter;
+			var renames = new List<(DuplicateItemVM Item, string NewPath)>();
+			try {
+				errorCounter = await Task.Run(() =>
+					Utils.FileUtils.CopyFile(selectedItems, result[0], true, false, renames,
+						(done, total) => Dispatcher.UIThread.Post(() =>
+							IsBusyOverlayText = string.Format(App.Lang["Busy.Copying"], done, total))));
+			}
+			finally {
+				IsBusy = false;
+			}
+			foreach (var (item, newPath) in renames)
+				item.ItemInfo.Path = newPath;
 			if (errorCounter > 0)
 				await MessageBoxService.Show(App.Lang["Message.CopyFailed"]);
 		});
@@ -381,16 +398,35 @@ namespace VDF.GUI.ViewModels {
 			if (result == null || result.Count == 0) return;
 
 			var selectedItems = Duplicates.Where(s => s.Checked).ToList();
-			List<Tuple<DuplicateItemVM, FileEntry>> itemsToUpdate = new();
-			foreach (var item in selectedItems) {
-				if (ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry))
-					itemsToUpdate.Add(Tuple.Create(item, dbEntry!));
+			if (selectedItems.Count == 0) return;
+
+			IsBusy = true;
+			IsBusyOverlayText = string.Format(App.Lang["Busy.Moving"], 0, selectedItems.Count);
+			int errorCounter;
+			var renames = new List<(DuplicateItemVM Item, string NewPath)>();
+			try {
+				errorCounter = await Task.Run(() => {
+					// Database entries must be resolved by the OLD path, before the move.
+					var dbEntries = new Dictionary<DuplicateItemVM, FileEntry>(ReferenceEqualityComparer<DuplicateItemVM>.Instance);
+					foreach (var item in selectedItems) {
+						if (ScanEngine.GetFromDatabase(item.ItemInfo.Path, out var dbEntry))
+							dbEntries[item] = dbEntry!;
+					}
+					int errors = Utils.FileUtils.CopyFile(selectedItems, result[0], true, true, renames,
+						(done, total) => Dispatcher.UIThread.Post(() =>
+							IsBusyOverlayText = string.Format(App.Lang["Busy.Moving"], done, total)));
+					foreach (var (item, newPath) in renames)
+						if (dbEntries.TryGetValue(item, out var entry))
+							ScanEngine.UpdateFilePathInDatabase(newPath, entry);
+					ScanEngine.SaveDatabase();
+					return errors;
+				});
 			}
-			Utils.FileUtils.CopyFile(selectedItems, result[0], true, true, out var errorCounter);
-			foreach (var pair in itemsToUpdate) {
-				ScanEngine.UpdateFilePathInDatabase(pair.Item1.ItemInfo.Path, pair.Item2);
+			finally {
+				IsBusy = false;
 			}
-			ScanEngine.SaveDatabase();
+			foreach (var (item, newPath) in renames)
+				item.ItemInfo.Path = newPath;
 			if (errorCounter > 0)
 				await MessageBoxService.Show(App.Lang["Message.MoveFailed"]);
 		});

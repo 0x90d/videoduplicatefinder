@@ -402,6 +402,8 @@
 	"Busy.ImportScanResults": "Importation des résultats d'analyse depuis le disque...",
 	"Busy.LoadMissingThumbnails": "Chargement des miniatures manquantes...",
 	"Busy.Deleting": "Suppression des fichiers... {0}/{1}",
+	"Busy.Copying": "Copie des fichiers... {0}/{1}",
+	"Busy.Moving": "Déplacement des fichiers... {0}/{1}",
 	"Log.InvalidScheduledScanTime": "L'heure d'analyse planifiée est invalide. Utilisez HH:mm (ex. 02:00).",
 	"Log.CustomCommandFailed": "Échec de l'exécution de la commande personnalisée : {0}\n Arguments : {1}\nException : {2}",
 	"Log.ScheduledScanSkippedMissingDatabaseFolder": "Analyse planifiée ignorée : le dossier de base de données personnalisé n'existe pas.",

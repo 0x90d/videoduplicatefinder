@@ -407,6 +407,8 @@
 	"Busy.ImportScanResults": "Importing scan results from disk...",
 	"Busy.LoadMissingThumbnails": "Loading missing thumbnails...",
 	"Busy.Deleting": "Deleting files... {0}/{1}",
+	"Busy.Copying": "Copying files... {0}/{1}",
+	"Busy.Moving": "Moving files... {0}/{1}",
 	"Log.InvalidScheduledScanTime": "Scheduled scan time is invalid. Use HH:mm (e.g., 02:00).",
 	"Log.CustomCommandFailed": "Failed to run custom command: {0}\n Arguments: {1}\nException: {2}",
 	"Log.ScheduledScanSkippedMissingDatabaseFolder": "Scheduled scan skipped: custom database folder does not exist.",

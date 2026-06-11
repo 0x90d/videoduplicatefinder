@@ -20,18 +20,18 @@ using VDF.GUI.ViewModels;
 namespace VDF.GUI.Utils {
 	static class FileUtils {
 		/// <summary>
-		/// Copies file or folder to target destination and remain the folder structure
+		/// Copies or moves the files into <paramref name="pDest"/>. Successful operations are
+		/// reported through <paramref name="renames"/> (item + its new path) instead of mutating
+		/// <see cref="DuplicateItemVM.ItemInfo"/> directly — this runs on a background thread and
+		/// the Path property is bound to the UI, so the caller applies the renames on the UI thread.
+		/// Returns the number of failed files.
 		/// </summary>
-		/// <param name="pSource"></param>
-		/// <param name="pDest"></param>
-		/// <param name="pOverwriteDest"></param>
-		/// <param name="pMove"></param>
-		/// <param name="errors"></param>
-		public static void CopyFile(IEnumerable<DuplicateItemVM> pSource, string pDest, bool pOverwriteDest, bool pMove, out int errors) {
-			string destDirectory = Path.GetDirectoryName(pDest) ?? string.Empty;
-			Directory.CreateDirectory(destDirectory);
-			errors = 0;
-			foreach (var s in pSource) {
+		public static int CopyFile(IReadOnlyList<DuplicateItemVM> pSource, string pDest, bool pOverwriteDest, bool pMove,
+				List<(DuplicateItemVM Item, string NewPath)> renames, Action<int, int>? onProgress = null) {
+			Directory.CreateDirectory(pDest);
+			int errors = 0;
+			for (int i = 0; i < pSource.Count; i++) {
+				var s = pSource[i];
 				try {
 					var name = Path.GetFileNameWithoutExtension(s.ItemInfo.Path);
 					var ext = Path.GetExtension(s.ItemInfo.Path);
@@ -42,18 +42,19 @@ namespace VDF.GUI.Utils {
 						counter++;
 					}
 
-					if (pMove) 
+					if (pMove)
 						File.Move(s.ItemInfo.Path, temppath, pOverwriteDest);
 					else
 						File.Copy(s.ItemInfo.Path, temppath, pOverwriteDest);
-					s.ItemInfo.Path = temppath;
+					renames.Add((s, temppath));
 				}
 				catch (Exception e) {
-					Logger.Instance.Info($"Failed to copy '{pSource}' to '{pDest}', reason: {e.Message}");
+					Logger.Instance.Info($"Failed to {(pMove ? "move" : "copy")} '{s.ItemInfo.Path}' to '{pDest}', reason: {e.Message}");
 					errors++;
 				}
+				onProgress?.Invoke(i + 1, pSource.Count);
 			}
-
+			return errors;
 		}
 	}
 }

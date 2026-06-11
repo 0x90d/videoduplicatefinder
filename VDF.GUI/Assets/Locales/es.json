@@ -402,6 +402,8 @@
 	"Busy.ImportScanResults": "Importando resultados del escaneo desde el disco...",
 	"Busy.LoadMissingThumbnails": "Cargando miniaturas faltantes...",
 	"Busy.Deleting": "Eliminando archivos... {0}/{1}",
+	"Busy.Copying": "Copiando archivos... {0}/{1}",
+	"Busy.Moving": "Moviendo archivos... {0}/{1}",
 	"Log.InvalidScheduledScanTime": "La hora programada del escaneo no es válida. Usa HH:mm (p. ej., 02:00).",
 	"Log.CustomCommandFailed": "Error al ejecutar el comando personalizado: {0}\n Argumentos: {1}\nExcepción: {2}",
 	"Log.ScheduledScanSkippedMissingDatabaseFolder": "Escaneo programado omitido: la carpeta de base de datos personalizada no existe.",

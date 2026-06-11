@@ -402,6 +402,8 @@
 	"Busy.ImportScanResults": "正在从磁盘导入扫描结果...",
 	"Busy.LoadMissingThumbnails": "正在加载缺失的缩略图...",
 	"Busy.Deleting": "正在删除文件... {0}/{1}",
+	"Busy.Copying": "正在复制文件... {0}/{1}",
+	"Busy.Moving": "正在移动文件... {0}/{1}",
 	"Log.InvalidScheduledScanTime": "计划扫描时间无效。请使用 HH:mm（如 02:00）。",
 	"Log.CustomCommandFailed": "运行自定义命令失败：{0}\n 参数：{1}\n异常：{2}",
 	"Log.ScheduledScanSkippedMissingDatabaseFolder": "已跳过计划扫描：自定义数据库文件夹不存在。",

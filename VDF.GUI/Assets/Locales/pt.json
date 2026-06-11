@@ -402,6 +402,8 @@
 	"Busy.ImportScanResults": "Importando resultados da varredura do disco...",
 	"Busy.LoadMissingThumbnails": "Carregando miniaturas ausentes...",
 	"Busy.Deleting": "Excluindo arquivos... {0}/{1}",
+	"Busy.Copying": "Copiando arquivos... {0}/{1}",
+	"Busy.Moving": "Movendo arquivos... {0}/{1}",
 	"Log.InvalidScheduledScanTime": "O horário do escaneamento agendado é inválido. Use HH:mm (ex.: 02:00).",
 	"Log.CustomCommandFailed": "Falha ao executar o comando personalizado: {0}\n Argumentos: {1}\nExceção: {2}",
 	"Log.ScheduledScanSkippedMissingDatabaseFolder": "Varredura agendada ignorada: a pasta de banco de dados personalizada não existe.",
