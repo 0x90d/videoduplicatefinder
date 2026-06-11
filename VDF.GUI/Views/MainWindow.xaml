@@ -672,10 +672,15 @@
                                                                 </Border.IsVisible>
                                                             </Border>
                                                             <!-- Actual thumbnail -->
+                                                            <!-- DownOnly: never upscale. Without it, a single-image strip (near-square
+                                                                 aspect) blows up to the full column width after a view refresh, while
+                                                                 video strips (N thumbnails wide) stay small (issue #787). -->
                                                             <Image
                                                                 Name="ThumbnailImage"
                                                                 Source="{Binding Thumbnail}"
                                                                 Stretch="Uniform"
+                                                                StretchDirection="DownOnly"
+                                                                HorizontalAlignment="Left"
                                                                 ToolTip.Tip="{Binding ItemInfo.Path}">
                                                                 <i:Interaction.Behaviors>
                                                                     <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].DataContext.ThumbnailDoubleClickCommand}" />
