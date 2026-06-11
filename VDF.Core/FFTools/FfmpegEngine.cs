@@ -264,12 +264,15 @@ namespace VDF.Core.FFTools {
 				RedirectStandardInput = false,
 				RedirectStandardOutput = true,
 				WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
-				RedirectStandardError = extendedLogging,
+				// Always capture stderr: when FFmpeg fails, its error output is the only
+				// diagnostic there is. Logged on failure regardless of the logging setting
+				// (issue #780 — 'exited with: 134' with no further detail is undebuggable).
+				RedirectStandardError = true,
 				WindowStyle = ProcessWindowStyle.Hidden
 			};
 
 			psi.ArgumentList.Add("-hide_banner");
-			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add((extendedLogging ? "error" : "quiet"));
+			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("error");
 
 			psi.ArgumentList.Add("-nostdin");
 
@@ -350,31 +353,29 @@ namespace VDF.Core.FFTools {
 			try {
 				process.EnableRaisingEvents = true;
 				process.Start();
-				if (extendedLogging) {
-					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-						if (e.Data?.Length > 0) {
-							if (e.Data == lastErrLine) {
-								repeatCount++;
-							}
-							else {
-								if (repeatCount > 0) {
-									errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
-									repeatCount = 0;
-								}
-								errOut += Environment.NewLine + e.Data;
-								lastErrLine = e.Data;
-							}
+				process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
+					if (e.Data?.Length > 0) {
+						if (e.Data == lastErrLine) {
+							repeatCount++;
 						}
-					});
-					process.BeginErrorReadLine();
-				}
+						else {
+							if (repeatCount > 0) {
+								errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+								repeatCount = 0;
+							}
+							errOut += Environment.NewLine + e.Data;
+							lastErrLine = e.Data;
+						}
+					}
+				});
+				process.BeginErrorReadLine();
 				using var ms = new MemoryStream();
 				process.StandardOutput.BaseStream.CopyTo(ms);
 
 				if (!process.WaitForExit(TimeoutDuration)) {
 					throw new TimeoutException($"FFmpeg timed out on file: {settings.File}");
 				}
-				else if (extendedLogging)
+				else
 					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
 
 				if (process.ExitCode != 0)
@@ -399,7 +400,9 @@ namespace VDF.Core.FFTools {
 			}
 			if (repeatCount > 0)
 				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
-			if (bytes == null || errOut.Length > 0) {
+			// Failures always log (including FFmpeg's stderr); success-with-warnings only
+			// when extended logging is enabled, to avoid noise from benign decoder chatter.
+			if (bytes == null || (extendedLogging && errOut.Length > 0)) {
 				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(isGrayByte ? "graybytes" : "thumbnail")} from: {settings.File}";
 				if (extendedLogging) {
 					var args = string.Join(" ", psi.ArgumentList);
