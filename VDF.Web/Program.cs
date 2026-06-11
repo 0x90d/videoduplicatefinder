@@ -83,10 +83,11 @@ app.MapPost("/auth/login", async (HttpContext ctx, AuthService auth) => {
 	var form = await ctx.Request.ReadFormAsync();
 	var password = form["password"].ToString();
 	var returnUrl = form["returnUrl"].ToString();
+	bool remember = form["remember"] == "true";
 
 	if (auth.ValidatePassword(password)) {
 		var token = auth.IssueToken();
-		auth.SetAuthCookie(ctx, token);
+		auth.SetAuthCookie(ctx, token, remember);
 		ctx.Response.Redirect(string.IsNullOrEmpty(returnUrl) ? "/" : returnUrl);
 	}
 	else {

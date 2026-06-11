@@ -15,7 +15,9 @@
 //
 
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace VDF.Web.Services {
 	/// <summary>
@@ -24,6 +26,11 @@ namespace VDF.Web.Services {
 	/// VDF_WEB_PASSWORD environment variable or disable auth entirely with VDF_WEB_AUTH=false.
 	/// </summary>
 	public sealed class AuthService {
+		internal sealed class StoredCredentials {
+			[JsonPropertyName("password")]
+			public string? Password { get; set; }
+		}
+
 		const string CookieName = "vdf_auth";
 		const int TokenExpirationDays = 30;
 		static readonly TimeSpan CookieMaxAge = TimeSpan.FromDays(TokenExpirationDays);
@@ -62,7 +69,13 @@ namespace VDF.Web.Services {
 			PrintPasswordBanner();
 		}
 
-		public bool ValidatePassword(string password) => _password == password;
+		public bool ValidatePassword(string password) {
+			// Hash both sides so the comparison is constant-time and leaks neither
+			// content nor length differences.
+			byte[] expected = SHA256.HashData(Encoding.UTF8.GetBytes(_password));
+			byte[] actual = SHA256.HashData(Encoding.UTF8.GetBytes(password ?? string.Empty));
+			return _authEnabled && CryptographicOperations.FixedTimeEquals(expected, actual);
+		}
 
 		public string IssueToken() {
 			var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
@@ -82,11 +95,13 @@ namespace VDF.Web.Services {
 			return ctx.Request.Cookies.TryGetValue(CookieName, out var token) && ValidateToken(token);
 		}
 
-		public void SetAuthCookie(HttpContext ctx, string token) {
+		public void SetAuthCookie(HttpContext ctx, string token, bool persistent = true) {
 			ctx.Response.Cookies.Append(CookieName, token, new CookieOptions {
 				HttpOnly = true,
 				SameSite = SameSiteMode.Strict,
-				MaxAge = CookieMaxAge,
+				// Persistent: survives browser restarts for 30 days.
+				// Otherwise: session cookie, gone when the browser closes.
+				MaxAge = persistent ? CookieMaxAge : null,
 				IsEssential = true,
 			});
 		}
@@ -95,12 +110,9 @@ namespace VDF.Web.Services {
 			// Try loading saved password
 			if (File.Exists(_credentialsPath)) {
 				try {
-					var json = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(_credentialsPath));
-					if (json.TryGetProperty("password", out var saved)) {
-						var pw = saved.GetString();
-						if (!string.IsNullOrWhiteSpace(pw))
-							return pw;
-					}
+					var saved = JsonSerializer.Deserialize(File.ReadAllText(_credentialsPath), WebJsonContext.Default.StoredCredentials);
+					if (!string.IsNullOrWhiteSpace(saved?.Password))
+						return saved.Password;
 				}
 				catch { }
 			}
@@ -115,7 +127,7 @@ namespace VDF.Web.Services {
 			try {
 				Directory.CreateDirectory(Path.GetDirectoryName(_credentialsPath)!);
 				File.WriteAllText(_credentialsPath,
-					JsonSerializer.Serialize(new { password }, new JsonSerializerOptions { WriteIndented = true }));
+					JsonSerializer.Serialize(new StoredCredentials { Password = password }, WebJsonContext.Default.StoredCredentials));
 			}
 			catch { }
 		}

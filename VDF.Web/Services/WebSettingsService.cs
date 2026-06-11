@@ -41,7 +41,7 @@ namespace VDF.Web.Services {
 			public bool ExtendedFFToolsLogging { get; set; }
 			public bool LogExcludedFiles { get; set; }
 			public bool UseNativeFfmpegBinding { get; set; }
-			[JsonConverter(typeof(JsonStringEnumConverter))]
+			[JsonConverter(typeof(JsonStringEnumConverter<FFHardwareAccelerationMode>))]
 			public FFHardwareAccelerationMode HardwareAccelerationMode { get; set; }
 			public string CustomFFArguments { get; set; } = string.Empty;
 			public string CustomDatabaseFolder { get; set; } = string.Empty;
@@ -51,7 +51,7 @@ namespace VDF.Web.Services {
 			public bool IgnoreWhitePixels { get; set; }
 			public bool IncludeNonExistingFiles { get; set; }
 			public bool ScanAgainstEntireDatabase { get; set; }
-			[JsonConverter(typeof(JsonStringEnumConverter))]
+			[JsonConverter(typeof(JsonStringEnumConverter<FolderMatchMode>))]
 			public FolderMatchMode FolderMatchMode { get; set; }
 			public int SameFolderDepth { get; set; } = 1;
 			public double DurationDifferenceMinSeconds { get; set; }
@@ -84,8 +84,6 @@ namespace VDF.Web.Services {
 		public int ThumbnailWidth { get; set; } = 480;
 		public int ThumbnailJpegQuality { get; set; } = 85;
 
-		static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
-
 		static string SettingsPath {
 			get {
 				string folder;
@@ -103,7 +101,7 @@ namespace VDF.Web.Services {
 		public bool Load(Settings s) {
 			if (!File.Exists(SettingsPath)) return false;
 			try {
-				var dto = JsonSerializer.Deserialize<Dto>(File.ReadAllText(SettingsPath), JsonOpts);
+				var dto = JsonSerializer.Deserialize(File.ReadAllText(SettingsPath), WebJsonContext.Default.Dto);
 				if (dto == null) return false;
 				foreach (var p in dto.IncludeList) s.IncludeList.Add(p);
 				foreach (var p in dto.BlackList) s.BlackList.Add(p);
@@ -211,7 +209,7 @@ namespace VDF.Web.Services {
 					ThumbnailWidth = ThumbnailWidth,
 					ThumbnailJpegQuality = ThumbnailJpegQuality,
 				};
-				File.WriteAllText(SettingsPath, JsonSerializer.Serialize(dto, JsonOpts));
+				File.WriteAllText(SettingsPath, JsonSerializer.Serialize(dto, WebJsonContext.Default.Dto));
 				return true;
 			}
 			catch { return false; }
