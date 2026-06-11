@@ -276,6 +276,7 @@
 	"MainWindow.Settings.SaveResultsOnExitTooltip": "选中后，关闭 VDF 时会询问是否保存结果",
 	"MainWindow.Settings.AutoApplySelectionPreset": "扫描后自动应用选择预设",
 	"MainWindow.Settings.AutoApplySelectionPresetTooltip": "每次扫描完成后，自动对结果运行所选的自定义选择预设",
+	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "没有已保存的预设 — 请通过 选择 → 自定义选择 创建",
 	"Log.AutoAppliedPreset": "已自动应用选择预设“{0}”",
 	"Log.AutoApplyPresetMissing": "未找到配置为自动应用的选择预设“{0}”",
 	"MainWindow.Settings.SaveTooltip": "注意：设置会在正常退出时自动保存",

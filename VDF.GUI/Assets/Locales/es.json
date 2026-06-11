@@ -276,6 +276,7 @@
 	"MainWindow.Settings.SaveResultsOnExitTooltip": "Si está marcado, se te preguntará si quieres guardar los resultados al cerrar VDF",
 	"MainWindow.Settings.AutoApplySelectionPreset": "Aplicar automáticamente el preajuste de selección tras el escaneo",
 	"MainWindow.Settings.AutoApplySelectionPresetTooltip": "Tras completar cada escaneo, ejecuta automáticamente el preajuste de selección elegido sobre los resultados",
+	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "No hay preajustes guardados — créalos en Selección → Selección personalizada",
 	"Log.AutoAppliedPreset": "Preajuste de selección '{0}' aplicado automáticamente",
 	"Log.AutoApplyPresetMissing": "No se encontró el preajuste de selección '{0}' configurado para aplicarse automáticamente",
 	"MainWindow.Settings.SaveTooltip": "Nota: los ajustes se guardan automáticamente al salir normalmente",

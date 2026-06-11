@@ -276,6 +276,7 @@
 	"MainWindow.Settings.SaveResultsOnExitTooltip": "Wenn aktiviert, werden Sie beim Schließen von VDF gefragt, ob Sie die Ergebnisse speichern möchten",
 	"MainWindow.Settings.AutoApplySelectionPreset": "Auswahl-Vorlage nach dem Scan automatisch anwenden",
 	"MainWindow.Settings.AutoApplySelectionPresetTooltip": "Wendet nach jedem Scan automatisch die gewählte Auswahl-Vorlage auf die Ergebnisse an",
+	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "Keine gespeicherten Vorlagen — über Auswahl → Benutzerdefinierte Auswahl anlegen",
 	"Log.AutoAppliedPreset": "Auswahl-Vorlage '{0}' automatisch angewendet",
 	"Log.AutoApplyPresetMissing": "Die für die automatische Anwendung konfigurierte Auswahl-Vorlage '{0}' wurde nicht gefunden",
 	"MainWindow.Settings.SaveTooltip": "Hinweis: Einstellungen werden beim normalen Beenden automatisch gespeichert",

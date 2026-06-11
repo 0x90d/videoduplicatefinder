@@ -42,6 +42,13 @@
         <mvvm:ShowSkeletonConverter x:Key="ShowSkeletonConverter" />
     </Window.Resources>
     <Window.Styles>
+        <!-- Avalonia 12 draws managed caption buttons when the client area is extended
+             (ExtendClientAreaChromeHints/PreferSystemChrome no longer exists). Its button
+             set adds a full-screen toggle that Windows chrome never had, which reads as a
+             second maximize button — hide it to keep the familiar minimize/maximize/close. -->
+        <Style Selector="Button#PART_FullScreenButton">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
         <Style Selector="Button.hyperlink">
             <Setter Property="Template">
                 <ControlTemplate>
@@ -1470,7 +1477,8 @@
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPreset]}"
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}" IsThreeState="False"
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetTooltip]}" />
-                                                        <ComboBox MaxWidth="300" HorizontalAlignment="Left"
+                                                        <ComboBox MinWidth="260" MaxWidth="360" HorizontalAlignment="Left"
+                                                                  PlaceholderText="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetPlaceholder]}"
                                                                   IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}"
                                                                   ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomSelectionPresets}"
                                                                   SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPreset}">
