@@ -14,7 +14,6 @@
 // */
 //
 
-using System.Runtime.CompilerServices;
 using MemoryPack;
 
 namespace VDF.Core.Utils {
@@ -25,9 +24,9 @@ namespace VDF.Core.Utils {
 		/// AOT trimming that method can be removed ("can not found RegisterFormatter",
 		/// seen in the AOT GUI). Register&lt;T&gt;() is constrained to
 		/// IMemoryPackFormatterRegister, so these calls bind statically and root the
-		/// formatters at compile time.
+		/// formatters at compile time. Called from DatabaseUtils' static constructor —
+		/// the only place MemoryPack serialization happens.
 		/// </summary>
-		[ModuleInitializer]
 		internal static void Register() {
 			MemoryPackFormatterProvider.Register<DatabaseWrapper>();
 			MemoryPackFormatterProvider.Register<FileEntry>();

@@ -580,8 +580,8 @@
                                             ItemsSource="{Binding SortOrders}"
                                             SelectedItem="{Binding SortOrder}">
                                             <ComboBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock x:CompileBindings="False" Text="{Binding Key}" />
+                                                <DataTemplate x:DataType="Settings:SortOrderOption">
+                                                    <TextBlock Text="{Binding Name}" />
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
@@ -595,8 +595,8 @@
                                             ItemsSource="{Binding TypeFilters}"
                                             SelectedItem="{Binding FileType}">
                                             <ComboBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock x:CompileBindings="False" Text="{Binding Key}" />
+                                                <DataTemplate x:DataType="Settings:FileTypeFilterOption">
+                                                    <TextBlock Text="{Binding Name}" />
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
@@ -1960,11 +1960,13 @@
                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailDoubleClick]}" />
                                                         <ComboBox MinWidth="200"
                                                                   ItemsSource="{Binding ThumbnailDoubleClickOptions}"
-                                                                  SelectedValueBinding="{ReflectionBinding Value}"
                                                                   SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailDoubleClickAction, Mode=TwoWay}">
+                                                            <ComboBox.SelectedValueBinding>
+                                                                <Binding Path="Value" DataType="Settings:ThumbnailDoubleClickOption" />
+                                                            </ComboBox.SelectedValueBinding>
                                                             <ComboBox.ItemTemplate>
-                                                                <DataTemplate>
-                                                                    <TextBlock x:CompileBindings="False" Text="{Binding Key}" />
+                                                                <DataTemplate x:DataType="Settings:ThumbnailDoubleClickOption">
+                                                                    <TextBlock Text="{Binding Name}" />
                                                                 </DataTemplate>
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>

@@ -20,6 +20,8 @@ using MemoryPack;
 
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
+		static DatabaseUtils() => MemoryPackRegistration.Register();
+
 		// New databases are MemoryPack payloads behind this magic header; files without
 		// it are protobuf-net databases from 3.x / early 4.x, decoded by
 		// LegacyDatabaseReader and migrated to the new format on the next save.

@@ -25,7 +25,7 @@ namespace VDF.GUI.ViewModels {
 
 		DataGridCollectionView? view;
 
-		public KeyValuePair<string, DataGridSortDescription>[] SortOrders { get; private set; }
+		public SortOrderOption[] SortOrders { get; private set; }
 
 		public sealed class CheckedGroupsComparer : System.Collections.IComparer {
 			readonly MainWindowVM mainVM;
@@ -90,35 +90,35 @@ namespace VDF.GUI.ViewModels {
 				return groupSizeX.CompareTo(groupSizeY);
 			}
 		}
-		public KeyValuePair<string, FileTypeFilter>[] TypeFilters { get; } = {
-			new KeyValuePair<string, FileTypeFilter>("All",  FileTypeFilter.All),
-			new KeyValuePair<string, FileTypeFilter>("Videos",  FileTypeFilter.Videos),
-			new KeyValuePair<string, FileTypeFilter>("Images",  FileTypeFilter.Images),
+		public FileTypeFilterOption[] TypeFilters { get; } = {
+			new FileTypeFilterOption("All", FileTypeFilter.All),
+			new FileTypeFilterOption("Videos", FileTypeFilter.Videos),
+			new FileTypeFilterOption("Images", FileTypeFilter.Images),
 		};
 
-		KeyValuePair<string, FileTypeFilter> _FileType;
+		FileTypeFilterOption _FileType;
 
-		public KeyValuePair<string, FileTypeFilter> FileType {
+		public FileTypeFilterOption FileType {
 			get => _FileType;
 			set {
-				if (value.Key == _FileType.Key) return;
+				if (value.Name == _FileType.Name) return;
 				_FileType = value;
 				this.RaisePropertyChanged(nameof(FileType));
 				view?.Refresh();
 			}
 		}
-		KeyValuePair<string, DataGridSortDescription> _SortOrder;
+		SortOrderOption _SortOrder;
 
-		public KeyValuePair<string, DataGridSortDescription> SortOrder {
+		public SortOrderOption SortOrder {
 			get => _SortOrder;
 			set {
-				if (value.Key == _SortOrder.Key) return;
+				if (value.Name == _SortOrder.Name) return;
 				_SortOrder = value;
-				SettingsFile.Instance.LastSortOrder = value.Key;
+				SettingsFile.Instance.LastSortOrder = value.Name;
 				this.RaisePropertyChanged(nameof(SortOrder));
 				view?.SortDescriptions.Clear();
-				if (_SortOrder.Value != null)
-					view?.SortDescriptions.Add(_SortOrder.Value);
+				if (_SortOrder.Sort != null)
+					view?.SortDescriptions.Add(_SortOrder.Sort);
 				view?.Refresh();
 			}
 		}

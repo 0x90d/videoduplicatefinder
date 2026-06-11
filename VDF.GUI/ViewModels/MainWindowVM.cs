@@ -343,45 +343,45 @@ namespace VDF.GUI.ViewModels {
 			scheduledScanTimer.Start();
 			CheckScheduledScan();
 
-			SortOrders = new KeyValuePair<string, DataGridSortDescription>[] {
-				new KeyValuePair<string, DataGridSortDescription>("None", null!),
-				new KeyValuePair<string, DataGridSortDescription>("Size Ascending",
+			SortOrders = new SortOrderOption[] {
+				new SortOrderOption("None", null),
+				new SortOrderOption("Size Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Size Descending",
+				new SortOrderOption("Size Descending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
-				new KeyValuePair<string, DataGridSortDescription>("Resolution Ascending",
+				new SortOrderOption("Resolution Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Resolution Descending",
+				new SortOrderOption("Resolution Descending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Descending)),
-				new KeyValuePair<string, DataGridSortDescription>("Duration Ascending",
+				new SortOrderOption("Duration Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Duration Descending",
+				new SortOrderOption("Duration Descending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Descending)),
-				new KeyValuePair<string, DataGridSortDescription>("Date Created Ascending",
+				new SortOrderOption("Date Created Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Date Created Descending",
+				new SortOrderOption("Date Created Descending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
-				new KeyValuePair<string, DataGridSortDescription>("Similarity Ascending",
+				new SortOrderOption("Similarity Ascending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Similarity Descending",
+				new SortOrderOption("Similarity Descending",
 				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
-				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Ascending",
+				new SortOrderOption("Group Has Selected Items Ascending",
 				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Group Has Selected Items Descending",
+				new SortOrderOption("Group Has Selected Items Descending",
 				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Descending)),
-				new KeyValuePair<string, DataGridSortDescription>("Group Size Ascending",
+				new SortOrderOption("Group Size Ascending",
 				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Group Size Descending",
+				new SortOrderOption("Group Size Descending",
 				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
-				new KeyValuePair<string, DataGridSortDescription>("Group Total Size Ascending",
+				new SortOrderOption("Group Total Size Ascending",
 				DataGridSortDescription.FromComparer(new GroupTotalSizeComparer(this), ListSortDirection.Ascending)),
-				new KeyValuePair<string, DataGridSortDescription>("Group Total Size Descending",
+				new SortOrderOption("Group Total Size Descending",
 				DataGridSortDescription.FromComparer(new GroupTotalSizeComparer(this), ListSortDirection.Descending)),
 			};
 			_SortOrder = SortOrders[0];
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.LastSortOrder)) {
 				foreach (var order in SortOrders)
-					if (order.Key == SettingsFile.Instance.LastSortOrder) {
+					if (order.Name == SettingsFile.Instance.LastSortOrder) {
 						_SortOrder = order;
 						break;
 					}
@@ -641,8 +641,8 @@ namespace VDF.GUI.ViewModels {
 			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
 			// Rebuilding the view (rescan, import) previously dropped the active sort
 			// while the sort ComboBox kept displaying it.
-			if (_SortOrder.Value != null)
-				view.SortDescriptions.Add(_SortOrder.Value);
+			if (_SortOrder.Sort != null)
+				view.SortDescriptions.Add(_SortOrder.Sort);
 			view.Filter += DuplicatesFilter;
 			GetDataGrid.ItemsSource = view;
 			TotalSizeRemovedInternal = 0;
@@ -1054,7 +1054,7 @@ namespace VDF.GUI.ViewModels {
 				OpenItems();
 		});
 
-		public KeyValuePair<string, Data.ThumbnailDoubleClickAction>[] ThumbnailDoubleClickOptions { get; } = {
+		public Data.ThumbnailDoubleClickOption[] ThumbnailDoubleClickOptions { get; } = {
 			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenFile"], Data.ThumbnailDoubleClickAction.OpenFile),
 			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenThumbnailComparer"], Data.ThumbnailDoubleClickAction.OpenThumbnailComparer),
 		};
