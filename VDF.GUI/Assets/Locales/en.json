@@ -281,7 +281,7 @@
 	"MainWindow.Settings.SaveResultsOnExitTooltip": "If checked you will be asked if you want to save the results when you close VDF",
 	"MainWindow.Settings.AutoApplySelectionPreset": "Auto-apply selection preset after scan",
 	"MainWindow.Settings.AutoApplySelectionPresetTooltip": "After each scan completes, run the chosen custom-selection preset on the results automatically",
-	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "No saved presets — create one via Selection → Custom selection",
+	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "No saved presets",
 	"Log.AutoAppliedPreset": "Automatically applied selection preset '{0}'",
 	"Log.AutoApplyPresetMissing": "Selection preset '{0}' configured for auto-apply was not found",
 	"MainWindow.Settings.SaveTooltip": "Note: Settings are automatically saved on normal exit",

@@ -276,7 +276,7 @@
 	"MainWindow.Settings.SaveResultsOnExitTooltip": "Se marcado, você será perguntado se deseja salvar os resultados ao fechar o VDF",
 	"MainWindow.Settings.AutoApplySelectionPreset": "Aplicar automaticamente a predefinição de seleção após a verificação",
 	"MainWindow.Settings.AutoApplySelectionPresetTooltip": "Após cada verificação, executa automaticamente a predefinição de seleção escolhida nos resultados",
-	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "Nenhuma predefinição salva — crie uma em Seleção → Seleção personalizada",
+	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "Nenhuma predefinição salva",
 	"Log.AutoAppliedPreset": "Predefinição de seleção '{0}' aplicada automaticamente",
 	"Log.AutoApplyPresetMissing": "A predefinição de seleção '{0}' configurada para aplicação automática não foi encontrada",
 	"MainWindow.Settings.SaveTooltip": "Nota: as configurações são salvas automaticamente ao sair normalmente",

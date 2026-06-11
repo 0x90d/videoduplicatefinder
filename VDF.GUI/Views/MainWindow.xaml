@@ -44,11 +44,9 @@
     <Window.Styles>
         <!-- Avalonia 12 draws managed caption buttons when the client area is extended
              (ExtendClientAreaChromeHints/PreferSystemChrome no longer exists). Its button
-             set adds a full-screen toggle that Windows chrome never had, which reads as a
-             second maximize button — hide it to keep the familiar minimize/maximize/close. -->
-        <Style Selector="Button#PART_FullScreenButton">
-            <Setter Property="IsVisible" Value="False" />
-        </Style>
+             set includes a full-screen toggle Windows chrome never had. Hiding it via
+             Button#PART_FullScreenButton works but leaves the remaining buttons offset
+             from the window edge, which looks worse — so the button stays for now. -->
         <Style Selector="Button.hyperlink">
             <Setter Property="Template">
                 <ControlTemplate>

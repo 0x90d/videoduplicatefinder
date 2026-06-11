@@ -276,7 +276,7 @@
 	"MainWindow.Settings.SaveResultsOnExitTooltip": "Si coché, vous serez invité à enregistrer les résultats lors de la fermeture de VDF",
 	"MainWindow.Settings.AutoApplySelectionPreset": "Appliquer automatiquement le préréglage de sélection après l'analyse",
 	"MainWindow.Settings.AutoApplySelectionPresetTooltip": "Après chaque analyse, applique automatiquement le préréglage de sélection choisi aux résultats",
-	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "Aucun préréglage enregistré — créez-en un via Sélection → Sélection personnalisée",
+	"MainWindow.Settings.AutoApplySelectionPresetPlaceholder": "Aucun préréglage enregistré",
 	"Log.AutoAppliedPreset": "Préréglage de sélection « {0} » appliqué automatiquement",
 	"Log.AutoApplyPresetMissing": "Le préréglage de sélection « {0} » configuré pour l'application automatique est introuvable",
 	"MainWindow.Settings.SaveTooltip": "Note : les paramètres sont enregistrés automatiquement lors d'une fermeture normale",
