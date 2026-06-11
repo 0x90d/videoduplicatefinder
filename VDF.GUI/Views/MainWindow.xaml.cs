@@ -116,8 +116,50 @@ namespace VDF.GUI.Views {
 				Height = 750d;
 			}
 
+			ApplySavedWindowPlacement();
+
 			ApplyKeyboardShortcuts();
 			KeyboardShortcutManager.Instance.ShortcutsChanged += ApplyKeyboardShortcuts;
+		}
+
+		void ApplySavedWindowPlacement() {
+			var settings = SettingsFile.Instance;
+			if (settings.MainWindowWidth is double savedWidth && savedWidth > 0)
+				Width = savedWidth;
+			if (settings.MainWindowHeight is double savedHeight && savedHeight > 0)
+				Height = savedHeight;
+
+			if (settings.MainWindowPositionX.HasValue && settings.MainWindowPositionY.HasValue && Screens != null) {
+				// Only restore a position that is still on a connected screen — a saved
+				// position on a since-removed monitor would open the window off-screen.
+				var saved = new PixelPoint(settings.MainWindowPositionX.Value, settings.MainWindowPositionY.Value);
+				var screen = Screens.ScreenFromPoint(new PixelPoint(
+					saved.X + (int)Math.Round(Width / 2), saved.Y + (int)Math.Round(Height / 2)));
+				if (screen != null) {
+					var workingArea = screen.WorkingArea;
+					int maxX = Math.Max(workingArea.X, workingArea.Right - (int)Math.Ceiling(Width));
+					int maxY = Math.Max(workingArea.Y, workingArea.Bottom - (int)Math.Ceiling(Height));
+					Position = new PixelPoint(
+						Math.Clamp(saved.X, workingArea.X, maxX),
+						Math.Clamp(saved.Y, workingArea.Y, maxY));
+				}
+			}
+
+			if (settings.MainWindowMaximized)
+				WindowState = WindowState.Maximized;
+		}
+
+		void SaveWindowPlacement() {
+			var settings = SettingsFile.Instance;
+			settings.MainWindowMaximized = WindowState == WindowState.Maximized;
+			// Size/position are only meaningful in the normal state; keep the last
+			// normal-state values when closing maximized or minimized.
+			if (WindowState == WindowState.Normal) {
+				settings.MainWindowWidth = Width;
+				settings.MainWindowHeight = Height;
+				settings.MainWindowPositionX = Position.X;
+				settings.MainWindowPositionY = Position.Y;
+			}
 		}
 
 		void ApplyKeyboardShortcuts() {
@@ -150,6 +192,7 @@ namespace VDF.GUI.Views {
 		}
 
 		void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
+			SaveWindowPlacement();
 			e.Cancel = true;
 			ConfirmClose();
 		}

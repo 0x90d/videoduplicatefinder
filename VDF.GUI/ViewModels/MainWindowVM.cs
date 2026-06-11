@@ -379,6 +379,13 @@ namespace VDF.GUI.ViewModels {
 				DataGridSortDescription.FromComparer(new GroupTotalSizeComparer(this), ListSortDirection.Descending)),
 			};
 			_SortOrder = SortOrders[0];
+			if (!string.IsNullOrEmpty(SettingsFile.Instance.LastSortOrder)) {
+				foreach (var order in SortOrders)
+					if (order.Key == SettingsFile.Instance.LastSortOrder) {
+						_SortOrder = order;
+						break;
+					}
+			}
 
 			this.WhenAnyValue(vm => vm.FilterByPath)
 					.Throttle(TimeSpan.FromMilliseconds(500), RxSchedulers.MainThreadScheduler)
@@ -632,6 +639,10 @@ namespace VDF.GUI.ViewModels {
 		void BuildDuplicatesView() {
 			view = new DataGridCollectionView(Duplicates);
 			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
+			// Rebuilding the view (rescan, import) previously dropped the active sort
+			// while the sort ComboBox kept displaying it.
+			if (_SortOrder.Value != null)
+				view.SortDescriptions.Add(_SortOrder.Value);
 			view.Filter += DuplicatesFilter;
 			GetDataGrid.ItemsSource = view;
 			TotalSizeRemovedInternal = 0;
@@ -763,6 +774,56 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> ExportScanResultsToFileCommand => ReactiveCommand.CreateFromTask(async () => {
 			await ExportScanResults();
 		});
+
+		public ReactiveCommand<Unit, Unit> ExportScanResultsToCsvCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (Duplicates.Count == 0) return;
+			var path = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
+				DefaultExtension = ".csv",
+				FileTypeChoices = [new FilePickerFileType("CSV") { Patterns = ["*.csv"] }]
+			});
+			if (string.IsNullOrEmpty(path)) return;
+			try {
+				var snapshot = Duplicates.ToList();
+				await Task.Run(() => WriteScanResultsCsv(path, snapshot));
+			}
+			catch (Exception ex) {
+				string error = string.Format(App.Lang["Message.ExportScanResultsFailed"], ex);
+				Logger.Instance.Info(error);
+				await MessageBoxService.Show(error);
+			}
+		});
+
+		static void WriteScanResultsCsv(string path, List<DuplicateItemVM> items) {
+			static string Escape(string? s) {
+				s ??= string.Empty;
+				return s.Contains(',') || s.Contains('"') || s.Contains('\n') || s.Contains('\r')
+					? "\"" + s.Replace("\"", "\"\"") + "\""
+					: s;
+			}
+			var inv = System.Globalization.CultureInfo.InvariantCulture;
+			// UTF-8 BOM so Excel detects the encoding.
+			using var writer = new StreamWriter(path, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+			writer.WriteLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Checked");
+			// Keep group members on adjacent rows regardless of list order.
+			foreach (var group in items.GroupBy(i => i.ItemInfo.GroupId))
+				foreach (var item in group) {
+					var info = item.ItemInfo;
+					writer.WriteLine(string.Join(',',
+						info.GroupId.ToString(),
+						Escape(info.Path),
+						info.SizeLong.ToString(inv),
+						info.Duration.ToString(null, inv),
+						Escape(info.FrameSize),
+						info.Fps.ToString(inv),
+						info.BitRateKbs.ToString(inv),
+						Escape(info.AudioFormat),
+						info.AudioSampleRate.ToString(inv),
+						info.Similarity.ToString(inv),
+						info.DateCreated.ToString("yyyy-MM-dd HH:mm:ss", inv),
+						info.IsImage.ToString(),
+						item.Checked.ToString()));
+				}
+		}
 
 		private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions {
 			IncludeFields = true,

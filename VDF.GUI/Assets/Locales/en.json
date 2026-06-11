@@ -187,6 +187,7 @@
 	"MainWindow.Menu.ExportScanResults.Json": "To Json",
 	"MainWindow.Menu.ExportScanResults.JsonPretty": "To Json (pretty)",
 	"MainWindow.Menu.ExportScanResults.WithThumbnails": "To File including thumbnails",
+	"MainWindow.Menu.ExportScanResults.Csv": "Export results to CSV...",
 	"MainWindow.Menu.ImportScanResults": "Import Scan Results",
 	"MainWindow.Menu.ImportScanResults.WithThumbnails": "From File including thumbnails",
 	"MainWindow.Menu.LatestRelease": "Latest Release",

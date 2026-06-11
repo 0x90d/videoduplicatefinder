@@ -182,6 +182,7 @@
 	"MainWindow.Menu.ExportScanResults.Json": "Para JSON",
 	"MainWindow.Menu.ExportScanResults.JsonPretty": "Para JSON (formatado)",
 	"MainWindow.Menu.ExportScanResults.WithThumbnails": "Para arquivo incluindo miniaturas",
+	"MainWindow.Menu.ExportScanResults.Csv": "Exportar resultados para CSV...",
 	"MainWindow.Menu.ImportScanResults": "Importar resultados da varredura",
 	"MainWindow.Menu.ImportScanResults.WithThumbnails": "De arquivo incluindo miniaturas",
 	"MainWindow.Menu.LatestRelease": "Última versão",

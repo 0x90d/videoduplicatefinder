@@ -354,6 +354,15 @@
                                                 Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Menu.ExportScanResults.WithThumbnails]}" />
                                         </MenuItem.Header>
                                     </MenuItem>
+                                    <Separator />
+                                    <MenuItem Command="{Binding ExportScanResultsToCsvCommand}">
+                                        <MenuItem.Header>
+                                            <TextBlock
+                                                Margin="5,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Menu.ExportScanResults.Csv]}" />
+                                        </MenuItem.Header>
+                                    </MenuItem>
                                 </MenuItem>
                                 <MenuItem IsVisible="{Binding !!Duplicates.Count}">
                                     <MenuItem.Header>

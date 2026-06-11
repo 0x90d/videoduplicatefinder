@@ -102,6 +102,44 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _AutoApplySelectionPreset, value);
 		}
 
+		double? _MainWindowWidth;
+		[JsonPropertyName("MainWindowWidth")]
+		public double? MainWindowWidth {
+			get => _MainWindowWidth;
+			set => this.RaiseAndSetIfChanged(ref _MainWindowWidth, value);
+		}
+		double? _MainWindowHeight;
+		[JsonPropertyName("MainWindowHeight")]
+		public double? MainWindowHeight {
+			get => _MainWindowHeight;
+			set => this.RaiseAndSetIfChanged(ref _MainWindowHeight, value);
+		}
+		int? _MainWindowPositionX;
+		[JsonPropertyName("MainWindowPositionX")]
+		public int? MainWindowPositionX {
+			get => _MainWindowPositionX;
+			set => this.RaiseAndSetIfChanged(ref _MainWindowPositionX, value);
+		}
+		int? _MainWindowPositionY;
+		[JsonPropertyName("MainWindowPositionY")]
+		public int? MainWindowPositionY {
+			get => _MainWindowPositionY;
+			set => this.RaiseAndSetIfChanged(ref _MainWindowPositionY, value);
+		}
+		bool _MainWindowMaximized;
+		[JsonPropertyName("MainWindowMaximized")]
+		public bool MainWindowMaximized {
+			get => _MainWindowMaximized;
+			set => this.RaiseAndSetIfChanged(ref _MainWindowMaximized, value);
+		}
+		string _LastSortOrder = string.Empty;
+		/// <summary>Key of the results sort order (see MainWindowVM.SortOrders), restored on startup.</summary>
+		[JsonPropertyName("LastSortOrder")]
+		public string LastSortOrder {
+			get => _LastSortOrder;
+			set => this.RaiseAndSetIfChanged(ref _LastSortOrder, value);
+		}
+
 		string _LanguageCode = ResolveDefaultLanguageCode();
 		[JsonPropertyName("LanguageCode")]
 		public string LanguageCode {

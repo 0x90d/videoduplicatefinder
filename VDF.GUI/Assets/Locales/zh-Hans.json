@@ -182,6 +182,7 @@
 	"MainWindow.Menu.ExportScanResults.Json": "导出为 JSON",
 	"MainWindow.Menu.ExportScanResults.JsonPretty": "导出为 JSON（美化）",
 	"MainWindow.Menu.ExportScanResults.WithThumbnails": "导出为包含缩略图的文件",
+	"MainWindow.Menu.ExportScanResults.Csv": "将结果导出为 CSV...",
 	"MainWindow.Menu.ImportScanResults": "导入扫描结果",
 	"MainWindow.Menu.ImportScanResults.WithThumbnails": "从包含缩略图的文件导入",
 	"MainWindow.Menu.LatestRelease": "最新版本",

@@ -114,6 +114,7 @@ namespace VDF.GUI.ViewModels {
 			set {
 				if (value.Key == _SortOrder.Key) return;
 				_SortOrder = value;
+				SettingsFile.Instance.LastSortOrder = value.Key;
 				this.RaisePropertyChanged(nameof(SortOrder));
 				view?.SortDescriptions.Clear();
 				if (_SortOrder.Value != null)
