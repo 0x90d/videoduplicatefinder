@@ -34,11 +34,14 @@
     <PackageReference Include="Avalonia" Version="11.3.11" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.11" />
 <PackageReference Include="Avalonia.Desktop" Version="11.3.11" />
+    <!-- Explicit pin: Avalonia 11.3.x pulls Tmds.DBus.Protocol 0.21.2, which has a known
+         high-severity vulnerability (GHSA-xrw6-gwf8-vvr9). Remove once Avalonia updates. -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.11" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.19.3" />
     <PackageReference Include="ReactiveUI.Avalonia" Version="11.3.8" />
-    <PackageReference Include="System.CommandLine" Version="2.0.2" />
-    <PackageReference Include="System.IO.Hashing" Version="10.0.2" />
+    <PackageReference Include="System.CommandLine" Version="2.0.9" />
+    <PackageReference Include="System.IO.Hashing" Version="10.0.9" />
     <PackageReference Include="Xaml.Behaviors.Avalonia" Version="11.3.9.3" />
   </ItemGroup>
   <ItemGroup>
