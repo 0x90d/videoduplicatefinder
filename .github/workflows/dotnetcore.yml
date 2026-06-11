@@ -12,7 +12,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
     - name: Build GUI
       run: dotnet publish VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r win-x64
     - name: Build CLI
