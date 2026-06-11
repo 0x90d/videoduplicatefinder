@@ -848,6 +848,7 @@ namespace VDF.GUI.ViewModels {
 			IsBusy = true;
 			IsBusyOverlayText = App.Lang["Busy.LoadMissingThumbnails"];
 			try {
+				SyncCoreSettings();
 				await Scanner.RetrieveThumbnailsForItems(missing.Select(d => d.ItemInfo));
 			}
 			finally {
@@ -1224,6 +1225,27 @@ Non-Windows setup:
 			TotalDuplicatesSize = string.Empty;
 
 			SettingsFile.SaveSettings();
+			SyncCoreSettings();
+
+			ChangeIsBusyMessage();
+			IsBusy = true;
+
+			if (isFreshScan) {
+				Scanner.StartSearch();
+			}
+			else {
+				Scanner.StartCompare();
+			}
+		}, this.WhenAnyValue(x => x.IsBusy, busy => !busy));
+
+		/// <summary>
+		/// Copies the GUI settings into the Core engine. Must run before any engine
+		/// operation that reads <see cref="ScanEngine.Settings"/> — not just scans:
+		/// explicit thumbnail loading after a backup restore otherwise runs with Core
+		/// defaults (e.g. ThumbnailMaxWidth 100 instead of the configured value),
+		/// producing pixelated thumbnails (issue #778).
+		/// </summary>
+		void SyncCoreSettings() {
 			Scanner.Settings.IncludeSubDirectories = SettingsFile.Instance.IncludeSubDirectories;
 			Scanner.Settings.IncludeImages = SettingsFile.Instance.IncludeImages;
 			Scanner.Settings.GeneratePreviewThumbnails = SettingsFile.Instance.GeneratePreviewThumbnails;
@@ -1276,16 +1298,12 @@ Non-Windows setup:
 			foreach (var s in SettingsFile.Instance.Blacklists)
 				Scanner.Settings.BlackList.Add(s);
 
-			ChangeIsBusyMessage();
-			IsBusy = true;
-
-			if (isFreshScan) {
-				Scanner.StartSearch();
-			}
-			else {
-				Scanner.StartCompare();
-			}
-		}, this.WhenAnyValue(x => x.IsBusy, busy => !busy));
+			// Apply the FFmpeg engine statics as well — PrepareSearch does this at scan
+			// start, but thumbnail-only flows never reach PrepareSearch.
+			VDF.Core.FFTools.FfmpegEngine.HardwareAccelerationMode = Scanner.Settings.HardwareAccelerationMode;
+			VDF.Core.FFTools.FfmpegEngine.CustomFFArguments = Scanner.Settings.CustomFFArguments;
+			VDF.Core.FFTools.FfmpegEngine.UseNativeBinding = Scanner.Settings.UseNativeFfmpegBinding;
+		}
 
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();
@@ -1399,12 +1417,14 @@ Non-Windows setup:
 	public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
 		var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
 		if (items.Count == 0) return;
+		SyncCoreSettings();
 		await Scanner.RetrieveThumbnailsForItems(items);
 	});
 
 	public ReactiveCommand<Unit, Unit> LoadThumbnailsForGroupCommand => ReactiveCommand.CreateFromTask(async () => {
 		if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
 		var items = Duplicates.Where(d => d.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).Select(d => d.ItemInfo).ToList();
+		SyncCoreSettings();
 		await Scanner.RetrieveThumbnailsForItems(items);
 	});
 
