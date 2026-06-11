@@ -38,6 +38,13 @@ namespace VDF.Core {
 			DateCreated = fileInfo.CreationTimeUtc;
 			DateModified = fileInfo.LastWriteTimeUtc;
 			FileSize = fileInfo.Length;
+			// Attributes are already populated on enumerated FileInfos, so stamping the
+			// reparse flag here is free and spares the scan a per-file syscall later.
+			FileAttributes attributes = fileInfo.Attributes;
+			if (attributes != (FileAttributes)(-1)) {
+				Flags.Set(EntryFlags.ReparsePoint, (attributes & FileAttributes.ReparsePoint) != 0);
+				Flags.Set(EntryFlags.ReparsePointChecked);
+			}
 		}
 
 		[MemoryPackInclude, MemoryPackOrder(0)]

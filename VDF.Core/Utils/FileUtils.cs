@@ -14,6 +14,8 @@
 // */
 //
 
+using System.Collections.Frozen;
+using System.IO.Enumeration;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -50,7 +52,8 @@ namespace VDF.Core.Utils {
 			".rmvb",
 			".rm"
 		};
-		static readonly string[] AllExtensions = VideoExtensions.Concat(ImageExtensions).ToArray();
+		static readonly FrozenSet<string> VideoExtensionSet = VideoExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+		static readonly FrozenSet<string> AllExtensionSet = VideoExtensions.Concat(ImageExtensions).ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken) {
 			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,
@@ -62,7 +65,10 @@ namespace VDF.Core.Utils {
 			if (ignoreReparsePoints)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
-			var extensions = includeImages ? AllExtensions : VideoExtensions;
+			// Span-based extension probe: non-matching files are rejected before any
+			// FileInfo (or even file-name string) is allocated.
+			var extensionLookup = (includeImages ? AllExtensionSet : VideoExtensionSet)
+				.GetAlternateLookup<ReadOnlySpan<char>>();
 
 			List<FileInfo> files = new();
 			Queue<DirectoryInfo> subFolders = new();
@@ -74,8 +80,12 @@ namespace VDF.Core.Utils {
 				DirectoryInfo currentFolder = subFolders.Dequeue();
 				try {
 
-					files.AddRange(currentFolder.EnumerateFiles("*", enumerationOptions)
-					.Where(f => extensions.Any(x => f.FullName.EndsWith(x, StringComparison.OrdinalIgnoreCase))));
+					files.AddRange(new FileSystemEnumerable<FileInfo>(currentFolder.FullName,
+						(ref FileSystemEntry entry) => (FileInfo)entry.ToFileSystemInfo(),
+						enumerationOptions) {
+						ShouldIncludePredicate = (ref FileSystemEntry entry) =>
+							!entry.IsDirectory && extensionLookup.Contains(Path.GetExtension(entry.FileName))
+					});
 
 					if (!recursive)
 						break;

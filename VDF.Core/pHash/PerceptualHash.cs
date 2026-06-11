@@ -109,10 +109,10 @@ namespace VDF.Core.pHash {
 		}
 
 		private static float Median64(Span<float> values) {
-			// Copy to array and sort; faster than fancy selection for 64 elems
-			float[] buf = new float[values.Length];
+			// Copy to the stack and sort; faster than fancy selection for 64 elems
+			Span<float> buf = stackalloc float[K * K];
 			values.CopyTo(buf);
-			Array.Sort(buf);
+			buf.Sort();
 			return (buf[31] + buf[32]) * 0.5f; // even length = 64
 		}
 	}

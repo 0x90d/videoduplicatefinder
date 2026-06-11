@@ -169,6 +169,68 @@ namespace VDF.Core.FFTools {
 			}
 		}
 
+		/// <summary>
+		/// Extracts one 32x32 grayscale frame per position, opening a single decoder and
+		/// reusing one sws context for the whole file instead of paying the open/seek/teardown
+		/// cost per frame. Returns an array aligned with <paramref name="positionsSeconds"/>;
+		/// entries are null when that frame could not be decoded. Positions the native batch
+		/// could not produce (or all of them, without the native binding) fall back to the
+		/// per-frame <see cref="GetThumbnail"/> path, which itself falls back to the FFmpeg process.
+		/// </summary>
+		internal static unsafe byte[]?[] GetGrayFrames(string filePath, IReadOnlyList<double> positionsSeconds, bool extendedLogging) {
+			const int N = 32;
+			var frames = new byte[]?[positionsSeconds.Count];
+			if (UseNativeBinding) {
+				try {
+					using var vsd = new VideoStreamDecoder(filePath, GetConfiguredHardwareDeviceType());
+					VideoFrameConverter? converter = null;
+					Size converterSourceSize = default;
+					AVPixelFormat converterSrcFmt = AVPixelFormat.AV_PIX_FMT_NONE;
+					try {
+						for (int i = 0; i < positionsSeconds.Count; i++) {
+							if (!vsd.TryDecodeFrame(out var srcFrame, TimeSpan.FromSeconds(positionsSeconds[i])))
+								continue;
+
+							Size sourceSize = new(
+								srcFrame.width > 0 ? srcFrame.width : vsd.FrameSize.Width,
+								srcFrame.height > 0 ? srcFrame.height : vsd.FrameSize.Height);
+							AVPixelFormat srcPixFmt = vsd.IsHardwareDecode ? (AVPixelFormat)srcFrame.format : vsd.PixelFormat;
+							if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB ||
+								sourceSize.Width <= 0 || sourceSize.Height <= 0)
+								continue;
+
+							if (converter == null || sourceSize != converterSourceSize || srcPixFmt != converterSrcFmt) {
+								converter?.Dispose();
+								converter = new VideoFrameConverter(
+									sourceSize, srcPixFmt,
+									new Size(N, N), AVPixelFormat.AV_PIX_FMT_GRAY8,
+									VideoFrameConverter.ScaleQuality.Bicubic, bitExact: false);
+								converterSourceSize = sourceSize;
+								converterSrcFmt = srcPixFmt;
+							}
+
+							frames[i] = ExtractGray32FromFrame(converter.Convert(srcFrame));
+						}
+					}
+					finally {
+						converter?.Dispose();
+					}
+				}
+				catch (Exception e) {
+					Logger.Instance.Info($"Native batch frame extraction failed on '{filePath}', falling back to per-frame path. Exception: {e}");
+				}
+			}
+
+			for (int i = 0; i < positionsSeconds.Count; i++) {
+				frames[i] ??= GetThumbnail(new FfmpegSettings {
+					File = filePath,
+					Position = TimeSpan.FromSeconds(positionsSeconds[i]),
+					GrayScale = 1
+				}, extendedLogging);
+			}
+			return frames;
+		}
+
 		public static unsafe byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {
 
 			const int N = 32;

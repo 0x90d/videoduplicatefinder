@@ -398,9 +398,21 @@ namespace VDF.Core {
 				}
 			}
 
-			if (Settings.IgnoreReparsePoints && File.Exists(entry.Path) && File.ResolveLinkTarget(entry.Path, returnFinalTarget: false) != null) {
-				reason = "file is a reparse point";
-				return true;
+			if (Settings.IgnoreReparsePoints) {
+				// The flag is stamped at FileEntry creation; entries from databases written
+				// before it existed get a one-time stat here and carry the result forward.
+				if (!entry.Flags.Has(EntryFlags.ReparsePointChecked)) {
+					try {
+						FileAttributes attributes = File.GetAttributes(entry.Path);
+						entry.Flags.Set(EntryFlags.ReparsePoint, (attributes & FileAttributes.ReparsePoint) != 0);
+						entry.Flags.Set(EntryFlags.ReparsePointChecked);
+					}
+					catch { } // missing/inaccessible file — the existence check above already covers it
+				}
+				if (entry.Flags.Has(EntryFlags.ReparsePoint)) {
+					reason = "file is a reparse point";
+					return true;
+				}
 			}
 			if (Settings.FilterByFilePathNotContains) {
 				bool contains = false;
@@ -465,7 +477,7 @@ namespace VDF.Core {
 			try {
 				InitProgress(DatabaseUtils.Database.Count);
 				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
-					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
+					pauseTokenSource.WaitWhilePaused(token);
 
 					try {
 						entry.invalid = InvalidEntry(entry, out bool reportProgress, out string? invalidReason);
@@ -783,6 +795,10 @@ namespace VDF.Core {
 			// Maps GroupId -> representative FileEntry for that group.
 			// Used to prevent merging groups whose representatives aren't similar.
 			Dictionary<Guid, FileEntry> groupRepresentatives = new();
+			// Maps GroupId -> its members, so merging two groups relabels only the
+			// absorbed group's items instead of scanning every duplicate found so far
+			// while holding the lock.
+			Dictionary<Guid, List<DuplicateItem>> groupMembers = new();
 			int mergesBlocked = 0;
 			missingPHashFiles.Clear();
 
@@ -867,9 +883,12 @@ namespace VDF.Core {
 								return; // Representatives aren't similar — don't merge.
 							}
 							Guid groupID = existingComp!.GroupId;
-							foreach (DuplicateItem? dup in duplicateDict.Values.Where(c =>
-								c.GroupId == groupID))
+							List<DuplicateItem> baseMembers = groupMembers[existingBase.GroupId];
+							foreach (DuplicateItem dup in groupMembers[groupID]) {
 								dup.GroupId = existingBase.GroupId;
+								baseMembers.Add(dup);
+							}
+							groupMembers.Remove(groupID);
 							// Keep the representative of the absorbing group; remove the merged one.
 							groupRepresentatives.Remove(groupID);
 						}
@@ -881,8 +900,9 @@ namespace VDF.Core {
 							mergesBlocked++;
 							return;
 						}
-						duplicateDict.TryAdd(compItem.Path,
-							new DuplicateItem(compItem, difference, existingBase!.GroupId, flags));
+						var newItem = new DuplicateItem(compItem, difference, existingBase!.GroupId, flags);
+						if (duplicateDict.TryAdd(compItem.Path, newItem))
+							groupMembers[existingBase.GroupId].Add(newItem);
 					}
 					else if (foundComp) {
 						// New item joining an existing group — verify it matches the representative.
@@ -891,13 +911,17 @@ namespace VDF.Core {
 							mergesBlocked++;
 							return;
 						}
-						duplicateDict.TryAdd(entry.Path,
-							new DuplicateItem(entry, difference, existingComp!.GroupId, flags));
+						var newItem = new DuplicateItem(entry, difference, existingComp!.GroupId, flags);
+						if (duplicateDict.TryAdd(entry.Path, newItem))
+							groupMembers[existingComp.GroupId].Add(newItem);
 					}
 					else {
 						var groupId = Guid.NewGuid();
-						duplicateDict.TryAdd(compItem.Path, new DuplicateItem(compItem, difference, groupId, flags));
-						duplicateDict.TryAdd(entry.Path, new DuplicateItem(entry, difference, groupId, DuplicateFlags.None));
+						var compDup = new DuplicateItem(compItem, difference, groupId, flags);
+						var entryDup = new DuplicateItem(entry, difference, groupId, DuplicateFlags.None);
+						duplicateDict.TryAdd(compItem.Path, compDup);
+						duplicateDict.TryAdd(entry.Path, entryDup);
+						groupMembers[groupId] = new List<DuplicateItem> { compDup, entryDup };
 						groupRepresentatives[groupId] = entry;
 					}
 				}
@@ -923,7 +947,7 @@ namespace VDF.Core {
 
 			// Compare one entry against candidate buckets (bucketed path).
 			void CompareEntry(FileEntry entry, int entryIndex, IEnumerable<int> candidateBucketKeys) {
-				while (pauseTokenSource.IsPaused) Thread.Sleep(50);
+				pauseTokenSource.WaitWhilePaused(cancelationTokenSource.Token);
 
 				float difference = 0;
 				bool isDuplicate;
@@ -1028,7 +1052,7 @@ namespace VDF.Core {
 			// Linear compare path for small datasets to avoid bucket bookkeeping overhead.
 			void CompareVideosLinear() {
 				Action<int> compareAction = i => {
-					while (pauseTokenSource.IsPaused) Thread.Sleep(50);
+					pauseTokenSource.WaitWhilePaused(cancelationTokenSource.Token);
 
 					var entry = videoEntries[i];
 					float difference = 0;
@@ -1187,7 +1211,7 @@ namespace VDF.Core {
 			Parallel.For(0, videos.Count - 1,
 				new ParallelOptions {
 					CancellationToken = cancelationTokenSource.Token,
-					MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount)
+					MaxDegreeOfParallelism = Math.Max(1, Settings.MaxDegreeOfParallelism)
 				},
 				i => {
 					FileEntry source = videos[i];
@@ -1235,7 +1259,7 @@ namespace VDF.Core {
 				try {
 					Parallel.ForEach(assignments, new ParallelOptions {
 						CancellationToken = cancelationTokenSource.Token,
-						MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount)
+						MaxDegreeOfParallelism = Math.Max(1, Settings.MaxDegreeOfParallelism)
 					}, a => {
 						bool pass = VerifyPartialClipVisually(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec, out float visualSim);
 						if (pass) {
@@ -1307,23 +1331,25 @@ namespace VDF.Core {
 			int comparisons = 0;
 			float simSum = 0f;
 
+			// Collect the usable sample times first so each file is decoded in a single
+			// batched session instead of one decoder open per frame.
+			var srcSampleTimes = new List<double>(clipTimes.Count);
+			var clipSampleTimes = new List<double>(clipTimes.Count);
 			foreach (double t in clipTimes) {
 				double srcAt = offsetSec + t;
 				if (srcAt >= sourceSec - 0.1 || t >= clipSec - 0.1) continue;
+				srcSampleTimes.Add(srcAt);
+				clipSampleTimes.Add(t);
+			}
+			if (srcSampleTimes.Count == 0) return true;
 
-				byte[]? srcFrame = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-					File = source.Path,
-					Position = TimeSpan.FromSeconds(srcAt),
-					GrayScale = 1
-				}, Settings.ExtendedFFToolsLogging);
-				if (srcFrame == null) continue;
+			byte[]?[] srcFrames = FfmpegEngine.GetGrayFrames(source.Path, srcSampleTimes, Settings.ExtendedFFToolsLogging);
+			byte[]?[] clipFrames = FfmpegEngine.GetGrayFrames(clip.Path, clipSampleTimes, Settings.ExtendedFFToolsLogging);
 
-				byte[]? clipFrame = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-					File = clip.Path,
-					Position = TimeSpan.FromSeconds(t),
-					GrayScale = 1
-				}, Settings.ExtendedFFToolsLogging);
-				if (clipFrame == null) continue;
+			for (int i = 0; i < srcSampleTimes.Count; i++) {
+				byte[]? srcFrame = srcFrames[i];
+				byte[]? clipFrame = clipFrames[i];
+				if (srcFrame == null || clipFrame == null) continue;
 
 				float pairSim;
 				if (useP) {
@@ -1427,16 +1453,14 @@ namespace VDF.Core {
 				for (; k + 8 <= len; k += 8) {
 					var va = Vector256.LoadUnsafe(ref aRef, (nuint)k);
 					var vb = Vector256.LoadUnsafe(ref bRef, (nuint)k);
-					var xored = va ^ vb;
+					// Popcount over 64-bit lanes: half the PopCount calls of per-uint
+					// counting. (Vector256.PopCount still has no hardware path here.)
+					var xored = (va ^ vb).AsUInt64();
 
 					totalBits += BitOperations.PopCount(xored.GetElement(0))
 							   + BitOperations.PopCount(xored.GetElement(1))
 							   + BitOperations.PopCount(xored.GetElement(2))
-							   + BitOperations.PopCount(xored.GetElement(3))
-							   + BitOperations.PopCount(xored.GetElement(4))
-							   + BitOperations.PopCount(xored.GetElement(5))
-							   + BitOperations.PopCount(xored.GetElement(6))
-							   + BitOperations.PopCount(xored.GetElement(7));
+							   + BitOperations.PopCount(xored.GetElement(3));
 
 					if (totalBits > maxAllowedBits) return totalBits;
 				}
@@ -1449,12 +1473,10 @@ namespace VDF.Core {
 				for (; k + 4 <= len; k += 4) {
 					var va = Vector128.LoadUnsafe(ref aRef, (nuint)k);
 					var vb = Vector128.LoadUnsafe(ref bRef, (nuint)k);
-					var xored = va ^ vb;
+					var xored = (va ^ vb).AsUInt64();
 
 					totalBits += BitOperations.PopCount(xored.GetElement(0))
-							   + BitOperations.PopCount(xored.GetElement(1))
-							   + BitOperations.PopCount(xored.GetElement(2))
-							   + BitOperations.PopCount(xored.GetElement(3));
+							   + BitOperations.PopCount(xored.GetElement(1));
 
 					if (totalBits > maxAllowedBits) return totalBits;
 				}

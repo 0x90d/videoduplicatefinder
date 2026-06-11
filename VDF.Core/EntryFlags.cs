@@ -28,6 +28,8 @@ namespace VDF.Core {
 		NoAudioTrack = 32,           // File has no audio stream; skip audio fingerprinting
 		AudioFingerprintError = 64,  // Audio extraction/fingerprinting failed
 		SilentAudioTrack = 128,      // File has audio but it's silent; fingerprint is all zeros and unusable
+		ReparsePoint = 256,          // File has FILE_ATTRIBUTE_REPARSE_POINT (symlink, junction, cloud placeholder)
+		ReparsePointChecked = 512,   // ReparsePoint has been populated; entries from older databases lack it
 
 		AllErrors = ThumbnailError | MetadataError | TooDark
 	}

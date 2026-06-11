@@ -21,12 +21,24 @@ namespace VDF.Core.Utils {
 	/// http://blogs.msdn.com/b/pfxteam/archive/2013/01/13/cooperatively-pausing-async-methods.aspx 
 	/// </summary>
 	public sealed class PauseTokenSource {
-		int paused;
+		// Set = running, reset = paused. Workers block on the event instead of
+		// polling IsPaused in a sleep loop, so resuming wakes them immediately
+		// and a paused scan burns no CPU.
+		readonly ManualResetEventSlim resumeEvent = new(initialState: true);
+
 		public bool IsPaused {
-			get => paused != 0;
-			set => Interlocked.Exchange(ref paused, value ? 1 : 0);
+			get => !resumeEvent.IsSet;
+			set {
+				if (value)
+					resumeEvent.Reset();
+				else
+					resumeEvent.Set();
+			}
 		}
 
-
+		/// <summary>Blocks until the source is resumed; no-op when not paused.
+		/// Throws <see cref="OperationCanceledException"/> when <paramref name="cancellationToken"/> is canceled while waiting.</summary>
+		public void WaitWhilePaused(CancellationToken cancellationToken = default) =>
+			resumeEvent.Wait(cancellationToken);
 	}
 }
