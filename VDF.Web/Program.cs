@@ -14,7 +14,6 @@
 // */
 //
 
-using System.Collections.Concurrent;
 using VDF.Core;
 using VDF.Web.Services;
 
@@ -98,40 +97,8 @@ app.MapPost("/auth/login", async (HttpContext ctx, AuthService auth) => {
 	}
 });
 
-// Thumbnail endpoint — encodes the extracted thumbnail from DuplicateItem.ImageList.
-// Works for both image files and video files (extracted frames).
-app.MapGet("/thumbnail", async (HttpContext ctx, ScanService scan) => {
-	string? path = ctx.Request.Query["path"];
-	if (string.IsNullOrEmpty(path)) {
-		ctx.Response.StatusCode = 400;
-		return;
-	}
-
-	path = Path.GetFullPath(path);
-	var item = scan.Duplicates.FirstOrDefault(d => d.Path == path);
-	if (item == null) {
-		ctx.Response.StatusCode = 404;
-		return;
-	}
-
-	var images = item.ImageList;
-	if (images.Count == 0 || images[0].Length == 0) {
-		// Thumbnail not yet retrieved — return 204 so the browser shows nothing
-		ctx.Response.StatusCode = 204;
-		return;
-	}
-
-	// ImageList holds encoded bytes — JPEG normally, PNG for the placeholder icon.
-	byte[] thumb = images[0];
-	bool isPng = thumb.Length > 4 && thumb[0] == 0x89 && thumb[1] == 'P' && thumb[2] == 'N' && thumb[3] == 'G';
-	ctx.Response.ContentType = isPng ? "image/png" : "image/jpeg";
-	ctx.Response.Headers.CacheControl = "public, max-age=3600";
-	await ctx.Response.Body.WriteAsync(thumb);
-});
-
 // HQ thumbnail endpoint — extracts a fresh frame using configurable resolution and quality.
 // Used by the card-based results view for crisp thumbnails.
-var hqThumbCache = new ConcurrentDictionary<string, byte[]>();
 var webSettings = app.Services.GetRequiredService<WebSettingsService>();
 app.MapGet("/thumbnail/hq", async (HttpContext ctx, ScanService scan) => {
 	string? path = ctx.Request.Query["path"];
@@ -141,8 +108,12 @@ app.MapGet("/thumbnail/hq", async (HttpContext ctx, ScanService scan) => {
 	var item = scan.Duplicates.FirstOrDefault(d => d.Path == path);
 	if (item == null) { ctx.Response.StatusCode = 404; return; }
 
-	int width = Math.Clamp(webSettings.ThumbnailWidth, 48, 960);
-	int quality = Math.Clamp(webSettings.ThumbnailJpegQuality, 10, 95);
+	// Honor the w/q the page requested (falling back to the current settings) so
+	// cached browser URLs stay consistent with the bytes they were rendered from.
+	int width = int.TryParse(ctx.Request.Query["w"], out int w) ? w : webSettings.ThumbnailWidth;
+	int quality = int.TryParse(ctx.Request.Query["q"], out int q) ? q : webSettings.ThumbnailJpegQuality;
+	width = Math.Clamp(width, 48, 960);
+	quality = Math.Clamp(quality, 10, 95);
 
 	var position = item.ThumbnailTimestamps.Count > 0
 		? item.ThumbnailTimestamps[0]
@@ -150,11 +121,13 @@ app.MapGet("/thumbnail/hq", async (HttpContext ctx, ScanService scan) => {
 
 	string cacheKey = $"{path}|{position.TotalSeconds:F2}|{width}|{quality}";
 
-	if (!hqThumbCache.TryGetValue(cacheKey, out var jpeg)) {
+	if (!scan.HqThumbCache.TryGetValue(cacheKey, out var jpeg)) {
 		// FFmpeg encodes at the requested quality directly — no re-encode pass needed.
 		jpeg = await Task.Run(() => ScanEngine.ExtractThumbnailJpeg(path, position, width, quality));
 		if (jpeg == null || jpeg.Length == 0) { ctx.Response.StatusCode = 204; return; }
-		hqThumbCache.TryAdd(cacheKey, jpeg);
+		if (scan.HqThumbCache.Count >= 4096)
+			scan.HqThumbCache.Clear();
+		scan.HqThumbCache.TryAdd(cacheKey, jpeg);
 	}
 
 	ctx.Response.ContentType = "image/jpeg";
@@ -163,7 +136,6 @@ app.MapGet("/thumbnail/hq", async (HttpContext ctx, ScanService scan) => {
 });
 
 // Full-resolution thumbnail endpoint — extracts at original resolution for the comparison modal.
-var fullThumbCache = new ConcurrentDictionary<string, byte[]>();
 app.MapGet("/thumbnail/full", async (HttpContext ctx, ScanService scan) => {
 	string? path = ctx.Request.Query["path"];
 	if (string.IsNullOrEmpty(path)) { ctx.Response.StatusCode = 400; return; }
@@ -178,10 +150,13 @@ app.MapGet("/thumbnail/full", async (HttpContext ctx, ScanService scan) => {
 
 	string cacheKey = $"{path}|{position.TotalSeconds:F2}|full";
 
-	if (!fullThumbCache.TryGetValue(cacheKey, out var jpeg)) {
+	if (!scan.FullThumbCache.TryGetValue(cacheKey, out var jpeg)) {
 		jpeg = await Task.Run(() => ScanEngine.ExtractThumbnailJpeg(path, position, 0));
 		if (jpeg == null || jpeg.Length == 0) { ctx.Response.StatusCode = 204; return; }
-		fullThumbCache.TryAdd(cacheKey, jpeg);
+		// Full-resolution frames are megabytes each — keep this cache small.
+		if (scan.FullThumbCache.Count >= 64)
+			scan.FullThumbCache.Clear();
+		scan.FullThumbCache.TryAdd(cacheKey, jpeg);
 	}
 
 	ctx.Response.ContentType = "image/jpeg";

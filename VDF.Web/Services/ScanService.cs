@@ -60,6 +60,15 @@ namespace VDF.Web.Services {
 		public IReadOnlyCollection<DuplicateItem> Duplicates => _engine.Duplicates;
 		public Settings Settings => _engine.Settings;
 
+		/// <summary>Caches for the thumbnail endpoints — cleared whenever the results change wholesale.</summary>
+		public System.Collections.Concurrent.ConcurrentDictionary<string, byte[]> HqThumbCache { get; } = new();
+		public System.Collections.Concurrent.ConcurrentDictionary<string, byte[]> FullThumbCache { get; } = new();
+
+		void ClearThumbnailCaches() {
+			HqThumbCache.Clear();
+			FullThumbCache.Clear();
+		}
+
 		public event Action? StateChanged;
 
 		public ScanService(WebSettingsService settingsService) {
@@ -110,6 +119,7 @@ namespace VDF.Web.Services {
 			ThumbnailCurrent = 0;
 			ThumbnailMax = 0;
 			_engine.Duplicates.Clear();
+			ClearThumbnailCaches();
 			try {
 				_engine.StartSearch();
 			}
@@ -147,8 +157,9 @@ namespace VDF.Web.Services {
 			ThumbnailCurrent = 0;
 			ThumbnailMax = 0;
 			_engine.Duplicates.Clear();
-			_engine.Settings.IncludeList.Clear();
-			_engine.Settings.BlackList.Clear();
+			ClearThumbnailCaches();
+			// Keep IncludeList/BlackList — resetting scan results should not
+			// throw away the paths the user configured.
 			Notify();
 		}
 
