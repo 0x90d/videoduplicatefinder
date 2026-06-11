@@ -33,6 +33,13 @@ namespace VDF.Web.Services {
 			public bool IncludeSubDirectories { get; set; } = true;
 			public bool IncludeImages { get; set; } = true;
 			public bool UsePHashing { get; set; }
+			public bool IgnoreReadOnlyFolders { get; set; }
+			public bool IgnoreReparsePoints { get; set; }
+			public bool ExcludeHardLinks { get; set; }
+			public bool UseExifCreationDate { get; set; }
+			public bool AlwaysRetryFailedSampling { get; set; }
+			public bool ExtendedFFToolsLogging { get; set; }
+			public bool LogExcludedFiles { get; set; }
 			public bool UseNativeFfmpegBinding { get; set; }
 			[JsonConverter(typeof(JsonStringEnumConverter))]
 			public FFHardwareAccelerationMode HardwareAccelerationMode { get; set; }
@@ -44,9 +51,24 @@ namespace VDF.Web.Services {
 			public bool IgnoreWhitePixels { get; set; }
 			public bool IncludeNonExistingFiles { get; set; }
 			public bool ScanAgainstEntireDatabase { get; set; }
+			[JsonConverter(typeof(JsonStringEnumConverter))]
+			public FolderMatchMode FolderMatchMode { get; set; }
+			public int SameFolderDepth { get; set; } = 1;
+			public double DurationDifferenceMinSeconds { get; set; }
+			public double DurationDifferenceMaxSeconds { get; set; }
+			public double MaxSamplingDurationSeconds { get; set; }
+			public bool FilterByFileSize { get; set; }
+			public int MinimumFileSize { get; set; }
+			public int MaximumFileSize { get; set; }
+			public bool FilterByFilePathContains { get; set; }
+			public List<string> FilePathContainsTexts { get; set; } = new();
+			public bool FilterByFilePathNotContains { get; set; }
+			public List<string> FilePathNotContainsTexts { get; set; } = new();
 			public bool EnablePartialClipDetection { get; set; }
 			public double PartialClipMinRatio { get; set; } = 0.10;
 			public double PartialClipSimilarityThreshold { get; set; } = 0.80;
+			public bool PartialClipRequireVisualMatch { get; set; } = true;
+			public double PartialClipVisualThreshold { get; set; } = 0.85;
 
 			// WebUI-only settings (not in VDF.Core Settings)
 			/// <summary>Whether to automatically load HQ thumbnails on the results page.</summary>
@@ -93,6 +115,13 @@ namespace VDF.Web.Services {
 				s.IncludeSubDirectories = dto.IncludeSubDirectories;
 				s.IncludeImages = dto.IncludeImages;
 				s.UsePHashing = dto.UsePHashing;
+				s.IgnoreReadOnlyFolders = dto.IgnoreReadOnlyFolders;
+				s.IgnoreReparsePoints = dto.IgnoreReparsePoints;
+				s.ExcludeHardLinks = dto.ExcludeHardLinks;
+				s.UseExifCreationDate = dto.UseExifCreationDate;
+				s.AlwaysRetryFailedSampling = dto.AlwaysRetryFailedSampling;
+				s.ExtendedFFToolsLogging = dto.ExtendedFFToolsLogging;
+				s.LogExcludedFiles = dto.LogExcludedFiles;
 				s.UseNativeFfmpegBinding = dto.UseNativeFfmpegBinding;
 				s.HardwareAccelerationMode = dto.HardwareAccelerationMode;
 				s.CustomFFArguments = dto.CustomFFArguments;
@@ -103,9 +132,23 @@ namespace VDF.Web.Services {
 				s.IgnoreWhitePixels = dto.IgnoreWhitePixels;
 				s.IncludeNonExistingFiles = dto.IncludeNonExistingFiles;
 				s.ScanAgainstEntireDatabase = dto.ScanAgainstEntireDatabase;
+				s.FolderMatchMode = dto.FolderMatchMode;
+				s.SameFolderDepth = dto.SameFolderDepth;
+				s.DurationDifferenceMinSeconds = dto.DurationDifferenceMinSeconds;
+				s.DurationDifferenceMaxSeconds = dto.DurationDifferenceMaxSeconds;
+				s.MaxSamplingDurationSeconds = dto.MaxSamplingDurationSeconds;
+				s.FilterByFileSize = dto.FilterByFileSize;
+				s.MinimumFileSize = dto.MinimumFileSize;
+				s.MaximumFileSize = dto.MaximumFileSize;
+				s.FilterByFilePathContains = dto.FilterByFilePathContains;
+				s.FilePathContainsTexts = dto.FilePathContainsTexts.ToList();
+				s.FilterByFilePathNotContains = dto.FilterByFilePathNotContains;
+				s.FilePathNotContainsTexts = dto.FilePathNotContainsTexts.ToList();
 				s.EnablePartialClipDetection = dto.EnablePartialClipDetection;
 				s.PartialClipMinRatio = dto.PartialClipMinRatio;
 				s.PartialClipSimilarityThreshold = dto.PartialClipSimilarityThreshold;
+				s.PartialClipRequireVisualMatch = dto.PartialClipRequireVisualMatch;
+				s.PartialClipVisualThreshold = dto.PartialClipVisualThreshold;
 				// WebUI-only
 				AutoLoadThumbnails = dto.AutoLoadThumbnails;
 				ThumbnailWidth = Math.Clamp(dto.ThumbnailWidth, 48, 960);
@@ -129,6 +172,13 @@ namespace VDF.Web.Services {
 					IncludeSubDirectories = s.IncludeSubDirectories,
 					IncludeImages = s.IncludeImages,
 					UsePHashing = s.UsePHashing,
+					IgnoreReadOnlyFolders = s.IgnoreReadOnlyFolders,
+					IgnoreReparsePoints = s.IgnoreReparsePoints,
+					ExcludeHardLinks = s.ExcludeHardLinks,
+					UseExifCreationDate = s.UseExifCreationDate,
+					AlwaysRetryFailedSampling = s.AlwaysRetryFailedSampling,
+					ExtendedFFToolsLogging = s.ExtendedFFToolsLogging,
+					LogExcludedFiles = s.LogExcludedFiles,
 					UseNativeFfmpegBinding = s.UseNativeFfmpegBinding,
 					HardwareAccelerationMode = s.HardwareAccelerationMode,
 					CustomFFArguments = s.CustomFFArguments,
@@ -139,9 +189,23 @@ namespace VDF.Web.Services {
 					IgnoreWhitePixels = s.IgnoreWhitePixels,
 					IncludeNonExistingFiles = s.IncludeNonExistingFiles,
 					ScanAgainstEntireDatabase = s.ScanAgainstEntireDatabase,
+					FolderMatchMode = s.FolderMatchMode,
+					SameFolderDepth = s.SameFolderDepth,
+					DurationDifferenceMinSeconds = s.DurationDifferenceMinSeconds,
+					DurationDifferenceMaxSeconds = s.DurationDifferenceMaxSeconds,
+					MaxSamplingDurationSeconds = s.MaxSamplingDurationSeconds,
+					FilterByFileSize = s.FilterByFileSize,
+					MinimumFileSize = s.MinimumFileSize,
+					MaximumFileSize = s.MaximumFileSize,
+					FilterByFilePathContains = s.FilterByFilePathContains,
+					FilePathContainsTexts = s.FilePathContainsTexts.ToList(),
+					FilterByFilePathNotContains = s.FilterByFilePathNotContains,
+					FilePathNotContainsTexts = s.FilePathNotContainsTexts.ToList(),
 					EnablePartialClipDetection = s.EnablePartialClipDetection,
 					PartialClipMinRatio = s.PartialClipMinRatio,
 					PartialClipSimilarityThreshold = s.PartialClipSimilarityThreshold,
+					PartialClipRequireVisualMatch = s.PartialClipRequireVisualMatch,
+					PartialClipVisualThreshold = s.PartialClipVisualThreshold,
 					// WebUI-only
 					AutoLoadThumbnails = AutoLoadThumbnails,
 					ThumbnailWidth = ThumbnailWidth,
