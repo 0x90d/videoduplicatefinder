@@ -77,6 +77,19 @@ namespace VDF.Core {
 		[ProtoIgnore]
 		internal bool invalid = true;
 
+		// Transient compare-phase snapshot, built by ScanEngine.ScanForDuplicates and
+		// cleared when the phase ends. compareGray holds the gray-byte arrays aligned
+		// with the scan's thumbnail position order, comparePHash the first-position
+		// pHash, and compareIndex the entry's position in the scan list. The per-pair
+		// hot path reads these instead of probing Dictionary<double,...> with computed
+		// keys and hashing the full path string for every candidate pair.
+		[ProtoIgnore]
+		internal byte[]?[]? compareGray;
+		[ProtoIgnore]
+		internal ulong? comparePHash;
+		[ProtoIgnore]
+		internal int compareIndex;
+
 		[ProtoIgnore]
 		internal bool IsImage {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
