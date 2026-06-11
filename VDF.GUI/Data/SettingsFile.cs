@@ -88,6 +88,20 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _CustomSelectionPresets, value);
 		}
 
+		bool _AutoApplySelectionPresetEnabled;
+		[JsonPropertyName("AutoApplySelectionPresetEnabled")]
+		public bool AutoApplySelectionPresetEnabled {
+			get => _AutoApplySelectionPresetEnabled;
+			set => this.RaiseAndSetIfChanged(ref _AutoApplySelectionPresetEnabled, value);
+		}
+		string _AutoApplySelectionPreset = string.Empty;
+		/// <summary>Name of the custom-selection preset applied automatically after every scan.</summary>
+		[JsonPropertyName("AutoApplySelectionPreset")]
+		public string AutoApplySelectionPreset {
+			get => _AutoApplySelectionPreset;
+			set => this.RaiseAndSetIfChanged(ref _AutoApplySelectionPreset, value);
+		}
+
 		string _LanguageCode = ResolveDefaultLanguageCode();
 		[JsonPropertyName("LanguageCode")]
 		public string LanguageCode {

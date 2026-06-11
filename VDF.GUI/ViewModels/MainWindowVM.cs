@@ -221,6 +221,61 @@ namespace VDF.GUI.ViewModels {
 		// items distort the checked-size total.
 		static long CheckedSizeOf(DuplicateItemVM item) => Math.Max(0, item.ItemInfo.SizeLong);
 
+		// ---- Selection undo (Ctrl+Z) ----
+		// Each step holds the items whose Checked state changed in one gesture and
+		// the value to restore. Bulk selection commands group their changes via
+		// BeginSelectionUndoBatch(); ungrouped changes (single checkbox clicks)
+		// become one step each.
+		const int MaxSelectionUndoSteps = 200;
+		readonly List<List<(DuplicateItemVM Item, bool OldChecked)>> selectionUndoStack = new();
+		List<(DuplicateItemVM Item, bool OldChecked)>? activeSelectionUndoBatch;
+		bool suppressSelectionUndoRecording;
+
+		internal IDisposable BeginSelectionUndoBatch() {
+			// Nested scopes (e.g. a preset auto-applied from another command) fold
+			// into the outer step so one Ctrl+Z reverts the whole gesture.
+			if (activeSelectionUndoBatch != null)
+				return System.Reactive.Disposables.Disposable.Empty;
+			var batch = activeSelectionUndoBatch = new();
+			return System.Reactive.Disposables.Disposable.Create(() => {
+				activeSelectionUndoBatch = null;
+				if (batch.Count > 0)
+					PushSelectionUndoStep(batch);
+			});
+		}
+
+		void RecordCheckedChangeForUndo(DuplicateItemVM item) {
+			if (suppressSelectionUndoRecording) return;
+			var entry = (item, !item.Checked); // PropertyChanged fires after the change
+			if (activeSelectionUndoBatch != null) {
+				activeSelectionUndoBatch.Add(entry);
+				return;
+			}
+			PushSelectionUndoStep(new() { entry });
+		}
+
+		void PushSelectionUndoStep(List<(DuplicateItemVM Item, bool OldChecked)> step) {
+			selectionUndoStack.Add(step);
+			if (selectionUndoStack.Count > MaxSelectionUndoSteps)
+				selectionUndoStack.RemoveAt(0);
+		}
+
+		public ReactiveCommand<Unit, Unit> UndoSelectionCommand => ReactiveCommand.Create(() => {
+			if (selectionUndoStack.Count == 0) return;
+			var step = selectionUndoStack[^1];
+			selectionUndoStack.RemoveAt(selectionUndoStack.Count - 1);
+			suppressSelectionUndoRecording = true;
+			try {
+				// Restore in reverse so items touched twice in one step end up
+				// at their original state.
+				for (int i = step.Count - 1; i >= 0; i--)
+					step[i].Item.Checked = step[i].OldChecked;
+			}
+			finally {
+				suppressSelectionUndoRecording = false;
+			}
+		});
+
 		// Live count of checked items per group, maintained alongside the checked
 		// counters. The "groups with checked items" filter and sort previously
 		// rescanned the whole duplicates list per row, which is quadratic on
@@ -357,11 +412,13 @@ namespace VDF.GUI.ViewModels {
 				DuplicatesCheckedCounter = 0;
 				DuplicatesCheckedSizeInternal = 0;
 				checkedCountByGroup.Clear();
+				selectionUndoStack.Clear();
 			}
 		}
 
 		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName != nameof(DuplicateItemVM.Checked) || sender == null) return;
+			RecordCheckedChangeForUndo((DuplicateItemVM)sender);
 			if (((DuplicateItemVM)sender).Checked) {
 				DuplicatesCheckedCounter++;
 				DuplicatesCheckedSizeInternal += CheckedSizeOf((DuplicateItemVM)sender);
@@ -547,6 +604,19 @@ namespace VDF.GUI.ViewModels {
 				BuildDuplicatesView();
 				RebuildSearchPathIndex();
 				RefreshGroupStats();
+
+				if (SettingsFile.Instance.AutoApplySelectionPresetEnabled &&
+					!string.IsNullOrEmpty(SettingsFile.Instance.AutoApplySelectionPreset)) {
+					var preset = SettingsFile.Instance.CustomSelectionPresets
+						.FirstOrDefault(p => p.Name == SettingsFile.Instance.AutoApplySelectionPreset);
+					if (preset != null) {
+						RunCustomSelection(preset.Data);
+						Logger.Instance.Info(string.Format(App.Lang["Log.AutoAppliedPreset"], preset.Name));
+					}
+					else {
+						Logger.Instance.Info(string.Format(App.Lang["Log.AutoApplyPresetMissing"], SettingsFile.Instance.AutoApplySelectionPreset));
+					}
+				}
 
 				if (completedScheduledScan && SettingsFile.Instance.NotifyOnScheduledScanComplete) {
 					_ = MessageBoxService.Show(App.Lang["Message.ScheduledScanCompleted"]);
@@ -1108,6 +1178,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> ToggleCheckboxCommand => ReactiveCommand.Create(() => {
+			using var _ = BeginSelectionUndoBatch();
 			foreach (var item in GetSelectedDuplicates()) {
 				if (item is not DuplicateItemVM currentItem) return;
 				currentItem.Checked = !currentItem.Checked;
@@ -1458,6 +1529,7 @@ Non-Windows setup:
 				ResolveCriteria(QualityCriteriaOrder),
 				d => d.ItemInfo.IsImage);
 
+			using var _ = BeginSelectionUndoBatch();
 			keep.Checked = false;
 			foreach (var item in groupItems)
 				if (item.ItemInfo.Path != keep.ItemInfo.Path)
@@ -1661,6 +1733,19 @@ Non-Windows setup:
 		});
 
 		public ReactiveCommand<Unit, Unit> NavigateNextGroupCommand => ReactiveCommand.Create(() => {
+			NavigateGroup(forward: true);
+		});
+
+		// Keyboard triage (Alt+K): keep the highlighted item — check everything
+		// else in its group — then advance to the next group.
+		public ReactiveCommand<Unit, Unit> KeepHighlightedAndAdvanceCommand => ReactiveCommand.Create(() => {
+			if (GetSelectedDuplicateItem() is DuplicateItemVM keeper) {
+				using var _ = BeginSelectionUndoBatch();
+				keeper.Checked = false;
+				foreach (var item in Duplicates)
+					if (item.ItemInfo.GroupId == keeper.ItemInfo.GroupId && !ReferenceEquals(item, keeper))
+						item.Checked = true;
+			}
 			NavigateGroup(forward: true);
 		});
 

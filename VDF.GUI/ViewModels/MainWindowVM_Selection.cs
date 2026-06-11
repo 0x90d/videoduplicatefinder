@@ -95,6 +95,7 @@ namespace VDF.GUI.ViewModels {
 								})
 								.ToList();
 
+			using var undoBatch = BeginSelectionUndoBatch();
 			foreach (var result in matchResults) {
 				if (result.Matches.Count == 0)
 					continue;
@@ -119,6 +120,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
+			using var undoBatch = BeginSelectionUndoBatch();
 			HashSet<Guid> blackListGroupID = new();
 			var scoped = ScopedDuplicates();
 
@@ -137,6 +139,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
+			using var undoBatch = BeginSelectionUndoBatch();
 			HashSet<Guid> blackListGroupID = new();
 			var scoped = ScopedDuplicates();
 
@@ -157,6 +160,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckOldestCommand => ReactiveCommand.Create(() => {
+			using var undoBatch = BeginSelectionUndoBatch();
 			HashSet<Guid> blackListGroupID = new();
 			var scoped = ScopedDuplicates();
 
@@ -177,6 +181,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckNewestCommand => ReactiveCommand.Create(() => {
+			using var undoBatch = BeginSelectionUndoBatch();
 			HashSet<Guid> blackListGroupID = new();
 			var scoped = ScopedDuplicates();
 
@@ -202,6 +207,7 @@ namespace VDF.GUI.ViewModels {
 			if (result == null || result.Count == 0) return;
 			QualityCriteriaOrder = result;
 
+			using var undoBatch = BeginSelectionUndoBatch();
 			HashSet<Guid> blackListGroupID = new();
 			var scoped = ScopedDuplicates();
 
@@ -230,6 +236,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckMissingFilesCommand => ReactiveCommand.Create(() => {
+			using var undoBatch = BeginSelectionUndoBatch();
 			foreach (var item in ScopedDuplicates().Where(d => d.IsVisibleInFilter))
 				if (!File.Exists(item.ItemInfo.Path))
 					item.Checked = true;
@@ -243,11 +250,13 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> ClearCheckedItemsCommand => ReactiveCommand.Create(() => {
+			using var undoBatch = BeginSelectionUndoBatch();
 			foreach (var item in ScopedDuplicates().Where(d => d.IsVisibleInFilter))
 				item.Checked = false;
 		});
 
 		public ReactiveCommand<Unit, Unit> InvertCheckedItemsCommand => ReactiveCommand.Create(() => {
+			using var undoBatch = BeginSelectionUndoBatch();
 			foreach (var item in ScopedDuplicates().Where(d => d.IsVisibleInFilter))
 				item.Checked = !item.Checked;
 		});
@@ -375,6 +384,7 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		internal void RunCustomSelection(CustomSelectionData data) {
+			using var undoBatch = BeginSelectionUndoBatch();
 
 			IEnumerable<DuplicateItemVM> dups = ScopedDuplicates().Where(x => x.IsVisibleInFilter);
 			if (data.IgnoreGroupsWithCheckedItems) {

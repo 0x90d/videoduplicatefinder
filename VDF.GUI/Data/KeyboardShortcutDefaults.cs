@@ -38,6 +38,8 @@ namespace VDF.GUI.Data {
 			["RemoveCheckedItemsFromList"] = "",
 			["NavigateNextGroup"] = "Ctrl+Down",
 			["NavigatePreviousGroup"] = "Ctrl+Up",
+			["KeepHighlightedAndAdvance"] = "Alt+K",
+			["UndoSelection"] = "Ctrl+Z",
 		};
 
 		public static readonly Dictionary<string, string> DatabaseViewerDefaults = new() {

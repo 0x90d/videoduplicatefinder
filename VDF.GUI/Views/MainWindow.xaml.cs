@@ -142,6 +142,8 @@ namespace VDF.GUI.Views {
 				["RemoveCheckedItemsFromList"] = vm.RemoveCheckedItemsFromListCommand,
 				["NavigateNextGroup"] = vm.NavigateNextGroupCommand,
 				["NavigatePreviousGroup"] = vm.NavigatePreviousGroupCommand,
+				["KeepHighlightedAndAdvance"] = vm.KeepHighlightedAndAdvanceCommand,
+				["UndoSelection"] = vm.UndoSelectionCommand,
 			};
 			var dataGrid = this.FindControl<DataGrid>("dataGridGrouping")!;
 			KeyboardShortcutManager.Instance.ApplyBindings(dataGrid, commandMap);
