@@ -15,7 +15,7 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 
 # Partial Clip Detection
 
-VDF can detect when a shorter video is a partial clip of a longer one — for example, a scene ripped from a movie, or a clip saved from a longer recording. This works even when there is no visual overlap between the two files.
+VDF can detect when a shorter video is a partial clip of a longer one — for example, a scene ripped from a movie, or a clip saved from a longer recording. Candidates are found by audio fingerprinting, so it catches clips the normal visual scan misses; by default each audio match is then visually confirmed by comparing frames at the matched offset.
 
 It runs as an **optional second phase** after the normal visual duplicate scan, using an audio fingerprinting pipeline (Chromaprint-style chroma extraction + sliding-window Hamming similarity matching). Matched pairs appear in the duplicate list with a **Clip Offset** column showing where in the source the clip starts.
 
@@ -27,6 +27,8 @@ In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detectio
 |---------|---------|-------------|
 | Min clip / source ratio (%) | 10 | Minimum clip duration as a percentage of the source duration. Clips shorter than this are ignored. |
 | Min audio similarity (%) | 80 | Minimum average Hamming similarity for the sliding-window fingerprint match to be accepted. |
+| Require visual confirmation | on | Reject audio matches whose frames at the matched offset don't also look similar. |
+| Min visual similarity (%) | 85 | Minimum frame similarity for the visual confirmation step. |
 
 > **Note:** Partial clip detection requires audio tracks in both files. Videos without audio are skipped.
 
@@ -225,10 +227,15 @@ To change the port:
 ASPNETCORE_URLS=http://+:8080 ./VDF.Web
 ```
 
-Settings and the scan database are saved to:
+Web settings and login credentials are saved to:
 - Windows: `%APPDATA%\VDF\`
-- Linux: `~/.config/VDF/`
+- Linux: `~/.config/VDF/` (or `$XDG_CONFIG_HOME/VDF/`)
 - macOS: `~/Library/Preferences/VDF/`
+
+The scan database (`ScannedFiles.db`) is stored next to the executable if that folder is writable; otherwise it falls back to:
+- Windows: `%LOCALAPPDATA%\VDF\`
+- Linux: `~/.local/state/VDF/` (or `$XDG_STATE_HOME/VDF/`)
+- macOS: `~/Library/Application Support/VDF/`
 
 ---
 
