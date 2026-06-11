@@ -401,6 +401,16 @@ namespace VDF.Web.Services {
 		/// <summary>Number of file entries currently stored in the scan database.</summary>
 		public int DatabaseEntryCount => VDF.Core.Utils.DatabaseUtils.Database.Count;
 
+		/// <summary>
+		/// Runs the single-pair detection diagnostic with the current settings and
+		/// returns the step-by-step report. See <see cref="ScanEngine.TestFilePairAsync"/>.
+		/// </summary>
+		public Task<string> TestFilePairAsync(string fileA, string fileB) {
+			if (State == ScanState.Scanning || State == ScanState.Comparing)
+				return Task.FromResult("A scan is currently running. Wait for it to finish before running the file pair test.");
+			return _engine.TestFilePairAsync(fileA, fileB);
+		}
+
 		void Notify() => StateChanged?.Invoke();
 
 		public void Dispose() => _cts.Dispose();

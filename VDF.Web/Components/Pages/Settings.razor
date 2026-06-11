@@ -349,6 +349,33 @@
     </label>
 </section>
 
+<section class="settings-section">
+    <h2>Test Two Files</h2>
+    <p style="margin-top:0;">
+        Enter the full paths of two files you believe are duplicates and run the test.
+        They are compared with the current settings (saving is not required) and the report
+        explains at which step the pair passes or fails detection.
+    </p>
+    <label>
+        File A
+        <input type="text" placeholder="/videos/example1.mp4"
+               value="@_testFileA"
+               @onchange="e => _testFileA = e.Value?.ToString() ?? string.Empty" />
+    </label>
+    <label>
+        File B
+        <input type="text" placeholder="/videos/example2.mp4"
+               value="@_testFileB"
+               @onchange="e => _testFileB = e.Value?.ToString() ?? string.Empty" />
+    </label>
+    <div class="start-row" style="margin-top:0.5rem;">
+        <button class="primary" @onclick="RunFilePairTest" disabled="@_testBusy">@(_testBusy ? "Running…" : "Run Test")</button>
+    </div>
+    @if (_testResult != null) {
+        <pre style="white-space:pre-wrap;overflow-x:auto;background:var(--code-bg,#1e1e1e22);padding:0.75rem;border-radius:6px;margin-top:0.75rem;">@_testResult</pre>
+    }
+</section>
+
 @code {
     string? _saveMsg;
     bool _saveFailed;
@@ -356,6 +383,22 @@
     bool _confirmClear;
     string? _dbMsg;
     bool _dbMsgIsError;
+    string _testFileA = string.Empty;
+    string _testFileB = string.Empty;
+    bool _testBusy;
+    string? _testResult;
+
+    async Task RunFilePairTest() {
+        _testBusy = true;
+        _testResult = null;
+        try {
+            _testResult = await Scan.TestFilePairAsync(_testFileA, _testFileB);
+        }
+        catch (Exception ex) {
+            _testResult = $"Test failed: {ex.Message}";
+        }
+        _testBusy = false;
+    }
 
     void SaveSettings() {
         bool ok = Scan.SaveSettings();

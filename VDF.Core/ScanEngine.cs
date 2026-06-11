@@ -33,7 +33,7 @@ using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 
 namespace VDF.Core {
-	public sealed class ScanEngine {
+	public sealed partial class ScanEngine {
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
 		public Settings Settings { get; set; } = new Settings();
 		public event EventHandler<ScanProgressChangedEventArgs>? Progress;

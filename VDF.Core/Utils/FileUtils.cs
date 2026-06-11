@@ -54,6 +54,8 @@ namespace VDF.Core.Utils {
 		};
 		static readonly FrozenSet<string> VideoExtensionSet = VideoExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 		static readonly FrozenSet<string> AllExtensionSet = VideoExtensions.Concat(ImageExtensions).ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+		internal static bool IsVideoExtension(string extension) => VideoExtensionSet.Contains(extension);
+		internal static bool IsMediaExtension(string extension) => AllExtensionSet.Contains(extension);
 		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken) {
 			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,
