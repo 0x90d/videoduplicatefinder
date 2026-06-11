@@ -93,6 +93,27 @@ public class ThumbnailRetryTests {
 	}
 
 	[Fact]
+	public void SmallerExtractionWidth_IsRetried_WhenRequiredWidthGiven() {
+		// #777: explicit reloads refresh thumbnails extracted at a smaller width.
+		var item = new DuplicateItem { ThumbnailWidth = 100 };
+		item.SetThumbnails(new List<byte[]> { NewRealThumb() }, new List<TimeSpan> { TimeSpan.Zero });
+
+		Assert.True(ScanEngine.ShouldRetryThumbnails(item, placeholder: null, requiredWidth: 300));
+		Assert.False(ScanEngine.ShouldRetryThumbnails(item, placeholder: null, requiredWidth: 100));
+		// No requiredWidth (automatic post-scan pass) -> width is ignored.
+		Assert.False(ScanEngine.ShouldRetryThumbnails(item, placeholder: null));
+	}
+
+	[Fact]
+	public void UnknownExtractionWidth_IsNotRetriedForWidth() {
+		// Older backups have no recorded width (0) -- don't force a mass re-extract.
+		var item = new DuplicateItem { ThumbnailWidth = 0 };
+		item.SetThumbnails(new List<byte[]> { NewRealThumb() }, new List<TimeSpan> { TimeSpan.Zero });
+
+		Assert.False(ScanEngine.ShouldRetryThumbnails(item, placeholder: null, requiredWidth: 300));
+	}
+
+	[Fact]
 	public void PlaceholderAlongsideRealThumbs_IsNotRetried() {
 		// Mixed list (count > 1) means at least one real thumb succeeded — not a candidate
 		// for retry even if one of the entries happens to be the placeholder reference.

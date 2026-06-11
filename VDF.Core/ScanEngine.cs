@@ -1711,9 +1711,13 @@ namespace VDF.Core {
 		/// otherwise a "Load thumbnails for group" click silently no-ops on the very items
 		/// the user is trying to recover (issue #748).
 		/// </summary>
-		internal static bool ShouldRetryThumbnails(DuplicateItem item, byte[]? placeholder) {
+		internal static bool ShouldRetryThumbnails(DuplicateItem item, byte[]? placeholder, int requiredWidth = 0) {
 			if (item.ImageList == null || item.ImageList.Count == 0) return true;
 			if (placeholder != null && item.ImageList.Count == 1 && ReferenceEquals(item.ImageList[0], placeholder)) return true;
+			// Explicit reloads also refresh thumbnails extracted at a smaller width than
+			// the current setting (issue #777). Width 0 = unknown (older backups) — those
+			// stay as-is rather than forcing a re-extract of everything.
+			if (requiredWidth > 0 && item.ThumbnailWidth > 0 && item.ThumbnailWidth < requiredWidth) return true;
 			return false;
 		}
 
@@ -1733,9 +1737,12 @@ namespace VDF.Core {
 		}
 
 		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {
-			var dupList = items.Where(d => ShouldRetryThumbnails(d, NoThumbnailImage)).ToList();
+			// Explicit reloads also refresh thumbnails whose extraction width is below the
+			// current setting (issue #777); the automatic post-scan pass does not.
+			int requiredWidth = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
+			var dupList = items.Where(d => ShouldRetryThumbnails(d, NoThumbnailImage, requiredWidth)).ToList();
 			if (dupList.Count == 0) {
-				Logger.Instance.Info("Explicit thumbnail retry: nothing to do (all selected items already have thumbnails).");
+				Logger.Instance.Info("Explicit thumbnail retry: nothing to do (all selected items already have up-to-date thumbnails).");
 				return;
 			}
 			EnsureThumbnailPositions();
@@ -1760,6 +1767,7 @@ namespace VDF.Core {
 							return ValueTask.CompletedTask;
 						}
 						list.Add(b);
+						entry.ThumbnailWidth = maxDim;
 						Interlocked.Increment(ref loaded);
 					}
 					else {
@@ -1780,14 +1788,17 @@ namespace VDF.Core {
 						if (list.Count == 0 && NoThumbnailImage != null) {
 							list.Add(NoThumbnailImage);
 							timeStamps.Add(TimeSpan.Zero);
+							entry.ThumbnailWidth = 0;
 							Logger.Instance.Info($"Using placeholder for '{entry.Path}' — all {positionList.Count} sample position(s) failed.");
 							Interlocked.Increment(ref placeholders);
 						}
 						else if (list.Count > 0 && failedPositions > 0) {
+							entry.ThumbnailWidth = maxDim;
 							Logger.Instance.Info($"Loaded {list.Count}/{positionList.Count} thumbnail(s) for '{entry.Path}' ({failedPositions} position(s) failed).");
 							Interlocked.Increment(ref loaded);
 						}
 						else if (list.Count > 0) {
+							entry.ThumbnailWidth = maxDim;
 							Interlocked.Increment(ref loaded);
 						}
 					}
@@ -1838,6 +1849,7 @@ namespace VDF.Core {
 							return ValueTask.CompletedTask;
 						}
 						list.Add(b);
+						entry.ThumbnailWidth = maxDim;
 						Interlocked.Increment(ref loaded);
 					}
 					else {
@@ -1858,14 +1870,17 @@ namespace VDF.Core {
 						if (list.Count == 0 && NoThumbnailImage != null) {
 							list.Add(NoThumbnailImage);
 							timeStamps.Add(TimeSpan.Zero);
+							entry.ThumbnailWidth = 0;
 							Logger.Instance.Info($"Using placeholder for '{entry.Path}' — all {positionList.Count} sample position(s) failed.");
 							Interlocked.Increment(ref placeholders);
 						}
 						else if (list.Count > 0 && failedPositions > 0) {
+							entry.ThumbnailWidth = maxDim;
 							Logger.Instance.Info($"Loaded {list.Count}/{positionList.Count} thumbnail(s) for '{entry.Path}' ({failedPositions} position(s) failed).");
 							Interlocked.Increment(ref loaded);
 						}
 						else if (list.Count > 0) {
+							entry.ThumbnailWidth = maxDim;
 							Interlocked.Increment(ref loaded);
 						}
 					}
