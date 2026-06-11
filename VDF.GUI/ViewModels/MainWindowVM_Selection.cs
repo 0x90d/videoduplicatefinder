@@ -327,6 +327,18 @@ namespace VDF.GUI.ViewModels {
 			});
 		});
 
+		public ReactiveCommand<Unit, Unit> CreateHardLinksForCheckedItemsCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(() => {
+				DeleteInternal(fromDisk: false, blackList: false, createHardLinksInstead: true);
+			});
+		});
+
+		public ReactiveCommand<Unit, Unit> CreateHardLinksForCheckedItemsAndBlacklistCommand => ReactiveCommand.Create(() => {
+			Dispatcher.UIThread.InvokeAsync(() => {
+				DeleteInternal(fromDisk: false, blackList: true, createHardLinksInstead: true);
+			});
+		});
+
 		public ReactiveCommand<Unit, Unit> ExportCheckedItemsCleanupDryRunReportCommand => ReactiveCommand.CreateFromTask(async () => {
 			var toDelete = CheckedItemsToDelete;
 			if (toDelete.Count == 0) {

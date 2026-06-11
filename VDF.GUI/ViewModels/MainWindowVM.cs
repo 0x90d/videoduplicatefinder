@@ -1556,16 +1556,20 @@ Non-Windows setup:
 									List<DuplicateItemVM>? toDelete = null,
 									bool blackList = false,
 									bool createSymbolLinksInstead = false,
-									bool permanently = false) {
+									bool permanently = false,
+									bool createHardLinksInstead = false) {
 			if (Duplicates.Count == 0) return;
 			toDelete ??= CheckedItemsToDelete;
 			if (toDelete.Count == 0) return;
+			bool createLinks = createSymbolLinksInstead || createHardLinksInstead;
 
 			long totalSizeToDelete = 0;
 			foreach (var item in toDelete)
 				totalSizeToDelete += CheckedSizeOf(item);
 
-			string confirmMessage = fromDisk
+			string confirmMessage = createLinks
+					? App.Lang["Message.ReplaceWithLinksConfirm"]
+					: fromDisk
 					? (!permanently ? App.Lang["Message.DeleteToTrashConfirm"] : App.Lang["Message.DeletePermanentlyConfirm"])
 					: (blackList ? App.Lang["Message.DeleteFromListBlacklistConfirm"] : App.Lang["Message.DeleteFromListConfirm"]);
 			confirmMessage += Environment.NewLine + Environment.NewLine +
@@ -1584,26 +1588,36 @@ Non-Windows setup:
 
 			var actuallyDeleted = new HashSet<DuplicateItemVM>(toDelete.Count, ReferenceEqualityComparer<DuplicateItemVM>.Instance);
 			long freedBytes = 0;
-			foreach (var dub in toDelete) {
-				try {
-					var fe = new FileEntry(dub.ItemInfo.Path);
-					if (fromDisk && !File.Exists(dub.ItemInfo.Path)) {
-						// File is already gone — treat as successfully deleted
-						// so the entry is still removed from the list and database.
-						Logger.Instance.Info($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
+			int total = toDelete.Count;
+			IsBusy = true;
+			IsBusyOverlayText = string.Format(App.Lang["Busy.Deleting"], 0, total);
+
+			try {
+				// File I/O and database updates run off the UI thread; thousands of
+				// deletions previously froze the window for their full duration.
+				await Task.Run(() => {
+					var progressTimer = Stopwatch.StartNew();
+					int done = 0;
+					void ReportProgress() {
+						if (progressTimer.ElapsedMilliseconds < 300) return;
+						progressTimer.Restart();
+						int current = done;
+						Dispatcher.UIThread.Post(() =>
+							IsBusyOverlayText = string.Format(App.Lang["Busy.Deleting"], current, total));
 					}
-					else if (fromDisk) {
-						if (createSymbolLinksInstead) {
-							var keeper = keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var k) ? k : null;
-							if (keeper == null)
-								throw new Exception($"Cannot create symlink for '{dub.ItemInfo.Path}' because all items in this group are selected");
-							File.CreateSymbolicLink(dub.ItemInfo.Path, keeper.ItemInfo.Path);
-							freedBytes += dub.ItemInfo.SizeLong;
-						}
-						else if (!permanently && CoreUtils.IsWindows) {
+
+					// Windows recycle-bin deletes go through a single batched shell
+					// operation — one SHFileOperation per file pays the full shell
+					// round-trip each time and is dramatically slower for big batches.
+					// Per-file success is determined afterwards by re-checking existence.
+					bool batchedRecycle = fromDisk && !permanently && !createLinks && CoreUtils.IsWindows;
+					var batchRecycled = new HashSet<DuplicateItemVM>(ReferenceEqualityComparer<DuplicateItemVM>.Instance);
+					if (batchedRecycle) {
+						var existing = toDelete.Where(d => File.Exists(d.ItemInfo.Path)).ToList();
+						if (existing.Count > 0) {
 							var fs = new FileUtils.SHFILEOPSTRUCT {
 								wFunc = FileUtils.FileOperationType.FO_DELETE,
-								pFrom = dub.ItemInfo.Path + '\0' + '\0',
+								pFrom = string.Join('\0', existing.Select(d => d.ItemInfo.Path)) + "\0\0",
 								fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
 										 FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
 										 FileUtils.FileOperationFlags.FOF_NOERRORUI |
@@ -1611,31 +1625,84 @@ Non-Windows setup:
 							};
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
-								throw new Exception($"SHFileOperation returned: {result:X}");
-							freedBytes += dub.ItemInfo.SizeLong;
-						}
-						else if (!permanently) {
-							// Linux/macOS: attempt to move to system trash, fall back to permanent delete
-							if (!FileUtils.MoveToTrash(dub.ItemInfo.Path))
-								File.Delete(dub.ItemInfo.Path);
-							freedBytes += dub.ItemInfo.SizeLong;
-						}
-						else {
-							File.Delete(dub.ItemInfo.Path);
-							freedBytes += dub.ItemInfo.SizeLong;
+								Logger.Instance.Info($"SHFileOperation returned {result:X} for a batch of {existing.Count} file(s); checking which files were actually recycled.");
+							foreach (var d in existing)
+								batchRecycled.Add(d);
 						}
 					}
 
-					if (blackList)
-						ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
-					else
-						ScanEngine.RemoveFromDatabase(fe);
+					foreach (var dub in toDelete) {
+						try {
+							// Path-only entry for the database lookup; FileEntry(string)
+							// stats the file and throws once it's gone.
+							var fe = new FileEntry { Path = dub.ItemInfo.Path };
+							bool exists = File.Exists(dub.ItemInfo.Path);
 
-					actuallyDeleted.Add(dub);
-				}
-				catch (Exception ex) {
-					Logger.Instance.Info($"Failed to delete '{dub.ItemInfo.Path}': {ex.Message}\n{ex.StackTrace}");
-				}
+							if (createLinks) {
+								if (!exists) {
+									Logger.Instance.Info($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
+								}
+								else {
+									var keeper = keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var k) ? k : null;
+									if (keeper == null)
+										throw new Exception($"Cannot create a link for '{dub.ItemInfo.Path}' because all items in this group are selected");
+									if (!File.Exists(keeper.ItemInfo.Path))
+										throw new Exception($"Cannot create a link for '{dub.ItemInfo.Path}' because the file to keep ('{keeper.ItemInfo.Path}') does not exist");
+									// The link target path must be free before the link can be created.
+									File.Delete(dub.ItemInfo.Path);
+									if (createHardLinksInstead)
+										HardLinkUtils.CreateHardLink(dub.ItemInfo.Path, keeper.ItemInfo.Path);
+									else
+										File.CreateSymbolicLink(dub.ItemInfo.Path, keeper.ItemInfo.Path);
+									freedBytes += CheckedSizeOf(dub);
+								}
+							}
+							else if (fromDisk) {
+								if (!exists) {
+									if (batchRecycled.Contains(dub)) {
+										freedBytes += CheckedSizeOf(dub);
+									}
+									else {
+										// File was already gone — treat as successfully deleted
+										// so the entry is still removed from the list and database.
+										Logger.Instance.Info($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
+									}
+								}
+								else if (batchedRecycle) {
+									// Batch ran but this file is still there.
+									throw new Exception("the shell did not move the file to the recycle bin");
+								}
+								else if (!permanently) {
+									// Linux/macOS: attempt to move to system trash, fall back to permanent delete
+									if (!FileUtils.MoveToTrash(dub.ItemInfo.Path))
+										File.Delete(dub.ItemInfo.Path);
+									freedBytes += CheckedSizeOf(dub);
+								}
+								else {
+									File.Delete(dub.ItemInfo.Path);
+									freedBytes += CheckedSizeOf(dub);
+								}
+							}
+
+							if (blackList)
+								ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
+							else
+								ScanEngine.RemoveFromDatabase(fe);
+
+							actuallyDeleted.Add(dub);
+						}
+						catch (Exception ex) {
+							Logger.Instance.Info($"Failed to delete '{dub.ItemInfo.Path}': {ex.Message}\n{ex.StackTrace}");
+						}
+						finally {
+							done++;
+							ReportProgress();
+						}
+					}
+				});
+			}
+			finally {
+				IsBusy = false;
 			}
 
 			if (freedBytes > 0)

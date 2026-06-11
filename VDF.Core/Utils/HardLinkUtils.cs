@@ -56,6 +56,26 @@ namespace VDF.Core.Utils {
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static partial bool GetFileInformationByHandle(SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
 
+		[LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16, EntryPoint = "CreateHardLinkW")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static partial bool CreateHardLinkW(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
+
+		/// <summary>
+		/// Creates a hard link at <paramref name="linkPath"/> referencing the same data as
+		/// <paramref name="existingFilePath"/>. Throws <see cref="IOException"/> on failure
+		/// (most commonly: the two paths are on different volumes, or the filesystem
+		/// doesn't support hard links).
+		/// </summary>
+		public static void CreateHardLink(string linkPath, string existingFilePath) {
+			if (CoreUtils.IsWindows) {
+				if (!CreateHardLinkW(linkPath, existingFilePath, IntPtr.Zero))
+					throw new IOException($"Failed to create hard link '{linkPath}' -> '{existingFilePath}' (Win32 error {Marshal.GetLastPInvokeError()}). Note: hard links require both paths to be on the same volume.");
+				return;
+			}
+			if (Mono.Unix.Native.Syscall.link(existingFilePath, linkPath) != 0)
+				throw new IOException($"Failed to create hard link '{linkPath}' -> '{existingFilePath}' (errno {Mono.Unix.Native.Stdlib.GetLastError()}). Note: hard links require both paths to be on the same filesystem.");
+		}
+
 		[StructLayout(LayoutKind.Sequential)]
 		private struct BY_HANDLE_FILE_INFORMATION {
 			public uint FileAttributes;

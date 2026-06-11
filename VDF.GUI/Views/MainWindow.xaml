@@ -1061,6 +1061,36 @@
                                                             </StackPanel>
                                                         </MenuItem.Header>
                                                     </MenuItem>
+                                                    <MenuItem Command="{Binding CreateHardLinksForCheckedItemsCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.HardLinkTooltip]}">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Viewbox Width="16" Height="16">
+                                                                    <Canvas Width="24" Height="24">
+                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListAndHardLinks]}" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
+                                                    <MenuItem Command="{Binding CreateHardLinksForCheckedItemsAndBlacklistCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.HardLinkTooltip]}">
+                                                        <MenuItem.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Viewbox Width="16" Height="16">
+                                                                    <Canvas Width="24" Height="24">
+                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                                <TextBlock
+                                                                    Margin="5,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListHardLinksExclude]}" />
+                                                            </StackPanel>
+                                                        </MenuItem.Header>
+                                                    </MenuItem>
                                                     <Separator />
                                                     <MenuItem Command="{Binding CopyCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyToFolderEllipsis]}" />
                                                     <MenuItem Command="{Binding MoveCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
