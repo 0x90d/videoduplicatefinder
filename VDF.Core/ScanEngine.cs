@@ -279,7 +279,12 @@ namespace VDF.Core {
 			foreach (string path in Settings.IncludeList) {
 				if (cancellationToken.IsCancellationRequested)
 					return;
-				if (!Directory.Exists(path)) continue;
+				if (!Directory.Exists(path)) {
+					// A disconnected network drive or removed folder would otherwise be
+					// skipped without a trace, making the scan look broken (0 files found).
+					Logger.Instance.Info($"WARNING: Search directory not found or inaccessible, skipping: '{path}'. If this is a network drive, make sure it is connected (or use the \\\\server\\share UNC path instead of a drive letter).");
+					continue;
+				}
 
 				foreach (FileInfo file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreReparsePoints,
 					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList(), cancellationToken)) {
