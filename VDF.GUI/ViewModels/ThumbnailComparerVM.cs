@@ -24,7 +24,6 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using ReactiveUI;
-using SixLabors.ImageSharp;
 using VDF.Core.FFTools;
 using VDF.GUI.Data;
 using VDF.GUI.Utils;

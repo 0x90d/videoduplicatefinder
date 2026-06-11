@@ -18,24 +18,7 @@ using VDF.Core.Utils;
 
 namespace VDF.Core.Tests.Utils;
 
-public class ImageLoaderTests {
-	[Theory]
-	[InlineData(@"C:\photos\IMG_0001.heic")]
-	[InlineData(@"C:\photos\IMG_0001.HEIC")]
-	[InlineData("/photos/IMG_0001.heif")]
-	[InlineData("/photos/IMG_0001.Heif")]
-	public void RequiresFfmpegDecoding_HeicHeif_True(string path) =>
-		Assert.True(ImageLoader.RequiresFfmpegDecoding(path));
-
-	[Theory]
-	[InlineData(@"C:\photos\IMG_0001.jpg")]
-	[InlineData(@"C:\photos\IMG_0001.png")]
-	[InlineData(@"C:\photos\IMG_0001.webp")]
-	[InlineData(@"C:\videos\clip.mp4")]
-	[InlineData(@"C:\photos\noextension")]
-	public void RequiresFfmpegDecoding_OtherFormats_False(string path) =>
-		Assert.False(ImageLoader.RequiresFfmpegDecoding(path));
-
+public class ImageExtensionTests {
 	[Fact]
 	public void HeicHeif_AreRecognisedAsImages() {
 		Assert.Contains(".heic", FileUtils.ImageExtensions);

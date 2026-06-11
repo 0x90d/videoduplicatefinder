@@ -15,8 +15,6 @@
 //
 
 using System.Collections.Concurrent;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Jpeg;
 using VDF.Core;
 using VDF.Web.Services;
 
@@ -117,15 +115,18 @@ app.MapGet("/thumbnail", async (HttpContext ctx, ScanService scan) => {
 	}
 
 	var images = item.ImageList;
-	if (images.Count == 0) {
+	if (images.Count == 0 || images[0].Length == 0) {
 		// Thumbnail not yet retrieved — return 204 so the browser shows nothing
 		ctx.Response.StatusCode = 204;
 		return;
 	}
 
-	ctx.Response.ContentType = "image/jpeg";
+	// ImageList holds encoded bytes — JPEG normally, PNG for the placeholder icon.
+	byte[] thumb = images[0];
+	bool isPng = thumb.Length > 4 && thumb[0] == 0x89 && thumb[1] == 'P' && thumb[2] == 'N' && thumb[3] == 'G';
+	ctx.Response.ContentType = isPng ? "image/png" : "image/jpeg";
 	ctx.Response.Headers.CacheControl = "public, max-age=3600";
-	await images[0].SaveAsync(ctx.Response.Body, new JpegEncoder { Quality = 85 });
+	await ctx.Response.Body.WriteAsync(thumb);
 });
 
 // HQ thumbnail endpoint — extracts a fresh frame using configurable resolution and quality.
@@ -150,15 +151,8 @@ app.MapGet("/thumbnail/hq", async (HttpContext ctx, ScanService scan) => {
 	string cacheKey = $"{path}|{position.TotalSeconds:F2}|{width}|{quality}";
 
 	if (!hqThumbCache.TryGetValue(cacheKey, out var jpeg)) {
-		jpeg = await Task.Run(() => ScanEngine.ExtractThumbnailJpeg(path, position, width));
-		if (jpeg != null && jpeg.Length > 0 && quality < 90) {
-			// Re-encode at requested quality if lower than extraction default (90)
-			using var ms = new MemoryStream(jpeg);
-			using var img = SixLabors.ImageSharp.Image.Load(ms);
-			using var outMs = new MemoryStream();
-			await img.SaveAsJpegAsync(outMs, new JpegEncoder { Quality = quality });
-			jpeg = outMs.ToArray();
-		}
+		// FFmpeg encodes at the requested quality directly — no re-encode pass needed.
+		jpeg = await Task.Run(() => ScanEngine.ExtractThumbnailJpeg(path, position, width, quality));
 		if (jpeg == null || jpeg.Length == 0) { ctx.Response.StatusCode = 204; return; }
 		hqThumbCache.TryAdd(cacheKey, jpeg);
 	}

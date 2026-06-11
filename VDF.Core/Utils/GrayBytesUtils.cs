@@ -19,8 +19,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace VDF.Core.Utils {
 	static class GrayBytesUtils {
@@ -42,60 +40,6 @@ namespace VDF.Core.Utils {
 			return 100d / data.Length * darkPixels < darkProcent;
 		}
 
-		public static unsafe byte[]? GetGrayScaleValues(Image original, double darkPercent = 80) {
-
-			// CloneAs<L8> already produces a single-channel luminance image, so an additional
-			// .Grayscale() call only re-applies the BT.709 luma matrix to L=L=L, leaving values
-			// unchanged. Removing it skips a full Vector4 roundtrip per pixel of the resized image.
-			using var img = original.CloneAs<L8>();
-			img.Mutate(ctx => ctx.Resize(Side, Side));
-
-			byte[] buffer = new byte[GrayByteValueLength];
-
-			int dark = 0;
-			img.ProcessPixelRows(accessor =>
-			{
-				for (int y = 0; y < Side; y++) {
-					Span<L8> row = accessor.GetRowSpan(y);
-					int baseIdx = y * Side;
-					for (int x = 0; x < Side; x++) {
-						byte lum = row[x].PackedValue;
-						buffer[baseIdx + x] = lum;
-						if (lum <= BlackPixelLimit) dark++;
-					}
-				}
-			});
-
-			double darkP = 100d / GrayByteValueLength * dark;
-			return darkP >= darkPercent ? null : buffer;
-
-		}
-		public static unsafe byte[]? GetGrayScaleValues16x16(Image original, double darkPercent = 80) {
-			const int graybyteLength = 256;
-			// See GetGrayScaleValues — CloneAs<L8> already converts to grayscale; the
-			// subsequent .Grayscale() was a no-op on values, just wasted work.
-			using var img = original.CloneAs<L8>();
-			img.Mutate(ctx => ctx.Resize(OldSide, OldSide));
-
-			byte[] buffer = new byte[graybyteLength];
-
-			int dark = 0;
-			img.ProcessPixelRows(accessor => {
-				for (int y = 0; y < OldSide; y++) {
-					Span<L8> row = accessor.GetRowSpan(y);
-					int baseIdx = y * OldSide;
-					for (int x = 0; x < OldSide; x++) {
-						byte lum = row[x].PackedValue;
-						buffer[baseIdx + x] = lum;
-						if (lum <= BlackPixelLimit) dark++;
-					}
-				}
-			});
-
-			double darkP = 100d / graybyteLength * dark;
-			return darkP >= darkPercent ? null : buffer;
-
-		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe float PercentageDifferenceWithoutSpecificPixels(byte[] img1, byte[] img2, bool ignoreBlackPixels, bool ignoreWhitePixels) {
 			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
@@ -271,43 +215,6 @@ namespace VDF.Core.Utils {
 				t.Reverse();
 				return Unsafe.ReadUnaligned<Vector128<byte>>(ref t[0]);
 			}
-		}
-
-
-
-		readonly static byte[] flipp_shuf256 = {
-				15,14,13,12,11,10, 9, 8,   7, 6, 5, 4, 3, 2, 1, 0,
-				31,30,29,28,27,26,25,24,  23,22,21,20,19,18,17,16
-		};
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static byte[] FlipGrayScale16x16(byte[] img) {
-			Debug.Assert((img.Length % 16) == 0, "Invalid img.Length");
-			byte[] flip_img;
-			if (Avx2.IsSupported) {
-				flip_img = new byte[img.Length];
-				Span<Vector256<byte>> vImg = MemoryMarshal.Cast<byte, Vector256<byte>>(img.AsSpan());
-				Span<Vector256<byte>> vImg_flipped = MemoryMarshal.Cast<byte, Vector256<byte>>(flip_img.AsSpan());
-				Span<Vector256<byte>> vFlipp_shuf = MemoryMarshal.Cast<byte, Vector256<byte>>(flipp_shuf256.AsSpan());
-
-				for (int i = 0; i < vImg.Length; i++)
-					vImg_flipped[i] = Avx2.Shuffle(vImg[i], vFlipp_shuf[0]);
-			}
-			else if (Sse3.IsSupported) {
-				flip_img = new byte[img.Length];
-				Span<Vector128<byte>> vImg = MemoryMarshal.Cast<byte, Vector128<byte>>(img.AsSpan());
-				Span<Vector128<byte>> vImg_flipped = MemoryMarshal.Cast<byte, Vector128<byte>>(flip_img.AsSpan());
-				Span<Vector128<byte>> vFlipp_shuf = MemoryMarshal.Cast<byte, Vector128<byte>>(flipp_shuf256.AsSpan());
-
-				for (int i = 0; i < vImg.Length; i++)
-					vImg_flipped[i] = Ssse3.Shuffle(vImg[i], vFlipp_shuf[0]);
-			}
-			else {
-				flip_img = (byte[])img.Clone();
-				for (int i = 0; i < 16; i++)
-					Array.Reverse(flip_img, i * 16, 16);
-			}
-			return flip_img;
 		}
 	}
 }

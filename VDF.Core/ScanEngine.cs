@@ -20,17 +20,14 @@ global using System.Collections.Generic;
 global using System.IO;
 global using System.Threading;
 global using System.Threading.Tasks;
-global using SixLabors.ImageSharp;
+global using Size = System.Drawing.Size;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text.Json;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
-using SixLabors.ImageSharp.Processing;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
 using VDF.Core.ViewModels;
@@ -48,7 +45,8 @@ namespace VDF.Core {
 		public event EventHandler? FilesEnumerated;
 		public event EventHandler? DatabaseCleaned;
 
-		public Image? NoThumbnailImage;
+		/// <summary>Encoded placeholder image (PNG/JPEG bytes) shown when thumbnail extraction fails.</summary>
+		public byte[]? NoThumbnailImage;
 
 		PauseTokenSource pauseTokenSource = new();
 		CancellationTokenSource cancelationTokenSource = new();
@@ -552,7 +550,7 @@ namespace VDF.Core {
 
 
 						if (entry.IsImage && entry.grayBytes.Count == 0) {
-							if (!GetGrayBytesFromImage(entry, Settings.UseExifCreationDate))
+							if (!GetGrayBytesFromImage(entry, Settings.UseExifCreationDate, Settings.ExtendedFFToolsLogging))
 								entry.invalid = true;
 						}
 						else if (!entry.IsImage) {
@@ -645,7 +643,9 @@ namespace VDF.Core {
 			byte[]?[] source = entry.compareGray!;
 			var flipped = new byte[]?[source.Length];
 			for (int j = 0; j < source.Length; j++)
-				flipped[j] = DatabaseUtils.DbVersion < 2 ? GrayBytesUtils.FlipGrayScale16x16(source[j]!) : GrayBytesUtils.FlipGrayScale(source[j]!);
+				// FlipGrayScale derives the side length from the array, so it handles both
+				// current 32x32 data and 16x16 data from legacy (DbVersion < 2) databases.
+				flipped[j] = GrayBytesUtils.FlipGrayScale(source[j]!);
 			return flipped;
 		}
 
@@ -1674,27 +1674,19 @@ namespace VDF.Core {
 		/// <param name="position">Seek position (ignored for images).</param>
 		/// <param name="maxWidth">Target width in pixels. 0 = original resolution.</param>
 		/// <returns>JPEG bytes, or null on failure.</returns>
-		public static byte[]? ExtractThumbnailJpeg(string filePath, TimeSpan position, int maxWidth = 0) {
+		public static byte[]? ExtractThumbnailJpeg(string filePath, TimeSpan position, int maxWidth = 0, int jpegQuality = 0) {
 			if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return null;
 
-			// For images, load and resize directly
-			var ext = Path.GetExtension(filePath);
-			if (IsImageExtension(ext)) {
-				try {
-					using var image = Image.Load(filePath);
-					if (maxWidth > 0 && image.Width > maxWidth) {
-						int h = (int)(image.Height * ((double)maxWidth / image.Width));
-						image.Mutate(x => x.Resize(maxWidth, h));
-					}
-					using var ms = new MemoryStream();
-					image.Save(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder { Quality = 90 });
-					return ms.ToArray();
-				}
-				catch { return null; }
-			}
-
-			// For videos, delegate to FFmpeg
-			return FfmpegEngine.ExtractThumbnailJpeg(filePath, position, maxWidth);
+			bool isImage = IsImageExtension(Path.GetExtension(filePath));
+			return FfmpegEngine.GetThumbnail(new FfmpegSettings {
+				File = filePath,
+				Position = isImage ? TimeSpan.Zero : position,
+				GrayScale = 0,
+				Fullsize = (byte)(maxWidth == 0 ? 1 : 0),
+				MaxWidth = maxWidth,
+				JpegQuality = jpegQuality,
+				SoftwareDecodeOnly = isImage,
+			}, false);
 		}
 
 		static bool IsImageExtension(string ext) =>
@@ -1714,7 +1706,7 @@ namespace VDF.Core {
 		/// otherwise a "Load thumbnails for group" click silently no-ops on the very items
 		/// the user is trying to recover (issue #748).
 		/// </summary>
-		internal static bool ShouldRetryThumbnails(DuplicateItem item, Image? placeholder) {
+		internal static bool ShouldRetryThumbnails(DuplicateItem item, byte[]? placeholder) {
 			if (item.ImageList == null || item.ImageList.Count == 0) return true;
 			if (placeholder != null && item.ImageList.Count == 1 && ReferenceEquals(item.ImageList[0], placeholder)) return true;
 			return false;
@@ -1746,7 +1738,7 @@ namespace VDF.Core {
 			int loaded = 0, placeholders = 0, skippedMissing = 0;
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
-					List<Image>? list = null;
+					List<byte[]>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
 					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
@@ -1756,28 +1748,17 @@ namespace VDF.Core {
 					}
 					else if (entry.IsImage) {
 						timeStamps = new(0);
-						list = new List<Image>(1);
-						try {
-							Image bitmapImage = ImageLoader.Load(entry.Path);
-							float resizeFactor = 1f;
-							if (bitmapImage.Width > maxDim || bitmapImage.Height > maxDim) {
-								float widthFactor = bitmapImage.Width / (float)maxDim;
-								float heightFactor = bitmapImage.Height / (float)maxDim;
-								resizeFactor = Math.Max(widthFactor, heightFactor);
-							}
-							int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
-							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
-							bitmapImage.Mutate(i => i.Resize(width, height));
-							list.Add(bitmapImage);
-							Interlocked.Increment(ref loaded);
-						}
-						catch (Exception ex) {
-							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
+						list = new List<byte[]>(1);
+						var b = ExtractThumbnailJpeg(entry.Path, TimeSpan.Zero, maxDim);
+						if (b == null || b.Length == 0) {
+							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}'.");
 							return ValueTask.CompletedTask;
 						}
+						list.Add(b);
+						Interlocked.Increment(ref loaded);
 					}
 					else {
-						list = new List<Image>(positionList.Count);
+						list = new List<byte[]>(positionList.Count);
 						timeStamps = new List<TimeSpan>(positionList.Count);
 						int failedPositions = 0;
 						for (int j = 0; j < positionList.Count; j++) {
@@ -1788,16 +1769,8 @@ namespace VDF.Core {
 								Logger.Instance.Info($"Failed extracting thumbnail at {timestamp} for '{entry.Path}', skipping that position.");
 								continue;
 							}
-							try {
-								using var byteStream = new MemoryStream(b);
-								var bitmapImage = Image.Load(byteStream);
-								list.Add(bitmapImage);
-								timeStamps.Add(timestamp);
-							}
-							catch (Exception ex) {
-								failedPositions++;
-								Logger.Instance.Info($"Failed decoding thumbnail bytes at {timestamp} for '{entry.Path}', reason: {ex.Message}");
-							}
+							list.Add(b);
+							timeStamps.Add(timestamp);
 						}
 						if (list.Count == 0 && NoThumbnailImage != null) {
 							list.Add(NoThumbnailImage);
@@ -1834,7 +1807,7 @@ namespace VDF.Core {
 			var sw = Stopwatch.StartNew();
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
-					List<Image>? list = null;
+					List<byte[]>? list = null;
 					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
 
@@ -1853,30 +1826,17 @@ namespace VDF.Core {
 					else if (entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						timeStamps = new(0);
-						list = new List<Image>(1);
-						try {
-							Image bitmapImage = ImageLoader.Load(entry.Path);
-							float resizeFactor = 1f;
-							if (bitmapImage.Width > maxDim || bitmapImage.Height > maxDim) {
-								float widthFactor = bitmapImage.Width / (float)maxDim;
-								float heightFactor = bitmapImage.Height / (float)maxDim;
-								resizeFactor = Math.Max(widthFactor, heightFactor);
-
-							}
-							int width = Convert.ToInt32(bitmapImage.Width / resizeFactor);
-							int height = Convert.ToInt32(bitmapImage.Height / resizeFactor);
-							bitmapImage.Mutate(i => i.Resize(width, height));
-							list.Add(bitmapImage);
-							Interlocked.Increment(ref loaded);
-						}
-						catch (Exception ex) {
-							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}', reason: {ex.Message}, stacktrace {ex.StackTrace}");
+						list = new List<byte[]>(1);
+						var b = ExtractThumbnailJpeg(entry.Path, TimeSpan.Zero, maxDim);
+						if (b == null || b.Length == 0) {
+							Logger.Instance.Info($"Failed loading image from file: '{entry.Path}'.");
 							return ValueTask.CompletedTask;
 						}
-
+						list.Add(b);
+						Interlocked.Increment(ref loaded);
 					}
 					else {
-						list = new List<Image>(positionList.Count);
+						list = new List<byte[]>(positionList.Count);
 						timeStamps = new List<TimeSpan>(positionList.Count);
 						int failedPositions = 0;
 						for (int j = 0; j < positionList.Count; j++) {
@@ -1887,16 +1847,8 @@ namespace VDF.Core {
 								Logger.Instance.Info($"Failed extracting thumbnail at {timestamp} for '{entry.Path}', skipping that position.");
 								continue;
 							}
-							try {
-								using var byteStream = new MemoryStream(b);
-								var bitmapImage = Image.Load(byteStream);
-								list.Add(bitmapImage);
-								timeStamps.Add(timestamp);
-							}
-							catch (Exception ex) {
-								failedPositions++;
-								Logger.Instance.Info($"Failed decoding thumbnail bytes at {timestamp} for '{entry.Path}', reason: {ex.Message}");
-							}
+							list.Add(b);
+							timeStamps.Add(timestamp);
 						}
 						if (list.Count == 0 && NoThumbnailImage != null) {
 							list.Add(NoThumbnailImage);
@@ -1923,64 +1875,61 @@ namespace VDF.Core {
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
-		static bool GetGrayBytesFromImage(FileEntry imageFile, bool useExifIfAvailable) {
+		static bool GetGrayBytesFromImage(FileEntry imageFile, bool useExifIfAvailable, bool extendedLogging) {
 			try {
+				// Decode through FFmpeg — the same pipeline videos use — so image and video
+				// gray bytes share identical grayscale conversion and scaling.
+				byte[]? grayBytes;
+				int width, height;
+				if (!FfmpegEngine.TryGetImageInfoAndGrayBytes(imageFile.Path, out grayBytes, out width, out height, extendedLogging)) {
+					// CLI fallback: dimensions via ffprobe, gray bytes via an FFmpeg process.
+					MediaInfo? info = FFProbeEngine.GetMediaInfo(imageFile.Path, extendedLogging);
+					var stream = info?.Streams?.FirstOrDefault(s => s.Width > 0 && s.Height > 0);
+					width = stream?.Width ?? 0;
+					height = stream?.Height ?? 0;
+					grayBytes = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+						File = imageFile.Path,
+						Position = TimeSpan.Zero,
+						GrayScale = 1,
+						SoftwareDecodeOnly = true,
+					}, extendedLogging);
+				}
 
-				using var bitmapImage = ImageLoader.Load(imageFile.Path);
-				//Set some props while we already loaded the image
+				if (grayBytes == null) {
+					imageFile.Flags.Set(EntryFlags.ThumbnailError);
+					return false;
+				}
+
 				imageFile.mediaInfo = new MediaInfo {
 					Streams = new[] {
-							new MediaInfo.StreamInfo {Height = bitmapImage.Height, Width = bitmapImage.Width}
+							new MediaInfo.StreamInfo {Height = height, Width = width}
 						}
 				};
 
-				// Extract EXIF creation date if enabled
+				// Extract EXIF capture date if enabled
 				if (useExifIfAvailable) {
-					bool dateFound = false;
-					var exifProfile = bitmapImage.Metadata.ExifProfile;
-					if (exifProfile != null) {
-						// Try DateTimeOriginal first (when photo was taken)
-						if (exifProfile.TryGetValue(ExifTag.DateTimeOriginal, out var dateTimeOriginal) && !string.IsNullOrWhiteSpace(dateTimeOriginal.Value)) {
-							if (TryParseExifDateTime(dateTimeOriginal.Value, out DateTime exifDate)) {
-								imageFile.DateCreated = exifDate;
-								dateFound = true;
-							}
-						}
-						// Fallback to DateTime if DateTimeOriginal is not available
-						else {
-							if (exifProfile.TryGetValue(ExifTag.DateTime, out var dateTime) && !string.IsNullOrWhiteSpace(dateTime.Value)) {
-								if (TryParseExifDateTime(dateTime.Value, out DateTime exifDate)) {
-									imageFile.DateCreated = exifDate;
-									dateFound = true;
-								}
-							}
-						}
+					if (ExifReader.TryGetDateTaken(imageFile.Path, out DateTime exifDate)) {
+						imageFile.DateCreated = exifDate;
 					}
-					// HEIC/HEIF are transcoded to JPEG via FFmpeg for hashing, which drops the
-					// EXIF profile. Fall back to the container creation_time tag read by FFprobe.
-					if (!dateFound && ImageLoader.RequiresFfmpegDecoding(imageFile.Path)) {
-						var creationTime = FFProbeEngine.GetCreationTime(imageFile.Path);
-						if (creationTime.HasValue)
-							imageFile.DateCreated = creationTime.Value;
+					else {
+						// HEIC/HEIF carry the date in the container instead; read it via FFprobe.
+						string ext = Path.GetExtension(imageFile.Path);
+						if (ext.Equals(".heic", StringComparison.OrdinalIgnoreCase) ||
+							ext.Equals(".heif", StringComparison.OrdinalIgnoreCase)) {
+							var creationTime = FFProbeEngine.GetCreationTime(imageFile.Path);
+							if (creationTime.HasValue)
+								imageFile.DateCreated = creationTime.Value;
+						}
 					}
 				}
 
-
-				int size = DatabaseUtils.DbVersion < 2 ?
-								16 :
-								GrayBytesUtils.Side;
-				bitmapImage.Mutate(a => a.Resize(size, size));
-
-				var d = DatabaseUtils.DbVersion < 2 ?
-							GrayBytesUtils.GetGrayScaleValues16x16(bitmapImage) :
-							GrayBytesUtils.GetGrayScaleValues(bitmapImage);
-				if (d == null) {
+				if (!GrayBytesUtils.VerifyGrayScaleValues(grayBytes)) {
 					imageFile.Flags.Set(EntryFlags.TooDark);
 					Logger.Instance.Info($"ERROR: Graybytes too dark of: {imageFile.Path}");
 					return false;
 				}
 
-				imageFile.grayBytes.Add(0, d);
+				imageFile.grayBytes.Add(0, grayBytes);
 				return true;
 			}
 			catch (Exception ex) {
@@ -1989,20 +1938,6 @@ namespace VDF.Core {
 				imageFile.Flags.Set(EntryFlags.ThumbnailError);
 				return false;
 			}
-		}
-
-		static bool TryParseExifDateTime(string exifDateTime, out DateTime result) {
-			// EXIF DateTime format: "YYYY:MM:DD HH:MM:SS"
-			result = DateTime.MinValue;
-
-			if (DateTime.TryParseExact(exifDateTime, "yyyy:MM:dd HH:mm:ss",
-				CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate)) {
-				// Convert to UTC (assuming local time in EXIF)
-				result = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
-				return true;
-			}
-
-			return false;
 		}
 
 		internal void HighlightBestMatches() {

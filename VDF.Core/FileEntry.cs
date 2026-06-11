@@ -18,7 +18,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using ProtoBuf;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using VDF.Core.Utils;
 
 namespace VDF.Core {

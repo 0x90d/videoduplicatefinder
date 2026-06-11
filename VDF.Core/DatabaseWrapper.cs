@@ -29,5 +29,15 @@ namespace VDF.Core {
 
 		[ProtoMember(2)]
 		public HashSet<FileEntry> Entries { get; set; } = new();
+
+		/// <summary>
+		/// Pipeline used to hash still images. 0 = legacy (ImageSharp: BT.709 luma,
+		/// ImageSharp bicubic), 1 = FFmpeg (BT.601 luma, swscale bicubic — identical to
+		/// the video pipeline). Databases loaded with a value of 0 get their image
+		/// hashes cleared once so they are recomputed with the current pipeline;
+		/// mixing the two would produce false non-matches between old and new entries.
+		/// </summary>
+		[ProtoMember(3)]
+		public int ImageHashPipeline { get; set; }
 	}
 }

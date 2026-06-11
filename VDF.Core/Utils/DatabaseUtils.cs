@@ -43,10 +43,13 @@ namespace VDF.Core.Utils {
 			if (databaseFile.Exists && databaseFile.Length == 0) //invalid data
 			{
 				databaseFile.Delete();
+				MigrateImageHashesIfNeeded();
 				return true;
 			}
-			if (!databaseFile.Exists)
+			if (!databaseFile.Exists) {
+				MigrateImageHashesIfNeeded();
 				return true;
+			}
 
 			Logger.Instance.Info("Found previously scanned files, importing...");
 			var st = Stopwatch.StartNew();
@@ -57,6 +60,7 @@ namespace VDF.Core.Utils {
 			catch (ProtoException ex) {
 				if (UpgradeDatabase(databaseFile.FullName)) {
 					Logger.Instance.Info("Database has been upgraded to the new format.");
+					MigrateImageHashesIfNeeded();
 					return true;
 				}
 				Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
@@ -76,7 +80,34 @@ namespace VDF.Core.Utils {
 
 			st.Stop();
 			Logger.Instance.Info($"Previously scanned files imported. {Database.Count:N0} files in {st.Elapsed}");
+			MigrateImageHashesIfNeeded();
 			return true;
+		}
+
+		/// <summary>
+		/// One-time migration: image gray bytes/pHashes produced by the old ImageSharp
+		/// pipeline are not comparable with the FFmpeg pipeline (different luma weights
+		/// and resampler), so clear them and let the next scan recompute. Cheap — images
+		/// re-hash at one decode per file. Videos are unaffected (always FFmpeg-hashed).
+		/// </summary>
+		internal const int CurrentImageHashPipeline = 1;
+		static void MigrateImageHashesIfNeeded() {
+			if (DbWrapper.ImageHashPipeline >= CurrentImageHashPipeline)
+				return;
+			int cleared = 0;
+			foreach (FileEntry entry in DbWrapper.Entries) {
+				if (!entry.IsImage)
+					continue;
+				if (entry.grayBytes.Count > 0 || entry.PHashes.Count > 0 || entry.Flags.Has(EntryFlags.TooDark)) {
+					entry.grayBytes.Clear();
+					entry.PHashes.Clear();
+					entry.Flags.Set(EntryFlags.TooDark, false);
+					cleared++;
+				}
+			}
+			DbWrapper.ImageHashPipeline = CurrentImageHashPipeline;
+			if (cleared > 0)
+				Logger.Instance.Info($"Image hash migration: cleared cached hashes of {cleared:N0} image(s) — they will be re-hashed with the FFmpeg pipeline on the next scan.");
 		}
 		internal static void Create16x16Database() {
 			DbWrapper.Version = 1;

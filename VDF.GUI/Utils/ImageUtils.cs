@@ -15,73 +15,110 @@
 //
 
 
-using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using VDF.Core.Utils;
+using VDF.Core.FFTools;
 
 namespace VDF.GUI.Utils {
 	static class ImageUtils {
+		// Anything beyond this gets downscaled to keep the composite inside
+		// Avalonia/UI texture limits.
+		public const int MaxDisplayableCompositeWidth = 4096;
+		// Hard sanity cap for the intermediate compose buffer (BGRA bytes).
+		const long MaxCompositeBufferBytes = 256_000_000;
+
 		/// <summary>
-		/// Composes <paramref name="images"/> into a horizontal-strip thumbnail and returns
-		/// a WriteableBitmap for immediate UI use. If <paramref name="jpegOut"/> is supplied,
-		/// the JPEG is written there FIRST, before the WriteableBitmap is built — that way
-		/// a failure on the Avalonia side (e.g. WriteableBitmap creation, multi-buffer
-		/// pixel-row layouts) still produces a valid cache entry. Reversing this order is
-		/// what caused issue #751: ImageSharp returns multi-buffer pixel storage above ~4 MB
-		/// per Bgra32 image, so 5×500-wide portrait composites tripped the old early-null
-		/// return before SaveAsJpeg ran, leaving the on-disk cache full of empty entries.
+		/// Composes <paramref name="encodedImages"/> (JPEG/PNG bytes) into a horizontal-strip
+		/// thumbnail and returns a Bitmap for immediate UI use. If <paramref name="jpegOut"/> is
+		/// supplied, the strip JPEG is written there FIRST, before the UI bitmap is built — that
+		/// way a failure on the Avalonia side still produces a valid cache entry (issue #751).
+		/// Decoding uses Avalonia/Skia; the strip JPEG is encoded via FFmpeg.
 		/// </summary>
-		public static unsafe Bitmap? JoinImages(IReadOnlyList<Image> images, Stream? jpegOut = null) {
-			if (images == null || images.Count == 0) return null;
+		public static unsafe Bitmap? JoinImages(IReadOnlyList<byte[]> encodedImages, Stream? jpegOut = null) {
+			if (encodedImages == null || encodedImages.Count == 0) return null;
 
-			using var img = JpegCompositor.BuildComposite(images);
-
-			if (jpegOut != null) {
-				try {
-					img.SaveAsJpeg(jpegOut, JpegCompositor.SharedEncoder);
-					try { jpegOut.Flush(); } catch { /* ignore */ }
-					if (jpegOut.CanSeek) { try { jpegOut.Position = 0; } catch { /* ignore */ } }
-				}
-				catch { /* the cache write is best-effort; UI bitmap below is independent */ }
-			}
-
+			var parts = new List<WriteableBitmap>(encodedImages.Count);
 			try {
-				using var bgraImage = img.CloneAs<Bgra32>();
+				int totalWidth = 0, maxHeight = 0;
+				foreach (var bytes in encodedImages) {
+					if (bytes == null || bytes.Length == 0) continue;
+					using var ms = new MemoryStream(bytes);
+					var part = WriteableBitmap.Decode(ms);
+					parts.Add(part);
+					totalWidth += part.PixelSize.Width;
+					maxHeight = Math.Max(maxHeight, part.PixelSize.Height);
+				}
+				if (parts.Count == 0 || totalWidth <= 0 || maxHeight <= 0) return null;
+				if ((long)totalWidth * maxHeight * 4 > MaxCompositeBufferBytes) return null;
 
-				var writeableBitmap = new WriteableBitmap(
-					new Avalonia.PixelSize(bgraImage.Width, bgraImage.Height),
-					new Avalonia.Vector(96, 96),
-					PixelFormat.Bgra8888,
-					AlphaFormat.Unpremul
-				);
-
-				using (var lockedFramebuffer = writeableBitmap.Lock()) {
-					byte* destBase = (byte*)lockedFramebuffer.Address;
-					int destStride = lockedFramebuffer.RowBytes;
-					int rowBytes = bgraImage.Width * 4;
-
-					// ProcessPixelRows is buffer-layout-agnostic — works whether ImageSharp
-					// stored the image as a single contiguous span or split it across
-					// multiple internal buffers (the latter happens above ~4 MB Bgra32,
-					// which is exactly the case that broke before).
-					bgraImage.ProcessPixelRows(accessor => {
-						for (int y = 0; y < accessor.Height; y++) {
-							Span<Bgra32> srcRow = accessor.GetRowSpan(y);
-							Span<byte> srcBytes = MemoryMarshal.AsBytes(srcRow);
-							Span<byte> destRow = new Span<byte>(destBase + (y * destStride), rowBytes);
-							srcBytes.CopyTo(destRow);
+				// Compose raw BGRA strip (rows shorter than maxHeight stay transparent).
+				byte[] strip = new byte[totalWidth * maxHeight * 4];
+				int xOffset = 0;
+				foreach (var part in parts) {
+					using var fb = part.Lock();
+					int w = fb.Size.Width, h = fb.Size.Height;
+					bool isRgba = fb.Format == PixelFormat.Rgba8888;
+					if (fb.Format != PixelFormat.Bgra8888 && !isRgba)
+						return null; // unexpected decoder output — give up rather than show garbage
+					byte* src = (byte*)fb.Address;
+					for (int y = 0; y < h; y++) {
+						var srcRow = new ReadOnlySpan<byte>(src + (long)y * fb.RowBytes, w * 4);
+						var dstRow = strip.AsSpan(((y * totalWidth) + xOffset) * 4, w * 4);
+						if (!isRgba) {
+							srcRow.CopyTo(dstRow);
 						}
-					});
+						else {
+							for (int x = 0; x < w * 4; x += 4) {
+								dstRow[x] = srcRow[x + 2];     // B
+								dstRow[x + 1] = srcRow[x + 1]; // G
+								dstRow[x + 2] = srcRow[x];     // R
+								dstRow[x + 3] = srcRow[x + 3]; // A
+							}
+						}
+					}
+					xOffset += part.PixelSize.Width;
 				}
 
-				return writeableBitmap;
+				// Encode the strip via FFmpeg. The cache write happens before the UI bitmap is
+				// decoded, preserving the cache-first guarantee.
+				byte[]? jpeg = FfmpegEngine.EncodeJpegFromBgra(strip, totalWidth, maxHeight, MaxDisplayableCompositeWidth);
+				if (jpeg != null) {
+					if (jpegOut != null) {
+						try {
+							jpegOut.Write(jpeg, 0, jpeg.Length);
+							try { jpegOut.Flush(); } catch { /* ignore */ }
+							if (jpegOut.CanSeek) { try { jpegOut.Position = 0; } catch { /* ignore */ } }
+						}
+						catch { /* the cache write is best-effort; UI bitmap below is independent */ }
+					}
+					using var jpegMs = new MemoryStream(jpeg);
+					return new Bitmap(jpegMs);
+				}
+
+				// FFmpeg encode failed — still give the UI something (no cache entry written).
+				if (totalWidth > MaxDisplayableCompositeWidth) return null;
+				var fallback = new WriteableBitmap(
+					new PixelSize(totalWidth, maxHeight),
+					new Vector(96, 96),
+					PixelFormat.Bgra8888,
+					AlphaFormat.Unpremul);
+				using (var fb = fallback.Lock()) {
+					byte* dest = (byte*)fb.Address;
+					int rowBytes = totalWidth * 4;
+					fixed (byte* src = strip) {
+						for (int y = 0; y < maxHeight; y++)
+							Buffer.MemoryCopy(src + (long)y * rowBytes, dest + (long)y * fb.RowBytes, rowBytes, rowBytes);
+					}
+				}
+				return fallback;
 			}
 			catch {
 				return null;
+			}
+			finally {
+				foreach (var part in parts)
+					part.Dispose();
 			}
 		}
 		public static unsafe Bitmap? JoinImages(IReadOnlyList<Bitmap> images, Stream? jpegOut = null) {
@@ -108,11 +145,6 @@ namespace VDF.GUI.Utils {
 		public static byte[] ToByteArray(this Bitmap image) {
 			using MemoryStream ms = new();
 			image.Save(ms);
-			return ms.ToArray();
-		}
-		public static byte[] ToByteArray(this SixLabors.ImageSharp.Image image) {
-			using MemoryStream ms = new();
-			image.Save(ms, JpegCompositor.SharedEncoder);
 			return ms.ToArray();
 		}
 

@@ -16,7 +16,7 @@
 
 using System.Diagnostics;
 using FFmpeg.AutoGen;
-using SixLabors.ImageSharp;
+using Size = System.Drawing.Size;
 using VDF.Core;
 using VDF.Core.FFTools;
 using VDF.Core.FFTools.FFmpegNative;

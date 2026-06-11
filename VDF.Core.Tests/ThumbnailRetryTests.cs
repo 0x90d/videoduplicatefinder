@@ -14,8 +14,6 @@
 // */
 //
 
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using VDF.Core.ViewModels;
 
 namespace VDF.Core.Tests;
@@ -27,8 +25,8 @@ namespace VDF.Core.Tests;
 // the user was trying to recover. ShouldRetryThumbnails must treat a placeholder-only item
 // as eligible for retry.
 public class ThumbnailRetryTests {
-	static Image NewPlaceholder() => new Image<Rgba32>(1, 1);
-	static Image NewRealThumb() => new Image<Rgba32>(2, 2);
+	static byte[] NewPlaceholder() => new byte[] { 1 };
+	static byte[] NewRealThumb() => new byte[] { 2, 2 };
 
 	[Fact]
 	public void EmptyImageList_IsEligibleForRetry() {
@@ -43,7 +41,7 @@ public class ThumbnailRetryTests {
 	public void PlaceholderOnly_IsEligibleForRetry() {
 		var item = new DuplicateItem();
 		var placeholder = NewPlaceholder();
-		item.SetThumbnails(new List<Image> { placeholder }, new List<TimeSpan> { TimeSpan.Zero });
+		item.SetThumbnails(new List<byte[]> { placeholder }, new List<TimeSpan> { TimeSpan.Zero });
 
 		Assert.True(ScanEngine.ShouldRetryThumbnails(item, placeholder),
 			"#748 regression: placeholder-only items must remain eligible for explicit retry.");
@@ -54,7 +52,7 @@ public class ThumbnailRetryTests {
 		var item = new DuplicateItem();
 		var placeholder = NewPlaceholder();
 		var real = NewRealThumb();
-		item.SetThumbnails(new List<Image> { real }, new List<TimeSpan> { TimeSpan.Zero });
+		item.SetThumbnails(new List<byte[]> { real }, new List<TimeSpan> { TimeSpan.Zero });
 
 		Assert.False(ScanEngine.ShouldRetryThumbnails(item, placeholder));
 	}
@@ -64,7 +62,7 @@ public class ThumbnailRetryTests {
 		var item = new DuplicateItem();
 		var placeholder = NewPlaceholder();
 		item.SetThumbnails(
-			new List<Image> { NewRealThumb(), NewRealThumb(), NewRealThumb() },
+			new List<byte[]> { NewRealThumb(), NewRealThumb(), NewRealThumb() },
 			new List<TimeSpan> { TimeSpan.Zero, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2) });
 
 		Assert.False(ScanEngine.ShouldRetryThumbnails(item, placeholder));
@@ -78,7 +76,7 @@ public class ThumbnailRetryTests {
 		var item = new DuplicateItem();
 		var placeholder = NewPlaceholder();
 		var lookalike = NewPlaceholder(); // same pixels, different instance
-		item.SetThumbnails(new List<Image> { lookalike }, new List<TimeSpan> { TimeSpan.Zero });
+		item.SetThumbnails(new List<byte[]> { lookalike }, new List<TimeSpan> { TimeSpan.Zero });
 
 		Assert.False(ScanEngine.ShouldRetryThumbnails(item, placeholder));
 	}
@@ -86,7 +84,7 @@ public class ThumbnailRetryTests {
 	[Fact]
 	public void NullPlaceholder_OnlyEmptyListsRetried() {
 		var withImages = new DuplicateItem();
-		withImages.SetThumbnails(new List<Image> { NewRealThumb() }, new List<TimeSpan> { TimeSpan.Zero });
+		withImages.SetThumbnails(new List<byte[]> { NewRealThumb() }, new List<TimeSpan> { TimeSpan.Zero });
 
 		var empty = new DuplicateItem();
 
@@ -101,7 +99,7 @@ public class ThumbnailRetryTests {
 		var item = new DuplicateItem();
 		var placeholder = NewPlaceholder();
 		item.SetThumbnails(
-			new List<Image> { placeholder, NewRealThumb() },
+			new List<byte[]> { placeholder, NewRealThumb() },
 			new List<TimeSpan> { TimeSpan.Zero, TimeSpan.FromSeconds(1) });
 
 		Assert.False(ScanEngine.ShouldRetryThumbnails(item, placeholder));

@@ -237,7 +237,11 @@ namespace VDF.GUI.ViewModels {
 			Scanner.ThumbnailsRetrieved += Scanner_ThumbnailsRetrieved;
 			Scanner.DatabaseCleaned += Scanner_DatabaseCleaned;
 			Scanner.FilesEnumerated += Scanner_FilesEnumerated;
-			Scanner.NoThumbnailImage = SixLabors.ImageSharp.Image.Load(AssetLoader.Open(new Uri("avares://VDF.GUI/Assets/icon.png")));
+			using (var assetStream = AssetLoader.Open(new Uri("avares://VDF.GUI/Assets/icon.png")))
+			using (var assetMs = new MemoryStream()) {
+				assetStream.CopyTo(assetMs);
+				Scanner.NoThumbnailImage = assetMs.ToArray();
+			}
 
 			try {
 				TempDirectory = TempExtractionManager.Register(new("VDF-"));

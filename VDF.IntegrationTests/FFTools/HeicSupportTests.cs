@@ -21,9 +21,9 @@ using VDF.IntegrationTests.Fixtures;
 namespace VDF.IntegrationTests.FFTools;
 
 /// <summary>
-/// End-to-end coverage for HEIC/HEIF support: ImageSharp cannot decode HEIC, so
-/// <see cref="ImageLoader"/> routes it through FFmpeg, and the EXIF-creation-date
-/// feature falls back to FFprobe's container creation_time tag.
+/// End-to-end coverage for HEIC/HEIF support: still images are decoded and hashed
+/// through FFmpeg (native binding fast path or CLI fallback), and the
+/// EXIF-creation-date feature falls back to FFprobe's container creation_time tag.
 /// </summary>
 [Collection("Ffmpeg")]
 public class HeicSupportTests {
@@ -32,7 +32,7 @@ public class HeicSupportTests {
 	public HeicSupportTests(FfmpegFixture fixture) => _fixture = fixture;
 
 	[SkippableFact]
-	public void ImageLoader_Load_Heic_ProcessMode_DecodesToExpectedDimensions() {
+	public void GrayBytes_Heic_ProcessMode_DecodesWithExpectedDimensions() {
 		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
 		Skip.If(_fixture.SampleHeic == null, "sample.heic test asset missing");
 
@@ -40,14 +40,24 @@ public class HeicSupportTests {
 		FfmpegEngine.UseNativeBinding = false;
 		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
 
-		using var image = ImageLoader.Load(_fixture.SampleHeic!);
+		var gray = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = _fixture.SampleHeic!,
+			Position = TimeSpan.Zero,
+			GrayScale = 1,
+			SoftwareDecodeOnly = true,
+		}, extendedLogging: true);
+		Assert.NotNull(gray);
+		Assert.Equal(32 * 32, gray!.Length);
 
-		Assert.Equal(96, image.Width);
-		Assert.Equal(72, image.Height);
+		var info = FFProbeEngine.GetMediaInfo(_fixture.SampleHeic!, extendedLogging: true);
+		var stream = info?.Streams?.FirstOrDefault(s => s.Width > 0 && s.Height > 0);
+		Assert.NotNull(stream);
+		Assert.Equal(96, stream!.Width);
+		Assert.Equal(72, stream.Height);
 	}
 
 	[SkippableFact]
-	public void ImageLoader_Load_Heic_NativeMode_DecodesToExpectedDimensions() {
+	public void GrayBytes_Heic_NativeMode_DecodesToExpectedDimensions() {
 		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
 		Skip.If(_fixture.SampleHeic == null, "sample.heic test asset missing");
 
@@ -55,10 +65,14 @@ public class HeicSupportTests {
 		FfmpegEngine.UseNativeBinding = true;
 		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
 
-		using var image = ImageLoader.Load(_fixture.SampleHeic!);
+		bool ok = FfmpegEngine.TryGetImageInfoAndGrayBytes(_fixture.SampleHeic!,
+			out byte[]? gray, out int width, out int height, extendedLogging: true);
 
-		Assert.Equal(96, image.Width);
-		Assert.Equal(72, image.Height);
+		Assert.True(ok);
+		Assert.NotNull(gray);
+		Assert.Equal(32 * 32, gray!.Length);
+		Assert.Equal(96, width);
+		Assert.Equal(72, height);
 	}
 
 	[SkippableFact]
@@ -77,14 +91,6 @@ public class HeicSupportTests {
 		// JPEG SOI marker
 		Assert.Equal(0xFF, jpeg[0]);
 		Assert.Equal(0xD8, jpeg[1]);
-	}
-
-	[SkippableFact]
-	public void ImageLoader_Load_NonHeic_BypassesFfmpeg() {
-		// A .png path must never go through the FFmpeg branch — ImageSharp decodes it
-		// directly even when no FFmpeg is present.
-		Assert.False(ImageLoader.RequiresFfmpegDecoding("whatever.png"));
-		Assert.True(ImageLoader.RequiresFfmpegDecoding(_fixture.SampleHeic ?? "x.heic"));
 	}
 
 	[SkippableFact]
