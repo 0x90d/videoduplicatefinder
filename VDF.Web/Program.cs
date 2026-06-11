@@ -164,6 +164,40 @@ app.MapGet("/thumbnail/full", async (HttpContext ctx, ScanService scan) => {
 	await ctx.Response.Body.WriteAsync(jpeg);
 });
 
+// CSV export of the current results — same column layout as the GUI export,
+// minus the GUI-only Checked column.
+app.MapGet("/export/csv", (ScanService scan) => {
+	static string Escape(string? s) {
+		s ??= string.Empty;
+		return s.Contains(',') || s.Contains('"') || s.Contains('\n') || s.Contains('\r')
+			? "\"" + s.Replace("\"", "\"\"") + "\""
+			: s;
+	}
+	var inv = System.Globalization.CultureInfo.InvariantCulture;
+	var sb = new System.Text.StringBuilder();
+	sb.AppendLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage");
+	// Keep group members on adjacent rows regardless of list order.
+	foreach (var group in scan.Duplicates.GroupBy(i => i.GroupId))
+		foreach (var item in group)
+			sb.AppendLine(string.Join(',',
+				item.GroupId.ToString(),
+				Escape(item.Path),
+				item.SizeLong.ToString(inv),
+				item.Duration.ToString(null, inv),
+				Escape(item.FrameSize),
+				item.Fps.ToString(inv),
+				item.BitRateKbs.ToString(inv),
+				Escape(item.AudioFormat),
+				item.AudioSampleRate.ToString(inv),
+				item.Similarity.ToString(inv),
+				item.DateCreated.ToString("yyyy-MM-dd HH:mm:ss", inv),
+				item.IsImage.ToString()));
+	// UTF-8 BOM so Excel detects the encoding.
+	var utf8 = System.Text.Encoding.UTF8;
+	byte[] bytes = [.. utf8.GetPreamble(), .. utf8.GetBytes(sb.ToString())];
+	return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", "vdf-results.csv");
+});
+
 app.MapRazorComponents<VDF.Web.Components.App>()
 	.AddInteractiveServerRenderMode();
 

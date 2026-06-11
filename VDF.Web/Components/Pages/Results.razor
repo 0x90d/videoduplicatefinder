@@ -11,12 +11,22 @@
 
 @{
     var allDuplicates = Scan.Duplicates;
-    var filteredGroups = allDuplicates
-        .GroupBy(d => d.GroupId)
-        .Where(g => string.IsNullOrEmpty(_search) ||
-                    g.Any(i => i.Path.Contains(_search, StringComparison.OrdinalIgnoreCase)))
-        .OrderBy(g => g.Key)
-        .ToList();
+    var filteredGroups = GetFilteredGroups();
+    long totalSize = 0, potentialSavings = 0;
+    int totalFiles = 0;
+    foreach (var g in filteredGroups) {
+        long groupTotal = 0, largest = 0;
+        foreach (var i in g) {
+            totalFiles++;
+            long s = Math.Max(0, i.SizeLong);
+            groupTotal += s;
+            if (s > largest) largest = s;
+        }
+        totalSize += groupTotal;
+        potentialSavings += groupTotal - largest;
+    }
+    long selectedSize = _selected.Sum(i => Math.Max(0, i.SizeLong));
+    int renderIndex = 0;
 }
 
 @if (!allDuplicates.Any()) {
@@ -25,13 +35,13 @@
 else {
     <div class="results-toolbar" @onkeydown="OnKeyDown" tabindex="0">
         <input class="search-box" @bind="_search" @bind:event="oninput"
-               placeholder="Filter by path..." />
+               placeholder="Filter by path (* and ? wildcards)..." />
         @if (!string.IsNullOrEmpty(_search)) {
             <button @onclick="() => _search = string.Empty">&#x2715;</button>
         }
         <span class="result-count">
-            @filteredGroups.Count group(s), @filteredGroups.SelectMany(g => g).Count() file(s)
-            @if (_selected.Count > 0) { <text> — @_selected.Count selected</text> }
+            @filteredGroups.Count group(s), @totalFiles file(s), @FormatSize(totalSize) — potential savings @FormatSize(potentialSavings)
+            @if (_selected.Count > 0) { <text> — @_selected.Count selected (@FormatSize(selectedSize))</text> }
         </span>
 
         @* Auto-select dropdown *@
@@ -55,6 +65,7 @@ else {
         @* Collapse all / Expand all *@
         <button @onclick="CollapseAll" title="Collapse all groups">Collapse all</button>
         <button @onclick="ExpandAll" title="Expand all groups">Expand all</button>
+        <button @onclick="ExportCsv" title="Download the results list as CSV">Export CSV</button>
 
         @if (_selected.Count > 0) {
             <div class="action-group">
@@ -123,7 +134,8 @@ else {
         bool allGroupSelected = sortedItems.All(i => _selected.Contains(i));
         bool isCollapsed = _collapsedGroups.Contains(groupId);
         float maxSimilarity = sortedItems.Max(i => i.Similarity);
-        int groupIndex = filteredGroups.IndexOf(group);
+        long groupSize = sortedItems.Sum(i => Math.Max(0, i.SizeLong));
+        int groupIndex = renderIndex++;
         int hiddenCount = sortedItems.Count(i => _hiddenItems.Contains(i.Path));
         var hoveredMetric = _hoveredMetrics.GetValueOrDefault(groupId);
 
@@ -132,7 +144,7 @@ else {
                 <label class="group-select-all">
                     <input type="checkbox" checked="@allGroupSelected"
                            @onchange="() => ToggleGroup(sortedItems, !allGroupSelected)" />
-                    @sortedItems.Count file(s)
+                    @sortedItems.Count file(s) &#183; @FormatSize(groupSize)
                 </label>
                 <span class="similarity-badge @SimilarityClass(maxSimilarity)">
                     @maxSimilarity.ToString("F1")% similar
@@ -723,9 +735,34 @@ else {
 
     static string SimilarityClass(float sim) => sim >= 99f ? "high" : sim >= 90f ? "medium" : "low";
 
+    // === Filtering ===
+    List<IGrouping<Guid, DuplicateItem>> GetFilteredGroups() =>
+        Scan.Duplicates
+            .GroupBy(d => d.GroupId)
+            .Where(g => string.IsNullOrEmpty(_search) || g.Any(i => PathMatchesFilter(i.Path, _search)))
+            .OrderBy(g => g.Key)
+            .ToList();
+
+    // Substring match by default; * and ? switch to wildcard matching (same rules as the GUI filter).
+    static bool PathMatchesFilter(string path, string needle) {
+        if (needle.IndexOfAny(['*', '?']) < 0)
+            return path.Contains(needle, StringComparison.OrdinalIgnoreCase);
+        string pattern = needle;
+        if (!pattern.StartsWith('*')) pattern = "*" + pattern;
+        if (!pattern.EndsWith('*')) pattern += "*";
+        return System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(pattern, path);
+    }
+
+    // === CSV Export ===
+    async Task ExportCsv() {
+        try { await JS.InvokeVoidAsync("vdf.download", "/export/csv"); }
+        catch { }
+    }
+
     // === QoL: Keyboard Navigation ===
     async Task OnKeyDown(KeyboardEventArgs e) {
-        var groups = Scan.Duplicates.GroupBy(d => d.GroupId).ToList();
+        // Same group list the page renders, so j/k/x/1-9 act on what the user sees.
+        var groups = GetFilteredGroups();
         if (groups.Count == 0) return;
 
         switch (e.Key) {

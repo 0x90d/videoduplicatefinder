@@ -19,7 +19,7 @@ using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 
 namespace VDF.Web.Services {
-	public enum ScanState { Idle, Scanning, Comparing, RetrievingThumbnails, Done, Aborted, Error }
+	public enum ScanState { Idle, Scanning, Comparing, Done, Aborted, Error }
 
 	/// <summary>Outcome of a batch file operation (delete / move / link).</summary>
 	public sealed class FileOpResult {
@@ -54,9 +54,6 @@ namespace VDF.Web.Services {
 		public ScanProgressArgs? LastProgress { get; private set; }
 		/// <summary>Total files hashed (captured when BuildingHashesDone fires).</summary>
 		public int FilesHashed { get; private set; }
-		/// <summary>Thumbnail retrieval progress.</summary>
-		public int ThumbnailCurrent { get; private set; }
-		public int ThumbnailMax { get; private set; }
 		public IReadOnlyCollection<DuplicateItem> Duplicates => _engine.Duplicates;
 		public Settings Settings => _engine.Settings;
 
@@ -110,14 +107,12 @@ namespace VDF.Web.Services {
 		}
 
 		public void StartScanAndCompare() {
-			if (State == ScanState.Scanning || State == ScanState.Comparing || State == ScanState.RetrievingThumbnails) return;
+			if (State == ScanState.Scanning || State == ScanState.Comparing) return;
 			_cts = new CancellationTokenSource();
 			State = ScanState.Scanning;
 			ErrorMessage = null;
 			LastProgress = null;
 			FilesHashed = 0;
-			ThumbnailCurrent = 0;
-			ThumbnailMax = 0;
 			_engine.Duplicates.Clear();
 			ClearThumbnailCaches();
 			try {
@@ -149,13 +144,11 @@ namespace VDF.Web.Services {
 		public bool SaveSettings() => _settingsService.Save(_engine.Settings);
 
 		public void Reset() {
-			if (State == ScanState.Scanning || State == ScanState.Comparing || State == ScanState.RetrievingThumbnails) return;
+			if (State == ScanState.Scanning || State == ScanState.Comparing) return;
 			State = ScanState.Idle;
 			ErrorMessage = null;
 			LastProgress = null;
 			FilesHashed = 0;
-			ThumbnailCurrent = 0;
-			ThumbnailMax = 0;
 			_engine.Duplicates.Clear();
 			ClearThumbnailCaches();
 			// Keep IncludeList/BlackList — resetting scan results should not

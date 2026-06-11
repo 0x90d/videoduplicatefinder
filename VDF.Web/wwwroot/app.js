@@ -39,6 +39,15 @@ window.vdf = {
         localStorage.setItem('vdf-compare-mode', mode);
     },
 
+    download: function (url) {
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    },
+
     scrollToGroup: function (index) {
         var groups = document.querySelectorAll('.dup-group');
         if (groups[index]) {

@@ -48,7 +48,7 @@
     </div>
 }
 
-@if (Scan.State == ScanState.Scanning || Scan.State == ScanState.Comparing || Scan.State == ScanState.RetrievingThumbnails) {
+@if (Scan.State == ScanState.Scanning || Scan.State == ScanState.Comparing) {
     <div class="progress-section">
         @if (Scan.State == ScanState.Scanning) {
             <p class="state-label">Hashing files...</p>
@@ -66,26 +66,16 @@
                 }
             }
         }
-        else if (Scan.State == ScanState.Comparing) {
+        else {
             <p class="state-label">
                 <span class="spinner"></span>
                 Comparing @(Scan.FilesHashed > 0 ? $"{Scan.FilesHashed:N0} hashed files" : "files") for duplicates...
             </p>
             <p class="comparing-note">This may take a while depending on library size.</p>
         }
-        else {
-            <p class="state-label">Retrieving thumbnails...</p>
-            @if (Scan.ThumbnailMax > 0) {
-                int pct = (int)(100L * Scan.ThumbnailCurrent / Scan.ThumbnailMax);
-                <div class="progress-bar-track">
-                    <div class="progress-bar-fill" style="width:@pct%"></div>
-                </div>
-                <p>@Scan.ThumbnailCurrent / @Scan.ThumbnailMax</p>
-            }
-        }
         <div class="actions">
-            <button @onclick="Scan.Pause" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">Pause</button>
-            <button @onclick="Scan.Resume" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">Resume</button>
+            <button @onclick="Scan.Pause">Pause</button>
+            <button @onclick="Scan.Resume">Resume</button>
             <button class="danger" @onclick="Scan.Stop">Stop</button>
         </div>
     </div>
