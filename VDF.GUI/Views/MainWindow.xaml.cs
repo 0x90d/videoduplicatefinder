@@ -198,8 +198,8 @@ namespace VDF.GUI.Views {
 				if (fold == null)
 					continue;
 				string? localPath = fold.TryGetLocalPath();
-				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
-					SettingsFile.Instance.Includes.Add(localPath);
+				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Blacklists.Contains(localPath))
+					SettingsFile.Instance.Blacklists.Add(localPath);
 			}
 		}
 
