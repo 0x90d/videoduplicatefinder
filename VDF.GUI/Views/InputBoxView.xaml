@@ -42,7 +42,7 @@
             Margin="10,10,10,20"
             Text="{Binding Input}"
             TextWrapping="Wrap"
-            Watermark="{Binding WaterMark}" />
+            PlaceholderText="{Binding WaterMark}" />
         <Grid Grid.Row="3" Margin="5,0,5,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />

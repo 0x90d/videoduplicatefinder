@@ -22,6 +22,7 @@ using System.Reactive;
 using System.Reflection;
 using System.Text;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Platform.Storage.FileIO;
 using Avalonia.Threading;

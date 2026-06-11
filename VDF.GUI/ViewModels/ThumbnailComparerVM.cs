@@ -113,7 +113,7 @@ namespace VDF.GUI.ViewModels {
 			_ = Task.Run(async () => {
 				try {
 					await Task.Delay(millis, token);
-					RxApp.MainThreadScheduler.Schedule(() => IsMessageVisible = false);
+					RxSchedulers.MainThreadScheduler.Schedule(() => IsMessageVisible = false);
 				}
 				catch { }
 			});
@@ -283,7 +283,7 @@ namespace VDF.GUI.ViewModels {
 
 			this.WhenAnyValue(vm => vm.ModeSliderValue, vm => vm.SelectedCompareMode, vm => vm.ImageA, vm => vm.ImageB)
 				.Throttle(TimeSpan.FromMilliseconds(16))
-				.ObserveOn(RxApp.MainThreadScheduler)
+				.ObserveOn(RxSchedulers.MainThreadScheduler)
 				.Subscribe(_ => Recalc());
 
 			FitToViewCommand = ReactiveCommand.Create(() => { Zoom = 1.0; PanOffsetX = 0; PanOffsetY = 0; });
@@ -464,7 +464,7 @@ namespace VDF.GUI.ViewModels {
 					Bitmap? bmpB = needExtractB ? itemB!.ExtractFrameAtOffset(baseIdx, stepB) : null;
 					if (cts.IsCancellationRequested) return;
 
-					RxApp.MainThreadScheduler.Schedule(() => {
+					RxSchedulers.MainThreadScheduler.Schedule(() => {
 						if (cts.IsCancellationRequested) return;
 						if (needExtractA && bmpA != null)
 							ImageA = bmpA;
@@ -476,7 +476,7 @@ namespace VDF.GUI.ViewModels {
 					});
 				}
 				catch {
-					RxApp.MainThreadScheduler.Schedule(() => IsExtractingFrame = false);
+					RxSchedulers.MainThreadScheduler.Schedule(() => IsExtractingFrame = false);
 				}
 			});
 
@@ -616,7 +616,7 @@ namespace VDF.GUI.ViewModels {
 						sem.Release();
 						var finished = Interlocked.Increment(ref done);
 						var p = Math.Clamp((double)finished / total, 0, 1);
-						RxApp.MainThreadScheduler.Schedule(() => {
+						RxSchedulers.MainThreadScheduler.Schedule(() => {
 							LoadProgress = p;
 							this.RaisePropertyChanged(nameof(LoadProgressText));
 						});

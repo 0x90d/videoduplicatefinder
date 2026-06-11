@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Avalonia 12 compiles bindings by default; our views use reflection bindings
+         without x:DataType. Keep the v11 behavior until views are annotated. -->
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTargets>x64;arm64</PlatformTargets>
@@ -29,20 +32,17 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="25.2.1" />
-    <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="25.2.1" />
-    <PackageReference Include="Avalonia" Version="11.3.11" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.11" />
-<PackageReference Include="Avalonia.Desktop" Version="11.3.11" />
-    <!-- Explicit pin: Avalonia 11.3.x pulls Tmds.DBus.Protocol 0.21.2, which has a known
-         high-severity vulnerability (GHSA-xrw6-gwf8-vvr9). Remove once Avalonia updates. -->
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.11" />
+    <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="26.1.1" />
+    <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="26.1.1" />
+    <PackageReference Include="Avalonia" Version="12.0.4" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0" />
+<PackageReference Include="Avalonia.Desktop" Version="12.0.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.4" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.19.3" />
-    <PackageReference Include="ReactiveUI.Avalonia" Version="11.3.8" />
+    <PackageReference Include="ReactiveUI.Avalonia" Version="12.0.3" />
     <PackageReference Include="System.CommandLine" Version="2.0.9" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.9" />
-    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="11.3.9.3" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="12.0.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />

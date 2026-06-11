@@ -73,14 +73,14 @@ namespace VDF.GUI.Views {
 				_textBlock.Opacity = 1.0;
 		}
 
-		protected override void OnGotFocus(GotFocusEventArgs e) {
+		protected override void OnGotFocus(FocusChangedEventArgs e) {
 			base.OnGotFocus(e);
 			_isCapturing = true;
 			BorderBrush = new SolidColorBrush(Color.FromRgb(100, 150, 255));
 			UpdateDisplay();
 		}
 
-		protected override void OnLostFocus(RoutedEventArgs e) {
+		protected override void OnLostFocus(FocusChangedEventArgs e) {
 			base.OnLostFocus(e);
 			_isCapturing = false;
 			BorderBrush = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255));

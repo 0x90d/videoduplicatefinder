@@ -28,6 +28,7 @@ using System.Text.Json;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -299,7 +300,7 @@ namespace VDF.GUI.ViewModels {
 			_SortOrder = SortOrders[0];
 
 			this.WhenAnyValue(vm => vm.FilterByPath)
-					.Throttle(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
+					.Throttle(TimeSpan.FromMilliseconds(500), RxSchedulers.MainThreadScheduler)
 						.Subscribe(_ => { RebuildSearchPathIndex(); view?.Refresh(); });
 		}
 
@@ -1647,11 +1648,8 @@ Non-Windows setup:
 				if (item is not DuplicateItemVM currentItem) return;
 				sb.AppendLine($"\"{currentItem.ItemInfo.Path}\"");
 			}
-#pragma warning disable CS8600
-#pragma warning disable CS8602
-			await (ApplicationHelpers.MainWindow.Clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' })));
-#pragma warning restore CS8602
-#pragma warning restore CS8600
+			if (ApplicationHelpers.MainWindow.Clipboard is { } clipboard)
+				await clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
 		});
 
 		public ReactiveCommand<Unit, Unit> CopyFilenamesToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -1660,11 +1658,8 @@ Non-Windows setup:
 				if (item is not DuplicateItemVM currentItem) return;
 				sb.AppendLine(Path.GetFileName(currentItem.ItemInfo.Path));
 			}
-#pragma warning disable CS8600
-#pragma warning disable CS8602
-			await (ApplicationHelpers.MainWindow.Clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' })));
-#pragma warning restore CS8602
-#pragma warning restore CS8600
+			if (ApplicationHelpers.MainWindow.Clipboard is { } clipboard)
+				await clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
 		});
 
 		public ReactiveCommand<Unit, Unit> RelocateDatabaseFilesCommand => ReactiveCommand.Create(() => {

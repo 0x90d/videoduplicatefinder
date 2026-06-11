@@ -81,7 +81,7 @@ namespace VDF.GUI {
 						new FontFallback { FontFamily = new FontFamily("Noto Sans CJK SC") },
 					},
 				})
-				.UseReactiveUI()
+				.UseReactiveUI(_ => { })
 				.RegisterReactiveUIViewsFromEntryAssembly();
 	}
 }

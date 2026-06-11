@@ -67,7 +67,8 @@ namespace VDF.GUI.Views {
 				Environment.OSVersion.Version.Build >= 22000) {
 				Background = null;
 				TransparencyLevelHint = new List<WindowTransparencyLevel> { WindowTransparencyLevel.Mica };
-				ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.PreferSystemChrome;
+				// Avalonia 12: ExtendClientAreaChromeHints was removed; WindowDecorations.Full
+				// (system chrome) is the default, matching the old PreferSystemChrome behavior.
 				if (SettingsFile.Instance.DarkMode)
 					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundBlack")!.IsVisible = true;
 				else
