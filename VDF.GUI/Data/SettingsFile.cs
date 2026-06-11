@@ -353,7 +353,7 @@ namespace VDF.GUI.Data {
 
 		public static void SaveSettings(string? path = null) {
 			path = ResolveSettingsPath(path);
-			File.WriteAllText(path, JsonSerializer.Serialize(instance));
+			File.WriteAllText(path, JsonSerializer.Serialize(instance, GuiJsonContext.Default.SettingsFile));
 		}
 
 		bool _UseMica = false;
@@ -560,7 +560,7 @@ namespace VDF.GUI.Data {
 
 			path = ResolveSettingsPath(path);
 			if (!File.Exists(path)) return;
-			instance = JsonSerializer.Deserialize<SettingsFile>(File.ReadAllBytes(path));
+			instance = JsonSerializer.Deserialize(File.ReadAllBytes(path), GuiJsonContext.Default.SettingsFile);
 		}
 
 		static bool LoadOldSettings(string? path) {

@@ -81,6 +81,7 @@ namespace VDF.GUI.ViewModels {
 		private readonly DatabaseWrapper DbWrapper;
 		static readonly JsonSerializerOptions serializerOptions = new() {
 			IncludeFields = true,
+			TypeInfoResolver = VDF.Core.Utils.CoreJsonContext.Default,
 		};
 		public RelocateFilesDialogVM(Window owner) {
 			_owner = owner;

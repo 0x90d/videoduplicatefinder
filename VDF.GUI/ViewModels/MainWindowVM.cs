@@ -759,14 +759,11 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		public ReactiveCommand<Unit, Unit> ExportScanResultsCommand => ReactiveCommand.CreateFromTask(async () => {
-			await ExportScanResults(serializerOptions: new JsonSerializerOptions {
-				IncludeFields = true,
-			});
+			await ExportScanResults(serializerOptions: JsonOptions);
 		});
 
 		public ReactiveCommand<Unit, Unit> ExportScanResultsPrettyCommand => ReactiveCommand.CreateFromTask(async () => {
-			await ExportScanResults(serializerOptions: new JsonSerializerOptions {
-				IncludeFields = true,
+			await ExportScanResults(serializerOptions: new JsonSerializerOptions(JsonOptions) {
 				WriteIndented = true,
 			});
 		});
@@ -827,6 +824,7 @@ namespace VDF.GUI.ViewModels {
 
 		private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions {
 			IncludeFields = true,
+			TypeInfoResolver = GuiJsonFieldsContext.Default,
 		};
 
 		// Accepts both the v1 envelope ({version, items}) and the legacy raw array

@@ -32,6 +32,7 @@ namespace VDF.GUI.ViewModels {
 		readonly string TempDatabaseFile;
 		static readonly JsonSerializerOptions serializerOptions = new() {
 			IncludeFields = true,
+			TypeInfoResolver = VDF.Core.Utils.CoreJsonContext.Default,
 		};
 		readonly DataGrid GetDataGrid;
 

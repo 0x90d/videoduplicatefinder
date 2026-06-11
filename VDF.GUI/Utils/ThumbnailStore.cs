@@ -104,8 +104,8 @@ namespace VDF.GUI.Utils {
 			string idxPath = System.IO.Path.Combine(folder, "thumbs.idx");
 			var fs = new FileStream(packPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
 			Dictionary<string, (long, int)> idx = File.Exists(idxPath)
-							? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, (long, int)>>(
-			File.ReadAllBytes(idxPath), IdxJson) ?? new()
+							? System.Text.Json.JsonSerializer.Deserialize(
+			File.ReadAllBytes(idxPath), Data.GuiJsonFieldsContext.Default.ThumbPackIndex) ?? new()
 							: new();
 			return new ThumbPack(fs, idxPath, idx, packPath, folder);
 		}
@@ -163,10 +163,9 @@ namespace VDF.GUI.Utils {
 				return new StreamSlice(rfs, e.off, e.len, leaveOpen: true);
 			}
 		}
-		private static readonly System.Text.Json.JsonSerializerOptions IdxJson = new() { IncludeFields = true };
 		public void FlushIndex() {
 			lock (_gate) {
-				var json = System.Text.Json.JsonSerializer.Serialize(_idx, IdxJson);
+				var json = System.Text.Json.JsonSerializer.Serialize(_idx, Data.GuiJsonFieldsContext.Default.ThumbPackIndex);
 				File.WriteAllText(_idxPath, json);
 			}
 		}

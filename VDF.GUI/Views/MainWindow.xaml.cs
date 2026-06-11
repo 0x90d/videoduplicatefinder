@@ -84,9 +84,6 @@ namespace VDF.GUI.Views {
 					RequestedThemeVariant = SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
 			};
 
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
-			}
 			ShowAlgoView();
 		}
 
@@ -120,6 +117,24 @@ namespace VDF.GUI.Views {
 
 			ApplyKeyboardShortcuts();
 			KeyboardShortcutManager.Instance.ShortcutsChanged += ApplyKeyboardShortcuts;
+
+			HideOwnTitleIfChromeDrawsOne();
+		}
+
+		/// <summary>
+		/// Avalonia draws managed window decorations — including a centered title —
+		/// whenever the client area is extended (always on Linux; on Windows since
+		/// Avalonia 12 removed PreferSystemChrome). The app's own title TextBlock then
+		/// duplicates it. Detect the drawn title instead of hardcoding platforms so
+		/// each OS keeps exactly one title.
+		/// </summary>
+		void HideOwnTitleIfChromeDrawsOne() {
+			Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+				bool chromeTitleVisible = this.GetVisualDescendants()
+					.Any(c => c is Control { Name: "PART_TitleTextPanel", IsVisible: true });
+				if (chromeTitleVisible)
+					this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
+			}, Avalonia.Threading.DispatcherPriority.Loaded);
 		}
 
 		void ApplySavedWindowPlacement() {

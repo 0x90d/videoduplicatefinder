@@ -354,7 +354,10 @@ namespace VDF.GUI.ViewModels {
 				}
 			});
 			if (string.IsNullOrEmpty(result)) return;
-			var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+			var json = JsonSerializer.Serialize(report, new JsonSerializerOptions {
+				WriteIndented = true,
+				TypeInfoResolver = GuiJsonContext.Default
+			});
 			File.WriteAllText(result, json);
 			await MessageBoxService.Show(App.Lang["Message.CleanupDryRunSaved"]);
 		});
@@ -551,25 +554,28 @@ namespace VDF.GUI.ViewModels {
 			history.Insert(0, expression);
 		}
 
-		sealed class CleanupDryRunReport {
-			public DateTime CreatedAt { get; set; }
-			public long EstimatedTotalSavingsBytes { get; set; }
-			public List<CleanupDryRunGroup> Groups { get; set; } = new();
-		}
+	}
 
-		sealed class CleanupDryRunGroup {
-			public Guid GroupId { get; set; }
-			public long EstimatedSavingsBytes { get; set; }
-			public string Reason { get; set; } = string.Empty;
-			public List<CleanupDryRunItem> RemoveItems { get; set; } = new();
-			public List<CleanupDryRunItem> KeepItems { get; set; } = new();
-		}
+	// Top-level (not nested in MainWindowVM) so the source-generated JSON context
+	// can reference them.
+	internal sealed class CleanupDryRunReport {
+		public DateTime CreatedAt { get; set; }
+		public long EstimatedTotalSavingsBytes { get; set; }
+		public List<CleanupDryRunGroup> Groups { get; set; } = new();
+	}
 
-		sealed class CleanupDryRunItem {
-			public string Path { get; set; } = string.Empty;
-			public long SizeBytes { get; set; }
-			public string Resolution { get; set; } = string.Empty;
-			public DateTime DateCreated { get; set; }
-		}
+	internal sealed class CleanupDryRunGroup {
+		public Guid GroupId { get; set; }
+		public long EstimatedSavingsBytes { get; set; }
+		public string Reason { get; set; } = string.Empty;
+		public List<CleanupDryRunItem> RemoveItems { get; set; } = new();
+		public List<CleanupDryRunItem> KeepItems { get; set; } = new();
+	}
+
+	internal sealed class CleanupDryRunItem {
+		public string Path { get; set; } = string.Empty;
+		public long SizeBytes { get; set; }
+		public string Resolution { get; set; } = string.Empty;
+		public DateTime DateCreated { get; set; }
 	}
 }

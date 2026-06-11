@@ -54,7 +54,7 @@ namespace VDF.GUI.ViewModels {
 			set {
 				this.RaiseAndSetIfChanged(ref _SelectedPreset, value);
 				if (value != null)
-					Data = JsonSerializer.Deserialize<CustomSelectionData>(JsonSerializer.Serialize(value.Data))!;
+					Data = JsonSerializer.Deserialize(JsonSerializer.Serialize(value.Data, GuiJsonContext.Default.CustomSelectionData), GuiJsonContext.Default.CustomSelectionData)!;
 			}
 		}
 
@@ -62,7 +62,7 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> SavePresetCommand => ReactiveCommand.CreateFromTask(async () => {
 			var name = await InputBoxService.Show(App.Lang["Preset.NamePrompt"], _SelectedPreset?.Name ?? string.Empty, title: App.Lang["Preset.SaveTitle"]);
 			if (string.IsNullOrWhiteSpace(name)) return;
-			var dataCopy = JsonSerializer.Deserialize<CustomSelectionData>(JsonSerializer.Serialize(Data))!;
+			var dataCopy = JsonSerializer.Deserialize(JsonSerializer.Serialize(Data, GuiJsonContext.Default.CustomSelectionData), GuiJsonContext.Default.CustomSelectionData)!;
 			var existing = CustomSelectionPresets.FirstOrDefault(p => p.Name == name);
 			if (existing != null)
 				existing.Data = dataCopy;
@@ -125,7 +125,7 @@ namespace VDF.GUI.ViewModels {
 			if (string.IsNullOrEmpty(result)) return;
 
 			try {
-				File.WriteAllText(result, JsonSerializer.Serialize(Data));
+				File.WriteAllText(result, JsonSerializer.Serialize(Data, GuiJsonContext.Default.CustomSelectionData));
 			}
 			catch (Exception ex) {
 				await MessageBoxService.Show($"Saving to file has failed: {ex.Message}");
@@ -141,7 +141,7 @@ namespace VDF.GUI.ViewModels {
 			if (string.IsNullOrEmpty(result)) return;
 
 			try {
-				Data = JsonSerializer.Deserialize<CustomSelectionData>(File.ReadAllText(result))!;
+				Data = JsonSerializer.Deserialize(File.ReadAllText(result), GuiJsonContext.Default.CustomSelectionData)!;
 
 			}
 			catch (Exception ex) {

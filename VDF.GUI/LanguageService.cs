@@ -47,7 +47,7 @@ namespace VDF.GUI {
 				using var stream = AssetLoader.Open(uri);
 				using var reader = new StreamReader(stream);
 				var json = reader.ReadToEnd();
-				_translations = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+				_translations = JsonSerializer.Deserialize(json, Data.GuiJsonContext.Default.DictionaryStringString) ?? new();
 				this.RaisePropertyChanged("Item[]");
 			}
 			catch (Exception) {
