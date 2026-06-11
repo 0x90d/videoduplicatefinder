@@ -295,6 +295,7 @@
 	"MainWindow.Settings.ShowAudioColumn": "Show Audio Column¹",
 	"MainWindow.Settings.ShowDurationColumn": "Show Duration Column¹",
 	"MainWindow.Settings.ShowFormatColumn": "Show Format Column¹",
+	"MainWindow.Settings.ShowThumbnailColumn": "Show Thumbnail Column",
 	"MainWindow.Settings.ShowPathColumn": "Show Path Column¹",
 	"MainWindow.Settings.ShowSimilarityColumn": "Show Similarity Column¹",
 	"MainWindow.Settings.ThumbnailDoubleClick": "Thumbnail double-click:",

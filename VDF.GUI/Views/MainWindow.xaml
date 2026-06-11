@@ -16,6 +16,7 @@
     xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
     xmlns:views="clr-namespace:VDF.GUI.Views;assembly=VDF.GUI"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+    x:DataType="vm:MainWindowVM"
     x:Name="MainWindow"
     Title="{Binding Source={x:Static local:App.Lang}, Path=[App.Title]}"
     Width="1020"
@@ -580,7 +581,7 @@
                                             SelectedItem="{Binding SortOrder}">
                                             <ComboBox.ItemTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding Key}" />
+                                                    <TextBlock x:CompileBindings="False" Text="{Binding Key}" />
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
@@ -595,7 +596,7 @@
                                             SelectedItem="{Binding FileType}">
                                             <ComboBox.ItemTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding Key}" />
+                                                    <TextBlock x:CompileBindings="False" Text="{Binding Key}" />
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
@@ -649,18 +650,18 @@
                                         <DataGrid.Columns>
                                             <DataGridTemplateColumn>
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <CheckBox Margin="0,0,5,0" HorizontalAlignment="Center" IsChecked="{Binding Checked}" />
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
                                             <DataGridTemplateColumn Width="24">
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <Button Padding="2" Margin="0" MinWidth="18" MinHeight="18" Width="18" Height="18"
                                                                 Background="Transparent" BorderThickness="0"
                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                Command="{Binding $parent[DataGrid].DataContext.RemoveSingleItemCommand}"
+                                                                Command="{Binding $parent[DataGrid].((vm:MainWindowVM)DataContext).RemoveSingleItemCommand}"
                                                                 CommandParameter="{Binding}"
                                                                 ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListOnly]}">
                                                             <TextBlock Text="✕" FontSize="10" Opacity="0.4" />
@@ -670,7 +671,7 @@
                                             </DataGridTemplateColumn>
                                             <DataGridTemplateColumn Header="Thumbnail" Tag="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <Grid>
                                                             <!-- Skeleton shimmer while thumbnail is loading -->
                                                             <Border Classes="skeleton-shimmer"
@@ -697,7 +698,7 @@
                                                                 HorizontalAlignment="Left"
                                                                 ToolTip.Tip="{Binding ItemInfo.Path}">
                                                                 <i:Interaction.Behaviors>
-                                                                    <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].DataContext.ThumbnailDoubleClickCommand}" />
+                                                                    <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].((vm:MainWindowVM)DataContext).ThumbnailDoubleClickCommand}" />
                                                                 </i:Interaction.Behaviors>
                                                             </Image>
                                                         </Grid>
@@ -710,7 +711,7 @@
                                                 Tag="Path"
                                                 IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <TextBlock
                                                             Margin="10,0,0,0"
                                                             Text="{Binding ItemInfo.Path, TargetNullValue=''}"
@@ -725,7 +726,7 @@
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.DurationCompactTip]}" />
                                                 </DataGridTemplateColumn.Header>
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <Grid Margin="10,0,0,0">
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition />
@@ -807,7 +808,7 @@
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.VideoCompactTip]}" />
                                                 </DataGridTemplateColumn.Header>
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <Grid Margin="10,0,0,0" IsVisible="{Binding !ItemInfo.IsImage}">
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition />
@@ -871,7 +872,7 @@
                                                         ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.AudioCompactTip]}" />
                                                 </DataGridTemplateColumn.Header>
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <Grid Margin="10,0,0,0" IsVisible="{Binding !ItemInfo.IsImage}">
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition />
@@ -932,7 +933,7 @@
                                                 Header="Similarity"
                                                 IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
                                                         <Border
                                                             CornerRadius="4"
                                                             Padding="6,2"
@@ -952,6 +953,7 @@
                                             </DataGridTemplateColumn>
                                             <DataGridTextColumn
                                                 Width="1*"
+                                                x:DataType="vm:DuplicateItemVM"
                                                 Binding="{Binding ItemInfo.PartialClipOffsetDisplay, TargetNullValue=''}"
                                                 Header="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.ClipOffset]}"
                                                 IsReadOnly="True" />
@@ -1476,15 +1478,16 @@
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}" IsThreeState="False"
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetTooltip]}" />
                                                         <ComboBox MinWidth="260" MaxWidth="360" HorizontalAlignment="Left"
+                                                                  x:DataType="Settings:SettingsFile"
                                                                   PlaceholderText="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetPlaceholder]}"
                                                                   IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}"
                                                                   ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomSelectionPresets}"
                                                                   SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPreset}">
                                                             <ComboBox.SelectedValueBinding>
-                                                                <Binding Path="Name" />
+                                                                <Binding Path="Name" DataType="Settings:CustomSelectionPreset" />
                                                             </ComboBox.SelectedValueBinding>
                                                             <ComboBox.ItemTemplate>
-                                                                <DataTemplate>
+                                                                <DataTemplate x:DataType="Settings:CustomSelectionPreset">
                                                                     <TextBlock Text="{Binding Name}" />
                                                                 </DataTemplate>
                                                             </ComboBox.ItemTemplate>
@@ -1942,11 +1945,11 @@
                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailDoubleClick]}" />
                                                         <ComboBox MinWidth="200"
                                                                   ItemsSource="{Binding ThumbnailDoubleClickOptions}"
-                                                                  SelectedValueBinding="{Binding Value}"
+                                                                  SelectedValueBinding="{ReflectionBinding Value}"
                                                                   SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailDoubleClickAction, Mode=TwoWay}">
                                                             <ComboBox.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <TextBlock Text="{Binding Key}" />
+                                                                    <TextBlock x:CompileBindings="False" Text="{Binding Key}" />
                                                                 </DataTemplate>
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>
@@ -1958,6 +1961,8 @@
                                                     BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
                                                     BorderThickness="1" CornerRadius="6" Padding="12">
                                                 <StackPanel Spacing="4">
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowThumbnailColumn]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}" IsThreeState="False" />
                                                     <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowPathColumn]}"
                                                               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}" IsThreeState="False" />
                                                     <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowDurationColumn]}"

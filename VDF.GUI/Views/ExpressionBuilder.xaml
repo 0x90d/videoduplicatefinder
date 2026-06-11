@@ -5,6 +5,9 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:data="using:VDF.GUI.Data"
+    xmlns:vm="using:VDF.GUI.ViewModels"
+    x:DataType="vm:ExpressionBuilderVM"
     Title="{Binding Source={x:Static local:App.Lang}, Path=[ExpressionBuilder.Title]}"
     MinWidth="400"
     MaxWidth="600"
@@ -58,8 +61,11 @@
             <ComboBox
                 Grid.Column="1"
                 ItemsSource="{Binding ExpressionPresets}"
-                SelectedItem="{Binding SelectedPreset}"
-                DisplayMemberBinding="{Binding Name}" />
+                SelectedItem="{Binding SelectedPreset}">
+                <ComboBox.DisplayMemberBinding>
+                    <Binding Path="Name" DataType="data:ExpressionPreset" />
+                </ComboBox.DisplayMemberBinding>
+            </ComboBox>
             <Button
                 Grid.Column="2"
                 Margin="5,0"

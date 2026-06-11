@@ -7,6 +7,8 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 		x:Class="VDF.GUI.Views.ChooseAlgoView"
+		xmlns:views="using:VDF.GUI.Views"
+		x:DataType="views:ChooseAlgoView"
 		MaxWidth="720"
 		WindowStartupLocation="CenterOwner"
 		SizeToContent="WidthAndHeight"

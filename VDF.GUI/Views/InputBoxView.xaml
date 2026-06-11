@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
     xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+    xmlns:vm="using:VDF.GUI.ViewModels"
+    x:DataType="vm:InputBoxVM"
     Title="{Binding Title}"
     MinWidth="400"
     Width="400"

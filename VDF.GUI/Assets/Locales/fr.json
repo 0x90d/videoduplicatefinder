@@ -290,6 +290,7 @@
 	"MainWindow.Settings.ShowAudioColumn": "Afficher la colonne audio¹",
 	"MainWindow.Settings.ShowDurationColumn": "Afficher la colonne durée¹",
 	"MainWindow.Settings.ShowFormatColumn": "Afficher la colonne format¹",
+	"MainWindow.Settings.ShowThumbnailColumn": "Afficher la colonne des miniatures",
 	"MainWindow.Settings.ShowPathColumn": "Afficher la colonne chemin¹",
 	"MainWindow.Settings.ShowSimilarityColumn": "Afficher la colonne similarité¹",
 	"MainWindow.Settings.ThumbnailDoubleClick": "Double-clic sur miniature :",

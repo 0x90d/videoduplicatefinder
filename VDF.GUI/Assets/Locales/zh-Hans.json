@@ -290,6 +290,7 @@
 	"MainWindow.Settings.ShowAudioColumn": "显示音频列¹",
 	"MainWindow.Settings.ShowDurationColumn": "显示时长列¹",
 	"MainWindow.Settings.ShowFormatColumn": "显示格式列¹",
+	"MainWindow.Settings.ShowThumbnailColumn": "显示缩略图列",
 	"MainWindow.Settings.ShowPathColumn": "显示路径列¹",
 	"MainWindow.Settings.ShowSimilarityColumn": "显示相似度列¹",
 	"MainWindow.Settings.ThumbnailDoubleClick": "缩略图双击：",

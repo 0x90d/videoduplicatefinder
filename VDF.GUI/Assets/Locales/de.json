@@ -290,6 +290,7 @@
 	"MainWindow.Settings.ShowAudioColumn": "Audio-Spalte anzeigen¹",
 	"MainWindow.Settings.ShowDurationColumn": "Dauer-Spalte anzeigen¹",
 	"MainWindow.Settings.ShowFormatColumn": "Format-Spalte anzeigen¹",
+	"MainWindow.Settings.ShowThumbnailColumn": "Vorschaubild-Spalte anzeigen",
 	"MainWindow.Settings.ShowPathColumn": "Pfad-Spalte anzeigen¹",
 	"MainWindow.Settings.ShowSimilarityColumn": "Ähnlichkeits-Spalte anzeigen¹",
 	"MainWindow.Settings.ThumbnailDoubleClick": "Thumbnail-Doppelklick:",

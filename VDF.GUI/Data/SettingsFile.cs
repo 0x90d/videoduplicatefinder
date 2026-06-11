@@ -404,6 +404,12 @@ namespace VDF.GUI.Data {
 			get => _ThumbnailComparerMode;
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerMode, value);
 		}
+		bool _ShowThumbnailColumn = true;
+		[JsonPropertyName("ShowThumbnailColumn")]
+		public bool ShowThumbnailColumn {
+			get => _ShowThumbnailColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowThumbnailColumn, value);
+		}
 		bool _ShowPathColumn = true;
 		[JsonPropertyName("ShowPathColumn")]
 		public bool ShowPathColumn {

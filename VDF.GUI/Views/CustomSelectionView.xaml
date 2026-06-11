@@ -7,6 +7,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
     xmlns:app="clr-namespace:VDF.GUI"
+    xmlns:data="using:VDF.GUI.Data"
+    xmlns:vm="using:VDF.GUI.ViewModels"
+    x:DataType="vm:CustomSelectionVM"
     x:Name="CustomSelectionWindow"
     Title="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Title]}"
     MinWidth="400"
@@ -92,8 +95,11 @@
                 <ComboBox
                     Grid.Column="1"
                     ItemsSource="{Binding CustomSelectionPresets}"
-                    SelectedItem="{Binding SelectedPreset}"
-                    DisplayMemberBinding="{Binding Name}" />
+                    SelectedItem="{Binding SelectedPreset}">
+                    <ComboBox.DisplayMemberBinding>
+                        <Binding Path="Name" DataType="data:CustomSelectionPreset" />
+                    </ComboBox.DisplayMemberBinding>
+                </ComboBox>
                 <Button
                     Grid.Column="2"
                     Margin="5,0"
