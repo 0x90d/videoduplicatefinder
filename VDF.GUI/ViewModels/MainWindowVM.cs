@@ -201,6 +201,18 @@ namespace VDF.GUI.ViewModels {
 			get => _DuplicatesCheckedCounter;
 			set => this.RaiseAndSetIfChanged(ref _DuplicatesCheckedCounter, value);
 		}
+		long _DuplicatesCheckedSizeInternal;
+		long DuplicatesCheckedSizeInternal {
+			get => _DuplicatesCheckedSizeInternal;
+			set {
+				_DuplicatesCheckedSizeInternal = value;
+				this.RaisePropertyChanged(nameof(DuplicatesCheckedSize));
+			}
+		}
+		public string DuplicatesCheckedSize => DuplicatesCheckedSizeInternal.BytesToString();
+		// SizeLong is -1 when the file no longer exists on disk; don't let those
+		// items distort the checked-size total.
+		static long CheckedSizeOf(DuplicateItemVM item) => Math.Max(0, item.ItemInfo.SizeLong);
 		public bool IsMultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
 		public bool IsMultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
 
@@ -295,24 +307,32 @@ namespace VDF.GUI.ViewModels {
 			if (e.OldItems != null) {
 				foreach (INotifyPropertyChanged item in e.OldItems) {
 					item.PropertyChanged -= DuplicateItemVM_PropertyChanged;
-					if (((DuplicateItemVM)item).Checked)
+					if (((DuplicateItemVM)item).Checked) {
 						DuplicatesCheckedCounter--;
+						DuplicatesCheckedSizeInternal -= CheckedSizeOf((DuplicateItemVM)item);
+					}
 				}
 			}
 			if (e.NewItems != null) {
 				foreach (INotifyPropertyChanged item in e.NewItems)
 					item.PropertyChanged += DuplicateItemVM_PropertyChanged;
 			}
-			if (e.Action == NotifyCollectionChangedAction.Reset)
+			if (e.Action == NotifyCollectionChangedAction.Reset) {
 				DuplicatesCheckedCounter = 0;
+				DuplicatesCheckedSizeInternal = 0;
+			}
 		}
 
 		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName != nameof(DuplicateItemVM.Checked) || sender == null) return;
-			if (((DuplicateItemVM)sender).Checked)
+			if (((DuplicateItemVM)sender).Checked) {
 				DuplicatesCheckedCounter++;
-			else
+				DuplicatesCheckedSizeInternal += CheckedSizeOf((DuplicateItemVM)sender);
+			}
+			else {
 				DuplicatesCheckedCounter--;
+				DuplicatesCheckedSizeInternal -= CheckedSizeOf((DuplicateItemVM)sender);
+			}
 		}
 
 		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
@@ -1394,10 +1414,17 @@ Non-Windows setup:
 			toDelete ??= CheckedItemsToDelete;
 			if (toDelete.Count == 0) return;
 
-			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
-				fromDisk
+			long totalSizeToDelete = 0;
+			foreach (var item in toDelete)
+				totalSizeToDelete += CheckedSizeOf(item);
+
+			string confirmMessage = fromDisk
 					? (!permanently ? App.Lang["Message.DeleteToTrashConfirm"] : App.Lang["Message.DeletePermanentlyConfirm"])
-					: (blackList ? App.Lang["Message.DeleteFromListBlacklistConfirm"] : App.Lang["Message.DeleteFromListConfirm"]),
+					: (blackList ? App.Lang["Message.DeleteFromListBlacklistConfirm"] : App.Lang["Message.DeleteFromListConfirm"]);
+			confirmMessage += Environment.NewLine + Environment.NewLine +
+				string.Format(App.Lang["Message.DeleteConfirmStats"], toDelete.Count, totalSizeToDelete.BytesToString());
+
+			MessageBoxButtons? dlgResult = await MessageBoxService.Show(confirmMessage,
 				MessageBoxButtons.Yes | MessageBoxButtons.No);
 			if (dlgResult != MessageBoxButtons.Yes) return;
 
@@ -1466,6 +1493,11 @@ Non-Windows setup:
 
 			if (freedBytes > 0)
 				TotalSizeRemovedInternal += freedBytes;
+
+			int failedCount = toDelete.Count - actuallyDeleted.Count;
+			if (failedCount > 0)
+				await MessageBoxService.Show(string.Format(App.Lang["Message.DeleteCompletedWithFailures"],
+					actuallyDeleted.Count, toDelete.Count, failedCount));
 
 			if (actuallyDeleted.Count == 0)
 				return;

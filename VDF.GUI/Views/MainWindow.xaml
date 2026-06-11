@@ -1142,6 +1142,11 @@
                                     </TextBlock>
                                     <Border Width="1" Margin="5,2" Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock FontSize="12">
+                                        <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.CheckedSize]}" />
+                                        <Run Text="{Binding DuplicatesCheckedSize, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <Border Width="1" Margin="5,2" Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock FontSize="12">
                                         <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.Duplicates]}" />
                                         <Run Text="{Binding TotalDuplicates, Mode=OneWay}" />
                                     </TextBlock>
