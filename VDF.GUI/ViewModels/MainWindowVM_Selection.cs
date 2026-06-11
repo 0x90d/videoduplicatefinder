@@ -70,7 +70,10 @@ namespace VDF.GUI.ViewModels {
 			try {
 				// Use PrimitiveTypes only — avoids registering types like Convert, Activator, etc.
 				// that could be abused if a malicious expression is loaded from a crafted settings file.
+				// Assignments are disabled: "item.IsBestSize = true" (a typo for ==) would otherwise
+				// WRITE the property on every item and match everything; now it's a parse error.
 				interpreter = new Interpreter(InterpreterOptions.PrimitiveTypes | InterpreterOptions.SystemKeywords)
+					.EnableAssignment(AssignmentOperators.None)
 					.Reference(typeof(TimeSpan))
 					.Reference(typeof(Math))
 					.Reference(typeof(Regex))

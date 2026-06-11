@@ -1167,17 +1167,32 @@
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
                                             Spacing="6">
+                                            <!-- Also hidden while busy: the busy overlay is translucent, so this
+                                                 text otherwise shows through and overlaps its progress messages
+                                                 (e.g. during the FFmpeg download at scan start). -->
                                             <TextBlock
                                                 HorizontalAlignment="Center"
                                                 FontSize="18"
-                                                IsVisible="{Binding !IsScanning}"
                                                 Opacity="0.9"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.EmptyState.Title]}" />
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.EmptyState.Title]}">
+                                                <TextBlock.IsVisible>
+                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                        <Binding Path="!IsScanning" />
+                                                        <Binding Path="!IsBusy" />
+                                                    </MultiBinding>
+                                                </TextBlock.IsVisible>
+                                            </TextBlock>
                                             <TextBlock
                                                 HorizontalAlignment="Center"
-                                                IsVisible="{Binding !IsScanning}"
                                                 Opacity="0.65"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.EmptyState.Subtitle]}" />
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.EmptyState.Subtitle]}">
+                                                <TextBlock.IsVisible>
+                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                        <Binding Path="!IsScanning" />
+                                                        <Binding Path="!IsBusy" />
+                                                    </MultiBinding>
+                                                </TextBlock.IsVisible>
+                                            </TextBlock>
                                         </StackPanel>
                                     </Border>
                                 </Grid>

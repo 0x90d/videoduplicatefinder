@@ -409,11 +409,17 @@ namespace VDF.GUI.ViewModels {
 			}
 
 			if (ffmpegFound && ffprobeFound) {
+				// Everything is in place — the manual install/restart instructions below
+				// would only contradict the success (the scan continues right away).
 				sb.AppendLine(App.Lang["Message.FfmpegDownloadVerified"]);
+				if (!string.IsNullOrWhiteSpace(targetFolder)) {
+					sb.AppendLine();
+					sb.AppendLine(string.Format(CultureInfo.InvariantCulture, App.Lang["Message.FfmpegDownloadTargetFolder"], targetFolder));
+				}
+				return sb.ToString();
 			}
-			else {
-				sb.AppendLine(App.Lang["Message.FfmpegDownloadMissing"]);
-			}
+
+			sb.AppendLine(App.Lang["Message.FfmpegDownloadMissing"]);
 
 			if (!string.IsNullOrWhiteSpace(targetFolder)) {
 				sb.AppendLine();

@@ -126,15 +126,25 @@ namespace VDF.GUI.Views {
 		/// whenever the client area is extended (always on Linux; on Windows since
 		/// Avalonia 12 removed PreferSystemChrome). The app's own title TextBlock then
 		/// duplicates it. Detect the drawn title instead of hardcoding platforms so
-		/// each OS keeps exactly one title.
+		/// each OS keeps exactly one title. The decorations attach asynchronously
+		/// (after Opened — a single deferred check missed them), so probe on the
+		/// first layout passes and stop once found or after a few attempts.
 		/// </summary>
 		void HideOwnTitleIfChromeDrawsOne() {
-			Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+			int attempts = 0;
+			void Check(object? sender, EventArgs e) {
 				bool chromeTitleVisible = this.GetVisualDescendants()
 					.Any(c => c is Control { Name: "PART_TitleTextPanel", IsVisible: true });
-				if (chromeTitleVisible)
+				if (chromeTitleVisible) {
 					this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
-			}, Avalonia.Threading.DispatcherPriority.Loaded);
+					LayoutUpdated -= Check;
+				}
+				else if (++attempts >= 30) {
+					LayoutUpdated -= Check; // no managed chrome on this platform/config
+				}
+			}
+			LayoutUpdated += Check;
+			Check(null, EventArgs.Empty);
 		}
 
 		void ApplySavedWindowPlacement() {
