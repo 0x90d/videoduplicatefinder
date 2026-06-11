@@ -42,4 +42,14 @@ namespace VDF.GUI.Data {
 	[JsonSerializable(typeof(List<DuplicateItemVM>))]
 	[JsonSerializable(typeof(Dictionary<string, ValueTuple<long, int>>), TypeInfoPropertyName = "ThumbPackIndex")]
 	internal partial class GuiJsonFieldsContext : JsonSerializerContext { }
+
+	/// <summary>WriteIndented twin of <see cref="GuiJsonContext"/> (cleanup dry-run reports).</summary>
+	[JsonSourceGenerationOptions(WriteIndented = true)]
+	[JsonSerializable(typeof(CleanupDryRunReport))]
+	internal partial class GuiJsonPrettyContext : JsonSerializerContext { }
+
+	/// <summary>WriteIndented twin of <see cref="GuiJsonFieldsContext"/> (pretty scan-results exports).</summary>
+	[JsonSourceGenerationOptions(IncludeFields = true, WriteIndented = true)]
+	[JsonSerializable(typeof(ScanResultsEnvelope))]
+	internal partial class GuiJsonFieldsPrettyContext : JsonSerializerContext { }
 }

@@ -265,6 +265,7 @@ namespace VDF.GUI.ViewModels {
 		public ThumbnailComparerVM(List<LargeThumbnailDuplicateItem> duplicateItemVMs)
 			: this(duplicateItemVMs, null, null) { }
 
+		[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = MainWindowVM.WhenAnyValueTrimJustification)]
 		public ThumbnailComparerVM(
 			List<LargeThumbnailDuplicateItem> duplicateItemVMs,
 			Guid? currentGroupId,

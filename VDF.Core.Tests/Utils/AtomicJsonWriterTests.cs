@@ -15,9 +15,20 @@
 //
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using VDF.Core.Utils;
 
 namespace VDF.Core.Tests.Utils;
+
+sealed record AtomicWriterPayload(string Name, int Count);
+
+sealed class AtomicWriterRecursive {
+	public AtomicWriterRecursive? Self { get; set; }
+}
+
+[JsonSerializable(typeof(AtomicWriterPayload))]
+[JsonSerializable(typeof(AtomicWriterRecursive))]
+partial class AtomicWriterTestJsonContext : JsonSerializerContext { }
 
 public class AtomicJsonWriterTests : IDisposable {
 	readonly string _dir;
@@ -31,24 +42,22 @@ public class AtomicJsonWriterTests : IDisposable {
 		try { Directory.Delete(_dir, recursive: true); } catch { /* ignore */ }
 	}
 
-	sealed record Payload(string Name, int Count);
-
 	[Fact]
 	public async Task RoundTrip_WritesValidJson() {
 		string path = Path.Combine(_dir, "data.json");
-		var value = new Payload("hello", 42);
+		var value = new AtomicWriterPayload("hello", 42);
 
-		await AtomicJsonWriter.WriteAsync(path, value);
+		await AtomicJsonWriter.WriteAsync(path, value, AtomicWriterTestJsonContext.Default.AtomicWriterPayload);
 
 		Assert.True(File.Exists(path));
-		var read = JsonSerializer.Deserialize<Payload>(await File.ReadAllTextAsync(path));
+		var read = JsonSerializer.Deserialize<AtomicWriterPayload>(await File.ReadAllTextAsync(path));
 		Assert.Equal(value, read);
 	}
 
 	[Fact]
 	public async Task LeavesNoTempFile_OnSuccess() {
 		string path = Path.Combine(_dir, "data.json");
-		await AtomicJsonWriter.WriteAsync(path, new Payload("ok", 1));
+		await AtomicJsonWriter.WriteAsync(path, new AtomicWriterPayload("ok", 1), AtomicWriterTestJsonContext.Default.AtomicWriterPayload);
 		Assert.False(File.Exists(path + ".tmp"));
 	}
 
@@ -57,10 +66,10 @@ public class AtomicJsonWriterTests : IDisposable {
 		string path = Path.Combine(_dir, "data.json");
 		await File.WriteAllTextAsync(path, "stale contents that should be replaced");
 
-		await AtomicJsonWriter.WriteAsync(path, new Payload("new", 7));
+		await AtomicJsonWriter.WriteAsync(path, new AtomicWriterPayload("new", 7), AtomicWriterTestJsonContext.Default.AtomicWriterPayload);
 
-		var read = JsonSerializer.Deserialize<Payload>(await File.ReadAllTextAsync(path));
-		Assert.Equal(new Payload("new", 7), read);
+		var read = JsonSerializer.Deserialize<AtomicWriterPayload>(await File.ReadAllTextAsync(path));
+		Assert.Equal(new AtomicWriterPayload("new", 7), read);
 	}
 
 	[Fact]
@@ -69,18 +78,14 @@ public class AtomicJsonWriterTests : IDisposable {
 		await File.WriteAllTextAsync(path, "{\"name\":\"original\",\"count\":1}");
 
 		// JsonSerializer cannot serialize an unbounded recursion: build one.
-		var bad = new Recursive();
+		var bad = new AtomicWriterRecursive();
 		bad.Self = bad;
 
 		await Assert.ThrowsAnyAsync<Exception>(async () =>
-			await AtomicJsonWriter.WriteAsync(path, bad));
+			await AtomicJsonWriter.WriteAsync(path, bad, AtomicWriterTestJsonContext.Default.AtomicWriterRecursive));
 
 		Assert.True(File.Exists(path));
 		Assert.Contains("original", await File.ReadAllTextAsync(path));
 		Assert.False(File.Exists(path + ".tmp"));
-	}
-
-	sealed class Recursive {
-		public Recursive? Self { get; set; }
 	}
 }

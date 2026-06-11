@@ -357,10 +357,7 @@ namespace VDF.GUI.ViewModels {
 				}
 			});
 			if (string.IsNullOrEmpty(result)) return;
-			var json = JsonSerializer.Serialize(report, new JsonSerializerOptions {
-				WriteIndented = true,
-				TypeInfoResolver = GuiJsonContext.Default
-			});
+			var json = JsonSerializer.Serialize(report, GuiJsonPrettyContext.Default.CleanupDryRunReport);
 			File.WriteAllText(result, json);
 			await MessageBoxService.Show(App.Lang["Message.CleanupDryRunSaved"]);
 		});

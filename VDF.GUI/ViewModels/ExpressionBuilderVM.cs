@@ -88,6 +88,11 @@ namespace VDF.GUI.ViewModels {
 		});
 		public ReactiveCommand<Unit, Unit> OKCommand => ReactiveCommand.Create(() => {
 			host.Close(true);
-		}, this.WhenAnyValue(x => x.ExpressionText, t => !string.IsNullOrWhiteSpace(t)));
+		}, CanConfirm);
+
+		IObservable<bool> CanConfirm {
+			[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = MainWindowVM.WhenAnyValueTrimJustification)]
+			get => this.WhenAnyValue(x => x.ExpressionText, t => !string.IsNullOrWhiteSpace(t));
+		}
 	}
 }

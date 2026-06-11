@@ -303,6 +303,14 @@ namespace VDF.GUI.ViewModels {
 		public static bool IsDebug => false;
 #endif
 
+		// ILLink flags every WhenAnyValue call (IL2026): it reflects over the member
+		// chain in the expression. All chains here target view-model properties that
+		// are also statically referenced (compiled bindings and code), so they are
+		// preserved and the warning is a false positive — suppressed per call site.
+		internal const string WhenAnyValueTrimJustification =
+			"WhenAnyValue reflects over view-model properties that are also statically referenced (compiled bindings and code), so they are preserved.";
+
+		[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = WhenAnyValueTrimJustification)]
 		public MainWindowVM() {
 			MigrateLegacyBlacklistLocation();
 			GroupBlacklist = BlacklistStore.Load(BlacklistedGroupsFile, msg => Logger.Instance.Info(msg));
@@ -759,13 +767,11 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		public ReactiveCommand<Unit, Unit> ExportScanResultsCommand => ReactiveCommand.CreateFromTask(async () => {
-			await ExportScanResults(serializerOptions: JsonOptions);
+			await ExportScanResults();
 		});
 
 		public ReactiveCommand<Unit, Unit> ExportScanResultsPrettyCommand => ReactiveCommand.CreateFromTask(async () => {
-			await ExportScanResults(serializerOptions: new JsonSerializerOptions(JsonOptions) {
-				WriteIndented = true,
-			});
+			await ExportScanResults(envelopeTypeInfo: GuiJsonFieldsPrettyContext.Default.ScanResultsEnvelope);
 		});
 
 		public ReactiveCommand<Unit, Unit> ExportScanResultsToFileCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -822,27 +828,22 @@ namespace VDF.GUI.ViewModels {
 				}
 		}
 
-		private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions {
-			IncludeFields = true,
-			TypeInfoResolver = GuiJsonFieldsContext.Default,
-		};
-
 		// Accepts both the v1 envelope ({version, items}) and the legacy raw array
 		// shape produced by older builds. Returns the items list.
 		private static List<DuplicateItemVM> ReadScanResultsItems(JsonElement root) {
 			if (root.ValueKind == JsonValueKind.Array)
-				return root.Deserialize<List<DuplicateItemVM>>(JsonOptions) ?? new();
+				return root.Deserialize(GuiJsonFieldsContext.Default.ListDuplicateItemVM) ?? new();
 
 			if (root.ValueKind == JsonValueKind.Object &&
 				root.TryGetProperty("items", out var itemsEl) &&
 				itemsEl.ValueKind == JsonValueKind.Array) {
-				return itemsEl.Deserialize<List<DuplicateItemVM>>(JsonOptions) ?? new();
+				return itemsEl.Deserialize(GuiJsonFieldsContext.Default.ListDuplicateItemVM) ?? new();
 			}
 
 			throw new JsonException("Unknown scan results format");
 		}
 
-		async Task ExportScanResults(string? path = null, bool includeThumbnails = true, int thumbMaxEdge = 160, JsonSerializerOptions? serializerOptions = null) {
+		async Task ExportScanResults(string? path = null, bool includeThumbnails = true, int thumbMaxEdge = 160, System.Text.Json.Serialization.Metadata.JsonTypeInfo<ScanResultsEnvelope>? envelopeTypeInfo = null) {
 			path ??= await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
 				SuggestedStartLocation = await ApplicationHelpers.MainWindow.StorageProvider.TryGetFolderFromPathAsync(CoreUtils.CurrentFolder),
 				DefaultExtension = includeThumbnails ? ".zip" : ".json",
@@ -862,7 +863,7 @@ namespace VDF.GUI.ViewModels {
 
 				if (!includeThumbnails) {
 					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
-					await JsonSerializer.SerializeAsync(fs, envelope, serializerOptions ?? JsonOptions);
+					await JsonSerializer.SerializeAsync(fs, envelope, envelopeTypeInfo ?? GuiJsonFieldsContext.Default.ScanResultsEnvelope);
 				}
 				else {
 					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
@@ -870,7 +871,7 @@ namespace VDF.GUI.ViewModels {
 					var jsonEntry = zip.CreateEntry("scan.json", CompressionLevel.NoCompression);
 
 					await using (var es = jsonEntry.Open()) {
-						await JsonSerializer.SerializeAsync(es, envelope, serializerOptions ?? JsonOptions);
+						await JsonSerializer.SerializeAsync(es, envelope, envelopeTypeInfo ?? GuiJsonFieldsContext.Default.ScanResultsEnvelope);
 						await es.FlushAsync();
 					}
 
@@ -1416,7 +1417,12 @@ Non-Windows setup:
 			else {
 				Scanner.StartCompare();
 			}
-		}, this.WhenAnyValue(x => x.IsBusy, busy => !busy));
+		}, CanStartScan);
+
+		IObservable<bool> CanStartScan {
+			[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = WhenAnyValueTrimJustification)]
+			get => this.WhenAnyValue(x => x.IsBusy, busy => !busy);
+		}
 
 		/// <summary>
 		/// Copies the GUI settings into the Core engine. Must run before any engine
@@ -1488,19 +1494,34 @@ Non-Windows setup:
 		public ReactiveCommand<Unit, Unit> PauseScanCommand => ReactiveCommand.Create(() => {
 			Scanner.Pause();
 			IsPaused = true;
-		}, this.WhenAnyValue(x => x.IsScanning, x => x.IsPaused, (a, b) => a && !b));
+		}, CanPauseScan);
+
+		IObservable<bool> CanPauseScan {
+			[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = WhenAnyValueTrimJustification)]
+			get => this.WhenAnyValue(x => x.IsScanning, x => x.IsPaused, (a, b) => a && !b);
+		}
 
 		public ReactiveCommand<Unit, Unit> ResumeScanCommand => ReactiveCommand.Create(() => {
 			IsPaused = false;
 			Scanner.Resume();
-		}, this.WhenAnyValue(x => x.IsScanning, x => x.IsPaused, (a, b) => a && b));
+		}, CanResumeScan);
+
+		IObservable<bool> CanResumeScan {
+			[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = WhenAnyValueTrimJustification)]
+			get => this.WhenAnyValue(x => x.IsScanning, x => x.IsPaused, (a, b) => a && b);
+		}
 
 		public ReactiveCommand<Unit, Unit> StopScanCommand => ReactiveCommand.Create(() => {
 			IsPaused = false;
 			IsBusy = true;
 			IsBusyOverlayText = "Stopping all scan threads...";
 			Scanner.Stop();
-		}, this.WhenAnyValue(x => x.IsScanning));
+		}, CanStopScan);
+
+		IObservable<bool> CanStopScan {
+			[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = WhenAnyValueTrimJustification)]
+			get => this.WhenAnyValue(x => x.IsScanning);
+		}
 
 		public ReactiveCommand<Unit, Unit> MarkGroupAsNotAMatchCommand => ReactiveCommand.CreateFromTask(async () => {
 			try {

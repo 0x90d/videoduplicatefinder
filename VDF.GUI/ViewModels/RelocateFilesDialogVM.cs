@@ -79,15 +79,16 @@ namespace VDF.GUI.ViewModels {
 		private readonly HashSet<FileEntry> _entries;
 		private readonly string TempDatabaseFile;
 		private readonly DatabaseWrapper DbWrapper;
+		// Only forwarded to ScanEngine.ExportDataBaseToJson (which serializes through
+		// its own typed metadata); local (de)serialization uses CoreJsonContext directly.
 		static readonly JsonSerializerOptions serializerOptions = new() {
 			IncludeFields = true,
-			TypeInfoResolver = VDF.Core.Utils.CoreJsonContext.Default,
 		};
 		public RelocateFilesDialogVM(Window owner) {
 			_owner = owner;
 			TempDatabaseFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 			ScanEngine.ExportDataBaseToJson(TempDatabaseFile, serializerOptions);
-			DbWrapper = JsonSerializer.Deserialize<DatabaseWrapper>(File.ReadAllBytes(TempDatabaseFile), serializerOptions)!;
+			DbWrapper = JsonSerializer.Deserialize(File.ReadAllBytes(TempDatabaseFile), VDF.Core.Utils.CoreJsonContext.Default.DatabaseWrapper)!;
 			_entries = [.. DbWrapper.Entries];
 		}
 
@@ -161,7 +162,12 @@ namespace VDF.GUI.ViewModels {
 			if (ScanRoots.Any()) ScanRoots.RemoveAt(ScanRoots.Count - 1);
 		});
 		public ReactiveCommand<Unit, Unit> BuildPreview => ReactiveCommand.Create(BuildPreviewImpl);
-		public ReactiveCommand<Unit, Unit> Apply => ReactiveCommand.Create(ApplyImpl, this.WhenAnyValue(x => x.CanApply));
+		public ReactiveCommand<Unit, Unit> Apply => ReactiveCommand.Create(ApplyImpl, CanApplyObservable);
+
+		IObservable<bool> CanApplyObservable {
+			[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = MainWindowVM.WhenAnyValueTrimJustification)]
+			get => this.WhenAnyValue(x => x.CanApply);
+		}
 		public ReactiveCommand<Unit, Unit> Cancel => ReactiveCommand.Create(() => _owner.Close());
 		public ReactiveCommand<Unit, Unit> CheckAllResults => ReactiveCommand.Create(() => {
 			foreach (var item in Preview) {
@@ -335,7 +341,7 @@ namespace VDF.GUI.ViewModels {
 
 			DbWrapper.Entries = [.. _entries];
 			try {
-				File.WriteAllBytes(TempDatabaseFile, JsonSerializer.SerializeToUtf8Bytes(DbWrapper, serializerOptions));
+				File.WriteAllBytes(TempDatabaseFile, JsonSerializer.SerializeToUtf8Bytes(DbWrapper, VDF.Core.Utils.CoreJsonContext.Default.DatabaseWrapper));
 			}
 			catch (Exception e) {
 				Logger.Instance.Info($"Failed to save changes to database file, because of {e}");

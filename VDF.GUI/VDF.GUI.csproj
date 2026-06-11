@@ -8,6 +8,14 @@
     <!-- Avalonia 12 compiles bindings by default; our views use reflection bindings
          without x:DataType. Keep the v11 behavior until views are annotated. -->
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Native AOT publish: IL2104/IL3053 are per-assembly rollups for third-party
+         libraries (MemoryPack, ReactiveUI, Avalonia.DataGrid, ActiPro, DynamicExpresso,
+         Microsoft.CSharp, System.Linq.Expressions) saying they contain members the
+         trimmer can't prove safe. Triaged 2026-06: our usage of all of them is covered
+         (MemoryPack formatters registered statically, DataGrid sort/group paths and
+         DynamicExpresso verified working under AOT). Our own code publishes without
+         IL warnings. -->
+    <NoWarn>$(NoWarn);IL2104;IL3053</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTargets>x64;arm64</PlatformTargets>

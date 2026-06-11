@@ -24,27 +24,8 @@ namespace VDF.Core.Utils {
 	/// REPLACE_EXISTING); on POSIX <c>rename(2)</c> is atomic.
 	/// </summary>
 	public static class AtomicJsonWriter {
-		public static async Task WriteAsync<T>(
-			string path,
-			T value,
-			JsonSerializerOptions? options = null,
-			CancellationToken ct = default) {
-
-			string dir = Path.GetDirectoryName(path)!;
-			string tmp = Path.Combine(dir, Path.GetFileName(path) + ".tmp");
-
-			try {
-				await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 64 * 1024, useAsync: true)) {
-					await JsonSerializer.SerializeAsync(fs, value, options, ct);
-				}
-				File.Move(tmp, path, overwrite: true);
-			}
-			finally {
-				try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* ignore */ }
-			}
-		}
-
-		/// <summary>AOT-safe overload taking source-generated type metadata.</summary>
+		// Only the JsonTypeInfo overload exists: the JsonSerializerOptions-based one
+		// carried RequiresUnreferencedCode and was unused.
 		public static async Task WriteAsync<T>(
 			string path,
 			T value,
