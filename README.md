@@ -34,7 +34,9 @@ In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detectio
 
 # Downloads
 
-[Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) — attachments are automatically rebuilt and replaced on every commit.
+[Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) — attachments are automatically rebuilt and replaced on every commit.
+
+> **Upgrading from 3.x:** your scan database is migrated automatically on first load. Cached image hashes are recomputed on the next scan (image processing moved from ImageSharp to FFmpeg); video hashes are unaffected. Downgrading back to 3.x after the migration is not recommended. The last 3.x build remains available on the [3.0.x release](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x).
 
 Available packages per platform:
 - `GUI-<platform>` — desktop application
@@ -105,7 +107,7 @@ Same as the GUI: FFmpeg and FFprobe must be on your `PATH` or in the same direct
 
 ### Installation
 
-Download `CLI-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) and extract it.
+Download `CLI-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) and extract it.
 
 On Linux/macOS, make the binary executable:
 ```bash
@@ -203,7 +205,7 @@ FFmpeg and FFprobe are required. When running outside Docker, VDF.Web will attem
 
 ### Installation (self-contained archive)
 
-Download `Web-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) and extract it.
+Download `Web-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) and extract it.
 
 On Linux/macOS:
 ```bash
@@ -317,11 +319,11 @@ Video Duplicate Finder is licensed under AGPLv3
 - [ActiPro Avalonia Controls (Free Edition)](https://github.com/Actipro/Avalonia-Controls)
 - [FFmpeg.AutoGen](https://github.com/Ruslan-B/FFmpeg.AutoGen)
 - [protobuf-net](https://github.com/protobuf-net/protobuf-net)
-- [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp)
+
 - [AcoustID.NET by wo80](https://github.com/wo80/AcoustID.NET) — the audio fingerprinting pipeline (Chromaprint-style chroma extraction, FIR smoothing, and fingerprint encoding) used for partial clip detection is derived from this library, licensed under LGPL 2.1
 
 # Building
-- .NET 9.x
+- .NET 10.x
 - Visual Studio 2022 or later is recommended
 
 # Contributing
