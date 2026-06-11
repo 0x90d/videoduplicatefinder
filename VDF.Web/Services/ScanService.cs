@@ -15,10 +15,19 @@
 //
 
 using VDF.Core;
+using VDF.Core.Utils;
 using VDF.Core.ViewModels;
 
 namespace VDF.Web.Services {
 	public enum ScanState { Idle, Scanning, Comparing, RetrievingThumbnails, Done, Aborted, Error }
+
+	/// <summary>Outcome of a batch file operation (delete / move / link).</summary>
+	public sealed class FileOpResult {
+		public int Done;
+		public int Failed;
+		public long FreedBytes;
+		public List<string> Errors { get; } = new();
+	}
 
 	public class ScanProgressArgs {
 		public string CurrentFile { get; init; } = string.Empty;
@@ -163,107 +172,210 @@ namespace VDF.Web.Services {
 					_engine.Duplicates.Remove(d);
 		}
 
+		// === Batch file operations (delete / move / link) ===
+
+		/// <summary>True while a delete/move/link batch is running.</summary>
+		public bool FileOpRunning { get; private set; }
+		public string FileOpVerb { get; private set; } = string.Empty;
+		public int FileOpCurrent { get; private set; }
+		public int FileOpMax { get; private set; }
+
+		bool TryBeginFileOp(string verb, int max) {
+			if (FileOpRunning || max == 0) return false;
+			FileOpRunning = true;
+			FileOpVerb = verb;
+			FileOpCurrent = 0;
+			FileOpMax = max;
+			Notify();
+			return true;
+		}
+
+		void EndFileOp() {
+			FileOpRunning = false;
+			FileOpVerb = string.Empty;
+			Notify();
+		}
+
 		/// <summary>Deletes files from disk and removes them from results and the scan database.</summary>
-		public (int Deleted, int Failed, List<string> Errors) DeleteItems(IEnumerable<DuplicateItem> items, bool permanent) {
-			int deleted = 0, failed = 0;
-			var errors = new List<string>();
-			foreach (var item in items.ToList()) {
-				try {
-					if (permanent)
-						File.Delete(item.Path);
-					else
-						MoveToTrash(item.Path);
-					_engine.Duplicates.Remove(item);
-					ScanEngine.RemoveFromDatabase(new FileEntry(item.Path));
-					deleted++;
-				}
-				catch (Exception ex) {
-					errors.Add($"{Path.GetFileName(item.Path)}: {ex.Message}");
-					failed++;
-				}
+		public async Task<FileOpResult> DeleteItemsAsync(IEnumerable<DuplicateItem> items, bool permanent) {
+			var list = items.ToList();
+			var result = new FileOpResult();
+			if (!TryBeginFileOp(permanent ? "Deleting" : "Moving to trash", list.Count))
+				return result;
+			try {
+				await Task.Run(() => {
+					// Windows: recycle the whole batch in one shell call — one
+					// SHFileOperation per file pays the full shell round-trip each time.
+					var batchRecycled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+					if (!permanent && OperatingSystem.IsWindows()) {
+						var existing = list.Where(d => File.Exists(d.Path)).Select(d => d.Path).ToList();
+						if (existing.Count > 0) {
+							var fs = new FileUtils.SHFILEOPSTRUCT {
+								wFunc = FileUtils.FileOperationType.FO_DELETE,
+								pFrom = string.Join('\0', existing) + "\0\0",
+								fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
+										 FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
+										 FileUtils.FileOperationFlags.FOF_NOERRORUI |
+										 FileUtils.FileOperationFlags.FOF_SILENT
+							};
+							int shResult = FileUtils.SHFileOperation(ref fs);
+							if (shResult != 0)
+								Logger.Instance.Info($"SHFileOperation returned {shResult:X} for a batch of {existing.Count} file(s); checking which files were actually recycled.");
+							foreach (var p in existing)
+								batchRecycled.Add(p);
+						}
+					}
+
+					var sw = System.Diagnostics.Stopwatch.StartNew();
+					foreach (var item in list) {
+						try {
+							bool exists = File.Exists(item.Path);
+							if (!exists) {
+								if (batchRecycled.Contains(item.Path))
+									result.FreedBytes += Math.Max(0, item.SizeLong);
+								// Already gone — still remove the entry and database record.
+							}
+							else if (permanent) {
+								File.Delete(item.Path);
+								result.FreedBytes += Math.Max(0, item.SizeLong);
+							}
+							else if (OperatingSystem.IsWindows()) {
+								// The batch ran but this file is still there.
+								throw new IOException("the shell did not move the file to the recycle bin");
+							}
+							else {
+								// System trash, falling back to permanent delete (e.g.
+								// cross-filesystem files where trashing means a full copy).
+								if (!FileUtils.MoveToTrash(item.Path))
+									File.Delete(item.Path);
+								result.FreedBytes += Math.Max(0, item.SizeLong);
+							}
+							_engine.Duplicates.Remove(item);
+							// Path-only entry — FileEntry(string) stats the file and throws once it's gone.
+							ScanEngine.RemoveFromDatabase(new FileEntry { Path = item.Path });
+							result.Done++;
+						}
+						catch (Exception ex) {
+							result.Errors.Add($"{Path.GetFileName(item.Path)}: {ex.Message}");
+							result.Failed++;
+						}
+						finally {
+							FileOpCurrent++;
+							if (sw.ElapsedMilliseconds >= 100) { sw.Restart(); Notify(); }
+						}
+					}
+					if (result.Done > 0)
+						ScanEngine.SaveDatabase();
+					DropSingletonGroups();
+				});
 			}
-			if (deleted > 0)
-				ScanEngine.SaveDatabase();
-			DropSingletonGroups();
-			Notify();
-			return (deleted, failed, errors);
+			finally { EndFileOp(); }
+			return result;
 		}
 
-		/// <summary>Moves files to a destination folder.</summary>
-		public (int Moved, int Failed, List<string> Errors) MoveItems(IEnumerable<DuplicateItem> items, string destinationFolder) {
-			int moved = 0, failed = 0;
-			var errors = new List<string>();
+		/// <summary>Moves files to a destination folder and updates the scan database paths.</summary>
+		public async Task<FileOpResult> MoveItemsAsync(IEnumerable<DuplicateItem> items, string destinationFolder) {
+			var list = items.ToList();
+			var result = new FileOpResult();
 			try { Directory.CreateDirectory(destinationFolder); }
-			catch (Exception ex) { return (0, 0, new List<string> { $"Cannot create destination folder: {ex.Message}" }); }
-
-			foreach (var item in items.ToList()) {
-				try {
-					string dest = Path.Combine(destinationFolder, Path.GetFileName(item.Path));
-					// Avoid overwriting existing files at destination
-					int n = 1;
-					string ext = Path.GetExtension(dest);
-					string nameNoExt = Path.GetFileNameWithoutExtension(dest);
-					while (File.Exists(dest))
-						dest = Path.Combine(destinationFolder, $"{nameNoExt}_{n++}{ext}");
-					File.Move(item.Path, dest);
-					_engine.Duplicates.Remove(item);
-					moved++;
-				}
-				catch (Exception ex) {
-					errors.Add($"{Path.GetFileName(item.Path)}: {ex.Message}");
-					failed++;
-				}
+			catch (Exception ex) {
+				result.Errors.Add($"Cannot create destination folder: {ex.Message}");
+				return result;
 			}
-			DropSingletonGroups();
-			Notify();
-			return (moved, failed, errors);
+			if (!TryBeginFileOp("Moving", list.Count))
+				return result;
+			try {
+				await Task.Run(() => {
+					var sw = System.Diagnostics.Stopwatch.StartNew();
+					foreach (var item in list) {
+						try {
+							string dest = Path.Combine(destinationFolder, Path.GetFileName(item.Path));
+							// Avoid overwriting existing files at destination
+							int n = 1;
+							string ext = Path.GetExtension(dest);
+							string nameNoExt = Path.GetFileNameWithoutExtension(dest);
+							while (File.Exists(dest))
+								dest = Path.Combine(destinationFolder, $"{nameNoExt}_{n++}{ext}");
+							File.Move(item.Path, dest);
+							if (ScanEngine.GetFromDatabase(item.Path, out var dbEntry) && dbEntry != null)
+								ScanEngine.UpdateFilePathInDatabase(dest, dbEntry);
+							_engine.Duplicates.Remove(item);
+							result.Done++;
+						}
+						catch (Exception ex) {
+							result.Errors.Add($"{Path.GetFileName(item.Path)}: {ex.Message}");
+							result.Failed++;
+						}
+						finally {
+							FileOpCurrent++;
+							if (sw.ElapsedMilliseconds >= 100) { sw.Restart(); Notify(); }
+						}
+					}
+					if (result.Done > 0)
+						ScanEngine.SaveDatabase();
+					DropSingletonGroups();
+				});
+			}
+			finally { EndFileOp(); }
+			return result;
 		}
 
-		static void MoveToTrash(string path) {
-			if (OperatingSystem.IsWindows()) {
-				Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(
-					path,
-					Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
-					Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
-			}
-			else if (OperatingSystem.IsLinux()) {
-				string trashDir = Path.Combine(
-					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-					".local", "share", "Trash", "files");
-				Directory.CreateDirectory(trashDir);
-				// Skip trash for cross-filesystem files (e.g. network shares) to avoid downloading
-				if (!VDF.Core.Utils.FileUtils.IsOnSameFileSystem(path, trashDir)) {
-					File.Delete(path);
-					return;
-				}
-				string dest = UniqueDestPath(trashDir, path);
-				File.Move(path, dest);
-			}
-			else if (OperatingSystem.IsMacOS()) {
-				string trashDir = Path.Combine(
-					Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".Trash");
-				Directory.CreateDirectory(trashDir);
-				// Skip trash for cross-volume files to avoid cross-volume copy
-				if (!VDF.Core.Utils.FileUtils.IsOnSameFileSystem(path, trashDir)) {
-					File.Delete(path);
-					return;
-				}
-				string dest = UniqueDestPath(trashDir, path);
-				File.Move(path, dest);
-			}
-			else {
-				File.Delete(path);
-			}
-		}
+		/// <summary>
+		/// Replaces each selected file with a hardlink or symlink to the kept file of its
+		/// group (the highest-similarity unselected member that still exists on disk).
+		/// </summary>
+		public async Task<FileOpResult> CreateLinksAsync(IEnumerable<DuplicateItem> items, bool hardLinks) {
+			var list = items.ToList();
+			var result = new FileOpResult();
+			if (!TryBeginFileOp(hardLinks ? "Creating hardlinks" : "Creating symlinks", list.Count))
+				return result;
+			try {
+				await Task.Run(() => {
+					var selected = list.ToHashSet();
+					var keeperByGroup = _engine.Duplicates
+						.Where(d => !selected.Contains(d))
+						.GroupBy(d => d.GroupId)
+						.ToDictionary(g => g.Key, g => g.OrderByDescending(d => d.Similarity).FirstOrDefault(d => File.Exists(d.Path)));
 
-		static string UniqueDestPath(string folder, string originalPath) {
-			string fileName = Path.GetFileNameWithoutExtension(originalPath);
-			string ext = Path.GetExtension(originalPath);
-			string dest = Path.Combine(folder, Path.GetFileName(originalPath));
-			int n = 1;
-			while (File.Exists(dest))
-				dest = Path.Combine(folder, $"{fileName}_{n++}{ext}");
-			return dest;
+					var sw = System.Diagnostics.Stopwatch.StartNew();
+					foreach (var item in list) {
+						try {
+							if (!File.Exists(item.Path)) {
+								// Already gone — still remove the entry and database record.
+							}
+							else {
+								keeperByGroup.TryGetValue(item.GroupId, out var keeper);
+								if (keeper == null)
+									throw new IOException("no unselected file is left in this group to link to");
+								long size = Math.Max(0, item.SizeLong);
+								// The link target path must be free before the link can be created.
+								File.Delete(item.Path);
+								if (hardLinks)
+									HardLinkUtils.CreateHardLink(item.Path, keeper.Path);
+								else
+									File.CreateSymbolicLink(item.Path, keeper.Path);
+								result.FreedBytes += size;
+							}
+							_engine.Duplicates.Remove(item);
+							ScanEngine.RemoveFromDatabase(new FileEntry { Path = item.Path });
+							result.Done++;
+						}
+						catch (Exception ex) {
+							result.Errors.Add($"{Path.GetFileName(item.Path)}: {ex.Message}");
+							result.Failed++;
+						}
+						finally {
+							FileOpCurrent++;
+							if (sw.ElapsedMilliseconds >= 100) { sw.Restart(); Notify(); }
+						}
+					}
+					if (result.Done > 0)
+						ScanEngine.SaveDatabase();
+					DropSingletonGroups();
+				});
+			}
+			finally { EndFileOp(); }
+			return result;
 		}
 
 		/// <summary>Removes database entries for files that no longer exist or have errors.</summary>

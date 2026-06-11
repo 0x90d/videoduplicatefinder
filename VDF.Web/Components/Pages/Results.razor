@@ -59,13 +59,25 @@ else {
         @if (_selected.Count > 0) {
             <div class="action-group">
                 <button @onclick="RemoveSelected">Remove from list</button>
-                <button @onclick="() => _confirmDelete = true" class="danger-outline">Delete (trash)</button>
-                <button @onclick="() => _confirmDeletePermanent = true" class="danger">Delete permanently</button>
-                <button @onclick="() => _showMovePanel = !_showMovePanel">Move to folder…</button>
+                <button @onclick="() => _confirmDelete = true" class="danger-outline" disabled="@Scan.FileOpRunning">Delete (trash)</button>
+                <button @onclick="() => _confirmDeletePermanent = true" class="danger" disabled="@Scan.FileOpRunning">Delete permanently</button>
+                <button @onclick="() => _showMovePanel = !_showMovePanel" disabled="@Scan.FileOpRunning">Move to folder…</button>
+                <button @onclick="() => _showLinkPanel = !_showLinkPanel" disabled="@Scan.FileOpRunning">Replace with links…</button>
                 <button @onclick="ClearSelection">Deselect all</button>
             </div>
         }
     </div>
+
+    @* Batch file operation progress *@
+    @if (Scan.FileOpRunning) {
+        <div class="action-panel">
+            <span class="spinner"></span>
+            <span>@Scan.FileOpVerb… @Scan.FileOpCurrent / @Scan.FileOpMax</span>
+            <div class="progress-bar-track inline-bar">
+                <div class="progress-bar-fill" style="width:@(Scan.FileOpMax > 0 ? 100 * Scan.FileOpCurrent / Scan.FileOpMax : 0)%"></div>
+            </div>
+        </div>
+    }
 
     @* Move panel *@
     @if (_showMovePanel) {
@@ -73,8 +85,19 @@ else {
             <label>Destination folder:
                 <input @bind="_moveDestination" placeholder="/path/to/destination" class="@(Directory.Exists(_moveDestination) ? "input-valid" : "")" />
             </label>
-            <button class="primary" @onclick="MoveSelected" disabled="@string.IsNullOrWhiteSpace(_moveDestination)">Move @_selected.Count file(s)</button>
+            <button class="primary" @onclick="MoveSelected" disabled="@(string.IsNullOrWhiteSpace(_moveDestination) || Scan.FileOpRunning)">Move @_selected.Count file(s)</button>
             <button @onclick="() => _showMovePanel = false">Cancel</button>
+        </div>
+    }
+
+    @* Link panel *@
+    @if (_showLinkPanel) {
+        <div class="action-panel">
+            <span>Replace each selected file with a link to the best remaining file of its group:</span>
+            <label><input type="radio" name="linktype" checked="@(!_linkHard)" @onchange="() => _linkHard = false" /> Symlink</label>
+            <label><input type="radio" name="linktype" checked="@_linkHard" @onchange="() => _linkHard = true" /> Hardlink (same volume only)</label>
+            <button class="primary" @onclick="CreateLinksSelected" disabled="@Scan.FileOpRunning">Create links for @_selected.Count file(s)</button>
+            <button @onclick="() => _showLinkPanel = false">Cancel</button>
         </div>
     }
 
@@ -368,6 +391,8 @@ else {
     bool _confirmDelete;
     bool _confirmDeletePermanent;
     bool _showMovePanel;
+    bool _showLinkPanel;
+    bool _linkHard;
     string _moveDestination = string.Empty;
     string? _operationMsg;
     bool _operationFailed;
@@ -471,24 +496,37 @@ else {
         _selected.Remove(item);
     }
 
-    void ExecuteDelete(bool permanent) {
-        var (deleted, failed, errors) = Scan.DeleteItems(_selected.ToList(), permanent);
-        _selected.Clear();
+    async Task ExecuteDelete(bool permanent) {
         _confirmDelete = false;
         _confirmDeletePermanent = false;
-        string verb = permanent ? "permanently deleted" : "moved to trash";
-        string msg = $"{deleted} file(s) {verb}.";
-        if (failed > 0) msg += $" {failed} failed: {string.Join("; ", errors.Take(3))}";
-        ShowMsg(msg, failed > 0);
+        var toDelete = _selected.ToList();
+        _selected.Clear();
+        var result = await Scan.DeleteItemsAsync(toDelete, permanent);
+        ShowOpResult($"{result.Done} file(s) {(permanent ? "permanently deleted" : "moved to trash")}", result);
     }
 
-    void MoveSelected() {
-        var (moved, failed, errors) = Scan.MoveItems(_selected.ToList(), _moveDestination);
-        _selected.Clear();
+    async Task MoveSelected() {
         _showMovePanel = false;
-        string msg = $"{moved} file(s) moved to '{_moveDestination}'.";
-        if (failed > 0) msg += $" {failed} failed: {string.Join("; ", errors.Take(3))}";
-        ShowMsg(msg, failed > 0);
+        var toMove = _selected.ToList();
+        _selected.Clear();
+        var result = await Scan.MoveItemsAsync(toMove, _moveDestination);
+        ShowOpResult($"{result.Done} file(s) moved to '{_moveDestination}'", result);
+    }
+
+    async Task CreateLinksSelected() {
+        _showLinkPanel = false;
+        var toLink = _selected.ToList();
+        _selected.Clear();
+        var result = await Scan.CreateLinksAsync(toLink, _linkHard);
+        ShowOpResult($"{result.Done} file(s) replaced with {(_linkHard ? "hardlinks" : "symlinks")}", result);
+    }
+
+    void ShowOpResult(string action, FileOpResult result) {
+        string msg = action;
+        if (result.FreedBytes > 0) msg += $" — {FormatSize(result.FreedBytes)} freed";
+        msg += ".";
+        if (result.Failed > 0) msg += $" {result.Failed} failed: {string.Join("; ", result.Errors.Take(3))}";
+        ShowMsg(msg, result.Failed > 0);
     }
 
     void ShowMsg(string msg, bool failed) {
