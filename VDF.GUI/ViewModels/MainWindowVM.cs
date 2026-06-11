@@ -189,6 +189,12 @@ namespace VDF.GUI.ViewModels {
 			get => _TotalDuplicatesSize;
 			set => this.RaiseAndSetIfChanged(ref _TotalDuplicatesSize, value);
 		}
+		string _PotentialSavings = string.Empty;
+		/// <summary>Space freed if only the largest file of every group were kept.</summary>
+		public string PotentialSavings {
+			get => _PotentialSavings;
+			set => this.RaiseAndSetIfChanged(ref _PotentialSavings, value);
+		}
 		long _TotalSizeRemovedInternal;
 		long TotalSizeRemovedInternal {
 			get => _TotalSizeRemovedInternal;
@@ -214,6 +220,22 @@ namespace VDF.GUI.ViewModels {
 		// SizeLong is -1 when the file no longer exists on disk; don't let those
 		// items distort the checked-size total.
 		static long CheckedSizeOf(DuplicateItemVM item) => Math.Max(0, item.ItemInfo.SizeLong);
+
+		// Live count of checked items per group, maintained alongside the checked
+		// counters. The "groups with checked items" filter and sort previously
+		// rescanned the whole duplicates list per row, which is quadratic on
+		// large result sets.
+		readonly Dictionary<Guid, int> checkedCountByGroup = new();
+		internal bool GroupHasCheckedItems(Guid groupId) => checkedCountByGroup.ContainsKey(groupId);
+		void AdjustCheckedGroupIndex(DuplicateItemVM item, int delta) {
+			Guid groupId = item.ItemInfo.GroupId;
+			checkedCountByGroup.TryGetValue(groupId, out int count);
+			count += delta;
+			if (count <= 0)
+				checkedCountByGroup.Remove(groupId);
+			else
+				checkedCountByGroup[groupId] = count;
+		}
 		public bool IsMultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
 		public bool IsMultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
 
@@ -315,16 +337,26 @@ namespace VDF.GUI.ViewModels {
 					if (((DuplicateItemVM)item).Checked) {
 						DuplicatesCheckedCounter--;
 						DuplicatesCheckedSizeInternal -= CheckedSizeOf((DuplicateItemVM)item);
+						AdjustCheckedGroupIndex((DuplicateItemVM)item, -1);
 					}
 				}
 			}
 			if (e.NewItems != null) {
-				foreach (INotifyPropertyChanged item in e.NewItems)
+				foreach (INotifyPropertyChanged item in e.NewItems) {
 					item.PropertyChanged += DuplicateItemVM_PropertyChanged;
+					// Items can arrive already checked (restored backups); count them
+					// so the counters and the per-group index stay accurate.
+					if (((DuplicateItemVM)item).Checked) {
+						DuplicatesCheckedCounter++;
+						DuplicatesCheckedSizeInternal += CheckedSizeOf((DuplicateItemVM)item);
+						AdjustCheckedGroupIndex((DuplicateItemVM)item, +1);
+					}
+				}
 			}
 			if (e.Action == NotifyCollectionChangedAction.Reset) {
 				DuplicatesCheckedCounter = 0;
 				DuplicatesCheckedSizeInternal = 0;
+				checkedCountByGroup.Clear();
 			}
 		}
 
@@ -333,10 +365,12 @@ namespace VDF.GUI.ViewModels {
 			if (((DuplicateItemVM)sender).Checked) {
 				DuplicatesCheckedCounter++;
 				DuplicatesCheckedSizeInternal += CheckedSizeOf((DuplicateItemVM)sender);
+				AdjustCheckedGroupIndex((DuplicateItemVM)sender, +1);
 			}
 			else {
 				DuplicatesCheckedCounter--;
 				DuplicatesCheckedSizeInternal -= CheckedSizeOf((DuplicateItemVM)sender);
+				AdjustCheckedGroupIndex((DuplicateItemVM)sender, -1);
 			}
 		}
 
@@ -537,8 +571,24 @@ namespace VDF.GUI.ViewModels {
 
 		void RefreshGroupStats() {
 			TotalDuplicates = Duplicates.Count;
-			TotalDuplicatesSize = Duplicates.Sum(x => x.ItemInfo.SizeLong).BytesToString();
-			TotalDuplicateGroups = Duplicates.GroupBy(x => x.ItemInfo.GroupId).Count();
+			int groupCount = 0;
+			long totalSize = 0;
+			long savings = 0;
+			foreach (var group in Duplicates.GroupBy(x => x.ItemInfo.GroupId)) {
+				groupCount++;
+				long groupTotal = 0;
+				long largest = 0;
+				foreach (var item in group) {
+					long size = Math.Max(0, item.ItemInfo.SizeLong);
+					groupTotal += size;
+					if (size > largest) largest = size;
+				}
+				totalSize += groupTotal;
+				savings += groupTotal - largest;
+			}
+			TotalDuplicatesSize = totalSize.BytesToString();
+			TotalDuplicateGroups = groupCount;
+			PotentialSavings = savings.BytesToString();
 		}
 
 		private DuplicateItemVM? GetSelectedDuplicateItem() {

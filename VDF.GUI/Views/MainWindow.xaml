@@ -1166,6 +1166,11 @@
                                         <Run Text="{Binding TotalDuplicatesSize, Mode=OneWay}" />
                                     </TextBlock>
                                     <Border Width="1" Margin="5,2" Background="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                    <TextBlock FontSize="12" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.PotentialSavingsTooltip]}">
+                                        <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.PotentialSavings]}" />
+                                        <Run Text="{Binding PotentialSavings, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <Border Width="1" Margin="5,2" Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     <TextBlock FontSize="12">
                                         <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.SizeRemoved]}" />
                                         <Run Text="{Binding TotalSizeRemoved, Mode=OneWay}" />

@@ -29,24 +29,11 @@ namespace VDF.GUI.ViewModels {
 
 		public sealed class CheckedGroupsComparer : System.Collections.IComparer {
 			readonly MainWindowVM mainVM;
-			readonly Dictionary<Guid, bool> _hasChecked = new();
 			public CheckedGroupsComparer(MainWindowVM vm) => mainVM = vm;
 			public int Compare(object? x, object? y) {
 				if (x is not DuplicateItemVM dx || y is not DuplicateItemVM dy) return -1;
-
-				bool X() => _hasChecked.TryGetValue(dx.ItemInfo.GroupId, out var b)
-					? b
-					: (_hasChecked[dx.ItemInfo.GroupId] =
-						mainVM.Duplicates.Any(a => a.ItemInfo.GroupId == dx.ItemInfo.GroupId && a.Checked));
-
-				bool Y() => dx.ItemInfo.GroupId == dy.ItemInfo.GroupId
-							? X()
-							: (_hasChecked.TryGetValue(dy.ItemInfo.GroupId, out var b)
-							   ? b
-							   : (_hasChecked[dy.ItemInfo.GroupId] =
-								   mainVM.Duplicates.Any(a => a.ItemInfo.GroupId == dy.ItemInfo.GroupId && a.Checked)));
-
-				return X().CompareTo(Y());
+				return mainVM.GroupHasCheckedItems(dx.ItemInfo.GroupId)
+					.CompareTo(mainVM.GroupHasCheckedItems(dy.ItemInfo.GroupId));
 			}
 		}
 		public sealed class GroupTotalSizeComparer : System.Collections.IComparer {
@@ -161,9 +148,23 @@ namespace VDF.GUI.ViewModels {
 			if (string.IsNullOrEmpty(needle)) { _groupsWithPathHit.Clear(); return; }
 
 			_groupsWithPathHit = Duplicates
-				.Where(d => d.ItemInfo.Path.Contains(needle, StringComparison.OrdinalIgnoreCase))
+				.Where(d => PathMatchesFilter(d.ItemInfo.Path, needle))
 				.Select(d => d.ItemInfo.GroupId)
 				.ToHashSet();
+		}
+
+		/// <summary>
+		/// Substring match by default; when the needle contains * or ? it is treated
+		/// as a wildcard pattern instead (unanchored, so "*season?\ep*" works without
+		/// the user having to wrap it in stars themselves).
+		/// </summary>
+		internal static bool PathMatchesFilter(string path, string needle) {
+			if (needle.IndexOfAny(['*', '?']) < 0)
+				return path.Contains(needle, StringComparison.OrdinalIgnoreCase);
+			string pattern = needle;
+			if (!pattern.StartsWith('*')) pattern = "*" + pattern;
+			if (!pattern.EndsWith('*')) pattern += "*";
+			return System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(pattern, path);
 		}
 
 		string _FilterByPath = string.Empty;
@@ -202,7 +203,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			bool ok = true;
 			if (!string.IsNullOrEmpty(FilterByPath)) {
-				ok = data.ItemInfo.Path.Contains(FilterByPath, StringComparison.OrdinalIgnoreCase)
+				ok = PathMatchesFilter(data.ItemInfo.Path, FilterByPath)
 					 || _groupsWithPathHit.Contains(data.ItemInfo.GroupId);
 			}
 
@@ -213,7 +214,7 @@ namespace VDF.GUI.ViewModels {
 				ok = data.ItemInfo.Similarity >= FilterSimilarityFrom && data.ItemInfo.Similarity <= FilterSimilarityTo;
 
 			if (ok && FilterGroupsWithCheckedItems)
-				ok = Duplicates.Any(d => d.ItemInfo.GroupId == data.ItemInfo.GroupId && d.Checked);
+				ok = GroupHasCheckedItems(data.ItemInfo.GroupId);
 
 			data.IsVisibleInFilter = ok;
 			return ok;

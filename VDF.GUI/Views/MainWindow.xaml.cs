@@ -220,6 +220,8 @@ namespace VDF.GUI.Views {
 			// Avoid adding buttons twice (recycled headers)
 			if (header.Tag is true) return;
 			header.Tag = true;
+			// The summary below replaces the raw key; "ItemInfo.GroupId:" adds nothing.
+			header.IsPropertyNameVisible = false;
 
 			var vm = ApplicationHelpers.MainWindowDataContext;
 
@@ -251,6 +253,22 @@ namespace VDF.GUI.Views {
 				Children = { compareBtn, keepBestBtn }
 			};
 
+			// Shown in place of the raw GroupId GUID ("4 files · 3.2 GB").
+			var summaryText = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+			void UpdateHeaderSummary() {
+				if (header.DataContext is not Avalonia.Collections.DataGridCollectionViewGroup g) return;
+				int count = 0;
+				long totalSize = 0;
+				foreach (var item in g.Items.OfType<DuplicateItemVM>()) {
+					count++;
+					if (item.ItemInfo.SizeLong > 0)
+						totalSize += item.ItemInfo.SizeLong;
+				}
+				summaryText.Text = string.Format(App.Lang["GroupHeader.Summary"], count, totalSize.BytesToString());
+			}
+			// Recycled headers keep our injected controls but get a new group.
+			header.DataContextChanged += (_, _) => UpdateHeaderSummary();
+
 			// Inject buttons into the header's visual tree once it's loaded
 			header.Loaded += (_, _) => {
 				// Walk visual tree to find the root Grid and append our button panel
@@ -260,6 +278,19 @@ namespace VDF.GUI.Views {
 					Grid.SetColumn(panel, grid.ColumnDefinitions.Count - 1);
 					grid.Children.Add(panel);
 				}
+				// Swap the GUID key TextBlock for the human-readable summary. The key
+				// element has no template part name, so it's located by its current text.
+				if (summaryText.Parent == null &&
+					header.DataContext is Avalonia.Collections.DataGridCollectionViewGroup g) {
+					string key = g.Key?.ToString() ?? string.Empty;
+					var keyText = header.GetVisualDescendants().OfType<TextBlock>()
+						.FirstOrDefault(tb => tb.Text == key);
+					if (keyText != null && keyText.Parent is Panel keyPanel) {
+						keyText.IsVisible = false;
+						keyPanel.Children.Insert(keyPanel.Children.IndexOf(keyText) + 1, summaryText);
+					}
+				}
+				UpdateHeaderSummary();
 			};
 		}
 
