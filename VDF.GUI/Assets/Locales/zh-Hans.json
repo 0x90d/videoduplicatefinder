@@ -311,9 +311,9 @@
 	"MainWindow.Stats.RemainingTime": "剩余时间：~",
 	"MainWindow.Stats.CheckedDuplicates": "已选重复项：",
 	"MainWindow.Stats.CheckedSize": "已选大小：",
-	"MainWindow.Stats.PotentialSavings": "å¯èçç©ºé´ï¼",
-	"MainWindow.Stats.PotentialSavingsTooltip": "ä»ä¿çæ¯ç»ä¸­æå¤§æä»¶æ¶å¯éæ¾çç©ºé´",
-	"GroupHeader.Summary": "{0} ä¸ªæä»¶ Â· {1}",
+	"MainWindow.Stats.PotentialSavings": "可节省空间：",
+	"MainWindow.Stats.PotentialSavingsTooltip": "仅保留每组中最大文件时可释放的空间",
+	"GroupHeader.Summary": "{0} 个文件 · {1}",
 	"MainWindow.Stats.SizeRemoved": "移除大小：",
 	"MainWindow.Tab.Log": "日志",
 	"MainWindow.Tab.Scanner": "扫描器",

@@ -318,7 +318,7 @@
 	"MainWindow.Stats.CheckedSize": "Checked Size: ",
 	"MainWindow.Stats.PotentialSavings": "Potential savings: ",
 	"MainWindow.Stats.PotentialSavingsTooltip": "Space freed if only the largest file of every group were kept",
-	"GroupHeader.Summary": "{0} files Â· {1}",
+	"GroupHeader.Summary": "{0} files · {1}",
 	"MainWindow.Stats.SizeRemoved": "Size Removed: ",
 	"MainWindow.Tab.Log": "Log",
 	"MainWindow.Tab.Scanner": "Scanner",
