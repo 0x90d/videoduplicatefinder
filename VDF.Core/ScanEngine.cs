@@ -178,8 +178,11 @@ namespace VDF.Core {
 			if (!cancelationTokenSource.IsCancellationRequested)
 				await GatherInfos();
 			Logger.Instance.Info(T("Log.FinishedGatheringHashes", SearchTimer.StopGetElapsedAndRestart()));
-			BuildingHashesDone?.Invoke(this, new EventArgs());
+			// Save before signaling completion: consumers (e.g. the CLI) may treat the
+			// event as "done" and exit the process, which previously killed this thread
+			// mid-write and left a torn ScannedFiles_new.db behind.
 			DatabaseUtils.SaveDatabase();
+			BuildingHashesDone?.Invoke(this, new EventArgs());
 			if (!cancelationTokenSource.IsCancellationRequested) {
 				StartCompare();
 			}
@@ -205,10 +208,11 @@ namespace VDF.Core {
 			LogGroupStatistics();
 			Logger.Instance.Info(T("Log.HighlightingBestResults"));
 			HighlightBestMatches();
-			ScanDone?.Invoke(this, new EventArgs());
-			Logger.Instance.Info(T("Log.ScanDone"));
+			// Save before signaling completion — see the matching comment in StartSearch.
 			DatabaseUtils.SaveDatabase();
 			isScanning = false;
+			ScanDone?.Invoke(this, new EventArgs());
+			Logger.Instance.Info(T("Log.ScanDone"));
 		}
 
 		void PrepareSearch() {
