@@ -318,7 +318,7 @@ Video Duplicate Finder is licensed under AGPLv3
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia)
 - [ActiPro Avalonia Controls (Free Edition)](https://github.com/Actipro/Avalonia-Controls)
 - [FFmpeg.AutoGen](https://github.com/Ruslan-B/FFmpeg.AutoGen)
-- [protobuf-net](https://github.com/protobuf-net/protobuf-net)
+- [MemoryPack](https://github.com/Cysharp/MemoryPack)
 
 - [AcoustID.NET by wo80](https://github.com/wo80/AcoustID.NET) — the audio fingerprinting pipeline (Chromaprint-style chroma extraction, FIR smoothing, and fingerprint encoding) used for partial clip detection is derived from this library, licensed under LGPL 2.1
 

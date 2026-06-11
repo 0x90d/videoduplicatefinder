@@ -17,15 +17,16 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using ProtoBuf;
+using MemoryPack;
 using VDF.Core.Utils;
 
 namespace VDF.Core {
 
-	[ProtoContract]
+	[MemoryPackable(GenerateType.VersionTolerant)]
 	[DebuggerDisplay("{" + nameof(_Path) + ",nq}")]
-	public class FileEntry {
+	public partial class FileEntry {
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
+		[MemoryPackConstructor]
 		public FileEntry() { }
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
 		public FileEntry(string file) : this(new FileInfo(file)) { }
@@ -39,9 +40,9 @@ namespace VDF.Core {
 			FileSize = fileInfo.Length;
 		}
 
-		[ProtoMember(1)]
+		[MemoryPackInclude, MemoryPackOrder(0)]
 		internal string _Path;
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		public string Path {
 			get => _Path;
 			set {
@@ -50,30 +51,30 @@ namespace VDF.Core {
 				Folder = fileInfo.Directory?.FullName ?? string.Empty;
 			}
 		 }
-		[ProtoMember(2)]
+		[MemoryPackOrder(1)]
 		public string Folder;
-		[ProtoMember(3)]
+		[MemoryPackOrder(2)]
 		public Dictionary<double, byte[]?> grayBytes = new();
-		[ProtoMember(4)]
+		[MemoryPackOrder(3)]
 		public MediaInfo? mediaInfo;
-		[ProtoMember(5)]
+		[MemoryPackOrder(4)]
 		public EntryFlags Flags;
-		[ProtoMember(6)]
+		[MemoryPackOrder(5)]
 		public DateTime DateCreated;
-		[ProtoMember(7)]
+		[MemoryPackOrder(6)]
 		public DateTime DateModified;
-		[ProtoMember(8)]
+		[MemoryPackOrder(7)]
 		public long FileSize;
-		[ProtoMember(9)]
+		[MemoryPackOrder(8)]
 		public Dictionary<double, ulong?> PHashes = new();
 		/// <summary>
 		/// Aggregated audio fingerprint: one <c>uint</c> per second of audio.
 		/// <c>null</c> = not yet extracted; empty array = file has no audio track.
 		/// </summary>
-		[ProtoMember(10)]
+		[MemoryPackOrder(9)]
 		public uint[]? AudioFingerprint;
 
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		internal bool invalid = true;
 
 		// Transient compare-phase snapshot, built by ScanEngine.ScanForDuplicates and
@@ -82,38 +83,38 @@ namespace VDF.Core {
 		// pHash, and compareIndex the entry's position in the scan list. The per-pair
 		// hot path reads these instead of probing Dictionary<double,...> with computed
 		// keys and hashing the full path string for every candidate pair.
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		internal byte[]?[]? compareGray;
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		internal ulong? comparePHash;
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		internal int compareIndex;
 
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		internal bool IsImage {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.IsImage);
 			set => Flags.Set(EntryFlags.IsImage, value);
 		}
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		public bool IsManuallyExcluded {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.ManuallyExcluded);
 			protected set => Flags.Set(EntryFlags.ManuallyExcluded, value);
 		}
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		public bool HasMetadataError {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.MetadataError);
 			protected set => Flags.Set(EntryFlags.MetadataError, value);
 		}
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		public bool HasThubmanilError {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.ThumbnailError);
 			protected set => Flags.Set(EntryFlags.ThumbnailError, value);
 		}
-		[ProtoIgnore]
+		[MemoryPackIgnore]
 		public bool IsTooDark {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => Flags.Has(EntryFlags.TooDark);

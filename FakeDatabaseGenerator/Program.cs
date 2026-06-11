@@ -14,7 +14,7 @@
 // */
 //
 using System.Globalization;
-using ProtoBuf;
+using MemoryPack;
 using VDF.Core;
 
 namespace FakeDatabaseGenerator {
@@ -59,7 +59,8 @@ namespace FakeDatabaseGenerator {
 			};
 
 			using var stream = File.Create(options.OutputPath);
-			Serializer.Serialize(stream, wrapper);
+			stream.Write("VDFDB001"u8);
+			MemoryPackSerializer.SerializeAsync(stream, wrapper).AsTask().GetAwaiter().GetResult();
 
 			Console.WriteLine($"Wrote {entries.Count:N0} entries to {options.OutputPath}");
 			Console.WriteLine("Remember to keep ThumbnailCount consistent with the benchmark settings.");

@@ -15,58 +15,58 @@
 //
 
 using System;
-using ProtoBuf;
+using MemoryPack;
 
 namespace VDF.Core {
 
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
-	[ProtoContract]
-	public sealed class MediaInfo {
-		[ProtoMember(1)]
+	[MemoryPackable(GenerateType.VersionTolerant)]
+	public sealed partial class MediaInfo {
+		[MemoryPackOrder(0)]
 		public StreamInfo[] Streams { get; set; }
 
-		[ProtoMember(2)]
+		[MemoryPackOrder(1)]
 		public TimeSpan Duration { get; set; }
 
-		[ProtoContract]
-		public class StreamInfo {
+		[MemoryPackable(GenerateType.VersionTolerant)]
+		public partial class StreamInfo {
 
-			[ProtoMember(1)]
+			[MemoryPackOrder(0)]
 			public string Index { get; set; }
 
-			[ProtoMember(2)]
+			[MemoryPackOrder(1)]
 			public string CodecName { get; set; }
 
-			[ProtoMember(3)]
+			[MemoryPackOrder(2)]
 			public string CodecLongName { get; set; }
 
-			[ProtoMember(4)]
+			[MemoryPackOrder(3)]
 			public string CodecType { get; set; }
 
-			[ProtoMember(5)]
+			[MemoryPackOrder(4)]
 			public string PixelFormat { get; set; }
 
-			[ProtoMember(6)]
+			[MemoryPackOrder(5)]
 			public int Width { get; set; }
 
-			[ProtoMember(7)]
+			[MemoryPackOrder(6)]
 			public int Height { get; set; }
 
-			[ProtoMember(8)]
+			[MemoryPackOrder(7)]
 			public int SampleRate { get; set; }
 
-			[ProtoMember(9)]
+			[MemoryPackOrder(8)]
 			public string ChannelLayout { get; set; }
 
-			[ProtoMember(10)]
+			[MemoryPackOrder(9)]
 			public long BitRate { get; set; }
 
-			[ProtoMember(11)]
+			[MemoryPackOrder(10)]
 			public float FrameRate { get; set; }
 
-			[ProtoMember(12)]
+			[MemoryPackOrder(11)]
 			public int Channels { get; set; }
-			[ProtoMember(13)]
+			[MemoryPackOrder(12)]
 			public string HdrFormat { get; set; }
 		}
 	}

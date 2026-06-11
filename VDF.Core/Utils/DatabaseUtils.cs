@@ -16,10 +16,15 @@
 
 using System.Diagnostics;
 using System.Text.Json;
-using ProtoBuf;
+using MemoryPack;
 
 namespace VDF.Core.Utils {
 	static class DatabaseUtils {
+		// New databases are MemoryPack payloads behind this magic header; files without
+		// it are protobuf-net databases from 3.x / early 4.x, decoded by
+		// LegacyDatabaseReader and migrated to the new format on the next save.
+		static ReadOnlySpan<byte> FormatMagic => "VDFDB001"u8;
+
 		internal static HashSet<FileEntry> Database => DbWrapper.Entries;
 		internal static int DbVersion => DbWrapper.Version;
 		static DatabaseWrapper DbWrapper = new();
@@ -54,28 +59,37 @@ namespace VDF.Core.Utils {
 			Logger.Instance.Info("Found previously scanned files, importing...");
 			var st = Stopwatch.StartNew();
 			try {
-				using var file = new FileStream(databaseFile.FullName, FileMode.Open);
-				DbWrapper = Serializer.Deserialize<DatabaseWrapper>(file);
+				using var file = new FileStream(databaseFile.FullName, FileMode.Open, FileAccess.Read);
+				Span<byte> header = stackalloc byte[8];
+				int headerRead = file.Read(header);
+				if (headerRead == FormatMagic.Length && header.SequenceEqual(FormatMagic)) {
+					DbWrapper = MemoryPackSerializer.DeserializeAsync<DatabaseWrapper>(file)
+						.AsTask().GetAwaiter().GetResult() ?? new DatabaseWrapper();
+				}
+				else {
+					// Legacy protobuf-net database (3.x / early 4.x).
+					file.Position = 0;
+					byte[] raw = new byte[file.Length];
+					file.ReadExactly(raw);
+					DbWrapper = LegacyDatabaseReader.Read(raw);
+					Logger.Instance.Info("Legacy database format detected — it will be stored in the new format on the next save.");
+				}
 			}
-			catch (ProtoException ex) {
-				if (UpgradeDatabase(databaseFile.FullName)) {
-					Logger.Instance.Info("Database has been upgraded to the new format.");
-					MigrateImageHashesIfNeeded();
-					return true;
+			catch (Exception ex) {
+				st.Stop();
+				// A broken temp file (e.g. a crash mid-save) must not block startup:
+				// drop it and retry with the real database file.
+				if (databaseFile.FullName == new FileInfo(TempDatabasePath).FullName) {
+					Logger.Instance.Info($"Importing previously scanned files from '{databaseFile.FullName}' has failed; retrying with the main database file.");
+					try { databaseFile.Delete(); } catch (Exception) { }
+					return LoadDatabase();
 				}
 				Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
-				st.Stop();
 				try {
 					File.Move(databaseFile.FullName, Path.ChangeExtension(databaseFile.FullName, "_DAMAGED.db"), true);
 				}
 				catch (Exception) { }
 				return false;
-			}
-			catch (EndOfStreamException) {
-				Logger.Instance.Info($"Importing previously scanned files from '{databaseFile.FullName}' has failed.");
-				databaseFile.Delete();
-				//Could have been the temp database file
-				LoadDatabase();
 			}
 
 			st.Stop();
@@ -113,19 +127,6 @@ namespace VDF.Core.Utils {
 			DbWrapper.Version = 1;
 			SaveDatabase();
 		}
-		static bool UpgradeDatabase(string file) {
-
-			try {
-				using var fs = new FileStream(file, FileMode.Open);
-				DbWrapper.Entries = Serializer.Deserialize<HashSet<FileEntry>>(fs);
-				DbWrapper.Version = 1;
-				return true;
-			}
-			catch (Exception ex) {
-				Logger.Instance.Info($"Upgrading database has failed because of: {ex}");
-			}
-			return false;
-		}
 		internal static void CleanupDatabase() {
 			int oldCount = Database.Count;
 			var st = Stopwatch.StartNew();
@@ -140,9 +141,10 @@ namespace VDF.Core.Utils {
 		internal static void SaveDatabase() {
 			Logger.Instance.Info($"Save scanned files to disk ({Database.Count:N0} files).");
 
-			FileStream stream = new(TempDatabasePath, FileMode.Create);
-			Serializer.Serialize(stream, DbWrapper);
-			stream.Dispose();
+			using (FileStream stream = new(TempDatabasePath, FileMode.Create)) {
+				stream.Write(FormatMagic);
+				MemoryPackSerializer.SerializeAsync(stream, DbWrapper).AsTask().GetAwaiter().GetResult();
+			}
 			//Reason: https://github.com/0x90d/videoduplicatefinder/issues/247
 			File.Move(TempDatabasePath, CurrentDatabasePath, true);
 		}

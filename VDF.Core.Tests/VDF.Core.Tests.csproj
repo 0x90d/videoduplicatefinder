@@ -22,4 +22,7 @@
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="TestAssets\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

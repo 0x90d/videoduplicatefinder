@@ -19,15 +19,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ProtoBuf;
+using MemoryPack;
 
 namespace VDF.Core {
-	[ProtoContract]
-	public class DatabaseWrapper {
-		[ProtoMember(1)]
+	[MemoryPackable(GenerateType.VersionTolerant)]
+	public partial class DatabaseWrapper {
+		[MemoryPackOrder(0)]
 		public int Version { get; set; } = 3;
 
-		[ProtoMember(2)]
+		[MemoryPackOrder(1)]
 		public HashSet<FileEntry> Entries { get; set; } = new();
 
 		/// <summary>
@@ -37,7 +37,7 @@ namespace VDF.Core {
 		/// hashes cleared once so they are recomputed with the current pipeline;
 		/// mixing the two would produce false non-matches between old and new entries.
 		/// </summary>
-		[ProtoMember(3)]
+		[MemoryPackOrder(2)]
 		public int ImageHashPipeline { get; set; }
 	}
 }

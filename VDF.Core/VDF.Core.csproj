@@ -15,8 +15,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
+    <PackageReference Include="MemoryPack" Version="1.21.4" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
-    <PackageReference Include="protobuf-net" Version="3.2.56" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\Locales\en.json" />
