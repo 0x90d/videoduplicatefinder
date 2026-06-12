@@ -20,6 +20,9 @@ using VDF.Core.Utils;
 
 namespace VDF.Core.ViewModels {
 	[DebuggerDisplay("{" + nameof(Path) + ",nq}")]
+	// Serialized members need PUBLIC setters: the GUI's source-generated JSON context
+	// lives in another assembly, where [JsonInclude] on a private setter throws
+	// InvalidOperationException at deserialization time (broke backup restore, #789).
 	public class DuplicateItem : ViewModelBase {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public DuplicateItem() { }
@@ -100,7 +103,7 @@ namespace VDF.Core.ViewModels {
 		/// </summary>
 		public int ThumbnailWidth { get; set; }
 		[JsonInclude]
-		public List<TimeSpan> ThumbnailTimestamps { get; private set; } = new List<TimeSpan>();
+		public List<TimeSpan> ThumbnailTimestamps { get; set; } = new List<TimeSpan>();
 		string _Path = string.Empty;
 		public string Path {
 			get => _Path;
@@ -119,25 +122,25 @@ namespace VDF.Core.ViewModels {
 		public bool IsBestDuration { get; set; }
 		public string? FrameSize { get; set; }
 		[JsonInclude]
-		public int FrameSizeInt { get; private set; }
+		public int FrameSizeInt { get; set; }
 		public bool IsBestFrameSize { get; set; }
 		[JsonInclude]
-		public string? Format { get; private set; }
+		public string? Format { get; set; }
 		[JsonInclude]
-		public string? AudioFormat { get; private set; }
+		public string? AudioFormat { get; set; }
 		[JsonInclude]
-		public string? AudioChannel { get; private set; }
+		public string? AudioChannel { get; set; }
 		[JsonInclude]
-		public int AudioSampleRate { get; private set; }
+		public int AudioSampleRate { get; set; }
 		public bool IsBestAudioSampleRate { get; set; }
 		[JsonInclude]
-		public decimal AudioBitRateKbs { get; private set; }
+		public decimal AudioBitRateKbs { get; set; }
 		public bool IsBestAudioBitRateKbs { get; set; }
 		[JsonInclude]
-		public decimal BitRateKbs { get; private set; }
+		public decimal BitRateKbs { get; set; }
 		public bool IsBestBitRateKbs { get; set; }
 		[JsonInclude]
-		public string HdrFormat { get; private set; } = string.Empty;
+		public string HdrFormat { get; set; } = string.Empty;
 		public bool IsBestHdrFormat { get; set; }
 		[JsonIgnore]
 		public int FolderDepth {
@@ -158,15 +161,15 @@ namespace VDF.Core.ViewModels {
 			_ => 0
 		};
 		[JsonInclude]
-		public float Fps { get; private set; }
+		public float Fps { get; set; }
 		public bool IsBestFps { get; set; }
 		[JsonInclude]
-		public DateTime DateCreated { get; private set; }
+		public DateTime DateCreated { get; set; }
 		[JsonInclude]
-		public DuplicateFlags Flags { get; private set; }
+		public DuplicateFlags Flags { get; set; }
 
 		[JsonInclude]
-		public bool IsImage { get; private set; }
+		public bool IsImage { get; set; }
 		/// <summary>
 		/// For <see cref="DuplicateFlags.PartialClip"/> items: the time position within the
 		/// source (longer) video where this clip begins.  Zero for all other items.

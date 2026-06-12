@@ -940,11 +940,12 @@ namespace VDF.GUI.ViewModels {
 
 				using var zip = ZipFile.OpenRead(path);
 				var json = zip.GetEntry("scan.json") ?? throw new Exception("scan.json missing");
-				List<DuplicateItemVM> items;
-				await using (var js = json.Open()) {
-					using var doc = await JsonDocument.ParseAsync(js);
-					items = ReadScanResultsItems(doc.RootElement);
-				}
+				// Parse and deserialize on a worker thread — large backups froze the UI (#789).
+				List<DuplicateItemVM> items = await Task.Run(() => {
+					using var js = json.Open();
+					using var doc = JsonDocument.Parse(js);
+					return ReadScanResultsItems(doc.RootElement);
+				});
 
 				int skipped = items.RemoveAll(it => it?.ItemInfo == null);
 				if (skipped > 0)
