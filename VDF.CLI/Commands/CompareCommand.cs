@@ -25,6 +25,7 @@ namespace VDF.CLI.Commands {
 
 			cmd.Options.Add(SharedOptions.Threshold);
 			cmd.Options.Add(SharedOptions.Percent);
+			cmd.Options.Add(SharedOptions.IncludeImages);
 			cmd.Options.Add(SharedOptions.Database);
 			cmd.Options.Add(SharedOptions.IncludeNonExistingFiles);
 			cmd.Options.Add(SharedOptions.SettingsFile);
@@ -34,6 +35,10 @@ namespace VDF.CLI.Commands {
 			cmd.SetAction(async (parseResult, ct) => {
 				var engine = new ScanEngine();
 				SharedOptions.ApplyToSettings(engine.Settings, parseResult);
+				// 'compare' has no --include option; without this, the empty include list
+				// would make the inclusion filter skip every database entry (0 results, #790).
+				if (engine.Settings.IncludeList.Count == 0)
+					engine.Settings.ScanAgainstEntireDatabase = true;
 				ScanRunner.WireProgress(engine);
 
 				var duplicates = await ScanRunner.RunCompareAsync(engine, ct);

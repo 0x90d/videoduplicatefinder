@@ -237,21 +237,72 @@ namespace VDF.Core {
 			ElapsedTimer.Reset();
 			SearchTimer.Reset();
 
+			BuildPositionList();
+			NormalizeScanPaths();
+
+			isScanning = true;
+		}
+
+		void BuildPositionList() {
+			positionList.Clear();
 			float positionCounter = 0f;
 			for (int i = 0; i < Settings.ThumbnailCount; i++) {
 				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
 				positionList.Add(positionCounter);
 			}
-
-			isScanning = true;
 		}
+
+		/// <summary>
+		/// FileEntry.Folder is always an absolute path without a trailing separator, but the
+		/// include/blacklist entries arrive as typed (CLI flags, Web text fields, JSON settings).
+		/// A relative path or trailing slash made the StartsWith inclusion check silently skip
+		/// every database entry — scans found 0 duplicates with no hint why (issue #790).
+		/// </summary>
+		void NormalizeScanPaths() {
+			static HashSet<string> Normalize(HashSet<string> paths) {
+				var result = new HashSet<string>();
+				foreach (var path in paths) {
+					string normalized = path;
+					try {
+						normalized = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+					}
+					catch { /* keep the original string if it cannot be resolved */ }
+					result.Add(normalized);
+				}
+				return result;
+			}
+			Settings.IncludeList = Normalize(Settings.IncludeList);
+			Settings.BlackList = Normalize(Settings.BlackList);
+		}
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		double GetGrayBytesIndex(FileEntry entry, float position) =>
 			entry.GetGrayBytesIndex(position, Settings.MaxSamplingDurationSeconds);
 
 		void PrepareCompare() {
-			if (Settings.ThumbnailCount != positionList.Count) {
+			if (positionList.Count == 0) {
+				// Fresh process running compare-only (CLI 'compare' on an existing database):
+				// the list is built during PrepareSearch, which never ran here (issue #790).
+				BuildPositionList();
+			}
+			else if (Settings.ThumbnailCount != positionList.Count) {
 				throw new Exception("Number of thumbnails can't be changed between quick rescans! Rescan has been aborted.");
+			}
+			NormalizeScanPaths();
+			if (DatabaseUtils.Database.Count == 0) {
+				// Also a compare-only concern: the database is normally loaded by
+				// StartSearch's BuildFileList, which never ran in this process (issue #790).
+				DatabaseUtils.CustomDatabaseFolder = Settings.CustomDatabaseFolder;
+				DatabaseUtils.InvalidateDatabaseFolder();
+				DatabaseUtils.LoadDatabase();
+				// The invalid flag is not persisted and defaults to true; it is normally
+				// cleared per entry by StartSearch's hashing pass. Without this pass a
+				// compare-only run sees every imported entry as invalid (0 files compared).
+				foreach (FileEntry entry in DatabaseUtils.Database) {
+					entry.invalid = InvalidEntry(entry, out _, out string? reason);
+					if (entry.invalid && reason != null)
+						LogExcludedFile(entry, reason);
+				}
 			}
 
 			CancelAllTasks();
