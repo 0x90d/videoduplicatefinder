@@ -363,7 +363,10 @@ public sealed class FFmpegSetupService {
 		psi.ArgumentList.Add(archivePath);
 		psi.ArgumentList.Add("-C");
 		psi.ArgumentList.Add(targetFolder);
-		psi.ArgumentList.Add("--no-absolute-filenames");
+		// NOTE: do NOT pass --no-absolute-filenames. It is not a valid GNU tar option
+		// (rejected even by GNU tar 1.35) and is absent from BSD/busybox tar, so it
+		// aborted extraction on Linux/macOS with "tar: unrecognized option" (issue #788).
+		// tar already strips leading '/'s by default, and the archive is checksum-verified.
 
 		using var process = new Process { StartInfo = psi };
 		process.Start();

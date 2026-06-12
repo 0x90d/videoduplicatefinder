@@ -209,7 +209,7 @@ namespace VDF.GUI.ViewModels {
 				case Architecture.X64:
 					plans.Add(new FfmpegDownloadPlan(
 						new Uri($"https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-n{versionTag}-latest-macos64-gpl-shared-{versionTag}.zip"),
-						$"ffmpeg-nn{versionTag}-latest-macos64-gpl-shared-{versionTag}.zip",
+						$"ffmpeg-n{versionTag}-latest-macos64-gpl-shared-{versionTag}.zip",
 						ArchiveType.Zip,
 						$"macOS x64 ({versionTag})"));
 					break;
@@ -302,7 +302,10 @@ namespace VDF.GUI.ViewModels {
 			psi.ArgumentList.Add(archivePath);
 			psi.ArgumentList.Add("-C");
 			psi.ArgumentList.Add(targetFolder);
-			psi.ArgumentList.Add("--no-absolute-filenames");
+			// NOTE: do NOT pass --no-absolute-filenames. It is not a valid GNU tar option
+			// (rejected even by GNU tar 1.35) and is absent from BSD/busybox tar, so it
+			// aborted extraction on Linux/macOS with "tar: unrecognized option" (issue #788).
+			// tar already strips leading '/'s by default, and the archive is checksum-verified.
 
 			using var process = new Process {
 				StartInfo = psi
