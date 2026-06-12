@@ -1333,6 +1333,34 @@ Non-Windows setup:
 			return msg;
 		}
 
+		/// <summary>
+		/// Message for the specific case where 'Use native FFmpeg binding' is on and the
+		/// FFmpeg/FFprobe executables were found, but the matching shared libraries were not.
+		/// The native binding cannot use the executable, so "FFmpeg was not found" is wrong and
+		/// confusing here — guide the user to either disable native binding or install the libs.
+		/// </summary>
+		public static string GetNativeLibrariesMissingMessage() {
+			int ffMajor = MapToFfmpegMajor(ffmpeg.LIBAVCODEC_VERSION_MAJOR, ffmpeg.LIBAVFORMAT_VERSION_MAJOR, ffmpeg.LIBAVUTIL_VERSION_MAJOR);
+			string versionPart = ffMajor == 0 ? "the matching version" : $"FFmpeg {ffMajor}.x";
+			string archPart = ArchString(RuntimeInformation.ProcessArchitecture);
+
+			string libNames = OperatingSystem.IsWindows()
+				? "avcodec-*.dll, avformat-*.dll, avutil-*.dll, swresample-*.dll, swscale-*.dll"
+				: OperatingSystem.IsMacOS()
+					? "libavcodec.*.dylib, libavformat.*.dylib, libavutil.*.dylib, libswresample.*.dylib, libswscale.*.dylib"
+					: "libavcodec.so.*, libavformat.so.*, libavutil.so.*, libswresample.so.*, libswscale.so.*";
+
+			return
+$@"'Use native FFmpeg binding' is enabled, but the FFmpeg shared libraries were not found.
+
+Your FFmpeg/FFprobe executables were found, but the native binding cannot use them — it needs the matching shared-library build ({versionPart}, {archPart}):
+  {libNames}
+
+You have two options:
+  • Turn OFF 'Use native FFmpeg binding' in Settings to use your existing FFmpeg executable (process mode). This is the quickest fix.
+  • Or install the {versionPart} shared libraries so the native binding can find them (next to the VDF executable, in a 'bin' subfolder, or on the library search path).";
+		}
+
 		public ReactiveCommand<string, Unit> StartScanCommand => ReactiveCommand.CreateFromTask(async (string command) => {
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
 				await MessageBoxService.Show(App.Lang["Message.CustomDatabaseFolderMissing"]);
@@ -1348,6 +1376,15 @@ Non-Windows setup:
 				(!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) ||
 				!ScanEngine.FFprobeExists) {
 				await DownloadSharedFfmpegAsync();
+			}
+			// Native binding on, shared libraries still missing, but the ffmpeg/ffprobe
+			// executables ARE present: don't claim "FFmpeg was not found" — point the user
+			// at the actual distinction (native needs shared libs) and the one-click way out
+			// (disable native binding to use the executable). See issue #788.
+			if (SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists &&
+				ScanEngine.FFmpegExists && ScanEngine.FFprobeExists) {
+				await MessageBoxService.Show(GetNativeLibrariesMissingMessage());
+				return;
 			}
 			if ((SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) ||
 				(!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists)) {
