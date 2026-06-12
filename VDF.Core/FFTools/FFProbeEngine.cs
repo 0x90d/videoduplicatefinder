@@ -20,9 +20,16 @@ using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
 	static class FFProbeEngine {
-		public static readonly string FFprobePath;
+		static string _FFprobePath = string.Empty;
+		// Re-probes when unresolved (or the binary vanished) — see FfmpegEngine.FFmpegPath (issue #788).
+		public static string FFprobePath {
+			get {
+				if (_FFprobePath.Length == 0 || !File.Exists(_FFprobePath))
+					_FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
+				return _FFprobePath;
+			}
+		}
 		const int TimeoutDuration = 15_000; //15 seconds
-		static FFProbeEngine() => FFprobePath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFProbe) ?? string.Empty;
 
 		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
 			var psi = new ProcessStartInfo {

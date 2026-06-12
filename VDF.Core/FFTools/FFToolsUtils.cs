@@ -44,14 +44,14 @@ namespace VDF.Core.FFTools {
 			var toolPath = Path.Combine(CoreUtils.CurrentFolder, "bin", toolExecutable);
 			if (File.Exists(toolPath))
 				return toolPath;
-			
+
 			toolPath = Path.Combine(CoreUtils.CurrentFolder, toolExecutable);
 			if (File.Exists(toolPath))
 				return toolPath;
 
-			var environmentVariables = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
-			if (environmentVariables != null) {
-				foreach (var path in environmentVariables) {
+			static string? ScanPathDirs(string? pathVariable, string toolExecutable) {
+				if (pathVariable == null) return null;
+				foreach (var path in pathVariable.Split(Path.PathSeparator)) {
 					if (!Directory.Exists(path))
 						continue;
 
@@ -70,6 +70,23 @@ namespace VDF.Core.FFTools {
 #endif
 					}
 				}
+				return null;
+			}
+
+			toolPath = ScanPathDirs(Environment.GetEnvironmentVariable("PATH"), toolExecutable);
+			if (toolPath != null)
+				return toolPath;
+
+			// The process PATH is a snapshot taken when the app was launched. On Windows an
+			// FFmpeg installed afterwards (winget/scoop/choco or a manual PATH edit) shows up
+			// in new consoles but not here, so users see "ffmpeg -version" work while VDF
+			// keeps reporting it missing (issue #788). Re-read the registry-backed user and
+			// machine PATH, which is always current.
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				toolPath = ScanPathDirs(Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User), toolExecutable)
+					?? ScanPathDirs(Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine), toolExecutable);
+				if (toolPath != null)
+					return toolPath;
 			}
 
 			// A GUI app launched from Finder (macOS) or a desktop launcher (Linux) can inherit

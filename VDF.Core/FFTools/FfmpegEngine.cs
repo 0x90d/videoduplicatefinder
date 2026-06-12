@@ -26,13 +26,22 @@ using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
 	internal static class FfmpegEngine {
-		public static readonly string FFmpegPath;
+		static string _FFmpegPath = string.Empty;
+		// Re-probes when unresolved (or the binary vanished): a once-only static cache made
+		// an FFmpeg installed/downloaded while the app was running invisible until restart,
+		// so the GUI kept offering the download forever (issue #788).
+		public static string FFmpegPath {
+			get {
+				if (_FFmpegPath.Length == 0 || !File.Exists(_FFmpegPath))
+					_FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
+				return _FFmpegPath;
+			}
+		}
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
 		public static string CustomFFArguments = string.Empty;
 		public static bool UseNativeBinding;
 		const int DefaultJpegQuality = 90;
-		static FfmpegEngine() => FFmpegPath = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg) ?? string.Empty;
 
 
 		static AVHWDeviceType GetConfiguredHardwareDeviceType() => HardwareAccelerationMode switch {
