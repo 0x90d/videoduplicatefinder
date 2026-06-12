@@ -7,6 +7,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>vdf-cli</AssemblyName>
     <RootNamespace>VDF.CLI</RootNamespace>
+    <!-- Native AOT publish: IL2104/IL3053 are per-assembly rollups for third-party
+         libraries (MemoryPack, System.CommandLine) saying they contain members the
+         trimmer can't prove safe. Our usage is covered (MemoryPack formatters
+         registered statically; verified scan/compare/legacy-migration under AOT). -->
+    <NoWarn>$(NoWarn);IL2104;IL3053</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -42,7 +42,9 @@ jobs:
             target: osx-arm64
             name: osx-arm64
           - kind: linuxarm64
-            os: ubuntu-latest
+            # Native ARM64 runner: Native AOT cannot cross-compile from x64 to
+            # linux-arm64 without a cross toolchain, so build it on its own arch.
+            os: ubuntu-24.04-arm
             target: linux-arm64
             name: linux-arm64
             
@@ -61,11 +63,12 @@ jobs:
     - name: Build
       shell: bash
       run: |
-          # Build GUI
-          dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputGUI"
-          # Build CLI
-          dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputCLI"
-          # Build Web
+          # Build GUI (Native AOT — verified AOT-safe for 4.0: compiled bindings,
+          # source-generated JSON, statically-registered MemoryPack formatters)
+          dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputGUI"
+          # Build CLI (Native AOT)
+          dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputCLI"
+          # Build Web (JIT, self-contained — Blazor Server is not supported under Native AOT)
           dotnet publish ./VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputWeb"
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
