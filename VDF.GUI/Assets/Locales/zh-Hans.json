@@ -361,6 +361,7 @@
 	"Message.MaxDegreeOfParallelismInvalid": "MaxDegreeOfParallelism 不能为 0。请到设置中修改。",
 	"Message.MoveFailed": "部分文件移动失败。请检查日志！",
 	"Message.NativeFfmpegAutoNotSupported": "无法在原生 ffmpeg 绑定中使用硬件加速模式 'auto'。请显式设置模式或设置为 'none'。",
+	"Message.NativeFfmpegLibrariesMissing": "已启用原生 FFmpeg 绑定，但未找到 FFmpeg 共享库。\n\n已找到您的 FFmpeg/FFprobe 可执行文件，但原生绑定无法使用它们——它需要匹配的共享库版本（{0}，{1}）：\n  {2}\n\n您有两个选择：\n  • 在设置中禁用原生 FFmpeg 绑定，以使用现有的 FFmpeg 可执行文件（进程模式）。这是最快的解决方法。\n  • 或者安装 {0} 共享库，使原生绑定能够找到它们（放在 VDF 可执行文件旁边、'bin' 子文件夹中，或库搜索路径上）。",
 	"Message.NoMatchingDuplicates": "没有符合筛选条件（如设置）且已勾选的重复项",
 	"Message.NoScanFolders": "没有要扫描的文件夹。请在设置中至少添加一个“搜索目录”。",
 	"Message.OpenHwAccelInfoFailed": "打开 URL 失败： https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability",

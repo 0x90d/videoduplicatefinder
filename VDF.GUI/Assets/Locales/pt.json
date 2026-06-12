@@ -361,6 +361,7 @@
 	"Message.MaxDegreeOfParallelismInvalid": "MaxDegreeOfParallelism não pode ser 0. Vá para as configurações e altere.",
 	"Message.MoveFailed": "Falha ao mover alguns arquivos. Verifique o log!",
 	"Message.NativeFfmpegAutoNotSupported": "Você não pode usar o modo de aceleração de hardware 'auto' com ligações nativas do ffmpeg. Defina um modo explícito ou configure para 'none'.",
+	"Message.NativeFfmpegLibrariesMissing": "A ligação nativa do FFmpeg está ativada, mas as bibliotecas compartilhadas do FFmpeg não foram encontradas.\n\nSeus executáveis do FFmpeg/FFprobe foram encontrados, mas a ligação nativa não pode usá-los: ela precisa da versão de bibliotecas compartilhadas correspondente ({0}, {1}):\n  {2}\n\nVocê tem duas opções:\n  • Desative a ligação nativa do FFmpeg nas configurações para usar seu executável do FFmpeg existente (modo de processo). Esta é a solução mais rápida.\n  • Ou instale as bibliotecas compartilhadas do {0} para que a ligação nativa possa encontrá-las (junto ao executável do VDF, em uma subpasta 'bin' ou no caminho de busca de bibliotecas).",
 	"Message.NoMatchingDuplicates": "Não há duplicatas correspondentes ao seu filtro (se definido) e marcadas",
 	"Message.NoScanFolders": "Não há pastas para escanear. Vá para as configurações e adicione pelo menos uma pasta em 'Diretórios de pesquisa'.",
 	"Message.OpenHwAccelInfoFailed": "Falha ao abrir a URL: https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability",
