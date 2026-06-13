@@ -40,7 +40,50 @@ namespace VDF.Core.FFTools {
 		const int TimeoutDuration = 15_000; //15 seconds
 		public static FFHardwareAccelerationMode HardwareAccelerationMode;
 		public static string CustomFFArguments = string.Empty;
-		public static bool UseNativeBinding;
+
+		static bool _useNativeBinding;
+		public static bool UseNativeBinding {
+			get => _useNativeBinding;
+			set {
+				_useNativeBinding = value;
+				// Reset the per-scan native-health state whenever native binding is (re)configured,
+				// i.e. at the start of each scan.
+				_nativeConsecutiveFailures = 0;
+				_nativeDisabledForSession = false;
+			}
+		}
+
+		// Native-binding health. When the libraries load but native operations keep failing
+		// (e.g. a hardware-decode mismatch — issue #795), fall back to process mode for the
+		// rest of the scan after a few consecutive failures, with one summary message instead
+		// of a per-file stack-trace storm. A native success resets the counter so an isolated
+		// bad file doesn't disable native for the whole library.
+		static int _nativeConsecutiveFailures;
+		static bool _nativeDisabledForSession;
+		const int NativeFailureThreshold = 5;
+
+		/// <summary>True when a native FFmpeg operation should be attempted.</summary>
+		static bool ShouldUseNativeBinding =>
+			UseNativeBinding && !_nativeDisabledForSession && FFmpegNative.FFmpegHelper.CanLoadNativeLibraries;
+
+		static void RecordNativeSuccess() => _nativeConsecutiveFailures = 0;
+
+		static void RecordNativeFailure(string file, Exception e) {
+			if (_nativeDisabledForSession)
+				return;
+			int n = ++_nativeConsecutiveFailures;
+			if (n >= NativeFailureThreshold) {
+				_nativeDisabledForSession = true;
+				Logger.Instance.Info(
+					$"Native FFmpeg binding failed on {n} consecutive files; using process mode for the rest of this scan. " +
+					$"Last error on '{file}': {e.GetType().Name}: {e.Message}. " +
+					$"If this persists, set hardware acceleration to 'none' or disable 'Use native FFmpeg binding'.");
+			}
+			else {
+				Logger.Instance.Info($"Failed using native FFmpeg binding on '{file}', switching to process mode. Exception: {e}");
+			}
+		}
+
 		const int DefaultJpegQuality = 90;
 
 
@@ -170,10 +213,14 @@ namespace VDF.Core.FFTools {
 				finally {
 					converter?.Dispose();
 				}
+				RecordNativeSuccess();
 				return true;
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Native batch graybytes failed on '{videoFile.Path}', falling back to per-sample path. Exception: {e}");
+				// One failure recorded per video file (not per position) so the session
+				// circuit breaker reflects per-file native health (issues #793/#795). The
+				// per-sample fallback below still re-attempts native but does not record.
+				RecordNativeFailure(videoFile.Path, e);
 				return false;
 			}
 		}
@@ -189,7 +236,7 @@ namespace VDF.Core.FFTools {
 		internal static unsafe byte[]?[] GetGrayFrames(string filePath, IReadOnlyList<double> positionsSeconds, bool extendedLogging) {
 			const int N = 32;
 			var frames = new byte[]?[positionsSeconds.Count];
-			if (UseNativeBinding) {
+			if (ShouldUseNativeBinding) {
 				try {
 					using var vsd = new VideoStreamDecoder(filePath, GetConfiguredHardwareDeviceType());
 					VideoFrameConverter? converter = null;
@@ -224,9 +271,12 @@ namespace VDF.Core.FFTools {
 					finally {
 						converter?.Dispose();
 					}
+					RecordNativeSuccess();
 				}
 				catch (Exception e) {
-					Logger.Instance.Info($"Native batch frame extraction failed on '{filePath}', falling back to per-frame path. Exception: {e}");
+					// One failure recorded per video file; the per-frame fallback below still
+					// re-attempts native but does not record (issues #793/#795).
+					RecordNativeFailure(filePath, e);
 				}
 			}
 
@@ -247,7 +297,7 @@ namespace VDF.Core.FFTools {
 			bool isGrayByte = settings.GrayScale == 1;
 
 			try {
-				if (UseNativeBinding) {
+				if (ShouldUseNativeBinding) {
 
 
 					AVHWDeviceType HWDevice = settings.SoftwareDecodeOnly
@@ -499,7 +549,7 @@ namespace VDF.Core.FFTools {
 			// Native batch path: open file + decoder + sws context once, walk all positions.
 			// The for-loop fallback below recreates them per position, so on a 4-position scan
 			// this avoids ~3x of the per-file FFmpeg setup cost.
-			if (UseNativeBinding && TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete)) {
+			if (ShouldUseNativeBinding && TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete)) {
 				if (tooDarkCounter == missingPositions) {
 					videoFile.Flags.Set(EntryFlags.TooDark);
 					Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
@@ -604,7 +654,7 @@ namespace VDF.Core.FFTools {
 			grayBytes = null;
 			width = 0;
 			height = 0;
-			if (!UseNativeBinding)
+			if (!ShouldUseNativeBinding)
 				return false;
 			try {
 				// Stills never benefit from HW decoders (and some HW paths reject them).
@@ -650,7 +700,7 @@ namespace VDF.Core.FFTools {
 			if (quality <= 0) quality = DefaultJpegQuality;
 			Size destSize = maxWidth > 0 ? ScaleToMaxWidth(new Size(width, height), maxWidth) : new Size(width, height);
 
-			if (UseNativeBinding) {
+			if (ShouldUseNativeBinding) {
 				try {
 					AVFrame* srcFrame = ffmpeg.av_frame_alloc();
 					if (srcFrame == null) throw new FFInvalidExitCodeException("Failed to allocate AVFrame.");

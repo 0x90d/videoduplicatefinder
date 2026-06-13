@@ -144,6 +144,45 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			}
 		}
 
+		static bool? canLoadNativeLibraries;
+		/// <summary>
+		/// True only if the FFmpeg shared libraries are present AND can actually be loaded and
+		/// called. <see cref="DoFFmpegLibraryFilesExist"/> only checks that the files exist on
+		/// disk (File.Exists); it never confirms they load. On some machines the libraries are
+		/// present and the right version but still fail to load (missing system dependency,
+		/// security software, an ABI/build mismatch), which previously surfaced as a
+		/// NotSupportedException on every single decode call instead of one clear failure
+		/// (issues #793/#795). Probe one trivial function per library so the load failure is
+		/// detected once, up front. Cached for the process — once a native library fails to
+		/// load it cannot be reloaded without a restart.
+		/// </summary>
+		internal static bool CanLoadNativeLibraries {
+			get {
+				if (canLoadNativeLibraries.HasValue)
+					return canLoadNativeLibraries.Value;
+				bool ok = false;
+				try {
+					if (DoFFmpegLibraryFilesExist) {
+						// Touch each library. If any cannot be loaded/resolved, AutoGen throws here.
+						_ = ffmpeg.avutil_version();
+						_ = ffmpeg.avcodec_version();
+						_ = ffmpeg.avformat_version();
+						_ = ffmpeg.swscale_version();
+						_ = ffmpeg.swresample_version();
+						ok = true;
+					}
+				}
+				catch (Exception e) {
+					Utils.Logger.Instance.Info(
+						$"FFmpeg shared libraries are present but could not be loaded; falling back to process mode. " +
+						$"Reason: {e.GetType().Name}: {e.Message}. {DescribeExpectedLibraries()}");
+					ok = false;
+				}
+				canLoadNativeLibraries = ok;
+				return ok;
+			}
+		}
+
 		/// <summary>
 		/// Builds a diagnostic string listing the FFmpeg shared libraries the current AutoGen
 		/// binding expects, plus any mismatched major versions detected on the system. Intended
