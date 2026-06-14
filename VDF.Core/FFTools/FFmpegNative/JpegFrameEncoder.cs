@@ -58,6 +58,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 				AVFrame localFrame = frame;
 				localFrame.quality = ctx->global_quality;
+				// Copying the AVFrame struct leaves extended_data pointing at the SOURCE
+				// frame's data array. avcodec_send_frame -> av_frame_ref requires
+				// extended_data == data for formats with <= AV_NUM_DATA_POINTERS planes
+				// and otherwise fails with EINVAL ("Invalid argument"). That made every
+				// native JPEG encode throw and silently fall back to the FFmpeg process
+				// (issues #793/#795). Re-point extended_data at this copy's own data array.
+				localFrame.extended_data = (byte**)&localFrame.data;
 				ffmpeg.avcodec_send_frame(ctx, &localFrame).ThrowExceptionIfError();
 				ffmpeg.avcodec_send_frame(ctx, null); // flush — single-frame encode
 				ffmpeg.avcodec_receive_packet(ctx, packet).ThrowExceptionIfError();

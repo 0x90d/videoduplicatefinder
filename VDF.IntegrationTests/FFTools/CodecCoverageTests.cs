@@ -85,6 +85,42 @@ public class CodecCoverageTests {
 			$"{codecName}: native graybytes too dark (failed VerifyGrayScaleValues)");
 	}
 
+	// JPEG thumbnail path (GrayScale = 0). This exercises JpegFrameEncoder, which the
+	// graybytes tests above never touch — the gap that let the native MJPEG encoder ship
+	// broken on FFmpeg 8.x (issue #795: 'Invalid argument' in JpegFrameEncoder.Encode).
+	static void AssertValidJpeg(byte[]? jpeg, string label) {
+		Assert.NotNull(jpeg);
+		Assert.True(jpeg!.Length > 4, $"{label}: JPEG too small ({jpeg.Length} bytes)");
+		Assert.True(jpeg[0] == 0xFF && jpeg[1] == 0xD8, $"{label}: missing JPEG SOI marker");
+		Assert.True(jpeg[^2] == 0xFF && jpeg[^1] == 0xD9, $"{label}: missing JPEG EOI marker");
+	}
+
+	[SkippableTheory]
+	[MemberData(nameof(CodecNames))]
+	public void ThumbnailJpeg_ProcessMode_ReturnsValidJpeg(string codecName) {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		string? path = GetVideoPath(codecName);
+		Skip.If(path == null, $"{codecName} test video not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = false;
+		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
+
+		var jpeg = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = path!,
+			Position = TimeSpan.FromSeconds(1),
+			GrayScale = 0,
+			MaxWidth = 100,
+		}, extendedLogging: false);
+
+		AssertValidJpeg(jpeg, $"{codecName} process-mode JPEG");
+	}
+
+	// NOTE: a GetThumbnail/EncodeJpegFromBgra "native" test would NOT guard the native
+	// encoder — both silently fall back to the FFmpeg process on native failure, so the
+	// test passes either way. The real native-encode regression test lives in
+	// JpegFrameEncoderTests, which calls JpegFrameEncoder.Encode directly (no fallback).
+
 	[SkippableTheory]
 	[MemberData(nameof(CodecNames))]
 	public void GrayBytes_ProcessMode_IsDeterministic(string codecName) {
