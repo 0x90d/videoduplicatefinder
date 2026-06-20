@@ -116,7 +116,7 @@ namespace VDF.CLI.Commands {
 
 				if (count == 0) {
 					Console.Error.WriteLine("Database is empty. Nothing to export.");
-					return;
+					return 1;
 				}
 
 				var outputPath = parseResult.GetValue(outputOpt)!;
@@ -131,8 +131,10 @@ namespace VDF.CLI.Commands {
 				if (ok) {
 					var fi = new System.IO.FileInfo(outputPath.FullName);
 					Console.Error.WriteLine($"Exported {count:N0} entries to {outputPath.FullName} ({fi.Length / 1_048_576.0:F1} MB).");
+					return 0;
 				} else {
 					Console.Error.WriteLine("Export failed.");
+					return 1;
 				}
 			});
 
