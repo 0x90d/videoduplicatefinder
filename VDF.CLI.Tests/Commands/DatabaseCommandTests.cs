@@ -33,7 +33,7 @@ public class DatabaseCommandTests {
 		var cmd = DatabaseCommand.Build();
 		var root = new RootCommand { cmd };
 		var result = root.Parse("db export -o /tmp/test.json");
-		Assert.Equal(0, result.Errors.Count);
+		Assert.Empty(result.Errors);
 	}
 
 	[Fact]
@@ -41,6 +41,6 @@ public class DatabaseCommandTests {
 		var cmd = DatabaseCommand.Build();
 		var root = new RootCommand { cmd };
 		var result = root.Parse("db export -o /tmp/test.json --pretty");
-		Assert.Equal(0, result.Errors.Count);
+		Assert.Empty(result.Errors);
 	}
 }

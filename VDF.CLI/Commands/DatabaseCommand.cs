@@ -93,8 +93,9 @@ namespace VDF.CLI.Commands {
 			var cmd = new Command("export",
 				"Export the scan database to a JSON file (includes fingerprints, media info, and perceptual hashes).");
 
-			var outputOpt = new Option<FileInfo?>("--output", "-o") {
-				Description = "Path for the exported JSON file."
+			var outputOpt = new Option<FileInfo>("--output", "-o") {
+				Description = "Path for the exported JSON file.",
+				Required = true,
 			};
 			cmd.Options.Add(outputOpt);
 
@@ -118,11 +119,7 @@ namespace VDF.CLI.Commands {
 					return;
 				}
 
-				var outputPath = parseResult.GetValue(outputOpt);
-				if (outputPath == null) {
-					Console.Error.WriteLine("Error: --output <path> is required.");
-					return;
-				}
+				var outputPath = parseResult.GetValue(outputOpt)!;
 				bool pretty = parseResult.GetValue(prettyOpt);
 
 				var options = new System.Text.Json.JsonSerializerOptions {
