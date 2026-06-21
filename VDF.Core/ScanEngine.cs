@@ -165,7 +165,14 @@ namespace VDF.Core {
 		public static bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
 		public static bool NativeFFmpegExists => FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist;
 
-		public async void StartSearch() {
+		/// <param name="searchAndCompare">
+		/// When true (GUI/Web default) the search chains straight into <see cref="StartCompare"/>.
+		/// Callers that drive the two phases separately — the CLI runs hashing and comparison as
+		/// distinct awaitable steps — must pass false, otherwise compare runs twice and the two
+		/// concurrent <see cref="DatabaseUtils.SaveDatabase"/> calls race over the temp database
+		/// file (#803).
+		/// </param>
+		public async void StartSearch(bool searchAndCompare = true) {
 			PrepareSearch();
 			SearchTimer.Start();
 			ElapsedTimer.Start();
@@ -184,7 +191,10 @@ namespace VDF.Core {
 			DatabaseUtils.SaveDatabase();
 			BuildingHashesDone?.Invoke(this, new EventArgs());
 			if (!cancelationTokenSource.IsCancellationRequested) {
-				StartCompare();
+				if (searchAndCompare)
+					StartCompare();
+				else
+					isScanning = false; // search-only: no StartCompare to clear it
 			}
 			else {
 				ScanAborted?.Invoke(this, new EventArgs());

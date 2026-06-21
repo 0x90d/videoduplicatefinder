@@ -35,7 +35,11 @@ namespace VDF.CLI.Commands {
 			engine.ScanAborted += OnAborted;
 			ct.Register(() => { engine.Stop(); tcs.TrySetCanceled(); });
 
-			engine.StartSearch();
+			// searchAndCompare:false — the CLI drives comparison as a separate awaitable step
+			// (RunCompareAsync). Letting StartSearch auto-chain into StartCompare would run the
+			// comparison twice, and the two concurrent SaveDatabase calls crash on the temp
+			// database file (#803).
+			engine.StartSearch(searchAndCompare: false);
 			await tcs.Task;
 
 			engine.BuildingHashesDone -= OnDone;
