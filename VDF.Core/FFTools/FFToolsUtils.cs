@@ -106,13 +106,29 @@ namespace VDF.Core.FFTools {
 			return null;
 		}
 
+		// Windows MAX_PATH: paths at or beyond this length need the extended-length
+		// "\\?\" prefix to be opened. Shorter paths are passed through verbatim.
+		const int WindowsMaxPath = 260;
+
 		/// <summary>
-		/// Returns a path with long path prefix
+		/// On Windows, prefixes the path with the extended-length "\\?\" form when (and only
+		/// when) it is long enough to require it. Other platforms return the path unchanged.
 		/// </summary>
+		/// <remarks>
+		/// The prefix is applied conditionally on purpose. It contains a '?', which FFmpeg's
+		/// image2 demuxer treats as a glob/sequence metacharacter, so prefixing every path made
+		/// still images fail to open ("Could not open file" / "Could find no file or sequence",
+		/// #806). Only paths that actually exceed MAX_PATH need the prefix; normal-length paths
+		/// (the overwhelming majority) are now handed to FFmpeg as-is and open correctly.
+		/// </remarks>
 		/// <param name="path">Path of the file</param>
-		/// <returns>On Windows: path with long path prefix. Otherwise same as input</returns>
+		/// <returns>On Windows: long paths get the "\\?\" prefix. Otherwise same as input.</returns>
 		internal static string LongPathFix(string path) {
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				return path;
+			if (path.StartsWith("\\\\?\\")) //already extended-length
+				return path;
+			if (path.Length < WindowsMaxPath)
 				return path;
 			//Check if path is UNC, see https://github.com/0x90d/videoduplicatefinder/issues/443
 			if (path.StartsWith('\\'))
