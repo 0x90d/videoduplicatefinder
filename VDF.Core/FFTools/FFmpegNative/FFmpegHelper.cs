@@ -52,6 +52,17 @@ namespace VDF.Core.FFTools.FFmpegNative {
 						if (CheckForFfmpegLibraryFilesInFolder(Path.Combine(Directory.GetParent(Directory.GetParent(path)!.FullName)!.FullName, "lib")))
 							return true;
 					}
+					// FFmpeg "shared" builds (and the auto-downloader) use a bin/ + sibling lib/
+					// layout: the executable lives in bin/, the .so files in ../lib. Probe it so the
+					// libraries the downloader fetches are actually found — otherwise VDF re-downloaded
+					// every run and still reported the shared libraries missing (#800). This also
+					// matches the common /usr/local/bin + /usr/local/lib system install.
+					if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+						string? exeDir = Path.GetDirectoryName(path);
+						string? prefix = exeDir != null ? Directory.GetParent(exeDir)?.FullName : null;
+						if (prefix != null && CheckForFfmpegLibraryFilesInFolder(Path.Combine(prefix, "lib")))
+							return true;
+					}
 
 				}
 				else if (path == null) {
@@ -63,6 +74,14 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 				path = Utils.CoreUtils.CurrentFolder;
 				if (CheckForFfmpegLibraryFilesInFolder(path))
+					return true;
+
+				// Linux auto-download target: the executables land in <app>/bin and the shared
+				// libraries in <app>/lib (see the FFmpeg downloader). Probe it explicitly so a
+				// freshly downloaded native binding works even when the resolved ffmpeg executable
+				// is a system one elsewhere on PATH (#800).
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) &&
+					CheckForFfmpegLibraryFilesInFolder(Path.Combine(Utils.CoreUtils.CurrentFolder, "lib")))
 					return true;
 
 				// macOS: Homebrew installs the FFmpeg dylibs under its prefix, which a
