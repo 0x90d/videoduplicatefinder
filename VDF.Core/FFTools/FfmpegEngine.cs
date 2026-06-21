@@ -50,6 +50,7 @@ namespace VDF.Core.FFTools {
 				// i.e. at the start of each scan.
 				_nativeConsecutiveFailures = 0;
 				_nativeDisabledForSession = false;
+				_vulkanNativeWarningLogged = false;
 			}
 		}
 
@@ -87,20 +88,40 @@ namespace VDF.Core.FFTools {
 		const int DefaultJpegQuality = 90;
 
 
-		static AVHWDeviceType GetConfiguredHardwareDeviceType() => HardwareAccelerationMode switch {
-			FFHardwareAccelerationMode.vdpau => AVHWDeviceType.AV_HWDEVICE_TYPE_VDPAU,
-			FFHardwareAccelerationMode.dxva2 => AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2,
-			FFHardwareAccelerationMode.vaapi => AVHWDeviceType.AV_HWDEVICE_TYPE_VAAPI,
-			FFHardwareAccelerationMode.qsv => AVHWDeviceType.AV_HWDEVICE_TYPE_QSV,
-			FFHardwareAccelerationMode.cuda => AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA,
-			FFHardwareAccelerationMode.videotoolbox => AVHWDeviceType.AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
-			FFHardwareAccelerationMode.d3d11va => AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA,
-			FFHardwareAccelerationMode.drm => AVHWDeviceType.AV_HWDEVICE_TYPE_DRM,
-			//FFHardwareAccelerationMode.opencl => AVHWDeviceType.AV_HWDEVICE_TYPE_OPENCL, OpenCL support is irrelevant for frame extraction
-			FFHardwareAccelerationMode.mediacodec => AVHWDeviceType.AV_HWDEVICE_TYPE_MEDIACODEC,
-			FFHardwareAccelerationMode.vulkan => AVHWDeviceType.AV_HWDEVICE_TYPE_VULKAN,
-			_ => AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
-		};
+		// Vulkan hardware decoding through the native FFmpeg binding segfaults the whole
+		// process on at least some NVIDIA setups (#799) — a native crash we cannot catch.
+		// The CLI path runs FFmpeg out-of-process, so a crash there is isolated and merely
+		// fails the file, but the native path takes the app down with it. Guard the native
+		// binding by decoding in software when Vulkan is requested; the warning is emitted
+		// once per scan instead of once per file.
+		static bool _vulkanNativeWarningLogged;
+
+		internal static AVHWDeviceType GetConfiguredHardwareDeviceType() {
+			if (HardwareAccelerationMode == FFHardwareAccelerationMode.vulkan) {
+				if (!_vulkanNativeWarningLogged) {
+					_vulkanNativeWarningLogged = true;
+					Logger.Instance.Info(
+						"Vulkan hardware acceleration is not supported with the native FFmpeg binding " +
+						"(it crashes the process on some drivers, #799); decoding in software instead. " +
+						"Disable 'Use native FFmpeg binding' to run Vulkan via the CLI, or pick another " +
+						"hardware acceleration mode such as 'cuda'.");
+				}
+				return AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
+			}
+			return HardwareAccelerationMode switch {
+				FFHardwareAccelerationMode.vdpau => AVHWDeviceType.AV_HWDEVICE_TYPE_VDPAU,
+				FFHardwareAccelerationMode.dxva2 => AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2,
+				FFHardwareAccelerationMode.vaapi => AVHWDeviceType.AV_HWDEVICE_TYPE_VAAPI,
+				FFHardwareAccelerationMode.qsv => AVHWDeviceType.AV_HWDEVICE_TYPE_QSV,
+				FFHardwareAccelerationMode.cuda => AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA,
+				FFHardwareAccelerationMode.videotoolbox => AVHWDeviceType.AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
+				FFHardwareAccelerationMode.d3d11va => AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA,
+				FFHardwareAccelerationMode.drm => AVHWDeviceType.AV_HWDEVICE_TYPE_DRM,
+				//FFHardwareAccelerationMode.opencl => AVHWDeviceType.AV_HWDEVICE_TYPE_OPENCL, OpenCL support is irrelevant for frame extraction
+				FFHardwareAccelerationMode.mediacodec => AVHWDeviceType.AV_HWDEVICE_TYPE_MEDIACODEC,
+				_ => AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
+			};
+		}
 
 		/// <summary>
 		/// Copies a 32x32 GRAY8 frame produced by <see cref="VideoFrameConverter"/> into a
