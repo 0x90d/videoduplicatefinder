@@ -24,6 +24,7 @@ namespace VDF.CLI.Commands {
 			var cmd = new Command("db", "Database maintenance commands.");
 			cmd.Subcommands.Add(BuildClean());
 			cmd.Subcommands.Add(BuildClear());
+			cmd.Subcommands.Add(BuildExport());
 			return cmd;
 		}
 
@@ -83,6 +84,58 @@ namespace VDF.CLI.Commands {
 
 				ScanEngine.ClearDatabase();
 				Console.Error.WriteLine($"Database cleared. {count:N0} entries removed.");
+			});
+
+			return cmd;
+		}
+
+		static Command BuildExport() {
+			var cmd = new Command("export",
+				"Export the scan database to a JSON file (includes fingerprints, media info, and perceptual hashes).");
+
+			var outputOpt = new Option<FileInfo>("--output", "-o") {
+				Description = "Path for the exported JSON file.",
+				Required = true,
+			};
+			cmd.Options.Add(outputOpt);
+
+			var prettyOpt = new Option<bool>("--pretty") {
+				Description = "Write indented (pretty-printed) JSON."
+			};
+			cmd.Options.Add(prettyOpt);
+
+			cmd.Options.Add(SharedOptions.Database);
+
+			cmd.SetAction(async (parseResult, ct) => {
+				var db = parseResult.GetValue(SharedOptions.Database);
+				if (db != null) DatabaseUtils.CustomDatabaseFolder = db;
+
+				await ScanEngine.LoadDatabase();
+				int count = DatabaseUtils.Database.Count;
+				Console.Error.WriteLine($"Database loaded: {count:N0} entries.");
+
+				if (count == 0) {
+					Console.Error.WriteLine("Database is empty. Nothing to export.");
+					return 1;
+				}
+
+				var outputPath = parseResult.GetValue(outputOpt)!;
+				bool pretty = parseResult.GetValue(prettyOpt);
+
+				var options = new System.Text.Json.JsonSerializerOptions {
+					IncludeFields = true,
+					WriteIndented = pretty,
+				};
+
+				bool ok = ScanEngine.ExportDataBaseToJson(outputPath.FullName, options);
+				if (ok) {
+					var fi = new System.IO.FileInfo(outputPath.FullName);
+					Console.Error.WriteLine($"Exported {count:N0} entries to {outputPath.FullName} ({fi.Length / 1_048_576.0:F1} MB).");
+					return 0;
+				} else {
+					Console.Error.WriteLine("Export failed.");
+					return 1;
+				}
 			});
 
 			return cmd;
