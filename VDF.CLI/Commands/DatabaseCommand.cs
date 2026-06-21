@@ -44,6 +44,7 @@ namespace VDF.CLI.Commands {
 				DatabaseUtils.CleanupDatabase();
 				int removed = before - DatabaseUtils.Database.Count;
 				Console.Error.WriteLine($"Cleanup complete: {removed:N0} entries removed, {DatabaseUtils.Database.Count:N0} remaining.");
+				return 0;
 			});
 
 			return cmd;
@@ -68,8 +69,9 @@ namespace VDF.CLI.Commands {
 				Console.Error.WriteLine($"Database loaded: {count:N0} entries.");
 
 				if (count == 0) {
+					// Already in the desired (empty) state — not an error.
 					Console.Error.WriteLine("Database is already empty.");
-					return;
+					return 0;
 				}
 
 				bool confirmed = parseResult.GetValue(confirmOpt);
@@ -77,13 +79,16 @@ namespace VDF.CLI.Commands {
 					Console.Error.Write($"WARNING: This will permanently delete all {count:N0} entries. Type 'yes' to confirm: ");
 					string? input = Console.ReadLine();
 					if (!string.Equals(input?.Trim(), "yes", StringComparison.OrdinalIgnoreCase)) {
+						// User declined (or no input in a non-interactive run): nothing was
+						// deleted, so report non-zero rather than a misleading success.
 						Console.Error.WriteLine("Aborted.");
-						return;
+						return 1;
 					}
 				}
 
 				ScanEngine.ClearDatabase();
 				Console.Error.WriteLine($"Database cleared. {count:N0} entries removed.");
+				return 0;
 			});
 
 			return cmd;
