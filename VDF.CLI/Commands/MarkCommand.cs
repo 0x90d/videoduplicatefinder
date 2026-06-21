@@ -31,8 +31,9 @@ namespace VDF.CLI.Commands {
 				Required = true
 			};
 			var strategyOpt = new Option<Strategy>("--strategy") {
-				Description = "Selection strategy: lowest-quality, smallest-file, shortest-duration, worst-resolution, 100-percent-only.",
-				Required = true
+				Description = $"Selection strategy: {string.Join(", ", StrategyParser.Names)}.",
+				Required = true,
+				CustomParser = StrategyParser.Parse
 			};
 			var dryRunOpt = new Option<bool>("--dry-run") {
 				Description = "Print which files would be deleted without deleting anything (default).",

@@ -26,7 +26,8 @@ namespace VDF.CLI.Commands {
 			SharedOptions.AddScanOptions(cmd);
 
 			var actionOpt = new Option<Strategy?>("--action") {
-				Description = "Automatically mark files for deletion using a strategy (see 'mark --help'). Implies --dry-run unless --delete or --delete-permanent is also specified."
+				Description = "Automatically mark files for deletion using a strategy (see 'mark --help'). Implies --dry-run unless --delete or --delete-permanent is also specified.",
+				CustomParser = StrategyParser.ParseNullable
 			};
 			var dryRunOpt = new Option<bool>("--dry-run") {
 				Description = "Print which files would be deleted without deleting anything. Default when --action is specified."

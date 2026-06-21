@@ -14,6 +14,7 @@
 // */
 //
 
+using System.CommandLine.Parsing;
 using VDF.Core.ViewModels;
 
 namespace VDF.CLI.Actions {
@@ -23,6 +24,49 @@ namespace VDF.CLI.Actions {
 		ShortestDuration,
 		WorstResolution,
 		HundredPercentOnly
+	}
+
+	/// <summary>
+	/// Parses the <see cref="Strategy"/> enum from the kebab-case names shown in
+	/// --help (e.g. "lowest-quality", "100-percent-only"). The default enum binder
+	/// only accepts the PascalCase member names, so the documented forms were
+	/// rejected; this normalises away case, hyphens and underscores and also maps
+	/// "100" to the "Hundred" prefix.
+	/// </summary>
+	public static class StrategyParser {
+		/// <summary>The canonical, documented option values.</summary>
+		public static readonly IReadOnlyList<string> Names = new[] {
+			"lowest-quality", "smallest-file", "shortest-duration", "worst-resolution", "100-percent-only"
+		};
+
+		public static bool TryParse(string? value, out Strategy strategy) {
+			strategy = Normalize(value) switch {
+				"lowestquality" => Strategy.LowestQuality,
+				"smallestfile" => Strategy.SmallestFile,
+				"shortestduration" => Strategy.ShortestDuration,
+				"worstresolution" => Strategy.WorstResolution,
+				"100percentonly" or "hundredpercentonly" => Strategy.HundredPercentOnly,
+				_ => (Strategy)(-1)
+			};
+			return Enum.IsDefined(strategy);
+		}
+
+		/// <summary>CustomParser for the required <c>Option&lt;Strategy&gt;</c> (mark --strategy).</summary>
+		public static Strategy Parse(ArgumentResult result) => ParseToken(result) ?? default;
+
+		/// <summary>CustomParser for the optional <c>Option&lt;Strategy?&gt;</c> (scan-and-compare --action).</summary>
+		public static Strategy? ParseNullable(ArgumentResult result) => ParseToken(result);
+
+		static Strategy? ParseToken(ArgumentResult result) {
+			string? token = result.Tokens.Count > 0 ? result.Tokens[0].Value : null;
+			if (TryParse(token, out var strategy))
+				return strategy;
+			result.AddError($"Invalid strategy '{token}'. Valid values: {string.Join(", ", Names)}.");
+			return null;
+		}
+
+		static string Normalize(string? value) =>
+			(value ?? string.Empty).Replace("-", "").Replace("_", "").ToLowerInvariant();
 	}
 
 	public static class DeletionStrategy {
