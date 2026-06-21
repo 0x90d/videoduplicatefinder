@@ -29,12 +29,13 @@ namespace VDF.CLI.Commands {
 
 				if (engine.Settings.IncludeList.Count == 0) {
 					Console.Error.WriteLine("Error: at least one --include path is required.");
-					return;
+					return 1;
 				}
 
 				ScanRunner.WireProgress(engine);
 				await ScanRunner.RunSearchAsync(engine, ct);
 				Console.Error.WriteLine("Scan complete. Run 'compare' to find duplicates.");
+				return 0;
 			});
 
 			return cmd;

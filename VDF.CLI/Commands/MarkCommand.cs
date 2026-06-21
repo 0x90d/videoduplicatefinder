@@ -55,7 +55,7 @@ namespace VDF.CLI.Commands {
 				var inputFile = parseResult.GetValue(inputOpt)!;
 				if (!inputFile.Exists) {
 					Console.Error.WriteLine($"Error: input file not found: {inputFile.FullName}");
-					return;
+					return 1;
 				}
 
 				List<DuplicateItem>? duplicates;
@@ -67,12 +67,13 @@ namespace VDF.CLI.Commands {
 				}
 				catch (Exception ex) {
 					Console.Error.WriteLine($"Error reading results file: {ex.Message}");
-					return;
+					return 1;
 				}
 
 				if (duplicates == null || duplicates.Count == 0) {
+					// A valid but empty results file is a no-op, not a failure.
 					Console.Error.WriteLine("No duplicates found in the results file.");
-					return;
+					return 0;
 				}
 
 				var strategy = parseResult.GetValue(strategyOpt);
@@ -82,16 +83,18 @@ namespace VDF.CLI.Commands {
 				bool doDelete = parseResult.GetValue(deleteOpt) || doPermanent;
 				bool dryRun = !doDelete || parseResult.GetValue(dryRunOpt);
 
-				await ExecuteDeletion(marked, dryRun, doPermanent);
+				int failed = await ExecuteDeletion(marked, dryRun, doPermanent);
+				return failed > 0 ? 1 : 0;
 			});
 
 			return cmd;
 		}
 
-		internal static async Task ExecuteDeletion(IReadOnlyList<DuplicateItem> marked, bool dryRun, bool permanent) {
+		/// <summary>Returns the number of files that failed to delete (0 in dry-run).</summary>
+		internal static async Task<int> ExecuteDeletion(IReadOnlyList<DuplicateItem> marked, bool dryRun, bool permanent) {
 			if (marked.Count == 0) {
 				Console.Error.WriteLine("No files selected for deletion by the chosen strategy.");
-				return;
+				return 0;
 			}
 
 			if (!dryRun) {
@@ -131,6 +134,7 @@ namespace VDF.CLI.Commands {
 			else {
 				Console.Error.WriteLine($"[dry-run] {marked.Count} file(s) would be deleted. Use --delete or --delete-permanent to proceed.");
 			}
+			return failed;
 		}
 
 		static void MoveToTrash(string path) {
