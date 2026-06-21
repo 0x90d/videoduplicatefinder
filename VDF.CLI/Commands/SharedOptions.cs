@@ -134,7 +134,12 @@ namespace VDF.CLI.Commands {
 
 			s.Threshhold = r.GetValue(Threshold);
 			s.Percent = r.GetValue(Percent);
-			s.MaxDegreeOfParallelism = r.GetValue(Parallelism);
+			// Commands that don't register --parallelism (e.g. 'compare') get default(int) == 0
+			// back from GetValue, and 0 is the one value ParallelOptions rejects (#804). Remap
+			// only that sentinel to the documented default of 1; -1 (unbounded) and any positive
+			// value the user actually passed are left untouched.
+			int parallelism = r.GetValue(Parallelism);
+			s.MaxDegreeOfParallelism = parallelism == 0 ? 1 : parallelism;
 			s.IncludeSubDirectories = !r.GetValue(NoSubdirs);
 			s.IncludeImages = r.GetValue(IncludeImages);
 			s.UsePHashing = r.GetValue(UsePhash);
