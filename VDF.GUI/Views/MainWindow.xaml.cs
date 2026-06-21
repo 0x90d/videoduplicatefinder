@@ -75,6 +75,17 @@ namespace VDF.GUI.Views {
 					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundWhite")!.IsVisible = true;
 			}
 
+			// GNOME (and other Linux compositors) keep their server-side title bar even when
+			// ExtendClientAreaToDecorationsHint is set, so VDF's own centered title rendered a
+			// second time just below the decoration (#798). Fall back to native decorations on
+			// Linux and drop both the in-window title and the gap reserved for the extended
+			// caption area. Windows/macOS keep the custom chrome.
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+				ExtendClientAreaToDecorationsHint = false;
+				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
+				this.FindControl<Grid>("MainContentGrid")!.Margin = new Thickness(2, 2, 2, 2);
+			}
+
 			if (!SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = ThemeVariant.Light;
 

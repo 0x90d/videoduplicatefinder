@@ -88,7 +88,7 @@
                 HorizontalAlignment="Center"
                 IsHitTestVisible="false"
                 Text="{Binding #MainWindow.Title}" />
-            <Grid Margin="2,30,2,2">
+            <Grid x:Name="MainContentGrid" Margin="2,30,2,2">
                 <TabControl x:Name="TabControl">
                     <TabItem Name="TabItemScanner">
                         <TabItem.Header>
