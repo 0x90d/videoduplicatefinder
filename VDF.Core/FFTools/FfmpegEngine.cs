@@ -423,8 +423,14 @@ namespace VDF.Core.FFTools {
 				psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
 			}
 
-			// -ss before -i (faster seek, may be less accurate; OK for frame sampling)
-			psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(settings.Position.ToString(null, CultureInfo.InvariantCulture));
+			// -ss before -i (faster seek, may be less accurate; OK for frame sampling).
+			// Skip it entirely for still images: they are a single frame with no seek position,
+			// and an input -ss (even -ss 0) makes FFmpeg discard that frame on some JPEGs —
+			// EOF before any frame reaches the filter graph, so it writes 0 bytes and exits 0
+			// with no error, surfacing as "Failed to retrieve graybytes" (#801).
+			if (!FileUtils.IsImageFile(settings.File)) {
+				psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(settings.Position.ToString(null, CultureInfo.InvariantCulture));
+			}
 			psi.ArgumentList.Add("-i"); psi.ArgumentList.Add(FFToolsUtils.LongPathFix(settings.File));
 
 			// Parse CustomFFArguments up front so we can detect a user-supplied -vf and merge it

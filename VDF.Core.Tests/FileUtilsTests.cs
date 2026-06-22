@@ -68,4 +68,21 @@ public class FileUtilsTests {
 		string path = "C:\\videos\\bad\uD83DA.mp4";
 		Assert.False(FileUtils.IsPathFFmpegSafe(path));
 	}
+
+	[Theory]
+	[InlineData("C:\\pics\\photo.jpg")]
+	[InlineData("C:\\pics\\photo.JPEG")]
+	[InlineData("/home/user/pics/photo.png")]
+	[InlineData("photo.webp")]
+	[InlineData("scan.heic")]
+	public void IsImageFile_ImageExtensions_True(string path) =>
+		Assert.True(FileUtils.IsImageFile(path));
+
+	[Theory]
+	[InlineData("C:\\videos\\clip.mp4")]
+	[InlineData("clip.mkv")]
+	[InlineData("noextension")]
+	[InlineData("archive.zip")]
+	public void IsImageFile_NonImage_False(string path) =>
+		Assert.False(FileUtils.IsImageFile(path));
 }

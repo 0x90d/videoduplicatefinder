@@ -53,9 +53,12 @@ namespace VDF.Core.Utils {
 			".rm"
 		};
 		static readonly FrozenSet<string> VideoExtensionSet = VideoExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+		static readonly FrozenSet<string> ImageExtensionSet = ImageExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 		static readonly FrozenSet<string> AllExtensionSet = VideoExtensions.Concat(ImageExtensions).ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 		internal static bool IsVideoExtension(string extension) => VideoExtensionSet.Contains(extension);
 		internal static bool IsMediaExtension(string extension) => AllExtensionSet.Contains(extension);
+		/// <summary>True when the file path has a still-image extension (decoded as a single frame by FFmpeg).</summary>
+		internal static bool IsImageFile(string path) => ImageExtensionSet.Contains(Path.GetExtension(path));
 		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken) {
 			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,
