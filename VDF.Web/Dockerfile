@@ -6,7 +6,7 @@ COPY ["VDF.Web/VDF.Web.csproj", "VDF.Web/"]
 RUN dotnet restore "VDF.Web/VDF.Web.csproj"
 COPY VDF.Core/ VDF.Core/
 COPY VDF.Web/ VDF.Web/
-RUN dotnet publish "VDF.Web/VDF.Web.csproj" -c Release -o /app/publish --no-restore
+RUN dotnet publish "VDF.Web/VDF.Web.csproj" -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
