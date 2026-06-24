@@ -15,6 +15,7 @@
 //
 
 using System.Diagnostics;
+using System.Linq;
 using System.Text.Json;
 using MemoryPack;
 
@@ -189,6 +190,63 @@ namespace VDF.Core.Utils {
 			}
 			return true;
 		}
+		/// <summary>
+		/// Writes a privacy-preserving graybytes dump for bug reports: the 32x32 grayscale
+		/// hashes and pHashes VDF computed for every entry, but <b>no file paths or names</b>
+		/// (entries are anonymized to a running id). Lets maintainers diagnose extraction bugs
+		/// (e.g. degenerate/duplicate graybytes producing false matches) from the actual stored
+		/// data without the user having to hand over their library's paths. Written with
+		/// Utf8JsonWriter so it stays AOT/trim safe.
+		/// </summary>
+		internal static bool ExportGrayBytesDiagnostic(string jsonFile) {
+			try {
+				using var stream = File.Create(jsonFile);
+				using var w = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
+				w.WriteStartObject();
+				w.WriteString("note", "Path-scrubbed VDF graybytes diagnostic. Contains NO file paths or names. " +
+					"grayFrames are base64-encoded 32x32 grayscale buffers (1024 bytes each), ordered by sample position.");
+				w.WriteNumber("entryCount", Database.Count);
+				w.WriteStartArray("entries");
+				int id = 0;
+				foreach (FileEntry e in Database) {
+					w.WriteStartObject();
+					w.WriteNumber("id", id++);
+					w.WriteBoolean("isImage", e.IsImage);
+					var stream0 = e.mediaInfo?.Streams?.FirstOrDefault(s => s.Width > 0 && s.Height > 0);
+					w.WriteNumber("width", stream0?.Width ?? 0);
+					w.WriteNumber("height", stream0?.Height ?? 0);
+					w.WriteNumber("durationSeconds", e.mediaInfo?.Duration.TotalSeconds ?? 0d);
+					w.WriteBoolean("tooDark", e.IsTooDark);
+					w.WriteBoolean("thumbnailError", e.HasThubmanilError);
+					w.WriteStartArray("grayFrames");
+					foreach (var kv in e.grayBytes.OrderBy(k => k.Key)) {
+						if (kv.Value == null)
+							w.WriteNullValue();
+						else
+							w.WriteBase64StringValue(kv.Value);
+					}
+					w.WriteEndArray();
+					w.WriteStartArray("pHashes");
+					foreach (var kv in e.PHashes.OrderBy(k => k.Key)) {
+						if (kv.Value == null)
+							w.WriteNullValue();
+						else
+							w.WriteNumberValue(kv.Value.Value);
+					}
+					w.WriteEndArray();
+					w.WriteEndObject();
+				}
+				w.WriteEndArray();
+				w.WriteEndObject();
+				w.Flush();
+				return true;
+			}
+			catch (Exception e) {
+				Logger.Instance.Info($"Failed to export graybytes diagnostic: {e}");
+				return false;
+			}
+		}
+
 		internal static bool ImportDatabaseFromJson(string jsonFile, JsonSerializerOptions options) {
 			try {
 				using var stream = File.OpenRead(jsonFile);

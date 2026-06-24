@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Text.Json;
 using MemoryPack;
 using VDF.Core.Utils;
 
@@ -154,6 +155,60 @@ public class DatabaseFormatTests {
 				Assert.Equal(value, other.PHashes[key]);
 			Assert.Equal(entry.mediaInfo?.Duration, other.mediaInfo?.Duration);
 			Assert.Equal(entry.mediaInfo?.Streams?.Length, other.mediaInfo?.Streams?.Length);
+		}
+	}
+
+	[Fact]
+	public void ExportGrayBytesDiagnostic_HasHashesButLeaksNoPaths() {
+		string dir = Path.Combine(Path.GetTempPath(), $"vdf-diag-{Guid.NewGuid():N}");
+		Directory.CreateDirectory(dir);
+		try {
+			File.Copy(Asset("legacy-wrapper.db"), Path.Combine(dir, "ScannedFiles.db"));
+			DatabaseUtils.CustomDatabaseFolder = dir;
+			DatabaseUtils.InvalidateDatabaseFolder();
+			Assert.True(DatabaseUtils.LoadDatabase());
+			Assert.Equal(3, DatabaseUtils.Database.Count);
+
+			string outFile = Path.Combine(dir, "diag.json");
+			Assert.True(DatabaseUtils.ExportGrayBytesDiagnostic(outFile));
+			string json = File.ReadAllText(outFile);
+
+			// Privacy guarantee: not a single path, folder, or filename from the DB.
+			Assert.DoesNotContain("movie.mp4", json);
+			Assert.DoesNotContain("photo.jpg", json);
+			Assert.DoesNotContain("minimal.mkv", json);
+			Assert.DoesNotContain("vids", json);
+			Assert.DoesNotContain("server", json);
+
+			using var doc = JsonDocument.Parse(json);
+			var root = doc.RootElement;
+			Assert.Equal(3, root.GetProperty("entryCount").GetInt32());
+			var entries = root.GetProperty("entries");
+			Assert.Equal(3, entries.GetArrayLength());
+
+			// The movie entry's 1024-byte gray frame must survive the base64 round-trip
+			// intact (the fixture stored the i*7 pattern).
+			bool foundExpectedFrame = false;
+			foreach (var e in entries.EnumerateArray()) {
+				foreach (var gf in e.GetProperty("grayFrames").EnumerateArray()) {
+					if (gf.ValueKind == JsonValueKind.Null)
+						continue;
+					byte[] bytes = Convert.FromBase64String(gf.GetString()!);
+					if (bytes.Length != 1024)
+						continue;
+					bool match = true;
+					for (int i = 0; i < 1024; i++)
+						if (bytes[i] != (byte)(i * 7)) { match = false; break; }
+					if (match) { foundExpectedFrame = true; break; }
+				}
+			}
+			Assert.True(foundExpectedFrame, "Expected the movie entry's 1024-byte gray frame in the export");
+		}
+		finally {
+			DatabaseUtils.CustomDatabaseFolder = null;
+			DatabaseUtils.InvalidateDatabaseFolder();
+			DatabaseUtils.Database.Clear();
+			try { Directory.Delete(dir, recursive: true); } catch { }
 		}
 	}
 

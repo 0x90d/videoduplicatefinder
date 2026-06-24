@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using VDF.Core.Utils;
 
@@ -123,6 +124,38 @@ namespace VDF.Core.FFTools {
 		/// </remarks>
 		/// <param name="path">Path of the file</param>
 		/// <returns>On Windows: long paths get the "\\?\" prefix. Otherwise same as input.</returns>
+		/// <summary>
+		/// Runs <c>&lt;tool&gt; -version</c> and returns its first output line (the
+		/// "ffmpeg version …" banner), or a short diagnostic string if the tool is missing
+		/// or could not be run. Used by the GUI diagnostics report for bug submissions.
+		/// </summary>
+		internal static string GetToolVersionLine(FFTool tool) {
+			string? path = GetPath(tool);
+			if (string.IsNullOrEmpty(path) || !File.Exists(path))
+				return $"{tool}: not found";
+			try {
+				using var process = new Process {
+					StartInfo = new ProcessStartInfo {
+						FileName = path,
+						Arguments = "-version",
+						CreateNoWindow = true,
+						RedirectStandardOutput = true,
+						RedirectStandardError = true,
+						UseShellExecute = false,
+						WindowStyle = ProcessWindowStyle.Hidden
+					}
+				};
+				process.Start();
+				string firstLine = process.StandardOutput.ReadLine() ?? string.Empty;
+				process.StandardOutput.ReadToEnd(); // drain so the process can exit cleanly
+				process.WaitForExit(5000);
+				return firstLine.Length > 0 ? firstLine : $"{tool}: no version output";
+			}
+			catch (Exception e) {
+				return $"{tool}: {e.GetType().Name}: {e.Message}";
+			}
+		}
+
 		internal static string LongPathFix(string path) {
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				return path;

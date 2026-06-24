@@ -2042,7 +2042,7 @@
                                         <TextBlock VerticalAlignment="Center" FontSize="12"
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Test]}" />
                                     </TabItem.Header>
-                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Margin="16,12,16,16">
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="16,12,16,16">
                                         <TextBlock Grid.Row="0" TextWrapping="Wrap"
                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Test.Description]}" />
                                         <Grid Grid.Row="1" ColumnDefinitions="60,*,Auto" Margin="0,12,0,0">
@@ -2070,6 +2070,19 @@
                                         <TextBox Grid.Row="4" AcceptsReturn="True" IsReadOnly="True" TextWrapping="NoWrap"
                                                  FontFamily="Cascadia Mono,Consolas,Menlo,monospace" FontSize="12"
                                                  Text="{Binding FilePairTestResult}" />
+                                        <StackPanel Grid.Row="5" Spacing="6" Margin="0,12,0,0">
+                                            <Separator />
+                                            <TextBlock FontWeight="Bold"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics]}" />
+                                            <TextBlock TextWrapping="Wrap" Opacity="0.8"
+                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics.Description]}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Command="{Binding CopyDiagnosticsCommand}"
+                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics.Copy]}" />
+                                                <Button Command="{Binding ExportGrayBytesCommand}"
+                                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics.ExportGrayBytes]}" />
+                                            </StackPanel>
+                                        </StackPanel>
                                     </Grid>
                                 </TabItem>
                             </TabControl>
