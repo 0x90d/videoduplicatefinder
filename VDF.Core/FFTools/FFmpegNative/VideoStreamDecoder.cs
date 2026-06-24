@@ -140,10 +140,17 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			double AV_TIME_BASE = (double)timebase.den / timebase.num;
 			long targetPts = Convert.ToInt64(position.TotalSeconds * AV_TIME_BASE);
 
-			if (ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, targetPts, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0)
-				ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, targetPts, ffmpeg.AVSEEK_FLAG_ANY).ThrowExceptionIfError();
+			// Only seek when a non-zero position is requested. Seeking to the start is at best a
+			// no-op and on single-frame image demuxers (image2/mjpeg) it overshoots the lone
+			// packet, leaving nothing to decode — which silently broke native still-image decode
+			// and forced a CLI fallback for every JPEG (native analogue of the #801 -ss-on-stills
+			// bug). For position 0 we just decode forward from the start, matching the CLI grabber.
+			if (targetPts > 0) {
+				if (ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, targetPts, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0)
+					ffmpeg.av_seek_frame(_pFormatContext, _streamIndex, targetPts, ffmpeg.AVSEEK_FLAG_ANY).ThrowExceptionIfError();
 
-			ffmpeg.avcodec_flush_buffers(_pCodecContext);
+				ffmpeg.avcodec_flush_buffers(_pCodecContext);
+			}
 
 			// Decode forward from keyframe until we reach the target PTS.
 			// Cap iterations to prevent infinite loops on corrupt files.
@@ -154,46 +161,66 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			// to the CLI process — see issue #731. Cap so a truly corrupt file still bails.
 			const int maxBadPackets = 64;
 			int badPacketCount = 0;
+			// Once the demuxer is exhausted we send a single null packet to put the decoder
+			// into draining mode. Intra single-frame codecs (e.g. MJPEG still images) buffer
+			// their only frame and emit it only after a flush; without draining that frame is
+			// never received and still-image decoding fails outright, forcing a CLI fallback
+			// (native analogue of the #801 -ss-on-stills bug).
+			bool draining = false;
 			for (int iter = 0; iter < maxIterations; iter++) {
-				int error;
-				while (true) {
-					ffmpeg.av_packet_unref(_pPacket);
-					error = ffmpeg.av_read_frame(_pFormatContext, _pPacket);
-					if (error == ffmpeg.AVERROR_EOF) {
-						frame = *_pFrame;
-						return false;
-					}
-					if (error == ffmpeg.AVERROR_INVALIDDATA) {
-						if (++badPacketCount > maxBadPackets) {
-							frame = *_pFrame;
-							return false;
+				if (!draining) {
+					int error;
+					while (true) {
+						ffmpeg.av_packet_unref(_pPacket);
+						error = ffmpeg.av_read_frame(_pFormatContext, _pPacket);
+						if (error == ffmpeg.AVERROR_EOF) {
+							// No more packets — flush the decoder rather than giving up.
+							ffmpeg.av_packet_unref(_pPacket);
+							ffmpeg.avcodec_send_packet(_pCodecContext, null).ThrowExceptionIfError();
+							draining = true;
+							break;
 						}
-						continue;
+						if (error == ffmpeg.AVERROR_INVALIDDATA) {
+							if (++badPacketCount > maxBadPackets) {
+								frame = *_pFrame;
+								return false;
+							}
+							continue;
+						}
+						error.ThrowExceptionIfError();
+						if (_pPacket->stream_index == _streamIndex) break;
 					}
-					error.ThrowExceptionIfError();
-					if (_pPacket->stream_index == _streamIndex) break;
+
+					if (!draining) {
+						int sendErr;
+						try {
+							sendErr = ffmpeg.avcodec_send_packet(_pCodecContext, _pPacket);
+						}
+						finally {
+							ffmpeg.av_packet_unref(_pPacket);
+						}
+						if (sendErr == ffmpeg.AVERROR_INVALIDDATA || sendErr == ffmpeg.AVERROR(ffmpeg.EINVAL)) {
+							if (++badPacketCount > maxBadPackets) {
+								frame = *_pFrame;
+								return false;
+							}
+							continue;
+						}
+						sendErr.ThrowExceptionIfError();
+					}
 				}
 
-				int sendErr;
-				try {
-					sendErr = ffmpeg.avcodec_send_packet(_pCodecContext, _pPacket);
-				}
-				finally {
-					ffmpeg.av_packet_unref(_pPacket);
-				}
-				if (sendErr == ffmpeg.AVERROR_INVALIDDATA || sendErr == ffmpeg.AVERROR(ffmpeg.EINVAL)) {
-					if (++badPacketCount > maxBadPackets) {
+				int recvErr = ffmpeg.avcodec_receive_frame(_pCodecContext, _pFrame);
+				if (recvErr == ffmpeg.AVERROR(ffmpeg.EAGAIN)) {
+					// In draining mode EAGAIN cannot occur; if it somehow does, the decoder
+					// has nothing left to give, so bail rather than spin to maxIterations.
+					if (draining) {
 						frame = *_pFrame;
 						return false;
 					}
 					continue;
 				}
-				sendErr.ThrowExceptionIfError();
-
-				error = ffmpeg.avcodec_receive_frame(_pCodecContext, _pFrame);
-				if (error == ffmpeg.AVERROR(ffmpeg.EAGAIN))
-					continue;
-				if (error < 0) {
+				if (recvErr < 0) { // includes AVERROR_EOF: decoder fully drained, no frame at target
 					frame = *_pFrame;
 					return false;
 				}

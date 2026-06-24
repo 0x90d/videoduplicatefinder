@@ -90,6 +90,37 @@ public class GrayBytesParityTests {
 		Assert.Equal(run1, run2);
 	}
 
+	[SkippableTheory]
+	[InlineData(false)] // JPEG (MJPEG): buffers its single frame, requires draining
+	[InlineData(true)]  // PNG: emits immediately, guards against a seek regression
+	public void GrayBytes_NativeStillImage_DecodesAndMatchesProcess(bool png) {
+		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		string? image = png ? _fixture.SamplePng : _fixture.SampleJpeg;
+		Skip.If(image == null, "Still image fixture not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
+
+		// Native still-image fast path. Before the #810 fix this returned false for MJPEG
+		// (the lone intra frame was never received), silently falling back to the CLI.
+		FfmpegEngine.UseNativeBinding = true;
+		bool ok = FfmpegEngine.TryGetImageInfoAndGrayBytes(image!, out var nativeBytes, out int w, out int h, extendedLogging: false);
+		Assert.True(ok, "Native still-image decode failed");
+		Assert.NotNull(nativeBytes);
+		Assert.Equal(1024, nativeBytes!.Length);
+		Assert.True(w > 0 && h > 0, $"Native decode reported invalid dimensions {w}x{h}");
+
+		FfmpegEngine.UseNativeBinding = false;
+		var processBytes = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = image!, Position = TimeSpan.Zero, GrayScale = 1, SoftwareDecodeOnly = true,
+		}, extendedLogging: false);
+		Assert.NotNull(processBytes);
+
+		float diff = GrayBytesUtils.PercentageDifference(nativeBytes, processBytes!);
+		Assert.True(diff < 0.05f, $"Native vs process still-image graybytes differ by {diff:P2}, expected < 5%");
+	}
+
 	[SkippableFact]
 	public void GrayBytes_NativeMode_SameInput_ProducesIdenticalOutput() {
 		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");

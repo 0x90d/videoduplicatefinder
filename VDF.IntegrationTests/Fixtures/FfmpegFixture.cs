@@ -39,6 +39,10 @@ public class FfmpegFixture : IDisposable {
 
 	/// <summary>Checked-in HEIC still image (FFmpeg can decode but not mux HEIC).</summary>
 	public string? SampleHeic { get; }
+	/// <summary>Generated still JPEG (MJPEG) for native still-image decode coverage.</summary>
+	public string? SampleJpeg { get; }
+	/// <summary>Generated still PNG for native still-image decode coverage.</summary>
+	public string? SamplePng { get; }
 	/// <summary>H.264 clip stamped with <see cref="CreationTimeTag"/> in its container metadata.</summary>
 	public string? Mp4WithCreationTime { get; }
 	/// <summary>The creation_time value stamped into <see cref="Mp4WithCreationTime"/>.</summary>
@@ -117,6 +121,15 @@ public class FfmpegFixture : IDisposable {
 		string creationTimePath = Path.Combine(TempDir, "creation_time.mp4");
 		if (TestVideoGenerator.GenerateMp4WithCreationTime(ffmpegPath, creationTimePath, CreationTimeTag))
 			Mp4WithCreationTime = creationTimePath;
+
+		// Still images: a single frame has no timeline to seek into, so native decoding must
+		// not input-seek and must drain the decoder to emit the buffered frame (see #810).
+		string jpegPath = Path.Combine(TempDir, "still.jpg");
+		if (TestVideoGenerator.GenerateStillImage(ffmpegPath, jpegPath))
+			SampleJpeg = jpegPath;
+		string pngPath = Path.Combine(TempDir, "still.png");
+		if (TestVideoGenerator.GenerateStillImage(ffmpegPath, pngPath))
+			SamplePng = pngPath;
 	}
 
 	public void Dispose() {

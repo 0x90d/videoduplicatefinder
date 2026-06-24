@@ -144,6 +144,18 @@ public static class TestVideoGenerator {
 			timeoutMs: Math.Max(30_000, durationSeconds * 4_000));
 
 	/// <summary>
+	/// Generates a single still image whose codec is inferred from the output extension
+	/// (.jpg/.jpeg → MJPEG, .png → PNG). Content is the deterministic testsrc2 pattern so
+	/// the decoded gray bytes are non-uniform. Used to guard native still-image decoding,
+	/// which has no inter-frame timeline to seek into and so exercises the no-seek/drain path.
+	/// </summary>
+	public static bool GenerateStillImage(string ffmpegPath, string outputPath, int width = 320, int height = 240) =>
+		RunFfmpeg(ffmpegPath,
+			string.Format(CultureInfo.InvariantCulture,
+				"-y -f lavfi -i testsrc2=size={0}x{1}:rate=1 -frames:v 1 \"{2}\"",
+				width, height, outputPath));
+
+	/// <summary>
 	/// Generic VP9 generator for benchmarks.
 	/// </summary>
 	public static bool GenerateVP9(string ffmpegPath, string outputPath, int width, int height, int durationSeconds, int fps = 25) =>
