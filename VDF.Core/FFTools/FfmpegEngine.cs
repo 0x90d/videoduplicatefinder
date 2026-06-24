@@ -73,16 +73,35 @@ namespace VDF.Core.FFTools {
 			if (_nativeDisabledForSession)
 				return;
 			int n = ++_nativeConsecutiveFailures;
+			string detail = BuildNativeFailureDetail(e);
 			if (n >= NativeFailureThreshold) {
 				_nativeDisabledForSession = true;
 				Logger.Instance.Info(
 					$"Native FFmpeg binding failed on {n} consecutive files; using process mode for the rest of this scan. " +
-					$"Last error on '{file}': {e.GetType().Name}: {e.Message}. " +
+					$"Last error on '{file}': {e.GetType().Name}: {e.Message}.{detail} " +
 					$"If this persists, set hardware acceleration to 'none' or disable 'Use native FFmpeg binding'.");
 			}
 			else {
-				Logger.Instance.Info($"Failed using native FFmpeg binding on '{file}', switching to process mode. Exception: {e}");
+				Logger.Instance.Info($"Failed using native FFmpeg binding on '{file}', switching to process mode. Exception: {e}{detail}");
 			}
+		}
+
+		/// <summary>
+		/// Builds the extra diagnostic suffix for a native failure: the FFmpeg log lines captured
+		/// on this thread for the failed file (otherwise lost by the native binding) plus a
+		/// classified, plain-language hint about the likely cause. Empty when nothing useful was
+		/// captured and the cause is unknown.
+		/// </summary>
+		static string BuildNativeFailureDetail(Exception e) {
+			string diagnostics = FfmpegLogCapture.GetRecent();
+			string? hint = FfmpegErrorClassifier.Classify(
+				diagnostics.Length > 0 ? $"{diagnostics} {e.Message}" : e.Message);
+			string detail = string.Empty;
+			if (diagnostics.Length > 0)
+				detail += $" FFmpeg log: {diagnostics}.";
+			if (hint != null)
+				detail += $" Hint: {hint}";
+			return detail;
 		}
 
 		const int DefaultJpegQuality = 90;
@@ -181,6 +200,7 @@ namespace VDF.Core.FFTools {
 			Action<int>? onSampleComplete) {
 			const int N = 32;
 			try {
+				FfmpegLogCapture.Reset();
 				using var vsd = new VideoStreamDecoder(videoFile.Path, GetConfiguredHardwareDeviceType());
 				VideoFrameConverter? converter = null;
 				Size converterSourceSize = default;
@@ -259,6 +279,7 @@ namespace VDF.Core.FFTools {
 			var frames = new byte[]?[positionsSeconds.Count];
 			if (ShouldUseNativeBinding) {
 				try {
+					FfmpegLogCapture.Reset();
 					using var vsd = new VideoStreamDecoder(filePath, GetConfiguredHardwareDeviceType());
 					VideoFrameConverter? converter = null;
 					Size converterSourceSize = default;
@@ -320,6 +341,7 @@ namespace VDF.Core.FFTools {
 			try {
 				if (ShouldUseNativeBinding) {
 
+					FfmpegLogCapture.Reset();
 
 					AVHWDeviceType HWDevice = settings.SoftwareDecodeOnly
 						? AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
@@ -397,7 +419,7 @@ namespace VDF.Core.FFTools {
 				}
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}");
+				Logger.Instance.Info($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}{BuildNativeFailureDetail(e)}");
 			}
 
 			var psi = new ProcessStartInfo {
@@ -556,7 +578,12 @@ namespace VDF.Core.FFTools {
 					var args = string.Join(" ", psi.ArgumentList);
 					message += $":{Environment.NewLine}{FFmpegPath} {args}";
 				}
-				Logger.Instance.Info($"{message}{errOut}");
+				// On an outright failure, classify FFmpeg's stderr into a plain-language hint so
+				// users (and the maintainer triaging reports) can tell incompatible hardware from
+				// a damaged file from a real bug without reproducing it.
+				string? hint = bytes == null ? FfmpegErrorClassifier.Classify(errOut) : null;
+				string hintSuffix = hint != null ? $"{Environment.NewLine}Hint: {hint}" : string.Empty;
+				Logger.Instance.Info($"{message}{errOut}{hintSuffix}");
 			}
 			return bytes;
 		}
