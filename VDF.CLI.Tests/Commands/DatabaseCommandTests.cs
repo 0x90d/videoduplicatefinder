@@ -84,6 +84,48 @@ public class DatabaseCommandTests {
 	}
 
 	[Fact]
+	public void DbCommand_Registers_ExportGrayBytes_Subcommand() {
+		var cmd = DatabaseCommand.Build();
+		var export = cmd.Subcommands.FirstOrDefault(c => c.Name == "export-graybytes");
+		Assert.NotNull(export);
+	}
+
+	[Fact]
+	public async Task DbExportGrayBytes_WritesPathScrubbedJson_AndReturnsZero() {
+		string dir = NewTempDir();
+		string outFile = Path.Combine(dir, "graybytes.json");
+		try {
+			// Seed a single entry with a recognizable path and a real gray frame.
+			DatabaseUtils.CustomDatabaseFolder = dir;
+			DatabaseUtils.InvalidateDatabaseFolder();
+			DatabaseUtils.Database.Clear();
+			var entry = new FileEntry { Path = "super-secret-filename-xyz.mp4", FileSize = 1234 };
+			byte[] frame = new byte[1024];
+			for (int i = 0; i < frame.Length; i++) frame[i] = (byte)(i % 256);
+			entry.grayBytes[0] = frame;
+			DatabaseUtils.Database.Add(entry);
+			DatabaseUtils.SaveDatabase();
+
+			int exit = await InvokeAsync($"db export-graybytes -o \"{outFile}\" --db \"{dir}\"");
+
+			Assert.Equal(0, exit);
+			Assert.True(File.Exists(outFile));
+			string json = File.ReadAllText(outFile);
+			// Privacy: the path must NOT appear anywhere.
+			Assert.DoesNotContain("super-secret-filename-xyz", json);
+			// But the gray frame must be present and round-trip to 1024 bytes.
+			using var doc = JsonDocument.Parse(json);
+			Assert.Equal(1, doc.RootElement.GetProperty("entryCount").GetInt32());
+			var gf = doc.RootElement.GetProperty("entries")[0].GetProperty("grayFrames")[0].GetString();
+			Assert.Equal(1024, Convert.FromBase64String(gf!).Length);
+		}
+		finally {
+			ResetDatabaseState();
+			TryDelete(dir);
+		}
+	}
+
+	[Fact]
 	public async Task DbExport_EmptyDatabase_ReturnsOne() {
 		string dir = NewTempDir();
 		string outFile = Path.Combine(dir, "export.json");

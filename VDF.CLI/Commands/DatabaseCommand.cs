@@ -25,6 +25,7 @@ namespace VDF.CLI.Commands {
 			cmd.Subcommands.Add(BuildClean());
 			cmd.Subcommands.Add(BuildClear());
 			cmd.Subcommands.Add(BuildExport());
+			cmd.Subcommands.Add(BuildExportGrayBytes());
 			return cmd;
 		}
 
@@ -141,6 +142,46 @@ namespace VDF.CLI.Commands {
 					Console.Error.WriteLine("Export failed.");
 					return 1;
 				}
+			});
+
+			return cmd;
+		}
+
+		static Command BuildExportGrayBytes() {
+			var cmd = new Command("export-graybytes",
+				"Export only the 32x32 grayscale hashes and pHashes VDF computed, with NO file paths or names. " +
+				"Safe to attach to a bug report when diagnosing false matches.");
+
+			var outputOpt = new Option<FileInfo>("--output", "-o") {
+				Description = "Path for the exported JSON file.",
+				Required = true,
+			};
+			cmd.Options.Add(outputOpt);
+			cmd.Options.Add(SharedOptions.Database);
+
+			cmd.SetAction(async (parseResult, ct) => {
+				var db = parseResult.GetValue(SharedOptions.Database);
+				if (db != null) DatabaseUtils.CustomDatabaseFolder = db;
+
+				await ScanEngine.LoadDatabase();
+				int count = DatabaseUtils.Database.Count;
+				Console.Error.WriteLine($"Database loaded: {count:N0} entries.");
+
+				if (count == 0) {
+					Console.Error.WriteLine("Database is empty. Nothing to export.");
+					return 1;
+				}
+
+				var outputPath = parseResult.GetValue(outputOpt)!;
+				bool ok = DatabaseUtils.ExportGrayBytesDiagnostic(outputPath.FullName);
+				if (ok) {
+					var fi = new System.IO.FileInfo(outputPath.FullName);
+					Console.Error.WriteLine($"Exported graybytes for {count:N0} entries to {outputPath.FullName} " +
+						$"({fi.Length / 1_048_576.0:F1} MB). This file contains no file paths or names.");
+					return 0;
+				}
+				Console.Error.WriteLine("Export failed.");
+				return 1;
 			});
 
 			return cmd;
