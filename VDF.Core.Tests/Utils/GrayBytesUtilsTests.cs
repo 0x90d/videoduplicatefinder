@@ -19,6 +19,43 @@ using VDF.Core.Utils;
 namespace VDF.Core.Tests.Utils;
 
 public class GrayBytesUtilsTests {
+	// Reference SAD-based difference, identical math to PercentageDifference but in plain
+	// 64-bit scalar — used to pin the SIMD paths against silent accumulator overflow (#810).
+	static float ReferenceDifference(byte[] a, byte[] b) {
+		long diff = 0;
+		for (int i = 0; i < a.Length; i++)
+			diff += Math.Abs(a[i] - b[i]);
+		return (float)diff / a.Length / 256;
+	}
+
+	[Fact]
+	public void PercentageDifference_MaxDifference_ReturnsOne() {
+		// All-black vs all-white is the worst case: every one of the 1024 bytes differs by 255,
+		// the largest total any SIMD lane has to accumulate. A Vector128<ushort> accumulator
+		// overflowed here on non-AVX2 CPUs and wrapped ~1.0 down to ~0.03 (#810).
+		byte[] black = new byte[1024];
+		byte[] white = new byte[1024];
+		Array.Fill(white, (byte)255);
+		// Max possible is 255/256 ≈ 0.9961 (the divisor is 256). The overflow bug wrapped this to ~0.03.
+		Assert.Equal(ReferenceDifference(black, white), GrayBytesUtils.PercentageDifference(black, white), 5);
+	}
+
+	[Fact]
+	public void PercentageDifference_DissimilarPair_MatchesScalarReference() {
+		// A genuinely dissimilar pair whose total SAD far exceeds the ushort ceiling; must equal
+		// the scalar reference on every code path (regression guard for the overflow that reported
+		// very different images as ~97% similar).
+		byte[] a = new byte[1024];
+		byte[] b = new byte[1024];
+		for (int i = 0; i < 1024; i++) {
+			a[i] = (byte)(i % 64);          // 0..63 (dark)
+			b[i] = (byte)(200 + (i % 56));  // 200..255 (bright)
+		}
+		float expected = ReferenceDifference(a, b);
+		Assert.True(expected > 0.25f, "test pair must be dissimilar enough to overflow a 16-bit lane");
+		Assert.Equal(expected, GrayBytesUtils.PercentageDifference(a, b), 5);
+	}
+
 	[Fact]
 	public void VerifyGrayScaleValues_AllBlack_ReturnsFalse() {
 		// All pixels <= 0x20 (BlackPixelLimit) means 100% dark > 80% threshold

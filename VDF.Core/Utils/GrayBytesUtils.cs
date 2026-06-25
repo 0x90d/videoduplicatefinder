@@ -127,6 +127,10 @@ namespace VDF.Core.Utils {
 			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
 			long diff = 0;
 			if (Avx2.IsSupported) {
+				// PSADBW writes four 8-byte SAD results into ushort lanes 0/4/8/12, each ≤ 8*255=2040.
+				// Over 1024/32 = 32 iterations a lane reaches at most 65 280, just under the ushort
+				// ceiling (65 535), so this in-vector accumulation is safe for the 1024-byte gray
+				// buffers callers pass. (The narrower SSE2 path below is NOT — see its note.)
 				Vector256<ushort> vec = Vector256<ushort>.Zero;
 				Span<Vector256<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector256<byte>>(img1.AsSpan());
 				Span<Vector256<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector256<byte>>(img2.AsSpan());
@@ -138,15 +142,19 @@ namespace VDF.Core.Utils {
 					diff += Math.Abs(vec.GetElement(i));
 			}
 			else if (Sse2.IsSupported) {
-				Vector128<ushort> vec = Vector128<ushort>.Zero;
+				// A 128-bit PSADBW puts its two 8-byte SAD results in ushort lanes 0 and 4. With
+				// 1024-byte buffers that's 64 iterations, so a lane can reach ~64*2040 = 130 560 and
+				// overflow a Vector128<ushort> accumulator — silently wrapping a large difference into
+				// a tiny one and reporting wildly different images as near-identical on CPUs without
+				// AVX2 (#810; exposed when the gray hash grew from 16x16 to 32x32). Accumulate the per
+				// iteration SAD straight into the 64-bit total instead, which cannot overflow.
 				Span<Vector128<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector128<byte>>(img1.AsSpan());
 				Span<Vector128<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector128<byte>>(img2.AsSpan());
 
-				for (int i = 0; i < vImg1.Length; i++)
-					vec = Sse2.Add(vec, Sse2.SumAbsoluteDifferences(vImg2[i], vImg1[i]));
-
-				for (int i = 0; i < Vector128<ushort>.Count; i++)
-					diff += Math.Abs(vec.GetElement(i));
+				for (int i = 0; i < vImg1.Length; i++) {
+					Vector128<ushort> sad = Sse2.SumAbsoluteDifferences(vImg2[i], vImg1[i]);
+					diff += sad.GetElement(0) + sad.GetElement(4);
+				}
 			}
 			else {
 				for (int i = 0; i < img1.Length; i++)
