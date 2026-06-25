@@ -57,6 +57,24 @@ namespace VDF.Web.Services {
 		public IReadOnlyCollection<DuplicateItem> Duplicates => _engine.Duplicates;
 		public Settings Settings => _engine.Settings;
 
+		/// <summary>
+		/// Snapshot of the file paths selected in the Results UI, captured right before a CSV
+		/// export is triggered. The selection itself lives per-circuit in the Results component;
+		/// the stateless /export/csv endpoint reads this to emit the per-row Selected column.
+		/// </summary>
+		public IReadOnlySet<string> ExportSelection { get; private set; } = EmptySelection();
+
+		static HashSet<string> EmptySelection() =>
+			new(CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+
+		/// <summary>Stores the paths selected at export time so the CSV export can mark them.</summary>
+		public void SetExportSelection(IEnumerable<string> paths) {
+			var set = EmptySelection();
+			foreach (var p in paths)
+				set.Add(p);
+			ExportSelection = set;
+		}
+
 		/// <summary>Caches for the thumbnail endpoints — cleared whenever the results change wholesale.</summary>
 		public System.Collections.Concurrent.ConcurrentDictionary<string, byte[]> HqThumbCache { get; } = new();
 		public System.Collections.Concurrent.ConcurrentDictionary<string, byte[]> FullThumbCache { get; } = new();
@@ -114,6 +132,7 @@ namespace VDF.Web.Services {
 			LastProgress = null;
 			FilesHashed = 0;
 			_engine.Duplicates.Clear();
+			ExportSelection = EmptySelection();
 			ClearThumbnailCaches();
 			try {
 				_engine.StartSearch();
@@ -150,6 +169,7 @@ namespace VDF.Web.Services {
 			LastProgress = null;
 			FilesHashed = 0;
 			_engine.Duplicates.Clear();
+			ExportSelection = EmptySelection();
 			ClearThumbnailCaches();
 			// Keep IncludeList/BlackList — resetting scan results should not
 			// throw away the paths the user configured.
