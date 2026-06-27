@@ -570,6 +570,13 @@ namespace VDF.Core.FFTools {
 			}
 			if (repeatCount > 0)
 				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+			// When we still extracted the frame from a still image, drop FFmpeg's benign
+			// demuxer chatter: its image2/png_pipe demuxer probes past the single frame and
+			// misreads mid-stream PNG IDAT bytes as a second image, emitting bogus
+			// "Invalid PNG signature"/"chunk too big" decode errors even though the frame
+			// decoded fine (issues #805/#809/#815). Keep the full stderr on real failures.
+			if (bytes != null && errOut.Length > 0 && FileUtils.IsImageFile(settings.File))
+				errOut = FilterBenignImageDemuxerNoise(errOut);
 			// Failures always log (including FFmpeg's stderr); success-with-warnings only
 			// when extended logging is enabled, to avoid noise from benign decoder chatter.
 			if (bytes == null || (extendedLogging && errOut.Length > 0)) {
@@ -646,6 +653,42 @@ namespace VDF.Core.FFTools {
 				return false;
 			}
 			return true;
+		}
+
+		// Markers for FFmpeg PNG demuxer false-positives that occur after a still frame
+		// has already been decoded successfully (issues #805/#809/#815).
+		static readonly string[] BenignImageDemuxerMarkers = {
+			"Invalid PNG signature",
+			"chunk too big",
+		};
+
+		/// <summary>
+		/// Strips known-benign FFmpeg demuxer lines (and the png decoder's follow-up
+		/// "Decoding error" line) from captured stderr. Only used for still images whose
+		/// frame was nonetheless extracted, so a non-fatal decode line cannot hide a real
+		/// failure. Returns the surviving lines with the original leading newline layout.
+		/// </summary>
+		static string FilterBenignImageDemuxerNoise(string errOut) {
+			var lines = errOut.Split(Environment.NewLine);
+			var kept = new List<string>(lines.Length);
+			foreach (var line in lines) {
+				if (line.Length == 0)
+					continue;
+				bool benign = false;
+				foreach (var marker in BenignImageDemuxerMarkers)
+					if (line.Contains(marker, StringComparison.OrdinalIgnoreCase)) {
+						benign = true;
+						break;
+					}
+				// The png decoder emits a paired "Decoding error: Invalid data ..." line
+				// alongside the bogus signature; drop it too when it names the png decoder.
+				if (!benign && line.Contains("/png @", StringComparison.Ordinal) &&
+					line.Contains("Decoding error", StringComparison.Ordinal))
+					benign = true;
+				if (!benign)
+					kept.Add(line);
+			}
+			return kept.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, kept);
 		}
 
 		private static List<string> TokenizeArgs(string args) {

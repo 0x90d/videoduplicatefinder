@@ -1989,11 +1989,16 @@ namespace VDF.Core {
 				byte[]? grayBytes;
 				int width, height;
 				if (!FfmpegEngine.TryGetImageInfoAndGrayBytes(imageFile.Path, out grayBytes, out width, out height, extendedLogging)) {
-					// CLI fallback: dimensions via ffprobe, gray bytes via an FFmpeg process.
-					MediaInfo? info = FFProbeEngine.GetMediaInfo(imageFile.Path, extendedLogging);
-					var stream = info?.Streams?.FirstOrDefault(s => s.Width > 0 && s.Height > 0);
-					width = stream?.Width ?? 0;
-					height = stream?.Height ?? 0;
+					// CLI fallback. Read dimensions straight from the file header first: some
+					// PNGs trip FFprobe's demuxer with a bogus "chunk too big" error (#805),
+					// and the header carries the dimensions without decoding. Only fall back
+					// to FFprobe when the header reader doesn't recognise the format.
+					if (!ImageHeader.TryGetDimensions(imageFile.Path, out width, out height)) {
+						MediaInfo? info = FFProbeEngine.GetMediaInfo(imageFile.Path, extendedLogging);
+						var stream = info?.Streams?.FirstOrDefault(s => s.Width > 0 && s.Height > 0);
+						width = stream?.Width ?? 0;
+						height = stream?.Height ?? 0;
+					}
 					grayBytes = FfmpegEngine.GetThumbnail(new FfmpegSettings {
 						File = imageFile.Path,
 						Position = TimeSpan.Zero,
