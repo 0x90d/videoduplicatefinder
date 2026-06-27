@@ -57,6 +57,36 @@ public class GrayBytesUtilsTests {
 	}
 
 	[Fact]
+	public void PercentageDifference_LargeBuffer_NoOverflow() {
+		// 4096 bytes of maximum difference: 128 SIMD iterations, enough to overflow even the
+		// AVX2 16-bit accumulator the old code used (128 * 2040 = 261 120 ≫ 65 535). Guards the
+		// Int64-lane accumulation on the AVX2 path itself, not just SSE2.
+		byte[] a = new byte[4096];
+		byte[] b = new byte[4096];
+		Array.Fill(b, (byte)255);
+		Assert.Equal(ReferenceDifference(a, b), GrayBytesUtils.PercentageDifference(a, b), 5);
+	}
+
+	[Fact]
+	public void PercentageDifferenceWithoutSpecificPixels_LargeBuffer_NoOverflow() {
+		// Same large-buffer overflow guard for the masked path's diff/count accumulators.
+		byte[] a = new byte[4096];
+		byte[] b = new byte[4096];
+		for (int i = 0; i < a.Length; i++) {
+			a[i] = (byte)(40 + i % 40);    // mid-tones (survive the black/white filters)
+			b[i] = (byte)(170 + i % 40);
+		}
+		long diff = 0, count = 0;
+		for (int i = 0; i < a.Length; i++) {
+			if (a[i] <= 0x20 || b[i] <= 0x20 || a[i] >= 0xF0 || b[i] >= 0xF0) continue;
+			diff += Math.Abs(a[i] - b[i]);
+			count++;
+		}
+		float expected = (float)diff / count / 256;
+		Assert.Equal(expected, GrayBytesUtils.PercentageDifferenceWithoutSpecificPixels(a, b, true, true), 5);
+	}
+
+	[Fact]
 	public void VerifyGrayScaleValues_AllBlack_ReturnsFalse() {
 		// All pixels <= 0x20 (BlackPixelLimit) means 100% dark > 80% threshold
 		byte[] data = new byte[1024]; // all zeros

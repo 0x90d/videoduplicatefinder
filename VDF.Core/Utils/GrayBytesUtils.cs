@@ -66,8 +66,10 @@ namespace VDF.Core.Utils {
 				var whiteMinus1 = Vector256.Create((byte)(WhitePixelLimit - 1));
 				var zero = Vector256<byte>.Zero;
 
-				Vector256<ushort> diffVec = Vector256<ushort>.Zero;
-				Vector256<ushort> countVec = Vector256<ushort>.Zero;
+				// Int64-lane accumulators (see PercentageDifference) so neither the difference nor
+				// the surviving-pixel count can overflow the way a 16-bit accumulator would.
+				Vector256<long> diffVec = Vector256<long>.Zero;
+				Vector256<long> countVec = Vector256<long>.Zero;
 
 				Span<Vector256<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector256<byte>>(img1.AsSpan());
 				Span<Vector256<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector256<byte>>(img2.AsSpan());
@@ -96,11 +98,11 @@ namespace VDF.Core.Utils {
 
 					var v1Masked = Avx2.And(v1, validMask);
 					var v2Masked = Avx2.And(v2, validMask);
-					diffVec = Avx2.Add(diffVec, Avx2.SumAbsoluteDifferences(v1Masked, v2Masked));
-					countVec = Avx2.Add(countVec, Avx2.SumAbsoluteDifferences(validMask, zero));
+					diffVec = Avx2.Add(diffVec, Avx2.SumAbsoluteDifferences(v1Masked, v2Masked).AsInt64());
+					countVec = Avx2.Add(countVec, Avx2.SumAbsoluteDifferences(validMask, zero).AsInt64());
 				}
 
-				for (int i = 0; i < Vector256<ushort>.Count; i++) {
+				for (int i = 0; i < Vector256<long>.Count; i++) {
 					diff += diffVec.GetElement(i);
 					counter += countVec.GetElement(i);
 				}
@@ -127,34 +129,32 @@ namespace VDF.Core.Utils {
 			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
 			long diff = 0;
 			if (Avx2.IsSupported) {
-				// PSADBW writes four 8-byte SAD results into ushort lanes 0/4/8/12, each ≤ 8*255=2040.
-				// Over 1024/32 = 32 iterations a lane reaches at most 65 280, just under the ushort
-				// ceiling (65 535), so this in-vector accumulation is safe for the 1024-byte gray
-				// buffers callers pass. (The narrower SSE2 path below is NOT — see its note.)
-				Vector256<ushort> vec = Vector256<ushort>.Zero;
+				// PSADBW emits each 8-byte SAD (≤ 8*255 = 2040) into its own 64-bit lane. Accumulate
+				// those into a Vector256<long> so the running total can never overflow, whatever the
+				// buffer size. A 16-bit accumulator wrapped once the per-lane sum passed 65535 — at
+				// 32x32 = 1024 bytes that overflowed on the SSE2 path and reported wildly different
+				// images as near-identical (#810); Int64 lanes remove the failure mode entirely.
+				Vector256<long> acc = Vector256<long>.Zero;
 				Span<Vector256<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector256<byte>>(img1.AsSpan());
 				Span<Vector256<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector256<byte>>(img2.AsSpan());
 
 				for (int i = 0; i < vImg1.Length; i++)
-					vec = Avx2.Add(vec, Avx2.SumAbsoluteDifferences(vImg2[i], vImg1[i]));
+					acc = Avx2.Add(acc, Avx2.SumAbsoluteDifferences(vImg2[i], vImg1[i]).AsInt64());
 
-				for (int i = 0; i < Vector256<ushort>.Count; i++)
-					diff += Math.Abs(vec.GetElement(i));
+				diff = acc.GetElement(0) + acc.GetElement(1) + acc.GetElement(2) + acc.GetElement(3);
 			}
 			else if (Sse2.IsSupported) {
-				// A 128-bit PSADBW puts its two 8-byte SAD results in ushort lanes 0 and 4. With
-				// 1024-byte buffers that's 64 iterations, so a lane can reach ~64*2040 = 130 560 and
-				// overflow a Vector128<ushort> accumulator — silently wrapping a large difference into
-				// a tiny one and reporting wildly different images as near-identical on CPUs without
-				// AVX2 (#810; exposed when the gray hash grew from 16x16 to 32x32). Accumulate the per
-				// iteration SAD straight into the 64-bit total instead, which cannot overflow.
+				// Same overflow-proof Int64-lane accumulation as the AVX2 path (PSADBW puts two SAD
+				// results in 64-bit lanes 0 and 1 here). The previous Vector128<ushort> accumulator
+				// overflowed for dissimilar 1024-byte pairs and was the actual #810 bug.
+				Vector128<long> acc = Vector128<long>.Zero;
 				Span<Vector128<byte>> vImg1 = MemoryMarshal.Cast<byte, Vector128<byte>>(img1.AsSpan());
 				Span<Vector128<byte>> vImg2 = MemoryMarshal.Cast<byte, Vector128<byte>>(img2.AsSpan());
 
-				for (int i = 0; i < vImg1.Length; i++) {
-					Vector128<ushort> sad = Sse2.SumAbsoluteDifferences(vImg2[i], vImg1[i]);
-					diff += sad.GetElement(0) + sad.GetElement(4);
-				}
+				for (int i = 0; i < vImg1.Length; i++)
+					acc = Sse2.Add(acc, Sse2.SumAbsoluteDifferences(vImg2[i], vImg1[i]).AsInt64());
+
+				diff = acc.GetElement(0) + acc.GetElement(1);
 			}
 			else {
 				for (int i = 0; i < img1.Length; i++)
