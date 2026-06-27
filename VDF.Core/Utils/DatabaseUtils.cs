@@ -14,6 +14,8 @@
 // */
 //
 
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
@@ -23,10 +25,18 @@ namespace VDF.Core.Utils {
 	static class DatabaseUtils {
 		static DatabaseUtils() => MemoryPackRegistration.Register();
 
-		// New databases are MemoryPack payloads behind this magic header; files without
-		// it are protobuf-net databases from 3.x / early 4.x, decoded by
-		// LegacyDatabaseReader and migrated to the new format on the next save.
+		// Database on-disk formats, newest first:
+		//   "VDFDB002" – streaming MemoryPack: header ints followed by one
+		//               length-prefixed FileEntry payload at a time (see
+		//               SerializeDatabaseStreaming). Bounds peak memory so saving a
+		//               multi-million-entry library no longer OOM-kills the process
+		//               mid-save (#814).
+		//   "VDFDB001" – whole-graph MemoryPack payload (still read for existing DBs).
+		//   no magic  – protobuf-net database from 3.x / early 4.x, decoded by
+		//               LegacyDatabaseReader.
+		// Any older format is migrated to the newest on the next save.
 		static ReadOnlySpan<byte> FormatMagic => "VDFDB001"u8;
+		static ReadOnlySpan<byte> FormatMagicStreaming => "VDFDB002"u8;
 
 		internal static HashSet<FileEntry> Database => DbWrapper.Entries;
 		internal static int DbVersion => DbWrapper.Version;
@@ -65,9 +75,16 @@ namespace VDF.Core.Utils {
 				using var file = new FileStream(databaseFile.FullName, FileMode.Open, FileAccess.Read);
 				Span<byte> header = stackalloc byte[8];
 				int headerRead = file.Read(header);
-				if (headerRead == FormatMagic.Length && header.SequenceEqual(FormatMagic)) {
+				if (headerRead == FormatMagicStreaming.Length && header.SequenceEqual(FormatMagicStreaming)) {
+					DbWrapper = DeserializeDatabaseStreaming(file);
+				}
+				else if (headerRead == FormatMagic.Length && header.SequenceEqual(FormatMagic)) {
+					// A non-empty file that deserializes to null is corrupt, not empty —
+					// throw so the catch below quarantines it instead of silently
+					// replacing the user's database with an empty one (#814).
 					DbWrapper = MemoryPackSerializer.DeserializeAsync<DatabaseWrapper>(file)
-						.AsTask().GetAwaiter().GetResult() ?? new DatabaseWrapper();
+						.AsTask().GetAwaiter().GetResult()
+						?? throw new InvalidDataException("Database payload deserialized to null.");
 				}
 				else {
 					// Legacy protobuf-net database (3.x / early 4.x).
@@ -144,12 +161,90 @@ namespace VDF.Core.Utils {
 		internal static void SaveDatabase() {
 			Logger.Instance.Info($"Save scanned files to disk ({Database.Count:N0} files).");
 
-			using (FileStream stream = new(TempDatabasePath, FileMode.Create)) {
-				stream.Write(FormatMagic);
-				MemoryPackSerializer.SerializeAsync(stream, DbWrapper).AsTask().GetAwaiter().GetResult();
-			}
+			using (FileStream stream = new(TempDatabasePath, FileMode.Create))
+				SerializeDatabaseStreaming(stream, DbWrapper);
 			//Reason: https://github.com/0x90d/videoduplicatefinder/issues/247
 			File.Move(TempDatabasePath, CurrentDatabasePath, true);
+		}
+
+		/// <summary>
+		/// Writes the database one <see cref="FileEntry"/> at a time so peak memory stays
+		/// at a single serialized entry regardless of how many entries there are. The old
+		/// whole-graph <c>SerializeAsync(stream, wrapper)</c> buffered the entire payload
+		/// (multiple GB for libraries past ~1M files) in memory on top of the live object
+		/// graph, which got the process OOM-killed mid-save (#814).
+		///
+		/// Layout: magic | Version (int32 LE) | ImageHashPipeline (int32 LE) |
+		///         repeated [ entryLength (int32 LE >= 0) | MemoryPack(FileEntry) ] |
+		///         terminator (int32 LE == -1).
+		/// </summary>
+		static void SerializeDatabaseStreaming(Stream stream, DatabaseWrapper wrapper) {
+			stream.Write(FormatMagicStreaming);
+			Span<byte> intBuf = stackalloc byte[sizeof(int)];
+			BinaryPrimitives.WriteInt32LittleEndian(intBuf, wrapper.Version);
+			stream.Write(intBuf);
+			BinaryPrimitives.WriteInt32LittleEndian(intBuf, wrapper.ImageHashPipeline);
+			stream.Write(intBuf);
+
+			// Snapshot the set: a checkpoint save runs while scan threads are still
+			// populating per-entry hash dictionaries. The set itself is not structurally
+			// modified during a scan, so ToArray is safe.
+			var buffer = new ArrayBufferWriter<byte>(1 << 16);
+			int skipped = 0;
+			foreach (FileEntry entry in wrapper.Entries.ToArray()) {
+				buffer.ResetWrittenCount();
+				try {
+					MemoryPackSerializer.Serialize(buffer, entry);
+				}
+				catch (Exception) {
+					// A periodic checkpoint can catch an entry whose hash dictionary is
+					// being mutated by a worker thread ("Collection was modified"). Skip it
+					// for this snapshot — it stays in memory and lands in the next save. The
+					// final end-of-scan save runs with no concurrency, so it never skips.
+					skipped++;
+					continue;
+				}
+				BinaryPrimitives.WriteInt32LittleEndian(intBuf, buffer.WrittenCount);
+				stream.Write(intBuf);
+				stream.Write(buffer.WrittenSpan);
+			}
+			BinaryPrimitives.WriteInt32LittleEndian(intBuf, -1);
+			stream.Write(intBuf);
+
+			if (skipped > 0)
+				Logger.Instance.Info($"Database checkpoint skipped {skipped:N0} entries still being hashed; they will be saved on the next checkpoint.");
+		}
+
+		/// <summary>
+		/// Reads the streaming format written by <see cref="SerializeDatabaseStreaming"/>.
+		/// A truncated file (e.g. a crash mid-save) runs out of bytes before the terminator
+		/// and throws, which the caller treats as a load failure — so a half-written temp
+		/// file never masquerades as an empty database.
+		/// </summary>
+		static DatabaseWrapper DeserializeDatabaseStreaming(Stream stream) {
+			var wrapper = new DatabaseWrapper { Entries = new() };
+			Span<byte> intBuf = stackalloc byte[sizeof(int)];
+			stream.ReadExactly(intBuf);
+			wrapper.Version = BinaryPrimitives.ReadInt32LittleEndian(intBuf);
+			stream.ReadExactly(intBuf);
+			wrapper.ImageHashPipeline = BinaryPrimitives.ReadInt32LittleEndian(intBuf);
+
+			byte[] buffer = new byte[1 << 16];
+			while (true) {
+				stream.ReadExactly(intBuf);
+				int length = BinaryPrimitives.ReadInt32LittleEndian(intBuf);
+				if (length == -1)
+					break;
+				if (length < 0)
+					throw new InvalidDataException($"Corrupt database: negative entry length {length}.");
+				if (length > buffer.Length)
+					buffer = new byte[length];
+				stream.ReadExactly(buffer.AsSpan(0, length));
+				FileEntry entry = MemoryPackSerializer.Deserialize<FileEntry>(buffer.AsSpan(0, length))
+					?? throw new InvalidDataException("Corrupt database: an entry deserialized to null.");
+				wrapper.Entries.Add(entry);
+			}
+			return wrapper;
 		}
 		internal static void ClearDatabase() {
 			Database.Clear();

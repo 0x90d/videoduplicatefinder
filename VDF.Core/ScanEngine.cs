@@ -156,8 +156,17 @@ namespace VDF.Core {
 				// Re-check after acquiring lock to avoid duplicate saves from racing threads
 				if (DateTime.UtcNow - lastCheckpointTime < interval) return;
 				lastCheckpointTime = DateTime.UtcNow;
-				DatabaseUtils.SaveDatabase();
-				Logger.Instance.Info(T("Log.DatabaseCheckpoint", DatabaseUtils.Database.Count));
+				// A checkpoint is best-effort: it runs on a worker thread inside the
+				// hashing/compare loops, several of which only catch
+				// OperationCanceledException. A failed periodic save must not abort the
+				// whole scan — the final end-of-scan save is the one that has to succeed.
+				try {
+					DatabaseUtils.SaveDatabase();
+					Logger.Instance.Info(T("Log.DatabaseCheckpoint", DatabaseUtils.Database.Count));
+				}
+				catch (Exception ex) {
+					Logger.Instance.Info($"Database checkpoint failed (the scan continues; the final save still runs): {ex}");
+				}
 			}
 		}
 

@@ -213,6 +213,70 @@ public class DatabaseFormatTests {
 	}
 
 	[Fact]
+	public void StreamingFormat_SaveLoad_RoundTripsAllEntries() {
+		string dir = Path.Combine(Path.GetTempPath(), $"vdf-dbstream-{Guid.NewGuid():N}");
+		Directory.CreateDirectory(dir);
+		try {
+			File.Copy(Asset("legacy-wrapper.db"), Path.Combine(dir, "ScannedFiles.db"));
+			DatabaseUtils.CustomDatabaseFolder = dir;
+			DatabaseUtils.InvalidateDatabaseFolder();
+
+			Assert.True(DatabaseUtils.LoadDatabase());     // legacy in
+			DatabaseUtils.SaveDatabase();                  // streaming out
+			DatabaseUtils.Database.Clear();
+			Assert.True(DatabaseUtils.LoadDatabase());     // streaming back in
+
+			Assert.Equal(3, DatabaseUtils.Database.Count);
+			var a = DatabaseUtils.Database.Single(e => e.Path.EndsWith("movie.mp4"));
+			Assert.Equal(@"C:\vids\ä 🎬 movie.mp4", a.Path);
+			Assert.Equal(123_456_789_012, a.FileSize);
+			Assert.Equal(EntryFlags.NoAudioTrack | EntryFlags.TooDark, a.Flags);
+			Assert.Equal(new uint[] { 0u, 1u, uint.MaxValue, 12345u }, a.AudioFingerprint);
+			Assert.Equal(0xDEADBEEFCAFEBABEUL, a.PHashes[12.5]);
+			Assert.Null(a.PHashes[25.0]);
+			Assert.Equal(1024, a.grayBytes[12.5]!.Length);
+			Assert.Equal(new TimeSpan(0, 1, 23, 45, 678), a.mediaInfo!.Duration);
+			Assert.Equal(3, DatabaseUtils.DbVersion);
+		}
+		finally {
+			DatabaseUtils.CustomDatabaseFolder = null;
+			DatabaseUtils.InvalidateDatabaseFolder();
+			DatabaseUtils.Database.Clear();
+			try { Directory.Delete(dir, recursive: true); } catch { }
+		}
+	}
+
+	[Fact]
+	public void TornTempFile_FallsBackToMainDatabase_NeverLoadsEmpty() {
+		string dir = Path.Combine(Path.GetTempPath(), $"vdf-dbtorn-{Guid.NewGuid():N}");
+		Directory.CreateDirectory(dir);
+		try {
+			// Intact main DB written in the streaming format …
+			File.Copy(Asset("legacy-wrapper.db"), Path.Combine(dir, "ScannedFiles.db"));
+			DatabaseUtils.CustomDatabaseFolder = dir;
+			DatabaseUtils.InvalidateDatabaseFolder();
+			Assert.True(DatabaseUtils.LoadDatabase());
+			DatabaseUtils.SaveDatabase();
+			DatabaseUtils.Database.Clear();
+
+			// … and a torn temp from a crash mid-save: valid magic, but the stream ends
+			// before any entry (let alone the terminator). LoadDatabase tries the temp
+			// first; it must discard it and recover the 3 real entries, not load empty.
+			File.WriteAllBytes(Path.Combine(dir, "ScannedFiles_new.db"), "VDFDB002"u8.ToArray());
+
+			Assert.True(DatabaseUtils.LoadDatabase());
+			Assert.Equal(3, DatabaseUtils.Database.Count);
+			Assert.False(File.Exists(Path.Combine(dir, "ScannedFiles_new.db")));
+		}
+		finally {
+			DatabaseUtils.CustomDatabaseFolder = null;
+			DatabaseUtils.InvalidateDatabaseFolder();
+			DatabaseUtils.Database.Clear();
+			try { Directory.Delete(dir, recursive: true); } catch { }
+		}
+	}
+
+	[Fact]
 	public void DatabaseUtils_MigratesLegacyFileToNewFormat() {
 		string dir = Path.Combine(Path.GetTempPath(), $"vdf-dbmig-{Guid.NewGuid():N}");
 		Directory.CreateDirectory(dir);
@@ -231,7 +295,7 @@ public class DatabaseFormatTests {
 			byte[] header = new byte[8];
 			using (var fs = File.OpenRead(Path.Combine(dir, "ScannedFiles.db")))
 				fs.ReadExactly(header);
-			Assert.Equal("VDFDB001"u8.ToArray(), header);
+			Assert.Equal("VDFDB002"u8.ToArray(), header);
 
 			// … and loads back with identical content.
 			Assert.True(DatabaseUtils.LoadDatabase());
