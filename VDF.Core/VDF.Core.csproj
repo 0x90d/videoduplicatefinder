@@ -26,6 +26,7 @@
     <EmbeddedResource Include="Assets\Locales\fr.json" />
     <EmbeddedResource Include="Assets\Locales\pt.json" />
     <EmbeddedResource Include="Assets\Locales\zh-Hans.json" />
+    <EmbeddedResource Include="Assets\Locales\ko.json" />
   </ItemGroup>
 
 </Project>

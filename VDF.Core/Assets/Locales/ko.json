@@ -1,0 +1,19 @@
+{
+  "Log.BuildingFileList": "파일 목록 작성 중...",
+  "Log.FinishedBuildingFileList": "{0} 만에 파일 목록 작성 완료.",
+  "Log.GatheringMediaInfo": "미디어 정보 수집 및 해시 생성 중...",
+  "Log.FinishedGatheringHashes": "{0} 만에 수집 및 해싱 완료.",
+  "Log.ScanAborted": "스캔이 중단되었습니다.",
+  "Log.ScanForDuplicates": "중복 스캔 중...",
+  "Log.FinishedScanForDuplicates": "{0} 만에 중복 스캔 완료.",
+  "Log.HighlightingBestResults": "최상의 결과 강조 중...",
+  "Log.ScanDone": "스캔 완료.",
+  "Log.ExcludedFile": "{1} 때문에 '{0}'을(를) 제외했습니다 (지금까지 {2:N0}개).",
+  "Log.ExcludedFilesSummary": "제외된 파일 요약 (사유별 제한):",
+  "Log.ExcludedFilesSuppressed": " (로그 {0:N0}개 표시 생략)",
+  "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
+  "Log.DatabaseCheckpoint": "데이터베이스 체크포인트 ({0:N0}개 파일을 디스크에 저장).",
+  "Scan.Stage.Probing": "메타데이터 분석",
+  "Scan.Stage.SamplingFrames": "프레임 샘플링",
+  "Scan.Stage.AudioFingerprint": "오디오 지문"
+}

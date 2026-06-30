@@ -74,6 +74,9 @@
     <AvaloniaResource Update="Assets\Locales\zh-Hans.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </AvaloniaResource>
+    <AvaloniaResource Update="Assets\Locales\ko.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </AvaloniaResource>
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Views\QualityOrderDialog.xaml.cs">
