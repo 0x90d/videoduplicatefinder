@@ -551,6 +551,28 @@
                                                 Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Title]}" />
                                         </StackPanel>
                                     </CheckBox>
+                                    <MenuItem Header="|" />
+                                    <MenuItem
+                                        Command="{Binding CompareInPlayerCommand}"
+                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tooltip.CompareInPlayer]}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox
+                                                    Width="20"
+                                                    Height="20">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path
+                                                            Data="M19,3H14V5H19V18L14,12V21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M10,18H5L10,12M10,3A2,2 0 0,0 8,5V21H10V3Z"
+                                                            Fill="MediumPurple" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Command.CompareInPlayer]}" />
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
                             </Menu>
                             <Grid Grid.Row="1">
                                 <Grid.RowDefinitions>
