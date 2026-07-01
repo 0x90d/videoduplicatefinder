@@ -125,6 +125,7 @@ namespace VDF.Core.FFTools {
 			try {
 				var sw = extendedLogging ? Stopwatch.StartNew() : null;
 				process.Start();
+				FFToolsUtils.LowerChildPriority(process);
 
 				if (extendedLogging) {
 					process.ErrorDataReceived += (_, e) => {

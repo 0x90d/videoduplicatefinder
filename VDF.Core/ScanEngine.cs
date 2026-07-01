@@ -52,7 +52,24 @@ namespace VDF.Core {
 		CancellationTokenSource cancelationTokenSource = new();
 		readonly List<float> positionList = new();
 
-		bool isScanning;
+		bool _isScanning;
+		// ponytail: main process yields CPU to foreground apps (Explorer/Dopus) while a scan
+		// runs, restored the instant scanning ends — hooked on the setter so EVERY exit path
+		// (done/abort/stop via CancelAllTasks) restores. BelowNormal only cedes under
+		// contention, so an unattended scan still runs at full speed. Best-effort.
+		bool isScanning {
+			get => _isScanning;
+			set {
+				if (_isScanning == value) return;
+				_isScanning = value;
+				try {
+					using var p = System.Diagnostics.Process.GetCurrentProcess();
+					p.PriorityClass = value ? System.Diagnostics.ProcessPriorityClass.BelowNormal
+											: System.Diagnostics.ProcessPriorityClass.Normal;
+				}
+				catch { /* priority is a nicety; never let it break a scan */ }
+			}
+		}
 		int scanProgressMaxValue;
 		readonly Stopwatch SearchTimer = new();
 		public Stopwatch ElapsedTimer = new();
