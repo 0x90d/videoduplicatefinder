@@ -19,6 +19,15 @@ using VDF.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Serve the Blazor framework assets (_framework/blazor.server.js, etc.) regardless of environment.
+// CreateBuilder only wires up static web assets automatically in Development, so a plain
+// `dotnet run` (which defaults to the Production environment when there's no launchSettings.json)
+// would otherwise 404 on blazor.server.js — the interactive circuit never connects and the UI
+// appears "dead" (e.g. the login button stays disabled). In a published/Docker build there is no
+// static web assets manifest, so this call is a harmless no-op and the assets baked into wwwroot
+// are used instead.
+builder.WebHost.UseStaticWebAssets();
+
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
 
@@ -165,8 +174,9 @@ app.MapGet("/thumbnail/full", async (HttpContext ctx, ScanService scan) => {
 	await ctx.Response.Body.WriteAsync(jpeg);
 });
 
-// CSV export of the current results — same column layout as the GUI export,
-// minus the GUI-only Checked column.
+// CSV export of the current results — same column layout as the GUI export. The trailing
+// Selected column reflects the UI selection captured at export time (see ScanService.ExportSelection);
+// the GUI's equivalent column is named Checked.
 app.MapGet("/export/csv", (ScanService scan) => {
 	static string Escape(string? s) {
 		s ??= string.Empty;
@@ -175,8 +185,9 @@ app.MapGet("/export/csv", (ScanService scan) => {
 			: s;
 	}
 	var inv = System.Globalization.CultureInfo.InvariantCulture;
+	var selection = scan.ExportSelection;
 	var sb = new System.Text.StringBuilder();
-	sb.AppendLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage");
+	sb.AppendLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Selected");
 	// Keep group members on adjacent rows regardless of list order.
 	foreach (var group in scan.Duplicates.GroupBy(i => i.GroupId))
 		foreach (var item in group)
@@ -192,7 +203,8 @@ app.MapGet("/export/csv", (ScanService scan) => {
 				item.AudioSampleRate.ToString(inv),
 				item.Similarity.ToString(inv),
 				item.DateCreated.ToString("yyyy-MM-dd HH:mm:ss", inv),
-				item.IsImage.ToString()));
+				item.IsImage.ToString(),
+				selection.Contains(item.Path) ? "checked" : "unchecked"));
 	// UTF-8 BOM so Excel detects the encoding.
 	var utf8 = System.Text.Encoding.UTF8;
 	byte[] bytes = [.. utf8.GetPreamble(), .. utf8.GetBytes(sb.ToString())];

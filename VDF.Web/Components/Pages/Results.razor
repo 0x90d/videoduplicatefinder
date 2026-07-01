@@ -755,7 +755,12 @@ else {
 
     // === CSV Export ===
     async Task ExportCsv() {
-        try { await JS.InvokeVoidAsync("vdf.download", "/export/csv"); }
+        try {
+            // Hand the current selection to the stateless export endpoint so the CSV's
+            // Selected column reflects what is checked right now.
+            Scan.SetExportSelection(_selected.Select(i => i.Path));
+            await JS.InvokeVoidAsync("vdf.download", "/export/csv");
+        }
         catch { }
     }
 
