@@ -80,6 +80,14 @@ namespace VDF.Core {
 		/// </summary>
 		[MemoryPackOrder(9)]
 		public uint[]? AudioFingerprint;
+		/// <summary>
+		/// OpenSubtitles-style content fingerprint (size + head/tail 64 KiB checksum), cached so a
+		/// later scan can recognise a MOVED file (same OsHash, old path now gone) and relink it —
+		/// reusing its thumbnails/mediaInfo instead of re-decoding. <c>null</c> = not yet computed
+		/// (or the file was too small / unreadable when last seen).
+		/// </summary>
+		[MemoryPackOrder(10)]
+		public string? OsHash;
 
 		[MemoryPackIgnore]
 		internal bool invalid = true;

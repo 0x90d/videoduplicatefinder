@@ -367,6 +367,20 @@ namespace VDF.Core {
 
 			int oldFileCount = DatabaseUtils.Database.Count;
 
+			// Index existing analysed entries by size so a path-miss below can be checked for being a
+			// MOVE (same content fingerprint, old path now gone) and relinked — reusing its analysis
+			// instead of re-decoding. Only OsHash-bearing entries are relink targets; keyed by size so
+			// we compute the new file's oshash only when a same-size analysed entry exists (zero reads
+			// on a fresh scan, where the DB is empty).
+			var relinkBySize = new Dictionary<long, List<FileEntry>>();
+			foreach (var e in DatabaseUtils.Database)
+				if (e.OsHash != null) {
+					if (!relinkBySize.TryGetValue(e.FileSize, out var lst))
+						relinkBySize[e.FileSize] = lst = new List<FileEntry>();
+					lst.Add(e);
+				}
+			int relinkedCount = 0;
+
 			foreach (string path in Settings.IncludeList) {
 				if (cancellationToken.IsCancellationRequested)
 					return;
@@ -390,8 +404,14 @@ namespace VDF.Core {
 						Logger.Instance.Info($"Skipped file '{file}' because of {e}");
 						continue;
 					}
-					if (!DatabaseUtils.Database.TryGetValue(fEntry, out var dbEntry))
-						DatabaseUtils.Database.Add(fEntry);
+					if (!DatabaseUtils.Database.TryGetValue(fEntry, out var dbEntry)) {
+						// Path not in the DB: either a genuinely new file or one moved/renamed from a
+						// path that's now gone. Relink the latter so its analysis survives the move.
+						if (TryRelinkMovedFile(fEntry, relinkBySize))
+							relinkedCount++;
+						else
+							DatabaseUtils.Database.Add(fEntry);
+					}
 					else if (fEntry.DateCreated != dbEntry.DateCreated ||
 							fEntry.DateModified != dbEntry.DateModified ||
 							fEntry.FileSize != dbEntry.FileSize) {
@@ -403,7 +423,53 @@ namespace VDF.Core {
 			}
 
 			Logger.Instance.Info($"Files in database: {DatabaseUtils.Database.Count:N0} ({DatabaseUtils.Database.Count - oldFileCount:N0} files added)");
+			if (relinkedCount > 0)
+				Logger.Instance.Info($"Detected {relinkedCount:N0} moved/renamed file(s) — reused existing analysis (no re-decode)");
 		});
+
+		// Returns true if fEntry is a moved/renamed version of an existing analysed entry — same size
+		// and content fingerprint (oshash), and that entry's recorded path no longer exists — in which
+		// case the existing entry is re-keyed to the new path, preserving grayBytes/mediaInfo/PHashes so
+		// GatherInfos skips re-decoding it. Ambiguous matches (0 or >1 missing candidates with the same
+		// oshash) fall through to "new file" so we never reuse the wrong data.
+		bool TryRelinkMovedFile(FileEntry fEntry, Dictionary<long, List<FileEntry>> relinkBySize) {
+			if (!relinkBySize.TryGetValue(fEntry.FileSize, out var sameSize))
+				return false;
+			// A move source is an entry whose recorded path is now gone. (A still-present path means it's
+			// a copy, not a move — leave it and treat the new path as a new file.)
+			List<FileEntry>? missing = null;
+			foreach (var c in sameSize)
+				if (!File.Exists(c.Path))
+					(missing ??= new List<FileEntry>()).Add(c);
+			if (missing == null)
+				return false;
+
+			string? oshash = OsHashUtils.TryCompute(fEntry.Path);
+			if (oshash == null)
+				return false;
+
+			FileEntry? match = null;
+			foreach (var c in missing)
+				if (c.OsHash == oshash) {
+					if (match != null)
+						return false;   // more than one candidate with this fingerprint -> ambiguous, treat as new
+					match = c;
+				}
+			if (match == null)
+				return false;
+
+			// Re-key the surviving entry to the new path. Its analysis rides along untouched; only the
+			// path/date/size are refreshed so a later rescan at the new path won't flag it as modified.
+			string oldPath = match.Path;
+			DatabaseUtils.Database.Remove(match);
+			match.Path = fEntry.Path;
+			match.DateCreated = fEntry.DateCreated;
+			match.DateModified = fEntry.DateModified;
+			match.FileSize = fEntry.FileSize;
+			DatabaseUtils.Database.Add(match);
+			Logger.Instance.Info($"Moved file relinked (analysis reused): '{oldPath}' -> '{match.Path}'");
+			return true;
+		}
 
 		// Check if entry should be excluded from the scan for any reason
 		// Returns true if the entry is invalid (should be excluded)
@@ -609,6 +675,14 @@ namespace VDF.Core {
 								IncrementProgress(entry.Path);
 							return ValueTask.CompletedTask;
 						}
+
+						// Cache a cheap content fingerprint so a future scan can detect this file was
+						// MOVED (same OsHash, old path gone) and relink it without re-decoding. Runs once
+						// per entry — computed here for new files and backfilled for pre-OsHash entries,
+						// then persisted. Best-effort: a missing/locked file leaves it null.
+						if (entry.OsHash == null)
+							entry.OsHash = OsHashUtils.TryCompute(entry.Path);
+
 						if (Settings.IncludeNonExistingFiles && entry.grayBytes?.Count > 0) {
 							bool hasAllInformation = entry.IsImage;
 							if (!hasAllInformation) {
