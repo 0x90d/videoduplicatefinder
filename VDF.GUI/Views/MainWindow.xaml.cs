@@ -260,6 +260,13 @@ namespace VDF.GUI.Views {
 				e.DragEffects = DragDropEffects.None;
 		}
 
+		// Only offer "Open In Folder" when the right-clicked log line actually
+		// resolves to a file/folder that exists; otherwise suppress the menu.
+		private void LogContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
+			if (DataContext is MainWindowVM vm && MainWindowVM.TryExtractExistingPath(vm.SelectedLogItem) == null)
+				e.Cancel = true;
+		}
+
 		private void DropInclude(object? sender, DragEventArgs e) {
 			if (!e.DataTransfer.Contains(DataFormat.File)) return;
 
