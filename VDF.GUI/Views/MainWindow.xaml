@@ -1481,7 +1481,9 @@
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}" IsThreeState="False"
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImagesTooltip]}" />
                                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                                                            <TextBlock VerticalAlignment="Center" Text="Thumbnail width (px)" />
+                                                            <TextBlock VerticalAlignment="Center"
+                                                                       ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidthTooltip]}"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidth]}" />
                                                             <NumericUpDown Minimum="48" Maximum="960" Increment="48"
                                                                            Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}"
                                                                            ToolTip.Tip="Width of preview thumbnails in pixels. Higher = sharper but uses more memory. Takes effect on next scan." />
@@ -1742,13 +1744,28 @@
                                                 </TreeView.Styles>
                                                 <TreeView.ItemTemplate>
                                                     <TreeDataTemplate x:DataType="vm:DirectoryTreeNodeVM" ItemsSource="{Binding Children}">
-                                                        <StackPanel Orientation="Horizontal" Spacing="5">
-                                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" VerticalAlignment="Center" />
-                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-                                                            <TextBlock FontSize="10" Opacity="0.7" VerticalAlignment="Center"
-                                                                       Foreground="{actipro:ThemeResource ControlForegroundBrushSolidAccent}"
-                                                                       IsVisible="{Binding HasIncludedDescendant}"
-                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartiallyIncluded]}" />
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <CheckBox IsThreeState="True" IsChecked="{Binding CheckState, Mode=TwoWay}" VerticalAlignment="Center" />
+                                                            <!-- folder icon -->
+                                                            <Viewbox Width="17" Height="17" VerticalAlignment="Center" IsVisible="{Binding !IsDrive}">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Fill="{Binding IconBrush}" Data="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <!-- drive icon -->
+                                                            <Viewbox Width="17" Height="17" VerticalAlignment="Center" IsVisible="{Binding IsDrive}">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Fill="{Binding IconBrush}" Data="M6,2H18A2,2 0 0,1 20,4V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2M12,4A4,4 0 0,0 8,8A4,4 0 0,0 12,12A4,4 0 0,0 16,8A4,4 0 0,0 12,4M12,17.5C13.38,17.5 14.5,16.71 14.5,15.75C14.5,14.79 13.38,14 12,14C10.62,14 9.5,14.79 9.5,15.75C9.5,16.71 10.62,17.5 12,17.5Z" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                                       Foreground="{Binding NameBrush}" FontWeight="{Binding NameWeight}" />
+                                                            <TextBlock Text="{Binding SizeText}" VerticalAlignment="Center" FontSize="11"
+                                                                       Foreground="#7FD1E0" Opacity="0.85" />
+                                                            <Border IsVisible="{Binding HasMissing}" VerticalAlignment="Center" CornerRadius="3"
+                                                                    Background="#33FF9800" Padding="5,1" Margin="2,0,0,0">
+                                                                <TextBlock Text="{Binding MissingText}" FontSize="11" FontWeight="SemiBold" Foreground="#FFB74D" />
+                                                            </Border>
                                                         </StackPanel>
                                                     </TreeDataTemplate>
                                                 </TreeView.ItemTemplate>
