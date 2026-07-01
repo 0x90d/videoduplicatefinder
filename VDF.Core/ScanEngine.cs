@@ -626,6 +626,22 @@ namespace VDF.Core {
 			return System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(blacklistEntry, folderPath);
 		}
 
+		// True if the entry's folder is covered by the current include list (honours IncludeSubDirectories).
+		// Shared by the scope filter below and the OsHash backfill so out-of-scope drives are never read.
+		bool IsInIncludeScope(FileEntry entry) {
+			if (!Settings.IncludeSubDirectories)
+				return Settings.IncludeList.Contains(entry.Folder);
+			return Settings.IncludeList.Any(f => {
+				if (!entry.Folder.StartsWith(f))
+					return false;
+				if (entry.Folder.Length == f.Length)
+					return true;
+				//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
+				string relativePath = Path.GetRelativePath(f, entry.Folder);
+				return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
+			});
+		}
+
 		async Task GatherInfos() {
 			try {
 				InitProgress(DatabaseUtils.Database.Count);
@@ -646,25 +662,9 @@ namespace VDF.Core {
 							skipReason = "previous thumbnail sampling failed and retry is disabled";
 						}
 
-						if (!skipEntry && !Settings.ScanAgainstEntireDatabase) {
-							if (Settings.IncludeSubDirectories == false) {
-								if (!Settings.IncludeList.Contains(entry.Folder)) {
-									skipEntry = true;
-									skipReason = "path is not in the included directories list";
-								}
-							}
-							else if (!Settings.IncludeList.Any(f => {
-								if (!entry.Folder.StartsWith(f))
-									return false;
-								if (entry.Folder.Length == f.Length)
-									return true;
-								//Reason: https://github.com/0x90d/videoduplicatefinder/issues/249
-								string relativePath = Path.GetRelativePath(f, entry.Folder);
-								return !relativePath.StartsWith('.') && !Path.IsPathRooted(relativePath);
-							})) {
-								skipEntry = true;
-								skipReason = "path is not in the included directories list";
-							}
+						if (!skipEntry && !Settings.ScanAgainstEntireDatabase && !IsInIncludeScope(entry)) {
+							skipEntry = true;
+							skipReason = "path is not in the included directories list";
 						}
 
 						if (skipEntry) {
@@ -680,7 +680,9 @@ namespace VDF.Core {
 						// MOVED (same OsHash, old path gone) and relink it without re-decoding. Runs once
 						// per entry — computed here for new files and backfilled for pre-OsHash entries,
 						// then persisted. Best-effort: a missing/locked file leaves it null.
-						if (entry.OsHash == null)
+						// Only fingerprint files inside the include list, so "scan against entire database"
+						// (which compares every historical entry) never spins up out-of-scope drives for a read.
+						if (entry.OsHash == null && IsInIncludeScope(entry))
 							entry.OsHash = OsHashUtils.TryCompute(entry.Path);
 
 						if (Settings.IncludeNonExistingFiles && entry.grayBytes?.Count > 0) {
