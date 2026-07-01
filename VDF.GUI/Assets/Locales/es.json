@@ -437,6 +437,7 @@
 	"Message.ImportScanResultsFailed": "La importación de resultados del escaneo falló debido a {0}",
 	"Message.LoadMissingThumbnailsPrompt": "{0} elemento(s) en estos resultados no tienen miniatura. ¿Deseas cargar ahora todas las miniaturas faltantes?",
 	"Message.OpenFilesFailed": "No se pudieron abrir los archivos: {0}",
+	"Message.NoFileInLogLine": "No se encontró ninguna ruta de archivo existente en esta línea de registro.",
 	"Message.ScheduledScanCompleted": "Escaneo programado completado.",
 	"ThumbnailComparerDialog.Thumbnail": "Miniatura:",
 	"ThumbnailComparerDialog.Files": "Archivos",

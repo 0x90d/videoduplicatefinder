@@ -44,6 +44,11 @@ namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
 		public ScanEngine Scanner { get; } = new();
 		public ObservableCollection<string> LogItems { get; } = new();
+		string? _SelectedLogItem;
+		public string? SelectedLogItem {
+			get => _SelectedLogItem;
+			set => this.RaiseAndSetIfChanged(ref _SelectedLogItem, value);
+		}
 		List<HashSet<string>> GroupBlacklist = new();
 		public string BackupScanResultsFile =>
 			Path.Combine(CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder), "backup.scanresults");
@@ -1100,27 +1105,33 @@ namespace VDF.GUI.ViewModels {
 				return;
 
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
+			await RevealInFileManager(currentItem.ItemInfo.Path);
+		}
+
+		// Reveal a single file in the OS file manager, selecting it where the
+		// platform supports it. Shared by the results grid and the log context menu.
+		static async Task RevealInFileManager(string filePath) {
 			try {
 				if (OperatingSystem.IsWindows()) {
 					try {
-						Utils.ShellUtils.ShowInExplorer(currentItem.ItemInfo.Path);
+						Utils.ShellUtils.ShowInExplorer(filePath);
 					}
 					catch {
 						// Fallback to explorer.exe if shell API fails (Notepad++/Electron pattern)
 						var psi = new ProcessStartInfo("explorer.exe") { UseShellExecute = false };
-						psi.ArgumentList.Add($"/select,{currentItem.ItemInfo.Path}");
+						psi.ArgumentList.Add($"/select,{filePath}");
 						Process.Start(psi);
 					}
 				}
 				else if (OperatingSystem.IsMacOS()) {
 					var psi = new ProcessStartInfo("open") { UseShellExecute = false };
 					psi.ArgumentList.Add("-R");
-					psi.ArgumentList.Add(currentItem.ItemInfo.Path);
+					psi.ArgumentList.Add(filePath);
 					Process.Start(psi);
 				}
 				else {
 					Process.Start(new ProcessStartInfo {
-						FileName = currentItem.ItemInfo.Folder,
+						FileName = Path.GetDirectoryName(filePath),
 						UseShellExecute = true,
 						Verb = "open"
 					});
@@ -1128,8 +1139,60 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch (Exception ex) {
 				await MessageBoxService.Show(string.Format(App.Lang["Message.OpenFilesFailed"], ex.Message));
+			}
+		}
+
+		// Right-click "Open In Folder" on a log line. Log entries are plain text, so
+		// pull a file path out of the selected line and reveal it if it still exists.
+		public ReactiveCommand<Unit, Unit> OpenLogItemLocationCommand => ReactiveCommand.CreateFromTask(async () => {
+			string? path = TryExtractExistingPath(SelectedLogItem);
+			if (path == null) {
+				await MessageBoxService.Show(App.Lang["Message.NoFileInLogLine"]);
 				return;
 			}
+			await RevealInFileManager(path);
+		});
+
+		// Best-effort extraction of a filesystem path from a free-text log line.
+		// Handles the common "... of: <path>", quoted 'path'/"path", and
+		// "<drive-or-slash>...<end-of-line>" shapes; only returns a candidate that
+		// actually exists on disk so we never open a bogus location.
+		internal static string? TryExtractExistingPath(string? logLine) {
+			if (string.IsNullOrWhiteSpace(logLine)) return null;
+
+			// Drop the "HH:mm:ss => " timestamp prefix the logger prepends.
+			int arrow = logLine.IndexOf("=> ", StringComparison.Ordinal);
+			string message = arrow >= 0 ? logLine[(arrow + 3)..] : logLine;
+
+			var candidates = new List<string>();
+
+			// 1) "... of: <path>" — the shape used by the decode / too-dark errors.
+			int ofIdx = message.LastIndexOf("of: ", StringComparison.Ordinal);
+			if (ofIdx >= 0)
+				candidates.Add(message[(ofIdx + 4)..]);
+
+			// 2) Quoted paths, e.g. 'C:\a\b.mp4' or "C:\a\b.mp4".
+			foreach (char quote in new[] { '\'', '"' }) {
+				int start = message.IndexOf(quote);
+				while (start >= 0) {
+					int end = message.IndexOf(quote, start + 1);
+					if (end < 0) break;
+					candidates.Add(message[(start + 1)..end]);
+					start = message.IndexOf(quote, end + 1);
+				}
+			}
+
+			// 3) First path-like root (drive letter or leading slash) through end of line.
+			var match = System.Text.RegularExpressions.Regex.Match(message, @"([A-Za-z]:[\\/]|/).*$");
+			if (match.Success)
+				candidates.Add(match.Value);
+
+			foreach (string candidate in candidates) {
+				string trimmed = candidate.Trim().Trim('\'', '"').Trim();
+				if (trimmed.Length > 0 && (File.Exists(trimmed) || Directory.Exists(trimmed)))
+					return trimmed;
+			}
+			return null;
 		}
 
 		private bool AlternativeOpen(string cmdSingle, string cmdMulti, List<DuplicateItemVM>? items = null) {

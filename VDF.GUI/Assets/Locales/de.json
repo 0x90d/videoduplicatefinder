@@ -437,6 +437,7 @@
 	"Message.ImportScanResultsFailed": "Importieren der Scan-Ergebnisse ist fehlgeschlagen wegen {0}",
 	"Message.LoadMissingThumbnailsPrompt": "{0} Element(e) in diesen Ergebnissen haben kein Vorschaubild. Möchten Sie jetzt alle fehlenden Vorschaubilder laden?",
 	"Message.OpenFilesFailed": "Dateien konnten nicht geöffnet werden: {0}",
+	"Message.NoFileInLogLine": "In dieser Protokollzeile wurde kein vorhandener Dateipfad gefunden.",
 	"Message.ScheduledScanCompleted": "Geplanter Scan abgeschlossen.",
 	"ThumbnailComparerDialog.Thumbnail": "Thumbnail:",
 	"ThumbnailComparerDialog.Files": "Dateien",

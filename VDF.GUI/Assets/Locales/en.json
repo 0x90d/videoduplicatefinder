@@ -442,6 +442,7 @@
 	"Message.ImportScanResultsFailed": "Importing scan results has failed because of {0}",
 	"Message.LoadMissingThumbnailsPrompt": "{0} item(s) in these results have no thumbnail. Do you want to load all missing thumbnails now?",
 	"Message.OpenFilesFailed": "Failed to open files: {0}",
+	"Message.NoFileInLogLine": "No existing file path was found in this log line.",
 	"Message.ScheduledScanCompleted": "Scheduled scan completed.",
 	"ThumbnailComparerDialog.Thumbnail": "Thumbnail:",
 	"ThumbnailComparerDialog.Files": "Files",

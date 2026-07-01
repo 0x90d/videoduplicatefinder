@@ -437,6 +437,7 @@
 	"Message.ImportScanResultsFailed": "A importação dos resultados da varredura falhou devido a {0}",
 	"Message.LoadMissingThumbnailsPrompt": "{0} item(ns) nestes resultados não têm miniatura. Deseja carregar agora todas as miniaturas ausentes?",
 	"Message.OpenFilesFailed": "Falha ao abrir arquivos: {0}",
+	"Message.NoFileInLogLine": "Nenhum caminho de arquivo existente foi encontrado nesta linha de registro.",
 	"Message.ScheduledScanCompleted": "Varredura agendada concluída.",
 	"ThumbnailComparerDialog.Thumbnail": "Miniatura:",
 	"ThumbnailComparerDialog.Files": "Ficheiros",

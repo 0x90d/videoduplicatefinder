@@ -437,6 +437,7 @@
 	"Message.ImportScanResultsFailed": "导入扫描结果失败，原因：{0}",
 	"Message.LoadMissingThumbnailsPrompt": "这些结果中有 {0} 个项目没有缩略图。是否现在加载所有缺失的缩略图？",
 	"Message.OpenFilesFailed": "打开文件失败：{0}",
+	"Message.NoFileInLogLine": "在此日志行中未找到存在的文件路径。",
 	"Message.ScheduledScanCompleted": "计划扫描已完成。",
 	"ThumbnailComparerDialog.Thumbnail": "缩略图：",
 	"ThumbnailComparerDialog.Files": "文件",

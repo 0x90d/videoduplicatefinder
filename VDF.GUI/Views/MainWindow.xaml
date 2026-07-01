@@ -2163,8 +2163,17 @@
                                 MinHeight="70"
                                 Margin="5"
                                 ItemsSource="{Binding LogItems}"
+                                SelectedItem="{Binding SelectedLogItem}"
                                 SelectionMode="Multiple"
-                                ScrollViewer.HorizontalScrollBarVisibility="Visible" />
+                                ScrollViewer.HorizontalScrollBarVisibility="Visible">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem
+                                            Command="{Binding OpenLogItemLocationCommand}"
+                                            Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenInFolder]}" />
+                                    </ContextMenu>
+                                </ListBox.ContextMenu>
+                            </ListBox>
                         </Grid>
                     </TabItem>
                 </TabControl>
