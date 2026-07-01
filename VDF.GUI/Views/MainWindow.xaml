@@ -1723,6 +1723,40 @@
                                     </Grid>
                                 </TabItem>
 
+                                <!-- ═══════ DIRECTORY SELECTION (folder tree) ═══════ -->
+                                <TabItem>
+                                    <TabItem.Header>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DirectorySelection]}" />
+                                    </TabItem.Header>
+                                    <Grid Margin="12,12,12,10" RowDefinitions="Auto,*">
+                                        <TextBlock Grid.Row="0" Opacity="0.6" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6"
+                                                   Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DirectorySelectionHint]}" />
+                                        <Border Grid.Row="1" BorderThickness="1" CornerRadius="4"
+                                                BorderBrush="{actipro:ThemeResource Container1BorderBrush}">
+                                            <TreeView ItemsSource="{Binding DirectoryTreeRoots}">
+                                                <TreeView.Styles>
+                                                    <Style Selector="TreeViewItem" x:DataType="vm:DirectoryTreeNodeVM">
+                                                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                                    </Style>
+                                                </TreeView.Styles>
+                                                <TreeView.ItemTemplate>
+                                                    <TreeDataTemplate x:DataType="vm:DirectoryTreeNodeVM" ItemsSource="{Binding Children}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                                            <TextBlock FontSize="10" Opacity="0.7" VerticalAlignment="Center"
+                                                                       Foreground="{actipro:ThemeResource ControlForegroundBrushSolidAccent}"
+                                                                       IsVisible="{Binding HasIncludedDescendant}"
+                                                                       Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartiallyIncluded]}" />
+                                                        </StackPanel>
+                                                    </TreeDataTemplate>
+                                                </TreeView.ItemTemplate>
+                                            </TreeView>
+                                        </Border>
+                                    </Grid>
+                                </TabItem>
+
                                 <!-- ═══════════════ FILES ═══════════════ -->
                                 <TabItem>
                                     <TabItem.Header>
