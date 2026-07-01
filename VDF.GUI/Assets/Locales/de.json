@@ -1,5 +1,10 @@
 {
 	"App.Title": "Video Duplicate Finder - Plattformübergreifend",
+	"MainWindow.Menu.About": "Über",
+	"About.Title": "Über Video Duplicate Finder",
+	"About.License": "Freie Software unter der GNU Affero General Public License v3.",
+	"About.ProjectPage": "Projektseite",
+	"About.Copy": "Kopieren",
 	"QualityOrderDialog.Title": "Reihenfolge der Qualitätskriterien auswählen",
 	"QualityOrderDialog.BtnMoveUp": "Nach oben",
 	"QualityOrderDialog.BtnMoveDown": "Nach unten",

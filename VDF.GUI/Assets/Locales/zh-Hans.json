@@ -1,5 +1,10 @@
 {
 	"App.Title": "Video Duplicate Finder - 跨平台",
+	"MainWindow.Menu.About": "关于",
+	"About.Title": "关于 Video Duplicate Finder",
+	"About.License": "遵循 GNU Affero 通用公共许可证 v3 的自由软件。",
+	"About.ProjectPage": "项目主页",
+	"About.Copy": "复制",
 	"QualityOrderDialog.Title": "选择质量标准的顺序",
 	"QualityOrderDialog.BtnMoveUp": "上移",
 	"QualityOrderDialog.BtnMoveDown": "下移",

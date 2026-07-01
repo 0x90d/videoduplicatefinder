@@ -688,16 +688,10 @@ namespace VDF.GUI.ViewModels {
 			return GetDataGrid.SelectedItems?.Cast<DuplicateItemVM>().ToList() ?? new();
 		}
 
-		public static ReactiveCommand<Unit, Unit> LatestReleaseCommand => ReactiveCommand.CreateFromTask(async () => {
-			try {
-				Process.Start(new ProcessStartInfo {
-					FileName = "https://github.com/0x90d/videoduplicatefinder/releases",
-					UseShellExecute = true
-				});
-			}
-			catch {
-				await MessageBoxService.Show(App.Lang["Message.OpenReleaseFailed"]);
-			}
+		public static ReactiveCommand<Unit, Unit> AboutCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (ApplicationHelpers.MainWindow == null)
+				return;
+			await new AboutWindow().ShowDialog(ApplicationHelpers.MainWindow);
 		});
 
 		public static ReactiveCommand<Unit, Unit> OpenOwnFolderCommand => ReactiveCommand.Create(() => {

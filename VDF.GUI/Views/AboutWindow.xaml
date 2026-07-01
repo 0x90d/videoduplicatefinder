@@ -1,0 +1,68 @@
+<Window
+    x:Class="VDF.GUI.Views.AboutWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="520"
+    CanResize="False"
+    SizeToContent="Height"
+    WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="24" Spacing="14">
+        <StackPanel
+            HorizontalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="16">
+            <Image
+                Width="60"
+                Height="60"
+                VerticalAlignment="Center"
+                Source="/Assets/Linux/icon.png" />
+            <StackPanel VerticalAlignment="Center" Spacing="3">
+                <TextBlock
+                    FontSize="20"
+                    FontWeight="Bold"
+                    Text="Video Duplicate Finder" />
+                <TextBlock
+                    x:Name="VersionText"
+                    FontSize="13"
+                    Opacity="0.8" />
+            </StackPanel>
+        </StackPanel>
+
+        <Border
+            Height="1"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" />
+
+        <TextBlock
+            x:Name="EnvText"
+            FontSize="12"
+            Opacity="0.8"
+            TextWrapping="Wrap" />
+
+        <TextBlock
+            x:Name="LicenseText"
+            FontSize="12"
+            Opacity="0.8"
+            TextWrapping="Wrap" />
+
+        <WrapPanel HorizontalAlignment="Center">
+            <Button
+                x:Name="ProjectPageButton"
+                Margin="4"
+                Click="OnProjectPage" />
+            <Button
+                x:Name="LatestReleaseButton"
+                Margin="4"
+                Click="OnLatestRelease" />
+            <Button
+                x:Name="CopyButton"
+                Margin="4"
+                Click="OnCopy" />
+            <Button
+                x:Name="OkButton"
+                Margin="4"
+                MinWidth="80"
+                Click="OnOk"
+                IsDefault="True" />
+        </WrapPanel>
+    </StackPanel>
+</Window>

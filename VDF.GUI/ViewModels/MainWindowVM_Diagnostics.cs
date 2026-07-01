@@ -15,7 +15,6 @@
 //
 
 using System.Reactive;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Avalonia.Input.Platform;
@@ -36,7 +35,7 @@ namespace VDF.GUI.ViewModels {
 		string BuildDiagnosticsReport() {
 			SyncCoreSettings(); // make sure the report reflects the current (unsaved) settings
 			var sb = new StringBuilder();
-			sb.AppendLine($"VDF version:        {Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "unknown"}");
+			sb.AppendLine($"VDF version:        {Utils.VersionInfo.LongDisplay}");
 			sb.AppendLine($"OS:                 {RuntimeInformation.OSDescription} ({RuntimeInformation.OSArchitecture})");
 			sb.AppendLine($".NET:               {RuntimeInformation.FrameworkDescription}");
 			sb.AppendLine($"ffmpeg path:        {FfmpegEngine.FFmpegPath}");

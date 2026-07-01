@@ -1,5 +1,10 @@
 {
 	"App.Title": "Video Duplicate Finder - Multiplateforme",
+	"MainWindow.Menu.About": "À propos",
+	"About.Title": "À propos de Video Duplicate Finder",
+	"About.License": "Logiciel libre sous licence GNU Affero General Public License v3.",
+	"About.ProjectPage": "Page du projet",
+	"About.Copy": "Copier",
 	"QualityOrderDialog.Title": "Sélectionner l'ordre des critères de qualité",
 	"QualityOrderDialog.BtnMoveUp": "Monter",
 	"QualityOrderDialog.BtnMoveDown": "Descendre",

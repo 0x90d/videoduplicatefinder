@@ -14,11 +14,11 @@
     xmlns:media="clr-namespace:Avalonia.Media;assembly=Avalonia.Base"
     xmlns:mvvm="clr-namespace:VDF.GUI.Mvvm;assembly=VDF.GUI"
     xmlns:presenters="clr-namespace:Avalonia.Controls.Presenters;assembly=Avalonia.Controls"
+    xmlns:utils="clr-namespace:VDF.GUI.Utils;assembly=VDF.GUI"
     xmlns:views="clr-namespace:VDF.GUI.Views;assembly=VDF.GUI"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:DataType="vm:MainWindowVM"
     x:Name="MainWindow"
-    Title="{Binding Source={x:Static local:App.Lang}, Path=[App.Title]}"
     Width="1020"
     Height="950"
     MinWidth="750"
@@ -32,6 +32,14 @@
     Icon="/Assets/icon.ico"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+    <Window.Title>
+        <!-- Localized app title plus the build identity (e.g. "… 4.0.0 (a225a45)").
+             Releases roll to one tag, so the commit is the meaningful version. -->
+        <MultiBinding StringFormat="{}{0}  —  {1}">
+            <Binding Path="[App.Title]" Source="{x:Static local:App.Lang}" />
+            <Binding Source="{x:Static utils:VersionInfo.ShortDisplay}" />
+        </MultiBinding>
+    </Window.Title>
     <Window.Resources>
         <mvvm:IsBestConverter x:Key="IsBestConverter" />
         <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
@@ -293,18 +301,18 @@
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
-                                <MenuItem Command="{Binding LatestReleaseCommand}">
+                                <MenuItem Command="{Binding AboutCommand}">
                                     <MenuItem.Header>
                                         <StackPanel Orientation="Horizontal">
                                             <Viewbox Width="16" Height="16">
-                                                <Canvas Width="64" Height="64">
-                                                    <Path Data="M32.029,8.345c-13.27,0 -24.029,10.759 -24.029,24.033c0,10.617 6.885,19.624 16.435,22.803c1.202,0.22 1.64,-0.522 1.64,-1.16c0,-0.569 -0.02,-2.081 -0.032,-4.086c-6.685,1.452 -8.095,-3.222 -8.095,-3.222c-1.093,-2.775 -2.669,-3.514 -2.669,-3.514c-2.182,-1.492 0.165,-1.462 0.165,-1.462c2.412,0.171 3.681,2.477 3.681,2.477c2.144,3.672 5.625,2.611 6.994,1.997c0.219,-1.553 0.838,-2.612 1.526,-3.213c-5.336,-0.606 -10.947,-2.669 -10.947,-11.877c0,-2.623 0.937,-4.769 2.474,-6.449c-0.247,-0.608 -1.072,-3.051 0.235,-6.36c0,0 2.018,-0.646 6.609,2.464c1.917,-0.533 3.973,-0.8 6.016,-0.809c2.041,0.009 4.097,0.276 6.017,0.809c4.588,-3.11 6.602,-2.464 6.602,-2.464c1.311,3.309 0.486,5.752 0.239,6.36c1.54,1.68 2.471,3.826 2.471,6.449c0,9.232 -5.62,11.263 -10.974,11.858c0.864,0.742 1.632,2.208 1.632,4.451c0,3.212 -0.029,5.804 -0.029,6.591c0,0.644 0.432,1.392 1.652,1.157c9.542,-3.185 16.421,-12.186 16.421,-22.8c0,-13.274 -10.76,-24.033 -24.034,-24.033" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
                                                 </Canvas>
                                             </Viewbox>
                                             <TextBlock
                                                 Margin="5,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Menu.LatestRelease]}" />
+                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Menu.About]}" />
                                         </StackPanel>
                                     </MenuItem.Header>
                                 </MenuItem>
