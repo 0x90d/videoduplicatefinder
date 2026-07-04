@@ -182,56 +182,89 @@ namespace VDF.Core {
 		/// file (#803).
 		/// </param>
 		public async void StartSearch(bool searchAndCompare = true) {
-			PrepareSearch();
-			SearchTimer.Start();
-			ElapsedTimer.Start();
-			Logger.Instance.InsertSeparator('-');
-			Logger.Instance.Info(T("Log.BuildingFileList"));
-			await BuildFileList(cancelationTokenSource.Token);
-			Logger.Instance.Info(T("Log.FinishedBuildingFileList", SearchTimer.StopGetElapsedAndRestart()));
-			FilesEnumerated?.Invoke(this, new EventArgs());
-			Logger.Instance.Info(T("Log.GatheringMediaInfo"));
-			if (!cancelationTokenSource.IsCancellationRequested)
-				await GatherInfos();
-			Logger.Instance.Info(T("Log.FinishedGatheringHashes", SearchTimer.StopGetElapsedAndRestart()));
-			// Save before signaling completion: consumers (e.g. the CLI) may treat the
-			// event as "done" and exit the process, which previously killed this thread
-			// mid-write and left a torn ScannedFiles_new.db behind.
-			DatabaseUtils.SaveDatabase();
-			BuildingHashesDone?.Invoke(this, new EventArgs());
-			if (!cancelationTokenSource.IsCancellationRequested) {
-				if (searchAndCompare)
-					StartCompare();
-				else
-					isScanning = false; // search-only: no StartCompare to clear it
+			try {
+				PrepareSearch();
+				SearchTimer.Start();
+				ElapsedTimer.Start();
+				Logger.Instance.InsertSeparator('-');
+				Logger.Instance.Info(T("Log.BuildingFileList"));
+				await BuildFileList(cancelationTokenSource.Token);
+				Logger.Instance.Info(T("Log.FinishedBuildingFileList", SearchTimer.StopGetElapsedAndRestart()));
+				FilesEnumerated?.Invoke(this, new EventArgs());
+				Logger.Instance.Info(T("Log.GatheringMediaInfo"));
+				if (!cancelationTokenSource.IsCancellationRequested)
+					await GatherInfos();
+				Logger.Instance.Info(T("Log.FinishedGatheringHashes", SearchTimer.StopGetElapsedAndRestart()));
+				// Save before signaling completion: consumers (e.g. the CLI) may treat the
+				// event as "done" and exit the process, which previously killed this thread
+				// mid-write and left a torn ScannedFiles_new.db behind.
+				DatabaseUtils.SaveDatabase();
+				BuildingHashesDone?.Invoke(this, new EventArgs());
+				if (!cancelationTokenSource.IsCancellationRequested) {
+					if (searchAndCompare)
+						StartCompare();
+					else
+						isScanning = false; // search-only: no StartCompare to clear it
+				}
+				else {
+					ScanAborted?.Invoke(this, new EventArgs());
+					Logger.Instance.Info(T("Log.ScanAborted"));
+					isScanning = false;
+				}
 			}
-			else {
-				ScanAborted?.Invoke(this, new EventArgs());
-				Logger.Instance.Info(T("Log.ScanAborted"));
-				isScanning = false;
+			catch (Exception ex) {
+				AbortScanOnError(ex);
 			}
 		}
 
 		public async void StartCompare() {
-			PrepareCompare();
-			SearchTimer.Start();
-			ElapsedTimer.Start();
-			Logger.Instance.Info(T("Log.ScanForDuplicates"));
-			if (!cancelationTokenSource.IsCancellationRequested)
-				await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
-			if (!cancelationTokenSource.IsCancellationRequested && Settings.EnablePartialClipDetection)
-				await Task.Run(ScanForPartialDuplicates, cancelationTokenSource.Token);
+			try {
+				PrepareCompare();
+				SearchTimer.Start();
+				ElapsedTimer.Start();
+				Logger.Instance.Info(T("Log.ScanForDuplicates"));
+				if (!cancelationTokenSource.IsCancellationRequested)
+					await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
+				if (!cancelationTokenSource.IsCancellationRequested && Settings.EnablePartialClipDetection)
+					await Task.Run(ScanForPartialDuplicates, cancelationTokenSource.Token);
+				SearchTimer.Stop();
+				ElapsedTimer.Stop();
+				Logger.Instance.Info(T("Log.FinishedScanForDuplicates", SearchTimer.Elapsed));
+				LogGroupStatistics();
+				Logger.Instance.Info(T("Log.HighlightingBestResults"));
+				HighlightBestMatches();
+				// Save before signaling completion — see the matching comment in StartSearch.
+				DatabaseUtils.SaveDatabase();
+				isScanning = false;
+				ScanDone?.Invoke(this, new EventArgs());
+				Logger.Instance.Info(T("Log.ScanDone"));
+			}
+			catch (Exception ex) {
+				AbortScanOnError(ex);
+			}
+		}
+
+		/// <summary>
+		/// Terminates a scan whose task died on an exception. StartSearch/StartCompare are
+		/// async void, so anything escaping them lands on the UI thread's
+		/// SynchronizationContext instead of a caller's catch block: the app survived, but
+		/// isScanning stayed true, ScanDone/ScanAborted never fired and Stop had no task
+		/// left to cancel — the GUI sat on "Stopping all scan threads..." until the user
+		/// killed the process (#821, an OutOfMemoryException during a database checkpoint).
+		/// No database save here: after an unknown failure the in-memory database may not
+		/// be loaded yet (e.g. PrepareSearch threw), and persisting it would overwrite the
+		/// user's good database file with an empty one. Hashing progress is already covered
+		/// by the post-hash save and the periodic checkpoints.
+		/// </summary>
+		void AbortScanOnError(Exception ex) {
+			if (ex is OperationCanceledException)
+				Logger.Instance.Info(T("Log.ScanAborted"));
+			else
+				Logger.Instance.Info($"Scan aborted because of an unexpected error: {ex}");
 			SearchTimer.Stop();
 			ElapsedTimer.Stop();
-			Logger.Instance.Info(T("Log.FinishedScanForDuplicates", SearchTimer.Elapsed));
-			LogGroupStatistics();
-			Logger.Instance.Info(T("Log.HighlightingBestResults"));
-			HighlightBestMatches();
-			// Save before signaling completion — see the matching comment in StartSearch.
-			DatabaseUtils.SaveDatabase();
 			isScanning = false;
-			ScanDone?.Invoke(this, new EventArgs());
-			Logger.Instance.Info(T("Log.ScanDone"));
+			ScanAborted?.Invoke(this, new EventArgs());
 		}
 
 		void PrepareSearch() {
@@ -2132,6 +2165,12 @@ namespace VDF.Core {
 			Logger.Instance.Info("Scan stopped by user");
 			if (isScanning)
 				cancelationTokenSource.Cancel();
+			else
+				// No scan task is alive to observe the cancellation, so nothing would ever
+				// raise ScanAborted. A frontend that still believes a scan is running (its
+				// Stop was clickable) would otherwise wait on its busy overlay forever (#821)
+				// — tell it the scan is over so it can reset.
+				ScanAborted?.Invoke(this, new EventArgs());
 		}
 	}
 }

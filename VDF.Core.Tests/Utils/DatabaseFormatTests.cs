@@ -26,6 +26,7 @@ namespace VDF.Core.Tests.Utils;
 /// itself before the dependency was removed), and the MemoryPack format must
 /// round-trip losslessly.
 /// </summary>
+[Collection("DatabaseUtils")] // DatabaseUtils is static — serialize with other classes touching it
 public class DatabaseFormatTests {
 	static string Asset(string name) =>
 		Path.Combine(AppContext.BaseDirectory, "TestAssets", name);
