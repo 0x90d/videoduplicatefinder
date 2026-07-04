@@ -35,6 +35,34 @@
                value="@Scan.Settings.PercentDurationDifference.ToString(CultureInfo.InvariantCulture)"
                @onchange="e => Scan.Settings.PercentDurationDifference = ParseDouble(e.Value)" />
     </label>
+    <label>
+        Duration tolerance minimum (seconds, 0 = off)
+        <input type="number" min="0" step="1"
+               value="@Scan.Settings.DurationDifferenceMinSeconds.ToString(CultureInfo.InvariantCulture)"
+               @onchange="e => Scan.Settings.DurationDifferenceMinSeconds = ParseDouble(e.Value)" />
+    </label>
+    <label>
+        Duration tolerance maximum (seconds, 0 = off)
+        <input type="number" min="0" step="1"
+               value="@Scan.Settings.DurationDifferenceMaxSeconds.ToString(CultureInfo.InvariantCulture)"
+               @onchange="e => Scan.Settings.DurationDifferenceMaxSeconds = ParseDouble(e.Value)" />
+    </label>
+    <label>
+        Folder matching
+        <select @onchange="e => Scan.Settings.FolderMatchMode = Enum.Parse<VDF.Core.FolderMatchMode>(e.Value!.ToString()!)">
+            <option value="@VDF.Core.FolderMatchMode.None" selected="@(Scan.Settings.FolderMatchMode == VDF.Core.FolderMatchMode.None)">Compare across all folders</option>
+            <option value="@VDF.Core.FolderMatchMode.SameFolderOnly" selected="@(Scan.Settings.FolderMatchMode == VDF.Core.FolderMatchMode.SameFolderOnly)">Same folder only</option>
+            <option value="@VDF.Core.FolderMatchMode.DifferentFolderOnly" selected="@(Scan.Settings.FolderMatchMode == VDF.Core.FolderMatchMode.DifferentFolderOnly)">Different folders only</option>
+        </select>
+    </label>
+    @if (Scan.Settings.FolderMatchMode == VDF.Core.FolderMatchMode.SameFolderOnly) {
+        <label>
+            Same-folder depth (parent levels treated as the same folder)
+            <input type="number" min="1" max="10"
+                   value="@Scan.Settings.SameFolderDepth"
+                   @onchange="e => Scan.Settings.SameFolderDepth = Math.Max(1, ParseInt(e.Value))" />
+        </label>
+    }
 </section>
 
 <section class="settings-section">
@@ -77,6 +105,42 @@
     </label>
     <label>
         <input type="checkbox"
+               checked="@Scan.Settings.IgnoreReadOnlyFolders"
+               @onchange="e => Scan.Settings.IgnoreReadOnlyFolders = (bool)e.Value!" />
+        Ignore read-only folders
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.IgnoreReparsePoints"
+               @onchange="e => Scan.Settings.IgnoreReparsePoints = (bool)e.Value!" />
+        Ignore reparse points / symlinks
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.ExcludeHardLinks"
+               @onchange="e => Scan.Settings.ExcludeHardLinks = (bool)e.Value!" />
+        Exclude hardlinks of already scanned files
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.UseExifCreationDate"
+               @onchange="e => Scan.Settings.UseExifCreationDate = (bool)e.Value!" />
+        Use EXIF creation date for images
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.AlwaysRetryFailedSampling"
+               @onchange="e => Scan.Settings.AlwaysRetryFailedSampling = (bool)e.Value!" />
+        Always retry failed sampling on rescan
+    </label>
+    <label>
+        Limit sampling to the first N seconds (0 = entire video)
+        <input type="number" min="0" step="1"
+               value="@Scan.Settings.MaxSamplingDurationSeconds.ToString(CultureInfo.InvariantCulture)"
+               @onchange="e => Scan.Settings.MaxSamplingDurationSeconds = ParseDouble(e.Value)" />
+    </label>
+    <label>
+        <input type="checkbox"
                checked="@Scan.Settings.IgnoreAudio"
                @onchange="e => Scan.Settings.IgnoreAudio = (bool)e.Value!" />
         Ignore audio (video only comparison)
@@ -93,6 +157,58 @@
                value="@Scan.Settings.ThumbnailCount"
                @onchange="e => Scan.Settings.ThumbnailCount = ParseInt(e.Value)" />
     </label>
+</section>
+
+<section class="settings-section">
+    <h2>File Filters</h2>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.FilterByFileSize"
+               @onchange="e => Scan.Settings.FilterByFileSize = (bool)e.Value!" />
+        Filter by file size
+    </label>
+    @if (Scan.Settings.FilterByFileSize) {
+        <label>
+            Minimum file size (MB)
+            <input type="number" min="0"
+                   value="@Scan.Settings.MinimumFileSize"
+                   @onchange="e => Scan.Settings.MinimumFileSize = ParseInt(e.Value)" />
+        </label>
+        <label>
+            Maximum file size (MB)
+            <input type="number" min="0"
+                   value="@Scan.Settings.MaximumFileSize"
+                   @onchange="e => Scan.Settings.MaximumFileSize = ParseInt(e.Value)" />
+        </label>
+    }
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.FilterByFilePathContains"
+               @onchange="e => Scan.Settings.FilterByFilePathContains = (bool)e.Value!" />
+        Only scan paths containing…
+    </label>
+    @if (Scan.Settings.FilterByFilePathContains) {
+        <label>
+            Path must contain one of (one entry per line)
+            <textarea rows="3"
+                      value="@string.Join('\n', Scan.Settings.FilePathContainsTexts)"
+                      @onchange="e => SetLines(Scan.Settings.FilePathContainsTexts, e.Value)"></textarea>
+        </label>
+    }
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.FilterByFilePathNotContains"
+               @onchange="e => Scan.Settings.FilterByFilePathNotContains = (bool)e.Value!" />
+        Skip paths containing…
+    </label>
+    @if (Scan.Settings.FilterByFilePathNotContains) {
+        <label>
+            Path must not contain any of (one entry per line)
+            <textarea rows="3"
+                      value="@string.Join('\n', Scan.Settings.FilePathNotContainsTexts)"
+                      @onchange="e => SetLines(Scan.Settings.FilePathNotContainsTexts, e.Value)"></textarea>
+        </label>
+    }
 </section>
 
 <section class="settings-section">
@@ -143,6 +259,20 @@
                    value="@((Scan.Settings.PartialClipSimilarityThreshold * 100).ToString(CultureInfo.InvariantCulture))"
                    @onchange="e => Scan.Settings.PartialClipSimilarityThreshold = ParseDouble(e.Value) / 100.0" />
         </label>
+        <label>
+            <input type="checkbox"
+                   checked="@Scan.Settings.PartialClipRequireVisualMatch"
+                   @onchange="e => Scan.Settings.PartialClipRequireVisualMatch = (bool)e.Value!" />
+            Require visual confirmation of audio matches
+        </label>
+        @if (Scan.Settings.PartialClipRequireVisualMatch) {
+            <label>
+                Min visual similarity %
+                <input type="number" min="1" max="100" step="0.1"
+                       value="@((Scan.Settings.PartialClipVisualThreshold * 100).ToString(CultureInfo.InvariantCulture))"
+                       @onchange="e => Scan.Settings.PartialClipVisualThreshold = ParseDouble(e.Value) / 100.0" />
+            </label>
+        }
     }
 </section>
 
@@ -177,6 +307,12 @@
         Scan against non-existing files (compare database entries whose files have been deleted or moved)
     </label>
     <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.ScanAgainstEntireDatabase"
+               @onchange="e => Scan.Settings.ScanAgainstEntireDatabase = (bool)e.Value!" />
+        Scan against the entire database (compare new files with every known entry, not only the scanned folders)
+    </label>
+    <label>
         Custom database folder
         <input type="text"
                value="@Scan.Settings.CustomDatabaseFolder"
@@ -206,6 +342,49 @@
     }
 </section>
 
+<section class="settings-section">
+    <h2>Diagnostics</h2>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.ExtendedFFToolsLogging"
+               @onchange="e => Scan.Settings.ExtendedFFToolsLogging = (bool)e.Value!" />
+        Extended FFmpeg/FFprobe logging
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.LogExcludedFiles"
+               @onchange="e => Scan.Settings.LogExcludedFiles = (bool)e.Value!" />
+        Log files excluded by filters
+    </label>
+</section>
+
+<section class="settings-section">
+    <h2>Test Two Files</h2>
+    <p style="margin-top:0;">
+        Enter the full paths of two files you believe are duplicates and run the test.
+        They are compared with the current settings (saving is not required) and the report
+        explains at which step the pair passes or fails detection.
+    </p>
+    <label>
+        File A
+        <input type="text" placeholder="/videos/example1.mp4"
+               value="@_testFileA"
+               @onchange="e => _testFileA = e.Value?.ToString() ?? string.Empty" />
+    </label>
+    <label>
+        File B
+        <input type="text" placeholder="/videos/example2.mp4"
+               value="@_testFileB"
+               @onchange="e => _testFileB = e.Value?.ToString() ?? string.Empty" />
+    </label>
+    <div class="start-row" style="margin-top:0.5rem;">
+        <button class="primary" @onclick="RunFilePairTest" disabled="@_testBusy">@(_testBusy ? "Running…" : "Run Test")</button>
+    </div>
+    @if (_testResult != null) {
+        <pre style="white-space:pre-wrap;overflow-x:auto;background:var(--code-bg,#1e1e1e22);padding:0.75rem;border-radius:6px;margin-top:0.75rem;">@_testResult</pre>
+    }
+</section>
+
 @code {
     string? _saveMsg;
     bool _saveFailed;
@@ -213,6 +392,22 @@
     bool _confirmClear;
     string? _dbMsg;
     bool _dbMsgIsError;
+    string _testFileA = string.Empty;
+    string _testFileB = string.Empty;
+    bool _testBusy;
+    string? _testResult;
+
+    async Task RunFilePairTest() {
+        _testBusy = true;
+        _testResult = null;
+        try {
+            _testResult = await Scan.TestFilePairAsync(_testFileA, _testFileB);
+        }
+        catch (Exception ex) {
+            _testResult = $"Test failed: {ex.Message}";
+        }
+        _testBusy = false;
+    }
 
     void SaveSettings() {
         bool ok = Scan.SaveSettings();
@@ -262,6 +457,12 @@
             _dbMsg = null;
             StateHasChanged();
         }));
+
+    static void SetLines(List<string> target, object? value) {
+        target.Clear();
+        target.AddRange((value?.ToString() ?? string.Empty)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
 
     // Culture-safe parsers: handle both comma and dot as decimal separator
     static string Normalize(object? v) =>
