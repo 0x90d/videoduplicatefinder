@@ -174,6 +174,23 @@ namespace VDF.Core {
 			}
 		}
 
+		// Explicit flush for a safe suspend point (Pause): persist completed work so the user can
+		// close the app while paused and resume later via the fingerprint cache. Shares
+		// checkpointLock so it never races a periodic checkpoint or the final save over the temp
+		// database file. Best-effort; files finishing during the pause land in the next save.
+		void FlushDatabase() {
+			lock (checkpointLock) {
+				lastCheckpointTime = DateTime.UtcNow;
+				try {
+					DatabaseUtils.SaveDatabase();
+					Logger.Instance.Info("Paused: database flushed — safe to close the app (a later rescan resumes from the cache).");
+				}
+				catch (Exception ex) {
+					Logger.Instance.Info($"Pause flush failed (the scan continues): {ex}");
+				}
+			}
+		}
+
 		public static bool FFmpegExists => !string.IsNullOrEmpty(FfmpegEngine.FFmpegPath);
 		public static bool FFprobeExists => !string.IsNullOrEmpty(FFProbeEngine.FFprobePath);
 		public static bool NativeFFmpegExists => FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist;
@@ -202,7 +219,11 @@ namespace VDF.Core {
 				// Save before signaling completion: consumers (e.g. the CLI) may treat the
 				// event as "done" and exit the process, which previously killed this thread
 				// mid-write and left a torn ScannedFiles_new.db behind.
-				DatabaseUtils.SaveDatabase();
+				// Under checkpointLock: a pause-flush runs on a background task and could
+				// otherwise still be writing the temp database file when a quick Stop lets
+				// the scan reach this save (#803-style race).
+				lock (checkpointLock)
+					DatabaseUtils.SaveDatabase();
 				BuildingHashesDone?.Invoke(this, new EventArgs());
 				if (!cancelationTokenSource.IsCancellationRequested) {
 					if (searchAndCompare)
@@ -237,8 +258,9 @@ namespace VDF.Core {
 				LogGroupStatistics();
 				Logger.Instance.Info(T("Log.HighlightingBestResults"));
 				HighlightBestMatches();
-				// Save before signaling completion — see the matching comment in StartSearch.
-				DatabaseUtils.SaveDatabase();
+				// Save before signaling completion — see the matching comments in StartSearch.
+				lock (checkpointLock)
+					DatabaseUtils.SaveDatabase();
 				isScanning = false;
 				ScanDone?.Invoke(this, new EventArgs());
 				Logger.Instance.Info(T("Log.ScanDone"));
@@ -2240,7 +2262,11 @@ namespace VDF.Core {
 			ElapsedTimer.Stop();
 			SearchTimer.Stop();
 			pauseTokenSource.IsPaused = true;
-
+			// Safe suspend point: flush completed work off the caller's (UI) thread so closing
+			// the app while paused loses nothing. Files that were mid-processing when the pause
+			// hit finish first (workers park at WaitWhilePaused between files) and land in the
+			// next checkpoint or the final save.
+			Task.Run(FlushDatabase);
 		}
 
 		public void Resume() {
