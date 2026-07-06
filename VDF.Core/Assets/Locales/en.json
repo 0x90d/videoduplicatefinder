@@ -15,5 +15,7 @@
   "Log.DatabaseCheckpoint": "Database checkpoint ({0:N0} files saved to disk).",
   "Scan.Stage.Probing": "probing metadata",
   "Scan.Stage.SamplingFrames": "sampling frames",
-  "Scan.Stage.AudioFingerprint": "audio fingerprint"
+  "Scan.Stage.AudioFingerprint": "audio fingerprint",
+  "Scan.Stage.ComparingDuplicates": "comparing duplicates",
+  "Scan.Stage.PartialCompare": "comparing partial clips"
 }

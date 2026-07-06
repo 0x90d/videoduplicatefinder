@@ -15,5 +15,7 @@
   "Log.DatabaseCheckpoint": "Checkpoint do banco de dados ({0:N0} arquivos salvos no disco).",
   "Scan.Stage.Probing": "analisando metadados",
   "Scan.Stage.SamplingFrames": "amostrando quadros",
-  "Scan.Stage.AudioFingerprint": "impressão digital de áudio"
+  "Scan.Stage.AudioFingerprint": "impressão digital de áudio",
+  "Scan.Stage.ComparingDuplicates": "comparando duplicados",
+  "Scan.Stage.PartialCompare": "comparando clipes parciais"
 }

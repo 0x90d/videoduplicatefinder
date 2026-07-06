@@ -15,5 +15,7 @@
   "Log.DatabaseCheckpoint": "Point de contrôle de la base de données ({0:N0} fichiers enregistrés sur le disque).",
   "Scan.Stage.Probing": "analyse des métadonnées",
   "Scan.Stage.SamplingFrames": "échantillonnage des images",
-  "Scan.Stage.AudioFingerprint": "empreinte audio"
+  "Scan.Stage.AudioFingerprint": "empreinte audio",
+  "Scan.Stage.ComparingDuplicates": "comparaison des doublons",
+  "Scan.Stage.PartialCompare": "comparaison des clips partiels"
 }

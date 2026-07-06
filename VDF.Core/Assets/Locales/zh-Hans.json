@@ -15,5 +15,7 @@
   "Log.DatabaseCheckpoint": "数据库检查点（{0:N0} 个文件已保存到磁盘）。",
   "Scan.Stage.Probing": "读取元数据",
   "Scan.Stage.SamplingFrames": "采样帧",
-  "Scan.Stage.AudioFingerprint": "音频指纹"
+  "Scan.Stage.AudioFingerprint": "音频指纹",
+  "Scan.Stage.ComparingDuplicates": "比较重复项",
+  "Scan.Stage.PartialCompare": "比较部分片段"
 }
