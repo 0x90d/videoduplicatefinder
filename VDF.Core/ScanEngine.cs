@@ -432,13 +432,8 @@ namespace VDF.Core {
 						else
 							DatabaseUtils.Database.Add(fEntry);
 					}
-					else if (fEntry.DateCreated != dbEntry.DateCreated ||
-							fEntry.DateModified != dbEntry.DateModified ||
-							fEntry.FileSize != dbEntry.FileSize) {
-						// -> Modified or different file
-						DatabaseUtils.Database.Remove(dbEntry);
-						DatabaseUtils.Database.Add(fEntry);
-					}
+					else
+						RefreshExistingEntry(fEntry, dbEntry);
 				}
 			}
 
@@ -446,6 +441,33 @@ namespace VDF.Core {
 			if (relinkedCount > 0)
 				Logger.Instance.Info($"Detected {relinkedCount:N0} moved/renamed file(s) — reused existing analysis (no re-decode)");
 		});
+
+		// A path that is already in the database: decide whether its cached analysis survives this
+		// rescan. Size changed -> content changed -> re-analyze. Same size but timestamps moved is
+		// usually a touch/copy/restore or a container-only rewrite with identical bytes, and
+		// re-decoding those wastes hours on big libraries — keep the cached analysis when the content
+		// fingerprint PROVES the bytes unchanged. Anything unverifiable (either hash missing, file
+		// unreadable, or a pre-OsHash entry not yet backfilled) re-analyzes exactly as before.
+		internal static void RefreshExistingEntry(FileEntry fEntry, FileEntry dbEntry) {
+			if (fEntry.FileSize != dbEntry.FileSize) {
+				DatabaseUtils.Database.Remove(dbEntry);
+				DatabaseUtils.Database.Add(fEntry);
+			}
+			else if (fEntry.DateCreated != dbEntry.DateCreated ||
+					fEntry.DateModified != dbEntry.DateModified) {
+				string? osHash = OsHashUtils.TryCompute(fEntry.Path);
+				if (osHash != null && osHash == dbEntry.OsHash) {
+					// Same bytes, just re-dated: keep the analysis and refresh the timestamps
+					// so the next scan doesn't re-verify.
+					dbEntry.DateCreated = fEntry.DateCreated;
+					dbEntry.DateModified = fEntry.DateModified;
+				}
+				else {
+					DatabaseUtils.Database.Remove(dbEntry);
+					DatabaseUtils.Database.Add(fEntry);
+				}
+			}
+		}
 
 		// Returns true if fEntry is a moved/renamed version of an existing analysed entry — same size
 		// and content fingerprint (oshash), and that entry's recorded path no longer exists — in which
