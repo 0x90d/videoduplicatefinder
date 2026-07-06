@@ -85,7 +85,9 @@ namespace VDF.Core.ViewModels {
 			}
 			var fi = new FileInfo(Path);
 			DateCreated = file.DateCreated;
-			SizeLong = fi.Exists ? fi.Length : -1;
+			// A missing file (deleted/offline entry included in the comparison) keeps its
+			// database-recorded size instead of a -1 sentinel that rendered as "-1.0 B".
+			SizeLong = fi.Exists ? fi.Length : file.FileSize;
 			if (file.IsImage)
 				Format = fi.Extension[1..];
 			Similarity = (1f - difference) * 100;

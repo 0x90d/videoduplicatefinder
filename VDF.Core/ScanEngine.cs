@@ -2098,9 +2098,19 @@ namespace VDF.Core {
 					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
 
 					if (!needsThumbnails) {
+						// Missing on disk (a deleted or offline entry included via IncludeMissingFiles):
+						// nothing can be extracted. Items without any thumbnails get the shared
+						// placeholder; items that already have some (width-upgrade retries) keep them.
+						// Never fall through — SetThumbnails with null timestamps stored a null list
+						// that consumers dereference (and tripped the Debug.Assert below).
 						Interlocked.Increment(ref skippedMissing);
+						if (entry.ImageList is not { Count: > 0 } && NoThumbnailImage != null) {
+							entry.ThumbnailWidth = 0;
+							entry.SetThumbnails(new List<byte[]> { NoThumbnailImage }, new List<TimeSpan> { TimeSpan.Zero });
+						}
+						return ValueTask.CompletedTask;
 					}
-					else if (entry.IsImage) {
+					if (entry.IsImage) {
 						timeStamps = new(0);
 						list = new List<byte[]>(1);
 						var b = ExtractThumbnailJpeg(entry.Path, TimeSpan.Zero, maxDim);
@@ -2179,9 +2189,19 @@ namespace VDF.Core {
 					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
 
 					if (!needsThumbnails) {
+						// Missing on disk (a deleted or offline entry included via IncludeMissingFiles):
+						// nothing can be extracted. Items without any thumbnails get the shared
+						// placeholder; items that already have some (width-upgrade retries) keep them.
+						// Never fall through — SetThumbnails with null timestamps stored a null list
+						// that consumers dereference (and tripped the Debug.Assert below).
 						Interlocked.Increment(ref skippedMissing);
+						if (entry.ImageList is not { Count: > 0 } && NoThumbnailImage != null) {
+							entry.ThumbnailWidth = 0;
+							entry.SetThumbnails(new List<byte[]> { NoThumbnailImage }, new List<TimeSpan> { TimeSpan.Zero });
+						}
+						return ValueTask.CompletedTask;
 					}
-					else if (entry.IsImage) {
+					if (entry.IsImage) {
 						//For images it doesn't make sense to load the actual image more than once
 						timeStamps = new(0);
 						list = new List<byte[]>(1);
