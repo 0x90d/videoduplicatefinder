@@ -644,6 +644,9 @@ namespace VDF.GUI.ViewModels {
 					}
 				}
 
+				if (SettingsFile.Instance.RememberDeletedContent && SettingsFile.Instance.AutoCheckDeletedContentMatches)
+					AutoCheckTombstoneMatches();
+
 				if (completedScheduledScan && SettingsFile.Instance.NotifyOnScheduledScanComplete) {
 					_ = MessageBoxService.Show(App.Lang["Message.ScheduledScanCompleted"]);
 				}
@@ -654,6 +657,29 @@ namespace VDF.GUI.ViewModels {
 						string.Format(App.Lang["Notification.ScanComplete.Message"], TotalDuplicateGroups));
 				}
 			});
+
+		// Groups that contain a tombstone (a fingerprint of content the user already deleted) mean
+		// any LIVE member is a re-download of rejected content — pre-check it for deletion so the
+		// user only has to review and confirm. Offline members (unplugged drive) are shown but
+		// never targeted, and actual deletion always still requires the delete button.
+		void AutoCheckTombstoneMatches() {
+			var tombstoneGroups = Duplicates
+				.Where(d => d.IsTombstone)
+				.Select(d => d.ItemInfo.GroupId)
+				.ToHashSet();
+			if (tombstoneGroups.Count == 0)
+				return;
+			int autoChecked = 0;
+			foreach (var d in Duplicates)
+				if (!d.IsTombstone && !d.IsOffline &&
+					tombstoneGroups.Contains(d.ItemInfo.GroupId) &&
+					File.Exists(d.ItemInfo.Path)) {
+					d.Checked = true;
+					autoChecked++;
+				}
+			if (autoChecked > 0)
+				Logger.Instance.Info($"Auto-checked {autoChecked} re-download(s) matching previously deleted content.");
+		}
 
 		void BuildDuplicatesView() {
 			view = new DataGridCollectionView(Duplicates);
@@ -1779,6 +1805,11 @@ Non-Windows setup:
 				   );
 
 			var actuallyDeleted = new HashSet<DuplicateItemVM>(toDelete.Count, ReferenceEqualityComparer<DuplicateItemVM>.Instance);
+			// With RememberDeletedContent on, a disk-delete that removes an ENTIRE group (no
+			// unchecked survivor) is a content rejection, not a duplicate cleanup: exactly one
+			// entry stays in the database as the tombstone so a re-download of this content is
+			// caught. This set records the groups that already kept theirs.
+			var tombstonedGroups = new HashSet<Guid>();
 			long freedBytes = 0;
 			int total = toDelete.Count;
 			IsBusy = true;
@@ -1878,8 +1909,16 @@ Non-Windows setup:
 
 							if (blackList)
 								ScanEngine.BlackListFileEntry(dub.ItemInfo.Path);
-							else
-								ScanEngine.RemoveFromDatabase(fe);
+							else {
+								// Only a disk-delete rejects content; remove-from-list/link modes leave
+								// the file (or a survivor) in place, so their entries are dropped as before.
+								bool keepAsTombstone = fromDisk &&
+									SettingsFile.Instance.RememberDeletedContent &&
+									(!keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var survivor) || survivor == null) &&
+									tombstonedGroups.Add(dub.ItemInfo.GroupId);
+								if (!keepAsTombstone)
+									ScanEngine.RemoveFromDatabase(fe);
+							}
 
 							actuallyDeleted.Add(dub);
 						}

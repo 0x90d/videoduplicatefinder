@@ -1525,6 +1525,11 @@
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContent]}"
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}" IsThreeState="False"
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContentTooltip]}" />
+                                                        <CheckBox Margin="24,0,0,0"
+                                                                  Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoCheckDeletedContentMatches]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoCheckDeletedContentMatches}" IsThreeState="False"
+                                                                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoCheckDeletedContentMatchesTooltip]}" />
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreReadOnlyFolders]}"
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}" IsThreeState="False" />
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePoints]}"

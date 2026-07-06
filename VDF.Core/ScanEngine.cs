@@ -519,7 +519,7 @@ namespace VDF.Core {
 		// case the existing entry is re-keyed to the new path, preserving grayBytes/mediaInfo/PHashes so
 		// GatherInfos skips re-decoding it. Ambiguous matches (0 or >1 missing candidates with the same
 		// oshash) fall through to "new file" so we never reuse the wrong data.
-		bool TryRelinkMovedFile(FileEntry fEntry, Dictionary<long, List<FileEntry>> relinkBySize) {
+		internal bool TryRelinkMovedFile(FileEntry fEntry, Dictionary<long, List<FileEntry>> relinkBySize) {
 			if (!relinkBySize.TryGetValue(fEntry.FileSize, out var sameSize))
 				return false;
 			// A move source is an entry whose recorded path is now gone. (A still-present path means it's

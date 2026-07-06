@@ -542,5 +542,7 @@
 	"MainWindow.Tooltip.PruneGhostEntries": "Removes entries whose file is gone from a mounted drive AND that carry no comparable data (no frame hashes, no audio fingerprint). Tombstones — missing files whose fingerprints are kept to recognize re-downloads — are untouched, as are files on offline drives.",
 	"DupList.Offline": "Offline",
 	"Message.NoGhostEntries": "No ghost entries found: every missing file either has fingerprints (kept as a tombstone) or is on an offline drive.",
-	"MainWindow.Settings.RememberDeletedContentTooltip": "Keep the fingerprint of files whose last copy was deleted, and include it in future comparisons: a re-download of content you already deleted is flagged 'Already deleted'. Database cleanup then preserves these tombstones (use Prune Ghost Entries for hygiene). Unplugged drives count as offline, never as deleted."
+	"MainWindow.Settings.RememberDeletedContentTooltip": "Keep the fingerprint of files whose last copy was deleted, and include it in future comparisons: a re-download of content you already deleted is flagged 'Already deleted'. Database cleanup then preserves these tombstones (use Prune Ghost Entries for hygiene). Unplugged drives count as offline, never as deleted.",
+	"MainWindow.Settings.AutoCheckDeletedContentMatches": "Auto-check re-downloads of deleted content",
+	"MainWindow.Settings.AutoCheckDeletedContentMatchesTooltip": "After a scan, pre-check the live files in any group that matched deleted content (an 'Already deleted' entry), so they are ready for review and deletion. Nothing is ever deleted automatically — the delete button and its confirmation still decide."
 }

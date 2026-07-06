@@ -542,5 +542,7 @@
 	"MainWindow.Tooltip.PruneGhostEntries": "仅删除文件已从已挂载驱动器消失且没有任何可比对数据（无帧哈希、无音频指纹）的条目。墓碑条目——保留指纹以识别重新下载的缺失文件——不受影响，离线驱动器上的文件也不受影响。",
 	"DupList.Offline": "离线",
 	"Message.NoGhostEntries": "未发现幽灵条目：所有缺失文件要么有指纹（作为墓碑保留），要么位于离线驱动器上。",
-	"MainWindow.Settings.RememberDeletedContentTooltip": "保留最后一份副本已被删除的文件的指纹，并在以后的扫描中参与比较：重新下载已删除的内容会被标记为\"已删除过\"。数据库清理会保留这些墓碑条目（如需清理请使用\"清理幽灵条目\"）。未连接的驱动器视为离线，绝不视为已删除。"
+	"MainWindow.Settings.RememberDeletedContentTooltip": "保留最后一份副本已被删除的文件的指纹，并在以后的扫描中参与比较：重新下载已删除的内容会被标记为\"已删除过\"。数据库清理会保留这些墓碑条目（如需清理请使用\"清理幽灵条目\"）。未连接的驱动器视为离线，绝不视为已删除。",
+	"MainWindow.Settings.AutoCheckDeletedContentMatches": "自动勾选已删除内容的重新下载",
+	"MainWindow.Settings.AutoCheckDeletedContentMatchesTooltip": "扫描后，自动勾选与已删除内容（带\"已删除过\"标记的条目）匹配的现存文件，便于审查和删除。绝不会自动删除任何内容——仍需通过删除按钮及其确认。"
 }
