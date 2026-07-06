@@ -28,6 +28,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using VDF.Core.Utils;
 using VDF.GUI.Data;
@@ -38,6 +39,13 @@ namespace VDF.GUI.Views {
 	public class MainWindow : Window {
 		bool keepBackupFile;
 		bool hasExited;
+		DispatcherTimer? settingsSaveDebounce;
+
+		void RestartSettingsSaveDebounce() {
+			if (settingsSaveDebounce == null || hasExited) return;
+			settingsSaveDebounce.Stop();
+			settingsSaveDebounce.Start();
+		}
 
 		public readonly Core.FFTools.FFHardwareAccelerationMode InitialHwMode;
 		public MainWindow() {
@@ -50,13 +58,6 @@ namespace VDF.GUI.Views {
 			Opened += MainWindow_Opened;
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
-
-
-
-			this.FindControl<ListBox>("ListboxIncludelist")!.AddHandler(DragDrop.DropEvent, DropInclude);
-			this.FindControl<ListBox>("ListboxIncludelist")!.AddHandler(DragDrop.DragOverEvent, DragOver);
-			this.FindControl<ListBox>("ListboxBlacklist")!.AddHandler(DragDrop.DropEvent, DropBlacklist);
-			this.FindControl<ListBox>("ListboxBlacklist")!.AddHandler(DragDrop.DragOverEvent, DragOver);
 
 			ApplicationHelpers.CurrentApplicationLifetime.Startup += MainWindow_Startup;
 			ApplicationHelpers.CurrentApplicationLifetime.Exit += MainWindow_Exit;
@@ -94,6 +95,24 @@ namespace VDF.GUI.Views {
 				if (e.PropertyName == nameof(SettingsFile.DarkMode))
 					RequestedThemeVariant = SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
 			};
+
+			// The settings page has no Save button anymore ("Settings save instantly"):
+			// persist any settings change debounced, plus the folder/filter lists.
+			settingsSaveDebounce = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+			settingsSaveDebounce.Tick += (_, __) => {
+				settingsSaveDebounce!.Stop();
+				try {
+					SettingsFile.SaveSettings();
+				}
+				catch (Exception ex) {
+					Logger.Instance.Info($"Saving settings failed: {ex.Message}");
+				}
+			};
+			SettingsFile.Instance.PropertyChanged += (_, __) => RestartSettingsSaveDebounce();
+			SettingsFile.Instance.Includes.CollectionChanged += (_, __) => RestartSettingsSaveDebounce();
+			SettingsFile.Instance.Blacklists.CollectionChanged += (_, __) => RestartSettingsSaveDebounce();
+			SettingsFile.Instance.FilePathContainsTexts.CollectionChanged += (_, __) => RestartSettingsSaveDebounce();
+			SettingsFile.Instance.FilePathNotContainsTexts.CollectionChanged += (_, __) => RestartSettingsSaveDebounce();
 
 			ShowAlgoView();
 		}
@@ -264,50 +283,11 @@ namespace VDF.GUI.Views {
 			SettingsFile.SaveSettings();
 		}
 
-		private void DragOver(object? sender, DragEventArgs e) {
-			// Only allow Copy or Link as Drop Operations.
-			e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
-
-			// Only allow if the dragged data contains filenames.
-			if (!e.DataTransfer.Contains(DataFormat.File))
-				e.DragEffects = DragDropEffects.None;
-		}
-
 		// Only offer "Open In Folder" when the right-clicked log line actually
 		// resolves to a file/folder that exists; otherwise suppress the menu.
 		private void LogContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
 			if (DataContext is MainWindowVM vm && MainWindowVM.TryExtractExistingPath(vm.SelectedLogItem) == null)
 				e.Cancel = true;
-		}
-
-		private void DropInclude(object? sender, DragEventArgs e) {
-			if (!e.DataTransfer.Contains(DataFormat.File)) return;
-
-			foreach (var path in e.DataTransfer.GetItems(DataFormat.File) ?? Array.Empty<IDataTransferItem>()) {
-				IStorageItem? fold = path.TryGetFile();
-				if (fold == null)
-					continue;
-				string? localPath = fold.TryGetLocalPath();
-				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Includes.Contains(localPath))
-					SettingsFile.Instance.Includes.Add(localPath);
-			}
-		}
-		private void DropBlacklist(object? sender, DragEventArgs e) {
-			if (!e.DataTransfer.Contains(DataFormat.File)) return;
-
-			foreach (var path in e.DataTransfer.GetItems(DataFormat.File) ?? Array.Empty<IDataTransferItem>()) {
-				IStorageItem? fold = path.TryGetFile();
-				if (fold == null)
-					continue;
-				string? localPath = fold.TryGetLocalPath();
-				if (!string.IsNullOrEmpty(localPath) && !SettingsFile.Instance.Blacklists.Contains(localPath))
-					SettingsFile.Instance.Blacklists.Add(localPath);
-			}
-		}
-
-		void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
-			if (ApplicationHelpers.MainWindow != null && ApplicationHelpers.MainWindowDataContext != null)
-				ApplicationHelpers.MainWindowDataContext.Thumbnails_ValueChanged(sender, e);
 		}
 
 		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) {

@@ -226,6 +226,21 @@ namespace VDF.GUI.ViewModels {
 			var active = ScanProfileMapper.Detect(SettingsFile.Instance);
 			foreach (var option in ScanProfileOptions)
 				option.IsActive = option.Value == active;
+			ActiveScanProfileIsManaged = active != ScanProfile.Custom;
+			ActiveScanProfileName = ScanProfileOptions.First(o => o.Value == active).Name;
+		}
+
+		bool _ActiveScanProfileIsManaged;
+		/// <summary>True while the managed knobs match a profile bundle — drives the
+		/// settings page banner (managed notice vs. the Custom auto-switch notice).</summary>
+		public bool ActiveScanProfileIsManaged {
+			get => _ActiveScanProfileIsManaged;
+			set => this.RaiseAndSetIfChanged(ref _ActiveScanProfileIsManaged, value);
+		}
+		string _ActiveScanProfileName = string.Empty;
+		public string ActiveScanProfileName {
+			get => _ActiveScanProfileName;
+			set => this.RaiseAndSetIfChanged(ref _ActiveScanProfileName, value);
 		}
 
 		public ReactiveCommand<ScanProfileOptionVM, Unit> SelectScanProfileCommand => ReactiveCommand.Create<ScanProfileOptionVM>(option => {

@@ -33,6 +33,13 @@ using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
+		string _SettingsSearchQuery = string.Empty;
+		/// <summary>Query of the settings search box; filters option rows across all sections.</summary>
+		public string SettingsSearchQuery {
+			get => _SettingsSearchQuery;
+			set => this.RaiseAndSetIfChanged(ref _SettingsSearchQuery, value);
+		}
+
 #pragma warning disable CA1822 // Mark members as static => It's used by Avalonia binding
 		public IEnumerable<Core.FFTools.FFHardwareAccelerationMode> HardwareAccelerationModes =>
 #pragma warning restore CA1822 // Mark members as static
