@@ -33,6 +33,15 @@ namespace VDF.GUI.ViewModels {
 		readonly HashSet<Guid> collapsedResultsGroups = new();
 		/// <summary>Groups of the last build, in display order (for navigation).</summary>
 		List<ResultsGroupHeader> resultsGroups = new();
+		bool resultsHavePartialClips;
+
+		/// <summary>
+		/// The Clip offset column only exists when it can carry data: partial-clip
+		/// detection is enabled, or the current results (e.g. an imported scan from a
+		/// machine where it was enabled) actually contain partial clips.
+		/// </summary>
+		public bool ResultsShowClipOffsetColumn =>
+			SettingsFile.Instance.EnablePartialClipDetection || resultsHavePartialClips;
 
 		// Seams the new results view control wires up when it attaches; the VM stays
 		// ignorant of the concrete ListBox.
@@ -94,8 +103,10 @@ namespace VDF.GUI.ViewModels {
 				Formats = BuildGroupSummaryFormats(),
 			});
 			resultsGroups = result.Groups;
+			resultsHavePartialClips = result.HasPartialClips;
 			ResultsRows.Clear();
 			ResultsRows.AddRange(result.Rows);
+			this.RaisePropertyChanged(nameof(ResultsShowClipOffsetColumn));
 		}
 
 		/// <summary>

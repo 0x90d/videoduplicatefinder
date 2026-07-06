@@ -196,6 +196,9 @@
         <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="76" TextAlignment="Right"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Match]}" />
+        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="80"
+                   IsVisible="{Binding ResultsShowClipOffsetColumn}"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.ClipOffset]}" />
         <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="150"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}" />
@@ -401,6 +404,16 @@
                     Foreground="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityToBadgeForegroundConverter}}"
                     Text="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityToFormattedConverter}}" />
               </Border>
+              <!-- Clip offset: position of a partial clip inside the longer source video.
+                   The column only exists while partial-clip detection is on or the
+                   results contain partial clips (maintainer decision). -->
+              <TextBlock
+                  DockPanel.Dock="Right"
+                  Width="80"
+                  VerticalAlignment="Center"
+                  FontSize="12"
+                  IsVisible="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ResultsShowClipOffsetColumn}"
+                  Text="{Binding Item.ItemInfo.PartialClipOffsetDisplay}" />
               <!-- Format · Audio -->
               <StackPanel
                   DockPanel.Dock="Right"
@@ -500,12 +513,11 @@
               </StackPanel>
               <!-- File name + path (fills remaining width) -->
               <StackPanel Margin="6,0,6,0" VerticalAlignment="Center" Spacing="1">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <TextBlock
-                      FontSize="13"
-                      FontWeight="SemiBold"
-                      TextTrimming="CharacterEllipsis"
-                      Text="{Binding Item.ItemInfo.Path, Converter={StaticResource FileNameConverter}}" />
+                <!-- Badges dock right so the name gets a finite width and its trimming
+                     engages; a plain horizontal StackPanel let long names paint over
+                     the neighboring metadata columns. -->
+                <DockPanel LastChildFill="True">
+                  <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
                   <Border IsVisible="{Binding IsBest}"
                           Background="#1C45B878" BorderBrush="#8045B878" BorderThickness="1"
                           CornerRadius="3" Padding="5,0" VerticalAlignment="Center">
@@ -526,17 +538,15 @@
                     <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DupList.Offline]}"
                                FontSize="10" FontWeight="Bold" Foreground="#DDDDDD" />
                   </Border>
-                  <!-- Partial-clip offset: position of this clip inside the longer source
-                       video. Shown as a badge instead of the old dedicated column, which
-                       was empty for every non-partial-clip result. -->
-                  <Border IsVisible="{Binding Item.ItemInfo.PartialClipOffsetDisplay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                          Background="#22348CB3" BorderBrush="#80348CB3" BorderThickness="1"
-                          CornerRadius="3" Padding="5,0" VerticalAlignment="Center"
-                          ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.ClipOffset]}">
-                    <TextBlock Text="{Binding Item.ItemInfo.PartialClipOffsetDisplay}"
-                               FontSize="10" FontWeight="Bold" />
-                  </Border>
-                </StackPanel>
+                  </StackPanel>
+                  <TextBlock
+                      FontSize="13"
+                      FontWeight="SemiBold"
+                      HorizontalAlignment="Left"
+                      TextTrimming="CharacterEllipsis"
+                      Text="{Binding Item.ItemInfo.Path, Converter={StaticResource FileNameConverter}}"
+                      ToolTip.Tip="{Binding Item.ItemInfo.Path, Converter={StaticResource FileNameConverter}}" />
+                </DockPanel>
                 <!-- Border supplies the hit-test surface for hover tooltip + click-to-copy -->
                 <Border
                     Background="Transparent"

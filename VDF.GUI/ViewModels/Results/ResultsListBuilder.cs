@@ -40,6 +40,8 @@ namespace VDF.GUI.ViewModels {
 	public sealed class ResultsBuildResult {
 		public required List<object> Rows { get; init; }
 		public required List<ResultsGroupHeader> Groups { get; init; }
+		/// <summary>Any visible member is a partial clip — drives the Clip offset column.</summary>
+		public bool HasPartialClips { get; init; }
 	}
 
 	/// <summary>
@@ -117,6 +119,7 @@ namespace VDF.GUI.ViewModels {
 
 			SortGroups(headers, request.SortMode, request.SortDescending);
 
+			bool hasPartialClips = false;
 			var flat = new List<object>();
 			for (int i = 0; i < headers.Count; i++) {
 				var header = headers[i];
@@ -124,12 +127,14 @@ namespace VDF.GUI.ViewModels {
 				header.Title = string.Format(request.Formats.GroupTitle, header.GroupNumber);
 				header.Summary = BuildSummary(header, request.Formats);
 				flat.Add(header);
-				if (!header.IsCollapsed)
-					foreach (var row in header.Rows)
+				foreach (var row in header.Rows) {
+					hasPartialClips |= row.Item.ItemInfo.Flags.HasFlag(Core.DuplicateFlags.PartialClip);
+					if (!header.IsCollapsed)
 						flat.Add(row);
+				}
 			}
 
-			return new ResultsBuildResult { Rows = flat, Groups = headers };
+			return new ResultsBuildResult { Rows = flat, Groups = headers, HasPartialClips = hasPartialClips };
 		}
 
 		/// <summary>

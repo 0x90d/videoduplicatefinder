@@ -426,6 +426,8 @@ namespace VDF.GUI.ViewModels {
 			SettingsFile.Instance.PropertyChanged += (_, e) => {
 				if (e.PropertyName == nameof(SettingsFile.UseClassicResultsView))
 					Dispatcher.UIThread.Post(() => BuildActiveResultsView(resetSessionStats: false));
+				else if (e.PropertyName == nameof(SettingsFile.EnablePartialClipDetection))
+					this.RaisePropertyChanged(nameof(ResultsShowClipOffsetColumn));
 			};
 		}
 

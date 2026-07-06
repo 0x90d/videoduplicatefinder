@@ -314,6 +314,36 @@ namespace VDF.GUI.Tests {
 		}
 
 		[Fact]
+		public void HasPartialClips_TrueWhenAnyMemberIsFlagged() {
+			Guid g = Guid.NewGuid();
+			var clip = Item(g, "clip");
+			clip.ItemInfo.Flags = VDF.Core.DuplicateFlags.PartialClip;
+			var result = ResultsListBuilder.Build(Request(Item(g, "source"), clip));
+
+			Assert.True(result.HasPartialClips);
+		}
+
+		[Fact]
+		public void HasPartialClips_FalseWithoutFlaggedMembers() {
+			Guid g = Guid.NewGuid();
+			var result = ResultsListBuilder.Build(Request(Item(g, "a"), Item(g, "b")));
+
+			Assert.False(result.HasPartialClips);
+		}
+
+		[Fact]
+		public void HasPartialClips_SeesMembersOfCollapsedGroups() {
+			Guid g = Guid.NewGuid();
+			var clip = Item(g, "clip");
+			clip.ItemInfo.Flags = VDF.Core.DuplicateFlags.PartialClip;
+			var result = ResultsListBuilder.Build(Request(Item(g, "source"), clip) with {
+				CollapsedGroups = new HashSet<Guid> { g }
+			});
+
+			Assert.True(result.HasPartialClips);
+		}
+
+		[Fact]
 		public void CustomFormats_AreUsedForTitleAndSummary() {
 			Guid g = Guid.NewGuid();
 			var result = ResultsListBuilder.Build(Request(
