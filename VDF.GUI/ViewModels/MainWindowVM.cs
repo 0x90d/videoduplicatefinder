@@ -179,6 +179,11 @@ namespace VDF.GUI.ViewModels {
 			get => _ScanProgressMaxValue;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressMaxValue, value);
 		}
+		string _ScanProgressCount = string.Empty;
+		public string ScanProgressCount {
+			get => _ScanProgressCount;
+			set => this.RaiseAndSetIfChanged(ref _ScanProgressCount, value);
+		}
 		int _TotalDuplicates;
 		public int TotalDuplicates {
 			get => _TotalDuplicates;
@@ -582,6 +587,7 @@ namespace VDF.GUI.ViewModels {
 				ScanProgressText = e.CurrentFile + stageSuffix;
 				RemainingTime = e.Remaining.Format();
 				ScanProgressValue = e.CurrentPosition;
+				ScanProgressCount = $"{e.CurrentPosition:N0} / {e.MaxPosition:N0}";
 				TimeElapsed = e.Elapsed.Format();
 				ScanProgressMaxValue = e.MaxPosition;
 			});

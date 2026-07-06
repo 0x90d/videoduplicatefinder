@@ -1258,6 +1258,9 @@
                                     <ProgressBar Name="PbScanProgress" MinWidth="80" Height="12"
                                         Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
                                         Value="{Binding ScanProgressValue, Mode=OneWay}" />
+                                    <TextBlock FontSize="12" Margin="6,0,2,0" VerticalAlignment="Center"
+                                        IsVisible="{Binding IsScanning}"
+                                        Text="{Binding ScanProgressCount, Mode=OneWay}" />
                                     <TextBlock FontSize="12" Margin="4,0">
                                         <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.ElapsedTime]}" />
                                         <Run Text="{Binding TimeElapsed, Mode=OneWay}" />
