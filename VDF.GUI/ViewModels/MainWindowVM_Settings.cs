@@ -93,6 +93,7 @@ namespace VDF.GUI.ViewModels {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				if (string.IsNullOrEmpty(message)) return;
 				LogItems.Add(message);
+				AppendLogTail(message);
 			});
 
 		public ReactiveCommand<Unit, Unit> OpenHWInfoLinkCommand => ReactiveCommand.CreateFromTask(async () => {

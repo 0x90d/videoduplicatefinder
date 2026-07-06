@@ -583,6 +583,9 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
+                                <!-- One window, three states: Setup → Scanning → Review (stage 2) -->
+                                <views:SetupView Grid.RowSpan="2" IsVisible="{Binding IsSetupState}" />
+                                <views:ScanningView Grid.RowSpan="2" IsVisible="{Binding IsScanningState}" />
                                 <Grid
                                     x:Name="GridFilter"
                                     Grid.Row="0"
@@ -592,6 +595,7 @@
                                     <Grid.IsVisible>
                                         <MultiBinding Converter="{x:Static BoolConverters.And}">
                                             <Binding Path="IsFilterEnabled" />
+                                            <Binding Path="IsReviewState" />
                                             <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="UseClassicResultsView" />
                                         </MultiBinding>
                                     </Grid.IsVisible>
@@ -673,7 +677,7 @@
                                         </StackPanel>
                                     </WrapPanel>
                                 </Grid>
-                                <Grid Grid.Row="1">
+                                <Grid Grid.Row="1" IsVisible="{Binding IsReviewState}">
                                     <views:DuplicateResultsView
                                         x:Name="NewResultsView"
                                         IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!UseClassicResultsView}" />
@@ -1214,42 +1218,7 @@
                                             </ContextMenu>
                                         </DataGrid.ContextMenu>
                                     </DataGrid>
-                                    <Border
-                                        x:Name="EmptyOverlay"
-                                        Background="Transparent"
-                                        IsVisible="{Binding !Duplicates.Count}">
-                                        <StackPanel
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Spacing="6">
-                                            <!-- Also hidden while busy: the busy overlay is translucent, so this
-                                                 text otherwise shows through and overlaps its progress messages
-                                                 (e.g. during the FFmpeg download at scan start). -->
-                                            <TextBlock
-                                                HorizontalAlignment="Center"
-                                                FontSize="18"
-                                                Opacity="0.9"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.EmptyState.Title]}">
-                                                <TextBlock.IsVisible>
-                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                                        <Binding Path="!IsScanning" />
-                                                        <Binding Path="!IsBusy" />
-                                                    </MultiBinding>
-                                                </TextBlock.IsVisible>
-                                            </TextBlock>
-                                            <TextBlock
-                                                HorizontalAlignment="Center"
-                                                Opacity="0.65"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.EmptyState.Subtitle]}">
-                                                <TextBlock.IsVisible>
-                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                                        <Binding Path="!IsScanning" />
-                                                        <Binding Path="!IsBusy" />
-                                                    </MultiBinding>
-                                                </TextBlock.IsVisible>
-                                            </TextBlock>
-                                        </StackPanel>
-                                    </Border>
+                                    <!-- The old empty-state overlay is superseded by the Setup state. -->
                                 </Grid>
                             </Grid>
                             <WrapPanel Grid.Row="2" Margin="0,2,0,0">
@@ -1329,8 +1298,15 @@
                             <Grid
                                 x:Name="BusyIndicator"
                                 Grid.RowSpan="3"
-                                IsVisible="{Binding IsBusy}"
                                 Opacity="0.8">
+                                <!-- Scans render in the window center (Scanning state) — the busy
+                                     curtain only covers non-scan operations (delete, import, …). -->
+                                <Grid.IsVisible>
+                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                        <Binding Path="IsBusy" />
+                                        <Binding Path="!IsScanning" />
+                                    </MultiBinding>
+                                </Grid.IsVisible>
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <ProgressBar
                                         Height="10"

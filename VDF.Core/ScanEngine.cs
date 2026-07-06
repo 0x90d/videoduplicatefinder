@@ -657,6 +657,18 @@ namespace VDF.Core {
 			entry.invalid || entry.mediaInfo == null || entry.Flags.Has(EntryFlags.ThumbnailError) || (!entry.IsImage && entry.grayBytes.Count < Settings.ThumbnailCount);
 
 		public static Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
+		/// <summary>
+		/// Loads the database from a custom folder. Callers with a configured custom
+		/// database folder must use this at startup — the parameterless overload resolves
+		/// the DEFAULT folder, and the custom one only took effect at the first scan
+		/// (PrepareSearch), so every pre-scan consumer (backup restore's tombstone checks,
+		/// database viewer, entry counts) read the wrong database.
+		/// </summary>
+		public static Task<bool> LoadDatabase(string? customDatabaseFolder) => Task.Run(() => {
+			DatabaseUtils.CustomDatabaseFolder = string.IsNullOrEmpty(customDatabaseFolder) ? null : customDatabaseFolder;
+			DatabaseUtils.InvalidateDatabaseFolder();
+			return DatabaseUtils.LoadDatabase();
+		});
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
 		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
 
@@ -2010,6 +2022,24 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Pruned {ghosts.Count:N0} ghost entries (file missing on a mounted drive, no comparable fingerprint data).");
 			return ghosts.Count;
 		}
+		/// <summary>
+		/// Number of database entries whose path lies under <paramref name="folderPath"/> —
+		/// the "N files known" a setup screen can show instantly, before any folder walk.
+		/// </summary>
+		public static int CountDatabaseEntriesUnder(string folderPath) {
+			if (string.IsNullOrWhiteSpace(folderPath)) return 0;
+			string prefix = folderPath.EndsWith(Path.DirectorySeparatorChar) || folderPath.EndsWith(Path.AltDirectorySeparatorChar)
+				? folderPath
+				: folderPath + Path.DirectorySeparatorChar;
+			var comparison = CoreUtils.IsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+			int n = 0;
+			foreach (var e in DatabaseUtils.Database)
+				if (e.Path.StartsWith(prefix, comparison)) n++;
+			return n;
+		}
+		/// <summary>Total number of entries in the fingerprint database.</summary>
+		public static int DatabaseEntryCount => DatabaseUtils.Database.Count;
+
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public static bool ImportDataBaseFromJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ImportDatabaseFromJson(jsonFile, options);
 

@@ -164,13 +164,17 @@ namespace VDF.GUI.Data {
 			get => _IgnoreReparsePoints;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreReparsePoints, value);
 		}
-		bool _IgnoreBlackPixels;
+		// IgnoreBlackPixels/IgnoreWhitePixels/CompareHorizontallyFlipped/Percent defaults
+		// form the "Edited & altered copies" scan profile — the recommended default for
+		// fresh installs (redesign stage 2). Existing settings files carry explicit
+		// values for every key, so nobody's configuration changes.
+		bool _IgnoreBlackPixels = true;
 		[JsonPropertyName("IgnoreBlackPixels")]
 		public bool IgnoreBlackPixels {
 			get => _IgnoreBlackPixels;
 			set => this.RaiseAndSetIfChanged(ref _IgnoreBlackPixels, value);
 		}
-		bool _IgnoreWhitePixels;
+		bool _IgnoreWhitePixels = true;
 		[JsonPropertyName("IgnoreWhitePixels")]
 		public bool IgnoreWhitePixels {
 			get => _IgnoreWhitePixels;
@@ -182,13 +186,29 @@ namespace VDF.GUI.Data {
 			get => _MaxDegreeOfParallelism;
 			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
+		bool _WelcomeStripDismissed;
+		/// <summary>The Setup screen's "New here?" hint strip, dismissible once.</summary>
+		[JsonPropertyName("WelcomeStripDismissed")]
+		public bool WelcomeStripDismissed {
+			get => _WelcomeStripDismissed;
+			set => this.RaiseAndSetIfChanged(ref _WelcomeStripDismissed, value);
+		}
+		ScanKnobs? _CustomScanKnobs;
+		/// <summary>Snapshot of the profile-managed knobs from when the user last left a
+		/// custom configuration; selecting the Custom profile restores it.</summary>
+		[JsonPropertyName("CustomScanKnobs")]
+		public ScanKnobs? CustomScanKnobs {
+			get => _CustomScanKnobs;
+			set => this.RaiseAndSetIfChanged(ref _CustomScanKnobs, value);
+		}
 		Core.FFTools.FFHardwareAccelerationMode _HardwareAccelerationMode = Core.FFTools.FFHardwareAccelerationMode.auto;
 		[JsonPropertyName("HardwareAccelerationMode")]
 		public Core.FFTools.FFHardwareAccelerationMode HardwareAccelerationMode {
 			get => _HardwareAccelerationMode;
 			set => this.RaiseAndSetIfChanged(ref _HardwareAccelerationMode, value);
 		}
-		bool _CompareHorizontallyFlipped = false;
+		// Part of the "Edited & altered copies" default profile (see IgnoreBlackPixels note).
+		bool _CompareHorizontallyFlipped = true;
 		[JsonPropertyName("CompareHorizontallyFlipped")]
 		public bool CompareHorizontallyFlipped {
 			get => _CompareHorizontallyFlipped;
@@ -321,7 +341,8 @@ namespace VDF.GUI.Data {
 			get => _UseExifCreationDate;
 			set => this.RaiseAndSetIfChanged(ref _UseExifCreationDate, value);
 		}
-		float _Percent = 95f;
+		// Part of the "Edited & altered copies" default profile (see IgnoreBlackPixels note).
+		float _Percent = 92f;
 		[JsonPropertyName("Percent")]
 		public float Percent {
 			get => _Percent;

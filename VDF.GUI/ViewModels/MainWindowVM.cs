@@ -112,7 +112,15 @@ namespace VDF.GUI.ViewModels {
 		bool _IsScanning;
 		public bool IsScanning {
 			get => _IsScanning;
-			set => this.RaiseAndSetIfChanged(ref _IsScanning, value);
+			set {
+				if (value == _IsScanning) return;
+				this.RaiseAndSetIfChanged(ref _IsScanning, value);
+				RaiseScannerStateChanged();
+				// Back on the Setup screen (scan aborted/stopped with no results):
+				// refresh folder stats — the database may have grown meanwhile.
+				if (IsSetupState)
+					RebuildSetupFolders();
+			}
 		}
 		string _IsBusyOverlayText = string.Empty;
 		public string IsBusyOverlayText {
@@ -428,7 +436,20 @@ namespace VDF.GUI.ViewModels {
 					Dispatcher.UIThread.Post(() => BuildActiveResultsView(resetSessionStats: false));
 				else if (e.PropertyName == nameof(SettingsFile.EnablePartialClipDetection))
 					this.RaisePropertyChanged(nameof(ResultsShowClipOffsetColumn));
+				// Editing any profile-managed knob re-derives the Setup screen's selection
+				// (switches the card to Custom when values no longer match a bundle).
+				if (e.PropertyName is nameof(SettingsFile.Percent)
+					or nameof(SettingsFile.CompareHorizontallyFlipped)
+					or nameof(SettingsFile.IgnoreBlackPixels)
+					or nameof(SettingsFile.IgnoreWhitePixels)
+					or nameof(SettingsFile.EnablePartialClipDetection))
+					RefreshScanProfileSelection();
 			};
+
+			SettingsFile.Instance.Includes.CollectionChanged += (_, __) => RebuildSetupFolders();
+			SettingsFile.Instance.Blacklists.CollectionChanged += (_, __) => RebuildSetupFolders();
+			RefreshScanProfileSelection();
+			RebuildSetupFolders();
 		}
 
 		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -460,6 +481,7 @@ namespace VDF.GUI.ViewModels {
 				checkedCountByGroup.Clear();
 				selectionUndoStack.Clear();
 			}
+			RaiseScannerStateChanged();
 		}
 
 		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
@@ -539,12 +561,16 @@ namespace VDF.GUI.ViewModels {
 		public async void LoadDatabase() {
 			IsBusy = true;
 			IsBusyOverlayText = "Loading database...";
-			bool success = await ScanEngine.LoadDatabase();
+			// Pass the configured folder — the parameterless overload loads the DEFAULT
+			// location, which is the wrong database when a custom folder is set.
+			bool success = await ScanEngine.LoadDatabase(SettingsFile.Instance.CustomDatabaseFolder);
 			IsBusy = false;
 			if (!success) {
 				await MessageBoxService.Show(App.Lang["Message.LoadDatabaseFailed"]);
 				Environment.Exit(-1);
 			}
+			// The Setup screen's DB-known counts were computed against an empty database.
+			RebuildSetupFolders();
 		}
 
 		void CheckScheduledScan() {
@@ -610,6 +636,11 @@ namespace VDF.GUI.ViewModels {
 					? string.Empty
 					: e.StageMax > 0 ? $"  [{e.CurrentStage} {e.StageCurrent}/{e.StageMax}]" : $"  [{e.CurrentStage}]";
 				ScanProgressText = e.CurrentFile + stageSuffix;
+				// Separate stage/file properties for the Scanning state's center panel.
+				ScanStageText = string.IsNullOrEmpty(e.CurrentStage)
+					? string.Empty
+					: e.StageMax > 0 ? $"{e.CurrentStage} {e.StageCurrent}/{e.StageMax}" : e.CurrentStage;
+				ScanCurrentFile = e.CurrentFile;
 				RemainingTime = e.Remaining.Format();
 				ScanProgressValue = e.CurrentPosition;
 				ScanProgressCount = $"{e.CurrentPosition:N0} / {e.MaxPosition:N0}";
@@ -1564,6 +1595,9 @@ Non-Windows setup:
 			}
 
 			Duplicates.Clear();
+
+			// Folder counting is informational only — never let it compete with the scan for IO.
+			folderCounting.CancelAll();
 
 			TempDirectory = TempExtractionManager.Register(new("VDF-"));
 			Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));

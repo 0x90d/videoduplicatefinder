@@ -1,0 +1,98 @@
+<UserControl
+    x:Class="VDF.GUI.Views.ScanningView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+    xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+    x:DataType="vm:MainWindowVM">
+
+  <!-- The scan IS what the app is doing, so it owns the center of the window —
+       no more modal "Please Wait" curtain (locked design decision 1). -->
+  <Grid>
+    <StackPanel
+        MaxWidth="760"
+        Margin="32,44,32,24"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Top"
+        Spacing="8">
+
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <TextBlock FontSize="19" FontWeight="SemiBold"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Title]}" />
+        <Border CornerRadius="10" Padding="10,2" VerticalAlignment="Center"
+                Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
+                IsVisible="{Binding ScanStageText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding ScanStageText}" />
+        </Border>
+        <TextBlock FontSize="13" Opacity="0.7" VerticalAlignment="Center" Margin="12,0,0,0">
+          <Run Text="{Binding ScanProgressCount, Mode=OneWay}" />
+        </TextBlock>
+      </StackPanel>
+
+      <ProgressBar
+          Height="10"
+          CornerRadius="5"
+          Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
+          Value="{Binding ScanProgressValue, Mode=OneWay}" />
+
+      <DockPanel LastChildFill="True">
+        <TextBlock DockPanel.Dock="Left" FontSize="12" Opacity="0.6">
+          <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.ElapsedTime]}" />
+          <Run Text="{Binding TimeElapsed, Mode=OneWay}" />
+          <Run Text=" · " />
+          <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.RemainingTime]}" />
+          <Run Text="{Binding RemainingTime, Mode=OneWay}" />
+        </TextBlock>
+        <TextBlock FontSize="12" Opacity="0.6" Margin="16,0,0,0"
+                   TextTrimming="PrefixCharacterEllipsis"
+                   Text="{Binding ScanCurrentFile}" />
+      </DockPanel>
+
+      <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
+        <Button
+            FontSize="13" Padding="14,6"
+            Command="{Binding PauseScanCommand}"
+            IsVisible="{Binding !IsPaused}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="⏸" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Pause]}" />
+          </StackPanel>
+        </Button>
+        <Button
+            FontSize="13" Padding="14,6"
+            Command="{Binding ResumeScanCommand}"
+            IsVisible="{Binding IsPaused}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="▶" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Resume]}" />
+          </StackPanel>
+        </Button>
+        <Button
+            FontSize="13" Padding="14,6"
+            Command="{Binding StopScanCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="⏹" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Stop]}" />
+          </StackPanel>
+        </Button>
+        <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center" Margin="8,0,0,0"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.PauseNote]}" />
+      </StackPanel>
+
+      <!-- last few log lines -->
+      <Border Margin="0,22,0,0" Padding="0,10,0,0"
+              BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+              BorderThickness="0,1,0,0">
+        <ItemsControl ItemsSource="{Binding LogTail}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock FontSize="11.5" Opacity="0.55" Margin="0,1"
+                         TextTrimming="CharacterEllipsis" Text="{Binding}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Border>
+    </StackPanel>
+  </Grid>
+</UserControl>
