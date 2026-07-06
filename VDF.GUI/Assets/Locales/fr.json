@@ -531,5 +531,16 @@
 	"MainWindow.Settings.PartialClipVisualThreshold": "Similarité visuelle min. (%):",
 	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "Similarité visuelle minimale au décalage détecté pour conserver une paire de clips partiels.",
 	"Dialog.CopySelected": "Copier la sélection",
-	"DuplicateList.HoverDiff.Best": "MEILLEUR"
+	"DuplicateList.HoverDiff.Best": "MEILLEUR",
+	"DupList.AlreadyDeletedTooltip": "Ce fichier a été supprimé alors que son disque était monté. Son empreinte est conservée afin de reconnaître un retéléchargement du même contenu.",
+	"MainWindow.Database.PruneGhostEntries": "Purger les entrées fantômes",
+	"Message.PruneGhostEntriesDone": "{0:N0} entrées fantômes supprimées et base de données enregistrée.",
+	"MainWindow.Settings.RememberDeletedContent": "Mémoriser le contenu supprimé",
+	"DupList.OfflineTooltip": "Le disque de ce fichier n'est pas connecté actuellement.",
+	"Message.PruneGhostEntriesConfirm": "{0:N0} entrées n'ont aucune donnée comparable et leurs fichiers ont disparu des disques montés. Les supprimer de la base de données ?",
+	"DupList.AlreadyDeleted": "Déjà supprimé",
+	"MainWindow.Tooltip.PruneGhostEntries": "Supprime uniquement les entrées dont le fichier a disparu d'un disque monté ET qui ne possèdent aucune donnée comparable (ni hachages d'images, ni empreinte audio). Les pierres tombales — fichiers absents dont les empreintes sont conservées pour reconnaître les retéléchargements — sont préservées, tout comme les fichiers des disques hors ligne.",
+	"DupList.Offline": "Hors ligne",
+	"Message.NoGhostEntries": "Aucune entrée fantôme trouvée : chaque fichier absent possède des empreintes (conservé comme pierre tombale) ou se trouve sur un disque hors ligne.",
+	"MainWindow.Settings.RememberDeletedContentTooltip": "Conserve l'empreinte des fichiers dont la dernière copie a été supprimée et l'inclut dans les comparaisons futures : un retéléchargement d'un contenu déjà supprimé est marqué « Déjà supprimé ». Le nettoyage de la base de données préserve ces pierres tombales (utilisez « Purger les entrées fantômes » pour l'hygiène). Les disques débranchés comptent comme hors ligne, jamais comme supprimés."
 }

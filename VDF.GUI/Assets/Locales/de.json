@@ -531,5 +531,16 @@
 	"MainWindow.Settings.PartialClipVisualThreshold": "Min. visuelle Ähnlichkeit (%):",
 	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "Minimale visuelle Ähnlichkeit am gefundenen Offset, damit ein Teilclip-Paar akzeptiert wird.",
 	"Dialog.CopySelected": "Auswahl kopieren",
-	"DuplicateList.HoverDiff.Best": "BESTE"
+	"DuplicateList.HoverDiff.Best": "BESTE",
+	"DupList.AlreadyDeletedTooltip": "Diese Datei wurde gelöscht, während ihr Laufwerk eingebunden war. Ihr Fingerabdruck bleibt erhalten, damit ein erneuter Download desselben Inhalts erkannt wird.",
+	"MainWindow.Database.PruneGhostEntries": "Verwaiste Einträge bereinigen",
+	"Message.PruneGhostEntriesDone": "{0:N0} verwaiste Einträge entfernt und Datenbank gespeichert.",
+	"MainWindow.Settings.RememberDeletedContent": "Gelöschte Inhalte merken",
+	"DupList.OfflineTooltip": "Das Laufwerk dieser Datei ist derzeit nicht verbunden.",
+	"Message.PruneGhostEntriesConfirm": "{0:N0} Einträge haben keine vergleichbaren Daten und ihre Dateien fehlen auf eingebundenen Laufwerken. Aus der Datenbank entfernen?",
+	"DupList.AlreadyDeleted": "Bereits gelöscht",
+	"MainWindow.Tooltip.PruneGhostEntries": "Entfernt nur Einträge, deren Datei auf einem eingebundenen Laufwerk fehlt UND die keinerlei vergleichbare Daten besitzen (keine Frame-Hashes, kein Audio-Fingerabdruck). Tombstones — fehlende Dateien, deren Fingerabdrücke zum Erkennen erneuter Downloads aufbewahrt werden — bleiben unberührt, ebenso Dateien auf Offline-Laufwerken.",
+	"DupList.Offline": "Offline",
+	"Message.NoGhostEntries": "Keine verwaisten Einträge gefunden: Jede fehlende Datei hat entweder Fingerabdrücke (als Tombstone aufbewahrt) oder liegt auf einem Offline-Laufwerk.",
+	"MainWindow.Settings.RememberDeletedContentTooltip": "Behält den Fingerabdruck von Dateien, deren letzte Kopie gelöscht wurde, und vergleicht künftige Scans dagegen: Ein erneuter Download bereits gelöschter Inhalte wird als 'Bereits gelöscht' markiert. Die Datenbankbereinigung bewahrt diese Tombstones (für Hygiene 'Verwaiste Einträge bereinigen' nutzen). Nicht verbundene Laufwerke gelten als offline, nie als gelöscht."
 }

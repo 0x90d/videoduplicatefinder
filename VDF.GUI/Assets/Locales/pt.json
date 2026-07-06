@@ -531,5 +531,16 @@
 	"MainWindow.Settings.PartialClipVisualThreshold": "Similaridade visual mín. (%):",
 	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "Similaridade visual mínima no deslocamento detectado para manter um par de clipe parcial.",
 	"Dialog.CopySelected": "Copiar selecionado",
-	"DuplicateList.HoverDiff.Best": "MELHOR"
+	"DuplicateList.HoverDiff.Best": "MELHOR",
+	"DupList.AlreadyDeletedTooltip": "Este arquivo foi excluído enquanto sua unidade estava montada. Sua impressão digital é mantida para reconhecer um redownload do mesmo conteúdo.",
+	"MainWindow.Database.PruneGhostEntries": "Remover entradas fantasma",
+	"Message.PruneGhostEntriesDone": "{0:N0} entradas fantasma removidas e banco de dados salvo.",
+	"MainWindow.Settings.RememberDeletedContent": "Lembrar conteúdo excluído",
+	"DupList.OfflineTooltip": "A unidade deste arquivo não está conectada no momento.",
+	"Message.PruneGhostEntriesConfirm": "{0:N0} entradas não têm dados comparáveis e seus arquivos sumiram das unidades montadas. Removê-las do banco de dados?",
+	"DupList.AlreadyDeleted": "Já excluído",
+	"MainWindow.Tooltip.PruneGhostEntries": "Remove apenas entradas cujo arquivo sumiu de uma unidade montada E que não têm nenhum dado comparável (sem hashes de quadros, sem impressão digital de áudio). As lápides — arquivos ausentes cujas impressões são mantidas para reconhecer redownloads — não são tocadas, nem os arquivos em unidades offline.",
+	"DupList.Offline": "Offline",
+	"Message.NoGhostEntries": "Nenhuma entrada fantasma encontrada: todo arquivo ausente tem impressões digitais (mantido como lápide) ou está em uma unidade offline.",
+	"MainWindow.Settings.RememberDeletedContentTooltip": "Mantém a impressão digital de arquivos cuja última cópia foi excluída e a inclui em comparações futuras: um redownload de conteúdo já excluído é marcado como 'Já excluído'. A limpeza do banco de dados preserva essas lápides (use 'Remover entradas fantasma' para higiene). Unidades desconectadas contam como offline, nunca como excluídas."
 }

@@ -531,5 +531,16 @@
 	"MainWindow.Settings.PartialClipVisualThreshold": "Similitud visual mín. (%):",
 	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "Similitud visual mínima en el desplazamiento detectado para mantener un par de clip parcial.",
 	"Dialog.CopySelected": "Copiar seleccionado",
-	"DuplicateList.HoverDiff.Best": "MEJOR"
+	"DuplicateList.HoverDiff.Best": "MEJOR",
+	"DupList.AlreadyDeletedTooltip": "Este archivo se eliminó mientras su unidad estaba montada. Su huella se conserva para reconocer una redescarga del mismo contenido.",
+	"MainWindow.Database.PruneGhostEntries": "Purgar entradas fantasma",
+	"Message.PruneGhostEntriesDone": "Se eliminaron {0:N0} entradas fantasma y se guardó la base de datos.",
+	"MainWindow.Settings.RememberDeletedContent": "Recordar contenido eliminado",
+	"DupList.OfflineTooltip": "La unidad de este archivo no está conectada actualmente.",
+	"Message.PruneGhostEntriesConfirm": "{0:N0} entradas no tienen datos comparables y sus archivos desaparecieron de unidades montadas. ¿Eliminarlas de la base de datos?",
+	"DupList.AlreadyDeleted": "Ya eliminado",
+	"MainWindow.Tooltip.PruneGhostEntries": "Elimina solo las entradas cuyo archivo desapareció de una unidad montada Y que no tienen ningún dato comparable (sin hashes de fotogramas ni huella de audio). Las lápidas — archivos ausentes cuyas huellas se conservan para reconocer redescargas — no se tocan, ni tampoco los archivos en unidades desconectadas.",
+	"DupList.Offline": "Sin conexión",
+	"Message.NoGhostEntries": "No se encontraron entradas fantasma: cada archivo ausente tiene huellas (conservado como lápida) o está en una unidad desconectada.",
+	"MainWindow.Settings.RememberDeletedContentTooltip": "Conserva la huella de los archivos cuya última copia se eliminó y la incluye en comparaciones futuras: una redescarga de contenido ya eliminado se marca como 'Ya eliminado'. La limpieza de la base de datos conserva estas lápidas (use 'Purgar entradas fantasma' para la higiene). Las unidades desconectadas cuentan como sin conexión, nunca como eliminadas."
 }

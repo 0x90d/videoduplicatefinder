@@ -531,5 +531,16 @@
 	"MainWindow.Settings.PartialClipVisualThreshold": "最小视觉相似度 (%):",
 	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "保留部分片段配对所需的最小视觉相似度（在检测到的偏移位置进行比较）。",
 	"Dialog.CopySelected": "复制所选",
-	"DuplicateList.HoverDiff.Best": "最佳"
+	"DuplicateList.HoverDiff.Best": "最佳",
+	"DupList.AlreadyDeletedTooltip": "此文件在其驱动器已挂载时被删除。其指纹已保留，以便识别相同内容的重新下载。",
+	"MainWindow.Database.PruneGhostEntries": "清理幽灵条目",
+	"Message.PruneGhostEntriesDone": "已删除 {0:N0} 个幽灵条目并保存数据库。",
+	"MainWindow.Settings.RememberDeletedContent": "记住已删除的内容",
+	"DupList.OfflineTooltip": "此文件所在的驱动器当前未连接。",
+	"Message.PruneGhostEntriesConfirm": "{0:N0} 个条目没有可比对数据，且文件已从已挂载驱动器消失。要从数据库中删除它们吗？",
+	"DupList.AlreadyDeleted": "已删除过",
+	"MainWindow.Tooltip.PruneGhostEntries": "仅删除文件已从已挂载驱动器消失且没有任何可比对数据（无帧哈希、无音频指纹）的条目。墓碑条目——保留指纹以识别重新下载的缺失文件——不受影响，离线驱动器上的文件也不受影响。",
+	"DupList.Offline": "离线",
+	"Message.NoGhostEntries": "未发现幽灵条目：所有缺失文件要么有指纹（作为墓碑保留），要么位于离线驱动器上。",
+	"MainWindow.Settings.RememberDeletedContentTooltip": "保留最后一份副本已被删除的文件的指纹，并在以后的扫描中参与比较：重新下载已删除的内容会被标记为\"已删除过\"。数据库清理会保留这些墓碑条目（如需清理请使用\"清理幽灵条目\"）。未连接的驱动器视为离线，绝不视为已删除。"
 }

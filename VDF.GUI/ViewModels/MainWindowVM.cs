@@ -718,6 +718,23 @@ namespace VDF.GUI.ViewModels {
 			Scanner.CleanupDatabase();
 		});
 
+		// Removes "ghost" entries: file gone from a MOUNTED drive + no comparable fingerprint data
+		// (tombstones — missing files WITH fingerprints — are untouched; offline drives too).
+		// Count-first so the confirm dialog shows exactly what would be removed.
+		public ReactiveCommand<Unit, Unit> PruneGhostEntriesCommand => ReactiveCommand.CreateFromTask(async () => {
+			int count = await Task.Run(ScanEngine.CountGhostEntries);
+			if (count == 0) {
+				await MessageBoxService.Show(App.Lang["Message.NoGhostEntries"]);
+				return;
+			}
+			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
+				string.Format(App.Lang["Message.PruneGhostEntriesConfirm"], count),
+				MessageBoxButtons.Yes | MessageBoxButtons.No);
+			if (dlgResult != MessageBoxButtons.Yes) return;
+			int removed = await Task.Run(ScanEngine.PruneGhostEntries);
+			await MessageBoxService.Show(string.Format(App.Lang["Message.PruneGhostEntriesDone"], removed));
+		});
+
 		public ReactiveCommand<Unit, Unit> ClearDatabaseCommand => ReactiveCommand.CreateFromTask(async () => {
 			MessageBoxButtons? dlgResult = await MessageBoxService.Show(
 				App.Lang["Message.ClearDatabaseWarning"],
@@ -1554,6 +1571,7 @@ Non-Windows setup:
 			SettingsFile.Instance.LanguageCode = App.Lang.CurrentLanguage;
 			Scanner.Settings.LanguageCode = SettingsFile.Instance.LanguageCode;
 			Scanner.Settings.IncludeNonExistingFiles = SettingsFile.Instance.IncludeNonExistingFiles;
+			Scanner.Settings.RememberDeletedContent = SettingsFile.Instance.RememberDeletedContent;
 			Scanner.Settings.FilterByFilePathContains = SettingsFile.Instance.FilterByFilePathContains;
 			Scanner.Settings.FilePathContainsTexts = SettingsFile.Instance.FilePathContainsTexts.ToList();
 			Scanner.Settings.FilterByFilePathNotContains = SettingsFile.Instance.FilterByFilePathNotContains;

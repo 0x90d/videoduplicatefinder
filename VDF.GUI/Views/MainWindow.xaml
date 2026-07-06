@@ -227,6 +227,24 @@
                                             </StackPanel>
                                         </MenuItem.Header>
                                     </MenuItem>
+                                    <!-- Narrower than cleanup: only removes entries that are BOTH missing from a
+                                         mounted drive AND carry no comparable fingerprint data, so it can never
+                                         destroy re-download detection (tombstones) or touch offline drives. -->
+                                    <MenuItem Command="{Binding PruneGhostEntriesCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tooltip.PruneGhostEntries]}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Database.PruneGhostEntries]}" />
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
                                     <MenuItem Command="{Binding EditDataBaseCommand}">
                                         <MenuItem.Header>
                                             <TextBlock
@@ -720,10 +738,28 @@
                                                 IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <TextBlock
-                                                            Margin="10,0,0,0"
-                                                            Text="{Binding ItemInfo.Path, TargetNullValue=''}"
-                                                            TextWrapping="Wrap" />
+                                                        <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
+                                                            <!-- Tombstone: content the user already deleted; its fingerprint matched again -->
+                                                            <Border IsVisible="{Binding IsTombstone}"
+                                                                    Background="#B33A2E" CornerRadius="3" Padding="5,1" Margin="0,0,6,0"
+                                                                    VerticalAlignment="Center"
+                                                                    ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DupList.AlreadyDeletedTooltip]}">
+                                                                <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DupList.AlreadyDeleted]}"
+                                                                           FontSize="10" FontWeight="Bold" Foreground="White" />
+                                                            </Border>
+                                                            <!-- Offline: the file's drive is not currently mounted -->
+                                                            <Border IsVisible="{Binding IsOffline}"
+                                                                    Background="#555555" CornerRadius="3" Padding="5,1" Margin="0,0,6,0"
+                                                                    VerticalAlignment="Center"
+                                                                    ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DupList.OfflineTooltip]}">
+                                                                <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DupList.Offline]}"
+                                                                           FontSize="10" FontWeight="Bold" Foreground="#DDDDDD" />
+                                                            </Border>
+                                                            <TextBlock
+                                                                Text="{Binding ItemInfo.Path, TargetNullValue=''}"
+                                                                TextWrapping="Wrap"
+                                                                VerticalAlignment="Center" />
+                                                        </StackPanel>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -1486,6 +1522,9 @@
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFiles]}"
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}" IsThreeState="False"
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFilesTooltip]}" />
+                                                        <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContent]}"
+                                                                  IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}" IsThreeState="False"
+                                                                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContentTooltip]}" />
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreReadOnlyFolders]}"
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}" IsThreeState="False" />
                                                         <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePoints]}"

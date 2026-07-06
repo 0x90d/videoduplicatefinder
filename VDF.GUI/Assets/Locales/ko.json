@@ -531,5 +531,16 @@
 	"MainWindow.Settings.PartialClipVisualThreshold": "최소 시각 유사도 (%):",
 	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "위 시각 교차 검증의 유사도 임계값(오디오 매칭 쌍의 프레임에 적용). 부분 클립은 잘리거나 재인코딩됐을 수 있어 본편 시각 임계값보다 약간 낮게 두는 것이 보통입니다.",
 	"Dialog.CopySelected": "선택 항목 복사",
-	"DuplicateList.HoverDiff.Best": "최상"
+	"DuplicateList.HoverDiff.Best": "최상",
+	"DupList.AlreadyDeletedTooltip": "드라이브가 연결된 상태에서 삭제된 파일입니다. 지문을 보존해 같은 콘텐츠의 재다운로드를 인식합니다.",
+	"MainWindow.Database.PruneGhostEntries": "지문 없는 부재 항목 정리",
+	"Message.PruneGhostEntriesDone": "{0:N0}개 항목을 삭제하고 데이터베이스를 저장했습니다.",
+	"MainWindow.Settings.RememberDeletedContent": "삭제한 콘텐츠 기억",
+	"DupList.OfflineTooltip": "이 파일의 드라이브가 현재 연결되어 있지 않습니다.",
+	"Message.PruneGhostEntriesConfirm": "{0:N0}개 항목이 비교 가능한 데이터가 없고 마운트된 드라이브에서 파일도 사라졌습니다. 데이터베이스에서 삭제할까요?",
+	"DupList.AlreadyDeleted": "이미 삭제함",
+	"MainWindow.Tooltip.PruneGhostEntries": "마운트된 드라이브에서 파일이 사라졌고 비교 가능한 데이터(프레임 해시·오디오 지문)가 전혀 없는 항목만 삭제합니다. 지문이 있는 부재 항목(재다운로드 감지용 묘비)과 오프라인 드라이브의 파일은 건드리지 않습니다.",
+	"DupList.Offline": "오프라인",
+	"Message.NoGhostEntries": "정리할 항목이 없습니다: 부재 파일은 모두 지문이 있거나(묘비로 보존) 오프라인 드라이브에 있습니다.",
+	"MainWindow.Settings.RememberDeletedContentTooltip": "마지막 사본까지 삭제된 파일의 지문을 보존하고 이후 스캔에서 비교에 포함합니다: 이미 삭제한 콘텐츠를 다시 다운로드하면 '이미 삭제함'으로 표시됩니다. 데이터베이스 정리는 이 묘비 항목을 보존합니다(정리는 '지문 없는 부재 항목 정리' 사용). 연결되지 않은 드라이브는 오프라인으로 간주하며 삭제로 처리하지 않습니다."
 }

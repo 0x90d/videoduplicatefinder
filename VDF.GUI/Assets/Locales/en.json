@@ -531,5 +531,16 @@
 	"MainWindow.Settings.PartialClipVisualThreshold": "Min visual similarity (%):",
 	"MainWindow.Settings.PartialClipVisualThresholdTooltip": "Minimum visual similarity at the matched offset for a partial-clip pair to be kept. Usually set slightly below the main visual threshold, since partial clips are often cropped or re-encoded.",
 	"Dialog.CopySelected": "Copy Selected",
-	"DuplicateList.HoverDiff.Best": "BEST"
+	"DuplicateList.HoverDiff.Best": "BEST",
+	"DupList.AlreadyDeletedTooltip": "This file was deleted while its drive was mounted. Its fingerprint is kept so a re-download of the same content is recognized.",
+	"MainWindow.Database.PruneGhostEntries": "Prune Ghost Entries",
+	"Message.PruneGhostEntriesDone": "{0:N0} ghost entries removed and the database saved.",
+	"MainWindow.Settings.RememberDeletedContent": "Remember deleted content",
+	"DupList.OfflineTooltip": "This file's drive is not currently connected.",
+	"Message.PruneGhostEntriesConfirm": "{0:N0} entries have no comparable data and their files are gone from mounted drives. Remove them from the database?",
+	"DupList.AlreadyDeleted": "Already deleted",
+	"MainWindow.Tooltip.PruneGhostEntries": "Removes entries whose file is gone from a mounted drive AND that carry no comparable data (no frame hashes, no audio fingerprint). Tombstones — missing files whose fingerprints are kept to recognize re-downloads — are untouched, as are files on offline drives.",
+	"DupList.Offline": "Offline",
+	"Message.NoGhostEntries": "No ghost entries found: every missing file either has fingerprints (kept as a tombstone) or is on an offline drive.",
+	"MainWindow.Settings.RememberDeletedContentTooltip": "Keep the fingerprint of files whose last copy was deleted, and include it in future comparisons: a re-download of content you already deleted is flagged 'Already deleted'. Database cleanup then preserves these tombstones (use Prune Ghost Entries for hygiene). Unplugged drives count as offline, never as deleted."
 }
