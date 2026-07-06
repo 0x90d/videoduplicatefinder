@@ -727,8 +727,15 @@ namespace VDF.Core {
 		}
 
 	
-	static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default, Action<double>? onProgress = null) {
+	internal static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default, Action<double>? onProgress = null) {
 		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, ct, onProgress);
+		if (fp == null && ct.IsCancellationRequested) {
+			// Stop/cancel mid-file is not a file error. Flagging here poisoned the entry
+			// permanently: both the AudioFingerprintError flag and the non-null empty
+			// fingerprint block every retry gate, so the file would never be fingerprinted
+			// again. Leave the entry untouched and let the next scan retry it.
+			return;
+		}
 		if (fp == null) {
 			// null = extraction failed (error or no audio stream)
 			entry.Flags.Set(EntryFlags.AudioFingerprintError);
@@ -2160,11 +2167,14 @@ namespace VDF.Core {
 		}
 
 		public void Stop() {
-			if (pauseTokenSource.IsPaused)
-				Resume();
 			Logger.Instance.Info("Scan stopped by user");
 			if (isScanning)
 				cancelationTokenSource.Cancel();
+			// Cancel before resuming: workers parked in WaitWhilePaused observe the
+			// cancelled token and throw instead of waking up and fully processing one
+			// more file each (with a dead token that would poison its results).
+			if (pauseTokenSource.IsPaused)
+				Resume();
 			else
 				// No scan task is alive to observe the cancellation, so nothing would ever
 				// raise ScanAborted. A frontend that still believes a scan is running (its
