@@ -274,7 +274,7 @@
                     CommandParameter="{Binding}"
                     Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.KeepBest]}" />
               </StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="8,0,0,0">
                 <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Title}" />
                 <TextBlock Classes="meta" VerticalAlignment="Center" Text="{Binding Summary}" />
                 <TextBlock FontSize="11" Opacity="0.6" VerticalAlignment="Center" Text="{Binding SimilarityRangeDisplay}" />
