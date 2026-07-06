@@ -16,8 +16,14 @@
     </Window.DataContext>
     <StackPanel Margin="16">
         <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Description]}" Margin="0,0,0,8" />
-        <ListBox x:Name="CriteriaListBox" ItemsSource="{Binding CriteriaOrder}" 
-         SelectedItem="{Binding SelectedItem, Mode=TwoWay}" Height="180" />
+        <ListBox x:Name="CriteriaListBox" ItemsSource="{Binding CriteriaOrder}"
+         SelectedItem="{Binding SelectedItem, Mode=TwoWay}" Height="180">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:QualityCriterionOption">
+                    <TextBlock Text="{Binding Display}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
             <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.BtnMoveUp]}"
                     Margin="4"

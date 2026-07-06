@@ -21,8 +21,13 @@ using System.Reactive;
 using ReactiveUI;
 
 namespace VDF.GUI.ViewModels {
+	// Key is the stored settings value ("Size"), Display the localized list entry
+	// ("Size (smaller file wins)") - they must stay separate so renaming a label
+	// never invalidates saved QualityCriteriaOrder settings.
+	public sealed record QualityCriterionOption(string Key, string Display);
+
 	public class QualityOrderVM : ReactiveObject {
-		public ObservableCollection<string> CriteriaOrder { get; }
+		public ObservableCollection<QualityCriterionOption> CriteriaOrder { get; }
 
 		public ReactiveCommand<int, Unit> MoveUpCommand { get; }
 		public ReactiveCommand<int, Unit> MoveDownCommand { get; }
@@ -33,13 +38,20 @@ namespace VDF.GUI.ViewModels {
 			foreach (var name in MainWindowVM.QualityCriteriaMap.Keys)
 				if (!merged.Contains(name))
 					merged.Add(name);
-			CriteriaOrder = new ObservableCollection<string>(merged);
+			CriteriaOrder = new ObservableCollection<QualityCriterionOption>(merged.Select(ToOption));
 			MoveUpCommand = ReactiveCommand.Create<int>(MoveUp);
 			MoveDownCommand = ReactiveCommand.Create<int>(MoveDown);
 			_selectedItem = CriteriaOrder[0];
 		}
-		private string _selectedItem;
-		public string SelectedItem {
+
+		static QualityCriterionOption ToOption(string key) {
+			var lookupKey = $"QualityCriteria.{key}";
+			var display = App.Lang[lookupKey];
+			return new(key, display == lookupKey ? key : display);
+		}
+
+		private QualityCriterionOption _selectedItem;
+		public QualityCriterionOption SelectedItem {
 			get => _selectedItem;
 			set => this.RaiseAndSetIfChanged(ref _selectedItem, value);
 		}
