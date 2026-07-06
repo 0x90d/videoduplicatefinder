@@ -175,7 +175,11 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				}
 
 				if (onProgress != null && expectedSamples > 0) {
-					int pct = Math.Min(99, (int)(100 * totalSamples / expectedSamples));
+					// 100.0 forces double math: `100 * totalSamples` as int×int overflows past
+					// ~21.5M samples (≈32.5 min at 11025 Hz), wrapping the percentage negative
+					// partway through any long file. Clamp low too — duration metadata can
+					// under-report, pushing the ratio past 100 before EOF.
+					int pct = Math.Clamp((int)(100.0 * totalSamples / expectedSamples), 0, 99);
 					if (pct != lastReportedPercent) {
 						lastReportedPercent = pct;
 						onProgress(pct / 100.0);
