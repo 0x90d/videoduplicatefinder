@@ -1,8 +1,10 @@
 name: Build releases
 
 
-on: [push]
-    
+on:
+  push:
+    branches: [master]
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
@@ -12,10 +14,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Delete all existing assets from the 4.0.x release so they get replaced with fresh
+          # Delete all existing assets from the 4.1.x release so they get replaced with fresh
           # builds. '|| true' covers the very first run, before the release exists.
-          gh release view 4.0.x --json assets --jq '.assets[].name' 2>/dev/null | while read -r asset; do
-            gh release delete-asset 4.0.x "$asset" --yes
+          # 4.0.x is FROZEN at v4.0-final (last old-UI build) and must never be touched again.
+          gh release view 4.1.x --json assets --jq '.assets[].name' 2>/dev/null | while read -r asset; do
+            gh release delete-asset 4.1.x "$asset" --yes
           done || true
 
   build:
@@ -115,14 +118,14 @@ jobs:
     - name: Publish
       uses: softprops/action-gh-release@v3
       with:
-          tag_name: 4.0.x
+          tag_name: 4.1.x
           files: |
             GUI-*
             CLI-*
             Web-*
           body: |
             Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says. If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in VDF folder.
-            4.0 highlights: .NET 10, Avalonia 12, ImageSharp removed (all image processing now via FFmpeg), faster duplicate comparison. Your scan database is migrated automatically on first load; cached image hashes are recomputed on the next scan (videos are unaffected). Downgrading to 3.0.x after that migration is not recommended.
+            4.1 highlights: redesigned interface (guided Set up / Scan / Review flow, scan profiles, reworked results list and settings) on top of all 4.0.x features. Databases and settings carry over. Prefer the old interface? The final classic build stays available in the 4.0.x release.
             Last build based on ${{ steps.vars.outputs.sha_short }}
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
