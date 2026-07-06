@@ -35,8 +35,10 @@
             <Grid Margin="0,0,0,8" ColumnDefinitions="Auto,*,Auto">
                 <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.From]}" />
                 <TextBox
+                    Name="TxtOldPrefix"
                     Grid.Column="1"
                     Margin="8,0"
+                    DragDrop.AllowDrop="True"
                     Text="{Binding OldPrefix}" />
                 <Button
                     Grid.Column="2"
@@ -46,8 +48,10 @@
             <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
                 <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.To]}" />
                 <TextBox
+                    Name="TxtNewPrefix"
                     Grid.Column="1"
                     Margin="8,0"
+                    DragDrop.AllowDrop="True"
                     Text="{Binding NewPrefix}" />
                 <Button
                     Grid.Column="2"
@@ -67,7 +71,7 @@
                 Grid.Row="1"
                 Margin="0,6,0,12"
                 RowDefinitions="*,Auto,Auto">
-                <ListBox Height="100" ItemsSource="{Binding ScanRoots}" />
+                <ListBox Name="ListScanRoots" Height="100" DragDrop.AllowDrop="True" ItemsSource="{Binding ScanRoots}" />
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <Button
                         Margin="8,0"
