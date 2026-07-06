@@ -21,6 +21,14 @@ using VDF.Core.Utils;
 namespace VDF.Core.FFTools {
 	static class FFToolsUtils {
 
+		// Child decoders (ffmpeg thumbnail/audio extraction) are the CPU/disk hogs during a
+		// scan — dropping them to Idle keeps foreground apps responsive while an unattended
+		// scan still runs at full speed (Idle only cedes under contention). Best-effort: a
+		// fast child may already have exited, which throws; ignore.
+		internal static void LowerChildPriority(Process process) {
+			try { process.PriorityClass = ProcessPriorityClass.Idle; } catch { }
+		}
+
 		const string FFprobeExecutableName = "ffprobe";
 		const string FFmpegExecutableName = "ffmpeg";
 		static readonly string ffProbePlatformName;
