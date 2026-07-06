@@ -7,28 +7,34 @@
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:DataType="vm:MainWindowVM">
 
-  <!-- The scan IS what the app is doing, so it owns the center of the window —
-       no more modal "Please Wait" curtain (locked design decision 1). -->
+  <!-- Mockup .scancard: centered 780px column; counts + remaining top-right,
+       elapsed + current file directly under the bar, bordered trust note. -->
   <Grid>
     <StackPanel
-        MaxWidth="760"
+        Width="780"
+        MaxWidth="780"
         Margin="32,44,32,24"
         HorizontalAlignment="Center"
-        VerticalAlignment="Top"
-        Spacing="8">
+        VerticalAlignment="Top">
 
-      <StackPanel Orientation="Horizontal" Spacing="12">
-        <TextBlock FontSize="19" FontWeight="SemiBold"
-                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Title]}" />
-        <Border CornerRadius="10" Padding="10,2" VerticalAlignment="Center"
-                Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
-                IsVisible="{Binding ScanStageText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-          <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding ScanStageText}" />
-        </Border>
-        <TextBlock FontSize="13" Opacity="0.7" VerticalAlignment="Center" Margin="12,0,0,0">
+      <!-- header row -->
+      <DockPanel LastChildFill="False" Margin="0,0,0,6">
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="12">
+          <TextBlock FontSize="19" FontWeight="SemiBold" VerticalAlignment="Center"
+                     Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Title]}" />
+          <Border CornerRadius="10" Padding="10,2" VerticalAlignment="Center"
+                  Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
+                  IsVisible="{Binding ScanStageText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding ScanStageText}" />
+          </Border>
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Right" FontSize="13.5" Opacity="0.8" VerticalAlignment="Center">
           <Run Text="{Binding ScanProgressCount, Mode=OneWay}" />
+          <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.FilesUnit]}" />
+          <Run Text="· ~" /><Run Text="{Binding RemainingTime, Mode=OneWay}" />
+          <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Left]}" />
         </TextBlock>
-      </StackPanel>
+      </DockPanel>
 
       <ProgressBar
           Height="10"
@@ -36,22 +42,22 @@
           Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
           Value="{Binding ScanProgressValue, Mode=OneWay}" />
 
-      <DockPanel LastChildFill="True">
-        <TextBlock DockPanel.Dock="Left" FontSize="12" Opacity="0.6">
+      <!-- elapsed + current file (mockup .scanmeta) -->
+      <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,6,0,0">
+        <TextBlock FontSize="12" Opacity="0.55">
           <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.ElapsedTime]}" />
           <Run Text="{Binding TimeElapsed, Mode=OneWay}" />
-          <Run Text=" · " />
-          <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.RemainingTime]}" />
-          <Run Text="{Binding RemainingTime, Mode=OneWay}" />
         </TextBlock>
-        <TextBlock FontSize="12" Opacity="0.6" Margin="16,0,0,0"
+        <TextBlock FontSize="12" Opacity="0.55" MaxWidth="520"
+                   FontFamily="Cascadia Mono,Consolas,monospace"
                    TextTrimming="PrefixCharacterEllipsis"
                    Text="{Binding ScanCurrentFile}" />
-      </DockPanel>
+      </StackPanel>
 
-      <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
+      <!-- actions + bordered trust note -->
+      <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,26,0,0">
         <Button
-            FontSize="13" Padding="14,6"
+            FontSize="13" Padding="16,7" VerticalAlignment="Center"
             Command="{Binding PauseScanCommand}"
             IsVisible="{Binding !IsPaused}">
           <StackPanel Orientation="Horizontal" Spacing="6">
@@ -60,7 +66,7 @@
           </StackPanel>
         </Button>
         <Button
-            FontSize="13" Padding="14,6"
+            FontSize="13" Padding="16,7" VerticalAlignment="Center"
             Command="{Binding ResumeScanCommand}"
             IsVisible="{Binding IsPaused}">
           <StackPanel Orientation="Horizontal" Spacing="6">
@@ -69,25 +75,29 @@
           </StackPanel>
         </Button>
         <Button
-            FontSize="13" Padding="14,6"
+            FontSize="13" Padding="16,7" VerticalAlignment="Center"
             Command="{Binding StopScanCommand}">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <TextBlock Text="⏹" FontSize="12" VerticalAlignment="Center" />
             <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Stop]}" />
           </StackPanel>
         </Button>
-        <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center" Margin="8,0,0,0"
-                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.PauseNote]}" />
+        <Border CornerRadius="8" Padding="14,7"
+                BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+                BorderThickness="1">
+          <TextBlock FontSize="12.5" Opacity="0.6" VerticalAlignment="Center"
+                     Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.PauseNote]}" />
+        </Border>
       </StackPanel>
 
-      <!-- last few log lines -->
-      <Border Margin="0,22,0,0" Padding="0,10,0,0"
+      <!-- last few log lines (mockup .logtail) -->
+      <Border Margin="0,26,0,0" Padding="0,12,0,0"
               BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
               BorderThickness="0,1,0,0">
         <ItemsControl ItemsSource="{Binding LogTail}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="x:String">
-              <TextBlock FontSize="11.5" Opacity="0.55" Margin="0,1"
+              <TextBlock FontSize="11.5" Opacity="0.55" Margin="0,1.5"
                          TextTrimming="CharacterEllipsis" Text="{Binding}" />
             </DataTemplate>
           </ItemsControl.ItemTemplate>

@@ -40,5 +40,22 @@ namespace VDF.Core.Utils {
 		/// Throws <see cref="OperationCanceledException"/> when <paramref name="cancellationToken"/> is canceled while waiting.</summary>
 		public void WaitWhilePaused(CancellationToken cancellationToken = default) =>
 			resumeEvent.Wait(cancellationToken);
+
+		/// <summary>
+		/// Non-throwing variant for parallel-loop bodies: returns false when the token is
+		/// canceled (Stop pressed while paused) instead of throwing through the worker.
+		/// The loop's own CancellationToken stops further iterations; callers just return.
+		/// Throwing from a body works but is noisy — every Stop-while-paused broke into
+		/// the debugger as a "user-unhandled" OperationCanceledException.
+		/// </summary>
+		public bool TryWaitWhilePaused(CancellationToken cancellationToken = default) {
+			try {
+				resumeEvent.Wait(cancellationToken);
+				return true;
+			}
+			catch (OperationCanceledException) {
+				return false;
+			}
+		}
 	}
 }

@@ -615,5 +615,12 @@
 	"Scan.Pause": "일시정지",
 	"Scan.Resume": "계속",
 	"Scan.Stop": "중지",
-	"Scan.PauseNote": "일시정지하면 진행 상황이 저장됩니다."
+	"Scan.PauseNote": "일시정지하면 진행 상황이 저장됩니다.",
+	"Setup.Drop.Bold": "폴더를 여기에 끌어다 놓기",
+	"Setup.Drop.Text": "포함하려면 — Alt를 누르면 제외 · 또는",
+	"Setup.Drop.Browse": "찾아보기…",
+	"Setup.RememberingDeletedOn": "삭제된 콘텐츠 기억: 켬",
+	"Setup.RememberingDeletedOff": "삭제된 콘텐츠 기억: 끔",
+	"Scan.FilesUnit": "파일",
+	"Scan.Left": "남음"
 }

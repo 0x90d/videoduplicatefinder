@@ -615,5 +615,12 @@
 	"Scan.Pause": "Pausar",
 	"Scan.Resume": "Reanudar",
 	"Scan.Stop": "Detener",
-	"Scan.PauseNote": "Pausar guarda tu progreso."
+	"Scan.PauseNote": "Pausar guarda tu progreso.",
+	"Setup.Drop.Bold": "Suelta carpetas aquí",
+	"Setup.Drop.Text": "para incluirlas — mantén Alt para excluir · o",
+	"Setup.Drop.Browse": "examinar…",
+	"Setup.RememberingDeletedOn": "Recordar contenido eliminado: sí",
+	"Setup.RememberingDeletedOff": "Recordar contenido eliminado: no",
+	"Scan.FilesUnit": "archivos",
+	"Scan.Left": "restante"
 }

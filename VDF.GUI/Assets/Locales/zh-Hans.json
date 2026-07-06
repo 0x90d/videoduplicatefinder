@@ -615,5 +615,12 @@
 	"Scan.Pause": "暂停",
 	"Scan.Resume": "继续",
 	"Scan.Stop": "停止",
-	"Scan.PauseNote": "暂停会保存进度。"
+	"Scan.PauseNote": "暂停会保存进度。",
+	"Setup.Drop.Bold": "将文件夹拖到此处",
+	"Setup.Drop.Text": "以包含它们 — 按住 Alt 则排除 · 或",
+	"Setup.Drop.Browse": "浏览…",
+	"Setup.RememberingDeletedOn": "记住已删除内容：开",
+	"Setup.RememberingDeletedOff": "记住已删除内容：关",
+	"Scan.FilesUnit": "个文件",
+	"Scan.Left": "剩余"
 }

@@ -21,7 +21,7 @@
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Opacity" Value="0.6" />
-      <Setter Property="Margin" Value="0,0,0,10" />
+      <Setter Property="Margin" Value="0,0,0,14" />
     </Style>
     <Style Selector="Border.foldercard">
       <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container3BorderBrush}" />
@@ -40,40 +40,45 @@
     </Style>
   </UserControl.Styles>
 
-  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-    <StackPanel Margin="24,14,24,20" MaxWidth="1200">
+  <!-- Mockup structure: hint strip on top, split panels (right panel tinted, left border),
+       window-wide status line at the bottom. -->
+  <Grid RowDefinitions="Auto,*,Auto">
 
-      <!-- welcome strip -->
-      <Border
-          CornerRadius="8"
-          Padding="12,8"
-          Margin="0,0,0,16"
-          Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
-          BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
-          BorderThickness="1"
-          IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!WelcomeStripDismissed}">
-        <DockPanel LastChildFill="True">
-          <Button
-              DockPanel.Dock="Right"
-              Background="Transparent"
-              BorderThickness="0"
-              FontSize="12"
-              Opacity="0.7"
-              Command="{Binding DismissWelcomeStripCommand}"
-              Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
-          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <TextBlock FontSize="13" FontWeight="SemiBold"
-                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Title]}" />
-            <TextBlock FontSize="13" Opacity="0.8" TextWrapping="Wrap"
-                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Text]}" />
-          </StackPanel>
-        </DockPanel>
-      </Border>
+    <!-- welcome strip -->
+    <Border
+        Grid.Row="0"
+        CornerRadius="8"
+        Padding="12,8"
+        Margin="24,14,24,4"
+        Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
+        BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+        BorderThickness="1"
+        IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!WelcomeStripDismissed}">
+      <DockPanel LastChildFill="True">
+        <Button
+            DockPanel.Dock="Right"
+            Background="Transparent"
+            BorderThickness="0"
+            FontSize="12"
+            Opacity="0.7"
+            VerticalAlignment="Center"
+            Command="{Binding DismissWelcomeStripCommand}"
+            Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <TextBlock FontSize="13" FontWeight="SemiBold"
+                     Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Title]}" />
+          <TextBlock FontSize="13" Opacity="0.8" TextWrapping="Wrap"
+                     Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Text]}" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
 
-      <Grid ColumnDefinitions="1.25*,24,*">
+    <!-- split panels -->
+    <Grid Grid.Row="1" ColumnDefinitions="1.25*,*" Margin="0,10,0,0">
 
-        <!-- ===== left: where to look ===== -->
-        <StackPanel Grid.Column="0">
+      <!-- ===== left: where to look ===== -->
+      <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="28,14,28,20">
           <TextBlock Classes="paneltitle" Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.WhereToLook]}" />
           <ItemsControl ItemsSource="{Binding SetupFolders}">
             <ItemsControl.ItemsPanel>
@@ -111,7 +116,6 @@
                                  TextTrimming="CharacterEllipsis"
                                  Text="{Binding Path}" ToolTip.Tip="{Binding Path}" />
                       <StackPanel Orientation="Horizontal" Spacing="6">
-                        <!-- tiny inline busy dot while a background walk runs -->
                         <ProgressBar Width="40" Height="4" IsIndeterminate="True"
                                      IsVisible="{Binding IsCounting}" VerticalAlignment="Center" />
                         <TextBlock FontSize="12" Opacity="0.7" Text="{Binding MetaText}" />
@@ -122,6 +126,27 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+
+          <!-- dashed drop zone (drop handled view-wide; Alt = exclude) -->
+          <Grid Margin="0,10,0,0" MinHeight="58">
+            <Rectangle
+                Stroke="{actipro:ThemeResource Container4BorderBrush}"
+                StrokeThickness="1.5"
+                StrokeDashArray="4,3"
+                RadiusX="8" RadiusY="8"
+                Fill="Transparent" />
+            <StackPanel Orientation="Horizontal" Spacing="4"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Margin="14,10">
+              <TextBlock FontSize="13" Opacity="0.85" FontWeight="SemiBold"
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Drop.Bold]}" />
+              <TextBlock FontSize="13" Opacity="0.55"
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Drop.Text]}" />
+              <Button Classes="hyperlink" FontSize="13" VerticalAlignment="Center"
+                      Command="{Binding AddIncludesToListCommand}"
+                      Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Drop.Browse]}" />
+            </StackPanel>
+          </Grid>
 
           <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,10,0,0">
             <Button
@@ -134,64 +159,88 @@
                 Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.AddExcluded]}" />
           </StackPanel>
         </StackPanel>
+      </ScrollViewer>
 
-        <!-- ===== right: what to look for ===== -->
-        <StackPanel Grid.Column="2">
-          <TextBlock Classes="paneltitle" Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.WhatToLookFor]}" />
-          <ItemsControl ItemsSource="{Binding ScanProfileOptions}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <StackPanel Spacing="8" />
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:ScanProfileOptionVM">
-                <Border Classes="profilecard"
-                        BorderBrush="{Binding IsActive, Converter={StaticResource ProfileBorderConverter}}"
-                        PointerPressed="OnProfileCardPressed">
-                  <DockPanel LastChildFill="True">
-                    <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.55"
-                               VerticalAlignment="Top" Text="{Binding TimeHint}" />
-                    <StackPanel Spacing="2">
-                      <StackPanel Orientation="Horizontal" Spacing="8">
-                        <RadioButton GroupName="ScanProfiles" IsHitTestVisible="False"
-                                     IsChecked="{Binding IsActive, Mode=OneWay}" />
-                        <TextBlock FontSize="13.5" FontWeight="SemiBold" VerticalAlignment="Center"
-                                   Text="{Binding Name}" />
+      <!-- ===== right: what to look for (tinted panel, left border — mockup .setup-right) ===== -->
+      <Border Grid.Column="1"
+              Background="{actipro:ThemeResource Container2BackgroundBrush}"
+              BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+              BorderThickness="1,0,0,0">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Margin="28,14,28,20">
+            <TextBlock Classes="paneltitle" Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.WhatToLookFor]}" />
+            <ItemsControl ItemsSource="{Binding ScanProfileOptions}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Spacing="8" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ScanProfileOptionVM">
+                  <Border Classes="profilecard"
+                          BorderBrush="{Binding IsActive, Converter={StaticResource ProfileBorderConverter}}"
+                          PointerPressed="OnProfileCardPressed">
+                    <DockPanel LastChildFill="True">
+                      <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.55"
+                                 VerticalAlignment="Top" Text="{Binding TimeHint}" />
+                      <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <RadioButton GroupName="ScanProfiles" IsHitTestVisible="False"
+                                       IsChecked="{Binding IsActive, Mode=OneWay}" />
+                          <TextBlock FontSize="13.5" FontWeight="SemiBold" VerticalAlignment="Center"
+                                     Text="{Binding Name}" />
+                        </StackPanel>
+                        <TextBlock FontSize="12" Opacity="0.7" TextWrapping="Wrap" Text="{Binding Description}" />
                       </StackPanel>
-                      <TextBlock FontSize="12" Opacity="0.7" TextWrapping="Wrap" Text="{Binding Description}" />
-                    </StackPanel>
-                  </DockPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+                    </DockPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
-          <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,18,0,0">
-            <Button
-                FontSize="14"
-                FontWeight="SemiBold"
-                Padding="26,9"
-                Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}"
-                Command="{Binding StartScanCommand}"
-                CommandParameter="FullScan">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="▶" FontSize="12" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Scan]}" />
-              </StackPanel>
-            </Button>
-            <Button
-                Classes="hyperlink"
-                FontSize="13"
-                Click="OnAdvancedSettingsClick"
-                Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.AdvancedSettings]}" />
+            <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,18,0,0">
+              <Button
+                  FontSize="14"
+                  FontWeight="SemiBold"
+                  Padding="26,9"
+                  VerticalAlignment="Center"
+                  Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}"
+                  Command="{Binding StartScanCommand}"
+                  CommandParameter="FullScan">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="▶" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Scan]}" />
+                </StackPanel>
+              </Button>
+              <Button
+                  Classes="hyperlink"
+                  FontSize="13"
+                  VerticalAlignment="Center"
+                  VerticalContentAlignment="Center"
+                  Click="OnAdvancedSettingsClick"
+                  Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.AdvancedSettings]}" />
+            </StackPanel>
+            <TextBlock FontSize="12" Opacity="0.55" Margin="0,12,0,0" TextWrapping="Wrap"
+                       Text="{Binding SetupFootnote}" />
           </StackPanel>
-          <TextBlock FontSize="12" Opacity="0.55" Margin="0,12,0,0" TextWrapping="Wrap"
-                     Text="{Binding SetupFootnote}" />
-          <TextBlock FontSize="12" Opacity="0.55" Margin="0,4,0,0"
-                     Text="{Binding DatabaseInfoText}" />
-        </StackPanel>
-      </Grid>
-    </StackPanel>
-  </ScrollViewer>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <!-- window-wide status line (mockup .statusline) -->
+    <Border Grid.Row="2"
+            Padding="24,6"
+            BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+            BorderThickness="0,1,0,0">
+      <StackPanel Orientation="Horizontal" Spacing="24">
+        <TextBlock FontSize="12" Opacity="0.55" Text="{Binding DatabaseInfoText}" />
+        <TextBlock FontSize="12" Opacity="0.55"
+                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.RememberingDeletedOn]}" />
+        <TextBlock FontSize="12" Opacity="0.55"
+                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!RememberDeletedContent}"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.RememberingDeletedOff]}" />
+      </StackPanel>
+    </Border>
+  </Grid>
 </UserControl>

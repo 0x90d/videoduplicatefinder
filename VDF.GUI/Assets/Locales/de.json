@@ -615,5 +615,12 @@
 	"Scan.Pause": "Pause",
 	"Scan.Resume": "Fortsetzen",
 	"Scan.Stop": "Stopp",
-	"Scan.PauseNote": "Pause speichert den Fortschritt."
+	"Scan.PauseNote": "Pause speichert den Fortschritt.",
+	"Setup.Drop.Bold": "Ordner hierher ziehen",
+	"Setup.Drop.Text": "zum Einschließen — mit Alt ausschließen · oder",
+	"Setup.Drop.Browse": "durchsuchen…",
+	"Setup.RememberingDeletedOn": "Gelöschte Inhalte merken: an",
+	"Setup.RememberingDeletedOff": "Gelöschte Inhalte merken: aus",
+	"Scan.FilesUnit": "Dateien",
+	"Scan.Left": "verbleibend"
 }

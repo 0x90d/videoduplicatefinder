@@ -615,5 +615,12 @@
 	"Scan.Pause": "Pausar",
 	"Scan.Resume": "Retomar",
 	"Scan.Stop": "Parar",
-	"Scan.PauseNote": "Pausar salva seu progresso."
+	"Scan.PauseNote": "Pausar salva seu progresso.",
+	"Setup.Drop.Bold": "Solte pastas aqui",
+	"Setup.Drop.Text": "para incluí-las — segure Alt para excluir · ou",
+	"Setup.Drop.Browse": "procurar…",
+	"Setup.RememberingDeletedOn": "Lembrar conteúdo excluído: ativado",
+	"Setup.RememberingDeletedOff": "Lembrar conteúdo excluído: desativado",
+	"Scan.FilesUnit": "arquivos",
+	"Scan.Left": "restante"
 }

@@ -750,7 +750,8 @@ namespace VDF.Core {
 				currentStageLabel = string.Empty; // per-file analysis reports its own sub-stages
 				InitProgress(DatabaseUtils.Database.Count);
 				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
-					pauseTokenSource.WaitWhilePaused(token);
+					if (!pauseTokenSource.TryWaitWhilePaused(token))
+						return ValueTask.CompletedTask; // canceled while paused — the loop token ends the iteration
 
 					try {
 						entry.invalid = InvalidEntry(entry, out bool reportProgress, out string? invalidReason);
@@ -1233,7 +1234,8 @@ namespace VDF.Core {
 
 			// Compare one entry against candidate buckets (bucketed path).
 			void CompareEntry(FileEntry entry, int entryIndex, IEnumerable<int> candidateBucketKeys) {
-				pauseTokenSource.WaitWhilePaused(cancelationTokenSource.Token);
+				if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
+					return; // canceled while paused — the parallel loop's token ends the iteration
 
 				float difference = 0;
 				bool isDuplicate;
@@ -1338,7 +1340,8 @@ namespace VDF.Core {
 			// Linear compare path for small datasets to avoid bucket bookkeeping overhead.
 			void CompareVideosLinear() {
 				Action<int> compareAction = i => {
-					pauseTokenSource.WaitWhilePaused(cancelationTokenSource.Token);
+					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
+						return; // canceled while paused — the loop guards below end the iteration
 
 					var entry = videoEntries[i];
 					float difference = 0;
@@ -1391,7 +1394,9 @@ namespace VDF.Core {
 						Parallel.For(0, videoEntries.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, compareAction);
 					}
 					else {
-						for (int i = 0; i < videoEntries.Count; i++)
+						// compareAction returns early on cancellation instead of throwing,
+						// so the sequential path must check the token itself.
+						for (int i = 0; i < videoEntries.Count && !cancelationTokenSource.IsCancellationRequested; i++)
 							compareAction(i);
 					}
 				}
