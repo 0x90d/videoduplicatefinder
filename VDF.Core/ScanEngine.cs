@@ -591,7 +591,7 @@ namespace VDF.Core {
 				reason = "file is marked as too dark";
 				return true;
 			}
-			if (!Settings.IncludeNonExistingFiles && !File.Exists(entry.Path))
+			if (!Settings.IncludeMissingFiles && !File.Exists(entry.Path))
 			{
 				reason = "file does not exist";
 				return true;
@@ -659,6 +659,27 @@ namespace VDF.Core {
 		public static Task<bool> LoadDatabase() => Task.Run(DatabaseUtils.LoadDatabase);
 		public static void SaveDatabase() => DatabaseUtils.SaveDatabase();
 		public static void RemoveFromDatabase(FileEntry dbEntry) => DatabaseUtils.Database.Remove(dbEntry);
+
+		// A DB entry can outlive its file. We tell an intentional deletion from a temporarily
+		// offline drive by the file's ROOT: drive mounted but file gone = the user deleted it
+		// (a "tombstone" whose fingerprint is kept when RememberDeletedContent is on, so a
+		// re-download is recognized); drive itself absent (USB unplugged, letter reassigned) =
+		// merely offline, must NOT count as deleted. UNC/unrooted paths can't be probed ->
+		// conservative: offline, never a tombstone.
+		public static bool IsDriveReady(string path) {
+			try {
+				string? root = Path.GetPathRoot(path);
+				if (string.IsNullOrEmpty(root))
+					return false;
+				return new DriveInfo(root).IsReady;
+			}
+			catch {
+				return false;
+			}
+		}
+		public static bool PathIsTombstone(string path) => !File.Exists(path) && IsDriveReady(path);
+		public static bool PathIsOffline(string path) => !File.Exists(path) && !IsDriveReady(path);
+
 		public static void UpdateFilePathInDatabase(string newPath, FileEntry dbEntry) => DatabaseUtils.UpdateFilePath(newPath, dbEntry);
 #pragma warning disable CS8601 // Possible null reference assignment
 		public static bool GetFromDatabase(string path, out FileEntry? dbEntry) {
@@ -756,7 +777,7 @@ namespace VDF.Core {
 						if (entry.OsHash == null && IsInIncludeScope(entry))
 							entry.OsHash = OsHashUtils.TryCompute(entry.Path);
 
-						if (Settings.IncludeNonExistingFiles && entry.grayBytes?.Count > 0) {
+						if (Settings.IncludeMissingFiles && entry.grayBytes?.Count > 0) {
 							bool hasAllInformation = entry.IsImage;
 							if (!hasAllInformation) {
 								hasAllInformation = true;
@@ -784,6 +805,17 @@ namespace VDF.Core {
 								IncrementProgress(entry.Path);
 								return ValueTask.CompletedTask;
 							}
+						}
+
+						// Tombstone/offline safety: the file is gone (deleted, or its drive is
+						// unmounted). A fully-cached entry was already kept above; one with
+						// incomplete cached data cannot be (re)analysed without the file, so
+						// exclude it from this scan instead of spawning ffprobe/ffmpeg on a
+						// missing path (which only errors).
+						if (!File.Exists(entry.Path)) {
+							entry.invalid = true;
+							IncrementProgress(entry.Path);
+							return ValueTask.CompletedTask;
 						}
 
 						if (entry.mediaInfo == null && !entry.IsImage) {
@@ -1934,11 +1966,50 @@ namespace VDF.Core {
 
 		public async void CleanupDatabase() {
 			await Task.Run(() => {
-				DatabaseUtils.CleanupDatabase();
+				DatabaseUtils.CleanupDatabase(preserveDeletedContentMemory: Settings.RememberDeletedContent);
 			});
 			DatabaseCleaned?.Invoke(this, new EventArgs());
 		}
 		public static void ClearDatabase() => DatabaseUtils.ClearDatabase();
+
+		// A "ghost" is an entry whose file is gone from a currently-MOUNTED drive and that carries
+		// no comparable data at all — no usable frame hash and no audio fingerprint. Unlike a
+		// tombstone (missing file WITH fingerprints, kept when RememberDeletedContent is on so a
+		// re-download is recognized), a ghost can never match anything and can never heal (the
+		// file is gone), so it is pure dead weight iterated by every scan. Offline drives are
+		// excluded, same discipline as PathIsTombstone: their files may still exist.
+		static bool IsGhostEntry(FileEntry e, Dictionary<string, bool> driveReadyCache) {
+			if (e.AudioFingerprint != null) return false;
+			if (e.grayBytes != null)
+				foreach (var v in e.grayBytes.Values)
+					if (v != null) return false;   // at least one usable frame hash -> keep as tombstone
+			if (File.Exists(e.Path)) return false;
+			string root = Path.GetPathRoot(e.Path) ?? string.Empty;
+			if (!driveReadyCache.TryGetValue(root, out bool ready))
+				driveReadyCache[root] = ready = IsDriveReady(e.Path);
+			return ready;
+		}
+		/// <summary>Counts what <see cref="PruneGhostEntries"/> would remove (read-only preview).</summary>
+		public static int CountGhostEntries() {
+			var readyCache = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+			int n = 0;
+			foreach (var e in DatabaseUtils.Database)
+				if (IsGhostEntry(e, readyCache)) n++;
+			return n;
+		}
+		/// <summary>Removes ghost entries and saves the database. Do not call during a scan.</summary>
+		public static int PruneGhostEntries() {
+			var readyCache = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+			var ghosts = new List<FileEntry>();
+			foreach (var e in DatabaseUtils.Database)
+				if (IsGhostEntry(e, readyCache)) ghosts.Add(e);
+			foreach (var g in ghosts)
+				DatabaseUtils.Database.Remove(g);
+			if (ghosts.Count > 0)
+				DatabaseUtils.SaveDatabase();
+			Logger.Instance.Info($"Pruned {ghosts.Count:N0} ghost entries (file missing on a mounted drive, no comparable fingerprint data).");
+			return ghosts.Count;
+		}
 		public static bool ExportDataBaseToJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ExportDatabaseToJson(jsonFile, options);
 		public static bool ImportDataBaseFromJson(string jsonFile, JsonSerializerOptions options) => DatabaseUtils.ImportDatabaseFromJson(jsonFile, options);
 
@@ -2022,7 +2093,7 @@ namespace VDF.Core {
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<byte[]>? list = null;
-					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
+					bool needsThumbnails = !Settings.IncludeMissingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
 					int maxDim = Settings.ThumbnailMaxWidth > 0 ? Settings.ThumbnailMaxWidth : 100;
 
@@ -2095,7 +2166,7 @@ namespace VDF.Core {
 			try {
 				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
 					List<byte[]>? list = null;
-					bool needsThumbnails = !Settings.IncludeNonExistingFiles || File.Exists(entry.Path);
+					bool needsThumbnails = !Settings.IncludeMissingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
 
 					int current = Interlocked.Increment(ref done);

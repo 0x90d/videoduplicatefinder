@@ -39,6 +39,19 @@ namespace VDF.Core {
 		public bool IgnoreWhitePixels;
 		public bool CompareHorizontallyFlipped;
 		public bool IncludeNonExistingFiles;
+		/// <summary>
+		/// Remember deleted content: keep the fingerprint of files whose last copy was deleted
+		/// ("tombstones") and include them in comparison, so a re-downloaded copy of content the
+		/// user already curated out is recognized. Also makes database cleanup tombstone-aware.
+		/// Off (default) = VDF behaves exactly as without the feature.
+		/// </summary>
+		public bool RememberDeletedContent;
+		/// <summary>
+		/// Missing files participate in scans when either switch requests it: the user's explicit
+		/// <see cref="IncludeNonExistingFiles"/>, or <see cref="RememberDeletedContent"/> (tombstones
+		/// must be compared even when the user never opted into listing non-existing files).
+		/// </summary>
+		internal bool IncludeMissingFiles => IncludeNonExistingFiles || RememberDeletedContent;
 		public bool ScanAgainstEntireDatabase;
 		public FolderMatchMode FolderMatchMode;
 		public int SameFolderDepth = 1;
