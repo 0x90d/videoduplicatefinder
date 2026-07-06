@@ -560,7 +560,7 @@ namespace VDF.Core {
 
 		// Check if entry should be excluded from the scan for any reason
 		// Returns true if the entry is invalid (should be excluded)
-		bool InvalidEntry(FileEntry entry, out bool reportProgress, out string? reason) {
+		internal bool InvalidEntry(FileEntry entry, out bool reportProgress, out string? reason) {
 			reportProgress = true;
 			reason = null;
 
