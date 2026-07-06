@@ -148,6 +148,18 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(ShowThumbnailRetrievalProgress));
 			}
 		}
+		// Determinate thumbnail-loading progress (GitHub #791). The engine has always
+		// reported (current, total); the old UI just rendered an indeterminate bar.
+		int _ThumbnailProgressCurrent;
+		public int ThumbnailProgressCurrent {
+			get => _ThumbnailProgressCurrent;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailProgressCurrent, value);
+		}
+		int _ThumbnailProgressMax;
+		public int ThumbnailProgressMax {
+			get => _ThumbnailProgressMax;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailProgressMax, value);
+		}
 		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
 			get => _ScanProgressText;
@@ -407,7 +419,14 @@ namespace VDF.GUI.ViewModels {
 
 			this.WhenAnyValue(vm => vm.FilterByPath)
 					.Throttle(TimeSpan.FromMilliseconds(500), RxSchedulers.MainThreadScheduler)
-						.Subscribe(_ => { RebuildSearchPathIndex(); view?.Refresh(); });
+						.Subscribe(_ => { RebuildSearchPathIndex(); RefreshResultsView(); });
+
+			// Switching between the classic DataGrid and the new flattened view rebuilds
+			// the representation that just became active (session stats stay untouched).
+			SettingsFile.Instance.PropertyChanged += (_, e) => {
+				if (e.PropertyName == nameof(SettingsFile.UseClassicResultsView))
+					Dispatcher.UIThread.Post(() => BuildActiveResultsView(resetSessionStats: false));
+			};
 		}
 
 		void Duplicates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -466,6 +485,8 @@ namespace VDF.GUI.ViewModels {
 
 		private void Scanner_ThumbnailProgress(int arg1, int arg2) => Dispatcher.UIThread.Post(() => {
 			ThumbnailRetrievalProgressText = $"Retrieving thumbnails for preview: {arg1}/{arg2}";
+			ThumbnailProgressCurrent = arg1;
+			ThumbnailProgressMax = arg2;
 		});
 
 		void Scanner_ThumbnailsRetrieved(object? sender, EventArgs e) {
@@ -475,6 +496,8 @@ namespace VDF.GUI.ViewModels {
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
 			ThumbnailRetrievalProgressText = string.Empty;
+			ThumbnailProgressCurrent = 0;
+			ThumbnailProgressMax = 0;
 			ShowThumbnailRetrievalProgressBar = false;
 #pragma warning disable CS4014
 			if (SettingsFile.Instance.BackupAfterListChanged)
@@ -627,7 +650,7 @@ namespace VDF.GUI.ViewModels {
 					Scanner.RetrieveThumbnails();
 				}
 
-				BuildDuplicatesView();
+				BuildActiveResultsView();
 				RebuildSearchPathIndex();
 				RefreshGroupStats();
 
@@ -690,7 +713,6 @@ namespace VDF.GUI.ViewModels {
 				view.SortDescriptions.Add(_SortOrder.Sort);
 			view.Filter += DuplicatesFilter;
 			GetDataGrid.ItemsSource = view;
-			TotalSizeRemovedInternal = 0;
 		}
 
 		static DataGrid GetDataGrid => ApplicationHelpers.MainWindow.FindControl<DataGrid>("dataGridGrouping")!;
@@ -718,10 +740,14 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		private DuplicateItemVM? GetSelectedDuplicateItem() {
+			if (!SettingsFile.Instance.UseClassicResultsView)
+				return NewResultsSelectionProvider?.Invoke().FirstOrDefault();
 			return GetDataGrid.SelectedItem as DuplicateItemVM;
 		}
 
 		private List<DuplicateItemVM> GetSelectedDuplicates() {
+			if (!SettingsFile.Instance.UseClassicResultsView)
+				return NewResultsSelectionProvider?.Invoke() ?? new();
 			return GetDataGrid.SelectedItems?.Cast<DuplicateItemVM>().ToList() ?? new();
 		}
 
@@ -1028,7 +1054,7 @@ namespace VDF.GUI.ViewModels {
 				foreach (var item in items)
 					Duplicates.Add(item);
 
-				BuildDuplicatesView();
+				BuildActiveResultsView();
 				RefreshGroupStats();
 				IsBusy = false;
 				stream.Close();
@@ -1090,6 +1116,11 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> OpenItemsByColIdCommand => ReactiveCommand.Create(() => {
+			// The flattened view has no "current column" concept — Enter simply opens.
+			if (!SettingsFile.Instance.UseClassicResultsView) {
+				OpenItems();
+				return;
+			}
 			var tag = GetDataGrid.CurrentColumn?.Tag as string;
 			if (tag == "Thumbnail")
 				OpenItems();
@@ -1662,11 +1693,12 @@ Non-Windows setup:
 		}
 
 		public ReactiveCommand<Unit, Unit> MarkGroupAsNotAMatchCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
+			await MarkGroupAsNotAMatch(data.ItemInfo.GroupId);
+		});
+
+		internal async Task MarkGroupAsNotAMatch(Guid gid) {
 			try {
-				if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
-
-				var gid = data.ItemInfo.GroupId;
-
 				HashSet<string> blacklist = new HashSet<string>(PathComparer.ForCurrentPlatform);
 				foreach (DuplicateItemVM duplicateItem in Duplicates.Where(d => d.ItemInfo.GroupId == gid))
 					blacklist.Add(duplicateItem.ItemInfo.Path);
@@ -1689,7 +1721,7 @@ Non-Windows setup:
 				// Drop singleton groups
 				DropSingletonGroups();
 				RefreshGroupStats();
-				view?.Refresh();
+				RefreshResultsView();
 
 				// Mirror the deletion path: keep backup.scanresults in sync so the mark
 				// survives a crash before the user gets to a clean exit.
@@ -1699,7 +1731,7 @@ Non-Windows setup:
 			catch (Exception ex) {
 				Logger.Instance.Info($"MarkGroupAsNotAMatch failed: {ex}");
 			}
-		});
+		}
 
 		private HashSet<Guid> ComputeBlacklistedGroupIds(IEnumerable<(Guid GroupId, string Path)> items) =>
 			GroupBlacklistFilter.ComputeBlacklistedGroupIds(items, GroupBlacklist);
@@ -1962,7 +1994,7 @@ Non-Windows setup:
 			DropSingletonGroups();
 
 			RefreshGroupStats();
-			view?.Refresh();
+			RefreshResultsView();
 
 			ScanEngine.SaveDatabase();
 
@@ -2017,6 +2049,11 @@ Non-Windows setup:
 		}
 
 		public ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {
+			if (!SettingsFile.Instance.UseClassicResultsView) {
+				collapsedResultsGroups.Clear();
+				RebuildResultsList();
+				return;
+			}
 			if (view == null) return;
 			foreach (var group in view.Groups ?? Enumerable.Empty<object>())
 				if (group is DataGridCollectionViewGroup g)
@@ -2024,6 +2061,12 @@ Non-Windows setup:
 		});
 
 		public ReactiveCommand<Unit, Unit> CollapseAllGroupsCommand => ReactiveCommand.Create(() => {
+			if (!SettingsFile.Instance.UseClassicResultsView) {
+				foreach (var group in resultsGroups)
+					collapsedResultsGroups.Add(group.GroupId);
+				RebuildResultsList();
+				return;
+			}
 			if (view == null) return;
 			foreach (var group in view.Groups ?? Enumerable.Empty<object>())
 				if (group is DataGridCollectionViewGroup g)
@@ -2052,6 +2095,8 @@ Non-Windows setup:
 		});
 
 		Guid? NavigateGroup(bool forward, Guid? fromGroupId = null) {
+			if (!SettingsFile.Instance.UseClassicResultsView)
+				return NavigateGroupNewView(forward, fromGroupId);
 			if (view?.Groups == null) return null;
 			var groups = view.Groups.OfType<DataGridCollectionViewGroup>().ToList();
 			if (groups.Count == 0) return null;

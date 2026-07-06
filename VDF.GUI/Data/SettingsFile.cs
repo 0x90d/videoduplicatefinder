@@ -452,6 +452,44 @@ namespace VDF.GUI.Data {
 			get => _ShowSimilarityColumn;
 			set => this.RaiseAndSetIfChanged(ref _ShowSimilarityColumn, value);
 		}
+		bool _ShowSizeDateColumn = true;
+		[JsonPropertyName("ShowSizeDateColumn")]
+		public bool ShowSizeDateColumn {
+			get => _ShowSizeDateColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowSizeDateColumn, value);
+		}
+		bool _UseClassicResultsView;
+		/// <summary>Fallback to the old DataGrid results view (kept until the new view reaches parity).</summary>
+		[JsonPropertyName("UseClassicResultsView")]
+		public bool UseClassicResultsView {
+			get => _UseClassicResultsView;
+			set => this.RaiseAndSetIfChanged(ref _UseClassicResultsView, value);
+		}
+		ViewModels.ResultsSortMode _ResultsSortMode = ViewModels.ResultsSortMode.WastedSpace;
+		[JsonPropertyName("ResultsSortMode")]
+		public ViewModels.ResultsSortMode ResultsSortMode {
+			get => _ResultsSortMode;
+			set => this.RaiseAndSetIfChanged(ref _ResultsSortMode, value);
+		}
+		bool _ResultsSortDescending = true;
+		[JsonPropertyName("ResultsSortDescending")]
+		public bool ResultsSortDescending {
+			get => _ResultsSortDescending;
+			set => this.RaiseAndSetIfChanged(ref _ResultsSortDescending, value);
+		}
+		double _ResultsPreviewWidth = 160;
+		/// <summary>Width of the Preview column in the results list; scales the filmstrip frames.</summary>
+		[JsonPropertyName("ResultsPreviewWidth")]
+		public double ResultsPreviewWidth {
+			get => _ResultsPreviewWidth;
+			set => this.RaiseAndSetIfChanged(ref _ResultsPreviewWidth, Math.Clamp(value, 56, 480));
+		}
+		bool _ResultsCompactRows;
+		[JsonPropertyName("ResultsCompactRows")]
+		public bool ResultsCompactRows {
+			get => _ResultsCompactRows;
+			set => this.RaiseAndSetIfChanged(ref _ResultsCompactRows, value);
+		}
 		ThumbnailDoubleClickAction _ThumbnailDoubleClickAction = ThumbnailDoubleClickAction.OpenFile;
 		[JsonPropertyName("ThumbnailDoubleClickAction")]
 		public ThumbnailDoubleClickAction ThumbnailDoubleClickAction {

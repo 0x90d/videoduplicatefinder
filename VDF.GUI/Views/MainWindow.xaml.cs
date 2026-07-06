@@ -225,6 +225,11 @@ namespace VDF.GUI.Views {
 			};
 			var dataGrid = this.FindControl<DataGrid>("dataGridGrouping")!;
 			KeyboardShortcutManager.Instance.ApplyBindings(dataGrid, commandMap);
+			// Same shortcuts on the new flattened results view; only one of the two
+			// controls is visible (and thus focusable) at a time.
+			var newResultsView = this.FindControl<DuplicateResultsView>("NewResultsView");
+			if (newResultsView != null)
+				KeyboardShortcutManager.Instance.ApplyBindings(newResultsView.ShortcutTarget, commandMap);
 		}
 
 		void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {

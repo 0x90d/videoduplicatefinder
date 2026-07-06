@@ -248,7 +248,7 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<DuplicateItemVM, Unit> RemoveSingleItemCommand => ReactiveCommand.Create<DuplicateItemVM>(item => {
 			if (item == null) return;
 			Duplicates.Remove(item);
-			view?.Refresh();
+			RefreshResultsView();
 			RefreshGroupStats();
 		});
 
@@ -265,12 +265,12 @@ namespace VDF.GUI.ViewModels {
 		});
 
 		public ReactiveCommand<Unit, Unit> DeleteHighlightedCommand => ReactiveCommand.Create(() => {
-			if (GetDataGrid.SelectedItem == null) return;
-			var selected = GetDataGrid.SelectedItems?.Cast<DuplicateItemVM>().ToList() ?? new();
+			var selected = GetSelectedDuplicates();
+			if (selected.Count == 0) return;
 			foreach (var item in selected)
 				Duplicates.Remove(item);
 			RefreshGroupStats();
-			view?.Refresh();
+			RefreshResultsView();
 		});
 
 		public ReactiveCommand<Unit, Unit> DeleteCheckedItemsWithPromptCommand => ReactiveCommand.CreateFromTask(async () => {

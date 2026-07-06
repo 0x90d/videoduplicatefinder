@@ -104,7 +104,7 @@ namespace VDF.GUI.ViewModels {
 				if (value.Name == _FileType.Name) return;
 				_FileType = value;
 				this.RaisePropertyChanged(nameof(FileType));
-				view?.Refresh();
+				RefreshResultsView();
 			}
 		}
 		SortOrderOption _SortOrder;
@@ -129,7 +129,7 @@ namespace VDF.GUI.ViewModels {
 			set {
 				if (value == _FilterGroupsWithCheckedItems) return;
 				this.RaiseAndSetIfChanged(ref _FilterGroupsWithCheckedItems, value);
-				view?.Refresh();
+				RefreshResultsView();
 			}
 		}
 
@@ -139,7 +139,7 @@ namespace VDF.GUI.ViewModels {
 			set {
 				if (value == _IsFilterEnabled) return;
 				this.RaiseAndSetIfChanged(ref _IsFilterEnabled, value);
-				view?.Refresh();
+				RefreshResultsView();
 			}
 		}
 
@@ -183,7 +183,7 @@ namespace VDF.GUI.ViewModels {
 			set {
 				if (value == _FilterSimilarityFrom) return;
 				this.RaiseAndSetIfChanged(ref _FilterSimilarityFrom, value);
-				view?.Refresh();
+				RefreshResultsView();
 			}
 		}
 		int _FilterSimilarityTo = 100;
@@ -192,7 +192,7 @@ namespace VDF.GUI.ViewModels {
 			set {
 				if (value == _FilterSimilarityTo) return;
 				this.RaiseAndSetIfChanged(ref _FilterSimilarityTo, value);
-				view?.Refresh();
+				RefreshResultsView();
 			}
 		}
 
@@ -202,6 +202,14 @@ namespace VDF.GUI.ViewModels {
 				data.IsVisibleInFilter = true;
 				return true;
 			}
+			return DuplicatesFilterCore(data);
+		}
+
+		/// <summary>
+		/// The filter without the IsFilterEnabled gate: the new results view exposes the
+		/// filters as always-active toolbar chips, so it bypasses the classic on/off toggle.
+		/// </summary>
+		internal bool DuplicatesFilterCore(DuplicateItemVM data) {
 			bool ok = true;
 			if (!string.IsNullOrEmpty(FilterByPath)) {
 				ok = PathMatchesFilter(data.ItemInfo.Path, FilterByPath)

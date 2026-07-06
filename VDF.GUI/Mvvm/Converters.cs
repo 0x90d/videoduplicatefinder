@@ -146,6 +146,44 @@ namespace VDF.GUI.Mvvm {
 		}
 	}
 
+	/// <summary>
+	/// Generic bool switch for XAML resources: returns TrueValue/FalseValue, converting
+	/// to the binding's target type (double for sizes, IBrush for colors) on demand.
+	/// </summary>
+	public sealed class BoolToValueConverter : IValueConverter {
+		public object? TrueValue { get; set; }
+		public object? FalseValue { get; set; }
+
+		public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+			object? result = value is true ? TrueValue : FalseValue;
+			if (result == null) return null;
+			if (targetType == typeof(double))
+				return System.Convert.ToDouble(result, CultureInfo.InvariantCulture);
+			if (typeof(IBrush).IsAssignableFrom(targetType) && result is not IBrush)
+				return new SolidColorBrush(Color.Parse(result.ToString()!));
+			return result;
+		}
+
+		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+	}
+
+	public sealed class FileNameConverter : IValueConverter {
+		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+			value is string path && path.Length > 0 ? Path.GetFileName(path) : string.Empty;
+
+		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+	}
+
+	public sealed class DirectoryPathConverter : IValueConverter {
+		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+			if (value is not string path || path.Length == 0) return string.Empty;
+			try { return Path.GetDirectoryName(path) ?? path; }
+			catch (Exception) { return path; }
+		}
+
+		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+	}
+
 	public sealed class PathDisplaySanitizer : IValueConverter {
 		public static readonly PathDisplaySanitizer Instance = new();
 

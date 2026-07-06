@@ -40,6 +40,9 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="VDF.GUI.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="26.1.1" />
     <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="26.1.1" />
     <PackageReference Include="Avalonia" Version="12.0.4" />

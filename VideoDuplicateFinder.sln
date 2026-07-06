@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VDF.TestSupport", "VDF.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VDF.Benchmarks", "VDF.Benchmarks\VDF.Benchmarks.csproj", "{B8F1A4C5-6D2E-49B7-A0C3-7E1F8B2D3A4C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VDF.GUI.Tests", "VDF.GUI.Tests\VDF.GUI.Tests.csproj", "{7996B571-4F34-42D9-9260-4B338D89D15A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,18 @@ Global
 		{B8F1A4C5-6D2E-49B7-A0C3-7E1F8B2D3A4C}.Release|x64.Build.0 = Release|Any CPU
 		{B8F1A4C5-6D2E-49B7-A0C3-7E1F8B2D3A4C}.Release|x86.ActiveCfg = Release|Any CPU
 		{B8F1A4C5-6D2E-49B7-A0C3-7E1F8B2D3A4C}.Release|x86.Build.0 = Release|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Debug|x64.Build.0 = Debug|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Debug|x86.Build.0 = Debug|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|x64.ActiveCfg = Release|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|x64.Build.0 = Release|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|x86.ActiveCfg = Release|Any CPU
+		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

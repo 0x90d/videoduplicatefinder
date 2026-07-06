@@ -586,8 +586,15 @@
                                 <Grid
                                     x:Name="GridFilter"
                                     Grid.Row="0"
-                                    IsVisible="{Binding IsFilterEnabled}"
                                     Background="{actipro:ThemeResource Container3BackgroundBrush}">
+                                    <!-- The new results view brings its own always-on filter toolbar;
+                                         this classic filter bar only applies to the DataGrid view. -->
+                                    <Grid.IsVisible>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="IsFilterEnabled" />
+                                            <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="UseClassicResultsView" />
+                                        </MultiBinding>
+                                    </Grid.IsVisible>
                                     <WrapPanel
                                     Margin="5">
                                         <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Path]}" />
@@ -667,10 +674,14 @@
                                     </WrapPanel>
                                 </Grid>
                                 <Grid Grid.Row="1">
+                                    <views:DuplicateResultsView
+                                        x:Name="NewResultsView"
+                                        IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!UseClassicResultsView}" />
                                     <DataGrid
                                         Name="dataGridGrouping"
                                         CanUserResizeColumns="True"
                                         LoadingRowGroup="OnLoadingRowGroup"
+                                        IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseClassicResultsView}"
                                         >
                                         <!-- KeyBindings are applied programmatically by KeyboardShortcutManager -->
                                         <DataGrid.Columns>
@@ -1284,9 +1295,13 @@
                                 <!-- Progress info -->
                                 <StackPanel Orientation="Horizontal"
                                     VerticalAlignment="Center">
-                                    <!-- Thumbnail progress (conditional) -->
+                                    <!-- Thumbnail progress: determinate once the engine reports counts (#791);
+                                         indeterminate only in the startup moment before the first event. -->
                                     <StackPanel Orientation="Horizontal" IsVisible="{Binding ShowThumbnailRetrievalProgress}" Margin="0,0,8,0">
-                                        <ProgressBar MinWidth="60" Height="12" IsIndeterminate="{Binding ShowThumbnailRetrievalProgressBar}" />
+                                        <ProgressBar MinWidth="60" Height="12"
+                                            IsIndeterminate="{Binding !ThumbnailProgressMax}"
+                                            Maximum="{Binding ThumbnailProgressMax, Mode=OneWay}"
+                                            Value="{Binding ThumbnailProgressCurrent, Mode=OneWay}" />
                                         <TextBlock FontSize="12" Margin="4,0" Text="{Binding ThumbnailRetrievalProgressText}" />
                                         <Border Width="1" Margin="5,2" Background="{actipro:ThemeResource ButtonForegroundBrush}" />
                                     </StackPanel>
@@ -2033,6 +2048,9 @@
                                                     BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
                                                     BorderThickness="1" CornerRadius="6" Padding="12">
                                                 <StackPanel Spacing="4">
+                                                    <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseClassicResultsView]}"
+                                                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseClassicResultsView}" IsThreeState="False"
+                                                              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseClassicResultsViewTooltip]}" />
                                                     <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowThumbnailColumn]}"
                                                               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}" IsThreeState="False" />
                                                     <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ShowPathColumn]}"
