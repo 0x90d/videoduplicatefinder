@@ -142,6 +142,14 @@ namespace VDF.GUI.Views {
 		/// first layout passes and stop once found or after a few attempts.
 		/// </summary>
 		void HideOwnTitleIfChromeDrawsOne() {
+			// Windows: the system/managed chrome draws a left-aligned caption title even
+			// with the client area extended, and it never appears in this window's visual
+			// tree — the probe below can't see it, which left BOTH titles visible
+			// ("double window title" report). Just never draw our own copy here.
+			if (OperatingSystem.IsWindows()) {
+				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
+				return;
+			}
 			int attempts = 0;
 			void Check(object? sender, EventArgs e) {
 				bool chromeTitleVisible = this.GetVisualDescendants()

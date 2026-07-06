@@ -23,8 +23,7 @@
     <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
     <mvvm:FileNameConverter x:Key="FileNameConverter" />
     <mvvm:DirectoryPathConverter x:Key="DirectoryPathConverter" />
-    <mvvm:BoolToValueConverter x:Key="RowHeightConverter" TrueValue="42" FalseValue="68" />
-    <mvvm:BoolToValueConverter x:Key="PreviewHeightConverter" TrueValue="34" FalseValue="58" />
+    <mvvm:ResultsRowSizingConverter x:Key="ResultsRowSizingConverter" />
     <mvvm:BoolToValueConverter x:Key="ChevronConverter" TrueValue="▸" FalseValue="▾" />
     <mvvm:BoolToValueConverter x:Key="SortDirectionGlyphConverter" TrueValue="↓" FalseValue="↑" />
     <!-- checked rows get a subtle accent tint that works in both themes -->
@@ -284,9 +283,17 @@
         <!-- ~~~~ File row ~~~~ -->
         <DataTemplate DataType="vm:ResultsItemRow">
           <Border
-              Height="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsCompactRows, Converter={StaticResource RowHeightConverter}}"
               Padding="6,0"
               Background="{Binding Item.Checked, Converter={StaticResource CheckedRowBackgroundConverter}}">
+            <!-- Uniform row height follows the Preview column width so dragging the
+                 grip (or raising the thumbnail width setting) scales the whole layout. -->
+            <Border.Height>
+              <MultiBinding Converter="{StaticResource ResultsRowSizingConverter}" ConverterParameter="row">
+                <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsPreviewWidth" />
+                <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsCompactRows" />
+                <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ShowThumbnailColumn" />
+              </MultiBinding>
+            </Border.Height>
             <Border.ContextMenu>
               <ContextMenu>
                 <MenuItem
@@ -343,9 +350,14 @@
                     IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
                 <Border
                     Classes="skeleton-shimmer"
-                    Height="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsCompactRows, Converter={StaticResource PreviewHeightConverter}}"
                     Margin="0,4,8,4"
                     Background="#18808080">
+                  <Border.Height>
+                    <MultiBinding Converter="{StaticResource ResultsRowSizingConverter}" ConverterParameter="image">
+                      <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsPreviewWidth" />
+                      <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsCompactRows" />
+                    </MultiBinding>
+                  </Border.Height>
                   <Border.IsVisible>
                     <MultiBinding Converter="{StaticResource ShowSkeletonConverter}">
                       <Binding Path="Item.Thumbnail" />
@@ -353,15 +365,24 @@
                     </MultiBinding>
                   </Border.IsVisible>
                 </Border>
+                <!-- Height tracks the Preview column width; Uniform keeps the aspect,
+                     DownOnly never upscales past the extracted bitmap (#787). -->
                 <Image
                     Source="{Binding Item.Thumbnail}"
                     Stretch="Uniform"
                     StretchDirection="DownOnly"
-                    MaxHeight="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsCompactRows, Converter={StaticResource PreviewHeightConverter}}"
                     Margin="0,2,8,2"
                     HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     DoubleTapped="OnThumbnailDoubleTapped"
-                    ToolTip.Tip="{Binding Item.ItemInfo.Path}" />
+                    ToolTip.Tip="{Binding Item.ItemInfo.Path}">
+                  <Image.Height>
+                    <MultiBinding Converter="{StaticResource ResultsRowSizingConverter}" ConverterParameter="image">
+                      <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsPreviewWidth" />
+                      <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsCompactRows" />
+                    </MultiBinding>
+                  </Image.Height>
+                </Image>
               </Grid>
               <!-- similarity chip -->
               <Border

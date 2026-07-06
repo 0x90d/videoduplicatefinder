@@ -147,6 +147,22 @@ namespace VDF.GUI.Mvvm {
 	}
 
 	/// <summary>
+	/// Results-list sizing: [0] ResultsPreviewWidth, [1] ResultsCompactRows,
+	/// [2] ShowThumbnailColumn (optional). Parameter "row" yields the uniform row
+	/// height, anything else the thumbnail height. Logic lives in ResultsRowSizing.
+	/// </summary>
+	public sealed class ResultsRowSizingConverter : IMultiValueConverter {
+		public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) {
+			double width = values.Count > 0 && values[0] is double d ? d : 160;
+			bool compact = values.Count > 1 && values[1] is true;
+			bool previewVisible = values.Count < 3 || values[2] is true;
+			return string.Equals(parameter as string, "row", StringComparison.OrdinalIgnoreCase)
+				? Utils.ResultsRowSizing.RowHeight(width, compact, previewVisible)
+				: Utils.ResultsRowSizing.ImageHeight(width, compact);
+		}
+	}
+
+	/// <summary>
 	/// Generic bool switch for XAML resources: returns TrueValue/FalseValue, converting
 	/// to the binding's target type (double for sizes, IBrush for colors) on demand.
 	/// </summary>

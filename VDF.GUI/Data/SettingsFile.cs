@@ -216,7 +216,16 @@ namespace VDF.GUI.Data {
 		[JsonPropertyName("ThumbnailMaxWidth")]
 		public int ThumbnailMaxWidth {
 			get => _ThumbnailMaxWidth;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailMaxWidth, Math.Clamp(value, 48, 960));
+			set {
+				int clamped = Math.Clamp(value, 48, 960);
+				if (clamped == _ThumbnailMaxWidth) return;
+				this.RaiseAndSetIfChanged(ref _ThumbnailMaxWidth, clamped);
+				// The old view sized its layout from this extraction width; keep that
+				// behavior by moving the results Preview column along. The drag grip can
+				// still diverge afterwards (a persisted ResultsPreviewWidth is loaded
+				// after this property and wins on startup).
+				ResultsPreviewWidth = clamped;
+			}
 		}
 		bool _ExtendedFFToolsLogging;
 		[JsonPropertyName("ExtendedFFToolsLogging")]
