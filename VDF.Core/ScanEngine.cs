@@ -85,6 +85,10 @@ namespace VDF.Core {
 			excludedReasonCounts.Clear();
 			excludedReasonLoggedCounts.Clear();
 		}
+		// ParallelOptions.MaxDegreeOfParallelism rejects 0 but accepts -1 (unlimited).
+		// Only 0 needs correcting — clamping with Math.Max(1, ...) turned the -1 default
+		// into single-threaded execution.
+		int ParallelDegree => Settings.MaxDegreeOfParallelism == 0 ? -1 : Settings.MaxDegreeOfParallelism;
 		void LogExcludedFile(FileEntry entry, string reason) {
 			if (!Settings.LogExcludedFiles)
 				return;
@@ -1321,7 +1325,7 @@ namespace VDF.Core {
 			Parallel.For(0, videos.Count - 1,
 				new ParallelOptions {
 					CancellationToken = cancelationTokenSource.Token,
-					MaxDegreeOfParallelism = Math.Max(1, Settings.MaxDegreeOfParallelism)
+					MaxDegreeOfParallelism = ParallelDegree
 				},
 				i => {
 					FileEntry source = videos[i];
@@ -1369,7 +1373,7 @@ namespace VDF.Core {
 				try {
 					Parallel.ForEach(assignments, new ParallelOptions {
 						CancellationToken = cancelationTokenSource.Token,
-						MaxDegreeOfParallelism = Math.Max(1, Settings.MaxDegreeOfParallelism)
+						MaxDegreeOfParallelism = ParallelDegree
 					}, a => {
 						bool pass = VerifyPartialClipVisually(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec, out float visualSim);
 						if (pass) {
