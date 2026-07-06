@@ -1470,10 +1470,10 @@
                                                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}" IsThreeState="False"
                                                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImagesTooltip]}" />
                                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                                                            <TextBlock VerticalAlignment="Center" Text="Thumbnail width (px)" />
+                                                            <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidth]}" />
                                                             <NumericUpDown Minimum="48" Maximum="960" Increment="48"
                                                                            Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}"
-                                                                           ToolTip.Tip="Width of preview thumbnails in pixels. Higher = sharper but uses more memory. Takes effect on next scan." />
+                                                                           ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidthTooltip]}" />
                                                         </StackPanel>
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="1" Spacing="4">

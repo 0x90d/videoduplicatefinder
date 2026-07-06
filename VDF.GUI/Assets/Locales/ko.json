@@ -265,6 +265,8 @@
 	"MainWindow.Settings.Language": "언어:",
 	"MainWindow.Settings.GeneratePreviewImages": "미리보기 이미지 생성",
 	"MainWindow.Settings.GeneratePreviewImagesTooltip": "스캔 완료 시 결과 목록용 미리보기 썸네일을 생성합니다. 끄면 스캔이 더 빨리 끝나고 디스크 캐시를 아끼지만 결과 행에 미리보기가 없어 비교 창으로 직접 확인해야 합니다.",
+	"MainWindow.Settings.ThumbnailMaxWidth": "미리보기 썸네일 너비 (px)",
+	"MainWindow.Settings.ThumbnailMaxWidthTooltip": "결과 목록 미리보기 썸네일의 폭(픽셀). 표시 전용 — 어떤 파일이 매칭되는지에는 영향이 없습니다. 높일수록 선명하지만 메모리를 더 씁니다. 다음 스캔부터 적용됩니다.",
 	"MainWindow.Settings.HardwareAcceleration": "하드웨어 가속:",
 	"MainWindow.Settings.HardwareAccelerationTooltip": "ffmpeg의 하드웨어 가속 모드",
 	"MainWindow.Settings.IgnoreBlackPixels": "검은 픽셀 무시",
