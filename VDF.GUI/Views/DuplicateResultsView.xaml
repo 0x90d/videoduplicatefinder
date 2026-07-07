@@ -105,7 +105,7 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="Auto,Auto,*,Auto">
+  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
 
     <!-- ======== Toolbar: sort + filter chips ======== -->
     <Border
@@ -165,6 +165,61 @@
             Margin="10,0,0,0"
             IsChecked="{Binding FilterGroupsWithCheckedItems}"
             Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.GroupsWithCheckedItems]}" />
+        <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
+        <!-- Auto-select ▾ (stage 7): home of the old Selection menu — grouped by what
+             the action ranges over (per group vs. across all results) -->
+        <Button FontSize="12" Padding="10,3" CornerRadius="12"
+                AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Toolbar.AutoSelect]}">
+          <Button.Content>
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Toolbar.AutoSelect]}" />
+              <TextBlock Text="▾" FontSize="10" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button.Content>
+          <Button.Flyout>
+            <MenuFlyout>
+              <MenuItem IsEnabled="False" FontSize="11"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.AutoSelect.PerGroup]}" />
+              <MenuItem
+                  Command="{Binding CheckLowestQualityCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckLowestQuality]}" />
+              <MenuItem
+                  Command="{Binding CheckOldestCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckOldest]}" />
+              <MenuItem
+                  Command="{Binding CheckNewestCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckNewest]}" />
+              <MenuItem IsEnabled="False" FontSize="11"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.AutoSelect.AcrossResults]}" />
+              <MenuItem
+                  Command="{Binding CheckWhenIdenticalCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckIdenticalKeepFirst]}" />
+              <MenuItem
+                  Command="{Binding CheckWhenIdenticalButSizeCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckIdenticalExceptSizeKeepSmallest]}" />
+              <MenuItem
+                  Command="{Binding CheckMissingFilesCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CheckMissingFiles]}" />
+              <Separator />
+              <MenuItem
+                  Command="{Binding CheckCustomCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ExpressionBuilder]}" />
+              <MenuItem
+                  Command="{Binding OpenCustomSelectionCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CustomSelection]}" />
+              <Separator />
+              <MenuItem
+                  Command="{Binding InvertCheckedItemsCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.InvertCheckedItems]}" />
+              <MenuItem
+                  Command="{Binding ClearCheckedItemsCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ClearCheckedItems]}" />
+              <MenuItem
+                  Command="{Binding UndoSelectionCommand}"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[Shortcut.UndoSelection]}" />
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
         <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
         <TextBox
             MinWidth="170" FontSize="12"
@@ -640,6 +695,17 @@
                 <MenuItem
                     Command="{Binding DeleteCheckedItemsPermanentlyCommand}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.DeletePermanently]}" />
+                <Separator />
+                <MenuItem
+                    Command="{Binding CopyCheckedItemsCommand}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyToFolderEllipsis]}" />
+                <MenuItem
+                    Command="{Binding MoveCheckedItemsCommand}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
+                <Separator />
+                <MenuItem
+                    Command="{Binding ExportCheckedItemsCleanupDryRunReportCommand}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ExportCheckedItemsCleanupDryRun]}" />
               </MenuFlyout>
             </Button.Flyout>
           </Button>
@@ -673,13 +739,6 @@
                 <MenuItem
                     Command="{Binding CreateHardLinksForCheckedItemsAndBlacklistCommand}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListHardLinksExclude]}" />
-                <Separator />
-                <MenuItem
-                    Command="{Binding CopyCheckedItemsCommand}"
-                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyToFolderEllipsis]}" />
-                <MenuItem
-                    Command="{Binding MoveCheckedItemsCommand}"
-                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
               </MenuFlyout>
             </Button.Flyout>
           </Button>
@@ -691,6 +750,44 @@
         </StackPanel>
         <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12" Opacity="0.55"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.Hint]}" />
+      </DockPanel>
+    </Border>
+
+    <!-- ======== Statusline (mockup .statusline): results stats, Review only.
+         Checked count/size live in the action bar; scan progress lives in the
+         Scanning state. Thumbnail loading (#791) stays visible here. ======== -->
+    <Border
+        Grid.Row="4"
+        Padding="10,4"
+        BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+        BorderThickness="0,1,0,0">
+      <DockPanel LastChildFill="False">
+        <StackPanel Orientation="Horizontal" Spacing="16">
+          <TextBlock FontSize="12" Opacity="0.55">
+            <Run Text="{Binding TotalDuplicateGroups, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.Groups]}" />
+            <Run Text="· " /><Run Text="{Binding TotalDuplicates, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.Duplicates]}" />
+            <Run Text="· " /><Run Text="{Binding TotalDuplicatesSize, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.TotalSize]}" />
+          </TextBlock>
+          <TextBlock FontSize="12" Opacity="0.55"
+                     ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.PotentialSavingsTooltip]}">
+            <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.PotentialSavings]}" />
+            <Run Text="{Binding PotentialSavings, Mode=OneWay}" />
+          </TextBlock>
+          <TextBlock FontSize="12" Opacity="0.55">
+            <Run Text="{Binding TotalSizeRemoved, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.RemovedSuffix]}" />
+          </TextBlock>
+        </StackPanel>
+        <!-- determinate thumbnail-load progress (#791) -->
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding ShowThumbnailRetrievalProgress}">
+          <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center"
+                     Text="{Binding ThumbnailRetrievalProgressText}" />
+          <ProgressBar Width="90" Height="5"
+                       IsIndeterminate="{Binding !ThumbnailProgressMax}"
+                       Maximum="{Binding ThumbnailProgressMax, Mode=OneWay}"
+                       Value="{Binding ThumbnailProgressCurrent, Mode=OneWay}" />
+        </StackPanel>
       </DockPanel>
     </Border>
   </Grid>
