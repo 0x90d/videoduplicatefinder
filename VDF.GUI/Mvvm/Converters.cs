@@ -70,6 +70,17 @@ namespace VDF.GUI.Mvvm {
 		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
 	}
 
+	/// <summary>Bitrate cell text ("8.4 Mb/s" / "192 kb/s"); empty for zero/unknown.</summary>
+	public sealed class BitrateDisplayConverter : IValueConverter {
+		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+			if (value is not decimal kbs)
+				return string.Empty;
+			return ResultsBadgeRules.FormatBitrate(kbs, CultureInfo.CurrentCulture);
+		}
+
+		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+	}
+
 	public sealed class ExtraShortDateTimeConverter : IValueConverter {
 
 		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => ExtraShortDateTimeFormater.DateToString((DateTime)value!);

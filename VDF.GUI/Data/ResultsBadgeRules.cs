@@ -16,6 +16,8 @@
 
 using System;
 using System.Globalization;
+using System.Text;
+using VDF.Core.Utils;
 
 namespace VDF.GUI.Data {
 	/// <summary>
@@ -54,7 +56,70 @@ namespace VDF.GUI.Data {
 		/// <summary>The hover-diff marker for "both values are equal".</summary>
 		internal static bool IsEqualDiff(string? diff) => diff == "=";
 
+		/// <summary>
+		/// Bitrate cell text: ≥ 1000 kb/s reads as Mb/s with one decimal, below stays
+		/// in kb/s; zero/unknown renders empty so image rows and unprobed files stay clean.
+		/// </summary>
+		internal static string FormatBitrate(decimal kbs, CultureInfo culture) {
+			if (kbs <= 0) return string.Empty;
+			return kbs >= 1000m
+				? string.Format(culture, "{0:0.0} Mb/s", kbs / 1000m)
+				: string.Format(culture, "{0:0} kb/s", kbs);
+		}
+
 		internal static MetricEmphasis GetEmphasis(bool isBest, string? diff) =>
 			IsEqualDiff(diff) ? MetricEmphasis.Equal : isBest ? MetricEmphasis.Good : MetricEmphasis.Bad;
+
+		/// <summary>"48 kHz" style sample-rate text; empty when unknown.</summary>
+		internal static string FormatSampleRate(int hz, CultureInfo culture) =>
+			hz <= 0 ? string.Empty : string.Format(culture, "{0:0.#} kHz", hz / 1000.0);
+
+		/// <summary>"HEVC · 3840×2160 · 59.94 fps · 00:04:11 · 51.5 Mb/s · HLG" — only fields that exist.</summary>
+		internal static string BuildVideoLine(VDF.Core.ViewModels.DuplicateItem item, CultureInfo culture) => JoinParts(" · ",
+			item.Format,
+			item.FrameSize,
+			item.IsImage || item.Fps <= 0 ? null : string.Format(culture, "{0:0.###} fps", item.Fps),
+			item.IsImage || item.Duration <= TimeSpan.Zero ? null : string.Format(culture, "{0:hh\\:mm\\:ss}", item.Duration),
+			FormatBitrate(item.BitRateKbs, culture),
+			string.IsNullOrEmpty(item.HdrFormat) ? null : item.HdrFormat);
+
+		/// <summary>"AAC · 2.0 · 48 kHz · 192 kb/s" — empty for files without audio.</summary>
+		internal static string BuildAudioLine(VDF.Core.ViewModels.DuplicateItem item, CultureInfo culture) => JoinParts(" · ",
+			item.AudioFormat,
+			item.AudioChannel,
+			FormatSampleRate(item.AudioSampleRate, culture),
+			FormatBitrate(item.AudioBitRateKbs, culture));
+
+		/// <summary>"712 MB · 28.04.2024 18:03" (size, creation date).</summary>
+		internal static string BuildFileLine(VDF.Core.ViewModels.DuplicateItem item, CultureInfo culture) =>
+			item.SizeLong.BytesToString() + " · " + item.DateCreated.ToString("g", culture);
+
+		/// <summary>
+		/// Plain-text summary behind the details panel's Copy button. Joins only the
+		/// lines that exist, so image rows don't produce empty audio lines.
+		/// </summary>
+		internal static string BuildDetailsText(VDF.Core.ViewModels.DuplicateItem item) {
+			var culture = CultureInfo.CurrentCulture;
+			var sb = new StringBuilder();
+			sb.AppendLine(item.Path);
+			var video = BuildVideoLine(item, culture);
+			if (video.Length > 0)
+				sb.AppendLine((item.IsImage ? "Image: " : "Video: ") + video);
+			var audio = BuildAudioLine(item, culture);
+			if (audio.Length > 0)
+				sb.AppendLine("Audio: " + audio);
+			sb.Append("File: ").Append(BuildFileLine(item, culture));
+			return sb.ToString();
+		}
+
+		internal static string JoinParts(string separator, params string?[] parts) {
+			var sb = new StringBuilder();
+			foreach (var part in parts) {
+				if (string.IsNullOrWhiteSpace(part)) continue;
+				if (sb.Length > 0) sb.Append(separator);
+				sb.Append(part);
+			}
+			return sb.ToString();
+		}
 	}
 }

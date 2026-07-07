@@ -457,6 +457,19 @@ namespace VDF.GUI.Data {
 			get => _ShowFormatColumn;
 			set => this.RaiseAndSetIfChanged(ref _ShowFormatColumn, value);
 		}
+		bool _ShowBitrateColumn = true;
+		[JsonPropertyName("ShowBitrateColumn")]
+		public bool ShowBitrateColumn {
+			get => _ShowBitrateColumn;
+			set => this.RaiseAndSetIfChanged(ref _ShowBitrateColumn, value);
+		}
+		// First-results hint: "drag the Preview handle / raise the thumbnail width" (one-shot)
+		bool _ResultsHintDismissed;
+		[JsonPropertyName("ResultsHintDismissed")]
+		public bool ResultsHintDismissed {
+			get => _ResultsHintDismissed;
+			set => this.RaiseAndSetIfChanged(ref _ResultsHintDismissed, value);
+		}
 		bool _ShowSimilarityColumn = true;
 		[JsonPropertyName("ShowSimilarityColumn")]
 		public bool ShowSimilarityColumn {

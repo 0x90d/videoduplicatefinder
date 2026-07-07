@@ -67,6 +67,34 @@ namespace VDF.GUI.ViewModels {
 		public ResultsGroupHeader Group { get; internal set; } = null!;
 		/// <summary>The member the quality ranker would keep; shown as the BEST badge.</summary>
 		public bool IsBest { get; internal set; }
+		/// <summary>
+		/// This member's HDR format beats at least one other member of the group — only
+		/// then does the HDR chip turn green. In uniform groups (all HDR10, or all SDR)
+		/// the chip stays neutral: there is nothing to win.
+		/// </summary>
+		public bool HdrIsUpgrade { get; internal set; }
+	}
+
+	/// <summary>
+	/// Expanded per-file details panel, inserted directly after its owning row (Tier 2 of
+	/// the metadata model: verbose facts that don't rank live here, not in columns).
+	/// Text lines are precomputed here so the template binds plain strings.
+	/// </summary>
+	public sealed class ResultsDetailsRow {
+		public ResultsDetailsRow(ResultsItemRow row) {
+			Row = row;
+			var culture = CultureInfo.CurrentCulture;
+			VideoText = Data.ResultsBadgeRules.BuildVideoLine(row.Item.ItemInfo, culture);
+			AudioText = Data.ResultsBadgeRules.BuildAudioLine(row.Item.ItemInfo, culture);
+			FileText = Data.ResultsBadgeRules.BuildFileLine(row.Item.ItemInfo, culture);
+		}
+		public ResultsItemRow Row { get; }
+		public DuplicateItemVM Item => Row.Item;
+		public string VideoText { get; }
+		public string AudioText { get; }
+		public string FileText { get; }
+		public bool HasAudio => AudioText.Length > 0;
+		public bool IsImage => Item.ItemInfo.IsImage;
 	}
 
 	/// <summary>

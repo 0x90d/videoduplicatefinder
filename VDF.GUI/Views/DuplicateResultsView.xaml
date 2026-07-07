@@ -16,6 +16,7 @@
          control's templates resolves against THIS scope, not the host window's. -->
     <mvvm:SimilarityTierConverter x:Key="SimilarityTierConverter" />
     <mvvm:EqualDiffConverter x:Key="EqualDiffConverter" />
+    <mvvm:BitrateDisplayConverter x:Key="BitrateDisplayConverter" />
     <mvvm:SimilarityToFormattedConverter x:Key="SimilarityToFormattedConverter" />
     <mvvm:MetricDisplayConverter x:Key="MetricDisplayConverter" />
     <mvvm:ShowSkeletonConverter x:Key="ShowSkeletonConverter" />
@@ -103,13 +104,56 @@
     <Style Selector="TextBlock.metric-diff.eq">
       <Setter Property="Foreground" Value="{DynamicResource VdfMutedBrush}" />
     </Style>
+    <!-- HDR chip: neutral bordered info chip; green when it wins a mixed group -->
+    <Style Selector="Border.hdrchip">
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container3BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.hdrchip TextBlock">
+      <Setter Property="FontSize" Value="9.5" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <Style Selector="Border.hdrchip.best">
+      <Setter Property="Background" Value="{DynamicResource VdfGoodSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfGoodBorderBrush}" />
+    </Style>
+    <Style Selector="Border.hdrchip.best TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource VdfGoodBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+
+    <!-- ======== First-results hint (one-shot, dismissible): thumbnails are small by
+         default — point at the Preview drag handle and the thumbnail-width setting ======== -->
+    <Border
+        Grid.Row="0"
+        Padding="10,6"
+        Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
+        BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+        BorderThickness="0,0,0,1"
+        IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!ResultsHintDismissed}">
+      <DockPanel LastChildFill="True">
+        <Button DockPanel.Dock="Right" Classes="group-action" FontSize="12"
+                Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}"
+                Command="{Binding DismissResultsHintCommand}" />
+        <Button DockPanel.Dock="Right" Classes="group-action" FontSize="12" Margin="0,0,6,0"
+                Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Hint.OpenSettings]}"
+                Command="{Binding ShowShellViewCommand}"
+                CommandParameter="Settings" />
+        <TextBlock VerticalAlignment="Center" FontSize="12.5" TextWrapping="Wrap"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Hint.PreviewSize]}" />
+      </DockPanel>
+    </Border>
 
     <!-- ======== Toolbar: sort + filter chips ======== -->
     <Border
-        Grid.Row="0"
+        Grid.Row="1"
         Padding="8,6"
         Background="{actipro:ThemeResource Container2BackgroundBrush}"
         BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
@@ -236,7 +280,7 @@
 
     <!-- ======== Column header strip (right-click: column menu) ======== -->
     <Border
-        Grid.Row="1"
+        Grid.Row="2"
         Padding="8,4"
         Background="{actipro:ThemeResource Container2BackgroundBrush}"
         BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
@@ -255,6 +299,10 @@
               Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.SizeDate]}"
               ToggleType="CheckBox"
               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSizeDateColumn}" />
+          <MenuItem
+              Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Bitrate]}"
+              ToggleType="CheckBox"
+              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowBitrateColumn}" />
           <MenuItem
               Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}"
               ToggleType="CheckBox"
@@ -300,6 +348,9 @@
         <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="150"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}" />
+        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="90"
+                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowBitrateColumn}"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Bitrate]}" />
         <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="110"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSizeDateColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.SizeDate]}" />
@@ -314,7 +365,7 @@
     <!-- ======== Flattened results list ======== -->
     <ListBox
         x:Name="ResultsList"
-        Grid.Row="2"
+        Grid.Row="3"
         Classes="results"
         Background="Transparent"
         ItemsSource="{Binding ResultsRows}"
@@ -542,6 +593,23 @@
                   <TextBlock FontSize="11.5" Opacity="0.8" Text="{Binding Item.ItemInfo.AudioChannel, TargetNullValue=''}" />
                 </StackPanel>
               </StackPanel>
+              <!-- Bitrate: video over audio, same two-line convention as the other columns -->
+              <StackPanel
+                  DockPanel.Dock="Right"
+                  Width="90"
+                  VerticalAlignment="Center"
+                  IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowBitrateColumn}">
+                <TextBlock FontSize="12" Classes="metric-diff"
+                           IsVisible="{Binding !Item.ItemInfo.IsImage}"
+                           Classes.hi="{Binding Item.ItemInfo.IsBestBitRateKbs}"
+                           Classes.lo="{Binding !Item.ItemInfo.IsBestBitRateKbs}"
+                           Text="{Binding Item.ItemInfo.BitRateKbs, Converter={StaticResource BitrateDisplayConverter}}" />
+                <TextBlock FontSize="11.5" Classes="metric-diff"
+                           IsVisible="{Binding !Item.ItemInfo.IsImage}"
+                           Classes.hi="{Binding Item.ItemInfo.IsBestAudioBitRateKbs}"
+                           Classes.lo="{Binding !Item.ItemInfo.IsBestAudioBitRateKbs}"
+                           Text="{Binding Item.ItemInfo.AudioBitRateKbs, Converter={StaticResource BitrateDisplayConverter}}" />
+              </StackPanel>
               <!-- Size · Date -->
               <StackPanel
                   DockPanel.Dock="Right"
@@ -586,20 +654,28 @@
                     </TextBlock.Text>
                   </TextBlock>
                 </Border>
-                <Border Tag="framesize" Background="Transparent"
-                        PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                  <TextBlock FontSize="11.5" Classes="metric-diff"
-                             Classes.hi="{Binding Item.ItemInfo.IsBestFrameSize}"
-                             Classes.lo="{Binding !Item.ItemInfo.IsBestFrameSize}"
-                             Classes.eq="{Binding Item.FrameSizeDiff, Converter={StaticResource EqualDiffConverter}}">
-                    <TextBlock.Text>
-                      <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
-                        <Binding Path="Item.ItemInfo.FrameSize" />
-                        <Binding Path="Item.FrameSizeDiff" />
-                      </MultiBinding>
-                    </TextBlock.Text>
-                  </TextBlock>
-                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <Border Tag="framesize" Background="Transparent"
+                          PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
+                    <TextBlock FontSize="11.5" Classes="metric-diff"
+                               Classes.hi="{Binding Item.ItemInfo.IsBestFrameSize}"
+                               Classes.lo="{Binding !Item.ItemInfo.IsBestFrameSize}"
+                               Classes.eq="{Binding Item.FrameSizeDiff, Converter={StaticResource EqualDiffConverter}}">
+                      <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
+                          <Binding Path="Item.ItemInfo.FrameSize" />
+                          <Binding Path="Item.FrameSizeDiff" />
+                        </MultiBinding>
+                      </TextBlock.Text>
+                    </TextBlock>
+                  </Border>
+                  <!-- HDR chip: neutral information; green only when this member's
+                       format outranks another member of the group -->
+                  <Border Classes="hdrchip" Classes.best="{Binding HdrIsUpgrade}"
+                          IsVisible="{Binding Item.ItemInfo.HdrFormat, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding Item.ItemInfo.HdrFormat}" />
+                  </Border>
+                </StackPanel>
               </StackPanel>
               <!-- File name + path (fills remaining width) -->
               <StackPanel Margin="6,0,6,0" VerticalAlignment="Center" Spacing="1">
@@ -632,6 +708,11 @@
                                FontSize="10" FontWeight="Bold"
                                Foreground="{DynamicResource VdfMutedBrush}" />
                   </Border>
+                  <!-- Tier-2 metadata: toggles the details panel under this row -->
+                  <Button Classes="group-action" Padding="4,0" FontSize="12" Content="ⓘ"
+                          ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.DetailsTip]}"
+                          Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleItemDetailsCommand}"
+                          CommandParameter="{Binding Item}" />
                   </StackPanel>
                   <TextBlock
                       FontSize="13"
@@ -656,12 +737,50 @@
             </DockPanel>
           </Border>
         </DataTemplate>
+
+        <!-- ~~~~ Details panel (Tier 2 metadata, expanded via ⓘ) ~~~~ -->
+        <DataTemplate DataType="vm:ResultsDetailsRow">
+          <Border Margin="36,2,16,6" Padding="14,8" CornerRadius="8"
+                  Background="{actipro:ThemeResource Container2BackgroundBrush}"
+                  BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+                  BorderThickness="1">
+            <DockPanel LastChildFill="True">
+              <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+                <Button Classes="group-action" FontSize="11.5"
+                        Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Copy]}"
+                        Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).CopyItemDetailsCommand}"
+                        CommandParameter="{Binding Item}" />
+              </StackPanel>
+              <WrapPanel>
+                <StackPanel Margin="0,0,26,2" MinWidth="220">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Classes="colheader" IsVisible="{Binding !IsImage}"
+                               Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Video]}" />
+                    <TextBlock Classes="colheader" IsVisible="{Binding IsImage}"
+                               Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Image]}" />
+                  </StackPanel>
+                  <TextBlock FontSize="12" Opacity="0.8" TextWrapping="Wrap" Text="{Binding VideoText}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,26,2" MinWidth="180" IsVisible="{Binding HasAudio}">
+                  <TextBlock Classes="colheader"
+                             Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Audio]}" />
+                  <TextBlock FontSize="12" Opacity="0.8" TextWrapping="Wrap" Text="{Binding AudioText}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,26,2" MinWidth="160">
+                  <TextBlock Classes="colheader"
+                             Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.File]}" />
+                  <TextBlock FontSize="12" Opacity="0.8" TextWrapping="Wrap" Text="{Binding FileText}" />
+                </StackPanel>
+              </WrapPanel>
+            </DockPanel>
+          </Border>
+        </DataTemplate>
       </ListBox.DataTemplates>
     </ListBox>
 
     <!-- ======== Action bar (appears with checked items) ======== -->
     <Border
-        Grid.Row="3"
+        Grid.Row="4"
         Padding="10,7"
         Background="{actipro:ThemeResource Container2BackgroundBrush}"
         BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
@@ -757,7 +876,7 @@
          Checked count/size live in the action bar; scan progress lives in the
          Scanning state. Thumbnail loading (#791) stays visible here. ======== -->
     <Border
-        Grid.Row="4"
+        Grid.Row="5"
         Padding="10,4"
         BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
         BorderThickness="0,1,0,0">

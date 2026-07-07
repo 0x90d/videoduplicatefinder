@@ -17,6 +17,7 @@
 using System.Linq;
 using System.Reactive;
 using Avalonia.Collections;
+using Avalonia.Input.Platform;
 using ReactiveUI;
 using VDF.GUI.Data;
 
@@ -31,6 +32,7 @@ namespace VDF.GUI.ViewModels {
 		public AvaloniaList<object> ResultsRows { get; } = new();
 
 		readonly HashSet<Guid> collapsedResultsGroups = new();
+		readonly HashSet<DuplicateItemVM> expandedResultsDetails = new();
 		/// <summary>Groups of the last build, in display order (for navigation).</summary>
 		List<ResultsGroupHeader> resultsGroups = new();
 		bool resultsHavePartialClips;
@@ -97,6 +99,7 @@ namespace VDF.GUI.ViewModels {
 				SortMode = SettingsFile.Instance.ResultsSortMode,
 				SortDescending = SettingsFile.Instance.ResultsSortDescending,
 				CollapsedGroups = collapsedResultsGroups,
+				ExpandedDetails = expandedResultsDetails,
 				PickBest = members => VDF.Core.Utils.QualityRanker.PickKeeper(
 					members.ToList(), ResolveCriteria(QualityCriteriaOrder), d => d.ItemInfo.IsImage),
 				Formats = BuildGroupSummaryFormats(),
@@ -123,6 +126,24 @@ namespace VDF.GUI.ViewModels {
 			if (!collapsedResultsGroups.Remove(header.GroupId))
 				collapsedResultsGroups.Add(header.GroupId);
 			RebuildResultsList();
+		});
+
+		/// <summary>Expands/collapses the per-file details panel under a row (Tier 2 metadata).</summary>
+		public ReactiveCommand<DuplicateItemVM, Unit> ToggleItemDetailsCommand => ReactiveCommand.Create<DuplicateItemVM>(item => {
+			if (item == null) return;
+			if (!expandedResultsDetails.Remove(item))
+				expandedResultsDetails.Add(item);
+			RebuildResultsList();
+		});
+
+		public ReactiveCommand<DuplicateItemVM, Unit> CopyItemDetailsCommand => ReactiveCommand.CreateFromTask<DuplicateItemVM>(async item => {
+			if (item == null) return;
+			if (ApplicationHelpers.MainWindow.Clipboard is { } clipboard)
+				await clipboard.SetTextAsync(ResultsBadgeRules.BuildDetailsText(item.ItemInfo));
+		});
+
+		public ReactiveCommand<Unit, Unit> DismissResultsHintCommand => ReactiveCommand.Create(() => {
+			SettingsFile.Instance.ResultsHintDismissed = true;
 		});
 
 		public ReactiveCommand<ResultsGroupHeader, Unit> CompareGroupHeaderCommand => ReactiveCommand.Create<ResultsGroupHeader>(header => {

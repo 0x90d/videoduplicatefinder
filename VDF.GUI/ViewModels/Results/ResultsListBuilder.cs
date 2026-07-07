@@ -28,6 +28,8 @@ namespace VDF.GUI.ViewModels {
 		public bool SortDescending { get; init; } = true;
 		/// <summary>Groups whose member rows are omitted (header only).</summary>
 		public IReadOnlySet<Guid>? CollapsedGroups { get; init; }
+		/// <summary>Items whose details panel is expanded (a details row follows their row).</summary>
+		public IReadOnlySet<DuplicateItemVM>? ExpandedDetails { get; init; }
 		/// <summary>Picks the member the BEST badge goes to. Null: no badges.</summary>
 		public Func<IReadOnlyList<DuplicateItemVM>, DuplicateItemVM?>? PickBest { get; init; }
 		/// <summary>Tombstone test, replaceable for tests. Defaults to <see cref="DuplicateItemVM.IsTombstone"/>.</summary>
@@ -114,6 +116,15 @@ namespace VDF.GUI.ViewModels {
 						foreach (var row in rows)
 							row.IsBest = ReferenceEquals(row.Item, best);
 				}
+
+				// HDR chip highlight: green only when this member's format outranks
+				// another member of the SAME group (mixed dynamic ranges).
+				int minHdrRank = int.MaxValue;
+				foreach (var m in members)
+					if (m.ItemInfo.HdrFormatRank < minHdrRank) minHdrRank = m.ItemInfo.HdrFormatRank;
+				foreach (var row in rows)
+					row.HdrIsUpgrade = row.Item.ItemInfo.HdrFormatRank > minHdrRank;
+
 				headers.Add(header);
 			}
 
@@ -129,8 +140,11 @@ namespace VDF.GUI.ViewModels {
 				flat.Add(header);
 				foreach (var row in header.Rows) {
 					hasPartialClips |= row.Item.ItemInfo.Flags.HasFlag(Core.DuplicateFlags.PartialClip);
-					if (!header.IsCollapsed)
+					if (!header.IsCollapsed) {
 						flat.Add(row);
+						if (request.ExpandedDetails?.Contains(row.Item) == true)
+							flat.Add(new ResultsDetailsRow(row));
+					}
 				}
 			}
 
