@@ -20,15 +20,15 @@ using System.Reflection;
 
 namespace VDF.GUI.Utils {
 	// Build/version identity for the About box, the window titlebar and the diagnostics
-	// report. Releases all publish to the single "4.0.x" tag, so the git commit baked in
+	// report. Releases all publish to the single "4.1.x" tag, so the git commit baked in
 	// at build time (see Directory.Build.props) is the meaningful build identifier.
 	public static class VersionInfo {
 		static readonly Assembly Asm = Assembly.GetEntryAssembly() ?? typeof(VersionInfo).Assembly;
 
-		// Numeric assembly version, e.g. "4.0.0".
+		// Numeric assembly version, e.g. "4.1.0".
 		public static string Version { get; } = Asm.GetName().Version is { } v
 			? $"{v.Major}.{v.Minor}.{v.Build}"
-			: "4.0.0";
+			: "4.1.0";
 
 		// Short git commit, e.g. "a225a45", or "unknown" when built without git.
 		public static string CommitId { get; } = Metadata("CommitId") ?? "unknown";
@@ -38,10 +38,10 @@ namespace VDF.GUI.Utils {
 
 		static bool HasCommit => CommitId.Length > 0 && CommitId != "unknown";
 
-		// Compact form for the titlebar, e.g. "4.0.0 (a225a45)".
+		// Compact form for the titlebar, e.g. "4.1.0 (a225a45)".
 		public static string ShortDisplay => HasCommit ? $"{Version} ({CommitId})" : Version;
 
-		// Verbose form for the About box, e.g. "4.0.0 (build a225a45, 2026-07-01)".
+		// Verbose form for the About box, e.g. "4.1.0 (build a225a45, 2026-07-01)".
 		public static string LongDisplay {
 			get {
 				if (!HasCommit)

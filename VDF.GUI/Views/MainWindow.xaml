@@ -32,7 +32,7 @@
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <Window.Title>
-        <!-- Localized app title plus the build identity (e.g. "… 4.0.0 (a225a45)").
+        <!-- Localized app title plus the build identity (e.g. "… 4.1.0 (a225a45)").
              Releases roll to one tag, so the commit is the meaningful version. -->
         <MultiBinding StringFormat="{}{0}  —  {1}">
             <Binding Path="[App.Title]" Source="{x:Static local:App.Lang}" />

@@ -1,10 +1,11 @@
 <Project>
 
   <PropertyGroup>
-    <!-- Base version for all VDF assemblies. Releases publish to the single "4.0.x"
+    <!-- Base version for all VDF assemblies. Releases publish to the single "4.1.x"
          GitHub tag and never bump a number, so the git commit baked in below is the
-         real build identifier the About box / diagnostics report show. -->
-    <VersionPrefix>4.0.0</VersionPrefix>
+         real build identifier the About box / diagnostics report show. Must match the
+         tag_name in .github/workflows/releases.yml (enforced by a test). -->
+    <VersionPrefix>4.1.0</VersionPrefix>
   </PropertyGroup>
 
   <!-- Bake the current git commit + build date into assembly metadata so the GUI can
