@@ -76,13 +76,13 @@ namespace VDF.Core.FFTools {
 			string detail = BuildNativeFailureDetail(e);
 			if (n >= NativeFailureThreshold) {
 				_nativeDisabledForSession = true;
-				Logger.Instance.Info(
+				Logger.Instance.Warn(
 					$"Native FFmpeg binding failed on {n} consecutive files; using process mode for the rest of this scan. " +
 					$"Last error on '{file}': {e.GetType().Name}: {e.Message}.{detail} " +
 					$"If this persists, set hardware acceleration to 'none' or disable 'Use native FFmpeg binding'.");
 			}
 			else {
-				Logger.Instance.Info($"Failed using native FFmpeg binding on '{file}', switching to process mode. Exception: {e}{detail}");
+				Logger.Instance.Warn($"Failed using native FFmpeg binding on '{file}', switching to process mode. Exception: {e}{detail}");
 			}
 		}
 
@@ -119,7 +119,7 @@ namespace VDF.Core.FFTools {
 			if (HardwareAccelerationMode == FFHardwareAccelerationMode.vulkan) {
 				if (!_vulkanNativeWarningLogged) {
 					_vulkanNativeWarningLogged = true;
-					Logger.Instance.Info(
+					Logger.Instance.Warn(
 						"Vulkan hardware acceleration is not supported with the native FFmpeg binding " +
 						"(it crashes the process on some drivers, #799); decoding in software instead. " +
 						"Disable 'Use native FFmpeg binding' to run Vulkan via the CLI, or pick another " +
@@ -419,7 +419,7 @@ namespace VDF.Core.FFTools {
 				}
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}{BuildNativeFailureDetail(e)}");
+				Logger.Instance.Warn($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}{BuildNativeFailureDetail(e)}");
 			}
 
 			var psi = new ProcessStartInfo {
@@ -591,7 +591,7 @@ namespace VDF.Core.FFTools {
 				// a damaged file from a real bug without reproducing it.
 				string? hint = bytes == null ? FfmpegErrorClassifier.Classify(errOut) : null;
 				string hintSuffix = hint != null ? $"{Environment.NewLine}Hint: {hint}" : string.Empty;
-				Logger.Instance.Info($"{message}{errOut}{hintSuffix}");
+				Logger.Instance.Warn($"{message}{errOut}{hintSuffix}");
 			}
 			return bytes;
 		}
@@ -614,7 +614,7 @@ namespace VDF.Core.FFTools {
 			if (ShouldUseNativeBinding && TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete)) {
 				if (tooDarkCounter == missingPositions) {
 					videoFile.Flags.Set(EntryFlags.TooDark);
-					Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
+					Logger.Instance.Warn($"Graybytes too dark of: {videoFile.Path}");
 					return false;
 				}
 				return true;
@@ -650,7 +650,7 @@ namespace VDF.Core.FFTools {
 			}
 			if (tooDarkCounter == missingPositions) {
 				videoFile.Flags.Set(EntryFlags.TooDark);
-				Logger.Instance.Info($"ERROR: Graybytes too dark of: {videoFile.Path}");
+				Logger.Instance.Warn($"Graybytes too dark of: {videoFile.Path}");
 				return false;
 			}
 			return true;
@@ -781,7 +781,7 @@ namespace VDF.Core.FFTools {
 			}
 			catch (Exception e) {
 				if (extendedLogging)
-					Logger.Instance.Info($"Native image decode failed on '{path}', falling back to process mode. Exception: {e}");
+					Logger.Instance.Warn($"Native image decode failed on '{path}', falling back to process mode. Exception: {e}");
 				return false;
 			}
 		}
@@ -825,7 +825,7 @@ namespace VDF.Core.FFTools {
 					}
 				}
 				catch (Exception e) {
-					Logger.Instance.Info($"Native BGRA->JPEG encode failed, falling back to process mode. Exception: {e}");
+					Logger.Instance.Warn($"Native BGRA->JPEG encode failed, falling back to process mode. Exception: {e}");
 				}
 			}
 
@@ -870,7 +870,7 @@ namespace VDF.Core.FFTools {
 				return jpeg.Length > 0 ? jpeg : null;
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"BGRA->JPEG encode via FFmpeg process failed: {e.Message}");
+				Logger.Instance.Warn($"BGRA->JPEG encode via FFmpeg process failed: {e.Message}");
 				try { if (!process.HasExited) process.Kill(); } catch { }
 				return null;
 			}

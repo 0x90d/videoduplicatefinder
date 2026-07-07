@@ -86,7 +86,7 @@ namespace VDF.GUI.ViewModels {
 				File.Delete(TempDatabaseFile);
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed to delete temporarily database file '{TempDatabaseFile}', because of {e}");
+				Logger.Instance.Warn($"Failed to delete temporarily database file '{TempDatabaseFile}', because of {e}");
 			}
 		}
 		public ReactiveCommand<Unit, Unit> DeleteSelectedEntries => ReactiveCommand.Create(() => {

@@ -157,7 +157,7 @@ namespace VDF.Core.Utils {
 				return true;
 			}
 			catch (Exception ex) {
-				Logger.Instance.Info($"Failed getting file id for file: {filepath}, reason: {ex.Message}");
+				Logger.Instance.Warn($"Failed getting file id for file: {filepath}, reason: {ex.Message}");
 				return false;
 			}
 		}
@@ -211,7 +211,7 @@ namespace VDF.Core.Utils {
 				return links;
 			}
 			catch (Exception ex) {
-				Logger.Instance.Info($"Failed getting hard links of file: {filepath}, reason: {ex.Message}");
+				Logger.Instance.Warn($"Failed getting hard links of file: {filepath}, reason: {ex.Message}");
 				return Array.Empty<string>();
 			}
 			finally {

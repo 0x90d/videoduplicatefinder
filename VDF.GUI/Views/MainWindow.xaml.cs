@@ -105,7 +105,7 @@ namespace VDF.GUI.Views {
 					SettingsFile.SaveSettings();
 				}
 				catch (Exception ex) {
-					Logger.Instance.Info($"Saving settings failed: {ex.Message}");
+					Logger.Instance.Error($"Saving settings failed: {ex.Message}");
 				}
 			};
 			SettingsFile.Instance.PropertyChanged += (_, __) => RestartSettingsSaveDebounce();
@@ -281,13 +281,6 @@ namespace VDF.GUI.Views {
 			if (hasExited) return;
 			hasExited = true;
 			SettingsFile.SaveSettings();
-		}
-
-		// Only offer "Open In Folder" when the right-clicked log line actually
-		// resolves to a file/folder that exists; otherwise suppress the menu.
-		private void LogContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
-			if (DataContext is MainWindowVM vm && MainWindowVM.TryExtractExistingPath(vm.SelectedLogItem) == null)
-				e.Cancel = true;
 		}
 
 		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) {

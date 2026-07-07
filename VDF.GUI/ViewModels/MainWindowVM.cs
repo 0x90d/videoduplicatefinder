@@ -43,9 +43,8 @@ using VDF.GUI.Views;
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
 		public ScanEngine Scanner { get; } = new();
-		public ObservableCollection<string> LogItems { get; } = new();
-		string? _SelectedLogItem;
-		public string? SelectedLogItem {
+		object? _SelectedLogItem;
+		public object? SelectedLogItem {
 			get => _SelectedLogItem;
 			set => this.RaiseAndSetIfChanged(ref _SelectedLogItem, value);
 		}
@@ -71,7 +70,7 @@ namespace VDF.GUI.ViewModels {
 				}
 			}
 			catch (Exception ex) {
-				Logger.Instance.Info($"Failed to migrate BlacklistedGroups.json: {ex.Message}");
+				Logger.Instance.Warn($"Failed to migrate BlacklistedGroups.json: {ex.Message}");
 			}
 		}
 
@@ -370,9 +369,7 @@ namespace VDF.GUI.ViewModels {
 				File.Delete(Path.Combine(CoreUtils.CurrentFolder, "log.txt"));
 			}
 			catch { }
-			Logger.Instance.LogItemAdded += Instance_LogItemAdded;
-			//Ensure items added before GUI was ready will be shown
-			Instance_LogItemAdded(string.Empty);
+			Logger.Instance.LogEntryAdded += Instance_LogEntryAdded;
 
 			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
 
@@ -578,7 +575,7 @@ namespace VDF.GUI.ViewModels {
 				return;
 			if (!TryParseScheduledTime(SettingsFile.Instance.ScheduledScanTime, out var scheduledTime)) {
 				if (!scheduleTimeInvalidNotified) {
-					Logger.Instance.Info(App.Lang["Log.InvalidScheduledScanTime"]);
+					Logger.Instance.Warn(App.Lang["Log.InvalidScheduledScanTime"]);
 					scheduleTimeInvalidNotified = true;
 				}
 				return;
@@ -603,24 +600,24 @@ namespace VDF.GUI.ViewModels {
 		void TryStartScheduledScan() {
 			if (IsScanning || IsBusy) return;
 			if (!string.IsNullOrEmpty(SettingsFile.Instance.CustomDatabaseFolder) && !Directory.Exists(SettingsFile.Instance.CustomDatabaseFolder)) {
-				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingDatabaseFolder"]);
+				Logger.Instance.Warn(App.Lang["Log.ScheduledScanSkippedMissingDatabaseFolder"]);
 				return;
 			}
 			if (Duplicates.Count > 0) {
-				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedWithResults"]);
+				Logger.Instance.Warn(App.Lang["Log.ScheduledScanSkippedWithResults"]);
 				return;
 			}
 			if ((SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) ||
 				(!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists)) {
-				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingFfmpeg"]);
+				Logger.Instance.Warn(App.Lang["Log.ScheduledScanSkippedMissingFfmpeg"]);
 				return;
 			}
 			if (!ScanEngine.FFprobeExists) {
-				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedMissingFfprobe"]);
+				Logger.Instance.Warn(App.Lang["Log.ScheduledScanSkippedMissingFfprobe"]);
 				return;
 			}
 			if (SettingsFile.Instance.Includes.Count == 0) {
-				Logger.Instance.Info(App.Lang["Log.ScheduledScanSkippedNoFolders"]);
+				Logger.Instance.Warn(App.Lang["Log.ScheduledScanSkippedNoFolders"]);
 				return;
 			}
 			scheduledScanInProgress = true;
@@ -696,7 +693,7 @@ namespace VDF.GUI.ViewModels {
 						Logger.Instance.Info(string.Format(App.Lang["Log.AutoAppliedPreset"], preset.Name));
 					}
 					else {
-						Logger.Instance.Info(string.Format(App.Lang["Log.AutoApplyPresetMissing"], SettingsFile.Instance.AutoApplySelectionPreset));
+						Logger.Instance.Warn(string.Format(App.Lang["Log.AutoApplyPresetMissing"], SettingsFile.Instance.AutoApplySelectionPreset));
 					}
 				}
 
@@ -898,7 +895,7 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch (Exception ex) {
 				string error = string.Format(App.Lang["Message.ExportScanResultsFailed"], ex);
-				Logger.Instance.Info(error);
+				Logger.Instance.Error(error);
 				await MessageBoxService.Show(error);
 			}
 		});
@@ -1008,7 +1005,7 @@ namespace VDF.GUI.ViewModels {
 			catch (Exception ex) {
 				IsBusy = false;
 				string error = string.Format(App.Lang["Message.ExportScanResultsFailed"], ex);
-				Logger.Instance.Info(error);
+				Logger.Instance.Error(error);
 				await MessageBoxService.Show(error);
 			}
 			finally {
@@ -1056,7 +1053,7 @@ namespace VDF.GUI.ViewModels {
 
 				int skipped = items.RemoveAll(it => it?.ItemInfo == null);
 				if (skipped > 0)
-					Logger.Instance.Info($"Skipped {skipped} corrupt scan result entries (missing ItemInfo)");
+					Logger.Instance.Warn($"Skipped {skipped} corrupt scan result entries (missing ItemInfo)");
 				if (items.Count == 0)
 					throw new JsonException("All scan result entries were corrupt");
 
@@ -1097,13 +1094,13 @@ namespace VDF.GUI.ViewModels {
 			catch (JsonException) {
 				IsBusy = false;
 				string error = App.Lang["Message.ImportScanResultsCorrupt"];
-				Logger.Instance.Info(error);
+				Logger.Instance.Error(error);
 				await MessageBoxService.Show(error);
 			}
 			catch (Exception ex) {
 				IsBusy = false;
 				string error = string.Format(App.Lang["Message.ImportScanResultsFailed"], ex);
-				Logger.Instance.Info(error);
+				Logger.Instance.Error(error);
 				await MessageBoxService.Show(error);
 			}
 		}
@@ -1258,7 +1255,7 @@ namespace VDF.GUI.ViewModels {
 		// Right-click "Open In Folder" on a log line. Log entries are plain text, so
 		// pull a file path out of the selected line and reveal it if it still exists.
 		public ReactiveCommand<Unit, Unit> OpenLogItemLocationCommand => ReactiveCommand.CreateFromTask(async () => {
-			string? path = TryExtractExistingPath(SelectedLogItem);
+			string? path = TryExtractExistingPath((SelectedLogItem as LogMessageRow)?.Message);
 			if (path == null) {
 				await MessageBoxService.Show(App.Lang["Message.NoFileInLogLine"]);
 				return;
@@ -1367,7 +1364,7 @@ namespace VDF.GUI.ViewModels {
 				Process.Start(psi);
 			}
 			catch (Exception e) {
-				Logger.Instance.Info(string.Format(App.Lang["Log.CustomCommandFailed"], command,
+				Logger.Instance.Error(string.Format(App.Lang["Log.CustomCommandFailed"], command,
 					string.Join(" ", psi.ArgumentList), e.Message));
 			}
 
@@ -1765,7 +1762,7 @@ Non-Windows setup:
 					await ExportScanResults(BackupScanResultsFile);
 			}
 			catch (Exception ex) {
-				Logger.Instance.Info($"MarkGroupAsNotAMatch failed: {ex}");
+				Logger.Instance.Error($"MarkGroupAsNotAMatch failed: {ex}");
 			}
 		}
 
@@ -1941,7 +1938,7 @@ Non-Windows setup:
 							};
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
-								Logger.Instance.Info($"SHFileOperation returned {result:X} for a batch of {existing.Count} file(s); checking which files were actually recycled.");
+								Logger.Instance.Warn($"SHFileOperation returned {result:X} for a batch of {existing.Count} file(s); checking which files were actually recycled.");
 							foreach (var d in existing)
 								batchRecycled.Add(d);
 						}
@@ -1956,7 +1953,7 @@ Non-Windows setup:
 
 							if (createLinks) {
 								if (!exists) {
-									Logger.Instance.Info($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
+									Logger.Instance.Warn($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
 								}
 								else {
 									var keeper = keepByGroup.TryGetValue(dub.ItemInfo.GroupId, out var k) ? k : null;
@@ -1981,7 +1978,7 @@ Non-Windows setup:
 									else {
 										// File was already gone — treat as successfully deleted
 										// so the entry is still removed from the list and database.
-										Logger.Instance.Info($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
+										Logger.Instance.Warn($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
 									}
 								}
 								else if (batchedRecycle) {
@@ -2016,7 +2013,7 @@ Non-Windows setup:
 							actuallyDeleted.Add(dub);
 						}
 						catch (Exception ex) {
-							Logger.Instance.Info($"Failed to delete '{dub.ItemInfo.Path}': {ex.Message}\n{ex.StackTrace}");
+							Logger.Instance.Error($"Failed to delete '{dub.ItemInfo.Path}': {ex.Message}\n{ex.StackTrace}");
 						}
 						finally {
 							done++;

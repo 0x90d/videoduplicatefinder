@@ -309,7 +309,7 @@ public sealed class FFmpegSetupService {
 
 			if (expectedHash == null) {
 				// Archive not listed in checksums file — warn but continue
-				Logger.Instance.Info($"FFmpeg download: no checksum entry found for '{archiveFileName}', skipping verification");
+				Logger.Instance.Warn($"FFmpeg download: no checksum entry found for '{archiveFileName}', skipping verification");
 				return;
 			}
 
@@ -323,7 +323,7 @@ public sealed class FFmpegSetupService {
 		}
 		catch (HttpRequestException) {
 			// Checksums file not available — warn but continue (don't block install)
-			Logger.Instance.Info("FFmpeg download: could not fetch checksums.sha256, skipping verification");
+			Logger.Instance.Warn("FFmpeg download: could not fetch checksums.sha256, skipping verification");
 		}
 	}
 

@@ -1,0 +1,220 @@
+<UserControl
+    x:Class="VDF.GUI.Views.LogView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+    xmlns:data="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
+    xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+    x:DataType="vm:MainWindowVM"
+    x:Name="LogRoot">
+
+  <UserControl.Styles>
+    <Style Selector="ToggleButton.chip">
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Button.mini">
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="ListBox.log ListBoxItem">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <!-- mockup .logrow: neutral dot; warn/err recolor dot, warn/err message text -->
+    <Style Selector="Ellipse.dot">
+      <Setter Property="Fill" Value="#55808080" />
+    </Style>
+    <Style Selector="Ellipse.dot.warn">
+      <Setter Property="Fill" Value="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" />
+    </Style>
+    <Style Selector="Ellipse.dot.err">
+      <Setter Property="Fill" Value="{actipro:ThemeResource ControlForegroundBrushSoftDanger}" />
+    </Style>
+    <Style Selector="TextBlock.lmsg.warn">
+      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" />
+    </Style>
+    <Style Selector="TextBlock.lmsg.err">
+      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftDanger}" />
+    </Style>
+    <!-- mockup .lrep: small pill chip, accent on hover / while expanded -->
+    <Style Selector="Button.lrep">
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container3BorderBrush}" />
+      <Setter Property="Opacity" Value="0.8" />
+    </Style>
+    <Style Selector="Button.lrep:pointerover">
+      <Setter Property="BorderBrush" Value="#34B39C" />
+      <Setter Property="Foreground" Value="#34B39C" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Button.lrep.on">
+      <Setter Property="BorderBrush" Value="#34B39C" />
+      <Setter Property="Foreground" Value="#34B39C" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto">
+
+    <!-- ======== Toolbar: severity chips · search · copy/save/clear (mockup .rtoolbar) ======== -->
+    <Border
+        Grid.Row="0"
+        Padding="8,6"
+        Background="{actipro:ThemeResource Container2BackgroundBrush}"
+        BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+        BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <WrapPanel Grid.Column="0" VerticalAlignment="Center">
+          <ToggleButton
+              Classes="chip"
+              IsChecked="{Binding LogFilterAllChecked, Mode=OneWay}"
+              Command="{Binding SetLogFilterCommand}"
+              CommandParameter="All"
+              Content="{Binding Source={x:Static local:App.Lang}, Path=[Log.Filter.All]}" />
+          <ToggleButton
+              Classes="chip"
+              Margin="6,0,0,0"
+              IsChecked="{Binding LogFilterInfoChecked, Mode=OneWay}"
+              Command="{Binding SetLogFilterCommand}"
+              CommandParameter="Info"
+              Content="{Binding Source={x:Static local:App.Lang}, Path=[Log.Filter.Info]}" />
+          <ToggleButton
+              Classes="chip"
+              Margin="6,0,0,0"
+              IsChecked="{Binding LogFilterWarningsChecked, Mode=OneWay}"
+              Command="{Binding SetLogFilterCommand}"
+              CommandParameter="Warnings"
+              Content="{Binding LogWarningsChipText}" />
+          <ToggleButton
+              Classes="chip"
+              Margin="6,0,0,0"
+              IsChecked="{Binding LogFilterErrorsChecked, Mode=OneWay}"
+              Command="{Binding SetLogFilterCommand}"
+              CommandParameter="Errors"
+              Content="{Binding LogErrorsChipText}" />
+          <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
+          <TextBox
+              MinWidth="180" FontSize="12"
+              Text="{Binding LogSearchText}"
+              Watermark="{Binding Source={x:Static local:App.Lang}, Path=[Log.SearchWatermark]}" />
+        </WrapPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button
+              Classes="mini"
+              Command="{Binding CopyLogSelectionCommand}"
+              CommandParameter="{Binding #LogListBox.SelectedItems}"
+              Content="{Binding Source={x:Static local:App.Lang}, Path=[Log.Copy]}" />
+          <Button
+              Classes="mini"
+              Command="{Binding SaveLogCommand}"
+              Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.SaveToFile]}" />
+          <Button
+              Classes="mini"
+              Command="{Binding ClearLogCommand}"
+              Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Clear]}" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- ======== Log list: session separators + rows (mockup .log-list) ======== -->
+    <ListBox
+        x:Name="LogListBox"
+        Grid.Row="1"
+        Classes="log"
+        Padding="0,8"
+        ItemsSource="{Binding LogRows}"
+        SelectedItem="{Binding SelectedLogItem}"
+        SelectionMode="Multiple"
+        Background="Transparent"
+        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox.ContextMenu>
+        <ContextMenu Opening="LogContextMenu_Opening">
+          <MenuItem
+              Command="{Binding OpenLogItemLocationCommand}"
+              Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenInFolder]}" />
+        </ContextMenu>
+      </ListBox.ContextMenu>
+      <ListBox.DataTemplates>
+        <!-- session separator: "Scan · today 09:41 ————————" -->
+        <DataTemplate DataType="data:LogSessionRow">
+          <Grid ColumnDefinitions="Auto,*" Margin="20,12,20,6">
+            <TextBlock
+                Grid.Column="0"
+                FontSize="11.5"
+                FontWeight="SemiBold"
+                Opacity="0.6"
+                Text="{Binding Header}" />
+            <Border
+                Grid.Column="1"
+                Height="1"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Background="{actipro:ThemeResource Container3BorderBrush}" />
+          </Grid>
+        </DataTemplate>
+        <!-- log row: time · dot · message · ×N chip -->
+        <DataTemplate DataType="data:LogMessageRow">
+          <Grid ColumnDefinitions="66,10,*,Auto" Margin="20,1.5" ToolTip.Tip="{Binding Message}">
+            <TextBlock
+                Grid.Column="0"
+                FontSize="12"
+                Opacity="0.55"
+                VerticalAlignment="Center"
+                Text="{Binding TimeText}" />
+            <Ellipse
+                Grid.Column="1"
+                Classes="dot"
+                Classes.warn="{Binding IsWarning}"
+                Classes.err="{Binding IsError}"
+                Width="7" Height="7"
+                Margin="0,0,3,0"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="2"
+                Classes="lmsg"
+                Classes.warn="{Binding IsWarning}"
+                Classes.err="{Binding IsError}"
+                Margin="10,0,0,0"
+                FontSize="13"
+                VerticalAlignment="Center"
+                TextTrimming="CharacterEllipsis"
+                Text="{Binding DisplayMessage}" />
+            <Button
+                Grid.Column="3"
+                Classes="lrep"
+                Classes.on="{Binding IsExpanded}"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                IsVisible="{Binding HasRepeats}"
+                Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleLogGroupCommand}"
+                CommandParameter="{Binding}"
+                Content="{Binding RepeatText}"
+                ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Log.ShowAllTip]}" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.DataTemplates>
+    </ListBox>
+
+    <!-- ======== Status line: log file location (mockup .statusline) ======== -->
+    <Border
+        Grid.Row="2"
+        Padding="24,6"
+        BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+        BorderThickness="0,1,0,0">
+      <TextBlock
+          FontSize="12"
+          Opacity="0.55"
+          Text="{Binding LogFileStatusText}" />
+    </Border>
+  </Grid>
+</UserControl>

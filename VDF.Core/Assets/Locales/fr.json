@@ -13,6 +13,8 @@
   "Log.ExcludedFilesSuppressed": " ({0:N0} entrées de journal supprimées)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
   "Log.DatabaseCheckpoint": "Point de contrôle de la base de données ({0:N0} fichiers enregistrés sur le disque).",
+  "Log.SessionScan": "Analyse",
+  "Log.SessionCompare": "Comparaison",
   "Scan.Stage.Probing": "analyse des métadonnées",
   "Scan.Stage.SamplingFrames": "échantillonnage des images",
   "Scan.Stage.AudioFingerprint": "empreinte audio",

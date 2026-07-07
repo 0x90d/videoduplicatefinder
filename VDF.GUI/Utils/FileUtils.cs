@@ -49,7 +49,7 @@ namespace VDF.GUI.Utils {
 					renames.Add((s, temppath));
 				}
 				catch (Exception e) {
-					Logger.Instance.Info($"Failed to {(pMove ? "move" : "copy")} '{s.ItemInfo.Path}' to '{pDest}', reason: {e.Message}");
+					Logger.Instance.Error($"Failed to {(pMove ? "move" : "copy")} '{s.ItemInfo.Path}' to '{pDest}', reason: {e.Message}");
 					errors++;
 				}
 				onProgress?.Invoke(i + 1, pSource.Count);

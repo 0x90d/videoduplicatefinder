@@ -110,7 +110,7 @@ namespace VDF.Core.Utils {
 				}
 				catch (DirectoryNotFoundException) { }
 				catch (Exception e) {
-					Logger.Instance.Info($"Failed to enumerate '{currentFolder.FullName}' because of: {e}");
+					Logger.Instance.Warn($"Failed to enumerate '{currentFolder.FullName}' because of: {e}");
 				}
 			}
 

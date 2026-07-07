@@ -13,6 +13,8 @@
   "Log.ExcludedFilesSuppressed": " (로그 {0:N0}개 표시 생략)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
   "Log.DatabaseCheckpoint": "데이터베이스 체크포인트 ({0:N0}개 파일을 디스크에 저장).",
+  "Log.SessionScan": "스캔",
+  "Log.SessionCompare": "비교",
   "Scan.Stage.Probing": "메타데이터 분석",
   "Scan.Stage.SamplingFrames": "프레임 샘플링",
   "Scan.Stage.AudioFingerprint": "오디오 지문",

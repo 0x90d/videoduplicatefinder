@@ -224,7 +224,7 @@ namespace VDF.Web.Services {
 							};
 							int shResult = FileUtils.SHFileOperation(ref fs);
 							if (shResult != 0)
-								Logger.Instance.Info($"SHFileOperation returned {shResult:X} for a batch of {existing.Count} file(s); checking which files were actually recycled.");
+								Logger.Instance.Warn($"SHFileOperation returned {shResult:X} for a batch of {existing.Count} file(s); checking which files were actually recycled.");
 							foreach (var p in existing)
 								batchRecycled.Add(p);
 						}

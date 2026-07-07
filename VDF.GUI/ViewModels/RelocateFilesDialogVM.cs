@@ -344,7 +344,7 @@ namespace VDF.GUI.ViewModels {
 				File.WriteAllBytes(TempDatabaseFile, JsonSerializer.SerializeToUtf8Bytes(DbWrapper, VDF.Core.Utils.CoreJsonContext.Default.DatabaseWrapper));
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed to save changes to database file, because of {e}");
+				Logger.Instance.Error($"Failed to save changes to database file, because of {e}");
 				return;
 			}
 			ScanEngine.ImportDataBaseFromJson(TempDatabaseFile, serializerOptions);
@@ -353,7 +353,7 @@ namespace VDF.GUI.ViewModels {
 				File.Delete(TempDatabaseFile);
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed to delete temporarily database file '{TempDatabaseFile}', because of {e}");
+				Logger.Instance.Warn($"Failed to delete temporarily database file '{TempDatabaseFile}', because of {e}");
 			}
 			_owner.Close();
 		}

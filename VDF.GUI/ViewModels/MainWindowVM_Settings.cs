@@ -96,13 +96,6 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
-		void Instance_LogItemAdded(string message) =>
-			Dispatcher.UIThread.InvokeAsync(() => {
-				if (string.IsNullOrEmpty(message)) return;
-				LogItems.Add(message);
-				AppendLogTail(message);
-			});
-
 		public ReactiveCommand<Unit, Unit> OpenHWInfoLinkCommand => ReactiveCommand.CreateFromTask(async () => {
 			try {
 				Process.Start(new ProcessStartInfo {
@@ -205,31 +198,6 @@ namespace VDF.GUI.ViewModels {
 			while (lbox.SelectedItems?.Count > 0)
 				SettingsFile.Instance.Blacklists.Remove((string)lbox.SelectedItems[0]!);
 			return null!;
-		});
-		public ReactiveCommand<Unit, Unit> ClearLogCommand => ReactiveCommand.Create(() => {
-			LogItems.Clear();
-		});
-		public ReactiveCommand<System.Collections.IList, Unit> CopyLogSelectionCommand => ReactiveCommand.Create<System.Collections.IList>(selected => {
-			if (selected == null || selected.Count == 0) return;
-			var sb = new StringBuilder();
-			foreach (var item in selected)
-				sb.AppendLine(item?.ToString());
-			ApplicationHelpers.MainWindow.Clipboard?.SetTextAsync(sb.ToString());
-		});
-		public ReactiveCommand<Unit, Unit> SaveLogCommand => ReactiveCommand.CreateFromTask(async () => {
-			var result = await Utils.PickerDialogUtils.SaveFilePicker(new FilePickerSaveOptions() {
-				DefaultExtension = ".txt",
-			});
-			if (string.IsNullOrEmpty(result)) return;
-			var sb = new StringBuilder();
-			foreach (var l in LogItems)
-				sb.AppendLine(l);
-			try {
-				File.WriteAllText(result, sb.ToString());
-			}
-			catch (Exception e) {
-				Logger.Instance.Info(e.Message);
-			}
 		});
 		public ReactiveCommand<Unit, Unit> SaveSettingsCommand => ReactiveCommand.CreateFromTask(async () => {
 			try {

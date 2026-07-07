@@ -90,12 +90,12 @@ namespace VDF.Core.FFTools {
 				mediaInfo = null;
 			}
 			if (mediaInfo == null || errOut.Length > 0) {
-				string message = $"{((mediaInfo == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} media info from: {file}";
+				string message = $"{((mediaInfo == null) ? "Failed to retrieve" : "Problems while retrieving")} media info from: {file}";
 				if (extendedLogging) {
 					var args = string.Join(" ", process.StartInfo.ArgumentList);
 					message += $":{Environment.NewLine}{FFprobePath} {args}";
 				}
-				Logger.Instance.Info($"{message}{errOut}");
+				Logger.Instance.Warn($"{message}{errOut}");
 			}
 			return mediaInfo;
 		}
@@ -143,7 +143,7 @@ namespace VDF.Core.FFTools {
 					return DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed reading creation_time from '{file}': {e.Message}");
+				Logger.Instance.Warn($"Failed reading creation_time from '{file}': {e.Message}");
 				try { if (!process.HasExited) process.Kill(); } catch { }
 			}
 			return null;

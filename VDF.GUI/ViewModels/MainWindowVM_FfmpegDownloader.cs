@@ -369,7 +369,7 @@ namespace VDF.GUI.ViewModels {
 				}
 
 				if (expectedHash == null) {
-					Logger.Instance.Info($"FFmpeg download: no checksum entry found for '{archiveFileName}', skipping verification");
+					Logger.Instance.Warn($"FFmpeg download: no checksum entry found for '{archiveFileName}', skipping verification");
 					return;
 				}
 
@@ -382,7 +382,7 @@ namespace VDF.GUI.ViewModels {
 						$"Checksum mismatch for '{archiveFileName}': expected {expectedHash}, got {actualHash}. The download may be corrupted or tampered with.");
 			}
 			catch (HttpRequestException) {
-				Logger.Instance.Info("FFmpeg download: could not fetch checksums.sha256, skipping verification");
+				Logger.Instance.Warn("FFmpeg download: could not fetch checksums.sha256, skipping verification");
 			}
 		}
 

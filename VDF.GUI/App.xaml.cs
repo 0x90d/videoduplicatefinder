@@ -53,14 +53,14 @@ namespace VDF.GUI {
 		private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e) {
 			try {
 				string detail = e.ExceptionObject is Exception ex ? ex.ToString() : e.ExceptionObject?.ToString() ?? "<null>";
-				VDF.Core.Utils.Logger.Instance.Info($"FATAL: Unhandled exception (terminating={e.IsTerminating}): {detail}");
+				VDF.Core.Utils.Logger.Instance.Error($"FATAL: Unhandled exception (terminating={e.IsTerminating}): {detail}");
 			}
 			catch { /* never let logging failure mask the original crash */ }
 			SafeCleanup();
 		}
 		private static void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e) {
 			try {
-				VDF.Core.Utils.Logger.Instance.Info($"Unhandled dispatcher exception: {e.Exception}");
+				VDF.Core.Utils.Logger.Instance.Error($"Unhandled dispatcher exception: {e.Exception}");
 			}
 			catch { /* never let logging failure mask the original error */ }
 			// Keep the app alive so the user can save state and the log contains a stack trace.
@@ -68,7 +68,7 @@ namespace VDF.GUI {
 		}
 		private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) {
 			try {
-				VDF.Core.Utils.Logger.Instance.Info($"Unobserved task exception: {e.Exception}");
+				VDF.Core.Utils.Logger.Instance.Error($"Unobserved task exception: {e.Exception}");
 			}
 			catch { /* never let logging failure mask the original error */ }
 			e.SetObserved();

@@ -149,7 +149,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				}
 			}
 			catch (Exception e) {
-				Utils.Logger.Instance.Info($"Failed to look for ffmpeg libraries: {e}");
+				Utils.Logger.Instance.Warn($"Failed to look for ffmpeg libraries: {e}");
 			}
 			return false;
 		}
@@ -192,7 +192,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 					}
 				}
 				catch (Exception e) {
-					Utils.Logger.Instance.Info(
+					Utils.Logger.Instance.Warn(
 						$"FFmpeg shared libraries are present but could not be loaded; falling back to process mode. " +
 						$"Reason: {e.GetType().Name}: {e.Message}. {DescribeExpectedLibraries()}");
 					ok = false;

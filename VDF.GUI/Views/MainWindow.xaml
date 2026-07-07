@@ -1346,78 +1346,7 @@
                                 FontSize="12"
                                 Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Log]}" />
                         </TabItem.Header>
-                        <Grid Margin="0,0,0,10">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition />
-                            </Grid.RowDefinitions>
-
-                            <Menu Grid.Row="0" MinHeight="30">
-                                <MenuItem Command="{Binding ClearLogCommand}">
-                                    <MenuItem.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox Width="20" Height="20">
-                                                <Canvas Width="1024" Height="1024">
-                                                    <Path Data="M899.1 869.6l-53-305.6H864c14.4 0 26-11.6 26-26V346c0-14.4-11.6-26-26-26H618V138c0-14.4-11.6-26-26-26H432c-14.4 0-26 11.6-26 26v182H160c-14.4 0-26 11.6-26 26v192c0 14.4 11.6 26 26 26h17.9l-53 305.6c-0.3 1.5-0.4 3-0.4 4.4 0 14.4 11.6 26 26 26h723c1.5 0 3-0.1 4.4-0.4 14.2-2.4 23.7-15.9 21.2-30zM204 390h272V182h72v208h272v104H204V390z m468 440V674c0-4.4-3.6-8-8-8h-48c-4.4 0-8 3.6-8 8v156H416V674c0-4.4-3.6-8-8-8h-48c-4.4 0-8 3.6-8 8v156H202.8l45.1-260H776l45.1 260H672z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Clear]}" />
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
-                                <MenuItem Command="{Binding SaveLogCommand}">
-                                    <MenuItem.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox Width="20" Height="20">
-                                                <Canvas Width="16" Height="16">
-                                                    <Path Data="M11.04 1.33L12.71 3l.29.71v.33h-.5l-.5.5v-.83l-1.67-1.67H10v4H4v-4H2v10h3l-.5 1H2l-1-1v-10l1-1h8.33l.71.29zM7 5h2V2H7v3zm6.5 0L15 6.5l-.02.69-5.5 5.5-.13.12-.37.37-.1.09-3 1.5-.67-.67 1.5-3 .09-.1.37-.37.12-.13 5.5-5.5h.71zm-6.22 7.24l-.52 1 1.04-.48-.52-.52zm.69-1.03l.79.79 5.15-5.15-.79-.79-5.15 5.15z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.SaveToFile]}" />
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
-                                <MenuItem Command="{Binding CopyLogSelectionCommand}"
-                                          CommandParameter="{Binding #LogListBox.SelectedItems}">
-                                    <MenuItem.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox Width="20" Height="20">
-                                                <Canvas Width="24" Height="24">
-                                                    <Path Data="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.CopySelected]}" />
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
-                            </Menu>
-                            <ListBox
-                                x:Name="LogListBox"
-                                Grid.Row="1"
-                                MinHeight="70"
-                                Margin="5"
-                                ItemsSource="{Binding LogItems}"
-                                SelectedItem="{Binding SelectedLogItem}"
-                                SelectionMode="Multiple"
-                                ScrollViewer.HorizontalScrollBarVisibility="Visible">
-                                <ListBox.ContextMenu>
-                                    <ContextMenu Opening="LogContextMenu_Opening">
-                                        <MenuItem
-                                            Command="{Binding OpenLogItemLocationCommand}"
-                                            Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenInFolder]}" />
-                                    </ContextMenu>
-                                </ListBox.ContextMenu>
-                            </ListBox>
-                        </Grid>
+                        <views:LogView />
                     </TabItem>
                 </TabControl>
             </Grid>

@@ -100,11 +100,11 @@ namespace VDF.Core.Utils {
 				// A broken temp file (e.g. a crash mid-save) must not block startup:
 				// drop it and retry with the real database file.
 				if (databaseFile.FullName == new FileInfo(TempDatabasePath).FullName) {
-					Logger.Instance.Info($"Importing previously scanned files from '{databaseFile.FullName}' has failed; retrying with the main database file.");
+					Logger.Instance.Warn($"Importing previously scanned files from '{databaseFile.FullName}' has failed; retrying with the main database file.");
 					try { databaseFile.Delete(); } catch (Exception) { }
 					return LoadDatabase();
 				}
-				Logger.Instance.Info($"Importing previously scanned files has failed because of: {ex}");
+				Logger.Instance.Error($"Importing previously scanned files has failed because of: {ex}");
 				try {
 					File.Move(databaseFile.FullName, Path.ChangeExtension(databaseFile.FullName, "_DAMAGED.db"), true);
 				}
@@ -343,11 +343,11 @@ namespace VDF.Core.Utils {
 				stream.Close();
 			}
 			catch (JsonException e) {
-				Logger.Instance.Info($"Failed to serialize database to json because: {e}");
+				Logger.Instance.Error($"Failed to serialize database to json because: {e}");
 				return false;
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed to export database to json because: {e}");
+				Logger.Instance.Error($"Failed to export database to json because: {e}");
 				return false;
 			}
 			return true;
@@ -404,7 +404,7 @@ namespace VDF.Core.Utils {
 				return true;
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed to export graybytes diagnostic: {e}");
+				Logger.Instance.Error($"Failed to export graybytes diagnostic: {e}");
 				return false;
 			}
 		}
@@ -416,11 +416,11 @@ namespace VDF.Core.Utils {
 				stream.Close();
 			}
 			catch (JsonException e) {
-				Logger.Instance.Info($"Failed to deserialize database from json because: {e}");
+				Logger.Instance.Error($"Failed to deserialize database from json because: {e}");
 				return false;
 			}
 			catch (Exception e) {
-				Logger.Instance.Info($"Failed to import database from json because: {e}");
+				Logger.Instance.Error($"Failed to import database from json because: {e}");
 				return false;
 			}
 			return true;

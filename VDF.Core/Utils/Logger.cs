@@ -15,29 +15,61 @@
 //
 
 namespace VDF.Core.Utils {
+	public enum LogSeverity {
+		Info,
+		Warning,
+		Error,
+	}
+
+	/// <summary>
+	/// One log line. <see cref="IsSessionStart"/> entries mark the beginning of a
+	/// logical session (e.g. a scan); their <see cref="Message"/> is the session label.
+	/// </summary>
+	public readonly record struct LogEntry(DateTime Timestamp, LogSeverity Severity, string Message, bool IsSessionStart = false);
+
 	public sealed class Logger {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		static Logger instance;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static Logger Instance => instance ??= new Logger();
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		public event LogEventHandler LogItemAdded;
-		public delegate void LogEventHandler(string foo);
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+		public event LogEventHandler? LogEntryAdded;
+		public delegate void LogEventHandler(LogEntry entry);
 		static readonly object lockObject = new();
 		static readonly Lazy<string> _logFilePath = new(() =>
 			Path.Combine(CoreUtils.IsCurrentFolderWritable
 				? CoreUtils.CurrentFolder
 				: CoreUtils.GetDefaultStateFolder(), "log.txt"));
-		public void Info(string text) {
-			LogItemAdded?.Invoke($"{DateTime.Now:HH:mm:ss} => {text}");
+		public static string LogFilePath => _logFilePath.Value;
+
+		public void Info(string text) => Add(new LogEntry(DateTime.Now, LogSeverity.Info, text));
+		public void Warn(string text) => Add(new LogEntry(DateTime.Now, LogSeverity.Warning, text));
+		public void Error(string text) => Add(new LogEntry(DateTime.Now, LogSeverity.Error, text));
+		/// <summary>Marks the start of a logical session (e.g. a scan) with a short label.</summary>
+		public void BeginSession(string label) => Add(new LogEntry(DateTime.Now, LogSeverity.Info, label, IsSessionStart: true));
+
+		void Add(LogEntry entry) {
+			LogEntryAdded?.Invoke(entry);
 			lock (lockObject) {
-				File.AppendAllText(_logFilePath.Value, $"{DateTime.Now:HH:mm:ss} => {text}{Environment.NewLine}");
+				// Best-effort: a reader holding log.txt (tail, editor, antivirus) must
+				// never turn a log call into an exception inside the scan engine.
+				try {
+					using var stream = new FileStream(_logFilePath.Value, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+					using var writer = new StreamWriter(stream);
+					writer.WriteLine(FormatFileLine(entry));
+				}
+				catch (IOException) { }
+				catch (UnauthorizedAccessException) { }
 			}
 		}
-		public void InsertSeparator(char separatorChar) {
-			LogItemAdded?.Invoke($"{Environment.NewLine}{new String(separatorChar, 150)}{Environment.NewLine}");
-		}
+
+		// Info lines keep the historic "HH:mm:ss => text" shape; severity only shows
+		// up as a tag when there is something to flag.
+		internal static string FormatFileLine(LogEntry entry) => entry switch {
+			{ IsSessionStart: true } => $"{Environment.NewLine}{new string('-', 60)} {entry.Message} · {entry.Timestamp:HH:mm:ss} {new string('-', 60)}",
+			{ Severity: LogSeverity.Warning } => $"{entry.Timestamp:HH:mm:ss} => [WARNING] {entry.Message}",
+			{ Severity: LogSeverity.Error } => $"{entry.Timestamp:HH:mm:ss} => [ERROR] {entry.Message}",
+			_ => $"{entry.Timestamp:HH:mm:ss} => {entry.Message}",
+		};
 	}
 
 }
