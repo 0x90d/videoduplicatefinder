@@ -696,6 +696,8 @@
 	"Settings.Row.DurationDiffMax.Title": "Obergrenze der Dauer-Toleranz (Sekunden)",
 	"Settings.Row.MaxSampling.Title": "Abtastfenster (Sekunden)",
 	"Settings.Row.Parallelism.Title": "Parallele Verarbeitung",
+	"Settings.Row.HddParallelism.Title": "Parallele Dateien pro Festplatte",
+	"Settings.Row.HddParallelism.Desc": "Wie viele Dateien gleichzeitig von einer einzelnen Magnetfestplatte (oder Netzwerkfreigabe) gelesen werden. Eine Magnetfestplatte verbringt bei vielen parallelen Lesezugriffen die meiste Zeit mit Suchbewegungen — ein niedriger Wert (Standard: 2) hält sie schnell, während SSDs weiterhin alle parallelen Prozesse nutzen. Falsch erkannte Laufwerke können in der Einstellungsdatei festgelegt werden (DriveTypeOverrides).",
 	"Settings.Row.FolderMatch.Title": "Ordner-Vergleichsmodus & Tiefe",
 	"Settings.Row.IncludeSubDirectories.Desc": "Auch alle Unterordner der Ordner auf der Liste scannen.",
 	"Settings.Row.IncludeImages.Desc": "Auch Fotos und andere Bilder scannen, nicht nur Videos.",

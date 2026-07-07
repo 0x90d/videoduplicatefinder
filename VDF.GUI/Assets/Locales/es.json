@@ -696,6 +696,8 @@
 	"Settings.Row.DurationDiffMax.Title": "Máximo de tolerancia de duración (segundos)",
 	"Settings.Row.MaxSampling.Title": "Ventana de muestreo (segundos)",
 	"Settings.Row.Parallelism.Title": "Procesos en paralelo",
+	"Settings.Row.HddParallelism.Title": "Archivos en paralelo por disco duro",
+	"Settings.Row.HddParallelism.Desc": "Cuántos archivos se leen a la vez de un mismo disco duro mecánico (o recurso de red). Un disco mecánico pierde la mayor parte del tiempo buscando cuando se leen muchos archivos en paralelo; un valor bajo (2 por defecto) lo mantiene rápido mientras los SSD siguen usando todos los procesos en paralelo. Las unidades mal detectadas pueden fijarse en el archivo de configuración (DriveTypeOverrides).",
 	"Settings.Row.FolderMatch.Title": "Modo de coincidencia por carpeta y profundidad",
 	"Settings.Row.IncludeSubDirectories.Desc": "Escanear también todas las subcarpetas de las carpetas de la lista.",
 	"Settings.Row.IncludeImages.Desc": "Escanear también fotos y otras imágenes, no solo vídeos.",

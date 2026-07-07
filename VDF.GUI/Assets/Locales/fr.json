@@ -696,6 +696,8 @@
 	"Settings.Row.DurationDiffMax.Title": "Plafond de tolérance de durée (secondes)",
 	"Settings.Row.MaxSampling.Title": "Fenêtre d'échantillonnage (secondes)",
 	"Settings.Row.Parallelism.Title": "Tâches parallèles",
+	"Settings.Row.HddParallelism.Title": "Fichiers en parallèle par disque dur",
+	"Settings.Row.HddParallelism.Desc": "Nombre de fichiers lus simultanément depuis un même disque dur mécanique (ou partage réseau). Un disque mécanique passe l'essentiel de son temps en déplacements de tête lorsque trop de fichiers sont lus en parallèle ; une valeur basse (2 par défaut) le garde rapide tandis que les SSD continuent d'utiliser toutes les tâches parallèles. Les disques mal détectés peuvent être fixés dans le fichier de paramètres (DriveTypeOverrides).",
 	"Settings.Row.FolderMatch.Title": "Mode de correspondance par dossier et profondeur",
 	"Settings.Row.IncludeSubDirectories.Desc": "Analyser aussi tous les sous-dossiers des dossiers de la liste.",
 	"Settings.Row.IncludeImages.Desc": "Analyser aussi les photos et autres images, pas seulement les vidéos.",

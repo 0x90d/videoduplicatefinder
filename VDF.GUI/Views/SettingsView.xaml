@@ -225,6 +225,14 @@
                 <NumericUpDown Classes="stepper" Maximum="100" Minimum="-1"
                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
               </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.HddParallelism.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.HddParallelism.Desc]}"
+                  SearchTags="parallelism hdd hard disk drive spindle usb network seek">
+                <NumericUpDown Classes="stepper" Maximum="100" Minimum="1"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HddMaxDegreeOfParallelism}" />
+              </views:SettingRow>
             </StackPanel>
 
             <!-- ═══════════════ MATCHING (profile-managed comparison knobs) ═══════════════ -->

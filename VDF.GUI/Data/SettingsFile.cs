@@ -178,6 +178,24 @@ namespace VDF.GUI.Data {
 			get => _MaxDegreeOfParallelism;
 			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
 		}
+		int _HddMaxDegreeOfParallelism = 2;
+		/// <summary>Per-drive cap for slow drives (spindle HDDs / network shares) — see Core setting.</summary>
+		[JsonPropertyName("HddMaxDegreeOfParallelism")]
+		public int HddMaxDegreeOfParallelism {
+			get => _HddMaxDegreeOfParallelism;
+			set => this.RaiseAndSetIfChanged(ref _HddMaxDegreeOfParallelism, value);
+		}
+		Dictionary<string, string> _DriveTypeOverrides = new(StringComparer.OrdinalIgnoreCase);
+		/// <summary>Drive root → "SSD"/"HDD" scan-concurrency overrides. No editor UI yet
+		/// (planned with the per-drive scan rows); power users can edit Settings.json.</summary>
+		[JsonPropertyName("DriveTypeOverrides")]
+		public Dictionary<string, string> DriveTypeOverrides {
+			get => _DriveTypeOverrides;
+			// STJ drops the comparer on deserialization — re-wrap so drive letters stay case-insensitive.
+			set => _DriveTypeOverrides = value == null
+				? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+				: new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase);
+		}
 		bool _WelcomeStripDismissed;
 		/// <summary>The Setup screen's "New here?" hint strip, dismissible once.</summary>
 		[JsonPropertyName("WelcomeStripDismissed")]

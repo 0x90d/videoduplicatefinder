@@ -50,7 +50,7 @@ namespace VDF.GUI.ViewModels {
 			sb.AppendLine($"Ignore black/white: {Scanner.Settings.IgnoreBlackPixels}/{Scanner.Settings.IgnoreWhitePixels}");
 			sb.AppendLine($"Thumbnails:         {Scanner.Settings.ThumbnailCount}");
 			sb.AppendLine($"Include images:     {Scanner.Settings.IncludeImages}");
-			sb.AppendLine($"Parallelism:        {Scanner.Settings.MaxDegreeOfParallelism}");
+			sb.AppendLine($"Parallelism:        {Scanner.Settings.MaxDegreeOfParallelism} (HDD cap: {Scanner.Settings.HddMaxDegreeOfParallelism}, drive overrides: {Scanner.Settings.DriveTypeOverrides.Count})");
 			sb.AppendLine($"Custom FF args:     {(string.IsNullOrWhiteSpace(Scanner.Settings.CustomFFArguments) ? "(none)" : Scanner.Settings.CustomFFArguments)}");
 			sb.AppendLine($"Database entries:   {DatabaseUtils.Database.Count}");
 			return sb.ToString();

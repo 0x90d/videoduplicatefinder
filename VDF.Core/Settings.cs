@@ -72,6 +72,30 @@ namespace VDF.Core {
 		/// <summary>Maximum width in pixels for display thumbnails (0 = original resolution).</summary>
 		public int ThumbnailMaxWidth = 100;
 		public int MaxDegreeOfParallelism = 1;
+		/// <summary>
+		/// Per-drive concurrency cap for slow drives (spindle HDDs, network shares, drives that
+		/// cannot be classified). A single spinning disk seek-thrashes when many files are read
+		/// at once, so it gets this low cap while SSDs share the full
+		/// <see cref="MaxDegreeOfParallelism"/> budget. 0 or negative = default of 2.
+		/// </summary>
+		public int HddMaxDegreeOfParallelism = 2;
+
+		Dictionary<string, string> driveTypeOverrides = new(StringComparer.OrdinalIgnoreCase);
+		/// <summary>
+		/// Storage-type overrides for scan concurrency, keyed by drive root (e.g. <c>D:\</c>,
+		/// <c>\\server\share</c>, <c>/mnt/usb</c>) with value <c>SSD</c> or <c>HDD</c>. Drives
+		/// not listed are classified automatically (network shares count as HDD, everything
+		/// else by a short seek-latency probe at scan start). An override always wins — use it
+		/// when the probe gets a drive wrong.
+		/// </summary>
+		public Dictionary<string, string> DriveTypeOverrides {
+			get => driveTypeOverrides;
+			// System.Text.Json does not preserve the comparer when repopulating — re-wrap so
+			// drive-letter keys stay case-insensitive after settings deserialization.
+			set => driveTypeOverrides = value == null
+				? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+				: new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase);
+		}
 
 		public string CustomFFArguments = string.Empty;
 		public string CustomDatabaseFolder = string.Empty;

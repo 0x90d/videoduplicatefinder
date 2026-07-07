@@ -138,16 +138,18 @@ namespace VDF.Core {
 			}
 		}
 		void IncrementProgress(string path) {
-			processedFiles++;
-			var pushUpdate = processedFiles == scanProgressMaxValue ||
+			// Atomic: workers of all concurrent drive groups increment this counter, and a
+			// torn increment would lose the processedFiles == scanProgressMaxValue final push.
+			int processed = Interlocked.Increment(ref processedFiles);
+			var pushUpdate = processed == scanProgressMaxValue ||
 								lastProgressUpdate + progressUpdateIntervall < DateTime.UtcNow;
 			if (!pushUpdate) return;
 			lastProgressUpdate = DateTime.UtcNow;
 			var timeRemaining = TimeSpan.FromTicks(DateTime.UtcNow.Subtract(startTime).Ticks *
-									(scanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
+									(scanProgressMaxValue - (processed + 1)) / (processed + 1));
 			Progress?.Invoke(this,
 							new ScanProgressChangedEventArgs {
-								CurrentPosition = processedFiles,
+								CurrentPosition = processed,
 								CurrentFile = path,
 								Elapsed = ElapsedTimer.Elapsed,
 								Remaining = timeRemaining,
@@ -759,7 +761,7 @@ namespace VDF.Core {
 			try {
 				currentStageLabel = string.Empty; // per-file analysis reports its own sub-stages
 				InitProgress(DatabaseUtils.Database.Count);
-				await Parallel.ForEachAsync(DatabaseUtils.Database, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, token) => {
+				ValueTask ProcessEntry(FileEntry entry, CancellationToken token) {
 					if (!pauseTokenSource.TryWaitWhilePaused(token))
 						return ValueTask.CompletedTask; // canceled while paused — the loop token ends the iteration
 
@@ -904,7 +906,35 @@ namespace VDF.Core {
 						IncrementProgress(entry.Path);
 						return ValueTask.CompletedTask;
 					}
-				});
+				}
+
+				// Per-drive concurrency: one spinning disk collapses to a fraction of its
+				// sequential throughput when many files are read at once (seek thrash), while
+				// an SSD wants high queue depth — a single global parallelism cannot fit a
+				// mixed SSD+HDD scan. Each drive therefore runs its own loop at a parallelism
+				// matched to its storage, all drives concurrently, so a fast drive is never
+				// held back by a slow one. Probe candidates are restricted to files this scan
+				// may read anyway — classification must not spin up out-of-scope drives.
+				List<DriveScanGroup> driveGroups = DriveScanPlanner.PartitionByDrive(DatabaseUtils.Database);
+				if (Settings.MaxDegreeOfParallelism == 1) {
+					// Documented promise: 1 = strictly one file at a time. Drives run
+					// sequentially, no probing needed.
+					foreach (DriveScanGroup group in driveGroups)
+						await Parallel.ForEachAsync(group.Entries, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = 1 }, ProcessEntry);
+				}
+				else {
+					DriveScanPlanner.ClassifyGroups(driveGroups, Settings.DriveTypeOverrides,
+						DriveScanPlanner.IsNetworkRoot,
+						group => DriveScanPlanner.ProbeSeekLatencyMs(
+							group.Entries.Where(e => Settings.ScanAgainstEntireDatabase || IsInIncludeScope(e))));
+					DriveScanPlanner.AssignParallelism(driveGroups, Settings.MaxDegreeOfParallelism, Settings.HddMaxDegreeOfParallelism, Environment.ProcessorCount);
+					var driveTasks = new List<Task>(driveGroups.Count);
+					foreach (DriveScanGroup group in driveGroups) {
+						Logger.Instance.Info($"Drive '{group.Root}': {group.Entries.Count:N0} file(s), concurrency {group.DegreeOfParallelism} ({(group.SpeedClass == DriveSpeedClass.Fast ? "fast" : "slow")}, {group.ClassSource})");
+						driveTasks.Add(Parallel.ForEachAsync(group.Entries, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = group.DegreeOfParallelism }, ProcessEntry));
+					}
+					await Task.WhenAll(driveTasks);
+				}
 			}
 			catch (OperationCanceledException) { }
 			finally {
