@@ -14,7 +14,6 @@
 // */
 //
 
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
@@ -371,21 +370,10 @@ namespace VDF.GUI.ViewModels {
 			RecomputeCounts();
 		});
 
-		public ReactiveCommand<Unit, Unit> OpenSelectedInFolderCommand => ReactiveCommand.Create(() => {
+		public ReactiveCommand<Unit, Unit> OpenSelectedInFolderCommand => ReactiveCommand.CreateFromTask(async () => {
 			var first = Selected().FirstOrDefault();
 			if (first == null) return;
-			try {
-				if (CoreUtils.IsWindows)
-					ShellUtils.ShowInExplorer(first.Entry.Path);
-				else
-					Process.Start(new ProcessStartInfo {
-						FileName = Path.GetDirectoryName(first.Entry.Path) ?? first.Entry.Path,
-						UseShellExecute = true,
-					});
-			}
-			catch (Exception ex) {
-				Logger.Instance.Warn($"Failed to open '{first.Entry.Path}' in folder: {ex.Message}");
-			}
+			await MainWindowVM.RevealInFileManager(first.Entry.Path);
 		});
 
 		public ReactiveCommand<Unit, Unit> CopySelectedPathsCommand => ReactiveCommand.CreateFromTask(async () => {

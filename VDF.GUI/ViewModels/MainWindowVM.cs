@@ -1144,8 +1144,9 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		// Reveal a single file in the OS file manager, selecting it where the
-		// platform supports it. Shared by the results grid and the log context menu.
-		static async Task RevealInFileManager(string filePath) {
+		// platform supports it. Shared by the results list, the log context menu
+		// and the database editor.
+		internal static async Task RevealInFileManager(string filePath) {
 			try {
 				if (OperatingSystem.IsWindows()) {
 					try {

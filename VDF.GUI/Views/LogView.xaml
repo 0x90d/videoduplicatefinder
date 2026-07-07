@@ -106,7 +106,7 @@
           <TextBox
               MinWidth="180" FontSize="12"
               Text="{Binding LogSearchText}"
-              Watermark="{Binding Source={x:Static local:App.Lang}, Path=[Log.SearchWatermark]}" />
+              PlaceholderText="{Binding Source={x:Static local:App.Lang}, Path=[Log.SearchWatermark]}" />
         </WrapPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
           <Button

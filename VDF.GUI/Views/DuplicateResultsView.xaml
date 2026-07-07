@@ -268,7 +268,7 @@
         <TextBox
             MinWidth="170" FontSize="12"
             Text="{Binding FilterByPath}"
-            Watermark="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Path]}"
+            PlaceholderText="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Path]}"
             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.PathNote]}" />
         <ToggleButton
             Classes="chip"
