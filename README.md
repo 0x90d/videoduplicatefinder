@@ -36,7 +36,9 @@ In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detectio
 
 # Downloads
 
-[Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) — attachments are automatically rebuilt and replaced on every commit.
+[Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.1.x) — attachments are automatically rebuilt and replaced on every commit.
+
+> **Prefer the classic interface?** 4.1 introduces a redesigned interface. The final classic-UI build stays available on the [4.0.x release](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) — databases and settings are compatible both ways.
 
 > **Upgrading from 3.x:** your scan database is migrated automatically on first load. Cached image hashes are recomputed on the next scan (image processing moved from ImageSharp to FFmpeg); video hashes are unaffected. Downgrading back to 3.x after the migration is not recommended. The last 3.x build remains available on the [3.0.x release](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x).
 
@@ -109,7 +111,7 @@ Same as the GUI: FFmpeg and FFprobe must be on your `PATH` or in the same direct
 
 ### Installation
 
-Download `CLI-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) and extract it.
+Download `CLI-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.1.x) and extract it.
 
 On Linux/macOS, make the binary executable:
 ```bash
@@ -207,7 +209,7 @@ FFmpeg and FFprobe are required. When running outside Docker, VDF.Web will attem
 
 ### Installation (self-contained archive)
 
-Download `Web-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) and extract it.
+Download `Web-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.1.x) and extract it.
 
 On Linux/macOS:
 ```bash
