@@ -25,8 +25,12 @@ jobs:
     needs: cleanup
 
     strategy:
+      # One platform failing (e.g. a runner-image hiccup) must not cancel the
+      # siblings: the cleanup job already emptied the release, so a cancelled
+      # matrix would leave it with missing assets until the next push.
+      fail-fast: false
       matrix:
-        kind: ['linux', 'windows', 'macOS', 'macOSarm64', 'linuxarm64']
+        kind: ['linux', 'windows', 'windowsarm64', 'macOS', 'macOSarm64', 'linuxarm64']
         include:
           - kind: linux
             os: ubuntu-latest
@@ -36,6 +40,14 @@ jobs:
             os: windows-latest
             target: win-x64
             name: win-x64
+          - kind: windowsarm64
+            # Native ARM64 runner (same reasoning as linux-arm64): Native AOT
+            # builds on its own architecture instead of relying on the x64
+            # image's cross toolchain. The FFmpeg auto-downloader already picks
+            # the BtbN winarm64 shared build on ARM64 Windows.
+            os: windows-11-arm
+            target: win-arm64
+            name: win-arm64
           - kind: macOS
             os: macos-latest
             target: osx-x64
@@ -74,7 +86,7 @@ jobs:
           # Build Web (JIT, self-contained — Blazor Server is not supported under Native AOT)
           dotnet publish ./VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputWeb"
           # Pack files
-          if [ "${{ matrix.target }}" == "win-x64" ]; then
+          if [[ "${{ matrix.target }}" == win-* ]]; then
             7z a -tzip "GUI-${{ matrix.target }}.zip" "./outputGUI/*"
             7z a -tzip "CLI-${{ matrix.target }}.zip" "./outputCLI/*"
             7z a -tzip "Web-${{ matrix.target }}.zip" "./outputWeb/*"
