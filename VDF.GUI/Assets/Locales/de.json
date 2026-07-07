@@ -635,8 +635,6 @@
 	"Settings.Banner.Managed2": " verwaltet. Änderungen schalten diese Scan-Einstellungen auf ",
 	"Settings.Banner.Managed3": " um – nichts geht verloren, und das Profil lässt sich jederzeit wieder auswählen.",
 	"Settings.Banner.Custom": "Diese Werte sind Ihre eigenen – kein Scan-Profil verwaltet sie. Die Auswahl eines Profils auf dem Startbildschirm ersetzt sie; Benutzerdefiniert stellt sie danach wieder her.",
-	"Settings.Sub.Comparison": "Vergleich",
-	"Settings.Sub.ScanBehavior": "Scan-Verhalten",
 	"Settings.Sub.Results": "Ergebnisse & Datenbank",
 	"Settings.Row.Percent.Title": "Ähnlichkeitsschwelle",
 	"Settings.Row.Percent.Desc": "Wie ähnlich die abgetasteten Frames zweier Dateien sein müssen, um als Duplikate zu gelten. 100 % findet nur nahezu identische Frames; ~95 % erfasst typische Re-Encodes; niedrigere Werte finden auch Kopien mit Wasserzeichen oder Beschnitt – um den Preis von Fehltreffern.",
@@ -687,5 +685,10 @@
 	"Settings.Row.PathNotContains.Desc": "Dateien, deren vollständiger Pfad einen dieser Einträge enthält, werden übersprungen.",
 	"Settings.Tags.Directories": "Ordner Verzeichnisse einschließen ausschließen Blacklist Muster ziehen ablegen wo suchen",
 	"Settings.Tags.Shortcuts": "Tastatur Tastenkürzel Tastenkombination Hotkey Belegung",
-	"Settings.Tags.Test": "Test Paar Diagnose Debug Bericht warum nicht erkannt Graybytes kopieren"
+	"Settings.Tags.Test": "Test Paar Diagnose Debug Bericht warum nicht erkannt Graybytes kopieren",
+	"Settings.Nav.Matching": "Abgleich",
+	"Settings.Nav.PartialClips": "Teilclips",
+	"Settings.Nav.FilesFilters": "Dateien & Filter",
+	"Settings.Sub.ResultsList": "Ergebnisliste",
+	"Settings.Sub.Database": "Datenbank"
 }

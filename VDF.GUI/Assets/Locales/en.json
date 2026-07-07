@@ -635,8 +635,6 @@
 	"Settings.Banner.Managed2": " profile. Changing anything switches this scan setup to ",
 	"Settings.Banner.Managed3": " — nothing is lost, and you can return to the profile anytime.",
 	"Settings.Banner.Custom": "These values are your own — no scan profile manages them. Selecting a profile on the main screen replaces them; picking Custom afterwards restores your values.",
-	"Settings.Sub.Comparison": "Comparison",
-	"Settings.Sub.ScanBehavior": "Scan behavior",
 	"Settings.Sub.Results": "Results & database",
 	"Settings.Row.Percent.Title": "Similarity threshold",
 	"Settings.Row.Percent.Desc": "How alike the sampled frames of two files must be to count as duplicates. 100 % finds only near-identical frames; ~95 % catches typical re-encodes; lower also surfaces watermarked or cropped copies at the cost of false positives.",
@@ -687,5 +685,10 @@
 	"Settings.Row.PathNotContains.Desc": "Files whose full path contains any of these entries are skipped.",
 	"Settings.Tags.Directories": "folders locations include exclude blacklist pattern drag drop where to search",
 	"Settings.Tags.Shortcuts": "keyboard shortcut hotkey key binding gesture",
-	"Settings.Tags.Test": "test pair diagnostics debug report why not detected copy graybytes"
+	"Settings.Tags.Test": "test pair diagnostics debug report why not detected copy graybytes",
+	"Settings.Nav.Matching": "Matching",
+	"Settings.Nav.PartialClips": "Partial clips",
+	"Settings.Nav.FilesFilters": "Files & filters",
+	"Settings.Sub.ResultsList": "Results list",
+	"Settings.Sub.Database": "Database"
 }

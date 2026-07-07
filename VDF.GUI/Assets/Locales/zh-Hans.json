@@ -635,8 +635,6 @@
 	"Settings.Banner.Managed2": " 配置管理。修改任意一项都会将扫描设置切换为 ",
 	"Settings.Banner.Managed3": "——不会丢失任何内容，随时可以切换回该配置。",
 	"Settings.Banner.Custom": "这些是您自己的值——没有任何扫描配置在管理它们。在主界面选择配置会替换这些值；之后选择“自定义”即可恢复。",
-	"Settings.Sub.Comparison": "比较",
-	"Settings.Sub.ScanBehavior": "扫描行为",
 	"Settings.Sub.Results": "结果与数据库",
 	"Settings.Row.Percent.Title": "相似度阈值",
 	"Settings.Row.Percent.Desc": "两个文件的采样帧需要多相似才算重复。100% 只找几乎完全相同的帧；约 95% 可捕获典型的重新编码；更低的值还能发现带水印或裁剪的副本，但误报会增多。",
@@ -687,5 +685,10 @@
 	"Settings.Row.PathNotContains.Desc": "完整路径包含任一这些条目的文件将被跳过。",
 	"Settings.Tags.Directories": "文件夹 目录 包含 排除 黑名单 模式 拖放 搜索位置",
 	"Settings.Tags.Shortcuts": "键盘 快捷键 按键 组合键",
-	"Settings.Tags.Test": "测试 文件对 诊断 调试 报告 为何未检测到 灰度字节"
+	"Settings.Tags.Test": "测试 文件对 诊断 调试 报告 为何未检测到 灰度字节",
+	"Settings.Nav.Matching": "匹配",
+	"Settings.Nav.PartialClips": "部分片段",
+	"Settings.Nav.FilesFilters": "文件与筛选",
+	"Settings.Sub.ResultsList": "结果列表",
+	"Settings.Sub.Database": "数据库"
 }

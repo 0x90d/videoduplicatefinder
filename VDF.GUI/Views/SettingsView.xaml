@@ -102,32 +102,43 @@
               BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
               BorderThickness="0,0,1,0"
               Padding="10,14">
-        <StackPanel x:Name="NavPanel">
-          <Border Classes="navitem on" Tag="Scanning" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Scanning]}" />
-          </Border>
-          <Border Classes="navitem" Tag="Directories" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Directories]}" />
-          </Border>
-          <Border Classes="navitem" Tag="Files" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Files]}" />
-          </Border>
-          <Border Classes="navitem" Tag="Processing" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Processing]}" />
-          </Border>
-          <Border Classes="navitem" Tag="Schedule" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
-          </Border>
-          <Border Classes="navitem" Tag="Appearance" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Appearance]}" />
-          </Border>
-          <Border Classes="navitem" Tag="Shortcuts" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts]}" />
-          </Border>
-          <Border Classes="navitem" Tag="Test" PointerPressed="OnNavItemPressed">
-            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Test]}" />
-          </Border>
-        </StackPanel>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel x:Name="NavPanel">
+            <Border Classes="navitem on" Tag="Scanning" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Scanning]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Matching" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.Matching]}" />
+            </Border>
+            <Border Classes="navitem" Tag="PartialClips" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.PartialClips]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Directories" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Directories]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Files" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.FilesFilters]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Database" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.Results]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Processing" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Processing]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Schedule" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Appearance" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Appearance]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Shortcuts" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts]}" />
+            </Border>
+            <Border Classes="navitem" Tag="Test" PointerPressed="OnNavItemPressed">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics]}" />
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
       </Border>
 
       <!-- ===== main column (mockup .set-main) ===== -->
@@ -150,34 +161,78 @@
             <TextBlock x:Name="NoResultsText" Margin="0,24,0,0" FontSize="13" Opacity="0.6" IsVisible="False"
                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.NoResults]}" />
 
-            <!-- ═══════════════ SCANNING ═══════════════ -->
+            <!-- ═══════════════ SCANNING (scan behavior) ═══════════════ -->
             <StackPanel Tag="Scanning">
               <TextBlock Classes="sectioncaption" IsVisible="False"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Scanning]}" />
 
-              <!-- profile banner: managed bundle vs. the Custom auto-switch notice -->
-              <Border CornerRadius="8" Padding="14,9" Margin="0,12,0,6" BorderThickness="1"
-                      Background="{actipro:ThemeResource ControlBackgroundBrushSoftWarning}"
-                      BorderBrush="{actipro:ThemeResource ControlForegroundBrushSoftWarning}"
-                      IsVisible="{Binding ActiveScanProfileIsManaged}">
-                <Grid ColumnDefinitions="Auto,*">
-                  <TextBlock Grid.Column="0" Text="⚙" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Managed1]}" /><Run FontWeight="SemiBold" Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" Text="{Binding ActiveScanProfileName}" /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Managed2]}" /><Run FontWeight="SemiBold" Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" Text="{Binding Source={x:Static local:App.Lang}, Path=[Profile.Custom.Name]}" /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Managed3]}" /></TextBlock>
-                </Grid>
-              </Border>
-              <Border CornerRadius="8" Padding="14,9" Margin="0,12,0,6" BorderThickness="1"
-                      Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
-                      BorderBrush="{actipro:ThemeResource ControlForegroundBrushSoftAccent}"
-                      IsVisible="{Binding !ActiveScanProfileIsManaged}">
-                <Grid ColumnDefinitions="Auto,*">
-                  <TextBlock Grid.Column="0" Text="⚙" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"
-                             Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Custom]}" />
-                </Grid>
-              </Border>
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeSubDirectories]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IncludeSubDirectories.Desc]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}" />
+              </views:SettingRow>
 
-              <TextBlock Classes="subcaption"
-                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.Comparison]}" />
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeImages]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IncludeImages.Desc]}"
+                  SearchTags="photos pictures">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDate]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDateTooltip]}"
+                  SearchTags="exif date taken">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseExifCreationDate}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreReadOnlyFolders]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IgnoreReadOnlyFolders.Desc]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePoints]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePointsTooltip]}"
+                  SearchTags="symlink junction cloud placeholder">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinks]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinksTooltip]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExcludeHardLinks}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSampling]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSamplingTooltip]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Parallelism.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxDegreeOfParallelismTooltip]}"
+                  SearchTags="parallelism cpu cores threads">
+                <NumericUpDown Classes="stepper" Maximum="100" Minimum="-1"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
+              </views:SettingRow>
+            </StackPanel>
+
+            <!-- ═══════════════ MATCHING (profile-managed comparison knobs) ═══════════════ -->
+            <StackPanel Tag="Matching" IsVisible="False">
+              <TextBlock Classes="sectioncaption" IsVisible="False"
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.Matching]}" />
+
+              <views:SettingsProfileBanner />
 
               <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Percent.Title]}"
@@ -283,158 +338,20 @@
                 </StackPanel>
               </views:SettingRow>
 
-              <TextBlock Classes="subcaption"
-                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.ScanBehavior]}" />
+              <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,16,0,0">
+                <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center"
+                           Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHint]}" />
+                <Button Classes="hyperlink" FontSize="12" VerticalAlignment="Center" Command="{Binding OpenWikiLinkCommand}"
+                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHyperlink]}" />
+              </StackPanel>
+            </StackPanel>
 
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeSubDirectories]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IncludeSubDirectories.Desc]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeSubDirectories}" />
-              </views:SettingRow>
+            <!-- ═══════════════ PARTIAL CLIPS ═══════════════ -->
+            <StackPanel Tag="PartialClips" IsVisible="False">
+              <TextBlock Classes="sectioncaption" IsVisible="False"
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.PartialClips]}" />
 
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IncludeImages]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IncludeImages.Desc]}"
-                  SearchTags="photos pictures">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeImages}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDate]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseExifCreationDateTooltip]}"
-                  SearchTags="exif date taken">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseExifCreationDate}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreReadOnlyFolders]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IgnoreReadOnlyFolders.Desc]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReadOnlyFolders}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePoints]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeReparsePointsTooltip]}"
-                  SearchTags="symlink junction cloud placeholder">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreReparsePoints}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinks]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeHardLinksTooltip]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ExcludeHardLinks}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSampling]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AlwaysRetryFailedSamplingTooltip]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysRetryFailedSampling}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Parallelism.Title]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MaxDegreeOfParallelismTooltip]}"
-                  SearchTags="parallelism cpu cores threads">
-                <NumericUpDown Classes="stepper" Maximum="100" Minimum="-1"
-                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MaxDegreeOfParallelism}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabase]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabaseTooltip]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFiles]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFilesTooltip]}"
-                  SearchTags="missing offline">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}" />
-              </views:SettingRow>
-
-              <TextBlock Classes="subcaption"
-                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.Results]}" />
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImages]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImagesTooltip]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidth]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidthTooltip]}">
-                <NumericUpDown Classes="stepper" Minimum="48" Maximum="960" Increment="48"
-                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContent]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContentTooltip]}"
-                  SearchTags="tombstone ghost already deleted">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoCheckDeletedContentMatches]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoCheckDeletedContentMatchesTooltip]}"
-                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoCheckDeletedContentMatches}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResults]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResultsTooltip]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExit]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExitTooltip]}">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPreset]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetTooltip]}"
-                  SearchTags="preset selection">
-                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                  <ToggleSwitch Classes="plain" VerticalAlignment="Center"
-                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}" />
-                  <ComboBox MinWidth="180" MaxWidth="260" VerticalAlignment="Center"
-                            x:DataType="Settings:SettingsFile"
-                            PlaceholderText="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetPlaceholder]}"
-                            IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}"
-                            ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomSelectionPresets}"
-                            SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPreset}">
-                    <ComboBox.SelectedValueBinding>
-                      <Binding Path="Name" DataType="Settings:CustomSelectionPreset" />
-                    </ComboBox.SelectedValueBinding>
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate x:DataType="Settings:CustomSelectionPreset">
-                        <TextBlock Text="{Binding Name}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-                </StackPanel>
-              </views:SettingRow>
-
-              <TextBlock Classes="subcaption"
-                         Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.PartialClipDetection]}" />
+              <views:SettingsProfileBanner />
 
               <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.EnablePartialClipDetection]}"
@@ -476,13 +393,6 @@
                 <NumericUpDown Classes="stepper" Increment="0.1" Minimum="1" Maximum="100"
                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipVisualThresholdPercent}" />
               </views:SettingRow>
-
-              <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,16,0,0">
-                <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center"
-                           Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHint]}" />
-                <Button Classes="hyperlink" FontSize="12" VerticalAlignment="Center" Command="{Binding OpenWikiLinkCommand}"
-                        Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHyperlink]}" />
-              </StackPanel>
             </StackPanel>
 
             <!-- ═══════════════ DIRECTORIES ═══════════════ -->
@@ -536,10 +446,10 @@
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
             </StackPanel>
 
-            <!-- ═══════════════ FILES ═══════════════ -->
+            <!-- ═══════════════ FILES & FILTERS ═══════════════ -->
             <StackPanel Tag="Files" IsVisible="False">
               <TextBlock Classes="sectioncaption" IsVisible="False"
-                         Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Files]}" />
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.FilesFilters]}" />
               <TextBlock Margin="0,12,0,0" FontSize="12.5" TextWrapping="Wrap" Opacity="0.8"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilesNote]}" />
 
@@ -612,6 +522,118 @@
               </StackPanel>
             </StackPanel>
 
+            <!-- ═══════════════ RESULTS & DATABASE ═══════════════ -->
+            <StackPanel Tag="Database" IsVisible="False">
+              <TextBlock Classes="sectioncaption" IsVisible="False"
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.Results]}" />
+
+              <TextBlock Classes="subcaption"
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.ResultsList]}" />
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImages]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.GeneratePreviewImagesTooltip]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=GeneratePreviewThumbnails}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidth]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ThumbnailMaxWidthTooltip]}">
+                <NumericUpDown Classes="stepper" Minimum="48" Maximum="960" Increment="48"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPreset]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetTooltip]}"
+                  SearchTags="preset selection">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <ToggleSwitch Classes="plain" VerticalAlignment="Center"
+                                IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}" />
+                  <ComboBox MinWidth="180" MaxWidth="260" VerticalAlignment="Center"
+                            x:DataType="Settings:SettingsFile"
+                            PlaceholderText="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetPlaceholder]}"
+                            IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}"
+                            ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomSelectionPresets}"
+                            SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPreset}">
+                    <ComboBox.SelectedValueBinding>
+                      <Binding Path="Name" DataType="Settings:CustomSelectionPreset" />
+                    </ComboBox.SelectedValueBinding>
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="Settings:CustomSelectionPreset">
+                        <TextBlock Text="{Binding Name}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExit]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SaveResultsOnExitTooltip]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AskToSaveResultsOnExit}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResults]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoBackupScanResultsTooltip]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=BackupAfterListChanged}" />
+              </views:SettingRow>
+
+              <TextBlock Classes="subcaption"
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.Database]}" />
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContent]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.RememberDeletedContentTooltip]}"
+                  SearchTags="tombstone ghost already deleted">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoCheckDeletedContentMatches]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoCheckDeletedContentMatchesTooltip]}"
+                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoCheckDeletedContentMatches}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabase]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstEntireDatabaseTooltip]}">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ScanAgainstEntireDatabase}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFiles]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanAgainstNonExistingFilesTooltip]}"
+                  SearchTags="missing offline">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IncludeNonExistingFiles}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolder]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolderTooltip]}"
+                  SearchTags="database folder location">
+                <TextBox Width="220"
+                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DatabaseCheckpointInterval]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DatabaseCheckpointIntervalTooltip]}"
+                  SearchTags="checkpoint autosave crash">
+                <NumericUpDown Classes="stepper" Minimum="0" Maximum="60" Increment="1" FormatString="0"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DatabaseCheckpointIntervalMinutes}" />
+              </views:SettingRow>
+            </StackPanel>
+
             <!-- ═══════════════ PROCESSING ═══════════════ -->
             <StackPanel Tag="Processing" IsVisible="False">
               <TextBlock Classes="sectioncaption" IsVisible="False"
@@ -673,22 +695,6 @@
                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomCommandsPlaceholderTooltip]}"
                            Text="{Binding SelectedCustomCommandValue}" />
                 </StackPanel>
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolder]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.CustomDatabaseFolderTooltip]}"
-                  SearchTags="database folder location">
-                <TextBox Width="220"
-                         Text="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomDatabaseFolder}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DatabaseCheckpointInterval]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DatabaseCheckpointIntervalTooltip]}"
-                  SearchTags="checkpoint autosave crash">
-                <NumericUpDown Classes="stepper" Minimum="0" Maximum="60" Increment="1" FormatString="0"
-                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=DatabaseCheckpointIntervalMinutes}" />
               </views:SettingRow>
             </StackPanel>
 
@@ -851,10 +857,10 @@
               </StackPanel>
             </StackPanel>
 
-            <!-- ═══════════════ TEST ═══════════════ -->
+            <!-- ═══════════════ DIAGNOSTICS ═══════════════ -->
             <StackPanel Tag="Test" IsVisible="False">
               <TextBlock Classes="sectioncaption" IsVisible="False"
-                         Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Test]}" />
+                         Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics]}" />
               <StackPanel Margin="0,12,0,0" Spacing="10"
                           views:SettingsSearchMeta.Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Tags.Test]}">
                 <TextBlock TextWrapping="Wrap" FontSize="12.5" Opacity="0.8"

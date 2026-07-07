@@ -635,8 +635,6 @@
 	"Settings.Banner.Managed2": ". Alterar qualquer coisa muda esta configuração de verificação para ",
 	"Settings.Banner.Managed3": " — nada se perde e você pode voltar ao perfil a qualquer momento.",
 	"Settings.Banner.Custom": "Estes valores são seus — nenhum perfil de verificação os gerencia. Escolher um perfil na tela principal os substitui; escolher Personalizado depois os restaura.",
-	"Settings.Sub.Comparison": "Comparação",
-	"Settings.Sub.ScanBehavior": "Comportamento da verificação",
 	"Settings.Sub.Results": "Resultados e banco de dados",
 	"Settings.Row.Percent.Title": "Limite de similaridade",
 	"Settings.Row.Percent.Desc": "Quão parecidos os quadros amostrados de dois arquivos precisam ser para contarem como duplicatas. 100 % encontra apenas quadros quase idênticos; ~95 % captura recodificações típicas; valores menores também revelam cópias com marca d'água ou cortadas, ao custo de falsos positivos.",
@@ -687,5 +685,10 @@
 	"Settings.Row.PathNotContains.Desc": "Arquivos cujo caminho completo contém alguma destas entradas são ignorados.",
 	"Settings.Tags.Directories": "pastas diretórios incluir excluir lista negra padrão arrastar soltar onde procurar",
 	"Settings.Tags.Shortcuts": "teclado atalho tecla combinação",
-	"Settings.Tags.Test": "teste par diagnóstico depuração relatório por que não detectado graybytes"
+	"Settings.Tags.Test": "teste par diagnóstico depuração relatório por que não detectado graybytes",
+	"Settings.Nav.Matching": "Correspondência",
+	"Settings.Nav.PartialClips": "Clipes parciais",
+	"Settings.Nav.FilesFilters": "Arquivos e filtros",
+	"Settings.Sub.ResultsList": "Lista de resultados",
+	"Settings.Sub.Database": "Banco de dados"
 }

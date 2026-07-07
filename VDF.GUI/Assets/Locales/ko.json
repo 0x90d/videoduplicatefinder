@@ -635,8 +635,6 @@
 	"Settings.Banner.Managed2": " 프로필이 관리합니다. 항목을 변경하면 스캔 설정이 ",
 	"Settings.Banner.Managed3": "(으)로 전환됩니다. 손실되는 것은 없으며 언제든지 프로필로 돌아갈 수 있습니다.",
 	"Settings.Banner.Custom": "이 값들은 사용자 고유의 값입니다. 어떤 스캔 프로필도 관리하지 않습니다. 메인 화면에서 프로필을 선택하면 대체되며, 이후 사용자 지정을 선택하면 복원됩니다.",
-	"Settings.Sub.Comparison": "비교",
-	"Settings.Sub.ScanBehavior": "스캔 동작",
 	"Settings.Sub.Results": "결과 및 데이터베이스",
 	"Settings.Row.Percent.Title": "유사도 임계값",
 	"Settings.Row.Percent.Desc": "두 파일의 샘플 프레임이 얼마나 비슷해야 중복으로 간주되는지 결정합니다. 100%는 거의 동일한 프레임만 찾고, 약 95%는 일반적인 재인코딩을 잡아내며, 더 낮은 값은 워터마크가 있거나 잘린 사본까지 찾지만 오탐이 늘어납니다.",
@@ -687,5 +685,10 @@
 	"Settings.Row.PathNotContains.Desc": "전체 경로에 이 항목 중 하나라도 포함된 파일은 건너뜁니다.",
 	"Settings.Tags.Directories": "폴더 디렉터리 포함 제외 블랙리스트 패턴 끌어서 놓기 검색 위치",
 	"Settings.Tags.Shortcuts": "키보드 단축키 핫키 키 바인딩",
-	"Settings.Tags.Test": "테스트 쌍 진단 디버그 보고서 감지되지 않음 그레이바이트"
+	"Settings.Tags.Test": "테스트 쌍 진단 디버그 보고서 감지되지 않음 그레이바이트",
+	"Settings.Nav.Matching": "매칭",
+	"Settings.Nav.PartialClips": "부분 클립",
+	"Settings.Nav.FilesFilters": "파일 및 필터",
+	"Settings.Sub.ResultsList": "결과 목록",
+	"Settings.Sub.Database": "데이터베이스"
 }

@@ -1,0 +1,33 @@
+<UserControl
+    x:Class="VDF.GUI.Views.SettingsProfileBanner"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+    xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+    xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
+    x:DataType="vm:MainWindowVM">
+
+  <!-- profile banner: managed bundle vs. the Custom auto-switch notice.
+       Shown on every section that contains profile-managed knobs. -->
+  <StackPanel>
+    <Border CornerRadius="8" Padding="14,9" Margin="0,12,0,6" BorderThickness="1"
+            Background="{actipro:ThemeResource ControlBackgroundBrushSoftWarning}"
+            BorderBrush="{actipro:ThemeResource ControlForegroundBrushSoftWarning}"
+            IsVisible="{Binding ActiveScanProfileIsManaged}">
+      <Grid ColumnDefinitions="Auto,*">
+        <TextBlock Grid.Column="0" Text="⚙" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Managed1]}" /><Run FontWeight="SemiBold" Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" Text="{Binding ActiveScanProfileName}" /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Managed2]}" /><Run FontWeight="SemiBold" Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" Text="{Binding Source={x:Static local:App.Lang}, Path=[Profile.Custom.Name]}" /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Managed3]}" /></TextBlock>
+      </Grid>
+    </Border>
+    <Border CornerRadius="8" Padding="14,9" Margin="0,12,0,6" BorderThickness="1"
+            Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
+            BorderBrush="{actipro:ThemeResource ControlForegroundBrushSoftAccent}"
+            IsVisible="{Binding !ActiveScanProfileIsManaged}">
+      <Grid ColumnDefinitions="Auto,*">
+        <TextBlock Grid.Column="0" Text="⚙" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Banner.Custom]}" />
+      </Grid>
+    </Border>
+  </StackPanel>
+</UserControl>

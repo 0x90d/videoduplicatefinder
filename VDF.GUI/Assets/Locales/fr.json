@@ -635,8 +635,6 @@
 	"Settings.Banner.Managed2": ". Modifier quoi que ce soit fait passer cette configuration en ",
 	"Settings.Banner.Managed3": " — rien n'est perdu et vous pouvez revenir au profil à tout moment.",
 	"Settings.Banner.Custom": "Ces valeurs sont les vôtres — aucun profil d'analyse ne les gère. Choisir un profil sur l'écran principal les remplace ; choisir Personnalisé ensuite les restaure.",
-	"Settings.Sub.Comparison": "Comparaison",
-	"Settings.Sub.ScanBehavior": "Comportement de l'analyse",
 	"Settings.Sub.Results": "Résultats et base de données",
 	"Settings.Row.Percent.Title": "Seuil de similarité",
 	"Settings.Row.Percent.Desc": "À quel point les images échantillonnées de deux fichiers doivent se ressembler pour compter comme doublons. 100 % ne trouve que des images quasi identiques ; ~95 % détecte les réencodages typiques ; plus bas révèle aussi les copies filigranées ou recadrées, au prix de faux positifs.",
@@ -687,5 +685,10 @@
 	"Settings.Row.PathNotContains.Desc": "Les fichiers dont le chemin complet contient une de ces entrées sont ignorés.",
 	"Settings.Tags.Directories": "dossiers répertoires inclure exclure liste noire motif glisser déposer où chercher",
 	"Settings.Tags.Shortcuts": "clavier raccourci touche combinaison",
-	"Settings.Tags.Test": "test paire diagnostic débogage rapport pourquoi non détecté graybytes"
+	"Settings.Tags.Test": "test paire diagnostic débogage rapport pourquoi non détecté graybytes",
+	"Settings.Nav.Matching": "Correspondance",
+	"Settings.Nav.PartialClips": "Clips partiels",
+	"Settings.Nav.FilesFilters": "Fichiers et filtres",
+	"Settings.Sub.ResultsList": "Liste des résultats",
+	"Settings.Sub.Database": "Base de données"
 }

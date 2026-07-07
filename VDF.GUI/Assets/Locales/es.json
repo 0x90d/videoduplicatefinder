@@ -635,8 +635,6 @@
 	"Settings.Banner.Managed2": ". Cambiar cualquier cosa pasa esta configuración de escaneo a ",
 	"Settings.Banner.Managed3": " — no se pierde nada y puedes volver al perfil en cualquier momento.",
 	"Settings.Banner.Custom": "Estos valores son tuyos: ningún perfil de escaneo los gestiona. Elegir un perfil en la pantalla principal los sustituye; elegir Personalizado después los restaura.",
-	"Settings.Sub.Comparison": "Comparación",
-	"Settings.Sub.ScanBehavior": "Comportamiento del escaneo",
 	"Settings.Sub.Results": "Resultados y base de datos",
 	"Settings.Row.Percent.Title": "Umbral de similitud",
 	"Settings.Row.Percent.Desc": "Cuán parecidos deben ser los fotogramas muestreados de dos archivos para contar como duplicados. 100 % solo encuentra fotogramas casi idénticos; ~95 % detecta recodificaciones típicas; valores más bajos también revelan copias con marca de agua o recortadas, a costa de falsos positivos.",
@@ -687,5 +685,10 @@
 	"Settings.Row.PathNotContains.Desc": "Se omiten los archivos cuya ruta completa contiene alguna de estas entradas.",
 	"Settings.Tags.Directories": "carpetas directorios incluir excluir lista negra patrón arrastrar soltar dónde buscar",
 	"Settings.Tags.Shortcuts": "teclado atajo combinación tecla acceso rápido",
-	"Settings.Tags.Test": "prueba par diagnóstico depurar informe por qué no detectado graybytes"
+	"Settings.Tags.Test": "prueba par diagnóstico depurar informe por qué no detectado graybytes",
+	"Settings.Nav.Matching": "Coincidencia",
+	"Settings.Nav.PartialClips": "Clips parciales",
+	"Settings.Nav.FilesFilters": "Archivos y filtros",
+	"Settings.Sub.ResultsList": "Lista de resultados",
+	"Settings.Sub.Database": "Base de datos"
 }
