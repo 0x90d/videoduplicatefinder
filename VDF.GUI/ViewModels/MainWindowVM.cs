@@ -1780,30 +1780,55 @@ Non-Windows setup:
 
 		public ReactiveCommand<Unit, Unit> ShowGroupInThumbnailComparerCommand => ReactiveCommand.Create(() => {
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM data) return;
-			List<LargeThumbnailDuplicateItem> items = new();
+			List<LargeThumbnailDuplicateItem> items;
 			Guid? groupId = null;
 
 			if (GetSelectedDuplicates().Count == 1) {
-				foreach (DuplicateItemVM duplicateItem in Duplicates.Where(d => d.ItemInfo.GroupId == data.ItemInfo.GroupId))
-					items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
+				items = CreateComparerItems(Duplicates.Where(d => d.ItemInfo.GroupId == data.ItemInfo.GroupId));
 				groupId = data.ItemInfo.GroupId;
 			}
 			else {
-				foreach (DuplicateItemVM duplicateItem in GetSelectedDuplicates())
-					items.Add(new LargeThumbnailDuplicateItem(duplicateItem));
+				// Arbitrary selection, possibly across groups — no keeper marking.
+				items = GetSelectedDuplicates().Select(d => new LargeThumbnailDuplicateItem(d)).ToList();
 			}
 
-			ThumbnailComparer thumbnailComparer = new(items, groupId, NavigateGroupForComparer);
+			ThumbnailComparer thumbnailComparer = new(items, groupId, NavigateGroupForComparer, GetComparerGroupPosition);
 			thumbnailComparer.Show();
 		});
 
 		public void CompareGroup(Guid groupId) {
-			var items = Duplicates
-				.Where(d => d.ItemInfo.GroupId == groupId)
-				.Select(d => new LargeThumbnailDuplicateItem(d))
-				.ToList();
+			var items = CreateComparerItems(Duplicates.Where(d => d.ItemInfo.GroupId == groupId));
 			if (items.Count == 0) return;
-			new ThumbnailComparer(items, groupId, NavigateGroupForComparer).Show();
+			new ThumbnailComparer(items, groupId, NavigateGroupForComparer, GetComparerGroupPosition).Show();
+		}
+
+		/// <summary>Comparer items for one group; marks the quality keeper (BEST badge, pane tint).</summary>
+		List<LargeThumbnailDuplicateItem> CreateComparerItems(IEnumerable<DuplicateItemVM> groupMembers) {
+			var list = groupMembers.Select(d => new LargeThumbnailDuplicateItem(d)).ToList();
+			if (list.Count >= 2) {
+				var keeper = VDF.Core.Utils.QualityRanker.PickKeeper(
+					list.Select(l => l.Item).ToList(),
+					ResolveCriteria(QualityCriteriaOrder),
+					d => d.ItemInfo.IsImage);
+				foreach (var entry in list)
+					entry.IsGroupBest = ReferenceEquals(entry.Item, keeper);
+			}
+			return list;
+		}
+
+		/// <summary>1-based position of a group within the current results view, for "Group X of Y".</summary>
+		internal (int Index, int Total)? GetComparerGroupPosition(Guid groupId) {
+			if (!SettingsFile.Instance.UseClassicResultsView) {
+				var ids = resultsGroups.Select(g => g.GroupId).ToList();
+				int idx = ids.IndexOf(groupId);
+				return idx < 0 ? null : (idx + 1, ids.Count);
+			}
+			if (view?.Groups == null) return null;
+			var groups = view.Groups.OfType<DataGridCollectionViewGroup>().ToList();
+			for (int i = 0; i < groups.Count; i++)
+				if (groups[i].Items.OfType<DuplicateItemVM>().FirstOrDefault()?.ItemInfo.GroupId == groupId)
+					return (i + 1, groups.Count);
+			return null;
 		}
 
 		public void KeepBestInGroup(Guid groupId) {
@@ -2172,10 +2197,7 @@ Non-Windows setup:
 		internal (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)? NavigateGroupForComparer(Guid currentGroupId, bool forward) {
 			var newGroupId = NavigateGroup(forward, currentGroupId);
 			if (newGroupId is null) return null;
-			var items = Duplicates
-				.Where(d => d.ItemInfo.GroupId == newGroupId.Value)
-				.Select(d => new LargeThumbnailDuplicateItem(d))
-				.ToList();
+			var items = CreateComparerItems(Duplicates.Where(d => d.ItemInfo.GroupId == newGroupId.Value));
 			if (items.Count == 0) return null;
 			return (newGroupId.Value, items);
 		}

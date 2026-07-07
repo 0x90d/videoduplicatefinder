@@ -690,5 +690,16 @@
 	"Settings.Nav.PartialClips": "Clips parciales",
 	"Settings.Nav.FilesFilters": "Archivos y filtros",
 	"Settings.Sub.ResultsList": "Lista de resultados",
-	"Settings.Sub.Database": "Base de datos"
+	"Settings.Sub.Database": "Base de datos",
+	"Comparer.GroupInfo": "Grupo {0} de {1}",
+	"Comparer.PairInfo": "par {0} / {1} · {2} archivos en el grupo",
+	"Comparer.KeepLeft": "Conservar izquierda, marcar derecha",
+	"Comparer.KeepRight": "Conservar derecha, marcar izquierda",
+	"Comparer.NotAMatch": "No es duplicado",
+	"Comparer.CheckedMessage": "Marcado: {0}",
+	"Comparer.NoMoreGroups": "No hay más grupos: has terminado.",
+	"Comparer.HintFrame": "fotograma",
+	"Comparer.HintZoom": "zoom",
+	"Comparer.HintNextPair": "siguiente par",
+	"Comparer.CheckedTag": "marcado"
 }

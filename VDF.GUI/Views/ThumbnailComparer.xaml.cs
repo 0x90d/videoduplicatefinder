@@ -17,7 +17,10 @@
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using DynamicData;
@@ -29,17 +32,21 @@ namespace VDF.GUI.Views {
 		//Designer need this
 		public ThumbnailComparer() => InitializeComponent();
 		public ThumbnailComparer(List<LargeThumbnailDuplicateItem> duplicateItemVMs)
-			: this(duplicateItemVMs, null, null) { }
+			: this(duplicateItemVMs, null, null, null) { }
 		public ThumbnailComparer(
 			List<LargeThumbnailDuplicateItem> duplicateItemVMs,
 			Guid? currentGroupId,
-			Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? groupNavigator) {
-			DataContext = new ThumbnailComparerVM(duplicateItemVMs, currentGroupId, groupNavigator);
+			Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? groupNavigator,
+			Func<Guid, (int Index, int Total)?>? groupPosition = null) {
+			DataContext = new ThumbnailComparerVM(duplicateItemVMs, currentGroupId, groupNavigator, groupPosition);
 			InitializeComponent();
 			Owner = ApplicationHelpers.MainWindow;
 			this.Loaded += ThumbnailComparer_Loaded;
 			this.Opened += ThumbnailComparer_Opened;
 			this.Closing += ThumbnailComparer_Closing;
+			// Culling keys are tunnel-handled so buttons/sliders never swallow them
+			// (locked decision 10: A/D keep a side, Space next pair, arrows step frames, Z zoom).
+			AddHandler(KeyDownEvent, OnCullingKeyDown, RoutingStrategies.Tunnel);
 
 			if (SettingsFile.Instance.UseMica &&
 				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
@@ -94,6 +101,49 @@ namespace VDF.GUI.Views {
 
 		private void ThumbnailComparer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
 			SaveWindowPlacement();
+		}
+
+		void OnCullingKeyDown(object? sender, KeyEventArgs e) {
+			if (DataContext is not ThumbnailComparerVM vm) return;
+			if (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Alt)) return;
+			// An open dropdown or a text input keeps its keys.
+			var focused = FocusManager?.GetFocusedElement() as Control;
+			if (focused is TextBox) return;
+			var combo = focused as ComboBox ?? focused?.FindLogicalAncestorOfType<ComboBox>();
+			if (combo?.IsDropDownOpen == true) return;
+
+			bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+			switch (e.Key) {
+				case Key.A:
+					vm.KeepLeftCommand.Execute().Subscribe();
+					e.Handled = true;
+					break;
+				case Key.D:
+					vm.KeepRightCommand.Execute().Subscribe();
+					e.Handled = true;
+					break;
+				case Key.N:
+					vm.NotAMatchCommand.Execute().Subscribe();
+					e.Handled = true;
+					break;
+				case Key.Space:
+					vm.SkipPairCommand.Execute().Subscribe();
+					e.Handled = true;
+					break;
+				case Key.Z:
+					vm.ToggleZoomCommand.Execute().Subscribe();
+					e.Handled = true;
+					break;
+				case Key.Left:
+					// Plain: previous aligned position on BOTH panes; Shift: fine-step both by one frame.
+					(shift ? vm.StepBothMinusCommand : vm.PrevBaseCommand).Execute().Subscribe();
+					e.Handled = true;
+					break;
+				case Key.Right:
+					(shift ? vm.StepBothPlusCommand : vm.NextBaseCommand).Execute().Subscribe();
+					e.Handled = true;
+					break;
+			}
 		}
 
 		private void ApplySavedWindowPlacement() {

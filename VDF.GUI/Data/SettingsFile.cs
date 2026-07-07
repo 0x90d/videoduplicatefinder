@@ -440,7 +440,8 @@ namespace VDF.GUI.Data {
 			get => _ThumbnailComparerWindowScreenIndex;
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowScreenIndex, value);
 		}
-		CompareMode _ThumbnailComparerMode = CompareMode.Swipe;
+		// Side-by-side first (redesign stage 4, maintainer directive on comparer view modes).
+		CompareMode _ThumbnailComparerMode = CompareMode.SideBySide;
 		[JsonPropertyName("ThumbnailComparerMode")]
 		public CompareMode ThumbnailComparerMode {
 			get => _ThumbnailComparerMode;

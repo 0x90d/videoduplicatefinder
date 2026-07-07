@@ -690,5 +690,16 @@
 	"Settings.Nav.PartialClips": "Partial clips",
 	"Settings.Nav.FilesFilters": "Files & filters",
 	"Settings.Sub.ResultsList": "Results list",
-	"Settings.Sub.Database": "Database"
+	"Settings.Sub.Database": "Database",
+	"Comparer.GroupInfo": "Group {0} of {1}",
+	"Comparer.PairInfo": "pair {0} / {1} · {2} files in group",
+	"Comparer.KeepLeft": "Keep left, check right",
+	"Comparer.KeepRight": "Keep right, check left",
+	"Comparer.NotAMatch": "Not a match",
+	"Comparer.CheckedMessage": "Checked: {0}",
+	"Comparer.NoMoreGroups": "No more groups — you're done.",
+	"Comparer.HintFrame": "frame",
+	"Comparer.HintZoom": "zoom",
+	"Comparer.HintNextPair": "next pair",
+	"Comparer.CheckedTag": "checked"
 }

@@ -690,5 +690,16 @@
 	"Settings.Nav.PartialClips": "부분 클립",
 	"Settings.Nav.FilesFilters": "파일 및 필터",
 	"Settings.Sub.ResultsList": "결과 목록",
-	"Settings.Sub.Database": "데이터베이스"
+	"Settings.Sub.Database": "데이터베이스",
+	"Comparer.GroupInfo": "그룹 {0} / {1}",
+	"Comparer.PairInfo": "쌍 {0} / {1} · 그룹 내 파일 {2}개",
+	"Comparer.KeepLeft": "왼쪽 유지, 오른쪽 선택",
+	"Comparer.KeepRight": "오른쪽 유지, 왼쪽 선택",
+	"Comparer.NotAMatch": "중복 아님",
+	"Comparer.CheckedMessage": "선택됨: {0}",
+	"Comparer.NoMoreGroups": "더 이상 그룹이 없습니다 — 완료.",
+	"Comparer.HintFrame": "프레임",
+	"Comparer.HintZoom": "확대",
+	"Comparer.HintNextPair": "다음 쌍",
+	"Comparer.CheckedTag": "선택됨"
 }

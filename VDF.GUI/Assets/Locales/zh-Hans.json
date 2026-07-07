@@ -690,5 +690,16 @@
 	"Settings.Nav.PartialClips": "部分片段",
 	"Settings.Nav.FilesFilters": "文件与筛选",
 	"Settings.Sub.ResultsList": "结果列表",
-	"Settings.Sub.Database": "数据库"
+	"Settings.Sub.Database": "数据库",
+	"Comparer.GroupInfo": "第 {0} 组，共 {1} 组",
+	"Comparer.PairInfo": "第 {0} / {1} 对 · 组内 {2} 个文件",
+	"Comparer.KeepLeft": "保留左侧，勾选右侧",
+	"Comparer.KeepRight": "保留右侧，勾选左侧",
+	"Comparer.NotAMatch": "不是重复项",
+	"Comparer.CheckedMessage": "已勾选：{0}",
+	"Comparer.NoMoreGroups": "没有更多组——完成。",
+	"Comparer.HintFrame": "帧",
+	"Comparer.HintZoom": "缩放",
+	"Comparer.HintNextPair": "下一对",
+	"Comparer.CheckedTag": "已勾选"
 }

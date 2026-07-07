@@ -690,5 +690,16 @@
 	"Settings.Nav.PartialClips": "Teilclips",
 	"Settings.Nav.FilesFilters": "Dateien & Filter",
 	"Settings.Sub.ResultsList": "Ergebnisliste",
-	"Settings.Sub.Database": "Datenbank"
+	"Settings.Sub.Database": "Datenbank",
+	"Comparer.GroupInfo": "Gruppe {0} von {1}",
+	"Comparer.PairInfo": "Paar {0} / {1} · {2} Dateien in der Gruppe",
+	"Comparer.KeepLeft": "Links behalten, rechts markieren",
+	"Comparer.KeepRight": "Rechts behalten, links markieren",
+	"Comparer.NotAMatch": "Kein Duplikat",
+	"Comparer.CheckedMessage": "Markiert: {0}",
+	"Comparer.NoMoreGroups": "Keine weiteren Gruppen – fertig.",
+	"Comparer.HintFrame": "Frame",
+	"Comparer.HintZoom": "Zoom",
+	"Comparer.HintNextPair": "nächstes Paar",
+	"Comparer.CheckedTag": "markiert"
 }

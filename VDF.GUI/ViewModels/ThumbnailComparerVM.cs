@@ -158,6 +158,7 @@ namespace VDF.GUI.ViewModels {
 				this.RaiseAndSetIfChanged(ref _baseThumbnailIndex, Math.Clamp(value, 0, Math.Max(BaseThumbnailIndexMax, 0)));
 				StepA = 0;
 				StepB = 0;
+				UpdateStripCurrent();
 			}
 		}
 		private int _baseThumbnailIndexMax;
@@ -256,6 +257,7 @@ namespace VDF.GUI.ViewModels {
 		CancellationTokenSource? _loadCts;
 
 		readonly Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? _groupNavigator;
+		readonly Func<Guid, (int Index, int Total)?>? _groupPosition;
 		Guid? _currentGroupId;
 		public bool CanNavigateGroups => _groupNavigator != null && _currentGroupId.HasValue;
 
@@ -263,16 +265,18 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit>? NextGroupCommand { get; }
 
 		public ThumbnailComparerVM(List<LargeThumbnailDuplicateItem> duplicateItemVMs)
-			: this(duplicateItemVMs, null, null) { }
+			: this(duplicateItemVMs, null, null, null) { }
 
 		[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = MainWindowVM.WhenAnyValueTrimJustification)]
 		public ThumbnailComparerVM(
 			List<LargeThumbnailDuplicateItem> duplicateItemVMs,
 			Guid? currentGroupId,
-			Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? groupNavigator) {
+			Func<Guid, bool, (Guid GroupId, List<LargeThumbnailDuplicateItem> Items)?>? groupNavigator,
+			Func<Guid, (int Index, int Total)?>? groupPosition = null) {
 			Items = new(duplicateItemVMs);
 			_currentGroupId = currentGroupId;
 			_groupNavigator = groupNavigator;
+			_groupPosition = groupPosition;
 
 			var modes = new ObservableCollection<CompareMode> {
 				CompareMode.Single, CompareMode.Swipe, CompareMode.SideBySide, CompareMode.Stacked
@@ -303,13 +307,37 @@ namespace VDF.GUI.ViewModels {
 				PreviousGroupCommand = ReactiveCommand.CreateFromTask(() => SwitchGroupAsync(forward: false));
 				NextGroupCommand = ReactiveCommand.CreateFromTask(() => SwitchGroupAsync(forward: true));
 			}
+
+			KeepLeftCommand = ReactiveCommand.Create(() => ApplyDecision(CullingPairFlow.Decision.KeepLeft));
+			KeepRightCommand = ReactiveCommand.Create(() => ApplyDecision(CullingPairFlow.Decision.KeepRight));
+			SkipPairCommand = ReactiveCommand.Create(() => ApplyDecision(CullingPairFlow.Decision.Skip));
+			NotAMatchCommand = ReactiveCommand.CreateFromTask(NotAMatchAsync);
+			ToggleZoomCommand = ReactiveCommand.Create(() => {
+				if (Math.Abs(Zoom - 1.0) < 0.01) {
+					Zoom = 2.0;
+				}
+				else {
+					Zoom = 1.0;
+					PanOffsetX = 0;
+					PanOffsetY = 0;
+				}
+			});
+			StepBothMinusCommand = ReactiveCommand.Create(() => { StepA--; StepB--; });
+			StepBothPlusCommand = ReactiveCommand.Create(() => { StepA++; StepB++; });
+			SelectBasePositionCommand = ReactiveCommand.Create<FrameStripEntry>(entry => {
+				if (entry != null) BaseThumbnailIndex = entry.Index;
+			});
+			UpdateGroupInfo();
 		}
 
 		async Task SwitchGroupAsync(bool forward) {
 			if (_groupNavigator is null || _currentGroupId is null) return;
 			var result = _groupNavigator(_currentGroupId.Value, forward);
 			if (result is null) return;
+			await ApplyGroupResultAsync(result.Value);
+		}
 
+		async Task ApplyGroupResultAsync((Guid GroupId, List<LargeThumbnailDuplicateItem> Items) result) {
 			// Cancel any in-flight thumbnail / frame work for the previous group
 			_loadCts?.Cancel();
 			_frameExtractCts?.Cancel();
@@ -325,29 +353,165 @@ namespace VDF.GUI.ViewModels {
 				this.RaisePropertyChanged(nameof(SelectedItemB));
 
 				Items.Clear();
-				foreach (var item in result.Value.Items)
+				foreach (var item in result.Items)
 					Items.Add(item);
 			}
 			finally {
 				_suppressSelectionUpdates = false;
 			}
 
-			_currentGroupId = result.Value.GroupId;
+			_currentGroupId = result.GroupId;
 			ImageA = null;
 			ImageB = null;
 			this.RaisePropertyChanged(nameof(ImageSingle));
+			UpdateGroupInfo();
 
 			await LoadThumbnailsAsync();
+		}
+
+		// ---------- keyboard-first culling (redesign stage 4) ----------
+
+		public ReactiveCommand<Unit, Unit> KeepLeftCommand { get; }
+		public ReactiveCommand<Unit, Unit> KeepRightCommand { get; }
+		public ReactiveCommand<Unit, Unit> SkipPairCommand { get; }
+		public ReactiveCommand<Unit, Unit> NotAMatchCommand { get; }
+		public ReactiveCommand<Unit, Unit> ToggleZoomCommand { get; }
+		public ReactiveCommand<Unit, Unit> StepBothMinusCommand { get; }
+		public ReactiveCommand<Unit, Unit> StepBothPlusCommand { get; }
+		public ReactiveCommand<FrameStripEntry, Unit> SelectBasePositionCommand { get; }
+
+		CullingPairFlow? _pairFlow;
+
+		string _groupInfoText = string.Empty;
+		public string GroupInfoText { get => _groupInfoText; private set => this.RaiseAndSetIfChanged(ref _groupInfoText, value); }
+		string _pairInfoText = string.Empty;
+		public string PairInfoText { get => _pairInfoText; private set => this.RaiseAndSetIfChanged(ref _pairInfoText, value); }
+		string _similarityText = string.Empty;
+		public string SimilarityText { get => _similarityText; private set => this.RaiseAndSetIfChanged(ref _similarityText, value); }
+		public bool HasSimilarity => !string.IsNullOrEmpty(SimilarityText);
+
+		public ObservableCollection<MetaChip> LeftChips { get; } = new();
+		public ObservableCollection<MetaChip> RightChips { get; } = new();
+		public ObservableCollection<FrameStripEntry> StripA { get; } = new();
+		public ObservableCollection<FrameStripEntry> StripB { get; } = new();
+
+		bool _isLeftBest;
+		public bool IsLeftBest { get => _isLeftBest; private set => this.RaiseAndSetIfChanged(ref _isLeftBest, value); }
+		bool _isRightBest;
+		public bool IsRightBest { get => _isRightBest; private set => this.RaiseAndSetIfChanged(ref _isRightBest, value); }
+
+		void ApplyDecision(CullingPairFlow.Decision decision) {
+			if (_pairFlow is null || Items.Count < 2) return;
+			var step = _pairFlow.Advance(decision);
+
+			if (step.CheckIndex >= 0 && step.CheckIndex < Items.Count) {
+				Items[step.CheckIndex].Item.Checked = true;
+				ShowMessage(string.Format(App.Lang["Comparer.CheckedMessage"], Items[step.CheckIndex].FileName), 1600);
+			}
+			if (step.KeepIndex >= 0 && step.KeepIndex < Items.Count)
+				Items[step.KeepIndex].Item.Checked = false;
+
+			if (step.GroupFinished) {
+				if (CanNavigateGroups)
+					_ = SwitchGroupAsync(forward: true);
+				else
+					ShowMessage(App.Lang["Comparer.NoMoreGroups"]);
+				return;
+			}
+			SetPairSelection(_pairFlow.LeftIndex, _pairFlow.RightIndex);
+		}
+
+		async Task NotAMatchAsync() {
+			if (_currentGroupId is null) return;
+			var gid = _currentGroupId.Value;
+			// Capture the neighbor BEFORE the group disappears from the results list.
+			var next = _groupNavigator?.Invoke(gid, true);
+			await ApplicationHelpers.MainWindowDataContext.MarkGroupAsNotAMatch(gid);
+			if (next is null || next.Value.GroupId == gid) {
+				ShowMessage(App.Lang["Comparer.NoMoreGroups"]);
+				return;
+			}
+			await ApplyGroupResultAsync(next.Value);
+		}
+
+		void SetPairSelection(int left, int right) {
+			if (left < 0 || right < 0 || left >= Items.Count || right >= Items.Count) return;
+			_suppressSelectionUpdates = true;
+			try {
+				SelectedItemA = Items[left];
+				SelectedItemB = Items[right];
+			}
+			finally {
+				_suppressSelectionUpdates = false;
+			}
+			UpdateShowFrameControls();
+			UpdateImages();
+			UpdateCullingInfo();
+		}
+
+		void UpdateGroupInfo() {
+			var pos = _currentGroupId is Guid gid ? _groupPosition?.Invoke(gid) : null;
+			GroupInfoText = pos is { } p
+				? string.Format(App.Lang["Comparer.GroupInfo"], p.Index, p.Total)
+				: string.Empty;
+		}
+
+		void UpdateCullingInfo() {
+			if (_pairFlow is { PairCount: > 0 })
+				PairInfoText = string.Format(App.Lang["Comparer.PairInfo"], _pairFlow.PairNumber, _pairFlow.PairCount, Items.Count);
+			else
+				PairInfoText = string.Empty;
+
+			var sim = SelectedItemB?.Item.ItemInfo.Similarity;
+			SimilarityText = sim is float s and > 0 ? $"{s:0} %" : string.Empty;
+			this.RaisePropertyChanged(nameof(HasSimilarity));
+
+			IsLeftBest = SelectedItemA?.IsGroupBest == true;
+			IsRightBest = SelectedItemB?.IsGroupBest == true;
+
+			LeftChips.Clear();
+			RightChips.Clear();
+			var a = SelectedItemA?.Item.ItemInfo;
+			var b = SelectedItemB?.Item.ItemInfo;
+			if (a != null)
+				foreach (var chip in ComparerChips.Build(a, b))
+					LeftChips.Add(chip);
+			if (b != null)
+				foreach (var chip in ComparerChips.Build(b, a))
+					RightChips.Add(chip);
+
+			RebuildStrips();
+		}
+
+		void RebuildStrips() {
+			StripA.Clear();
+			StripB.Clear();
+			FillStrip(StripA, SelectedItemA);
+			FillStrip(StripB, SelectedItemB);
+		}
+
+		void FillStrip(ObservableCollection<FrameStripEntry> strip, LargeThumbnailDuplicateItem? item) {
+			if (item == null || item.Item.ItemInfo.IsImage || item.Frames.Count < 2) return;
+			for (int i = 0; i < item.Frames.Count; i++)
+				strip.Add(new FrameStripEntry(item.Frames[i], i) { IsCurrent = i == BaseThumbnailIndex });
+		}
+
+		void UpdateStripCurrent() {
+			foreach (var entry in StripA)
+				entry.IsCurrent = entry.Index == BaseThumbnailIndex;
+			foreach (var entry in StripB)
+				entry.IsCurrent = entry.Index == BaseThumbnailIndex;
 		}
 
 		bool _suppressSelectionUpdates;
 
 		public void AssignDefaultSelections() {
+			_pairFlow = new CullingPairFlow(Items.Count);
 			_suppressSelectionUpdates = true;
 			try {
 				if (Items.Count >= 2) {
-					SelectedItemA = Items[0];
-					SelectedItemB = Items[1];
+					SelectedItemA = Items[_pairFlow.LeftIndex];
+					SelectedItemB = Items[_pairFlow.RightIndex];
 				}
 				else if (Items.Count == 1) {
 					SelectedItemA = Items[0];
@@ -358,12 +522,18 @@ namespace VDF.GUI.ViewModels {
 			}
 			UpdateShowFrameControls();
 			UpdateImages();
+			UpdateCullingInfo();
 		}
 
 		void OnSelectionChanged() {
 			if (_suppressSelectionUpdates) return;
+			// A manual pick re-anchors the culling walk at the chosen pair.
+			int left = SelectedItemA != null ? Items.IndexOf(SelectedItemA) : -1;
+			int right = SelectedItemB != null ? Items.IndexOf(SelectedItemB) : -1;
+			_pairFlow?.SetPair(left, right);
 			UpdateShowFrameControls();
 			UpdateImages();
+			UpdateCullingInfo();
 		}
 
 		// Auto-fallback to Single when only one image is available. Must not write to
@@ -628,8 +798,22 @@ namespace VDF.GUI.ViewModels {
 		}
 	}
 
+	/// <summary>One frame of the aligned strip under a comparer pane.</summary>
+	public sealed class FrameStripEntry : ReactiveObject {
+		public FrameStripEntry(Bitmap frame, int index) {
+			Frame = frame;
+			Index = index;
+		}
+		public Bitmap Frame { get; }
+		public int Index { get; }
+		bool _isCurrent;
+		public bool IsCurrent { get => _isCurrent; set => this.RaiseAndSetIfChanged(ref _isCurrent, value); }
+	}
+
 	public sealed class LargeThumbnailDuplicateItem : ReactiveObject {
 		public DuplicateItemVM Item { get; }
+		/// <summary>Set by MainWindowVM: this item is the group's quality keeper (BEST badge + pane tint).</summary>
+		public bool IsGroupBest { get; set; }
 
 		public Bitmap? Thumbnail { get; set; }
 		public IReadOnlyList<Bitmap> Frames => _frames;
