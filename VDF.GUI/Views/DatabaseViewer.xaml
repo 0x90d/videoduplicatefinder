@@ -1,8 +1,8 @@
 <Window
-    xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
     x:Class="VDF.GUI.Views.DatabaseViewer"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:app="clr-namespace:VDF.GUI"
@@ -10,20 +10,68 @@
     x:DataType="vm:DatabaseViewerVM"
     Title="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Title]}"
     Height="600"
-    Width="800"
+    Width="900"
     MinWidth="500"
     MinHeight="300"
     d:DesignHeight="450"
     d:DesignWidth="800"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
-    <Grid RowDefinitions="Auto, *">
-        <Grid ColumnDefinitions="Auto, *">
-            <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Search]}" VerticalAlignment="Center"/>
-            <TextBox Text="{Binding SearchText}" Margin="10,0,0,0" Grid.Column="1"/>
+    <Grid Margin="10" RowDefinitions="Auto,Auto,*">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,8">
+            <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Search]}" VerticalAlignment="Center" />
+            <TextBox Text="{Binding SearchText}" Margin="10,0" Grid.Column="1" />
+            <TextBlock Grid.Column="2" Margin="0,0,10,0" VerticalAlignment="Center" FontSize="12" Opacity="0.6"
+                       Text="{Binding EntryCountText}" />
+            <Button Grid.Column="3"
+                    Command="{Binding DeleteSelectedEntries}"
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Remove]}" />
         </Grid>
-        <controls:DataGrid x:Name="datagridDatabase" Grid.Row="1" ItemsSource="{Binding DatabaseFilesView}" AutoGenerateColumns="True">
-            <!-- KeyBindings are applied programmatically by KeyboardShortcutManager -->
-        </controls:DataGrid>
+        <!-- header strip; rows share the same column layout -->
+        <Border
+            Grid.Row="1"
+            Padding="8,4"
+            Background="{actipro:ThemeResource Container2BackgroundBrush}"
+            BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+            BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="3*,90,130,80,*">
+                <TextBlock FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[Path]}" />
+                <TextBlock Grid.Column="1" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Size]}" />
+                <TextBlock Grid.Column="2" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.DateCreated]}" />
+                <TextBlock Grid.Column="3" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Excluded]}" />
+                <TextBlock Grid.Column="4" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flags]}" />
+            </Grid>
+        </Border>
+        <ListBox
+            x:Name="dbList"
+            Grid.Row="2"
+            Background="Transparent"
+            ItemsSource="{Binding DatabaseFilesView}"
+            SelectionMode="Multiple"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <!-- Delete key binding is applied programmatically by KeyboardShortcutManager -->
+            <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                    <Setter Property="Padding" Value="8,1" />
+                    <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListBox.Styles>
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:DatabaseEntryVM">
+                    <Grid ColumnDefinitions="3*,90,130,80,*">
+                        <!-- editable: commits on focus loss, writes through to the entry -->
+                        <TextBox FontSize="12" Padding="4,2" MinHeight="0"
+                                 Background="Transparent" BorderThickness="0"
+                                 Text="{Binding Path}" />
+                        <TextBlock Grid.Column="1" FontSize="12" VerticalAlignment="Center" Text="{Binding SizeText}" />
+                        <TextBlock Grid.Column="2" FontSize="12" VerticalAlignment="Center" Text="{Binding DateCreatedText}" />
+                        <CheckBox Grid.Column="3" MinHeight="0" HorizontalAlignment="Center" IsChecked="{Binding IsManuallyExcluded}" />
+                        <TextBlock Grid.Column="4" FontSize="12" VerticalAlignment="Center" Opacity="0.75"
+                                   TextTrimming="CharacterEllipsis" Text="{Binding FlagsText}" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </Grid>
 </Window>

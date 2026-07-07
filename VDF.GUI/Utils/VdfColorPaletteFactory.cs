@@ -14,27 +14,23 @@
 // */
 //
 
-namespace VDF.GUI.Data {
-	// These lists were KeyValuePair<string, T> with reflection-bound item templates
-	// (x:DataType cannot express closed generic types). Under Native AOT the
-	// KeyValuePair property metadata is trimmed and the labels rendered empty, so
-	// each list gets a small named type instead, compiled-bindable like everything else.
+using ActiproSoftware.UI.Avalonia.Media;
+using ActiproSoftware.UI.Avalonia.Themes.Generation;
 
-	public sealed class FileTypeFilterOption {
-		public string Name { get; }
-		public FileTypeFilter Value { get; }
-		public FileTypeFilterOption(string name, FileTypeFilter value) {
-			Name = name;
-			Value = value;
-		}
-	}
+namespace VDF.GUI.Utils {
+	/// <summary>
+	/// The default ActiPro color palette plus VDF's teal-green accent ramp (redesign
+	/// locked decision 12). The ramp is generated from the mockup accent #34B39C as
+	/// midtone, so the dark theme lands on the mockup's #34B39C-ish accent and the
+	/// light theme on its darker counterpart.
+	/// </summary>
+	public sealed class VdfColorPaletteFactory : DefaultColorPaletteFactory {
+		public const string AccentRampName = "VdfTeal";
 
-	public sealed class ThumbnailDoubleClickOption {
-		public string Name { get; }
-		public ThumbnailDoubleClickAction Value { get; }
-		public ThumbnailDoubleClickOption(string name, ThumbnailDoubleClickAction value) {
-			Name = name;
-			Value = value;
+		public override ColorPalette Create() {
+			ColorPalette palette = base.Create();
+			palette.Ramps.Add(CreateColorRamp(AccentRampName, isNeutral: false, UIColor.Parse("#34B39C")));
+			return palette;
 		}
 	}
 }

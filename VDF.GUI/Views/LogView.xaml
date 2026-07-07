@@ -53,13 +53,13 @@
       <Setter Property="Opacity" Value="0.8" />
     </Style>
     <Style Selector="Button.lrep:pointerover">
-      <Setter Property="BorderBrush" Value="#34B39C" />
-      <Setter Property="Foreground" Value="#34B39C" />
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
+      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
       <Setter Property="Opacity" Value="1" />
     </Style>
     <Style Selector="Button.lrep.on">
-      <Setter Property="BorderBrush" Value="#34B39C" />
-      <Setter Property="Foreground" Value="#34B39C" />
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
+      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
       <Setter Property="Opacity" Value="1" />
     </Style>
   </UserControl.Styles>

@@ -79,21 +79,25 @@ namespace VDF.GUI.Views {
 			// GNOME (and other Linux compositors) keep their server-side title bar even when
 			// ExtendClientAreaToDecorationsHint is set, so VDF's own centered title rendered a
 			// second time just below the decoration (#798). Fall back to native decorations on
-			// Linux and drop both the in-window title and the gap reserved for the extended
-			// caption area. Windows/macOS keep the custom chrome.
+			// Linux and drop the in-window title. The 30px top band stays: it hosts the shell
+			// nav links, which render as a normal top strip under the native titlebar (no
+			// caption buttons to avoid, so the strip reaches the right edge).
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				ExtendClientAreaToDecorationsHint = false;
 				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
-				this.FindControl<Grid>("MainContentGrid")!.Margin = new Thickness(2, 2, 2, 2);
+				this.FindControl<StackPanel>("TitlebarNav")!.Margin = new Thickness(0, 0, 8, 0);
 			}
 
-			if (!SettingsFile.Instance.DarkMode)
-				RequestedThemeVariant = ThemeVariant.Light;
+			// Application-level, not window-level: the managed window chrome (caption bar,
+			// titlebar buttons) resolves its brushes against the application's variant, so a
+			// window-only override leaves a dark titlebar band on an otherwise light window.
+			if (!SettingsFile.Instance.DarkMode && Application.Current != null)
+				Application.Current.RequestedThemeVariant = ThemeVariant.Light;
 
 			// Switch theme at runtime when the user toggles the DarkMode setting
 			SettingsFile.Instance.PropertyChanged += (_, e) => {
-				if (e.PropertyName == nameof(SettingsFile.DarkMode))
-					RequestedThemeVariant = SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
+				if (e.PropertyName == nameof(SettingsFile.DarkMode) && Application.Current != null)
+					Application.Current.RequestedThemeVariant = SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
 			};
 
 			// The settings page has no Save button anymore ("Settings save instantly"):
@@ -250,10 +254,6 @@ namespace VDF.GUI.Views {
 				["KeepHighlightedAndAdvance"] = vm.KeepHighlightedAndAdvanceCommand,
 				["UndoSelection"] = vm.UndoSelectionCommand,
 			};
-			var dataGrid = this.FindControl<DataGrid>("dataGridGrouping")!;
-			KeyboardShortcutManager.Instance.ApplyBindings(dataGrid, commandMap);
-			// Same shortcuts on the new flattened results view; only one of the two
-			// controls is visible (and thus focusable) at a time.
 			var newResultsView = this.FindControl<DuplicateResultsView>("NewResultsView");
 			if (newResultsView != null)
 				KeyboardShortcutManager.Instance.ApplyBindings(newResultsView.ShortcutTarget, commandMap);
@@ -289,84 +289,6 @@ namespace VDF.GUI.Views {
 			vm.RestoreBackupScanResults();
 		}
 
-		void OnLoadingRowGroup(object? sender, DataGridRowGroupHeaderEventArgs e) {
-			var header = e.RowGroupHeader;
-			// Avoid adding buttons twice (recycled headers)
-			if (header.Tag is true) return;
-			header.Tag = true;
-			// The summary below replaces the raw key; "ItemInfo.GroupId:" adds nothing.
-			header.IsPropertyNameVisible = false;
-
-			var vm = ApplicationHelpers.MainWindowDataContext;
-
-			Guid GetGroupId() {
-				if (header.DataContext is Avalonia.Collections.DataGridCollectionViewGroup g) {
-					var first = g.Items.OfType<DuplicateItemVM>().FirstOrDefault();
-					if (first != null) return first.ItemInfo.GroupId;
-				}
-				return Guid.Empty;
-			}
-
-			var compareBtn = new Button { Content = "Compare", Classes = { "group-action" } };
-			var keepBestBtn = new Button { Content = "Keep Best", Classes = { "group-action" } };
-
-			compareBtn.Click += (_, _) => {
-				var id = GetGroupId();
-				if (id != Guid.Empty) vm.CompareGroup(id);
-			};
-			keepBestBtn.Click += (_, _) => {
-				var id = GetGroupId();
-				if (id != Guid.Empty) vm.KeepBestInGroup(id);
-			};
-
-			var panel = new StackPanel {
-				Orientation = Orientation.Horizontal,
-				Spacing = 4,
-				Margin = new Thickness(8, 0, 4, 0),
-				VerticalAlignment = VerticalAlignment.Center,
-				Children = { compareBtn, keepBestBtn }
-			};
-
-			// Shown in place of the raw GroupId GUID ("4 files · 3.2 GB").
-			var summaryText = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
-			void UpdateHeaderSummary() {
-				if (header.DataContext is not Avalonia.Collections.DataGridCollectionViewGroup g) return;
-				int count = 0;
-				long totalSize = 0;
-				foreach (var item in g.Items.OfType<DuplicateItemVM>()) {
-					count++;
-					if (item.ItemInfo.SizeLong > 0)
-						totalSize += item.ItemInfo.SizeLong;
-				}
-				summaryText.Text = string.Format(App.Lang["GroupHeader.Summary"], count, totalSize.BytesToString());
-			}
-			// Recycled headers keep our injected controls but get a new group.
-			header.DataContextChanged += (_, _) => UpdateHeaderSummary();
-
-			// Inject buttons into the header's visual tree once it's loaded
-			header.Loaded += (_, _) => {
-				// Walk visual tree to find the root Grid and append our button panel
-				var grid = header.GetVisualDescendants().OfType<Grid>().FirstOrDefault();
-				if (grid != null && !grid.Children.Contains(panel)) {
-					grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-					Grid.SetColumn(panel, grid.ColumnDefinitions.Count - 1);
-					grid.Children.Add(panel);
-				}
-				// Swap the GUID key TextBlock for the human-readable summary. The key
-				// element has no template part name, so it's located by its current text.
-				if (summaryText.Parent == null &&
-					header.DataContext is Avalonia.Collections.DataGridCollectionViewGroup g) {
-					string key = g.Key?.ToString() ?? string.Empty;
-					var keyText = header.GetVisualDescendants().OfType<TextBlock>()
-						.FirstOrDefault(tb => tb.Text == key);
-					if (keyText != null && keyText.Parent is Panel keyPanel) {
-						keyText.IsVisible = false;
-						keyPanel.Children.Insert(keyPanel.Children.IndexOf(keyText) + 1, summaryText);
-					}
-				}
-				UpdateHeaderSummary();
-			};
-		}
 
 		void OnMetricPointerEntered(object? sender, PointerEventArgs e) {
 			if (sender is Control ctrl && ctrl.Tag is string metric && ctrl.DataContext is DuplicateItemVM item)

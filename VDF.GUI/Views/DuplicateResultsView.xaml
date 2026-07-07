@@ -26,8 +26,6 @@
     <mvvm:ResultsRowSizingConverter x:Key="ResultsRowSizingConverter" />
     <mvvm:BoolToValueConverter x:Key="ChevronConverter" TrueValue="▸" FalseValue="▾" />
     <mvvm:BoolToValueConverter x:Key="SortDirectionGlyphConverter" TrueValue="↓" FalseValue="↑" />
-    <!-- checked rows get a subtle accent tint that works in both themes -->
-    <mvvm:BoolToValueConverter x:Key="CheckedRowBackgroundConverter" TrueValue="#2234B39C" FalseValue="Transparent" />
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -59,6 +57,13 @@
       <Setter Property="Padding" Value="10,3" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <!-- checked rows get a subtle accent tint that follows the theme accent -->
+    <Style Selector="Border.resultrow">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.resultrow.checked">
+      <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
     </Style>
   </UserControl.Styles>
 
@@ -286,8 +291,9 @@
         <!-- ~~~~ File row ~~~~ -->
         <DataTemplate DataType="vm:ResultsItemRow">
           <Border
-              Padding="6,0"
-              Background="{Binding Item.Checked, Converter={StaticResource CheckedRowBackgroundConverter}}">
+              Classes="resultrow"
+              Classes.checked="{Binding Item.Checked}"
+              Padding="6,0">
             <!-- Uniform row height follows the Preview column width so dragging the
                  grip (or raising the thumbnail width setting) scales the whole layout. -->
             <Border.Height>

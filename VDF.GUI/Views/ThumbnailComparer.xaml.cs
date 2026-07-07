@@ -103,6 +103,9 @@ namespace VDF.GUI.Views {
 			SaveWindowPlacement();
 		}
 
+		// Titlebar "✕ Close comparer" (mockup); checked items flow back like any close.
+		void OnCloseComparerClick(object? sender, RoutedEventArgs e) => Close();
+
 		void OnCullingKeyDown(object? sender, KeyEventArgs e) {
 			if (DataContext is not ThumbnailComparerVM vm) return;
 			if (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Alt)) return;

@@ -378,60 +378,12 @@ namespace VDF.GUI.ViewModels {
 			scheduledScanTimer.Start();
 			CheckScheduledScan();
 
-			SortOrders = new SortOrderOption[] {
-				new SortOrderOption("None", null),
-				new SortOrderOption("Size Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Ascending)),
-				new SortOrderOption("Size Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)}", ListSortDirection.Descending)),
-				new SortOrderOption("Resolution Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Ascending)),
-				new SortOrderOption("Resolution Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.FrameSizeInt)}", ListSortDirection.Descending)),
-				new SortOrderOption("Duration Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Ascending)),
-				new SortOrderOption("Duration Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Duration)}", ListSortDirection.Descending)),
-				new SortOrderOption("Date Created Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Ascending)),
-				new SortOrderOption("Date Created Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.DateCreated)}", ListSortDirection.Descending)),
-				new SortOrderOption("Similarity Ascending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Ascending)),
-				new SortOrderOption("Similarity Descending",
-				DataGridSortDescription.FromPath($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.Similarity)}", ListSortDirection.Descending)),
-				new SortOrderOption("Group Has Selected Items Ascending",
-				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Ascending)),
-				new SortOrderOption("Group Has Selected Items Descending",
-				DataGridSortDescription.FromComparer(new CheckedGroupsComparer(this), ListSortDirection.Descending)),
-				new SortOrderOption("Group Size Ascending",
-				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Ascending)),
-				new SortOrderOption("Group Size Descending",
-				DataGridSortDescription.FromComparer(new GroupSizeComparer(this), ListSortDirection.Descending)),
-				new SortOrderOption("Group Total Size Ascending",
-				DataGridSortDescription.FromComparer(new GroupTotalSizeComparer(this), ListSortDirection.Ascending)),
-				new SortOrderOption("Group Total Size Descending",
-				DataGridSortDescription.FromComparer(new GroupTotalSizeComparer(this), ListSortDirection.Descending)),
-			};
-			_SortOrder = SortOrders[0];
-			if (!string.IsNullOrEmpty(SettingsFile.Instance.LastSortOrder)) {
-				foreach (var order in SortOrders)
-					if (order.Name == SettingsFile.Instance.LastSortOrder) {
-						_SortOrder = order;
-						break;
-					}
-			}
-
 			this.WhenAnyValue(vm => vm.FilterByPath)
 					.Throttle(TimeSpan.FromMilliseconds(500), RxSchedulers.MainThreadScheduler)
 						.Subscribe(_ => { RebuildSearchPathIndex(); RefreshResultsView(); });
 
-			// Switching between the classic DataGrid and the new flattened view rebuilds
-			// the representation that just became active (session stats stay untouched).
 			SettingsFile.Instance.PropertyChanged += (_, e) => {
-				if (e.PropertyName == nameof(SettingsFile.UseClassicResultsView))
-					Dispatcher.UIThread.Post(() => BuildActiveResultsView(resetSessionStats: false));
-				else if (e.PropertyName == nameof(SettingsFile.EnablePartialClipDetection))
+				if (e.PropertyName == nameof(SettingsFile.EnablePartialClipDetection))
 					this.RaisePropertyChanged(nameof(ResultsShowClipOffsetColumn));
 				// Editing any profile-managed knob re-derives the Setup screen's selection
 				// (switches the card to Custom when values no longer match a bundle).
@@ -734,19 +686,6 @@ namespace VDF.GUI.ViewModels {
 				Logger.Instance.Info($"Auto-checked {autoChecked} re-download(s) matching previously deleted content.");
 		}
 
-		void BuildDuplicatesView() {
-			view = new DataGridCollectionView(Duplicates);
-			view.GroupDescriptions.Add(new DataGridPathGroupDescription($"{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.GroupId)}"));
-			// Rebuilding the view (rescan, import) previously dropped the active sort
-			// while the sort ComboBox kept displaying it.
-			if (_SortOrder.Sort != null)
-				view.SortDescriptions.Add(_SortOrder.Sort);
-			view.Filter += DuplicatesFilter;
-			GetDataGrid.ItemsSource = view;
-		}
-
-		static DataGrid GetDataGrid => ApplicationHelpers.MainWindow.FindControl<DataGrid>("dataGridGrouping")!;
-
 		void RefreshGroupStats() {
 			TotalDuplicates = Duplicates.Count;
 			int groupCount = 0;
@@ -769,17 +708,11 @@ namespace VDF.GUI.ViewModels {
 			PotentialSavings = savings.BytesToString();
 		}
 
-		private DuplicateItemVM? GetSelectedDuplicateItem() {
-			if (!SettingsFile.Instance.UseClassicResultsView)
-				return NewResultsSelectionProvider?.Invoke().FirstOrDefault();
-			return GetDataGrid.SelectedItem as DuplicateItemVM;
-		}
+		private DuplicateItemVM? GetSelectedDuplicateItem() =>
+			NewResultsSelectionProvider?.Invoke().FirstOrDefault();
 
-		private List<DuplicateItemVM> GetSelectedDuplicates() {
-			if (!SettingsFile.Instance.UseClassicResultsView)
-				return NewResultsSelectionProvider?.Invoke() ?? new();
-			return GetDataGrid.SelectedItems?.Cast<DuplicateItemVM>().ToList() ?? new();
-		}
+		private List<DuplicateItemVM> GetSelectedDuplicates() =>
+			NewResultsSelectionProvider?.Invoke() ?? new();
 
 		public static ReactiveCommand<Unit, Unit> AboutCommand => ReactiveCommand.CreateFromTask(async () => {
 			if (ApplicationHelpers.MainWindow == null)
@@ -1147,15 +1080,7 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> OpenItemsByColIdCommand => ReactiveCommand.Create(() => {
 			// The flattened view has no "current column" concept — Enter simply opens.
-			if (!SettingsFile.Instance.UseClassicResultsView) {
-				OpenItems();
-				return;
-			}
-			var tag = GetDataGrid.CurrentColumn?.Tag as string;
-			if (tag == "Thumbnail")
-				OpenItems();
-			else if (tag == "Path")
-				OpenItemsInFolder();
+			OpenItems();
 		});
 
 		public ReactiveCommand<Unit, Unit> ThumbnailDoubleClickCommand => ReactiveCommand.Create(() => {
@@ -1815,17 +1740,9 @@ Non-Windows setup:
 
 		/// <summary>1-based position of a group within the current results view, for "Group X of Y".</summary>
 		internal (int Index, int Total)? GetComparerGroupPosition(Guid groupId) {
-			if (!SettingsFile.Instance.UseClassicResultsView) {
-				var ids = resultsGroups.Select(g => g.GroupId).ToList();
-				int idx = ids.IndexOf(groupId);
-				return idx < 0 ? null : (idx + 1, ids.Count);
-			}
-			if (view?.Groups == null) return null;
-			var groups = view.Groups.OfType<DataGridCollectionViewGroup>().ToList();
-			for (int i = 0; i < groups.Count; i++)
-				if (groups[i].Items.OfType<DuplicateItemVM>().FirstOrDefault()?.ItemInfo.GroupId == groupId)
-					return (i + 1, groups.Count);
-			return null;
+			var ids = resultsGroups.Select(g => g.GroupId).ToList();
+			int idx = ids.IndexOf(groupId);
+			return idx < 0 ? null : (idx + 1, ids.Count);
 		}
 
 		public void KeepBestInGroup(Guid groupId) {
@@ -2107,28 +2024,14 @@ Non-Windows setup:
 		}
 
 		public ReactiveCommand<Unit, Unit> ExpandAllGroupsCommand => ReactiveCommand.Create(() => {
-			if (!SettingsFile.Instance.UseClassicResultsView) {
-				collapsedResultsGroups.Clear();
-				RebuildResultsList();
-				return;
-			}
-			if (view == null) return;
-			foreach (var group in view.Groups ?? Enumerable.Empty<object>())
-				if (group is DataGridCollectionViewGroup g)
-					GetDataGrid.ExpandRowGroup(g, true);
+			collapsedResultsGroups.Clear();
+			RebuildResultsList();
 		});
 
 		public ReactiveCommand<Unit, Unit> CollapseAllGroupsCommand => ReactiveCommand.Create(() => {
-			if (!SettingsFile.Instance.UseClassicResultsView) {
-				foreach (var group in resultsGroups)
-					collapsedResultsGroups.Add(group.GroupId);
-				RebuildResultsList();
-				return;
-			}
-			if (view == null) return;
-			foreach (var group in view.Groups ?? Enumerable.Empty<object>())
-				if (group is DataGridCollectionViewGroup g)
-					GetDataGrid.CollapseRowGroup(g, true);
+			foreach (var group in resultsGroups)
+				collapsedResultsGroups.Add(group.GroupId);
+			RebuildResultsList();
 		});
 
 		public ReactiveCommand<Unit, Unit> NavigateNextGroupCommand => ReactiveCommand.Create(() => {
@@ -2152,42 +2055,8 @@ Non-Windows setup:
 			NavigateGroup(forward: false);
 		});
 
-		Guid? NavigateGroup(bool forward, Guid? fromGroupId = null) {
-			if (!SettingsFile.Instance.UseClassicResultsView)
-				return NavigateGroupNewView(forward, fromGroupId);
-			if (view?.Groups == null) return null;
-			var groups = view.Groups.OfType<DataGridCollectionViewGroup>().ToList();
-			if (groups.Count == 0) return null;
-
-			var dataGrid = GetDataGrid;
-			Guid? referenceGroupId = fromGroupId
-				?? (dataGrid.SelectedItem as DuplicateItemVM)?.ItemInfo.GroupId;
-			int currentGroupIndex = -1;
-
-			if (referenceGroupId.HasValue) {
-				for (int i = 0; i < groups.Count; i++) {
-					if (groups[i].Items.OfType<DuplicateItemVM>()
-						.Any(item => item.ItemInfo.GroupId == referenceGroupId.Value)) {
-						currentGroupIndex = i;
-						break;
-					}
-				}
-			}
-
-			int targetIndex = forward
-				? (currentGroupIndex + 1 < groups.Count ? currentGroupIndex + 1 : 0)
-				: (currentGroupIndex - 1 >= 0 ? currentGroupIndex - 1 : groups.Count - 1);
-
-			var targetGroup = groups[targetIndex];
-			dataGrid.ExpandRowGroup(targetGroup, true);
-			var firstItem = targetGroup.Items.OfType<DuplicateItemVM>().FirstOrDefault();
-			if (firstItem != null) {
-				dataGrid.SelectedItem = firstItem;
-				dataGrid.ScrollIntoView(firstItem, null);
-				return firstItem.ItemInfo.GroupId;
-			}
-			return null;
-		}
+		Guid? NavigateGroup(bool forward, Guid? fromGroupId = null) =>
+			NavigateGroupNewView(forward, fromGroupId);
 
 		// Used by ThumbnailComparer to walk to the sibling group without closing the dialog.
 		// Also moves the main grid's selection so state stays consistent when the dialog closes.

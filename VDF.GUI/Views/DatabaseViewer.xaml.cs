@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Linq;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
@@ -24,8 +25,10 @@ namespace VDF.GUI.Views {
 	public class DatabaseViewer : Window {
 		public DatabaseViewer() {
 			InitializeComponent();
-			var dataGrid = this.FindControl<DataGrid>("datagridDatabase")!;
-			var vm = new DatabaseViewerVM(dataGrid);
+			var list = this.FindControl<ListBox>("dbList")!;
+			var vm = new DatabaseViewerVM {
+				SelectionProvider = () => list.SelectedItems?.OfType<DatabaseEntryVM>() ?? Enumerable.Empty<DatabaseEntryVM>(),
+			};
 			DataContext = vm;
 			Owner = ApplicationHelpers.MainWindow;
 			Closing += DatabaseViewer_Closing;
@@ -35,13 +38,13 @@ namespace VDF.GUI.Views {
 			var commandMap = new Dictionary<string, ICommand> {
 				["DB_DeleteSelectedEntries"] = vm.DeleteSelectedEntries,
 			};
-			KeyboardShortcutManager.Instance.ApplyBindings(dataGrid, commandMap);
+			KeyboardShortcutManager.Instance.ApplyBindings(list, commandMap);
 		}
 
-		private void DatabaseViewer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) 
+		private void DatabaseViewer_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
 			=> ((DatabaseViewerVM)DataContext!).Save();
 
-		void InitializeComponent() => AvaloniaXamlLoader.Load(this);		
+		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
 	}
 }

@@ -12,8 +12,6 @@
   <UserControl.Resources>
     <!-- local instances: StaticResource inside templates resolves against THIS scope -->
     <mvvm:BoolToValueConverter x:Key="ExcludedOpacityConverter" TrueValue="0.55" FalseValue="1.0" />
-    <mvvm:BoolToValueConverter x:Key="DriveChipBackgroundConverter" TrueValue="#33BB4237" FalseValue="#2234B39C" />
-    <mvvm:BoolToValueConverter x:Key="ProfileBorderConverter" TrueValue="#34B39C" FalseValue="#55808080" />
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -37,6 +35,22 @@
       <Setter Property="Padding" Value="12,10" />
       <Setter Property="Background" Value="{actipro:ThemeResource Container1BackgroundBrush}" />
       <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.profilecard.active">
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushEmphasizedAccent}" />
+    </Style>
+    <!-- mockup .folder .drive: accent-soft chip with accent label; excluded flips to danger -->
+    <Style Selector="Border.drivechip">
+      <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
+    </Style>
+    <Style Selector="Border.drivechip TextBlock">
+      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftAccent}" />
+    </Style>
+    <Style Selector="Border.drivechip.excluded">
+      <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftDanger}" />
+    </Style>
+    <Style Selector="Border.drivechip.excluded TextBlock">
+      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftDanger}" />
     </Style>
   </UserControl.Styles>
 
@@ -91,7 +105,8 @@
                 <Border Classes="foldercard" Opacity="{Binding IsExcluded, Converter={StaticResource ExcludedOpacityConverter}}">
                   <DockPanel LastChildFill="True">
                     <Border DockPanel.Dock="Left" Width="34" Height="34" CornerRadius="7"
-                            Background="{Binding IsExcluded, Converter={StaticResource DriveChipBackgroundConverter}}">
+                            Classes="drivechip"
+                            Classes.excluded="{Binding IsExcluded}">
                       <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
                                  FontWeight="Bold" FontSize="12" Text="{Binding DriveLabel}" />
                     </Border>
@@ -178,7 +193,7 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ScanProfileOptionVM">
                   <Border Classes="profilecard"
-                          BorderBrush="{Binding IsActive, Converter={StaticResource ProfileBorderConverter}}"
+                          Classes.active="{Binding IsActive}"
                           PointerPressed="OnProfileCardPressed">
                     <DockPanel LastChildFill="True">
                       <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.55"

@@ -31,7 +31,6 @@
     </Window.KeyBindings>
     <Window.Resources>
         <mvvm:BoolToValueConverter x:Key="WinnerPaneBackgroundConverter" TrueValue="#143E9B6E" FalseValue="Transparent" />
-        <mvvm:BoolToValueConverter x:Key="StripCurrentBorderConverter" TrueValue="#34B39C" FalseValue="#55808080" />
     </Window.Resources>
     <Window.Styles>
         <Style Selector="Button.tool-btn">
@@ -135,6 +134,13 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Margin" Value="0,0,4,0" />
         </Style>
+        <!-- current strip position: theme-accent outline -->
+        <Style Selector="Border.stripframeborder">
+            <Setter Property="BorderBrush" Value="#55808080" />
+        </Style>
+        <Style Selector="Border.stripframeborder.current">
+            <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushEmphasizedAccent}" />
+        </Style>
     </Window.Styles>
     <Border BorderBrush="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderThickness="2">
         <Grid RowDefinitions="Auto,Auto,*,Auto">
@@ -163,6 +169,25 @@
                 HorizontalAlignment="Center"
                 IsHitTestVisible="false"
                 Text="{Binding #ThumbnailComparerWindow.Title}" />
+            <!-- mockup: in-titlebar "✕ Close comparer", right-aligned before the caption buttons -->
+            <Button
+                Grid.Row="0"
+                Margin="0,0,190,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Height="28"
+                Background="Transparent"
+                BorderThickness="0"
+                CornerRadius="6"
+                Padding="10,3"
+                FontSize="13"
+                Click="OnCloseComparerClick">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="✕" FontSize="12" VerticalAlignment="Center" />
+                    <TextBlock VerticalAlignment="Center"
+                               Text="{Binding Source={x:Static app:App.Lang}, Path=[Shell.CloseComparer]}" />
+                </StackPanel>
+            </Button>
 
             <!-- ===== header (mockup .cmp-head) ===== -->
             <Border
@@ -253,8 +278,8 @@
                                             <Button Classes="stripframe"
                                                     Command="{Binding $parent[Window].((vm:ThumbnailComparerVM)DataContext).SelectBasePositionCommand}"
                                                     CommandParameter="{Binding}">
-                                                <Border CornerRadius="4" ClipToBounds="True" BorderThickness="2"
-                                                        BorderBrush="{Binding IsCurrent, Converter={StaticResource StripCurrentBorderConverter}}">
+                                                <Border Classes="stripframeborder" Classes.current="{Binding IsCurrent}"
+                                                        CornerRadius="4" ClipToBounds="True" BorderThickness="2">
                                                     <Image Height="44" Source="{Binding Frame}" Stretch="UniformToFill" />
                                                 </Border>
                                             </Button>
@@ -366,8 +391,8 @@
                                             <Button Classes="stripframe"
                                                     Command="{Binding $parent[Window].((vm:ThumbnailComparerVM)DataContext).SelectBasePositionCommand}"
                                                     CommandParameter="{Binding}">
-                                                <Border CornerRadius="4" ClipToBounds="True" BorderThickness="2"
-                                                        BorderBrush="{Binding IsCurrent, Converter={StaticResource StripCurrentBorderConverter}}">
+                                                <Border Classes="stripframeborder" Classes.current="{Binding IsCurrent}"
+                                                        CornerRadius="4" ClipToBounds="True" BorderThickness="2">
                                                     <Image Height="44" Source="{Binding Frame}" Stretch="UniformToFill" />
                                                 </Border>
                                             </Button>

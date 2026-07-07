@@ -93,6 +93,7 @@ namespace VDF.GUI.ViewModels {
 			this.RaisePropertyChanged(nameof(IsSetupState));
 			this.RaisePropertyChanged(nameof(IsScanningState));
 			this.RaisePropertyChanged(nameof(IsReviewState));
+			RaiseShellNavChanged(); // "New scan" nav link follows the Review state
 		}
 
 		// ---------- welcome strip ----------

@@ -15,26 +15,24 @@
 //
 
 namespace VDF.GUI.Data {
-	// These lists were KeyValuePair<string, T> with reflection-bound item templates
-	// (x:DataType cannot express closed generic types). Under Native AOT the
-	// KeyValuePair property metadata is trimmed and the labels rendered empty, so
-	// each list gets a small named type instead, compiled-bindable like everything else.
 
-	public sealed class FileTypeFilterOption {
-		public string Name { get; }
-		public FileTypeFilter Value { get; }
-		public FileTypeFilterOption(string name, FileTypeFilter value) {
-			Name = name;
-			Value = value;
-		}
+	/// <summary>The window's top-level view: the scanner (Setup/Scanning/Review states),
+	/// or one of the secondary views that replace it (mockup titlebar navigation).</summary>
+	public enum ShellView {
+		Main,
+		Settings,
+		Log,
 	}
 
-	public sealed class ThumbnailDoubleClickOption {
-		public string Name { get; }
-		public ThumbnailDoubleClickAction Value { get; }
-		public ThumbnailDoubleClickOption(string name, ThumbnailDoubleClickAction value) {
-			Name = name;
-			Value = value;
-		}
+	/// <summary>Which titlebar nav links are visible for a shell view (mockup titlebars:
+	/// each state links to the OTHER views; Review additionally offers "New scan").</summary>
+	public readonly record struct ShellNavLinks(bool NewScan, bool BackToResults, bool Log, bool Settings);
+
+	public static class ShellNav {
+		public static ShellNavLinks For(ShellView view, bool isReviewState) => new(
+			NewScan: view == ShellView.Main && isReviewState,
+			BackToResults: view != ShellView.Main,
+			Log: view != ShellView.Log,
+			Settings: view != ShellView.Settings);
 	}
 }

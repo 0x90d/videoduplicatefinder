@@ -6,7 +6,6 @@
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:datagrid="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
     xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Xaml.Behaviors.Interactivity"
     xmlns:ic="clr-namespace:Avalonia.Xaml.Interactions.Custom;assembly=Xaml.Behaviors.Interactions.Custom"
     xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
@@ -71,6 +70,22 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
+        <!-- titlebar nav links (mockup .navlink: quiet text, accent-soft pill on hover) -->
+        <Style Selector="Button.navlink">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Opacity" Value="0.8" />
+        </Style>
+        <Style Selector="Button.navlink:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
+        </Style>
+        <Style Selector="Button.navlink:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
     </Window.Styles>
     <Border BorderBrush="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderThickness="2">
         <Grid>
@@ -96,15 +111,44 @@
                 HorizontalAlignment="Center"
                 IsHitTestVisible="false"
                 Text="{Binding #MainWindow.Title}" />
+            <!-- Titlebar nav links (mockup .navlink): right-aligned before the caption
+                 buttons; contextual per shell view. The strip only holds the buttons, so
+                 the rest of the titlebar stays a drag region. -->
+            <StackPanel
+                x:Name="TitlebarNav"
+                Height="30"
+                Margin="0,0,190,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Orientation="Horizontal"
+                Spacing="2">
+                <Button
+                    Classes="navlink"
+                    Command="{Binding StartScanCommand}"
+                    CommandParameter="FullScan"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[Shell.NewScan]}"
+                    IsVisible="{Binding ShowNavNewScan}" />
+                <Button
+                    Classes="navlink"
+                    Command="{Binding ShowShellViewCommand}"
+                    CommandParameter="Main"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[Shell.BackToResults]}"
+                    IsVisible="{Binding ShowNavBackToResults}" />
+                <Button
+                    Classes="navlink"
+                    Command="{Binding ShowShellViewCommand}"
+                    CommandParameter="Log"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Log]}"
+                    IsVisible="{Binding ShowNavLog}" />
+                <Button
+                    Classes="navlink"
+                    Command="{Binding ShowShellViewCommand}"
+                    CommandParameter="Settings"
+                    Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Settings]}"
+                    IsVisible="{Binding ShowNavSettings}" />
+            </StackPanel>
             <Grid x:Name="MainContentGrid" Margin="2,30,2,2">
-                <TabControl x:Name="TabControl">
-                    <TabItem Name="TabItemScanner">
-                        <TabItem.Header>
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Scanner]}" />
-                        </TabItem.Header>
+                <Grid IsVisible="{Binding IsShellMainVisible}">
                         <Grid Margin="0,0,0,10" RowDefinitions="Auto, *, Auto">
                             <Menu Grid.Row="0" MinHeight="30"
                                 Background="{actipro:ThemeResource Container2BackgroundBrush}"
@@ -554,672 +598,14 @@
                                             </MenuItem.Header>
                                         </MenuItem>
                                     </MenuItem>
-                                    <MenuItem Header="|" />
-                                    <CheckBox Margin="5,0,0,0" IsChecked="{Binding IsFilterEnabled}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Viewbox
-                                                Width="16"
-                                                Height="16"
-                                                Focusable="False">
-                                                <Canvas
-                                                    Width="24"
-                                                    Height="24"
-                                                    Focusable="False">
-                                                    <Path
-                                                        Data="M10,13V11H18V13H10M10,19V17H14V19H10M10,7V5H22V7H10M6,17H8.5L5,20.5L1.5,17H4V7H1.5L5,3.5L8.5,7H6V17Z"
-                                                        Fill="{actipro:ThemeResource ButtonForegroundBrush}"
-                                                        Focusable="False" />
-                                                </Canvas>
-                                            </Viewbox>
-                                            <TextBlock
-                                                Margin="5,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Title]}" />
-                                        </StackPanel>
-                                    </CheckBox>
                             </Menu>
                             <Grid Grid.Row="1">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition />
-                                </Grid.RowDefinitions>
                                 <!-- One window, three states: Setup → Scanning → Review (stage 2) -->
-                                <views:SetupView Grid.RowSpan="2" IsVisible="{Binding IsSetupState}" />
-                                <views:ScanningView Grid.RowSpan="2" IsVisible="{Binding IsScanningState}" />
-                                <Grid
-                                    x:Name="GridFilter"
-                                    Grid.Row="0"
-                                    Background="{actipro:ThemeResource Container3BackgroundBrush}">
-                                    <!-- The new results view brings its own always-on filter toolbar;
-                                         this classic filter bar only applies to the DataGrid view. -->
-                                    <Grid.IsVisible>
-                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                            <Binding Path="IsFilterEnabled" />
-                                            <Binding Path="IsReviewState" />
-                                            <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="UseClassicResultsView" />
-                                        </MultiBinding>
-                                    </Grid.IsVisible>
-                                    <WrapPanel
-                                    Margin="5">
-                                        <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Path]}" />
-                                        <TextBox
-                                            MinWidth="150"
-                                            Margin="5,0,0,0"
-                                            Text="{Binding FilterByPath}"
-                                            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.PathNote]}" />
-                                        <TextBlock
-                                            Margin="5,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Sort]}" />
-                                        <ComboBox
-                                            MinWidth="150"
-                                            Margin="5,0,0,0"
-                                            ItemsSource="{Binding SortOrders}"
-                                            SelectedItem="{Binding SortOrder}">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate x:DataType="Settings:SortOrderOption">
-                                                    <TextBlock Text="{Binding Name}" />
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
-                                        <TextBlock
-                                            Margin="5,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Type]}" />
-                                        <ComboBox
-                                            MinWidth="150"
-                                            Margin="5,0,0,0"
-                                            ItemsSource="{Binding TypeFilters}"
-                                            SelectedItem="{Binding FileType}">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate x:DataType="Settings:FileTypeFilterOption">
-                                                    <TextBlock Text="{Binding Name}" />
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
-                                        <TextBlock
-                                            Margin="5,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Similarity]}" />
-                                        <NumericUpDown
-                                            Width="140"
-                                            FormatString="\{0\}%"
-                                            Maximum="100"
-                                            Minimum="0"
-                                            Value="{Binding FilterSimilarityFrom}" />
-                                        <TextBlock
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.To]}" />
-                                        <NumericUpDown
-                                            Width="140"
-                                            FormatString="\{0\}%"
-                                            Maximum="100"
-                                            Minimum="0"
-                                            Value="{Binding FilterSimilarityTo}" />
-                                        <CheckBox
-                                            Margin="10,0,0,0"
-                                            VerticalAlignment="Center"
-                                            IsChecked="{Binding FilterGroupsWithCheckedItems}">
-                                            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.GroupsWithCheckedItems]}" />
-                                        </CheckBox>
-                                        <StackPanel Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock
-                                                FontSize="11"
-                                                Opacity="0.8"
-                                                Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}"
-                                                Text="⚠ " />
-                                            <TextBlock
-                                                FontSize="11"
-                                                Opacity="0.8"
-                                                Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}"
-                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Note]}" />
-                                        </StackPanel>
-                                    </WrapPanel>
-                                </Grid>
-                                <Grid Grid.Row="1" IsVisible="{Binding IsReviewState}">
-                                    <views:DuplicateResultsView
-                                        x:Name="NewResultsView"
-                                        IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!UseClassicResultsView}" />
-                                    <DataGrid
-                                        Name="dataGridGrouping"
-                                        CanUserResizeColumns="True"
-                                        LoadingRowGroup="OnLoadingRowGroup"
-                                        IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseClassicResultsView}"
-                                        >
-                                        <!-- KeyBindings are applied programmatically by KeyboardShortcutManager -->
-                                        <DataGrid.Columns>
-                                            <DataGridTemplateColumn>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <CheckBox Margin="0,0,5,0" HorizontalAlignment="Center" IsChecked="{Binding Checked}" />
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Width="24">
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <Button Padding="2" Margin="0" MinWidth="18" MinHeight="18" Width="18" Height="18"
-                                                                Background="Transparent" BorderThickness="0"
-                                                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                Command="{Binding $parent[DataGrid].((vm:MainWindowVM)DataContext).RemoveSingleItemCommand}"
-                                                                CommandParameter="{Binding}"
-                                                                ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListOnly]}">
-                                                            <TextBlock Text="✕" FontSize="10" Opacity="0.4" />
-                                                        </Button>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Header="Thumbnail" Tag="Thumbnail" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}">
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <Grid>
-                                                            <!-- Skeleton shimmer while thumbnail is loading -->
-                                                            <Border Classes="skeleton-shimmer"
-                                                                    Width="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}"
-                                                                    Height="56"
-                                                                    Margin="4"
-                                                                    Background="#18808080">
-                                                                <Border.IsVisible>
-                                                                    <MultiBinding Converter="{StaticResource ShowSkeletonConverter}">
-                                                                        <Binding Path="Thumbnail" />
-                                                                        <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="GeneratePreviewThumbnails" />
-                                                                    </MultiBinding>
-                                                                </Border.IsVisible>
-                                                            </Border>
-                                                            <!-- Actual thumbnail -->
-                                                            <!-- DownOnly: never upscale. Without it, a single-image strip (near-square
-                                                                 aspect) blows up to the full column width after a view refresh, while
-                                                                 video strips (N thumbnails wide) stay small (issue #787). -->
-                                                            <Image
-                                                                Name="ThumbnailImage"
-                                                                Source="{Binding Thumbnail}"
-                                                                Stretch="Uniform"
-                                                                StretchDirection="DownOnly"
-                                                                HorizontalAlignment="Left"
-                                                                ToolTip.Tip="{Binding ItemInfo.Path}">
-                                                                <i:Interaction.Behaviors>
-                                                                    <ic:ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[DataGrid].((vm:MainWindowVM)DataContext).ThumbnailDoubleClickCommand}" />
-                                                                </i:Interaction.Behaviors>
-                                                            </Image>
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn
-                                                Width="1*"
-                                                Header="Path"
-                                                Tag="Path"
-                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}">
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
-                                                            <!-- Tombstone: content the user already deleted; its fingerprint matched again -->
-                                                            <Border IsVisible="{Binding IsTombstone}"
-                                                                    Background="#B33A2E" CornerRadius="3" Padding="5,1" Margin="0,0,6,0"
-                                                                    VerticalAlignment="Center"
-                                                                    ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DupList.AlreadyDeletedTooltip]}">
-                                                                <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DupList.AlreadyDeleted]}"
-                                                                           FontSize="10" FontWeight="Bold" Foreground="White" />
-                                                            </Border>
-                                                            <!-- Offline: the file's drive is not currently mounted -->
-                                                            <Border IsVisible="{Binding IsOffline}"
-                                                                    Background="#555555" CornerRadius="3" Padding="5,1" Margin="0,0,6,0"
-                                                                    VerticalAlignment="Center"
-                                                                    ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DupList.OfflineTooltip]}">
-                                                                <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DupList.Offline]}"
-                                                                           FontSize="10" FontWeight="Bold" Foreground="#DDDDDD" />
-                                                            </Border>
-                                                            <TextBlock
-                                                                Text="{Binding ItemInfo.Path, TargetNullValue=''}"
-                                                                TextWrapping="Wrap"
-                                                                VerticalAlignment="Center" />
-                                                        </StackPanel>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}">
-                                                <DataGridTemplateColumn.Header>
-                                                    <TextBlock
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.DurationCompact]}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.DurationCompactTip]}" />
-                                                </DataGridTemplateColumn.Header>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <Grid Margin="10,0,0,0">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                            </Grid.RowDefinitions>
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                IsVisible="{Binding ItemInfo.IsImage}"
-                                                                Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
-                                                                TextWrapping="Wrap" />
-                                                            <Border Grid.Row="0" Tag="duration" Background="Transparent"
-                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited"
-                                                                    IsVisible="{Binding !ItemInfo.IsImage}">
-                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
-                                                                    <TextBlock.Text>
-                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0:hh\:mm\:ss}">
-                                                                            <Binding Path="ItemInfo.Duration" />
-                                                                            <Binding Path="DurationDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                    <TextBlock.Foreground>
-                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                                                                            <Binding Path="ItemInfo.IsBestDuration" />
-                                                                            <Binding Path="DurationDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Foreground>
-                                                                </TextBlock>
-                                                            </Border>
-                                                            <Border Grid.Row="1" Tag="framesize" Background="Transparent"
-                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
-                                                                    <TextBlock.Text>
-                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
-                                                                            <Binding Path="ItemInfo.FrameSize" />
-                                                                            <Binding Path="FrameSizeDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                    <TextBlock.Foreground>
-                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                                                                            <Binding Path="ItemInfo.IsBestFrameSize" />
-                                                                            <Binding Path="FrameSizeDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Foreground>
-                                                                </TextBlock>
-                                                            </Border>
-                                                            <Border Grid.Row="2" Tag="size" Background="Transparent"
-                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
-                                                                    <TextBlock.Text>
-                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
-                                                                            <Binding Path="ItemInfo.Size" />
-                                                                            <Binding Path="SizeDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                    <TextBlock.Foreground>
-                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                                                                            <Binding Path="ItemInfo.IsBestSize" />
-                                                                            <Binding Path="SizeDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Foreground>
-                                                                </TextBlock>
-                                                            </Border>
-                                                            <TextBlock
-                                                                Grid.Row="3"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.DateCreated, TargetNullValue='', Converter={StaticResource ExtraShortDateTimeConverter}}"
-                                                                TextWrapping="Wrap" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}">
-                                                <DataGridTemplateColumn.Header>
-                                                    <TextBlock
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.VideoCompact]}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.VideoCompactTip]}" />
-                                                </DataGridTemplateColumn.Header>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <Grid Margin="10,0,0,0" IsVisible="{Binding !ItemInfo.IsImage}">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                            </Grid.RowDefinitions>
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.Format, TargetNullValue='', Mode=OneWay}"
-                                                                TextWrapping="Wrap" />
-                                                            <Border Grid.Row="1" Tag="fps" Background="Transparent"
-                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
-                                                                    <TextBlock.Text>
-                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0} fps">
-                                                                            <Binding Path="ItemInfo.Fps" />
-                                                                            <Binding Path="FpsDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                    <TextBlock.Foreground>
-                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                                                                            <Binding Path="ItemInfo.IsBestFps" />
-                                                                            <Binding Path="FpsDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Foreground>
-                                                                </TextBlock>
-                                                            </Border>
-                                                            <Border Grid.Row="2" Tag="bitrate" Background="Transparent"
-                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
-                                                                    <TextBlock.Text>
-                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0} kbps">
-                                                                            <Binding Path="ItemInfo.BitRateKbs" />
-                                                                            <Binding Path="BitRateDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                    <TextBlock.Foreground>
-                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                                                                            <Binding Path="ItemInfo.IsBestBitRateKbs" />
-                                                                            <Binding Path="BitRateDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Foreground>
-                                                                </TextBlock>
-                                                            </Border>
-                                                            <TextBlock
-                                                                Grid.Row="3"
-                                                                Margin="2"
-                                                                Foreground="{Binding ItemInfo.IsBestHdrFormat, Converter={StaticResource IsBestConverter}}"
-                                                                Text="{Binding ItemInfo.HdrFormat, TargetNullValue=''}"
-                                                                TextWrapping="Wrap" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Width="1*" IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}">
-                                                <DataGridTemplateColumn.Header>
-                                                    <TextBlock
-                                                        Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.AudioCompact]}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.AudioCompactTip]}" />
-                                                </DataGridTemplateColumn.Header>
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <Grid Margin="10,0,0,0" IsVisible="{Binding !ItemInfo.IsImage}">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                                <RowDefinition />
-                                                            </Grid.RowDefinitions>
-                                                            <TextBlock
-                                                                Grid.Row="0"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.AudioFormat, TargetNullValue=''}"
-                                                                TextWrapping="Wrap" />
-                                                            <TextBlock
-                                                                Grid.Row="1"
-                                                                Margin="2"
-                                                                Text="{Binding ItemInfo.AudioChannel, TargetNullValue=''}"
-                                                                TextWrapping="Wrap" />
-                                                            <Border Grid.Row="2" Tag="audiosamplerate" Background="Transparent"
-                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
-                                                                    <TextBlock.Text>
-                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
-                                                                            <Binding Path="ItemInfo.AudioSampleRate" />
-                                                                            <Binding Path="AudioSampleRateDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                    <TextBlock.Foreground>
-                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                                                                            <Binding Path="ItemInfo.IsBestAudioSampleRate" />
-                                                                            <Binding Path="AudioSampleRateDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Foreground>
-                                                                </TextBlock>
-                                                            </Border>
-                                                            <Border Grid.Row="3" Tag="audiobitrate" Background="Transparent"
-                                                                    PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                                                                <TextBlock Margin="2" Classes="metric-diff" TextWrapping="Wrap">
-                                                                    <TextBlock.Text>
-                                                                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0} kbps">
-                                                                            <Binding Path="ItemInfo.AudioBitRateKbs" />
-                                                                            <Binding Path="AudioBitRateDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                    <TextBlock.Foreground>
-                                                                        <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                                                                            <Binding Path="ItemInfo.IsBestAudioBitRateKbs" />
-                                                                            <Binding Path="AudioBitRateDiff" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Foreground>
-                                                                </TextBlock>
-                                                            </Border>
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn
-                                                Width="1*"
-                                                Header="Similarity"
-                                                IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}">
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate x:DataType="vm:DuplicateItemVM">
-                                                        <Border
-                                                            CornerRadius="4"
-                                                            Padding="6,2"
-                                                            Margin="4,2"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center"
-                                                            Background="{Binding ItemInfo.Similarity, Converter={StaticResource SimilarityToBadgeBackgroundConverter}}">
-                                                            <TextBlock
-                                                                FontSize="12"
-                                                                FontWeight="SemiBold"
-                                                                HorizontalAlignment="Center"
-                                                                Foreground="{Binding ItemInfo.Similarity, Converter={StaticResource SimilarityToBadgeForegroundConverter}}"
-                                                                Text="{Binding ItemInfo.Similarity, Converter={StaticResource SimilarityToFormattedConverter}}" />
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
-                                            <DataGridTextColumn
-                                                Width="1*"
-                                                x:DataType="vm:DuplicateItemVM"
-                                                Binding="{Binding ItemInfo.PartialClipOffsetDisplay, TargetNullValue=''}"
-                                                Header="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.ClipOffset]}"
-                                                IsReadOnly="True" />
-                                        </DataGrid.Columns>
-                                        <DataGrid.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem
-                                                    Command="{Binding OpenItemCommand}"
-                                                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenFile]}"
-                                                    InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[OpenItemsByColId]}" />
-                                                <MenuItem
-                                                    Command="{Binding OpenItemInFolderCommand}"
-                                                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenInFolder]}"
-                                                    InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[OpenItemInFolder]}" />
-                                                <MenuItem
-                                                    Command="{Binding RenameFileCommand}"
-                                                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RenameFile]}"
-                                                    InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[RenameFile]}" />
-                                                <MenuItem>
-                                                    <MenuItem.Header>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Viewbox Width="16" Height="16">
-                                                                <Canvas Width="24" Height="24">
-                                                                    <Path Data="M2,4C2,2.89 2.9,2 4,2H7V4H4V7H2V4M22,4V7H20V4H17V2H20A2,2 0 0,1 22,4M20,20V17H22V20C22,21.11 21.1,22 20,22H17V20H20M2,20V17H4V20H7V22H4A2,2 0 0,1 2,20M10,2H14V4H10V2M10,20H14V22H10V20M20,10H22V14H20V10M2,10H4V14H2V10Z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                                                </Canvas>
-                                                            </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CheckedItems]}" />
-                                                        </StackPanel>
-                                                    </MenuItem.Header>
-                                                    <MenuItem Command="{Binding DeleteCheckedItemsCommand}" InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[DeleteCheckedItems]}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.DeleteFromDiskRecycle]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <MenuItem Command="{Binding DeleteCheckedItemsPermanentlyCommand}" IsVisible="{Binding IsWindows}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.DeletePermanently]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <Separator />
-                                                    <MenuItem Command="{Binding RemoveCheckedItemsFromListCommand}" InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[DeleteCheckedItemsWithPrompt]}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListOnly]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <MenuItem Command="{Binding RemoveCheckedItemsFromListAndBlacklistCommand}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListAndExclude]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <MenuItem Command="{Binding CreateSymbolLinksForCheckedItemsCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SymbolLinkTooltip]}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListAndSymbolLinks]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <MenuItem Command="{Binding CreateSymbolLinksForCheckedItemsAndBlacklistCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SymbolLinkTooltip]}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListSymbolLinksExclude]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <MenuItem Command="{Binding CreateHardLinksForCheckedItemsCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.HardLinkTooltip]}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListAndHardLinks]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <MenuItem Command="{Binding CreateHardLinksForCheckedItemsAndBlacklistCommand}" ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.HardLinkTooltip]}">
-                                                        <MenuItem.Header>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Viewbox Width="16" Height="16">
-                                                                    <Canvas Width="24" Height="24">
-                                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                                    </Canvas>
-                                                                </Viewbox>
-                                                                <TextBlock
-                                                                    Margin="5,0,0,0"
-                                                                    VerticalAlignment="Center"
-                                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RemoveFromListHardLinksExclude]}" />
-                                                            </StackPanel>
-                                                        </MenuItem.Header>
-                                                    </MenuItem>
-                                                    <Separator />
-                                                    <MenuItem Command="{Binding CopyCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyToFolderEllipsis]}" />
-                                                    <MenuItem Command="{Binding MoveCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
-                                                    <Separator />
-                                                    <MenuItem Command="{Binding LoadThumbnailsForCheckedItemsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForCheckedItems]}" />
-                                                </MenuItem>
-                                                <MenuItem>
-                                                    <MenuItem.Header>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Viewbox Width="16" Height="16">
-                                                                <Canvas Width="24" Height="24">
-                                                                    <Path Data="M23 15H11.707l2.646 2.646-.707.707L9.793 14.5l3.854-3.854.707.707L11.707 14H23zm-13-5H6v1h4zm-4 5h2v-1H6zM3 4h3V3h3a2 2 0 0 1 4 0h3v1h3v9h-1V5h-2v2H6V5H4v16h14v-5h1v6H3zm4 2h8V4h-3V2.615A.615.615 0 0 0 11.386 2h-.771a.615.615 0 0 0-.615.615V4H7zM6 19h4v-1H6z" Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                                                </Canvas>
-                                                            </Viewbox>
-                                                            <TextBlock
-                                                                Margin="5,0,0,0"
-                                                                VerticalAlignment="Center"
-                                                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Copy]}" />
-                                                        </StackPanel>
-                                                    </MenuItem.Header>
-                                                    <MenuItem Command="{Binding CopyPathsToClipboardCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyPaths]}" />
-                                                    <MenuItem Command="{Binding CopyFilenamesToClipboardCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyFilenames]}" />
-                                                </MenuItem>
-                                                <MenuItem Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.Groups]}">
-                                                    <MenuItem Command="{Binding ExpandAllGroupsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.ExpandAll]}" />
-                                                    <MenuItem Command="{Binding CollapseAllGroupsCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CollapseAll]}" />
-                                                </MenuItem>
-                                                <MenuItem Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.SelectedGroup]}">
-                                                    <MenuItem
-                                                        Command="{Binding MarkGroupAsNotAMatchCommand}"
-                                                        Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MarkNotMatch]}"
-                                                        InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[MarkGroupAsNotAMatch]}"
-                                                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MarkNotMatchTooltip]}" />
-                                                    <MenuItem
-                                                        Command="{Binding OpenGroupCommand}"
-                                                        CommandParameter="0"
-                                                        Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenGroup]}"
-                                                        IsVisible="{Binding IsMultiOpenSupported}" />
-                                                    <MenuItem
-                                                        Command="{Binding OpenGroupCommand}"
-                                                        CommandParameter="1"
-                                                        Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.OpenGroupInFolder]}"
-                                                        IsVisible="{Binding IsMultiOpenInFolderSupported}" />
-                                                    <MenuItem Command="{Binding LoadThumbnailsForGroupCommand}" Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForGroup]}" />
-                                                    <MenuItem
-                                                        Command="{Binding ShowGroupInThumbnailComparerCommand}"
-                                                        Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CompareFullsizeThumbnails]}"
-                                                        InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[ShowGroupInThumbnailComparer]}" />
-                                                </MenuItem>
-                                            </ContextMenu>
-                                        </DataGrid.ContextMenu>
-                                    </DataGrid>
-                                    <!-- The old empty-state overlay is superseded by the Setup state. -->
-                                </Grid>
+                                <views:SetupView IsVisible="{Binding IsSetupState}" />
+                                <views:ScanningView IsVisible="{Binding IsScanningState}" />
+                                <views:DuplicateResultsView
+                                    x:Name="NewResultsView"
+                                    IsVisible="{Binding IsReviewState}" />
                             </Grid>
                             <WrapPanel Grid.Row="2" Margin="0,2,0,0">
                                 <!-- Statistics -->
@@ -1329,26 +715,9 @@
                                 </StackPanel>
                             </Grid>
                         </Grid>
-                    </TabItem>
-                    <TabItem Name="TabItemSettings">
-                        <TabItem.Header>
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Settings]}" />
-                        </TabItem.Header>
-                        <views:SettingsView />
-                    </TabItem>
-                    <TabItem Name="TabItemLog">
-                        <TabItem.Header>
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Log]}" />
-                        </TabItem.Header>
-                        <views:LogView />
-                    </TabItem>
-                </TabControl>
+                </Grid>
+                <views:SettingsView IsVisible="{Binding IsShellSettingsVisible}" />
+                <views:LogView IsVisible="{Binding IsShellLogVisible}" />
             </Grid>
         </Grid>
     </Border>

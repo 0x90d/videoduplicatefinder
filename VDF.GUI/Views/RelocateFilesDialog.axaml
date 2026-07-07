@@ -2,6 +2,7 @@
     x:Class="VDF.GUI.RelocateFilesDialog"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:app="clr-namespace:VDF.GUI"
@@ -91,26 +92,49 @@
             </StackPanel>
         </Grid>
 
-        <!--  Preview grid  -->
-        <DataGrid
+        <!--  Preview list: header strip + virtualized rows (shared column layout)  -->
+        <Grid
             Grid.Row="2"
             Margin="10,12,0,12"
-            CanUserResizeColumns="True"
-            ItemsSource="{Binding Preview}">
-            <DataGrid.Columns>
-                <DataGridTemplateColumn Header="{Binding Source={x:Static app:App.Lang}, Path=[Apply]}">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="vm:RelocateCandidate">
+            RowDefinitions="Auto,*">
+            <Border
+                Padding="8,4"
+                Background="{actipro:ThemeResource Container2BackgroundBrush}"
+                BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+                BorderThickness="0,0,0,1">
+                <Grid ColumnDefinitions="56,2*,2*,*,*">
+                    <TextBlock FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[Apply]}" />
+                    <TextBlock Grid.Column="1" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[Path]}" />
+                    <TextBlock Grid.Column="2" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[NewPath]}" />
+                    <TextBlock Grid.Column="3" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[Confidence]}" />
+                    <TextBlock Grid.Column="4" FontSize="11" FontWeight="SemiBold" Opacity="0.65" Text="{Binding Source={x:Static app:App.Lang}, Path=[Note]}" />
+                </Grid>
+            </Border>
+            <ListBox
+                Grid.Row="1"
+                Background="Transparent"
+                ItemsSource="{Binding Preview}"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Padding" Value="8,2" />
+                        <Setter Property="MinHeight" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListBox.Styles>
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RelocateCandidate">
+                        <Grid ColumnDefinitions="56,2*,2*,*,*">
                             <CheckBox IsChecked="{Binding Selected}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <DataGridTextColumn Width="2*" x:DataType="vm:RelocateCandidate" Binding="{Binding OldPath}" Header="{Binding Source={x:Static app:App.Lang}, Path=[Path]}" IsReadOnly="True" />
-                <DataGridTextColumn Width="2*" x:DataType="vm:RelocateCandidate" Binding="{Binding NewPath}" Header="{Binding Source={x:Static app:App.Lang}, Path=[NewPath]}" IsReadOnly="True" />
-                <DataGridTextColumn Width="*" x:DataType="vm:RelocateCandidate" Binding="{Binding ConfidenceString}" Header="{Binding Source={x:Static app:App.Lang}, Path=[Confidence]}" IsReadOnly="True" />
-                <DataGridTextColumn Width="*" x:DataType="vm:RelocateCandidate" Binding="{Binding Note}" Header="{Binding Source={x:Static app:App.Lang}, Path=[Note]}" IsReadOnly="True" />
-            </DataGrid.Columns>
-        </DataGrid>
+                            <TextBlock Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding OldPath}" ToolTip.Tip="{Binding OldPath}" />
+                            <TextBlock Grid.Column="2" Margin="0,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding NewPath}" ToolTip.Tip="{Binding NewPath}" />
+                            <TextBlock Grid.Column="3" Margin="0,0,8,0" VerticalAlignment="Center" Text="{Binding ConfidenceString}" />
+                            <TextBlock Grid.Column="4" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Note}" ToolTip.Tip="{Binding Note}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
 
         <!--  Buttons  -->
         <StackPanel

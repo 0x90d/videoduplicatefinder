@@ -14,57 +14,78 @@
 // */
 //
 
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Text.Json;
-using Avalonia.Collections;
-using Avalonia.Controls;
 using ReactiveUI;
 using VDF.Core;
 using VDF.Core.Utils;
 
 namespace VDF.GUI.ViewModels {
+	/// <summary>One database entry row: path is editable (writes through to the entry),
+	/// the exclude flag toggles, everything else is display-only.</summary>
+	internal sealed class DatabaseEntryVM {
+		public DatabaseEntryVM(FileEntry entry) => Entry = entry;
+		public FileEntry Entry { get; }
+
+		public string Path {
+			get => Entry.Path;
+			set {
+				if (!string.IsNullOrWhiteSpace(value))
+					Entry.Path = value;
+			}
+		}
+		public bool IsManuallyExcluded {
+			get => Entry.IsManuallyExcluded;
+			// FileEntry's property setter is protected; the flags field is public.
+			set => Entry.Flags.Set(EntryFlags.ManuallyExcluded, value);
+		}
+		public string SizeText => Entry.FileSize.BytesToString();
+		public string DateCreatedText => Entry.DateCreated.ToLocalTime().ToString("g");
+		public string FlagsText {
+			get {
+				var flags = new List<string>();
+				if (Entry.HasMetadataError) flags.Add("metadata error");
+				if (Entry.HasThubmanilError) flags.Add("thumbnail error");
+				if (Entry.IsTooDark) flags.Add("too dark");
+				return string.Join(", ", flags);
+			}
+		}
+	}
+
 	internal class DatabaseViewerVM : ReactiveObject {
-		public ObservableCollection<FileEntry> DatabaseFiles { get; } = new();
+		readonly List<DatabaseEntryVM> allEntries;
 		private DatabaseWrapper DbWrapper;
-		public DataGridCollectionView DatabaseFilesView { get; }
 		readonly string TempDatabaseFile;
 		// Only forwarded to ScanEngine.ExportDataBaseToJson (which serializes through
 		// its own typed metadata); local (de)serialization uses CoreJsonContext directly.
 		static readonly JsonSerializerOptions serializerOptions = new() {
 			IncludeFields = true,
 		};
-		readonly DataGrid GetDataGrid;
 
-		public DatabaseViewerVM(DataGrid dataGrid) {
-			GetDataGrid = dataGrid;
+		public DatabaseViewerVM() {
 			TempDatabaseFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 			ScanEngine.ExportDataBaseToJson(TempDatabaseFile, serializerOptions);
-			 DbWrapper = JsonSerializer.Deserialize(File.ReadAllBytes(TempDatabaseFile), VDF.Core.Utils.CoreJsonContext.Default.DatabaseWrapper)!;
-			DatabaseFiles = new ObservableCollection<FileEntry>(DbWrapper.Entries);
-			DatabaseFilesView = new DataGridCollectionView(DatabaseFiles);
-			DatabaseFilesView.Filter += TextFilter;
-			GetDataGrid.BeginningEdit += GetDataGrid_BeginningEdit;
-			GetDataGrid.CellEditEnded += GetDataGrid_CellEditEnded;
-			GetDataGrid.RowEditEnded += GetDataGrid_RowEditEnded;
+			DbWrapper = JsonSerializer.Deserialize(File.ReadAllBytes(TempDatabaseFile), VDF.Core.Utils.CoreJsonContext.Default.DatabaseWrapper)!;
+			allEntries = DbWrapper.Entries.Select(e => new DatabaseEntryVM(e)).ToList();
+			ApplyFilter();
 		}
 
-		private void GetDataGrid_RowEditEnded(object? sender, DataGridRowEditEndedEventArgs e) => canDeleteRows = true;
+		IReadOnlyList<DatabaseEntryVM> _DatabaseFilesView = Array.Empty<DatabaseEntryVM>();
+		public IReadOnlyList<DatabaseEntryVM> DatabaseFilesView {
+			get => _DatabaseFilesView;
+			private set => this.RaiseAndSetIfChanged(ref _DatabaseFilesView, value);
+		}
 
-		private void GetDataGrid_CellEditEnded(object? sender, DataGridCellEditEndedEventArgs e) => canDeleteRows = true;
+		public string EntryCountText => allEntries.Count == DatabaseFilesView.Count
+			? $"{allEntries.Count:N0}"
+			: $"{DatabaseFilesView.Count:N0} / {allEntries.Count:N0}";
 
-		private void GetDataGrid_BeginningEdit(object? sender, DataGridBeginningEditEventArgs e) => canDeleteRows = false;
-
-		bool canDeleteRows = true;
-
-		bool TextFilter(object obj) {
-			if (obj is not FileEntry data) return false;
-			bool success = true;
-			if (!string.IsNullOrEmpty(SearchText)) {
-				success = data.Path.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
-			}
-			return success;
+		void ApplyFilter() {
+			DatabaseFilesView = string.IsNullOrEmpty(SearchText)
+				? allEntries.ToList()
+				: allEntries.Where(e => e.Entry.Path.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+			this.RaisePropertyChanged(nameof(EntryCountText));
 		}
 
 		string _SearchText = string.Empty;
@@ -74,11 +95,15 @@ namespace VDF.GUI.ViewModels {
 				if (value == _SearchText) return;
 				_SearchText = value;
 				this.RaisePropertyChanged(nameof(SearchText));
-				DatabaseFilesView?.Refresh();
+				ApplyFilter();
 			}
 		}
+
+		// Wired by the view: returns the list box's current selection.
+		internal Func<IEnumerable<DatabaseEntryVM>>? SelectionProvider;
+
 		public void Save() {
-			DbWrapper.Entries = new HashSet<FileEntry>(DatabaseFiles);
+			DbWrapper.Entries = new HashSet<FileEntry>(allEntries.Select(e => e.Entry));
 			File.WriteAllBytes(TempDatabaseFile, JsonSerializer.SerializeToUtf8Bytes(DbWrapper, VDF.Core.Utils.CoreJsonContext.Default.DatabaseWrapper));
 			ScanEngine.ImportDataBaseFromJson(TempDatabaseFile, serializerOptions);
 			ScanEngine.SaveDatabase();
@@ -89,11 +114,13 @@ namespace VDF.GUI.ViewModels {
 				Logger.Instance.Warn($"Failed to delete temporarily database file '{TempDatabaseFile}', because of {e}");
 			}
 		}
+
 		public ReactiveCommand<Unit, Unit> DeleteSelectedEntries => ReactiveCommand.Create(() => {
-			if (!canDeleteRows) return;
-			foreach (var item in GetDataGrid.SelectedItems.OfType<FileEntry>().ToList()) {
-				DatabaseFiles.Remove(item);
-			}
+			var selected = SelectionProvider?.Invoke().ToList();
+			if (selected == null || selected.Count == 0) return;
+			foreach (var item in selected)
+				allEntries.Remove(item);
+			ApplyFilter();
 		});
 	}
 }

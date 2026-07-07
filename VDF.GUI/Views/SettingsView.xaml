@@ -790,34 +790,6 @@
                 </ComboBox>
               </views:SettingRow>
 
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseClassicResultsView]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.UseClassicResultsViewTooltip]}"
-                  SearchTags="classic datagrid results view">
-                <ToggleSwitch Classes="plain"
-                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseClassicResultsView}" />
-              </views:SettingRow>
-
-              <views:SettingRow
-                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.ClassicColumns.Title]}"
-                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.ClassicColumns.Desc]}"
-                  SearchTags="columns visibility"
-                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseClassicResultsView}">
-                <WrapPanel MaxWidth="240">
-                  <CheckBox FontSize="12.5" Margin="0,0,10,2" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Col.Thumbnail]}"
-                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}" />
-                  <CheckBox FontSize="12.5" Margin="0,0,10,2" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Col.Path]}"
-                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowPathColumn}" />
-                  <CheckBox FontSize="12.5" Margin="0,0,10,2" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Col.Duration]}"
-                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}" />
-                  <CheckBox FontSize="12.5" Margin="0,0,10,2" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Col.Format]}"
-                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}" />
-                  <CheckBox FontSize="12.5" Margin="0,0,10,2" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Col.Audio]}"
-                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowAudioColumn}" />
-                  <CheckBox FontSize="12.5" Margin="0,0,10,2" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Col.Similarity]}"
-                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
-                </WrapPanel>
-              </views:SettingRow>
             </StackPanel>
 
             <!-- ═══════════════ SHORTCUTS ═══════════════ -->

@@ -1,20 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- DataGrid row hover: subtle background highlight + elevation -->
-    <Style Selector="DataGridRow">
-        <Setter Property="Transitions">
-            <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.15" />
-            </Transitions>
-        </Setter>
-    </Style>
-
-    <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
-        <Setter Property="Fill" Value="{DynamicResource RowHoverBackground}" />
-    </Style>
-
-
     <!-- Metric hover diff: smooth color transition (matches web's transition: color 0.15s) -->
     <Style Selector="TextBlock.metric-diff">
         <Setter Property="Transitions">

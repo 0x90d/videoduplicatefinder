@@ -132,14 +132,6 @@ namespace VDF.GUI.Data {
 			get => _MainWindowMaximized;
 			set => this.RaiseAndSetIfChanged(ref _MainWindowMaximized, value);
 		}
-		string _LastSortOrder = string.Empty;
-		/// <summary>Key of the results sort order (see MainWindowVM.SortOrders), restored on startup.</summary>
-		[JsonPropertyName("LastSortOrder")]
-		public string LastSortOrder {
-			get => _LastSortOrder;
-			set => this.RaiseAndSetIfChanged(ref _LastSortOrder, value);
-		}
-
 		string _LanguageCode = ResolveDefaultLanguageCode();
 		[JsonPropertyName("LanguageCode")]
 		public string LanguageCode {
@@ -453,12 +445,6 @@ namespace VDF.GUI.Data {
 			get => _ShowThumbnailColumn;
 			set => this.RaiseAndSetIfChanged(ref _ShowThumbnailColumn, value);
 		}
-		bool _ShowPathColumn = true;
-		[JsonPropertyName("ShowPathColumn")]
-		public bool ShowPathColumn {
-			get => _ShowPathColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowPathColumn, value);
-		}
 		bool _ShowDurationColumn = true;
 		[JsonPropertyName("ShowDurationColumn")]
 		public bool ShowDurationColumn {
@@ -471,12 +457,6 @@ namespace VDF.GUI.Data {
 			get => _ShowFormatColumn;
 			set => this.RaiseAndSetIfChanged(ref _ShowFormatColumn, value);
 		}
-		bool _ShowAudioColumn = true;
-		[JsonPropertyName("ShowAudioColumn")]
-		public bool ShowAudioColumn {
-			get => _ShowAudioColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowAudioColumn, value);
-		}
 		bool _ShowSimilarityColumn = true;
 		[JsonPropertyName("ShowSimilarityColumn")]
 		public bool ShowSimilarityColumn {
@@ -488,13 +468,6 @@ namespace VDF.GUI.Data {
 		public bool ShowSizeDateColumn {
 			get => _ShowSizeDateColumn;
 			set => this.RaiseAndSetIfChanged(ref _ShowSizeDateColumn, value);
-		}
-		bool _UseClassicResultsView;
-		/// <summary>Fallback to the old DataGrid results view (kept until the new view reaches parity).</summary>
-		[JsonPropertyName("UseClassicResultsView")]
-		public bool UseClassicResultsView {
-			get => _UseClassicResultsView;
-			set => this.RaiseAndSetIfChanged(ref _UseClassicResultsView, value);
 		}
 		ViewModels.ResultsSortMode _ResultsSortMode = ViewModels.ResultsSortMode.WastedSpace;
 		[JsonPropertyName("ResultsSortMode")]

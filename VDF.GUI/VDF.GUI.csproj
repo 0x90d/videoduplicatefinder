@@ -9,12 +9,11 @@
          without x:DataType. Keep the v11 behavior until views are annotated. -->
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!-- Native AOT publish: IL2104/IL3053 are per-assembly rollups for third-party
-         libraries (MemoryPack, ReactiveUI, Avalonia.DataGrid, ActiPro, DynamicExpresso,
-         Microsoft.CSharp, System.Linq.Expressions) saying they contain members the
-         trimmer can't prove safe. Triaged 2026-06: our usage of all of them is covered
-         (MemoryPack formatters registered statically, DataGrid sort/group paths and
-         DynamicExpresso verified working under AOT). Our own code publishes without
-         IL warnings. -->
+         libraries (MemoryPack, ReactiveUI, ActiPro, DynamicExpresso, Microsoft.CSharp,
+         System.Linq.Expressions) saying they contain members the trimmer can't prove
+         safe. Triaged 2026-06: our usage of all of them is covered (MemoryPack
+         formatters registered statically, DynamicExpresso verified working under AOT).
+         Our own code publishes without IL warnings. -->
     <NoWarn>$(NoWarn);IL2104;IL3053</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -44,9 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="26.1.1" />
-    <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="26.1.1" />
     <PackageReference Include="Avalonia" Version="12.0.4" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0" />
 <PackageReference Include="Avalonia.Desktop" Version="12.0.4" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.4" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.19.3" />

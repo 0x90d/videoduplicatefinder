@@ -18,10 +18,6 @@
         <SolidColorBrush x:Key="BadgeLowBackground" Color="#E65100" Opacity="0.85" />
         <SolidColorBrush x:Key="BadgeLowForeground" Color="#FFCC80" />
 
-        <!-- DataGrid row hover -->
-        <SolidColorBrush x:Key="RowHoverBackground" Color="#FFFFFF" Opacity="0.04" />
-        <SolidColorBrush x:Key="RowSelectedBackground" Color="#FFFFFF" Opacity="0.08" />
-
         <!-- Best quality badge -->
         <SolidColorBrush x:Key="BestBadgeBackground" Color="#2E7D32" Opacity="0.9" />
         <SolidColorBrush x:Key="BestBadgeForeground" Color="#C8E6C9" />
@@ -36,9 +32,6 @@
             <SolidColorBrush x:Key="BadgeMediumForeground" Color="#0D47A1" />
             <SolidColorBrush x:Key="BadgeLowBackground" Color="#FFE0B2" />
             <SolidColorBrush x:Key="BadgeLowForeground" Color="#E65100" />
-
-            <SolidColorBrush x:Key="RowHoverBackground" Color="#000000" Opacity="0.04" />
-            <SolidColorBrush x:Key="RowSelectedBackground" Color="#000000" Opacity="0.08" />
 
             <SolidColorBrush x:Key="BestBadgeBackground" Color="#C8E6C9" />
             <SolidColorBrush x:Key="BestBadgeForeground" Color="#1B5E20" />

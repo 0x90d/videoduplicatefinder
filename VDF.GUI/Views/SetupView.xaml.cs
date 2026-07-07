@@ -53,9 +53,8 @@ namespace VDF.GUI.Views {
 		}
 
 		void OnAdvancedSettingsClick(object? sender, RoutedEventArgs e) {
-			var tabs = ApplicationHelpers.MainWindow.FindControl<TabControl>("TabControl");
-			if (tabs != null && tabs.ItemCount > 1)
-				tabs.SelectedIndex = 1; // the Settings tab
+			if (ViewModel != null)
+				ViewModel.ActiveShellView = Data.ShellView.Settings;
 		}
 	}
 }

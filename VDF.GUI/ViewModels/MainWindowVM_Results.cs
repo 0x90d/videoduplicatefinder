@@ -23,8 +23,8 @@ using VDF.GUI.Data;
 namespace VDF.GUI.ViewModels {
 	public sealed record ResultsSortOption(string Name, ResultsSortMode Mode);
 
-	// New flattened results view (redesign Stage 1). The classic DataGrid view remains
-	// available via SettingsFile.UseClassicResultsView until the new view reaches parity.
+	// Flattened results view (redesign Stage 1; the classic DataGrid view was retired
+	// in Stage 6).
 	public partial class MainWindowVM : ReactiveObject {
 
 		/// <summary>Flattened list the results ListBox renders: ResultsGroupHeader + ResultsItemRow.</summary>
@@ -91,7 +91,6 @@ namespace VDF.GUI.ViewModels {
 
 		/// <summary>Rebuilds the flattened list from the current duplicates, filter and sort.</summary>
 		internal void RebuildResultsList() {
-			if (SettingsFile.Instance.UseClassicResultsView) return;
 			var result = ResultsListBuilder.Build(new ResultsBuildRequest {
 				Items = Duplicates.ToList(),
 				Filter = DuplicatesFilterCore,
@@ -109,23 +108,12 @@ namespace VDF.GUI.ViewModels {
 			this.RaisePropertyChanged(nameof(ResultsShowClipOffsetColumn));
 		}
 
-		/// <summary>
-		/// Refreshes whichever results representation is active. Replaces the bare
-		/// view.Refresh() calls so filter/sort/list changes reach the new view too.
-		/// </summary>
-		internal void RefreshResultsView() {
-			if (SettingsFile.Instance.UseClassicResultsView)
-				view?.Refresh();
-			else
-				RebuildResultsList();
-		}
+		/// <summary>Refreshes the results list after filter/sort/list changes.</summary>
+		internal void RefreshResultsView() => RebuildResultsList();
 
-		/// <summary>Builds the active representation from scratch (scan done, import, view toggle).</summary>
+		/// <summary>Builds the results list from scratch (scan done, import).</summary>
 		void BuildActiveResultsView(bool resetSessionStats = true) {
-			if (SettingsFile.Instance.UseClassicResultsView)
-				BuildDuplicatesView();
-			else
-				RebuildResultsList();
+			RebuildResultsList();
 			if (resetSessionStats)
 				TotalSizeRemovedInternal = 0;
 		}
@@ -161,7 +149,7 @@ namespace VDF.GUI.ViewModels {
 			SettingsFile.Instance.ResultsCompactRows = !SettingsFile.Instance.ResultsCompactRows;
 		});
 
-		/// <summary>Group navigation for the flattened view; mirrors NavigateGroup for the DataGrid.</summary>
+		/// <summary>Group navigation for the flattened view.</summary>
 		Guid? NavigateGroupNewView(bool forward, Guid? fromGroupId = null) {
 			if (resultsGroups.Count == 0) return null;
 
