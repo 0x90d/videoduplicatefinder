@@ -30,16 +30,16 @@
       <Setter Property="Fill" Value="#55808080" />
     </Style>
     <Style Selector="Ellipse.dot.warn">
-      <Setter Property="Fill" Value="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" />
+      <Setter Property="Fill" Value="{DynamicResource VdfWarnBrush}" />
     </Style>
     <Style Selector="Ellipse.dot.err">
-      <Setter Property="Fill" Value="{actipro:ThemeResource ControlForegroundBrushSoftDanger}" />
+      <Setter Property="Fill" Value="{DynamicResource VdfDangerBrush}" />
     </Style>
     <Style Selector="TextBlock.lmsg.warn">
-      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" />
+      <Setter Property="Foreground" Value="{DynamicResource VdfWarnBrush}" />
     </Style>
     <Style Selector="TextBlock.lmsg.err">
-      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftDanger}" />
+      <Setter Property="Foreground" Value="{DynamicResource VdfDangerBrush}" />
     </Style>
     <!-- mockup .lrep: small pill chip, accent on hover / while expanded -->
     <Style Selector="Button.lrep">

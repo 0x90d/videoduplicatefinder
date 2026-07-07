@@ -8,6 +8,49 @@
     xmlns:utils="clr-namespace:VDF.GUI.Utils"
     RequestedThemeVariant="Dark">
 
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- Exact redesign palette (vdf-ux-concept.html tokens). These are the
+                     mockup's good/warn/danger/sel roles; the teal ACCENT itself comes from
+                     the VdfTeal ramp below. Border brushes carry the mockup's 45% alpha so
+                     badges/chips survive selected-row backgrounds (locked decision 12). -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="VdfGoodBrush" Color="#1C8A52" />
+                    <SolidColorBrush x:Key="VdfGoodSoftBrush" Color="#E2F2E9" />
+                    <SolidColorBrush x:Key="VdfGoodBorderBrush" Color="#731C8A52" />
+                    <SolidColorBrush x:Key="VdfWarnBrush" Color="#A06A10" />
+                    <SolidColorBrush x:Key="VdfWarnSoftBrush" Color="#F6ECD9" />
+                    <SolidColorBrush x:Key="VdfWarnBorderBrush" Color="#73A06A10" />
+                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#BB4237" />
+                    <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#F7E5E3" />
+                    <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#73BB4237" />
+                    <SolidColorBrush x:Key="VdfSelBrush" Color="#E8F1EF" />
+                    <SolidColorBrush x:Key="VdfTombBrush" Color="#A93B31" />
+                    <SolidColorBrush x:Key="VdfMutedBrush" Color="#8A9793" />
+                    <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#F7FAF9" />
+                    <SolidColorBrush x:Key="VdfMutedBorderBrush" Color="#DBE3E0" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="VdfGoodBrush" Color="#45B878" />
+                    <SolidColorBrush x:Key="VdfGoodSoftBrush" Color="#17301F" />
+                    <SolidColorBrush x:Key="VdfGoodBorderBrush" Color="#7345B878" />
+                    <SolidColorBrush x:Key="VdfWarnBrush" Color="#D29A3A" />
+                    <SolidColorBrush x:Key="VdfWarnSoftBrush" Color="#33260E" />
+                    <SolidColorBrush x:Key="VdfWarnBorderBrush" Color="#73D29A3A" />
+                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#E06A5E" />
+                    <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#391914" />
+                    <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#73E06A5E" />
+                    <SolidColorBrush x:Key="VdfSelBrush" Color="#1D2A27" />
+                    <SolidColorBrush x:Key="VdfTombBrush" Color="#C05248" />
+                    <SolidColorBrush x:Key="VdfMutedBrush" Color="#6D7B76" />
+                    <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#1C2422" />
+                    <SolidColorBrush x:Key="VdfMutedBorderBrush" Color="#2A3330" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <!-- Teal-green accent (redesign locked decision 12): a custom accent ramp

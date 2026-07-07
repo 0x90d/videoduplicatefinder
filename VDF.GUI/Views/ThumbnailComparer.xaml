@@ -76,36 +76,42 @@
             <Setter Property="Opacity" Value="0.8" />
         </Style>
         <Style Selector="Border.mchip.hi">
-            <Setter Property="BorderBrush" Value="#703E9B6E" />
-            <Setter Property="Background" Value="#1A3E9B6E" />
+            <Setter Property="BorderBrush" Value="{DynamicResource VdfGoodBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource VdfGoodSoftBrush}" />
         </Style>
         <Style Selector="Border.mchip.hi TextBlock">
-            <Setter Property="Foreground" Value="#3E9B6E" />
+            <Setter Property="Foreground" Value="{DynamicResource VdfGoodBrush}" />
             <Setter Property="Opacity" Value="1" />
         </Style>
         <Style Selector="Border.mchip.lo">
-            <Setter Property="BorderBrush" Value="#66BB4237" />
-            <Setter Property="Background" Value="#1ABB4237" />
+            <Setter Property="BorderBrush" Value="{DynamicResource VdfDangerBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource VdfDangerSoftBrush}" />
         </Style>
         <Style Selector="Border.mchip.lo TextBlock">
-            <Setter Property="Foreground" Value="#C05B51" />
+            <Setter Property="Foreground" Value="{DynamicResource VdfDangerBrush}" />
             <Setter Property="Opacity" Value="1" />
         </Style>
         <Style Selector="Border.bestbadge">
-            <Setter Property="Background" Value="#1A3E9B6E" />
-            <Setter Property="BorderBrush" Value="#703E9B6E" />
+            <Setter Property="Background" Value="{DynamicResource VdfGoodSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource VdfGoodBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="6,1" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style Selector="Border.checkedtag">
-            <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftWarning}" />
-            <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlForegroundBrushSoftWarning}" />
+            <Setter Property="Background" Value="{DynamicResource VdfWarnSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource VdfWarnBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="6,1" />
             <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.bestbadge TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource VdfGoodBrush}" />
+        </Style>
+        <Style Selector="Border.checkedtag TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource VdfWarnBrush}" />
         </Style>
         <Style Selector="Border.label-overlay-bg">
             <Setter Property="Background" Value="#AA000000" />
@@ -300,7 +306,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                                 <Border Classes="bestbadge" IsVisible="{Binding IsLeftBest}">
-                                    <TextBlock FontSize="10.5" FontWeight="Bold" Foreground="#3E9B6E"
+                                    <TextBlock FontSize="10.5" FontWeight="Bold"
                                                Text="{Binding Source={x:Static app:App.Lang}, Path=[Results.Row.Best]}" />
                                 </Border>
                                 <Border Classes="checkedtag" IsVisible="{Binding SelectedItemA.Item.Checked, FallbackValue=False}">
@@ -412,7 +418,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                                 <Border Classes="bestbadge" IsVisible="{Binding IsRightBest}">
-                                    <TextBlock FontSize="10.5" FontWeight="Bold" Foreground="#3E9B6E"
+                                    <TextBlock FontSize="10.5" FontWeight="Bold"
                                                Text="{Binding Source={x:Static app:App.Lang}, Path=[Results.Row.Best]}" />
                                 </Border>
                                 <Border Classes="checkedtag" IsVisible="{Binding SelectedItemB.Item.Checked, FallbackValue=False}">

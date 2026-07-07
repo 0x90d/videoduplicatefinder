@@ -26,7 +26,7 @@
                            Text="{TemplateBinding Description}"
                            IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <TextBlock FontSize="12.5" TextWrapping="Wrap" MaxWidth="470" HorizontalAlignment="Left"
-                           Foreground="{actipro:ThemeResource ControlForegroundBrushSoftWarning}"
+                           Foreground="{DynamicResource VdfWarnBrush}"
                            Text="{TemplateBinding Warning}"
                            IsVisible="{TemplateBinding Warning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>

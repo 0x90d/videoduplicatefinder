@@ -40,13 +40,9 @@
         </MultiBinding>
     </Window.Title>
     <Window.Resources>
-        <mvvm:IsBestConverter x:Key="IsBestConverter" />
         <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
-        <mvvm:SimilarityToBadgeBackgroundConverter x:Key="SimilarityToBadgeBackgroundConverter" />
-        <mvvm:SimilarityToBadgeForegroundConverter x:Key="SimilarityToBadgeForegroundConverter" />
         <mvvm:SimilarityToFormattedConverter x:Key="SimilarityToFormattedConverter" />
         <mvvm:MetricDisplayConverter x:Key="MetricDisplayConverter" />
-        <mvvm:MetricDiffForegroundConverter x:Key="MetricDiffForegroundConverter" />
         <mvvm:ShowSkeletonConverter x:Key="ShowSkeletonConverter" />
     </Window.Resources>
     <Window.Styles>

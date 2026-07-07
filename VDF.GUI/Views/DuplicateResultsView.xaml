@@ -14,11 +14,10 @@
   <UserControl.Resources>
     <!-- Own instances of the shared cell converters: StaticResource inside this
          control's templates resolves against THIS scope, not the host window's. -->
-    <mvvm:SimilarityToBadgeBackgroundConverter x:Key="SimilarityToBadgeBackgroundConverter" />
-    <mvvm:SimilarityToBadgeForegroundConverter x:Key="SimilarityToBadgeForegroundConverter" />
+    <mvvm:SimilarityTierConverter x:Key="SimilarityTierConverter" />
+    <mvvm:EqualDiffConverter x:Key="EqualDiffConverter" />
     <mvvm:SimilarityToFormattedConverter x:Key="SimilarityToFormattedConverter" />
     <mvvm:MetricDisplayConverter x:Key="MetricDisplayConverter" />
-    <mvvm:MetricDiffForegroundConverter x:Key="MetricDiffForegroundConverter" />
     <mvvm:ShowSkeletonConverter x:Key="ShowSkeletonConverter" />
     <mvvm:ExtraShortDateTimeConverter x:Key="ExtraShortDateTimeConverter" />
     <mvvm:FileNameConverter x:Key="FileNameConverter" />
@@ -58,12 +57,51 @@
       <Setter Property="FontSize" Value="12" />
       <Setter Property="CornerRadius" Value="12" />
     </Style>
-    <!-- checked rows get a subtle accent tint that follows the theme accent -->
+    <!-- checked rows use the mockup's exact selection tint (the "sel" token) -->
     <Style Selector="Border.resultrow">
       <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="Border.resultrow.checked">
-      <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
+      <Setter Property="Background" Value="{DynamicResource VdfSelBrush}" />
+    </Style>
+    <!-- similarity chip: mockup .simchip — soft surface, colored text, 45%-alpha
+         border; tier classes (mid/low) are bound from the similarity value -->
+    <Style Selector="Border.simchip">
+      <Setter Property="Background" Value="{DynamicResource VdfGoodSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfGoodBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Border.simchip TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource VdfGoodBrush}" />
+    </Style>
+    <Style Selector="Border.simchip.mid">
+      <Setter Property="Background" Value="{DynamicResource VdfWarnSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfWarnBorderBrush}" />
+    </Style>
+    <Style Selector="Border.simchip.mid TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource VdfWarnBrush}" />
+    </Style>
+    <Style Selector="Border.simchip.low">
+      <Setter Property="Background" Value="{DynamicResource VdfDangerSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfDangerBorderBrush}" />
+    </Style>
+    <Style Selector="Border.simchip.low TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource VdfDangerBrush}" />
+    </Style>
+    <!-- metric best/worst emphasis: mockup .hi/.lo (good/danger, weight 600).
+         .eq mutes both while the hover-diff shows equal values — declared last
+         so it wins the Foreground when combined with hi/lo. -->
+    <Style Selector="TextBlock.metric-diff.hi">
+      <Setter Property="Foreground" Value="{DynamicResource VdfGoodBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.metric-diff.lo">
+      <Setter Property="Foreground" Value="{DynamicResource VdfDangerBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.metric-diff.eq">
+      <Setter Property="Foreground" Value="{DynamicResource VdfMutedBrush}" />
     </Style>
   </UserControl.Styles>
 
@@ -395,19 +433,19 @@
               </Grid>
               <!-- similarity chip -->
               <Border
+                  Classes="simchip"
+                  Classes.mid="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityTierConverter}, ConverterParameter=mid}"
+                  Classes.low="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityTierConverter}, ConverterParameter=low}"
                   DockPanel.Dock="Right"
                   Width="70"
                   Margin="6,0,0,0"
-                  CornerRadius="4"
                   Padding="6,2"
                   VerticalAlignment="Center"
-                  IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}"
-                  Background="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityToBadgeBackgroundConverter}}">
+                  IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}">
                 <TextBlock
                     FontSize="12"
-                    FontWeight="SemiBold"
+                    FontWeight="Bold"
                     HorizontalAlignment="Center"
-                    Foreground="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityToBadgeForegroundConverter}}"
                     Text="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityToFormattedConverter}}" />
               </Border>
               <!-- Clip offset: position of a partial clip inside the longer source video.
@@ -457,19 +495,16 @@
                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSizeDateColumn}">
                 <Border Tag="size" Background="Transparent"
                         PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                  <TextBlock FontSize="12" Classes="metric-diff">
+                  <TextBlock FontSize="12" Classes="metric-diff"
+                             Classes.hi="{Binding Item.ItemInfo.IsBestSize}"
+                             Classes.lo="{Binding !Item.ItemInfo.IsBestSize}"
+                             Classes.eq="{Binding Item.SizeDiff, Converter={StaticResource EqualDiffConverter}}">
                     <TextBlock.Text>
                       <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
                         <Binding Path="Item.ItemInfo.Size" />
                         <Binding Path="Item.SizeDiff" />
                       </MultiBinding>
                     </TextBlock.Text>
-                    <TextBlock.Foreground>
-                      <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                        <Binding Path="Item.ItemInfo.IsBestSize" />
-                        <Binding Path="Item.SizeDiff" />
-                      </MultiBinding>
-                    </TextBlock.Foreground>
                   </TextBlock>
                 </Border>
                 <TextBlock FontSize="11.5" Opacity="0.8"
@@ -484,36 +519,30 @@
                 <Border Tag="duration" Background="Transparent"
                         IsVisible="{Binding !Item.ItemInfo.IsImage}"
                         PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                  <TextBlock FontSize="12" Classes="metric-diff">
+                  <TextBlock FontSize="12" Classes="metric-diff"
+                             Classes.hi="{Binding Item.ItemInfo.IsBestDuration}"
+                             Classes.lo="{Binding !Item.ItemInfo.IsBestDuration}"
+                             Classes.eq="{Binding Item.DurationDiff, Converter={StaticResource EqualDiffConverter}}">
                     <TextBlock.Text>
                       <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0:hh\:mm\:ss}">
                         <Binding Path="Item.ItemInfo.Duration" />
                         <Binding Path="Item.DurationDiff" />
                       </MultiBinding>
                     </TextBlock.Text>
-                    <TextBlock.Foreground>
-                      <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                        <Binding Path="Item.ItemInfo.IsBestDuration" />
-                        <Binding Path="Item.DurationDiff" />
-                      </MultiBinding>
-                    </TextBlock.Foreground>
                   </TextBlock>
                 </Border>
                 <Border Tag="framesize" Background="Transparent"
                         PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                  <TextBlock FontSize="11.5" Classes="metric-diff">
+                  <TextBlock FontSize="11.5" Classes="metric-diff"
+                             Classes.hi="{Binding Item.ItemInfo.IsBestFrameSize}"
+                             Classes.lo="{Binding !Item.ItemInfo.IsBestFrameSize}"
+                             Classes.eq="{Binding Item.FrameSizeDiff, Converter={StaticResource EqualDiffConverter}}">
                     <TextBlock.Text>
                       <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
                         <Binding Path="Item.ItemInfo.FrameSize" />
                         <Binding Path="Item.FrameSizeDiff" />
                       </MultiBinding>
                     </TextBlock.Text>
-                    <TextBlock.Foreground>
-                      <MultiBinding Converter="{StaticResource MetricDiffForegroundConverter}">
-                        <Binding Path="Item.ItemInfo.IsBestFrameSize" />
-                        <Binding Path="Item.FrameSizeDiff" />
-                      </MultiBinding>
-                    </TextBlock.Foreground>
                   </TextBlock>
                 </Border>
               </StackPanel>
@@ -525,24 +554,28 @@
                 <DockPanel LastChildFill="True">
                   <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
                   <Border IsVisible="{Binding IsBest}"
-                          Background="#1C45B878" BorderBrush="#8045B878" BorderThickness="1"
+                          Background="{DynamicResource VdfGoodSoftBrush}"
+                          BorderBrush="{DynamicResource VdfGoodBorderBrush}" BorderThickness="1"
                           CornerRadius="3" Padding="5,0" VerticalAlignment="Center">
                     <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.Best]}"
-                               FontSize="10" FontWeight="Bold" />
+                               FontSize="10" FontWeight="Bold"
+                               Foreground="{DynamicResource VdfGoodBrush}" />
                   </Border>
                   <Border IsVisible="{Binding Item.IsTombstone}"
-                          Background="#B33A2E" BorderBrush="#66FFFFFF" BorderThickness="1"
+                          Background="{DynamicResource VdfTombBrush}"
                           CornerRadius="3" Padding="5,0" VerticalAlignment="Center"
                           ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DupList.AlreadyDeletedTooltip]}">
                     <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DupList.AlreadyDeleted]}"
                                FontSize="10" FontWeight="Bold" Foreground="White" />
                   </Border>
                   <Border IsVisible="{Binding Item.IsOffline}"
-                          Background="#555555" BorderBrush="#66FFFFFF" BorderThickness="1"
+                          Background="{DynamicResource VdfMutedSoftBrush}"
+                          BorderBrush="{DynamicResource VdfMutedBorderBrush}" BorderThickness="1"
                           CornerRadius="3" Padding="5,0" VerticalAlignment="Center"
                           ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[DupList.OfflineTooltip]}">
                     <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[DupList.Offline]}"
-                               FontSize="10" FontWeight="Bold" Foreground="#DDDDDD" />
+                               FontSize="10" FontWeight="Bold"
+                               Foreground="{DynamicResource VdfMutedBrush}" />
                   </Border>
                   </StackPanel>
                   <TextBlock

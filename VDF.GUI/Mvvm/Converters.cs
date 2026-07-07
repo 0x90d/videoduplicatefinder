@@ -29,24 +29,6 @@ namespace VDF.GUI.Mvvm {
 
 		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => !(bool)value!;
 	}
-	static class Values {
-		public static readonly SolidColorBrush GreenBrush = new();
-		public static readonly SolidColorBrush RedBrush = new();
-		static Values() {
-			App.Current!.TryGetResource(ThemeResourceKind.ControlBackgroundBrushSolidSuccess.ToResourceKey(), SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light, out var greenBrush);
-			GreenBrush.Color = ((ImmutableSolidColorBrush)greenBrush!).Color;
-			App.Current.TryGetResource(ThemeResourceKind.ControlBackgroundBrushSolidDanger.ToResourceKey(), SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light, out var redBrush);
-			RedBrush.Color = ((ImmutableSolidColorBrush)redBrush!).Color;
-		}
-
-	}
-	public sealed class IsBestConverter : IValueConverter {
-		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-			(bool)value! ? Values.GreenBrush : Values.RedBrush;
-
-		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-	}
-
 	static class ExtraShortDateTimeFormater {
 		static readonly string FormatString;
 		public static string DateToString(DateTime value) => String.Format(FormatString, value);
@@ -59,29 +41,20 @@ namespace VDF.GUI.Mvvm {
 			FormatString = $"{{0:{FormatString}}}";
 		}
 	}
-	public sealed class SimilarityToBadgeBackgroundConverter : IValueConverter {
-		static readonly SolidColorBrush HighBrush = new(Color.Parse("#1B5E20"), 0.85);
-		static readonly SolidColorBrush MediumBrush = new(Color.Parse("#0D47A1"), 0.85);
-		static readonly SolidColorBrush LowBrush = new(Color.Parse("#E65100"), 0.85);
-
+	/// <summary>
+	/// Feeds the similarity chip's Classes.mid / Classes.low bindings; the actual
+	/// colors live in theme-variant styles (Vdf* brushes) so they follow the theme.
+	/// Parameter: "mid" or "low" (see <see cref="ResultsBadgeRules"/> for the bands).
+	/// </summary>
+	public sealed class SimilarityTierConverter : IValueConverter {
 		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 			if (value is not float similarity)
-				return LowBrush;
-			return similarity >= 99f ? HighBrush : similarity >= 90f ? MediumBrush : LowBrush;
-		}
-
-		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-	}
-
-	public sealed class SimilarityToBadgeForegroundConverter : IValueConverter {
-		static readonly SolidColorBrush HighBrush = new(Color.Parse("#A5D6A7"));
-		static readonly SolidColorBrush MediumBrush = new(Color.Parse("#90CAF9"));
-		static readonly SolidColorBrush LowBrush = new(Color.Parse("#FFCC80"));
-
-		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-			if (value is not float similarity)
-				return LowBrush;
-			return similarity >= 99f ? HighBrush : similarity >= 90f ? MediumBrush : LowBrush;
+				return false;
+			return (parameter as string) switch {
+				"mid" => ResultsBadgeRules.IsMidSimilarity(similarity),
+				"low" => ResultsBadgeRules.IsLowSimilarity(similarity),
+				_ => false
+			};
 		}
 
 		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
@@ -91,7 +64,7 @@ namespace VDF.GUI.Mvvm {
 		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 			if (value is not float similarity)
 				return string.Empty;
-			return $"{similarity:F1}%";
+			return ResultsBadgeRules.FormatSimilarity(similarity, CultureInfo.CurrentCulture);
 		}
 
 		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
@@ -126,24 +99,15 @@ namespace VDF.GUI.Mvvm {
 		}
 	}
 
-	public sealed class MetricDiffForegroundConverter : IMultiValueConverter {
-		static readonly SolidColorBrush GreenBrush = new(Color.Parse("#4CAF50"));
-		static readonly SolidColorBrush RedBrush = new(Color.Parse("#F44336"));
-		static readonly SolidColorBrush GrayBrush = new(Color.Parse("#9E9E9E"));
+	/// <summary>
+	/// True while the hover-diff shows "=" (both values equal). Drives the metric
+	/// TextBlocks' Classes.eq binding, which mutes the best/worst coloring.
+	/// </summary>
+	public sealed class EqualDiffConverter : IValueConverter {
+		public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+			ResultsBadgeRules.IsEqualDiff(value as string);
 
-		public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) {
-			// values[0] = isBest (bool), values[1] = diff text (string? or null)
-			if (values.Count >= 2 && values[1] is string diff && !string.IsNullOrEmpty(diff)) {
-				if (diff == "=")
-					return GrayBrush;
-				// Keep the same best/worst coloring — isBest already knows which is better
-				if (values[0] is bool best)
-					return best ? GreenBrush : RedBrush;
-			}
-			if (values[0] is bool isBest)
-				return isBest ? Values.GreenBrush : Values.RedBrush;
-			return null;
-		}
+		public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
 	}
 
 	/// <summary>

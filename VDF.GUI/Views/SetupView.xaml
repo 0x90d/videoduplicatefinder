@@ -47,10 +47,10 @@
       <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftAccent}" />
     </Style>
     <Style Selector="Border.drivechip.excluded">
-      <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftDanger}" />
+      <Setter Property="Background" Value="{DynamicResource VdfDangerSoftBrush}" />
     </Style>
     <Style Selector="Border.drivechip.excluded TextBlock">
-      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftDanger}" />
+      <Setter Property="Foreground" Value="{DynamicResource VdfDangerBrush}" />
     </Style>
   </UserControl.Styles>
 
