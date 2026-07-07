@@ -663,6 +663,7 @@
 	"Setup.RememberingDeletedOn": "Lembrar conteúdo excluído: ativado",
 	"Setup.RememberingDeletedOff": "Lembrar conteúdo excluído: desativado",
 	"Scan.FilesUnit": "arquivos",
+	"Scan.FilesPerSec": "arquivos/s",
 	"Scan.Left": "restante",
 	"Settings.SearchPlaceholder": "Pesquisar em todas as configurações…",
 	"Settings.SearchResults": "Resultados da pesquisa",

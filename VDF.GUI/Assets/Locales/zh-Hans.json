@@ -663,6 +663,7 @@
 	"Setup.RememberingDeletedOn": "记住已删除内容：开",
 	"Setup.RememberingDeletedOff": "记住已删除内容：关",
 	"Scan.FilesUnit": "个文件",
+	"Scan.FilesPerSec": "文件/秒",
 	"Scan.Left": "剩余",
 	"Settings.SearchPlaceholder": "搜索所有设置…",
 	"Settings.SearchResults": "搜索结果",

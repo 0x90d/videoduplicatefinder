@@ -87,6 +87,9 @@ namespace VDF.Core {
 			CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 		DateTime lastCheckpointTime = DateTime.MinValue;
 		readonly object checkpointLock = new();
+		// Per-drive done/total accounting; non-null only while GatherInfos runs, so progress
+		// events of every other phase carry Drives = null and the UI hides the drive rows.
+		DriveProgressTracker? driveProgressTracker;
 		// True between StartSearch beginning a log session and the chained StartCompare
 		// joining it; lets a standalone StartCompare open its own session instead.
 		bool compareIsChainedToSearch;
@@ -100,6 +103,7 @@ namespace VDF.Core {
 			processedFiles = 0;
 			lastProgressUpdate = DateTime.MinValue;
 			lastCheckpointTime = DateTime.UtcNow;
+			driveProgressTracker = null; // compare phases re-init progress; they have no per-drive data
 		}
 		void ResetExcludedLogging() {
 			excludedReasonCounts.Clear();
@@ -155,6 +159,7 @@ namespace VDF.Core {
 								Remaining = timeRemaining,
 								MaxPosition = scanProgressMaxValue,
 								CurrentStage = currentStageLabel,
+								Drives = driveProgressTracker?.Snapshot(),
 							});
 			TryDatabaseCheckpoint();
 		}
@@ -177,6 +182,7 @@ namespace VDF.Core {
 								CurrentStage = stage,
 								StageCurrent = stageCurrent,
 								StageMax = stageMax,
+								Drives = driveProgressTracker?.Snapshot(),
 							});
 		}
 
@@ -761,7 +767,16 @@ namespace VDF.Core {
 			try {
 				currentStageLabel = string.Empty; // per-file analysis reports its own sub-stages
 				InitProgress(DatabaseUtils.Database.Count);
-				ValueTask ProcessEntry(FileEntry entry, CancellationToken token) {
+				// Only in-scope entries count toward a drive's done/total — out-of-scope ones
+				// are skipped in microseconds and would otherwise dilute the drive bars.
+				bool CountsTowardDriveProgress(FileEntry entry) =>
+					Settings.ScanAgainstEntireDatabase || IsInIncludeScope(entry);
+				void CompleteEntry(FileEntry entry, DriveProgressTracker.Counter driveCounter) {
+					if (CountsTowardDriveProgress(entry))
+						driveCounter.Complete(entry.FileSize);
+					IncrementProgress(entry.Path);
+				}
+				ValueTask ProcessEntry(FileEntry entry, DriveProgressTracker.Counter driveCounter, CancellationToken token) {
 					if (!pauseTokenSource.TryWaitWhilePaused(token))
 						return ValueTask.CompletedTask; // canceled while paused — the loop token ends the iteration
 
@@ -789,7 +804,7 @@ namespace VDF.Core {
 							if (!wasInvalid && skipReason != null)
 								LogExcludedFile(entry, skipReason);
 							if (reportProgress)
-								IncrementProgress(entry.Path);
+								CompleteEntry(entry, driveCounter);
 							return ValueTask.CompletedTask;
 						}
 
@@ -827,7 +842,7 @@ namespace VDF.Core {
 									ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
 										onProgress: p => ReportStage(cachedAudioPath, audioStageLabel, (int)(p * 100), 100));
 								}
-								IncrementProgress(entry.Path);
+								CompleteEntry(entry, driveCounter);
 								return ValueTask.CompletedTask;
 							}
 						}
@@ -839,7 +854,7 @@ namespace VDF.Core {
 						// missing path (which only errors).
 						if (!File.Exists(entry.Path)) {
 							entry.invalid = true;
-							IncrementProgress(entry.Path);
+							CompleteEntry(entry, driveCounter);
 							return ValueTask.CompletedTask;
 						}
 
@@ -849,7 +864,7 @@ namespace VDF.Core {
 							if (info == null) {
 								entry.invalid = true;
 								entry.Flags.Set(EntryFlags.MetadataError);
-								IncrementProgress(entry.Path);
+								CompleteEntry(entry, driveCounter);
 								return ValueTask.CompletedTask;
 							}
 
@@ -890,7 +905,7 @@ namespace VDF.Core {
 								onProgress: p => ReportStage(audioPath, audioLabel, (int)(p * 100), 100));
 						}
 
-						IncrementProgress(entry.Path);
+						CompleteEntry(entry, driveCounter);
 						return ValueTask.CompletedTask;
 					}
 					catch (OperationCanceledException) {
@@ -903,7 +918,7 @@ namespace VDF.Core {
 						Logger.Instance.Error($"Unhandled error processing '{entry.Path}': {ex}");
 						entry.invalid = true;
 						entry.Flags.Set(EntryFlags.ThumbnailError);
-						IncrementProgress(entry.Path);
+						CompleteEntry(entry, driveCounter);
 						return ValueTask.CompletedTask;
 					}
 				}
@@ -918,26 +933,35 @@ namespace VDF.Core {
 				List<DriveScanGroup> driveGroups = DriveScanPlanner.PartitionByDrive(DatabaseUtils.Database);
 				if (Settings.MaxDegreeOfParallelism == 1) {
 					// Documented promise: 1 = strictly one file at a time. Drives run
-					// sequentially, no probing needed.
-					foreach (DriveScanGroup group in driveGroups)
-						await Parallel.ForEachAsync(group.Entries, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = 1 }, ProcessEntry);
+					// sequentially, no probing needed (speed class stays unknown).
+					driveProgressTracker = new DriveProgressTracker(driveGroups, CountsTowardDriveProgress, classified: false);
+					for (int i = 0; i < driveGroups.Count; i++) {
+						DriveProgressTracker.Counter counter = driveProgressTracker.CounterFor(i);
+						await Parallel.ForEachAsync(driveGroups[i].Entries, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = 1 },
+							(entry, token) => ProcessEntry(entry, counter, token));
+					}
 				}
 				else {
 					DriveScanPlanner.ClassifyGroups(driveGroups, Settings.DriveTypeOverrides,
 						DriveScanPlanner.IsNetworkRoot,
 						group => DriveScanPlanner.ProbeSeekLatencyMs(
-							group.Entries.Where(e => Settings.ScanAgainstEntireDatabase || IsInIncludeScope(e))));
+							group.Entries.Where(CountsTowardDriveProgress)));
 					DriveScanPlanner.AssignParallelism(driveGroups, Settings.MaxDegreeOfParallelism, Settings.HddMaxDegreeOfParallelism, Environment.ProcessorCount);
+					driveProgressTracker = new DriveProgressTracker(driveGroups, CountsTowardDriveProgress, classified: true);
 					var driveTasks = new List<Task>(driveGroups.Count);
-					foreach (DriveScanGroup group in driveGroups) {
+					for (int i = 0; i < driveGroups.Count; i++) {
+						DriveScanGroup group = driveGroups[i];
+						DriveProgressTracker.Counter counter = driveProgressTracker.CounterFor(i);
 						Logger.Instance.Info($"Drive '{group.Root}': {group.Entries.Count:N0} file(s), concurrency {group.DegreeOfParallelism} ({(group.SpeedClass == DriveSpeedClass.Fast ? "fast" : "slow")}, {group.ClassSource})");
-						driveTasks.Add(Parallel.ForEachAsync(group.Entries, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = group.DegreeOfParallelism }, ProcessEntry));
+						driveTasks.Add(Parallel.ForEachAsync(group.Entries, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = group.DegreeOfParallelism },
+							(entry, token) => ProcessEntry(entry, counter, token)));
 					}
 					await Task.WhenAll(driveTasks);
 				}
 			}
 			catch (OperationCanceledException) { }
 			finally {
+				driveProgressTracker = null;
 				LogExcludedSummary();
 			}
 		}

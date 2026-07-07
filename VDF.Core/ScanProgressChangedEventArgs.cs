@@ -29,5 +29,22 @@ namespace VDF.Core {
 		/// <summary>Progress within the current stage (e.g. sample 2 of 5). Both zero when stage progress isn't tracked.</summary>
 		public int StageCurrent;
 		public int StageMax;
+		/// <summary>
+		/// Per-drive progress during the analysis phase; null in every other phase (and for
+		/// consumers that don't care — CLI/Web render the global numbers only). Drives whose
+		/// files are all out of scan scope are omitted.
+		/// </summary>
+		public DriveProgress[]? Drives;
+	}
+
+	/// <summary>One drive's slice of the analysis phase, for per-drive progress display.</summary>
+	public struct DriveProgress {
+		public string Root;
+		public long TotalBytes;
+		public long DoneBytes;
+		public int TotalFiles;
+		public int DoneFiles;
+		/// <summary>true = fast (SSD/NVMe), false = slow (HDD/network share), null = not classified (strictly serial scan).</summary>
+		public bool? IsFastDrive;
 	}
 }

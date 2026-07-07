@@ -663,6 +663,7 @@
 	"Setup.RememberingDeletedOn": "삭제된 콘텐츠 기억: 켬",
 	"Setup.RememberingDeletedOff": "삭제된 콘텐츠 기억: 끔",
 	"Scan.FilesUnit": "파일",
+	"Scan.FilesPerSec": "파일/초",
 	"Scan.Left": "남음",
 	"Settings.SearchPlaceholder": "모든 설정 검색…",
 	"Settings.SearchResults": "검색 결과",

@@ -39,6 +39,71 @@ namespace VDF.Core.Utils {
 	}
 
 	/// <summary>
+	/// Thread-safe per-drive done/total accounting for the analysis phase, snapshotted into
+	/// <see cref="ScanProgressChangedEventArgs.Drives"/>. Totals count only entries that will
+	/// actually report progress (in scan scope), so a drive that only holds out-of-scope
+	/// history can never show a bar stuck below 100%.
+	/// </summary>
+	internal sealed class DriveProgressTracker {
+		internal sealed class Counter {
+			internal Counter(string root, bool? isFast) { Root = root; IsFast = isFast; }
+			internal readonly string Root;
+			internal readonly bool? IsFast;
+			internal long TotalBytes;
+			internal int TotalFiles;
+			internal long doneBytes;
+			internal int doneFiles;
+			internal void Complete(long fileSize) {
+				Interlocked.Add(ref doneBytes, fileSize);
+				Interlocked.Increment(ref doneFiles);
+			}
+		}
+
+		readonly Counter[] counters;
+
+		/// <param name="classified">false for the strictly-serial path, where drives are never probed — speed class is then unknown.</param>
+		internal DriveProgressTracker(IReadOnlyList<DriveScanGroup> groups, Func<FileEntry, bool> countsTowardProgress, bool classified) {
+			counters = new Counter[groups.Count];
+			for (int i = 0; i < groups.Count; i++) {
+				var counter = new Counter(groups[i].Root, classified ? groups[i].SpeedClass == DriveSpeedClass.Fast : null);
+				foreach (FileEntry entry in groups[i].Entries) {
+					if (!countsTowardProgress(entry))
+						continue;
+					counter.TotalFiles++;
+					counter.TotalBytes += entry.FileSize;
+				}
+				counters[i] = counter;
+			}
+		}
+
+		internal Counter CounterFor(int groupIndex) => counters[groupIndex];
+
+		/// <summary>Current state of every drive that has work in this scan, in group order.</summary>
+		internal DriveProgress[] Snapshot() {
+			int withWork = 0;
+			for (int i = 0; i < counters.Length; i++)
+				if (counters[i].TotalFiles > 0)
+					withWork++;
+			var snapshot = new DriveProgress[withWork];
+			int next = 0;
+			for (int i = 0; i < counters.Length; i++) {
+				Counter counter = counters[i];
+				if (counter.TotalFiles == 0)
+					continue;
+				snapshot[next++] = new DriveProgress {
+					Root = counter.Root,
+					TotalBytes = counter.TotalBytes,
+					DoneBytes = Interlocked.Read(ref counter.doneBytes),
+					TotalFiles = counter.TotalFiles,
+					DoneFiles = Volatile.Read(ref counter.doneFiles),
+					IsFastDrive = counter.IsFast,
+				};
+			}
+			return snapshot;
+		}
+	}
+
+	/// <summary>
 	/// Plans per-drive scan concurrency: partitions the database by drive, classifies each
 	/// drive's storage speed (user override → network heuristic → seek-latency probe) and
 	/// assigns each drive a degree of parallelism under the global

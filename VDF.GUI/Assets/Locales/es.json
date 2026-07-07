@@ -663,6 +663,7 @@
 	"Setup.RememberingDeletedOn": "Recordar contenido eliminado: sí",
 	"Setup.RememberingDeletedOff": "Recordar contenido eliminado: no",
 	"Scan.FilesUnit": "archivos",
+	"Scan.FilesPerSec": "archivos/s",
 	"Scan.Left": "restante",
 	"Settings.SearchPlaceholder": "Buscar en todos los ajustes…",
 	"Settings.SearchResults": "Resultados de la búsqueda",

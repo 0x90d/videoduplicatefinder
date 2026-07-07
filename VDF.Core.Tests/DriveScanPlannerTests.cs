@@ -218,6 +218,67 @@ public class DriveScanPlannerTests {
 		Assert.Equal("no probe candidate", groups[0].ClassSource);
 	}
 
+	// ── DriveProgressTracker ────────────────────────────────────────────────
+
+	static DriveScanGroup GroupWithEntries(string root, DriveSpeedClass speedClass, params FileEntry[] entries) {
+		var group = Group(root, speedClass);
+		group.Entries.AddRange(entries);
+		return group;
+	}
+
+	[Fact]
+	public void Tracker_TotalsCountOnlyEntriesInScanScope() {
+		var inScope = Entry(@"C:\a\1.mp4", @"C:\a", size: 100);
+		var outOfScope = Entry(@"C:\old\2.mp4", @"C:\old", size: 900);
+		var groups = new[] { GroupWithEntries(@"C:\", DriveSpeedClass.Fast, inScope, outOfScope) };
+		var tracker = new DriveProgressTracker(groups, e => e.Folder == @"C:\a", classified: true);
+		DriveProgress[] snapshot = tracker.Snapshot();
+		Assert.Single(snapshot);
+		Assert.Equal(1, snapshot[0].TotalFiles);
+		Assert.Equal(100, snapshot[0].TotalBytes);
+	}
+
+	[Fact]
+	public void Tracker_CompleteAdvancesDoneAndSnapshotKeepsGroupOrder() {
+		var groups = new[] {
+			GroupWithEntries(@"C:\", DriveSpeedClass.Fast, Entry(@"C:\a\1.mp4", @"C:\a", 100), Entry(@"C:\a\2.mp4", @"C:\a", 300)),
+			GroupWithEntries(@"D:\", DriveSpeedClass.Slow, Entry(@"D:\b\3.mp4", @"D:\b", 500)),
+		};
+		var tracker = new DriveProgressTracker(groups, _ => true, classified: true);
+		tracker.CounterFor(0).Complete(100);
+		tracker.CounterFor(1).Complete(500);
+		DriveProgress[] snapshot = tracker.Snapshot();
+		Assert.Equal(2, snapshot.Length);
+		Assert.Equal(@"C:\", snapshot[0].Root);
+		Assert.Equal(1, snapshot[0].DoneFiles);
+		Assert.Equal(100, snapshot[0].DoneBytes);
+		Assert.Equal(400, snapshot[0].TotalBytes);
+		Assert.True(snapshot[0].IsFastDrive);
+		Assert.Equal(@"D:\", snapshot[1].Root);
+		Assert.Equal(1, snapshot[1].DoneFiles);
+		Assert.False(snapshot[1].IsFastDrive);
+	}
+
+	[Fact]
+	public void Tracker_DrivesWithNoWorkAreOmittedFromTheSnapshot() {
+		// A drive holding only out-of-scope history would otherwise show a bar stuck at 0.
+		var groups = new[] {
+			GroupWithEntries(@"C:\", DriveSpeedClass.Fast, Entry(@"C:\a\1.mp4", @"C:\a", 100)),
+			GroupWithEntries(@"D:\", DriveSpeedClass.Slow, Entry(@"D:\old\2.mp4", @"D:\old", 900)),
+		};
+		var tracker = new DriveProgressTracker(groups, e => e.Folder.StartsWith(@"C:\"), classified: true);
+		DriveProgress[] snapshot = tracker.Snapshot();
+		Assert.Single(snapshot);
+		Assert.Equal(@"C:\", snapshot[0].Root);
+	}
+
+	[Fact]
+	public void Tracker_UnclassifiedScan_ReportsUnknownDriveType() {
+		var groups = new[] { GroupWithEntries(@"C:\", DriveSpeedClass.Fast, Entry(@"C:\a\1.mp4", @"C:\a", 100)) };
+		var tracker = new DriveProgressTracker(groups, _ => true, classified: false);
+		Assert.Null(tracker.Snapshot()[0].IsFastDrive);
+	}
+
 	// ── Settings round-trip ─────────────────────────────────────────────────
 
 	[Fact]

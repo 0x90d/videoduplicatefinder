@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+    xmlns:data="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
     xmlns:local="clr-namespace:VDF.GUI;assembly=VDF.GUI"
     xmlns:vm="clr-namespace:VDF.GUI.ViewModels;assembly=VDF.GUI"
     x:DataType="vm:MainWindowVM">
@@ -53,6 +54,43 @@
                    TextTrimming="PrefixCharacterEllipsis"
                    Text="{Binding ScanCurrentFile}" />
       </StackPanel>
+
+      <!-- per-drive rows (mockup .drives): label + type chip | byte-weighted bar | files stat.
+           Present only while the analysis phase reports drive data; compare phases carry none. -->
+      <ItemsControl
+          Margin="0,26,0,0"
+          IsVisible="{Binding ScanDrives.HasRows}"
+          ItemsSource="{Binding ScanDrives.Rows}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="12" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="data:ScanDriveRow">
+            <Grid ColumnDefinitions="200,*,150">
+              <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock FontSize="13.5" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Text="{Binding Root}" />
+                <Border CornerRadius="4" Padding="6,1" VerticalAlignment="Center"
+                        BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+                        BorderThickness="1"
+                        IsVisible="{Binding HasType}">
+                  <TextBlock FontSize="10.5" FontWeight="Bold" LetterSpacing="0.6" Opacity="0.55"
+                             Text="{Binding TypeLabel}" />
+                </Border>
+              </StackPanel>
+              <ProgressBar Grid.Column="1" Height="7" CornerRadius="3.5" Margin="14,0"
+                           VerticalAlignment="Center"
+                           Maximum="1"
+                           Value="{Binding Fraction, Mode=OneWay}" />
+              <TextBlock Grid.Column="2" FontSize="12" Opacity="0.8"
+                         VerticalAlignment="Center" TextAlignment="Right"
+                         Text="{Binding Stat}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
 
       <!-- actions + bordered trust note -->
       <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,26,0,0">

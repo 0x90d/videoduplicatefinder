@@ -663,6 +663,7 @@
 	"Setup.RememberingDeletedOn": "Remembering deleted content: on",
 	"Setup.RememberingDeletedOff": "Remembering deleted content: off",
 	"Scan.FilesUnit": "files",
+	"Scan.FilesPerSec": "files/s",
 	"Scan.Left": "left",
 	"Settings.SearchPlaceholder": "Search all settings…",
 	"Settings.SearchResults": "Search results",
