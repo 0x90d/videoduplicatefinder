@@ -547,53 +547,6 @@
                                             </MenuItem.Header>
                                         </MenuItem>
                                     </MenuItem>
-                                    <MenuItem>
-                                        <MenuItem.Header>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Viewbox Width="16" Height="16">
-                                                    <Canvas Width="24" Height="24">
-                                                        <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" Fill="Red" />
-                                                    </Canvas>
-                                                </Viewbox>
-                                                <TextBlock
-                                                    Margin="5,0,0,0"
-                                                    VerticalAlignment="Center"
-                                                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteCheckedItems]}" />
-                                                <Path
-                                                    Margin="4,2,0,0"
-                                                    VerticalAlignment="Center"
-                                                    Data="M 0 0 L 6 6 L 12 0 Z"
-                                                    Fill="{actipro:ThemeResource ButtonForegroundBrush}" />
-                                            </StackPanel>
-                                        </MenuItem.Header>
-                                        <MenuItem Command="{Binding DeleteCheckedItemsCommand}">
-                                            <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteCheckedItemsFromDisk]}" />
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                        <MenuItem Command="{Binding DeleteCheckedItemsPermanentlyCommand}" IsVisible="{Binding IsWindows}">
-                                            <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.DeleteCheckedItemsPermanently]}" />
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                        <MenuItem Header="-" />
-
-                                        <MenuItem Command="{Binding RemoveCheckedItemsFromListCommand}">
-                                            <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.RemoveCheckedItemsFromList]}" />
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                        <MenuItem Command="{Binding CopyCheckedItemsCommand}">
-                                            <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CopyCheckedItemsToFolder]}" />
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                        <MenuItem Command="{Binding MoveCheckedItemsCommand}">
-                                            <MenuItem.Header>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.MoveCheckedItemsToFolder]}" />
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                    </MenuItem>
                             </Menu>
                             <Grid Grid.Row="1">
                                 <!-- One window, three states: Setup → Scanning → Review (stage 2) -->
