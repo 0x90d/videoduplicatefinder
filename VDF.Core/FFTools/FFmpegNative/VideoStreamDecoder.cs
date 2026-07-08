@@ -26,7 +26,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		private AVFrame* _pReceivedFrame;
 		private readonly int _streamIndex;
 		private readonly AVIOInterruptCB_callback _interruptCbDelegate;
-		private readonly long _deadlineTicks;
+		private readonly long _timeoutTicks;
+		private long _deadlineTicks;
 
 		public VideoStreamDecoder(string url, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE, int timeoutMs = 15_000) {
 			_pFormatContext = ffmpeg.avformat_alloc_context();
@@ -36,7 +37,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			// Set up an interrupt callback so FFmpeg aborts blocking I/O when the
 			// timeout expires.  This lets Dispose() run normally and release the
 			// file handle — unlike killing a thread, which would leak it.
-			_deadlineTicks = Stopwatch.GetTimestamp() + (long)(timeoutMs / 1000.0 * Stopwatch.Frequency);
+			// The deadline is re-armed at the start of every TryDecodeFrame: the same
+			// decoder serves all sampled positions of a file (batch extraction), and a
+			// single construction-time deadline made the TOTAL decode time of the batch
+			// count against one 15 s budget — long/slow files tripped the interrupt
+			// halfway through and every remaining position failed to CLI fallback.
+			_timeoutTicks = (long)(timeoutMs / 1000.0 * Stopwatch.Frequency);
+			_deadlineTicks = Stopwatch.GetTimestamp() + _timeoutTicks;
 			_interruptCbDelegate = _ => Stopwatch.GetTimestamp() > _deadlineTicks ? 1 : 0;
 			_pFormatContext->interrupt_callback = new AVIOInterruptCB { callback = _interruptCbDelegate };
 
@@ -133,6 +140,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		}
 
 		public bool TryDecodeFrame(out AVFrame frame, TimeSpan position) {
+			// Fresh timeout budget per position — see the constructor note.
+			_deadlineTicks = Stopwatch.GetTimestamp() + _timeoutTicks;
 			ffmpeg.av_frame_unref(_pFrame);
 			ffmpeg.av_frame_unref(_pReceivedFrame);
 
@@ -233,7 +242,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 				ffmpeg.av_frame_unref(_pFrame);
 			}
 
-			if (_pCodecContext->hw_device_ctx != null) {
+			// Only download when the frame actually lives in GPU memory. Hardware
+			// decoders can silently fall back to software frames (unsupported
+			// profile/level); calling av_hwframe_transfer_data on those returns
+			// EINVAL and needlessly failed the whole file to the CLI fallback.
+			// Callers already read the source format from the frame itself when
+			// hardware decode was requested, so a software frame flows through fine.
+			if (_pCodecContext->hw_device_ctx != null && _pFrame->hw_frames_ctx != null) {
 				ffmpeg.av_hwframe_transfer_data(_pReceivedFrame, _pFrame, 0).ThrowExceptionIfError();
 				frame = *_pReceivedFrame;
 			}

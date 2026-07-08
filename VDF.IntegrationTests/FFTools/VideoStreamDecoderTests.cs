@@ -92,4 +92,30 @@ public class VideoStreamDecoderTests {
 		bool decoded = vsd.TryDecodeFrame(out _, TimeSpan.FromSeconds(60));
 		Assert.False(decoded);
 	}
+
+	/// <summary>
+	/// The decode timeout must be a per-position budget, not a per-decoder-lifetime
+	/// deadline. One decoder serves ALL sampled positions of a file (batch
+	/// extraction), so a construction-time deadline meant the batch's total wall
+	/// time counted against a single 15 s budget — slow drives or many positions
+	/// tripped the interrupt callback mid-file and every remaining position failed
+	/// to CLI fallback. Regression check: let more than the timeout pass between
+	/// two calls; the second must still decode because its budget starts fresh.
+	/// </summary>
+	[SkippableFact]
+	public void TryDecodeFrame_TimeoutBudgetIsPerPosition_NotPerDecoderLifetime() {
+		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var vsd = new VideoStreamDecoder(_fixture.H264_8bit!, timeoutMs: 500);
+
+		Assert.True(vsd.TryDecodeFrame(out _, TimeSpan.Zero), "first position failed on a clean file");
+
+		// Outlive the construction-time deadline. With the old lifetime deadline the
+		// interrupt callback now reports "expired" for every subsequent blocking call.
+		Thread.Sleep(800);
+
+		Assert.True(vsd.TryDecodeFrame(out _, TimeSpan.FromSeconds(1)),
+			"second position failed after idling past the timeout — the deadline was not re-armed per call");
+	}
 }
