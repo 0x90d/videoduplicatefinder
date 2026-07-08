@@ -624,6 +624,8 @@
 	"Setup.Welcome.Title": "처음이신가요?",
 	"Setup.Welcome.Text": "확인할 폴더를 추가하고, 찾을 항목을 선택한 뒤 스캔을 누르세요. 그게 전부입니다.",
 	"Setup.Welcome.Dismiss": "다시 표시 안 함 ✕",
+	"Setup.NoDuplicates.Title": "중복 항목을 찾지 못했습니다",
+	"Setup.NoDuplicates.Text": "마지막 스캔이 완료되었으며 중복 파일을 찾지 못했습니다.",
 	"Setup.WhereToLook": "검색 위치",
 	"Setup.WhatToLookFor": "검색 대상",
 	"Setup.AddFolder": "폴더 추가…",

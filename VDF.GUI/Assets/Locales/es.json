@@ -624,6 +624,8 @@
 	"Setup.Welcome.Title": "¿Nuevo aquí?",
 	"Setup.Welcome.Text": "Añade las carpetas a comprobar, elige qué buscar y pulsa Escanear. Ese es todo el flujo.",
 	"Setup.Welcome.Dismiss": "No mostrar de nuevo ✕",
+	"Setup.NoDuplicates.Title": "No se encontraron duplicados",
+	"Setup.NoDuplicates.Text": "Tu último escaneo finalizó sin encontrar archivos duplicados.",
 	"Setup.WhereToLook": "DÓNDE BUSCAR",
 	"Setup.WhatToLookFor": "QUÉ BUSCAR",
 	"Setup.AddFolder": "Añadir carpeta…",

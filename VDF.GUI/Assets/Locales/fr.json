@@ -624,6 +624,8 @@
 	"Setup.Welcome.Title": "Nouveau ici ?",
 	"Setup.Welcome.Text": "Ajoutez les dossiers à vérifier, choisissez quoi chercher, appuyez sur Analyser. C'est tout le flux.",
 	"Setup.Welcome.Dismiss": "Ne plus afficher ✕",
+	"Setup.NoDuplicates.Title": "Aucun doublon trouvé",
+	"Setup.NoDuplicates.Text": "Votre dernière analyse est terminée et n'a trouvé aucun fichier en double.",
 	"Setup.WhereToLook": "OÙ CHERCHER",
 	"Setup.WhatToLookFor": "QUOI CHERCHER",
 	"Setup.AddFolder": "Ajouter un dossier…",

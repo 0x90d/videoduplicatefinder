@@ -101,6 +101,22 @@ namespace VDF.GUI.ViewModels {
 			SettingsFile.Instance.WelcomeStripDismissed = true;
 		});
 
+		// ---------- "no duplicates found" notice ----------
+		bool _ShowNoDuplicatesNotice;
+		/// <summary>
+		/// Raised after a completed scan that found nothing, so the Setup screen a returning
+		/// user lands on can be told apart from the never-scanned state. Persists until the
+		/// next scan starts (see <see cref="StartScanCommand"/>) or the user dismisses it.
+		/// </summary>
+		public bool ShowNoDuplicatesNotice {
+			get => _ShowNoDuplicatesNotice;
+			set => this.RaiseAndSetIfChanged(ref _ShowNoDuplicatesNotice, value);
+		}
+
+		public ReactiveCommand<Unit, Unit> DismissNoDuplicatesNoticeCommand => ReactiveCommand.Create(() => {
+			ShowNoDuplicatesNotice = false;
+		});
+
 		// ---------- folder list ----------
 		public ObservableCollection<SetupFolderVM> SetupFolders { get; } = new();
 		readonly FolderCountingService folderCounting = new();

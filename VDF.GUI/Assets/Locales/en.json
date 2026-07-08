@@ -624,6 +624,8 @@
 	"Setup.Welcome.Title": "New here?",
 	"Setup.Welcome.Text": "Add the folders you want to check, pick what to look for, press Scan. That's the whole workflow.",
 	"Setup.Welcome.Dismiss": "Don't show again ✕",
+	"Setup.NoDuplicates.Title": "No duplicates found",
+	"Setup.NoDuplicates.Text": "Your last scan finished and found no duplicate files.",
 	"Setup.WhereToLook": "WHERE TO LOOK",
 	"Setup.WhatToLookFor": "WHAT TO LOOK FOR",
 	"Setup.AddFolder": "Add folder…",

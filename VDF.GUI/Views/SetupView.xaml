@@ -58,34 +58,71 @@
        window-wide status line at the bottom. -->
   <Grid RowDefinitions="Auto,*,Auto">
 
-    <!-- welcome strip -->
-    <Border
-        Grid.Row="0"
-        CornerRadius="8"
-        Padding="12,8"
-        Margin="24,14,24,4"
-        Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
-        BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
-        BorderThickness="1"
-        IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!WelcomeStripDismissed}">
-      <DockPanel LastChildFill="True">
-        <Button
-            DockPanel.Dock="Right"
-            Background="Transparent"
-            BorderThickness="0"
-            FontSize="12"
-            Opacity="0.7"
-            VerticalAlignment="Center"
-            Command="{Binding DismissWelcomeStripCommand}"
-            Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <TextBlock FontSize="13" FontWeight="SemiBold"
-                     Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Title]}" />
-          <TextBlock FontSize="13" Opacity="0.8" TextWrapping="Wrap"
-                     Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Text]}" />
-        </StackPanel>
-      </DockPanel>
-    </Border>
+    <StackPanel Grid.Row="0" Spacing="4">
+
+      <!-- "no duplicates found" notice: shown after a completed scan that matched
+           nothing, so returning to the Setup screen is distinguishable from the
+           never-scanned state -->
+      <Border
+          CornerRadius="8"
+          Padding="12,8"
+          Margin="24,14,24,0"
+          Background="{DynamicResource VdfGoodSoftBrush}"
+          BorderBrush="{DynamicResource VdfGoodBorderBrush}"
+          BorderThickness="1"
+          IsVisible="{Binding ShowNoDuplicatesNotice}">
+        <DockPanel LastChildFill="True">
+          <Button
+              DockPanel.Dock="Right"
+              Background="Transparent"
+              BorderThickness="0"
+              FontSize="12"
+              Opacity="0.7"
+              VerticalAlignment="Center"
+              Command="{Binding DismissNoDuplicatesNoticeCommand}"
+              ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Close]}"
+              Content="✕" />
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <TextBlock FontSize="14" VerticalAlignment="Center"
+                       Foreground="{DynamicResource VdfGoodBrush}"
+                       Text="✓" />
+            <TextBlock FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.NoDuplicates.Title]}" />
+            <TextBlock FontSize="13" Opacity="0.8" TextWrapping="Wrap" VerticalAlignment="Center"
+                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.NoDuplicates.Text]}" />
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+      <!-- welcome strip -->
+      <Border
+          CornerRadius="8"
+          Padding="12,8"
+          Margin="24,14,24,4"
+          Background="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}"
+          BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+          BorderThickness="1"
+          IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!WelcomeStripDismissed}">
+        <DockPanel LastChildFill="True">
+          <Button
+              DockPanel.Dock="Right"
+              Background="Transparent"
+              BorderThickness="0"
+              FontSize="12"
+              Opacity="0.7"
+              VerticalAlignment="Center"
+              Command="{Binding DismissWelcomeStripCommand}"
+              Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <TextBlock FontSize="13" FontWeight="SemiBold"
+                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Title]}" />
+            <TextBlock FontSize="13" Opacity="0.8" TextWrapping="Wrap"
+                       Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Text]}" />
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+    </StackPanel>
 
     <!-- split panels -->
     <Grid Grid.Row="1" ColumnDefinitions="1.25*,*" Margin="0,10,0,0">

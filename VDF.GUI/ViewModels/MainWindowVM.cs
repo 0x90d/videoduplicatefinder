@@ -631,6 +631,11 @@ namespace VDF.GUI.ViewModels {
 				foreach (var item in Scanner.Duplicates)
 					Duplicates.Add(new DuplicateItemVM(item));
 
+				// A completed scan that matched nothing drops back to the Setup screen; flag
+				// it so the screen shows a "no duplicates found" notice instead of looking
+				// identical to the never-scanned state.
+				ShowNoDuplicatesNotice = SetupNotice.ShowAfterScanDone(Duplicates.Count);
+
 				if (SettingsFile.Instance.GeneratePreviewThumbnails) {
 					ShowThumbnailRetrievalProgressBar = true;
 					ThumbnailRetrievalProgressText = "Starting to retrieve thumbnails for preview";
@@ -1523,6 +1528,7 @@ Non-Windows setup:
 			}
 
 			Duplicates.Clear();
+			ShowNoDuplicatesNotice = false;
 
 			// Folder counting is informational only — never let it compete with the scan for IO.
 			folderCounting.CancelAll();

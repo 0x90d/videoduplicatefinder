@@ -624,6 +624,8 @@
 	"Setup.Welcome.Title": "初次使用？",
 	"Setup.Welcome.Text": "添加要检查的文件夹，选择要查找的内容，然后按扫描。整个流程就是这样。",
 	"Setup.Welcome.Dismiss": "不再显示 ✕",
+	"Setup.NoDuplicates.Title": "未找到重复项",
+	"Setup.NoDuplicates.Text": "上次扫描已完成，未发现重复文件。",
 	"Setup.WhereToLook": "扫描位置",
 	"Setup.WhatToLookFor": "查找内容",
 	"Setup.AddFolder": "添加文件夹…",
