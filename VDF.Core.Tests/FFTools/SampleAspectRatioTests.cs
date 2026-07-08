@@ -45,4 +45,26 @@ public class SampleAspectRatioTests {
 		var coded = new Size(720, 576);
 		Assert.Equal(coded, FfmpegEngine.ApplySampleAspectRatio(coded, num, den));
 	}
+
+	// The CLI fallback normalizes SAR through an ffmpeg -vf expression instead of the managed
+	// helper, so it must carry the same overflow guard: a corrupt/huge SAR must not ask ffmpeg
+	// for a multi-hundred-megapixel frame. Images get no SAR filter (square pixels; #806).
+	[Theory]
+	[InlineData("movie.mp4")]
+	[InlineData("clip.MKV")]
+	[InlineData("no_extension")]
+	public void SarNormalizationFilter_ForVideos_WidensWithOverflowGuard(string file) {
+		string? chain = FfmpegEngine.BuildSarNormalizationFilter(file);
+		Assert.NotNull(chain);
+		Assert.Contains("setsar=1", chain);
+		Assert.Contains("65536", chain);            // the coded-width fallback guard
+		Assert.Contains("eq(sar\\,0)", chain);      // unknown SAR treated as square
+	}
+
+	[Theory]
+	[InlineData("photo.jpg")]
+	[InlineData("frame.PNG")]
+	[InlineData("art.webp")]
+	public void SarNormalizationFilter_ForImages_IsNull(string file) =>
+		Assert.Null(FfmpegEngine.BuildSarNormalizationFilter(file));
 }

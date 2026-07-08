@@ -156,11 +156,15 @@ namespace VDF.CLI.Commands {
 			s.IncludeSubDirectories = !r.GetValue(NoSubdirs);
 			s.IncludeImages = r.GetValue(IncludeImages);
 			s.UsePHashing = r.GetValue(UsePhash);
-			// Commands that don't register --phash-sample-ratio get default(double) == 0 back
-			// from GetValue (same trap as --parallelism/#804); remap that sentinel to the
-			// documented default.
-			double phashRatio = r.GetValue(PhashSampleRatio);
-			s.PHashRequiredMatchingSampleRatio = phashRatio == 0d ? 0.6f : (float)Math.Clamp(phashRatio, 0.01d, 1d);
+			// --phash-sample-ratio is only registered on commands that expose pHash tuning;
+			// for the rest GetResult is null and we keep the documented default. When it IS
+			// present, clamp to [0.01, 1] — GetValue returns the 0.6 DefaultValueFactory when
+			// omitted, and an explicit 0 clamps to the 0.01 minimum instead of being mistaken
+			// for "unset" (avoids the 0-sentinel overload the --parallelism/#804 remap has).
+			if (r.GetResult(PhashSampleRatio) != null)
+				s.PHashRequiredMatchingSampleRatio = (float)Math.Clamp(r.GetValue(PhashSampleRatio), 0.01d, 1d);
+			else
+				s.PHashRequiredMatchingSampleRatio = 0.6f;
 			s.UseNativeFfmpegBinding = r.GetValue(NativeFfmpeg);
 			s.HardwareAccelerationMode = r.GetValue(HardwareAccel);
 

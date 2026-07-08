@@ -136,6 +136,13 @@ namespace VDF.Core {
 
 		int MatchingParallelDegree => CalculateMatchingParallelism(Settings.MatchingMaxDegreeOfParallelism, Environment.ProcessorCount);
 
+		// The pHash quorum's requiredMatches is identical for every pair in a scan
+		// (sampleCount always equals positionList.Count), so the compare phase precomputes
+		// it once here and the per-pair hot path in CheckIfDuplicate reads it instead of
+		// re-clamping and re-ceiling on every candidate. Null outside a scan — the direct
+		// and diagnostic callers fall back to computing it locally.
+		int? matchingRequiredSampleMatches;
+
 		// Status-bar label for the current phase. Empty during per-file analysis (which reports
 		// its own sub-stages via ReportStage); set by the compare phases so the UI shows
 		// "comparing …" instead of leaving the last analyzed file path on screen, which looked
@@ -1118,7 +1125,6 @@ namespace VDF.Core {
 					return false;
 				gray[j] = data;
 			}
-			entry.compareGray = gray;
 
 			if (usePHashing) {
 				var phashes = new ulong[positionList.Count];
@@ -1130,6 +1136,9 @@ namespace VDF.Core {
 					}
 					if (gray[j]!.Length != GrayBytesUtils.Side * GrayBytesUtils.Side) {
 						// Legacy 16x16 data slipped past the DbVersion gate (mixed database).
+						// Return before assigning compareGray so a dropped entry leaves no
+						// dangling snapshot behind (the end-of-phase cleanup only visits the
+						// validated ScanList).
 						LogMissingPHash(entry.Path);
 						return false;
 					}
@@ -1138,6 +1147,7 @@ namespace VDF.Core {
 				}
 				entry.comparePHashes = phashes;
 			}
+			entry.compareGray = gray;
 			return true;
 		}
 
@@ -1174,24 +1184,32 @@ namespace VDF.Core {
 				int sampleCount = Math.Min(phashes.Length, phashesComp.Length);
 				if (sampleCount == 0)
 					return false;
-				float requiredRatio = Math.Clamp(Settings.PHashRequiredMatchingSampleRatio, 0.01f, 1f);
-				int requiredMatches = Math.Max(1, (int)Math.Ceiling(sampleCount * requiredRatio));
+				// requiredMatches is the same for every pair in a scan; the compare phase
+				// precomputes it (matchingRequiredSampleMatches). Direct/diagnostic callers
+				// leave it null and compute locally.
+				int requiredMatches = matchingRequiredSampleMatches is int precomputed && sampleCount == positionList.Count
+					? precomputed
+					: Math.Max(1, (int)Math.Ceiling(sampleCount * Math.Clamp(Settings.PHashRequiredMatchingSampleRatio, 0.01f, 1f)));
 				int matches = 0;
-				float matchedDiffSum = 0f;
+				// Mean dissimilarity over ALL sampled positions, not just the matching ones:
+				// dividing both orientations by the same sampleCount keeps the normal and
+				// flipped `difference` values comparable for the flip-vs-normal selection in
+				// TryCheckDuplicate, and stops a fully divergent frame from being hidden
+				// behind the high average of the few frames that happened to pass.
+				float pHashDiffSum = 0f;
 
 				for (int j = 0; j < sampleCount; j++) {
-					if (pHash.PHashCompare.IsDuplicateByPercent(phashes[j], phashesComp[j], out float similarity, differenceLimitpHash, strict: true)) {
+					bool pass = pHash.PHashCompare.IsDuplicateByPercent(phashes[j], phashesComp[j], out float similarity, differenceLimitpHash, strict: true);
+					pHashDiffSum += 1f - similarity;
+					if (pass)
 						matches++;
-						matchedDiffSum += 1f - similarity;
-					}
-					else if (matches + (sampleCount - j - 1) < requiredMatches) {
+					else if (matches + (sampleCount - j - 1) < requiredMatches)
 						return false; // quorum unreachable — skip the remaining samples
-					}
 				}
 				if (matches < requiredMatches)
 					return false;
 
-				difference = matchedDiffSum / matches;
+				difference = pHashDiffSum / sampleCount;
 				return !float.IsNaN(difference);
 			}
 
@@ -1255,6 +1273,10 @@ namespace VDF.Core {
 				Logger.Instance.Warn($"Excluded {droppedSnapshots} file(s) with incomplete cached scan data (missing gray bytes for the current thumbnail positions). Rescan to repopulate.");
 
 			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
+			// Precompute the pHash quorum threshold once for the whole phase (see field note).
+			matchingRequiredSampleMatches = usePHashing
+				? Math.Max(1, (int)Math.Ceiling(positionList.Count * Math.Clamp(Settings.PHashRequiredMatchingSampleRatio, 0.01f, 1f)))
+				: null;
 			int matchingParallelism = MatchingParallelDegree;
 			Logger.Instance.Info($"Matching concurrency: {matchingParallelism} worker(s) on {Environment.ProcessorCount} logical processor(s) (configured: matching={Settings.MatchingMaxDegreeOfParallelism}, media reads={Settings.MaxDegreeOfParallelism})");
 
@@ -1593,6 +1615,7 @@ namespace VDF.Core {
 				entry.compareGray = null;
 				entry.comparePHashes = null;
 			}
+			matchingRequiredSampleMatches = null;
 		}
 
 
@@ -1687,9 +1710,13 @@ namespace VDF.Core {
 				int dropped = 0;
 				var verified = new ConcurrentBag<(int, int, float, int, Guid)>();
 				try {
+					// Storage-tuned degree, NOT MatchingParallelDegree: unlike the audio
+					// fingerprint pass above (pure CPU over in-memory fingerprints), the visual
+					// gate decodes frames live off disk via GetGrayFrames, so it must respect the
+					// media-read cap that HDD users lower to avoid seek-thrash.
 					Parallel.ForEach(assignments, new ParallelOptions {
 						CancellationToken = cancelationTokenSource.Token,
-						MaxDegreeOfParallelism = MatchingParallelDegree
+						MaxDegreeOfParallelism = ParallelDegree
 					}, a => {
 						bool pass = VerifyPartialClipVisually(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec, out float visualSim);
 						if (pass) {

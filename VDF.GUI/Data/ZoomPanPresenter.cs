@@ -79,9 +79,21 @@ namespace VDF.GUI.Data {
 			AddHandler(PointerMovedEvent, OnMoved, handledEventsToo: true);
 
 			this.GetObservable(ContentProperty).Subscribe(_ => AttachTransform());
-			this.GetPropertyChangedObservable(ZoomProperty).Subscribe(_ => ApplyTransform());
+			this.GetPropertyChangedObservable(ZoomProperty).Subscribe(_ => OnZoomChanged());
 			this.GetPropertyChangedObservable(OffsetXProperty).Subscribe(_ => ApplyTransform());
 			this.GetPropertyChangedObservable(OffsetYProperty).Subscribe(_ => ApplyTransform());
+		}
+
+		private void OnZoomChanged() {
+			// A programmatic zoom (the Zoom-In/Out/Fit toolbar commands set Zoom directly) must
+			// re-clamp the pan offsets too: an offset that was valid at the previous zoom can
+			// push the now-differently-scaled content out of the viewport, leaving blank space.
+			// The wheel and drag handlers already clamp as they compute offsets; this covers
+			// every other write to Zoom.
+			Point clamped = ClampOffsetsToViewport(OffsetX, OffsetY, Math.Clamp(Zoom, MinZoom, MaxZoom));
+			if (clamped.X != OffsetX) OffsetX = clamped.X;
+			if (clamped.Y != OffsetY) OffsetY = clamped.Y;
+			ApplyTransform();
 		}
 
 		private void AttachTransform() {

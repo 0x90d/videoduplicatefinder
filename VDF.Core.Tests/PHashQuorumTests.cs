@@ -81,8 +81,13 @@ public class PHashQuorumTests {
 		var a = Entry((0.2f, ulong.MaxValue), (0.4f, 7UL), (0.6f, 7UL), (0.8f, 7UL));
 		var b = Entry((0.2f, 0UL), (0.4f, 7UL), (0.6f, 7UL), (0.8f, 7UL));
 
+		// Difference is averaged over ALL sampled positions, not just the matching
+		// ones: the one fully-divergent frame (diff 1.0) plus three identical frames
+		// (diff 0) over 4 positions = 0.25. Averaging over matching frames only would
+		// have reported 0.0 and hidden the divergent frame — and made the value
+		// non-comparable against the flipped orientation's own matched subset.
 		Assert.True(Check(engine, a, b, out float difference));
-		Assert.Equal(0f, difference);
+		Assert.Equal(0.25f, difference);
 	}
 
 	[Fact]
@@ -99,15 +104,40 @@ public class PHashQuorumTests {
 	}
 
 	[Fact]
-	public void DifferenceIsAveragedOverMatchingSamples() {
+	public void DifferenceIsAveragedOverAllSamples() {
 		// Sample 1: identical (diff 0). Sample 2: 16 differing bits = similarity
-		// 0.75, exactly at the 75% threshold (diff 0.25). Average = 0.125.
+		// 0.75, exactly at the 75% threshold (diff 0.25). Both pass here (ratio 1),
+		// so all-samples and matching-only averaging coincide: average = 0.125.
 		var engine = Engine(percent: 75f, ratio: 1f, 0.25f, 0.5f);
 		var a = Entry((0.25f, 0UL), (0.5f, 0UL));
 		var b = Entry((0.25f, 0UL), (0.5f, 0xFFFFUL));
 
 		Assert.True(Check(engine, a, b, out float difference));
 		Assert.InRange(difference, 0.124f, 0.126f);
+	}
+
+	[Fact]
+	public void FullAndPartialMatchDifferencesAreComparable() {
+		// The flip-vs-normal selection in TryCheckDuplicate picks the orientation with the
+		// smaller difference. A full-orientation match on all 4 frames (each slightly
+		// imperfect) must therefore report a LOWER difference than an orientation that
+		// matches only 3 of 4 with one fully-divergent frame — otherwise the worse,
+		// partially-divergent orientation would win. This holds only because difference is
+		// averaged over all sampled positions (both divide by 4); averaging over the matching
+		// subset made the partial match report 0.0 and spuriously beat the full match.
+		const ulong sixBits = 0x3FUL; // 6 differing bits → similarity ~0.906, above the 90% threshold
+		var engine = Engine(percent: 90f, ratio: 0.6f, 0.2f, 0.4f, 0.6f, 0.8f);
+
+		var full = Entry((0.2f, 0UL), (0.4f, 0UL), (0.6f, 0UL), (0.8f, 0UL));
+		var fullNear = Entry((0.2f, sixBits), (0.4f, sixBits), (0.6f, sixBits), (0.8f, sixBits));
+		Assert.True(Check(engine, full, fullNear, out float fullDiff));
+
+		var partial = Entry((0.2f, ulong.MaxValue), (0.4f, 0UL), (0.6f, 0UL), (0.8f, 0UL));
+		var partialComp = Entry((0.2f, 0UL), (0.4f, 0UL), (0.6f, 0UL), (0.8f, 0UL));
+		Assert.True(Check(engine, partial, partialComp, out float partialDiff));
+
+		Assert.True(fullDiff < partialDiff,
+			$"full-orientation diff {fullDiff} should be less than the partial-match diff {partialDiff}");
 	}
 
 	[Fact]

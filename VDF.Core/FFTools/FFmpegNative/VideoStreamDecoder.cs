@@ -253,6 +253,11 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			// hardware decode was requested, so a software frame flows through fine.
 			if (_pCodecContext->hw_device_ctx != null && _pFrame->hw_frames_ctx != null) {
 				ffmpeg.av_hwframe_transfer_data(_pReceivedFrame, _pFrame, 0).ThrowExceptionIfError();
+				// The transfer copies only pixel data; frame properties live on the source
+				// hw frame and must be carried across explicitly. Notably sample_aspect_ratio,
+				// which the display-thumbnail path reads to widen anamorphic content — without
+				// this the SAR correction silently no-ops under hardware decode.
+				ffmpeg.av_frame_copy_props(_pReceivedFrame, _pFrame);
 				frame = *_pReceivedFrame;
 			}
 			else

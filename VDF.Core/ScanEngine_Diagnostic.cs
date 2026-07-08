@@ -44,6 +44,9 @@ namespace VDF.Core {
 			List<string> failures = new();
 			List<string> scanInclusionIssues = new();
 			List<string> hints = new();
+			// This standalone pair test computes requiredMatches locally; make sure it never
+			// reads a value cached by a previous (possibly aborted) scan phase.
+			matchingRequiredSampleMatches = null;
 
 			string FormatSimilarity(float similarity) =>
 				float.IsNaN(similarity) ? "NaN" : (similarity * 100f).ToString("0.0#", inv) + "%";
@@ -319,14 +322,21 @@ namespace VDF.Core {
 				failures.Add("pHash data could not be computed for at least one file.");
 			}
 			else if (usePHash) {
-				// Per-frame breakdown mirroring the quorum rule in CheckIfDuplicate.
+				// Per-frame breakdown mirroring the quorum rule in CheckIfDuplicate. Recompute
+				// the headline similarity from every frame here too: CheckIfDuplicate reports 1f
+				// (0% similarity) on a non-match and a matched-only figure would still disagree
+				// with the frames listed below, so the summary is averaged over all frames to
+				// match the breakdown (the pass/fail verdict above is authoritative).
 				int passCount = 0;
+				float simSum = 0f;
 				for (int j = 0; j < positions.Count; j++) {
 					bool framePass = pHash.PHashCompare.IsDuplicateByPercent(a.comparePHashes![j], b.comparePHashes![j], out float frameSimilarity, Settings.Percent / 100f, strict: true);
 					if (framePass) passCount++;
+					simSum += frameSimilarity;
 					if (positions.Count > 1)
 						sb.AppendLine($"Frame {j + 1}: {FormatSimilarity(frameSimilarity)}{(framePass ? "" : " (below threshold)")}");
 				}
+				similarity = positions.Count > 0 ? simSum / positions.Count : 0f;
 				int requiredMatches = Math.Max(1, (int)Math.Ceiling(positions.Count * Math.Clamp(Settings.PHashRequiredMatchingSampleRatio, 0.01f, 1f)));
 				sb.AppendLine($"Frames passing the similarity threshold: {passCount} of {positions.Count} — required: {requiredMatches}");
 			}

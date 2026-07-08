@@ -492,9 +492,7 @@ namespace VDF.Core.FFTools {
 				// and the bounding box below sees display dimensions (matching the native
 				// path). sar==0 (unknown) counts as square pixels. Videos only — image
 				// demuxer pipelines are fragile (#806) and images have square pixels.
-				string? sarChain = FileUtils.IsImageFile(settings.File)
-					? null
-					: "scale=trunc(iw*if(eq(sar\\,0)\\,1\\,sar)):ih,setsar=1";
+				string? sarChain = BuildSarNormalizationFilter(settings.File);
 				if (settings.Fullsize != 1) {
 					int maxW = settings.MaxWidth > 0 ? settings.MaxWidth : 100;
 					// Downscale-only fit into a maxW x maxW bounding box (matching the native
@@ -764,6 +762,23 @@ namespace VDF.Core.FFTools {
 			if (displayWidth <= 0 || displayWidth > 65536)
 				return codedSize;
 			return new Size((int)displayWidth, codedSize.Height);
+		}
+
+		/// <summary>
+		/// The CLI <c>-vf</c> fragment that widens anamorphic video to its display width
+		/// (<c>setsar=1</c>), or null for images (square pixels; the image2 demuxer pipeline
+		/// is fragile — #806). Mirrors <see cref="ApplySampleAspectRatio"/>: an unknown SAR
+		/// (0) is treated as square, and an implausible SAR that would push the display width
+		/// past 65536 falls back to the coded width — bad container metadata must not ask
+		/// ffmpeg for a multi-hundred-megapixel frame (which just OOMs / fails the thumbnail).
+		/// </summary>
+		internal static string? BuildSarNormalizationFilter(string file) {
+			if (FileUtils.IsImageFile(file))
+				return null;
+			// SAR multiplier, unknown (0) treated as 1. Commas inside the expression are
+			// escaped so the filtergraph parser doesn't read them as filter separators.
+			const string sarMul = "if(eq(sar\\,0)\\,1\\,sar)";
+			return $"scale=if(gt(iw*{sarMul}\\,65536)\\,iw\\,trunc(iw*{sarMul})):ih,setsar=1";
 		}
 
 		/// <summary>Downscale-only fit into a maxDim x maxDim bounding box, preserving aspect ratio.</summary>
