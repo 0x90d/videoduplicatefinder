@@ -28,19 +28,11 @@ namespace VDF.CLI.Tests.Commands;
 public class SharedOptionsApplyTests {
 
 	static Settings Apply(System.CommandLine.Command cmd, params string[] args) {
-		// CLI numeric options are written in invariant "0.8" form regardless of OS locale;
-		// pin it so these tests exercise the clamp/sentinel logic deterministically on
-		// non-invariant hosts (System.CommandLine parses doubles with the current culture).
-		var prev = CultureInfo.CurrentCulture;
-		CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-		try {
-			var settings = new Settings();
-			SharedOptions.ApplyToSettings(settings, cmd.Parse(args));
-			return settings;
-		}
-		finally {
-			CultureInfo.CurrentCulture = prev;
-		}
+		// No culture pinning: SharedOptions' numeric options parse invariantly by design, so
+		// "0.8" is 0.8 on every host (see NumericOptions_ParseInvariantly_UnderCommaDecimalLocale).
+		var settings = new Settings();
+		SharedOptions.ApplyToSettings(settings, cmd.Parse(args));
+		return settings;
 	}
 
 	// ---- --phash-sample-ratio ----
@@ -86,5 +78,26 @@ public class SharedOptionsApplyTests {
 	public void MatchingParallelism_HonorsValue(string value, int expected) {
 		Assert.Equal(expected, Apply(ScanCommand.Build(), "--matching-parallelism", value).MatchingMaxDegreeOfParallelism);
 		Assert.Equal(expected, Apply(CompareCommand.Build(), "--matching-parallelism", value).MatchingMaxDegreeOfParallelism);
+	}
+
+	// ---- locale-independent numeric parsing ----
+
+	[Fact]
+	public void NumericOptions_ParseInvariantly_UnderCommaDecimalLocale() {
+		// Regression: CLI numeric options must accept the invariant "0.8"/"95.5" form on every
+		// OS locale. Before the invariant-culture parsers, a comma-decimal host (de-DE) read the
+		// "." as a group separator, so "0.8" became 8 and "95.5" became 955.
+		var prev = CultureInfo.CurrentCulture;
+		CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+		try {
+			var settings = Apply(ScanCommand.Build(),
+				"--phash-sample-ratio", "0.8", "--percent", "95.5", "--partial-clip-min-ratio", "0.25");
+			Assert.Equal(0.8f, settings.PHashRequiredMatchingSampleRatio, 3);
+			Assert.Equal(95.5f, settings.Percent, 3);
+			Assert.Equal(0.25, settings.PartialClipMinRatio, 3);
+		}
+		finally {
+			CultureInfo.CurrentCulture = prev;
+		}
 	}
 }

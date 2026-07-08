@@ -15,12 +15,39 @@
 //
 
 using System.CommandLine;
+using System.CommandLine.Parsing;
+using System.Globalization;
 using VDF.Core;
 using VDF.Core.FFTools;
 
 namespace VDF.CLI.Commands {
 	/// <summary>Reusable option definitions shared across scan/compare commands.</summary>
 	internal static class SharedOptions {
+
+		// System.CommandLine's built-in numeric converters parse with the current culture, so on
+		// a comma-decimal locale (e.g. de-DE) "0.8" becomes 8. CLI numeric arguments are
+		// conventionally invariant ('.' decimal), so every float/double option parses that way on
+		// every host. Tokens.Count == 0 only happens if the parser is invoked without a value;
+		// returning the fallback keeps the documented default intact.
+		static double ParseInvariantDouble(ArgumentResult result, double fallback) {
+			if (result.Tokens.Count == 0)
+				return fallback;
+			string token = result.Tokens[0].Value;
+			if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+				return value;
+			result.AddError($"'{token}' is not a valid number (use '.' as the decimal separator, e.g. 0.8).");
+			return fallback;
+		}
+
+		static float ParseInvariantFloat(ArgumentResult result, float fallback) {
+			if (result.Tokens.Count == 0)
+				return fallback;
+			string token = result.Tokens[0].Value;
+			if (float.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+				return value;
+			result.AddError($"'{token}' is not a valid number (use '.' as the decimal separator, e.g. 96.5).");
+			return fallback;
+		}
 		internal static readonly Option<string[]> Include = new("--include", "-i") {
 			Description = "Directory to include in the scan. Can be specified multiple times.",
 			Arity = ArgumentArity.OneOrMore,
@@ -40,7 +67,8 @@ namespace VDF.CLI.Commands {
 
 		internal static readonly Option<float> Percent = new("--percent") {
 			Description = "Minimum similarity percentage to report as duplicate. Default: 96.",
-			DefaultValueFactory = _ => 96f
+			DefaultValueFactory = _ => 96f,
+			CustomParser = r => ParseInvariantFloat(r, 96f)
 		};
 
 		internal static readonly Option<int> Parallelism = new("--parallelism") {
@@ -71,7 +99,8 @@ namespace VDF.CLI.Commands {
 
 		internal static readonly Option<double> PhashSampleRatio = new("--phash-sample-ratio") {
 			Description = "Minimum fraction (0.01-1.0) of sampled frame positions that must individually pass the pHash similarity threshold for a pair to match. Only used with --use-phash. Default: 0.6.",
-			DefaultValueFactory = _ => 0.6
+			DefaultValueFactory = _ => 0.6,
+			CustomParser = r => ParseInvariantDouble(r, 0.6)
 		};
 
 		internal static readonly Option<bool> NativeFfmpeg = new("--native-ffmpeg") {
@@ -97,12 +126,14 @@ namespace VDF.CLI.Commands {
 
 		internal static readonly Option<double> PartialClipMinRatio = new("--partial-clip-min-ratio") {
 			Description = "Minimum clip/source duration ratio (0.0–1.0). Default: 0.10.",
-			DefaultValueFactory = _ => 0.10
+			DefaultValueFactory = _ => 0.10,
+			CustomParser = r => ParseInvariantDouble(r, 0.10)
 		};
 
 		internal static readonly Option<double> PartialClipSimilarityThreshold = new("--partial-clip-similarity") {
 			Description = "Minimum audio fingerprint similarity threshold (0.0–1.0). Default: 0.80.",
-			DefaultValueFactory = _ => 0.80
+			DefaultValueFactory = _ => 0.80,
+			CustomParser = r => ParseInvariantDouble(r, 0.80)
 		};
 
 		internal static readonly Option<bool> PartialClipRequireVisualMatch = new("--partial-clip-require-visual") {
@@ -112,7 +143,8 @@ namespace VDF.CLI.Commands {
 
 		internal static readonly Option<double> PartialClipVisualThreshold = new("--partial-clip-visual-threshold") {
 			Description = "Minimum visual similarity (0.0–1.0) for the partial-clip visual gate. Uses pHash when --use-phash is set, else 32x32 grayscale percent diff. Default: 0.85.",
-			DefaultValueFactory = _ => 0.85
+			DefaultValueFactory = _ => 0.85,
+			CustomParser = r => ParseInvariantDouble(r, 0.85)
 		};
 
 		internal static readonly Option<int> CheckpointInterval = new("--checkpoint-interval") {
