@@ -258,6 +258,15 @@
               </views:SettingRow>
 
               <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.PHashSampleRatio.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.PHashSampleRatio.Desc]}"
+                  SearchTags="phash samples quorum frames false positives"
+                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}">
+                <NumericUpDown Classes="stepper" FormatString="\{0\}%" Increment="1" Maximum="100" Minimum="1"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PHashSampleRatioPercent}" />
+              </views:SettingRow>
+
+              <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Flip.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Flip.Desc]}"
                   SearchTags="mirror flip">

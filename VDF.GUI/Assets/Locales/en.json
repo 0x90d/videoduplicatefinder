@@ -682,6 +682,8 @@
 	"Settings.Row.Percent.Desc": "How alike the sampled frames of two files must be to count as duplicates. 100 % finds only near-identical frames; ~95 % catches typical re-encodes; lower also surfaces watermarked or cropped copies at the cost of false positives.",
 	"Settings.Row.UsePHash.Title": "Use perceptual hashing (pHash)",
 	"Settings.Row.UsePHash.Desc": "Much faster comparison on large libraries and robust to small brightness shifts; slightly coarser than the raw grayscale diff. Images always use grayscale regardless. Ignored on old databases with 16×16 graybyte values.",
+	"Settings.Row.PHashSampleRatio.Title": "Required matching samples",
+	"Settings.Row.PHashSampleRatio.Desc": "Minimum percentage of the sampled frame positions that must individually pass the similarity threshold in pHash mode. Higher values reduce false positives caused by a single coincidental frame; 60 % is a balanced default.",
 	"Settings.Row.Flip.Title": "Compare horizontally flipped",
 	"Settings.Row.Flip.Desc": "Catches mirror-image re-uploads; matches are marked as flipped in the results. Cost: roughly doubles the comparison work.",
 	"Settings.Row.IgnoreBW.Title": "Ignore black / white pixels",

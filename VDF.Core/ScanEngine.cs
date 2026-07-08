@@ -50,7 +50,7 @@ namespace VDF.Core {
 
 		PauseTokenSource pauseTokenSource = new();
 		CancellationTokenSource cancelationTokenSource = new();
-		readonly List<float> positionList = new();
+		internal readonly List<float> positionList = new();
 
 		bool _isScanning;
 		// The main process yields CPU to foreground apps while a scan runs, restored the
@@ -1020,6 +1020,21 @@ namespace VDF.Core {
 			return flipped;
 		}
 
+		// For the flip path this runs once per entry before its pair loop — never per
+		// pair, the DCT is far too expensive for the per-pair hot path. Null when any
+		// position cannot be hashed (legacy 16x16 data): pHash checks using the result
+		// are skipped for that entry.
+		internal static ulong[]? ComputePHashesFromGray(byte[]?[] grayBytes) {
+			var phashes = new ulong[grayBytes.Length];
+			for (int j = 0; j < grayBytes.Length; j++) {
+				byte[]? gray = grayBytes[j];
+				if (gray == null || gray.Length != GrayBytesUtils.Side * GrayBytesUtils.Side)
+					return null;
+				phashes[j] = pHash.PerceptualHash.ComputePHashFromGray32x32(gray);
+			}
+			return phashes;
+		}
+
 		/// <summary>Returns true if the last <paramref name="depth"/> path segments of both folder paths are equal (case-insensitive).</summary>
 	static bool SameFolderAtDepth(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int depth) {
 		for (int i = 0; i < depth; i++) {
@@ -1059,12 +1074,14 @@ namespace VDF.Core {
 	/// <summary>
 		/// Builds the transient compare snapshot for <paramref name="entry"/>: gray-byte
 		/// arrays aligned with <see cref="positionList"/> order and, when pHashing is
-		/// enabled, the first-position pHash (computed once and cached back into
-		/// <see cref="FileEntry.PHashes"/> if it was missing). Returns false when the
-		/// stored data is incomplete for the current scan settings — those entries are
-		/// excluded from the comparison instead of failing on every pair.
+		/// enabled, the pHash of every sampled position (computed once and cached back
+		/// into <see cref="FileEntry.PHashes"/> where missing — this prefill is what
+		/// keeps the parallel per-pair hot path free of dictionary writes). Returns
+		/// false when the stored data is incomplete for the current scan settings —
+		/// those entries are excluded from the comparison instead of failing on every
+		/// pair.
 		/// </summary>
-		bool TryBuildCompareSnapshot(FileEntry entry, bool usePHashing) {
+		internal bool TryBuildCompareSnapshot(FileEntry entry, bool usePHashing) {
 			if (entry.IsImage) {
 				if (!entry.grayBytes.TryGetValue(0, out byte[]? imageGray) || imageGray == null)
 					return false;
@@ -1082,19 +1099,27 @@ namespace VDF.Core {
 			entry.compareGray = gray;
 
 			if (usePHashing) {
-				double idx0 = GetGrayBytesIndex(entry, positionList[0]);
-				if (!entry.PHashes.TryGetValue(idx0, out ulong? phash)) {
-					phash = pHash.PerceptualHash.ComputePHashFromGray32x32(gray[0]);
-					entry.PHashes[idx0] = phash; // cache for future quick rescans
+				var phashes = new ulong[positionList.Count];
+				for (int j = 0; j < positionList.Count; j++) {
+					double idx = GetGrayBytesIndex(entry, positionList[j]);
+					if (entry.PHashes.TryGetValue(idx, out ulong? cached) && cached.HasValue) {
+						phashes[j] = cached.Value;
+						continue;
+					}
+					if (gray[j]!.Length != GrayBytesUtils.Side * GrayBytesUtils.Side) {
+						// Legacy 16x16 data slipped past the DbVersion gate (mixed database).
+						LogMissingPHash(entry.Path);
+						return false;
+					}
+					phashes[j] = pHash.PerceptualHash.ComputePHashFromGray32x32(gray[j]);
+					entry.PHashes[idx] = phashes[j]; // cache for future quick rescans; also heals stored nulls
 				}
-				if (phash == null)
-					LogMissingPHash(entry.Path);
-				entry.comparePHash = phash;
+				entry.comparePHashes = phashes;
 			}
 			return true;
 		}
 
-		bool CheckIfDuplicate(FileEntry entry, byte[]?[]? overrideGray, ulong? overridePHash, FileEntry compItem, out float difference) {
+		internal bool CheckIfDuplicate(FileEntry entry, byte[]?[]? overrideGray, ulong[]? overridePHashes, FileEntry compItem, out float difference) {
 			byte[]?[] grayBytes = overrideGray ?? entry.compareGray!;
 			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
@@ -1111,18 +1136,41 @@ namespace VDF.Core {
 			if (Settings.UsePHashing) {
 				float differenceLimitpHash = Settings.Percent / 100f;
 
-				// Entries with unrecoverable pHash data were logged once during
-				// snapshot building; they simply never match in pHash mode.
-				ulong? phash = overrideGray != null ? overridePHash : entry.comparePHash;
-				ulong? phash_comp = compItem.comparePHash;
-				if (phash == null || phash_comp == null) {
-					difference = 1f;
+				// Entries with unrecoverable pHash data were dropped during snapshot
+				// building; a null array only occurs on the flip path when the flipped
+				// hashes could not be computed.
+				ulong[]? phashes = overrideGray != null ? overridePHashes : entry.comparePHashes;
+				ulong[]? phashesComp = compItem.comparePHashes;
+				if (phashes == null || phashesComp == null)
 					return false;
-				}
-				bool isDup = pHash.PHashCompare.IsDuplicateByPercent(phash.Value, phash_comp.Value, out float similarity, differenceLimitpHash, strict: true);
-				difference = 1f - similarity;
-				return isDup;
 
+				// A pair is a duplicate when at least PHashRequiredMatchingSampleRatio
+				// of the sampled positions individually pass the similarity threshold.
+				// Comparing only one position made a single coincidental frame (black
+				// intro, title card) enough to report two unrelated videos as
+				// duplicates — and a single divergent frame enough to miss real ones.
+				int sampleCount = Math.Min(phashes.Length, phashesComp.Length);
+				if (sampleCount == 0)
+					return false;
+				float requiredRatio = Math.Clamp(Settings.PHashRequiredMatchingSampleRatio, 0.01f, 1f);
+				int requiredMatches = Math.Max(1, (int)Math.Ceiling(sampleCount * requiredRatio));
+				int matches = 0;
+				float matchedDiffSum = 0f;
+
+				for (int j = 0; j < sampleCount; j++) {
+					if (pHash.PHashCompare.IsDuplicateByPercent(phashes[j], phashesComp[j], out float similarity, differenceLimitpHash, strict: true)) {
+						matches++;
+						matchedDiffSum += 1f - similarity;
+					}
+					else if (matches + (sampleCount - j - 1) < requiredMatches) {
+						return false; // quorum unreachable — skip the remaining samples
+					}
+				}
+				if (matches < requiredMatches)
+					return false;
+
+				difference = matchedDiffSum / matches;
+				return !float.IsNaN(difference);
 			}
 
 			byte[]?[] compGray = compItem.compareGray!;
@@ -1278,12 +1326,12 @@ namespace VDF.Core {
 				}
 			}
 
-			bool TryCheckDuplicate(FileEntry entry, FileEntry compItem, byte[]?[]? flippedGrayBytes, ulong? flippedPHash, out float difference, out DuplicateFlags flags) {
+			bool TryCheckDuplicate(FileEntry entry, FileEntry compItem, byte[]?[]? flippedGrayBytes, ulong[]? flippedPHashes, out float difference, out DuplicateFlags flags) {
 				flags = DuplicateFlags.None;
 				difference = 0;
 				bool isDuplicate = CheckIfDuplicate(entry, null, null, compItem, out difference);
 				if (Settings.CompareHorizontallyFlipped &&
-					CheckIfDuplicate(entry, flippedGrayBytes, flippedPHash, compItem, out float flippedDifference)) {
+					CheckIfDuplicate(entry, flippedGrayBytes, flippedPHashes, compItem, out float flippedDifference)) {
 					if (!isDuplicate || flippedDifference < difference) {
 						flags |= DuplicateFlags.Flipped;
 						isDuplicate = true;
@@ -1305,14 +1353,14 @@ namespace VDF.Core {
 				bool isDuplicate;
 				DuplicateFlags flags;
 				byte[]?[]? flippedGrayBytes = null;
-				ulong? flippedPHash = null;
+				ulong[]? flippedPHashes = null;
 				double entryDurationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
 				double entryToleranceSeconds = GetDurationToleranceSeconds(entryDurationSeconds);
 
 				if (Settings.CompareHorizontallyFlipped) {
 					flippedGrayBytes = CreateFlippedGrayBytes(entry);
 					if (usePHashing)
-						flippedPHash = pHash.PerceptualHash.ComputePHashFromGray32x32(flippedGrayBytes[0]!);
+						flippedPHashes = ComputePHashesFromGray(flippedGrayBytes);
 				}
 
 				foreach (int bucketKey in candidateBucketKeys) {
@@ -1339,7 +1387,7 @@ namespace VDF.Core {
 							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
 							continue;
 
-						isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHash, out difference, out flags);
+						isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHashes, out difference, out flags);
 
 						if (isDuplicate &&
 							entry.FileSize == compItem.FileSize &&
@@ -1411,14 +1459,14 @@ namespace VDF.Core {
 					float difference = 0;
 					DuplicateFlags flags;
 					byte[]?[]? flippedGrayBytes = null;
-					ulong? flippedPHash = null;
+					ulong[]? flippedPHashes = null;
 					double entryDurationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
 					double entryToleranceSeconds = GetDurationToleranceSeconds(entryDurationSeconds);
 
 					if (Settings.CompareHorizontallyFlipped) {
 						flippedGrayBytes = CreateFlippedGrayBytes(entry);
 						if (usePHashing)
-							flippedPHash = pHash.PerceptualHash.ComputePHashFromGray32x32(flippedGrayBytes[0]!);
+							flippedPHashes = ComputePHashesFromGray(flippedGrayBytes);
 					}
 
 					for (int n = i + 1; n < videoEntries.Count; n++) {
@@ -1437,7 +1485,7 @@ namespace VDF.Core {
 							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
 							continue;
 
-						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHash, out difference, out flags);
+						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHashes, out difference, out flags);
 						if (isDuplicate &&
 							entry.FileSize == compItem.FileSize &&
 							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
@@ -1519,7 +1567,7 @@ namespace VDF.Core {
 			// owned by entry.grayBytes, only the alignment wrappers are dropped.
 			foreach (FileEntry entry in ScanList) {
 				entry.compareGray = null;
-				entry.comparePHash = null;
+				entry.comparePHashes = null;
 			}
 		}
 

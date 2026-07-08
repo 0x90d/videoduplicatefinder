@@ -682,6 +682,8 @@
 	"Settings.Row.Percent.Desc": "Wie ähnlich die abgetasteten Frames zweier Dateien sein müssen, um als Duplikate zu gelten. 100 % findet nur nahezu identische Frames; ~95 % erfasst typische Re-Encodes; niedrigere Werte finden auch Kopien mit Wasserzeichen oder Beschnitt – um den Preis von Fehltreffern.",
 	"Settings.Row.UsePHash.Title": "Perzeptuelles Hashing (pHash) verwenden",
 	"Settings.Row.UsePHash.Desc": "Deutlich schnellerer Vergleich bei großen Bibliotheken und robust gegen leichte Helligkeitsunterschiede; etwas gröber als der rohe Graustufenvergleich. Bilder verwenden immer Graustufen. Bei alten Datenbanken mit 16×16-Graybytes ohne Wirkung.",
+	"Settings.Row.PHashSampleRatio.Title": "Erforderliche übereinstimmende Stichproben",
+	"Settings.Row.PHashSampleRatio.Desc": "Mindestanteil der abgetasteten Frame-Positionen, die die Ähnlichkeitsschwelle im pHash-Modus einzeln bestehen müssen. Höhere Werte reduzieren Fehltreffer durch einen einzelnen zufällig ähnlichen Frame; 60 % ist ein ausgewogener Standardwert.",
 	"Settings.Row.Flip.Title": "Horizontal gespiegelt vergleichen",
 	"Settings.Row.Flip.Desc": "Findet gespiegelte Re-Uploads; Treffer werden in den Ergebnissen als gespiegelt markiert. Kosten: etwa doppelter Vergleichsaufwand.",
 	"Settings.Row.IgnoreBW.Title": "Schwarze / weiße Pixel ignorieren",

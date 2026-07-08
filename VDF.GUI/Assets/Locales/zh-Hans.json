@@ -682,6 +682,8 @@
 	"Settings.Row.Percent.Desc": "两个文件的采样帧需要多相似才算重复。100% 只找几乎完全相同的帧；约 95% 可捕获典型的重新编码；更低的值还能发现带水印或裁剪的副本，但误报会增多。",
 	"Settings.Row.UsePHash.Title": "使用感知哈希（pHash）",
 	"Settings.Row.UsePHash.Desc": "在大型媒体库中比较速度快得多，且不受轻微亮度变化影响；比原始灰度差异略粗糙。图片始终使用灰度比较。旧的 16×16 灰度数据库将忽略此项。",
+	"Settings.Row.PHashSampleRatio.Title": "所需匹配样本比例",
+	"Settings.Row.PHashSampleRatio.Desc": "pHash 模式下，采样帧位置中必须单独通过相似度阈值的最低百分比。较高的值可减少由单个偶然相似帧造成的误报；60% 是均衡的默认值。",
 	"Settings.Row.Flip.Title": "比较水平翻转",
 	"Settings.Row.Flip.Desc": "可发现镜像翻转的重复上传；匹配结果会标记为已翻转。代价：比较工作量约增加一倍。",
 	"Settings.Row.IgnoreBW.Title": "忽略黑色 / 白色像素",

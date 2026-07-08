@@ -63,6 +63,12 @@ namespace VDF.Core {
 
 		public byte Threshhold = 5;
 		public float Percent = 96f;
+		/// <summary>
+		/// Minimum fraction (0..1) of sampled frame positions that must individually pass
+		/// the pHash similarity threshold for a pair to count as duplicates. Only used
+		/// when <see cref="UsePHashing"/> is on.
+		/// </summary>
+		public float PHashRequiredMatchingSampleRatio = 0.6f;
 		public double PercentDurationDifference = 20d;
 		public double DurationDifferenceMinSeconds;
 		public double DurationDifferenceMaxSeconds;

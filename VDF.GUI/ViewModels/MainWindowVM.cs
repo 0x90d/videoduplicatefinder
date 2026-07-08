@@ -1602,6 +1602,7 @@ Non-Windows setup:
 			Scanner.Settings.FolderMatchMode = SettingsFile.Instance.FolderMatchMode;
 			Scanner.Settings.SameFolderDepth = SettingsFile.Instance.SameFolderDepth;
 			Scanner.Settings.UsePHashing = SettingsFile.Instance.UsePHash;
+			Scanner.Settings.PHashRequiredMatchingSampleRatio = SettingsFile.Instance.PHashSampleRatioPercent / 100f;
 			Scanner.Settings.UseExifCreationDate = SettingsFile.Instance.UseExifCreationDate;
 			Scanner.Settings.FilePathNotContainsTexts = SettingsFile.Instance.FilePathNotContainsTexts.ToList();
 			Scanner.Settings.FilterByFileSize = SettingsFile.Instance.FilterByFileSize;

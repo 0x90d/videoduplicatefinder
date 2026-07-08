@@ -237,13 +237,13 @@ namespace VDF.Core {
 					}
 					entry.compareGray = gray;
 					if (Settings.UsePHashing)
-						entry.comparePHash = pHash.PerceptualHash.ComputePHashFromGray32x32(gray[0]!);
+						entry.comparePHashes = ComputePHashesFromGray(gray);
 				}
 			}
 			if (!snapshotsOk) {
 				AppendVerdict(sb, false, failures, hints, scanInclusionIssues, null);
 				a.compareGray = b.compareGray = null;
-				a.comparePHash = b.comparePHash = null;
+				a.comparePHashes = b.comparePHashes = null;
 				return sb.ToString();
 			}
 
@@ -293,7 +293,7 @@ namespace VDF.Core {
 			// ── Visual similarity ───────────────────────────────────────────
 			sb.AppendLine("--- Visual similarity ---");
 			bool usePHash = !a.IsImage && Settings.UsePHashing;
-			sb.AppendLine($"Method: {(a.IsImage ? "32x32 grayscale (single image)" : usePHash ? "perceptual hash (pHash) of the first sampled frame" : $"32x32 grayscale, averaged over {positions.Count} frame(s)")}{(Settings.IgnoreBlackPixels || Settings.IgnoreWhitePixels ? $" — ignoring {(Settings.IgnoreBlackPixels && Settings.IgnoreWhitePixels ? "black and white" : Settings.IgnoreBlackPixels ? "black" : "white")} pixels" : "")}");
+			sb.AppendLine($"Method: {(a.IsImage ? "32x32 grayscale (single image)" : usePHash ? $"perceptual hash (pHash), quorum over {positions.Count} frame(s)" : $"32x32 grayscale, averaged over {positions.Count} frame(s)")}{(Settings.IgnoreBlackPixels || Settings.IgnoreWhitePixels ? $" — ignoring {(Settings.IgnoreBlackPixels && Settings.IgnoreWhitePixels ? "black and white" : Settings.IgnoreBlackPixels ? "black" : "white")} pixels" : "")}");
 
 			bool isDuplicate = CheckIfDuplicate(a, null, null, b, out float difference);
 			float similarity = 1f - difference;
@@ -314,9 +314,21 @@ namespace VDF.Core {
 				}
 				similarity = 1f - diffSum / positions.Count;
 			}
-			if (usePHash && (a.comparePHash == null || b.comparePHash == null)) {
+			if (usePHash && (a.comparePHashes == null || b.comparePHashes == null)) {
 				sb.AppendLine("FAIL — the pHash could not be computed for at least one file; in pHash mode such files never match.");
 				failures.Add("pHash data could not be computed for at least one file.");
+			}
+			else if (usePHash) {
+				// Per-frame breakdown mirroring the quorum rule in CheckIfDuplicate.
+				int passCount = 0;
+				for (int j = 0; j < positions.Count; j++) {
+					bool framePass = pHash.PHashCompare.IsDuplicateByPercent(a.comparePHashes![j], b.comparePHashes![j], out float frameSimilarity, Settings.Percent / 100f, strict: true);
+					if (framePass) passCount++;
+					if (positions.Count > 1)
+						sb.AppendLine($"Frame {j + 1}: {FormatSimilarity(frameSimilarity)}{(framePass ? "" : " (below threshold)")}");
+				}
+				int requiredMatches = Math.Max(1, (int)Math.Ceiling(positions.Count * Math.Clamp(Settings.PHashRequiredMatchingSampleRatio, 0.01f, 1f)));
+				sb.AppendLine($"Frames passing the similarity threshold: {passCount} of {positions.Count} — required: {requiredMatches}");
 			}
 
 			sb.AppendLine($"Similarity: {FormatSimilarity(similarity)} — required: at least {Settings.Percent.ToString("0.#", inv)}%");
@@ -325,8 +337,8 @@ namespace VDF.Core {
 			bool flipped = false;
 			if (Settings.CompareHorizontallyFlipped) {
 				byte[]?[] flippedGray = CreateFlippedGrayBytes(a);
-				ulong? flippedPHash = usePHash ? pHash.PerceptualHash.ComputePHashFromGray32x32(flippedGray[0]!) : null;
-				if (CheckIfDuplicate(a, flippedGray, flippedPHash, b, out float flippedDifference)) {
+				ulong[]? flippedPHashes = usePHash ? ComputePHashesFromGray(flippedGray) : null;
+				if (CheckIfDuplicate(a, flippedGray, flippedPHashes, b, out float flippedDifference)) {
 					sb.AppendLine($"Horizontally flipped similarity: {FormatSimilarity(1f - flippedDifference)}");
 					if (!isDuplicate || flippedDifference < difference) {
 						isDuplicate = true;
@@ -386,7 +398,7 @@ namespace VDF.Core {
 			AppendVerdict(sb, detected, failures, hints, scanInclusionIssues, flipped ? "flipped match" : null);
 
 			a.compareGray = b.compareGray = null;
-			a.comparePHash = b.comparePHash = null;
+			a.comparePHashes = b.comparePHashes = null;
 			return sb.ToString();
 		}
 

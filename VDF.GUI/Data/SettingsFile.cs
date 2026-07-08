@@ -345,6 +345,13 @@ namespace VDF.GUI.Data {
 			get => _UsePHash;
 			set => this.RaiseAndSetIfChanged(ref _UsePHash, value);
 		}
+		float _PHashSampleRatioPercent = 60f;
+		/// <summary>Percentage of sampled frame positions that must individually pass the pHash threshold — see Core's PHashRequiredMatchingSampleRatio (0..1).</summary>
+		[JsonPropertyName("PHashSampleRatioPercent")]
+		public float PHashSampleRatioPercent {
+			get => _PHashSampleRatioPercent;
+			set => this.RaiseAndSetIfChanged(ref _PHashSampleRatioPercent, Math.Clamp(value, 1f, 100f));
+		}
 		bool _UseExifCreationDate;
 		[JsonPropertyName("UseExifCreationDate")]
 		public bool UseExifCreationDate {

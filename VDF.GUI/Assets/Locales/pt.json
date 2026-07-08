@@ -682,6 +682,8 @@
 	"Settings.Row.Percent.Desc": "Quão parecidos os quadros amostrados de dois arquivos precisam ser para contarem como duplicatas. 100 % encontra apenas quadros quase idênticos; ~95 % captura recodificações típicas; valores menores também revelam cópias com marca d'água ou cortadas, ao custo de falsos positivos.",
 	"Settings.Row.UsePHash.Title": "Usar hash perceptual (pHash)",
 	"Settings.Row.UsePHash.Desc": "Comparação muito mais rápida em bibliotecas grandes e robusta a pequenas variações de brilho; um pouco mais grosseira que a diferença em tons de cinza. Imagens sempre usam tons de cinza. Ignorado em bancos de dados antigos com valores 16×16.",
+	"Settings.Row.PHashSampleRatio.Title": "Amostras correspondentes exigidas",
+	"Settings.Row.PHashSampleRatio.Desc": "Porcentagem mínima das posições de quadro amostradas que devem passar individualmente o limiar de similaridade no modo pHash. Valores mais altos reduzem falsos positivos causados por um único quadro casualmente parecido; 60 % é um padrão equilibrado.",
 	"Settings.Row.Flip.Title": "Comparar espelhado horizontalmente",
 	"Settings.Row.Flip.Desc": "Detecta reenvios espelhados; as correspondências são marcadas como invertidas nos resultados. Custo: aproximadamente dobra o trabalho de comparação.",
 	"Settings.Row.IgnoreBW.Title": "Ignorar pixels pretos / brancos",

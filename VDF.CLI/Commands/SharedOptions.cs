@@ -64,6 +64,11 @@ namespace VDF.CLI.Commands {
 			Description = "Use perceptual hashing instead of frame sampling."
 		};
 
+		internal static readonly Option<double> PhashSampleRatio = new("--phash-sample-ratio") {
+			Description = "Minimum fraction (0.01-1.0) of sampled frame positions that must individually pass the pHash similarity threshold for a pair to match. Only used with --use-phash. Default: 0.6.",
+			DefaultValueFactory = _ => 0.6
+		};
+
 		internal static readonly Option<bool> NativeFfmpeg = new("--native-ffmpeg") {
 			Description = "Use native FFmpeg bindings instead of the CLI wrapper."
 		};
@@ -143,6 +148,11 @@ namespace VDF.CLI.Commands {
 			s.IncludeSubDirectories = !r.GetValue(NoSubdirs);
 			s.IncludeImages = r.GetValue(IncludeImages);
 			s.UsePHashing = r.GetValue(UsePhash);
+			// Commands that don't register --phash-sample-ratio get default(double) == 0 back
+			// from GetValue (same trap as --parallelism/#804); remap that sentinel to the
+			// documented default.
+			double phashRatio = r.GetValue(PhashSampleRatio);
+			s.PHashRequiredMatchingSampleRatio = phashRatio == 0d ? 0.6f : (float)Math.Clamp(phashRatio, 0.01d, 1d);
 			s.UseNativeFfmpegBinding = r.GetValue(NativeFfmpeg);
 			s.HardwareAccelerationMode = r.GetValue(HardwareAccel);
 
@@ -171,6 +181,7 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(NoSubdirs);
 			cmd.Options.Add(IncludeImages);
 			cmd.Options.Add(UsePhash);
+			cmd.Options.Add(PhashSampleRatio);
 			cmd.Options.Add(NativeFfmpeg);
 			cmd.Options.Add(HardwareAccel);
 			cmd.Options.Add(CustomFfArgs);

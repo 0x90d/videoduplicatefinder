@@ -682,6 +682,8 @@
 	"Settings.Row.Percent.Desc": "Cuán parecidos deben ser los fotogramas muestreados de dos archivos para contar como duplicados. 100 % solo encuentra fotogramas casi idénticos; ~95 % detecta recodificaciones típicas; valores más bajos también revelan copias con marca de agua o recortadas, a costa de falsos positivos.",
 	"Settings.Row.UsePHash.Title": "Usar hashing perceptual (pHash)",
 	"Settings.Row.UsePHash.Desc": "Comparación mucho más rápida en bibliotecas grandes y robusta ante pequeños cambios de brillo; algo más gruesa que la diferencia de grises en bruto. Las imágenes siempre usan escala de grises. Se ignora en bases de datos antiguas con valores de 16×16.",
+	"Settings.Row.PHashSampleRatio.Title": "Muestras coincidentes requeridas",
+	"Settings.Row.PHashSampleRatio.Desc": "Porcentaje mínimo de las posiciones de fotograma muestreadas que deben superar individualmente el umbral de similitud en modo pHash. Valores más altos reducen los falsos positivos causados por un único fotograma casualmente parecido; 60 % es un valor predeterminado equilibrado.",
 	"Settings.Row.Flip.Title": "Comparar volteado horizontalmente",
 	"Settings.Row.Flip.Desc": "Detecta resubidas en espejo; las coincidencias se marcan como volteadas en los resultados. Coste: aproximadamente duplica el trabajo de comparación.",
 	"Settings.Row.IgnoreBW.Title": "Ignorar píxeles negros / blancos",
