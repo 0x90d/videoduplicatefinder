@@ -77,6 +77,15 @@ public static class TestVideoGenerator {
 			$"-c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p \"{outputPath}\"");
 
 	/// <summary>
+	/// 2s anamorphic H.264: 320x240 coded raster with SAR 2:1, i.e. a 640x240
+	/// display size. Exercises the SAR correction of display thumbnails.
+	/// </summary>
+	public static bool GenerateH264_Anamorphic(string ffmpegPath, string outputPath) =>
+		RunFfmpeg(ffmpegPath,
+			$"-y -f lavfi -i testsrc2=duration=2:size=320x240:rate=25 " +
+			$"-vf setsar=2/1 -c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p \"{outputPath}\"");
+
+	/// <summary>
 	/// 2s 320x240 HEVC 10-bit yuv420p10le with a deterministic test pattern.
 	/// </summary>
 	public static bool GenerateHEVC_10bit(string ffmpegPath, string outputPath) =>

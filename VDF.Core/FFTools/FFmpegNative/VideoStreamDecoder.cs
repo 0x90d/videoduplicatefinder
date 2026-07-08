@@ -71,6 +71,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			ffmpeg.avcodec_open2(_pCodecContext, codec, null).ThrowExceptionIfError();
 
 			CodecName = ffmpeg.avcodec_get_name(codec->id);
+			// Container-level pixel aspect ratio for anamorphic content; 0/1 when unknown.
+			StreamSampleAspectRatio = _pFormatContext->streams[_streamIndex]->sample_aspect_ratio;
 			FrameSize = new Size(_pCodecContext->width, _pCodecContext->height);
 			if (FrameSize.Width <= 0 || FrameSize.Height <= 0)
 				throw new FFInvalidExitCodeException($"Invalid frame dimensions {FrameSize.Width}x{FrameSize.Height}.");
@@ -95,6 +97,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		public Size FrameSize { get; }
 		public AVPixelFormat PixelFormat { get; }
 		public bool IsHardwareDecode { get; }
+		public AVRational StreamSampleAspectRatio { get; }
 
 		protected virtual void Dispose(bool disposing) {
 			ReleaseUnmanaged();

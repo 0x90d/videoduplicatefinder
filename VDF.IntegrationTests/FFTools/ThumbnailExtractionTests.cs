@@ -84,6 +84,82 @@ public class ThumbnailExtractionTests {
 		Assert.Null(result);
 	}
 
+	[SkippableTheory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void GetThumbnail_AnamorphicVideo_JpegHasDisplayDimensions(bool useNative) {
+		if (useNative)
+			Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		else
+			Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(_fixture.H264_Anamorphic == null, "Anamorphic test video not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = useNative;
+		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
+
+		// Fixture: 320x240 coded raster, SAR 2:1 → 640x240 display. A fullsize
+		// thumbnail must come out at display dimensions, not the coded raster
+		// (which renders visibly squished for DVD-style anamorphic content).
+		var result = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = _fixture.H264_Anamorphic!,
+			Position = TimeSpan.FromSeconds(1),
+			GrayScale = 0,
+			Fullsize = 1,
+		}, extendedLogging: false);
+
+		Assert.NotNull(result);
+		var (width, height) = ReadJpegDimensions(result);
+		Assert.Equal(640, width);
+		Assert.Equal(240, height);
+	}
+
+	[SkippableTheory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void GetThumbnail_SquarePixelVideo_JpegKeepsCodedDimensions(bool useNative) {
+		if (useNative)
+			Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		else
+			Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = useNative;
+		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
+
+		// Square pixels (SAR 1:1 or unset) must pass through unchanged.
+		var result = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = _fixture.H264_8bit!,
+			Position = TimeSpan.FromSeconds(1),
+			GrayScale = 0,
+			Fullsize = 1,
+		}, extendedLogging: false);
+
+		Assert.NotNull(result);
+		var (width, height) = ReadJpegDimensions(result);
+		Assert.Equal(320, width);
+		Assert.Equal(240, height);
+	}
+
+	/// <summary>Reads the frame dimensions from a baseline/progressive JPEG's SOF segment.</summary>
+	static (int Width, int Height) ReadJpegDimensions(byte[] jpeg) {
+		int i = 2; // skip SOI
+		while (i + 9 < jpeg.Length) {
+			Assert.True(jpeg[i] == 0xFF, $"Expected JPEG marker at offset {i}");
+			byte marker = jpeg[i + 1];
+			// SOF0..SOF15 carry dimensions (excluding DHT/JPG/DAC pseudo-SOFs).
+			if (marker >= 0xC0 && marker <= 0xCF && marker != 0xC4 && marker != 0xC8 && marker != 0xCC) {
+				int height = (jpeg[i + 5] << 8) | jpeg[i + 6];
+				int width = (jpeg[i + 7] << 8) | jpeg[i + 8];
+				return (width, height);
+			}
+			int length = (jpeg[i + 2] << 8) | jpeg[i + 3];
+			i += 2 + length;
+		}
+		throw new InvalidOperationException("No SOF segment found in JPEG data");
+	}
+
 	[SkippableFact]
 	public void GetThumbnail_GrayScale_Native_ReturnsExactly1024Bytes() {
 		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");

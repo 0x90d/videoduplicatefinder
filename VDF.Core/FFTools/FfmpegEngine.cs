@@ -366,10 +366,19 @@ namespace VDF.Core.FFTools {
 					if (sourceSize.Width <= 0 || sourceSize.Height <= 0)
 						throw new Exception($"Invalid source frame dimensions {sourceSize.Width}x{sourceSize.Height}.");
 
+					// Anamorphic streams store non-square pixels: widen the coded raster by
+					// the sample aspect ratio for display thumbnails, or DVD-style content
+					// (e.g. 720x576 16:9) is shown squished. Gray bytes are unaffected —
+					// they are force-scaled to a fixed square, which erases aspect ratio.
+					AVRational sar = vsd.StreamSampleAspectRatio;
+					if (sar.num <= 0 || sar.den <= 0)
+						sar = srcFrame.sample_aspect_ratio;
+					Size displaySize = isGrayByte ? sourceSize : ApplySampleAspectRatio(sourceSize, sar.num, sar.den);
+
 					Size destinationSize = isGrayByte ? new Size(N, N) :
 						settings.Fullsize == 1 ?
-							sourceSize :
-							ScaleToMaxWidth(sourceSize, settings.MaxWidth > 0 ? settings.MaxWidth : 100);
+							displaySize :
+							ScaleToMaxWidth(displaySize, settings.MaxWidth > 0 ? settings.MaxWidth : 100);
 
 					AVPixelFormat destinationPixelFrmt = isGrayByte ?
 						AVPixelFormat.AV_PIX_FMT_GRAY8 :
@@ -479,16 +488,28 @@ namespace VDF.Core.FFTools {
 				psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("gray");
 			}
 			else {
+				// SAR normalization first, so anamorphic videos render at display width
+				// and the bounding box below sees display dimensions (matching the native
+				// path). sar==0 (unknown) counts as square pixels. Videos only — image
+				// demuxer pipelines are fragile (#806) and images have square pixels.
+				string? sarChain = FileUtils.IsImageFile(settings.File)
+					? null
+					: "scale=trunc(iw*if(eq(sar\\,0)\\,1\\,sar)):ih,setsar=1";
 				if (settings.Fullsize != 1) {
 					int maxW = settings.MaxWidth > 0 ? settings.MaxWidth : 100;
 					// Downscale-only fit into a maxW x maxW bounding box (matching the native
 					// path and the old resize semantics) — small sources keep their size.
 					string vfChain = $"scale=min({maxW}\\,iw):min({maxW}\\,ih):force_original_aspect_ratio=decrease";
+					if (sarChain != null) vfChain = $"{sarChain},{vfChain}";
 					if (userVfFilter != null) vfChain = $"{vfChain},{userVfFilter}";
 					psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
 				}
-				else if (userVfFilter != null) {
-					psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(userVfFilter);
+				else {
+					string? vfChain = sarChain;
+					if (userVfFilter != null) vfChain = vfChain != null ? $"{vfChain},{userVfFilter}" : userVfFilter;
+					if (vfChain != null) {
+						psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
+					}
 				}
 				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("mjpeg");
 				// Map 1-100 quality onto MJPEG's 2-31 qscale (lower = better), same curve
@@ -729,6 +750,20 @@ namespace VDF.Core.FFTools {
 				MaxWidth = maxWidth,
 				JpegQuality = jpegQuality,
 			}, extendedLogging);
+		}
+
+		/// <summary>
+		/// Widens a coded frame size to its display size using the stream's sample
+		/// (pixel) aspect ratio. Unknown (0), degenerate or implausible SARs leave the
+		/// size unchanged — bad container metadata must not distort the thumbnail.
+		/// </summary>
+		internal static Size ApplySampleAspectRatio(Size codedSize, int sarNum, int sarDen) {
+			if (sarNum <= 0 || sarDen <= 0 || sarNum == sarDen)
+				return codedSize;
+			long displayWidth = (long)Math.Round(codedSize.Width * (double)sarNum / sarDen);
+			if (displayWidth <= 0 || displayWidth > 65536)
+				return codedSize;
+			return new Size((int)displayWidth, codedSize.Height);
 		}
 
 		/// <summary>Downscale-only fit into a maxDim x maxDim bounding box, preserving aspect ratio.</summary>

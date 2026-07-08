@@ -32,6 +32,7 @@ public class FfmpegFixture : IDisposable {
 	public bool NativeBindingAvailable { get; }
 
 	public string? H264_8bit { get; }
+	public string? H264_Anamorphic { get; }
 	public string? HEVC_10bit { get; }
 	public string? VP9 { get; }
 	public string? H264_Different { get; }
@@ -86,6 +87,12 @@ public class FfmpegFixture : IDisposable {
 		string h264Path = Path.Combine(TempDir, "h264_8bit.mp4");
 		if (TestVideoGenerator.GenerateH264_8bit(ffmpegPath, h264Path))
 			H264_8bit = h264Path;
+
+		// Anamorphic fixture (320x240 coded, SAR 2:1 -> 640x240 display) for the
+		// display-thumbnail SAR correction.
+		string anamorphicPath = Path.Combine(TempDir, "h264_anamorphic.mp4");
+		if (TestVideoGenerator.GenerateH264_Anamorphic(ffmpegPath, anamorphicPath))
+			H264_Anamorphic = anamorphicPath;
 
 		if (HasLibx265) {
 			string hevcPath = Path.Combine(TempDir, "hevc_10bit.mp4");
