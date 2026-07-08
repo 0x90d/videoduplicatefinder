@@ -99,6 +99,10 @@ namespace VDF.Web.Services {
 			ctx.Response.Cookies.Append(CookieName, token, new CookieOptions {
 				HttpOnly = true,
 				SameSite = SameSiteMode.Strict,
+				// True for direct HTTPS or when a TRUSTED reverse proxy (see
+				// forwarded-headers setup in Program.cs) reported https; stays false
+				// on plain-HTTP deployments (Docker default) so nothing breaks there.
+				Secure = ctx.Request.IsHttps,
 				// Persistent: survives browser restarts for 30 days.
 				// Otherwise: session cookie, gone when the browser closes.
 				MaxAge = persistent ? CookieMaxAge : null,
@@ -133,9 +137,10 @@ namespace VDF.Web.Services {
 		}
 
 		void PrintPasswordBanner() {
-			// Log via ILogger so it shows up in VS Code Debug Console / structured logging
+			// ILogger providers may persist structured logs, so the password itself
+			// only goes to stdout below (which is how Docker users read it anyway).
 			_logger.LogInformation("============================================");
-			_logger.LogInformation("  Web UI password:  {Password}", _password);
+			_logger.LogInformation("  Web UI authentication is enabled. The password is printed to stdout.");
 			_logger.LogInformation("============================================");
 
 			var envOverride = Environment.GetEnvironmentVariable("VDF_WEB_PASSWORD");

@@ -14,10 +14,29 @@
 // */
 //
 
+using Microsoft.AspNetCore.HttpOverrides;
 using VDF.Core;
 using VDF.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Reverse-proxy support: honor X-Forwarded-Proto so Secure-cookie handling knows
+// the original scheme, but only from explicitly trusted proxies (loopback is
+// trusted by ASP.NET's defaults). Unknown proxies' headers are ignored, so a
+// client cannot spoof the scheme. With no env vars set, behavior for direct and
+// plain-HTTP (Docker) deployments is unchanged. Invalid entries only warn —
+// a typo in an env var must not crash-loop the container.
+var trustedProxies = TrustedProxyParser.Parse(
+	Environment.GetEnvironmentVariable("VDF_TRUSTED_PROXIES"),
+	Environment.GetEnvironmentVariable("VDF_TRUSTED_PROXY_NETWORKS"));
+builder.Services.Configure<ForwardedHeadersOptions>(options => {
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+	options.ForwardLimit = 1;
+	foreach (var proxy in trustedProxies.Proxies)
+		options.KnownProxies.Add(proxy);
+	foreach (var network in trustedProxies.Networks)
+		options.KnownIPNetworks.Add(network);
+});
 
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
@@ -30,6 +49,12 @@ builder.Services.AddSingleton<ScanService>();
 builder.Services.AddSingleton<FFmpegSetupService>();
 
 var app = builder.Build();
+
+foreach (string warning in trustedProxies.Warnings)
+	app.Logger.LogWarning("{Warning}", warning);
+
+// Must run before anything that reads Request.Scheme / Request.IsHttps.
+app.UseForwardedHeaders();
 
 // Route unhandled exceptions from ScanEngine's async void methods (post-await) to ScanService
 // so they appear in the UI instead of crashing the process silently.

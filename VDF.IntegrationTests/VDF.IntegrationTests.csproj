@@ -23,6 +23,11 @@
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
     <ProjectReference Include="..\VDF.TestSupport\VDF.TestSupport.csproj" />
+    <ProjectReference Include="..\VDF.Web\VDF.Web.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Required to reference the Web SDK project above from a test host. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

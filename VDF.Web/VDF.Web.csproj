@@ -11,5 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="VDF.IntegrationTests" />
+  </ItemGroup>
 
 </Project>

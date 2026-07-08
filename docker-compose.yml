@@ -6,6 +6,11 @@ services:
     # environment:
     #   - VDF_WEB_PASSWORD=changeme   # set a password (otherwise auto-generated — check docker logs)
     #   - VDF_WEB_AUTH=false          # set to disable authentication entirely
+    #   # Optional, only when running behind an HTTPS reverse proxy: trust its
+    #   # X-Forwarded-Proto header so the auth cookie is marked Secure. Everything
+    #   # works without these — they only add the Secure flag.
+    #   - VDF_TRUSTED_PROXIES=172.17.0.1              # proxy IPs (comma-separated)
+    #   - VDF_TRUSTED_PROXY_NETWORKS=172.16.0.0/12    # or CIDR ranges
     volumes:
       # Add your media directories below (host_path:container_path:ro)
       # Example:
