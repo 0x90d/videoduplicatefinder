@@ -26,6 +26,7 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(SharedOptions.Threshold);
 			cmd.Options.Add(SharedOptions.Percent);
 			cmd.Options.Add(SharedOptions.Parallelism);
+			cmd.Options.Add(SharedOptions.MatchingParallelism);
 			cmd.Options.Add(SharedOptions.IncludeImages);
 			cmd.Options.Add(SharedOptions.Database);
 			cmd.Options.Add(SharedOptions.IncludeNonExistingFiles);

@@ -114,6 +114,28 @@ namespace VDF.Core {
 		// into single-threaded execution.
 		int ParallelDegree => Settings.MaxDegreeOfParallelism == 0 ? -1 : Settings.MaxDegreeOfParallelism;
 
+		/// <summary>
+		/// Resolves the worker count for the CPU-bound matching phases, independent of
+		/// <see cref="Settings.MaxDegreeOfParallelism"/> (a media-READ knob tuned to
+		/// storage — throttling it for an HDD must not serialize the compare phase,
+		/// and its -1/"unlimited" sentinel is likewise a poor fit for pure CPU work).
+		/// A positive configured value is honored up to the logical CPU count;
+		/// 0 or negative selects automatic: most of the machine, minus one or two
+		/// reserved cores so the UI and the system stay responsive.
+		/// </summary>
+		internal static int CalculateMatchingParallelism(int configured, int processorCount) {
+			processorCount = Math.Max(1, processorCount);
+			if (configured > 0)
+				return Math.Min(configured, processorCount);
+
+			int reservedProcessors = processorCount >= 8 ? 2 : processorCount >= 2 ? 1 : 0;
+			int reserveCap = Math.Max(1, processorCount - reservedProcessors);
+			int percentageCap = Math.Max(1, (int)Math.Ceiling(processorCount * 0.80d));
+			return Math.Min(reserveCap, percentageCap);
+		}
+
+		int MatchingParallelDegree => CalculateMatchingParallelism(Settings.MatchingMaxDegreeOfParallelism, Environment.ProcessorCount);
+
 		// Status-bar label for the current phase. Empty during per-file analysis (which reports
 		// its own sub-stages via ReportStage); set by the compare phases so the UI shows
 		// "comparing …" instead of leaving the last analyzed file path on screen, which looked
@@ -1233,6 +1255,8 @@ namespace VDF.Core {
 				Logger.Instance.Warn($"Excluded {droppedSnapshots} file(s) with incomplete cached scan data (missing gray bytes for the current thumbnail positions). Rescan to repopulate.");
 
 			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
+			int matchingParallelism = MatchingParallelDegree;
+			Logger.Instance.Info($"Matching concurrency: {matchingParallelism} worker(s) on {Environment.ProcessorCount} logical processor(s) (configured: matching={Settings.MatchingMaxDegreeOfParallelism}, media reads={Settings.MaxDegreeOfParallelism})");
 
 			currentStageLabel = T("Scan.Stage.ComparingDuplicates");
 			InitProgress(ScanList.Count);
@@ -1439,7 +1463,7 @@ namespace VDF.Core {
 
 				try {
 					if (imageEntries.Count >= largeBucketThreshold) {
-						Parallel.For(0, imageEntries.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, compareAction);
+						Parallel.For(0, imageEntries.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = matchingParallelism }, compareAction);
 					}
 					else {
 						for (int i = 0; i < imageEntries.Count; i++)
@@ -1503,7 +1527,7 @@ namespace VDF.Core {
 
 				try {
 					if (videoEntries.Count >= largeBucketThreshold) {
-						Parallel.For(0, videoEntries.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, compareAction);
+						Parallel.For(0, videoEntries.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = matchingParallelism }, compareAction);
 					}
 					else {
 						// compareAction returns early on cancellation instead of throwing,
@@ -1527,7 +1551,7 @@ namespace VDF.Core {
 					var smallBuckets = videoBuckets.Where(kvp => kvp.Value.Count < largeBucketThreshold).ToList();
 					var largeBuckets = videoBuckets.Where(kvp => kvp.Value.Count >= largeBucketThreshold).ToList();
 
-					Parallel.ForEach(smallBuckets, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, bucket => {
+					Parallel.ForEach(smallBuckets, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = matchingParallelism }, bucket => {
 						foreach (var entry in bucket.Value) {
 							int entryIndex = entry.compareIndex;
 							double durationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
@@ -1541,7 +1565,7 @@ namespace VDF.Core {
 					});
 
 					foreach (var bucket in largeBuckets) {
-						Parallel.For(0, bucket.Value.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, i => {
+						Parallel.For(0, bucket.Value.Count, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = matchingParallelism }, i => {
 							var entry = bucket.Value[i];
 							int entryIndex = entry.compareIndex;
 							double durationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
@@ -1616,7 +1640,7 @@ namespace VDF.Core {
 			Parallel.For(0, videos.Count - 1,
 				new ParallelOptions {
 					CancellationToken = cancelationTokenSource.Token,
-					MaxDegreeOfParallelism = ParallelDegree
+					MaxDegreeOfParallelism = MatchingParallelDegree
 				},
 				i => {
 					FileEntry source = videos[i];
@@ -1665,7 +1689,7 @@ namespace VDF.Core {
 				try {
 					Parallel.ForEach(assignments, new ParallelOptions {
 						CancellationToken = cancelationTokenSource.Token,
-						MaxDegreeOfParallelism = ParallelDegree
+						MaxDegreeOfParallelism = MatchingParallelDegree
 					}, a => {
 						bool pass = VerifyPartialClipVisually(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec, out float visualSim);
 						if (pass) {

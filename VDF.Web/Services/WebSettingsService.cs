@@ -29,6 +29,7 @@ namespace VDF.Web.Services {
 			public float Percent { get; set; } = 96f;
 			public double PercentDurationDifference { get; set; } = 20d;
 			public int MaxDegreeOfParallelism { get; set; } = 1;
+			public int MatchingMaxDegreeOfParallelism { get; set; }
 			public int ThumbnailCount { get; set; } = 1;
 			public bool IncludeSubDirectories { get; set; } = true;
 			public bool IncludeImages { get; set; } = true;
@@ -109,6 +110,7 @@ namespace VDF.Web.Services {
 				s.Percent = dto.Percent;
 				s.PercentDurationDifference = dto.PercentDurationDifference;
 				s.MaxDegreeOfParallelism = dto.MaxDegreeOfParallelism;
+				s.MatchingMaxDegreeOfParallelism = dto.MatchingMaxDegreeOfParallelism;
 				s.ThumbnailCount = dto.ThumbnailCount;
 				s.IncludeSubDirectories = dto.IncludeSubDirectories;
 				s.IncludeImages = dto.IncludeImages;
@@ -166,6 +168,7 @@ namespace VDF.Web.Services {
 					Percent = s.Percent,
 					PercentDurationDifference = s.PercentDurationDifference,
 					MaxDegreeOfParallelism = s.MaxDegreeOfParallelism,
+					MatchingMaxDegreeOfParallelism = s.MatchingMaxDegreeOfParallelism,
 					ThumbnailCount = s.ThumbnailCount,
 					IncludeSubDirectories = s.IncludeSubDirectories,
 					IncludeImages = s.IncludeImages,

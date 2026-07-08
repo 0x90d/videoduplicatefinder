@@ -701,6 +701,8 @@
 	"Settings.Row.Parallelism.Title": "Parallel workers",
 	"Settings.Row.HddParallelism.Title": "Parallel files per hard disk",
 	"Settings.Row.HddParallelism.Desc": "How many files are read at once from a single spinning hard disk (or network share). A spinning disk wastes most of its time seeking when many files are read in parallel, so a low value — 2 is a good default — keeps it fast while SSDs still use all parallel workers. Wrongly detected drives can be pinned in the settings file (DriveTypeOverrides).",
+	"Settings.Row.MatchingParallelism.Title": "Matching worker threads",
+	"Settings.Row.MatchingParallelism.Desc": "CPU workers for the comparison phases (visual matching, partial-clip matching). Separate from the parallelism setting above, which governs how files are READ and is tuned to your storage. 0 = automatic: use most of the CPU while keeping one or two cores free so the app stays responsive.",
 	"Settings.Row.FolderMatch.Title": "Folder match mode & depth",
 	"Settings.Row.IncludeSubDirectories.Desc": "Also scan every subfolder of the folders on your list.",
 	"Settings.Row.IncludeImages.Desc": "Scan photos and other images too, not just videos.",

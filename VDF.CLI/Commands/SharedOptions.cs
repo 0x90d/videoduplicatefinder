@@ -48,6 +48,11 @@ namespace VDF.CLI.Commands {
 			DefaultValueFactory = _ => 1
 		};
 
+		internal static readonly Option<int> MatchingParallelism = new("--matching-parallelism") {
+			Description = "Worker cap for the CPU-bound matching phases (visual compare, partial-clip compare), separate from --parallelism which governs media reads. 0 = automatic CPU-headroom cap. Default: 0.",
+			DefaultValueFactory = _ => 0
+		};
+
 		internal static readonly Option<string?> Database = new("--db") {
 			Description = "Custom folder to store the scan database.",
 		};
@@ -145,6 +150,9 @@ namespace VDF.CLI.Commands {
 			// value the user actually passed are left untouched.
 			int parallelism = r.GetValue(Parallelism);
 			s.MaxDegreeOfParallelism = parallelism == 0 ? 1 : parallelism;
+			// 0 (also what commands that don't register the option get back) = automatic
+			// CPU-headroom cap resolved by the engine.
+			s.MatchingMaxDegreeOfParallelism = r.GetValue(MatchingParallelism);
 			s.IncludeSubDirectories = !r.GetValue(NoSubdirs);
 			s.IncludeImages = r.GetValue(IncludeImages);
 			s.UsePHashing = r.GetValue(UsePhash);
@@ -177,6 +185,7 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(Threshold);
 			cmd.Options.Add(Percent);
 			cmd.Options.Add(Parallelism);
+			cmd.Options.Add(MatchingParallelism);
 			cmd.Options.Add(Database);
 			cmd.Options.Add(NoSubdirs);
 			cmd.Options.Add(IncludeImages);

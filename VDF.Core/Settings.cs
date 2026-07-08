@@ -85,6 +85,13 @@ namespace VDF.Core {
 		/// <see cref="MaxDegreeOfParallelism"/> budget. 0 or negative = default of 2.
 		/// </summary>
 		public int HddMaxDegreeOfParallelism = 2;
+		/// <summary>
+		/// Worker cap for the CPU-bound duplicate-matching phases (visual compare,
+		/// partial-clip compare). Separate from <see cref="MaxDegreeOfParallelism"/>,
+		/// which governs media READS and is tuned to storage, not CPU. 0 or negative =
+		/// automatic: use most of the machine while reserving headroom for the UI.
+		/// </summary>
+		public int MatchingMaxDegreeOfParallelism;
 
 		Dictionary<string, string> driveTypeOverrides = new(StringComparer.OrdinalIgnoreCase);
 		/// <summary>

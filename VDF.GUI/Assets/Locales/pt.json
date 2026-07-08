@@ -701,6 +701,8 @@
 	"Settings.Row.Parallelism.Title": "Processos paralelos",
 	"Settings.Row.HddParallelism.Title": "Arquivos em paralelo por disco rígido",
 	"Settings.Row.HddParallelism.Desc": "Quantos arquivos são lidos ao mesmo tempo de um único disco rígido mecânico (ou compartilhamento de rede). Um disco mecânico desperdiça a maior parte do tempo em buscas quando muitos arquivos são lidos em paralelo; um valor baixo (2 por padrão) o mantém rápido, enquanto os SSDs continuam usando todos os processos paralelos. Unidades detectadas incorretamente podem ser fixadas no arquivo de configurações (DriveTypeOverrides).",
+	"Settings.Row.MatchingParallelism.Title": "Threads de trabalho para comparação",
+	"Settings.Row.MatchingParallelism.Desc": "Trabalhadores de CPU para as fases de comparação (correspondência visual, correspondência de clipes parciais). Separado da configuração de paralelismo acima, que controla a LEITURA dos arquivos e é ajustada ao armazenamento. 0 = automático: usa a maior parte da CPU deixando um ou dois núcleos livres para que o aplicativo continue respondendo.",
 	"Settings.Row.FolderMatch.Title": "Modo de correspondência por pasta e profundidade",
 	"Settings.Row.IncludeSubDirectories.Desc": "Verificar também todas as subpastas das pastas da lista.",
 	"Settings.Row.IncludeImages.Desc": "Verificar também fotos e outras imagens, não apenas vídeos.",

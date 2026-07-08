@@ -701,6 +701,8 @@
 	"Settings.Row.Parallelism.Title": "병렬 작업 수",
 	"Settings.Row.HddParallelism.Title": "하드디스크당 병렬 파일 수",
 	"Settings.Row.HddParallelism.Desc": "하나의 기계식 하드디스크(또는 네트워크 공유)에서 동시에 읽는 파일 수입니다. 기계식 디스크는 여러 파일을 병렬로 읽으면 대부분의 시간을 탐색(시크)에 소모하므로 낮은 값(기본 2)이 오히려 빠르며, SSD는 계속 모든 병렬 작업을 사용합니다. 잘못 감지된 드라이브는 설정 파일(DriveTypeOverrides)에서 지정할 수 있습니다.",
+	"Settings.Row.MatchingParallelism.Title": "비교 작업 스레드",
+	"Settings.Row.MatchingParallelism.Desc": "비교 단계(시각적 일치, 부분 클립 일치)에 사용할 CPU 워커 수입니다. 파일 읽기를 제어하고 저장소에 맞춰 조정되는 위의 병렬 처리 설정과는 별개입니다. 0 = 자동: 앱이 반응성을 유지하도록 한두 개의 코어를 남기고 CPU 대부분을 사용합니다.",
 	"Settings.Row.FolderMatch.Title": "폴더 일치 모드 및 깊이",
 	"Settings.Row.IncludeSubDirectories.Desc": "목록에 있는 폴더의 모든 하위 폴더도 스캔합니다.",
 	"Settings.Row.IncludeImages.Desc": "동영상뿐 아니라 사진과 기타 이미지도 스캔합니다.",

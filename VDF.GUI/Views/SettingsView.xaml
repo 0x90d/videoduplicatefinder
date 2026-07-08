@@ -233,6 +233,14 @@
                 <NumericUpDown Classes="stepper" Maximum="100" Minimum="1"
                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=HddMaxDegreeOfParallelism}" />
               </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.MatchingParallelism.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.MatchingParallelism.Desc]}"
+                  SearchTags="parallelism cpu cores threads compare matching headroom">
+                <NumericUpDown Classes="stepper" Maximum="100" Minimum="0"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MatchingMaxDegreeOfParallelism}" />
+              </views:SettingRow>
             </StackPanel>
 
             <!-- ═══════════════ MATCHING (profile-managed comparison knobs) ═══════════════ -->

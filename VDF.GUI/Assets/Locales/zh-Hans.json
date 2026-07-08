@@ -701,6 +701,8 @@
 	"Settings.Row.Parallelism.Title": "并行工作线程",
 	"Settings.Row.HddParallelism.Title": "每块机械硬盘的并行文件数",
 	"Settings.Row.HddParallelism.Desc": "从同一块机械硬盘（或网络共享）同时读取的文件数量。并行读取过多文件时，机械硬盘的大部分时间都浪费在寻道上，较低的值（默认 2）反而更快，而 SSD 仍会使用全部并行工作线程。检测错误的驱动器可在设置文件中手动指定（DriveTypeOverrides）。",
+	"Settings.Row.MatchingParallelism.Title": "匹配工作线程",
+	"Settings.Row.MatchingParallelism.Desc": "比较阶段（视觉匹配、部分片段匹配）使用的 CPU 工作线程数。与上方控制文件读取、依存储设备调整的并行度设置相互独立。0 = 自动：使用大部分 CPU，同时保留一到两个核心，保证应用保持响应。",
 	"Settings.Row.FolderMatch.Title": "文件夹匹配模式与深度",
 	"Settings.Row.IncludeSubDirectories.Desc": "同时扫描列表中文件夹的所有子文件夹。",
 	"Settings.Row.IncludeImages.Desc": "同时扫描照片及其他图片，而不仅是视频。",
