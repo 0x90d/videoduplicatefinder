@@ -61,6 +61,20 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
+		// Bound via SelectedItem (not SelectedValue) so the choice actually persists — see
+		// SettingsCombo / issue #829.
+		public CustomSelectionPreset? SelectedAutoApplyPreset {
+			get => SettingsCombo.PresetFor(SettingsFile.Instance.CustomSelectionPresets, SettingsFile.Instance.AutoApplySelectionPreset);
+			set {
+				// Ignore a null selection: it only arises transiently while the item list
+				// populates (or when the stored preset was removed) — writing it back would
+				// wipe the saved preset name. The enable toggle governs whether it's applied.
+				if (value == null || string.Equals(value.Name, SettingsFile.Instance.AutoApplySelectionPreset, StringComparison.Ordinal)) return;
+				SettingsFile.Instance.AutoApplySelectionPreset = value.Name;
+				this.RaisePropertyChanged();
+			}
+		}
+
 		static readonly List<string> _CustomCommandList = typeof(SettingsFile.CustomActionCommands).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).ToList();
 		public List<string> CustomCommandList => _CustomCommandList;
 		PropertyInfo _SelectedCustomCommand = typeof(SettingsFile.CustomActionCommands).GetProperty(_CustomCommandList[0])!;

@@ -577,14 +577,10 @@
                   <ToggleSwitch Classes="plain" VerticalAlignment="Center"
                                 IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}" />
                   <ComboBox MinWidth="180" MaxWidth="260" VerticalAlignment="Center"
-                            x:DataType="Settings:SettingsFile"
                             PlaceholderText="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetPlaceholder]}"
                             IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPresetEnabled}"
                             ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CustomSelectionPresets}"
-                            SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AutoApplySelectionPreset}">
-                    <ComboBox.SelectedValueBinding>
-                      <Binding Path="Name" DataType="Settings:CustomSelectionPreset" />
-                    </ComboBox.SelectedValueBinding>
+                            SelectedItem="{Binding SelectedAutoApplyPreset, Mode=TwoWay}">
                     <ComboBox.ItemTemplate>
                       <DataTemplate x:DataType="Settings:CustomSelectionPreset">
                         <TextBlock Text="{Binding Name}" />
@@ -803,10 +799,7 @@
                   SearchTags="double click preview">
                 <ComboBox MinWidth="180"
                           ItemsSource="{Binding ThumbnailDoubleClickOptions}"
-                          SelectedValue="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailDoubleClickAction, Mode=TwoWay}">
-                  <ComboBox.SelectedValueBinding>
-                    <Binding Path="Value" DataType="Settings:ThumbnailDoubleClickOption" />
-                  </ComboBox.SelectedValueBinding>
+                          SelectedItem="{Binding SelectedThumbnailDoubleClickOption, Mode=TwoWay}">
                   <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="Settings:ThumbnailDoubleClickOption">
                       <TextBlock Text="{Binding Name}" />

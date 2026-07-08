@@ -1105,6 +1105,17 @@ namespace VDF.GUI.ViewModels {
 			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenThumbnailComparer"], Data.ThumbnailDoubleClickAction.OpenThumbnailComparer),
 		};
 
+		// Bound via SelectedItem (not SelectedValue) so the choice actually persists — see
+		// SettingsCombo / issue #829.
+		public Data.ThumbnailDoubleClickOption? SelectedThumbnailDoubleClickOption {
+			get => Data.SettingsCombo.OptionFor(ThumbnailDoubleClickOptions, SettingsFile.Instance.ThumbnailDoubleClickAction);
+			set {
+				if (value == null || value.Value == SettingsFile.Instance.ThumbnailDoubleClickAction) return;
+				SettingsFile.Instance.ThumbnailDoubleClickAction = value.Value;
+				this.RaisePropertyChanged();
+			}
+		}
+
 		public ReactiveCommand<Unit, Unit> OpenItemInFolderCommand => ReactiveCommand.Create(OpenItemsInFolder);
 
 		public ReactiveCommand<string, Unit> OpenGroupCommand => ReactiveCommand.Create<string>(openInFolder => {
