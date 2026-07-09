@@ -397,6 +397,7 @@
 	"Message.OpenHwAccelInfoFailed": "打开 URL 失败： https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability",
 	"Message.OpenReleaseFailed": "打开 URL 失败： https://github.com/0x90d/videoduplicatefinder/releases",
 	"Message.RescanConfirm": "确定要重新扫描吗？",
+	"Message.SettingsLoadFailed": "无法加载设置，VDF 已使用默认设置启动。\n\n{0}",
 	"Message.RestartRequired": "请重启 VDF 以应用新设置。",
 	"Message.SaveResultsPrompt": "是否保存结果并在下次启动 VDF 时继续？",
 	"Message.ClearAllExcludedConfirm": "确定要清空所有被排除文件夹的列表吗？",

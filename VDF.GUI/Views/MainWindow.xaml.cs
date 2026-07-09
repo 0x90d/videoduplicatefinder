@@ -50,7 +50,7 @@ namespace VDF.GUI.Views {
 		public readonly Core.FFTools.FFHardwareAccelerationMode InitialHwMode;
 		public MainWindow() {
 			//Settings must be load before XAML is parsed
-			SettingsFile.LoadSettings();
+			SettingsFile.LoadSettingsAtStartup();
 			App.Lang.CurrentLanguage = SettingsFile.Instance.LanguageCode;
 
 			InitializeComponent();
@@ -285,6 +285,7 @@ namespace VDF.GUI.Views {
 
 		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) {
 			var vm = ApplicationHelpers.MainWindowDataContext;
+			vm.NotifyStartupSettingsError();
 			vm.LoadDatabase();
 			vm.RestoreBackupScanResults();
 		}

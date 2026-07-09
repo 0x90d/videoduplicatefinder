@@ -665,7 +665,42 @@ namespace VDF.GUI.Data {
 
 			path = ResolveSettingsPath(path);
 			if (!File.Exists(path)) return;
-			instance = JsonSerializer.Deserialize(File.ReadAllBytes(path), GuiJsonContext.Default.SettingsFile);
+			instance = JsonSerializer.Deserialize(File.ReadAllBytes(path), GuiJsonContext.Default.SettingsFile)
+				?? throw new JsonException($"'{path}' does not contain a settings object.");
+		}
+
+		/// <summary>
+		/// Set when <see cref="LoadSettingsAtStartup"/> had to fall back to default settings;
+		/// the GUI shows it once the main window is up.
+		/// </summary>
+		[JsonIgnore]
+		public static string? StartupLoadError { get; private set; }
+
+		/// <summary>
+		/// Startup counterpart of <see cref="LoadSettings"/> that never throws. An unreadable
+		/// settings file (torn write during save, disk corruption) used to abort startup inside
+		/// the MainWindow constructor — before any exception handler or window existed — so the
+		/// app silently never opened again (#830). Keep the broken file as "*.corrupt" for
+		/// diagnosis and start with default settings instead.
+		/// </summary>
+		public static void LoadSettingsAtStartup() {
+			try {
+				LoadSettings();
+				StartupLoadError = null;
+			}
+			catch (Exception ex) {
+				string message = $"Settings could not be loaded: {ex.Message}";
+				string jsonPath = ResolveSettingsPath(null);
+				if (File.Exists(jsonPath)) {
+					try {
+						File.Copy(jsonPath, jsonPath + ".corrupt", overwrite: true);
+						message += $" The unreadable file was kept as '{jsonPath}.corrupt'.";
+					}
+					catch { /* keeping the evidence must never abort startup */ }
+				}
+				StartupLoadError = message;
+				Logger.Instance.Error(message);
+			}
 		}
 
 		static bool LoadOldSettings(string? path) {

@@ -35,15 +35,18 @@ namespace VDF.GUI {
 
 		public override void OnFrameworkInitializationCompleted() {
 			if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+				// Crash logging must be wired BEFORE the window is constructed: an exception
+				// escaping the MainWindow/MainWindowVM constructors used to terminate the
+				// process without leaving any trace in log.txt (#830).
+				AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+				Dispatcher.UIThread.UnhandledException += OnDispatcherUnhandledException;
+				TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 				desktop.MainWindow = new MainWindow {
 					DataContext = new MainWindowVM(),
 				};
 				desktop.ShutdownRequested += OnShutdownRequested;
 				desktop.Exit += OnExitCleanup; //fallback
 				AppDomain.CurrentDomain.ProcessExit += (_, __) => SafeCleanup();
-				AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-				Dispatcher.UIThread.UnhandledException += OnDispatcherUnhandledException;
-				TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 			}
 
 			base.OnFrameworkInitializationCompleted();

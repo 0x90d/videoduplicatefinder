@@ -509,6 +509,20 @@ namespace VDF.GUI.ViewModels {
 				ImportScanResultsIncludingThumbnails(BackupScanResultsFile);
 		}
 
+		/// <summary>
+		/// Tells the user when startup had to fall back to default settings because the
+		/// settings file was unreadable (#830). Logged again here because the constructor
+		/// deletes log.txt after the settings were loaded.
+		/// </summary>
+		public async void NotifyStartupSettingsError() {
+			if (SettingsFile.StartupLoadError is not { } error) return;
+			Logger.Instance.Error(error);
+			// Startup fires before the window is shown; a dialog with a non-visible owner throws.
+			while (ApplicationHelpers.MainWindow?.IsVisible != true)
+				await Task.Delay(200);
+			await MessageBoxService.Show(string.Format(App.Lang["Message.SettingsLoadFailed"], error));
+		}
+
 		public async void LoadDatabase() {
 			IsBusy = true;
 			IsBusyOverlayText = "Loading database...";

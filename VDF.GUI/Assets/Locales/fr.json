@@ -397,6 +397,7 @@
 	"Message.OpenHwAccelInfoFailed": "Échec de l'ouverture de l'URL : https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability",
 	"Message.OpenReleaseFailed": "Échec de l'ouverture de l'URL : https://github.com/0x90d/videoduplicatefinder/releases",
 	"Message.RescanConfirm": "Êtes-vous sûr de vouloir relancer l'analyse ?",
+	"Message.SettingsLoadFailed": "Les paramètres n'ont pas pu être chargés, VDF a donc démarré avec les paramètres par défaut.\n\n{0}",
 	"Message.RestartRequired": "Veuillez redémarrer VDF pour appliquer les nouveaux paramètres.",
 	"Message.SaveResultsPrompt": "Voulez-vous enregistrer les résultats et continuer la prochaine fois que vous lancez VDF ?",
 	"Message.ClearAllExcludedConfirm": "Êtes-vous sûr de vouloir effacer la liste de TOUS les dossiers exclus ?",
