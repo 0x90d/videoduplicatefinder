@@ -600,7 +600,9 @@ namespace VDF.GUI.ViewModels {
 				string stageSuffix = string.IsNullOrEmpty(e.CurrentStage)
 					? string.Empty
 					: e.StageMax > 0 ? $"  [{e.CurrentStage} {e.StageCurrent}/{e.StageMax}]" : $"  [{e.CurrentStage}]";
-				ScanProgressText = e.CurrentFile + stageSuffix;
+				// A phase's opening event carries no file yet (see ScanEngine.InitProgress) — don't
+				// leave the separator's leading spaces dangling in front of the stage label.
+				ScanProgressText = string.IsNullOrEmpty(e.CurrentFile) ? stageSuffix.TrimStart() : e.CurrentFile + stageSuffix;
 				// Separate stage/file properties for the Scanning state's center panel.
 				ScanStageText = string.IsNullOrEmpty(e.CurrentStage)
 					? string.Empty

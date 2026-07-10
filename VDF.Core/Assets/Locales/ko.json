@@ -19,5 +19,6 @@
   "Scan.Stage.SamplingFrames": "프레임 샘플링",
   "Scan.Stage.AudioFingerprint": "오디오 지문",
   "Scan.Stage.ComparingDuplicates": "중복 비교",
-  "Scan.Stage.PartialCompare": "부분 클립 비교"
+  "Scan.Stage.PartialCompare": "부분 클립 비교",
+  "Scan.Stage.PartialVisualVerify": "부분 클립 확인"
 }

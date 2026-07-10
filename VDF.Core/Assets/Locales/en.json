@@ -19,5 +19,6 @@
   "Scan.Stage.SamplingFrames": "sampling frames",
   "Scan.Stage.AudioFingerprint": "audio fingerprint",
   "Scan.Stage.ComparingDuplicates": "comparing duplicates",
-  "Scan.Stage.PartialCompare": "comparing partial clips"
+  "Scan.Stage.PartialCompare": "comparing partial clips",
+  "Scan.Stage.PartialVisualVerify": "verifying partial clips"
 }

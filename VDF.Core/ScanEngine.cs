@@ -48,9 +48,14 @@ namespace VDF.Core {
 		/// <summary>Encoded placeholder image (PNG/JPEG bytes) shown when thumbnail extraction fails.</summary>
 		public byte[]? NoThumbnailImage;
 
-		PauseTokenSource pauseTokenSource = new();
+		internal PauseTokenSource pauseTokenSource = new();
 		CancellationTokenSource cancelationTokenSource = new();
 		internal readonly List<float> positionList = new();
+
+		public ScanEngine() =>
+			// Armed and disarmed by the isScanning setter, so an idle engine owns no ticking timer.
+			progressHeartbeat = new Timer(_ => HeartbeatTick(), null,
+											Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
 
 		bool _isScanning;
 		// The main process yields CPU to foreground apps while a scan runs, restored the
@@ -62,6 +67,12 @@ namespace VDF.Core {
 			set {
 				if (_isScanning == value) return;
 				_isScanning = value;
+				progressHeartbeat.Change(
+					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan,
+					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan);
+				if (!value)
+					lock (progressSnapshotLock)
+						hasProgressSnapshot = false; // a late tick must not repaint a finished scan
 				try {
 					using var p = Process.GetCurrentProcess();
 					p.PriorityClass = value ? ProcessPriorityClass.BelowNormal
@@ -77,6 +88,19 @@ namespace VDF.Core {
 		DateTime startTime = DateTime.Now;
 		DateTime lastProgressUpdate = DateTime.MinValue;
 		static readonly TimeSpan progressUpdateIntervall = TimeSpan.FromMilliseconds(300);
+		// Elapsed and Remaining only ever reach a frontend on a Progress event, and a phase can
+		// run for minutes without completing a single file — the partial-clip visual gate decodes
+		// frames for a handful of assignments, one slow source stalling the counter. The whole
+		// status block (counter, ETA, stage label and clock) then sat frozen while the scan ran
+		// on, which reads as a hang (#831). The heartbeat re-sends the last snapshot with a live
+		// clock whenever real progress has gone quiet.
+		static readonly TimeSpan progressHeartbeatIntervall = TimeSpan.FromMilliseconds(500);
+		readonly Timer progressHeartbeat;
+		// ScanProgressChangedEventArgs is a struct: the heartbeat thread reads the snapshot while
+		// worker threads write it, so both sides go through the lock to avoid a torn copy.
+		readonly object progressSnapshotLock = new();
+		ScanProgressChangedEventArgs lastProgressSnapshot;
+		bool hasProgressSnapshot;
 		const int maxExcludedLogsPerReason = 5;
 		readonly ConcurrentDictionary<string, int> excludedReasonCounts = new();
 		readonly ConcurrentDictionary<string, int> excludedReasonLoggedCounts = new();
@@ -97,13 +121,26 @@ namespace VDF.Core {
 		string T(string key, params object[] args) =>
 			LanguageService.Instance.Get(Settings.LanguageCode, key, args);
 
-		void InitProgress(int count) {
+		internal void InitProgress(int count) {
 			startTime = DateTime.UtcNow;
 			scanProgressMaxValue = count;
 			processedFiles = 0;
-			lastProgressUpdate = DateTime.MinValue;
 			lastCheckpointTime = DateTime.UtcNow;
 			driveProgressTracker = null; // compare phases re-init progress; they have no per-drive data
+			// Publish the new phase's zeroed counters at once. A phase whose first item takes minutes
+			// (the visual gate decodes frames off disk) would otherwise leave the previous phase's
+			// finished-looking numbers on screen, and leave the heartbeat with nothing to refresh.
+			// Callers set currentStageLabel before calling, so the label switches with the counters.
+			PushProgress(new ScanProgressChangedEventArgs {
+				CurrentPosition = 0,
+				CurrentFile = string.Empty,
+				Elapsed = ElapsedTimer.Elapsed,
+				Remaining = TimeSpan.Zero,
+				MaxPosition = scanProgressMaxValue,
+				CurrentStage = currentStageLabel,
+			});
+			// After the push, so the phase's first completed item reports without waiting out the throttle.
+			lastProgressUpdate = DateTime.MinValue;
 		}
 		void ResetExcludedLogging() {
 			excludedReasonCounts.Clear();
@@ -170,7 +207,69 @@ namespace VDF.Core {
 				Logger.Instance.Warn(T("Log.ExcludedFilesSummaryItem", reason.Key, reason.Value, suppressionText));
 			}
 		}
-		void IncrementProgress(string path) {
+		/// <summary>
+		/// Raises <see cref="Progress"/> and keeps the snapshot the heartbeat re-sends.
+		/// </summary>
+		void PushProgress(ScanProgressChangedEventArgs args) {
+			lock (progressSnapshotLock) {
+				lastProgressSnapshot = args;
+				hasProgressSnapshot = true;
+			}
+			Progress?.Invoke(this, args);
+		}
+
+		/// <summary>
+		/// Linear extrapolation of the current phase's remaining time from what it has spent so far.
+		/// Clamped at zero: the final item's push has processed == maxPosition, which drove the old
+		/// expression negative — rendering as "~0s left" while the phase was still working (#831).
+		/// </summary>
+		internal static TimeSpan EstimateRemaining(TimeSpan phaseElapsed, int processed, int maxPosition) {
+			int remaining = maxPosition - (processed + 1);
+			if (remaining <= 0 || processed < 0 || phaseElapsed <= TimeSpan.Zero)
+				return TimeSpan.Zero;
+			return TimeSpan.FromTicks(phaseElapsed.Ticks * remaining / (processed + 1));
+		}
+
+		TimeSpan EstimateRemaining(int processed, int maxPosition) =>
+			EstimateRemaining(DateTime.UtcNow.Subtract(startTime), processed, maxPosition);
+
+		/// <summary>
+		/// <see cref="progressHeartbeat"/>'s callback. The worker-thread pushes raise Progress inside
+		/// the scan task, where StartSearch/StartCompare own the catch; this one runs on a threadpool
+		/// thread, where a subscriber's exception would take the process down instead. The clock is
+		/// cosmetic — never let it end a scan.
+		/// </summary>
+		internal void HeartbeatTick() {
+			try {
+				EmitProgressHeartbeat();
+			}
+			catch (Exception ex) {
+				Logger.Instance.Warn($"Progress heartbeat failed (the scan continues): {ex.Message}");
+			}
+		}
+
+		/// <summary>
+		/// Re-raises the last progress snapshot with a fresh clock and re-estimated remaining time.
+		/// Fires off <see cref="progressHeartbeat"/> while a scan is active, and stays quiet while
+		/// real progress is already flowing or the scan is paused (Pause stops ElapsedTimer, so the
+		/// clock is meant to stand still).
+		/// </summary>
+		internal void EmitProgressHeartbeat() {
+			if (!ElapsedTimer.IsRunning) return;
+			if (lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) return;
+			ScanProgressChangedEventArgs snapshot;
+			lock (progressSnapshotLock) {
+				if (!hasProgressSnapshot) return;
+				snapshot = lastProgressSnapshot;
+			}
+			// Deliberately does not touch lastProgressUpdate: a heartbeat must never delay or
+			// suppress the next real push from a worker.
+			snapshot.Elapsed = ElapsedTimer.Elapsed;
+			snapshot.Remaining = EstimateRemaining(snapshot.CurrentPosition, snapshot.MaxPosition);
+			Progress?.Invoke(this, snapshot);
+		}
+
+		internal void IncrementProgress(string path) {
 			// Atomic: workers of all concurrent drive groups increment this counter, and a
 			// torn increment would lose the processedFiles == scanProgressMaxValue final push.
 			int processed = Interlocked.Increment(ref processedFiles);
@@ -178,18 +277,15 @@ namespace VDF.Core {
 								lastProgressUpdate + progressUpdateIntervall < DateTime.UtcNow;
 			if (!pushUpdate) return;
 			lastProgressUpdate = DateTime.UtcNow;
-			var timeRemaining = TimeSpan.FromTicks(DateTime.UtcNow.Subtract(startTime).Ticks *
-									(scanProgressMaxValue - (processed + 1)) / (processed + 1));
-			Progress?.Invoke(this,
-							new ScanProgressChangedEventArgs {
-								CurrentPosition = processed,
-								CurrentFile = path,
-								Elapsed = ElapsedTimer.Elapsed,
-								Remaining = timeRemaining,
-								MaxPosition = scanProgressMaxValue,
-								CurrentStage = currentStageLabel,
-								Drives = driveProgressTracker?.Snapshot(),
-							});
+			PushProgress(new ScanProgressChangedEventArgs {
+				CurrentPosition = processed,
+				CurrentFile = path,
+				Elapsed = ElapsedTimer.Elapsed,
+				Remaining = EstimateRemaining(processed, scanProgressMaxValue),
+				MaxPosition = scanProgressMaxValue,
+				CurrentStage = currentStageLabel,
+				Drives = driveProgressTracker?.Snapshot(),
+			});
 			TryDatabaseCheckpoint();
 		}
 
@@ -199,20 +295,17 @@ namespace VDF.Core {
 		void ReportStage(string path, string stage, int stageCurrent = 0, int stageMax = 0) {
 			if (lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) return;
 			lastProgressUpdate = DateTime.UtcNow;
-			var timeRemaining = TimeSpan.FromTicks(DateTime.UtcNow.Subtract(startTime).Ticks *
-									(scanProgressMaxValue - (processedFiles + 1)) / (processedFiles + 1));
-			Progress?.Invoke(this,
-							new ScanProgressChangedEventArgs {
-								CurrentPosition = processedFiles,
-								CurrentFile = path,
-								Elapsed = ElapsedTimer.Elapsed,
-								Remaining = timeRemaining,
-								MaxPosition = scanProgressMaxValue,
-								CurrentStage = stage,
-								StageCurrent = stageCurrent,
-								StageMax = stageMax,
-								Drives = driveProgressTracker?.Snapshot(),
-							});
+			PushProgress(new ScanProgressChangedEventArgs {
+				CurrentPosition = processedFiles,
+				CurrentFile = path,
+				Elapsed = ElapsedTimer.Elapsed,
+				Remaining = EstimateRemaining(processedFiles, scanProgressMaxValue),
+				MaxPosition = scanProgressMaxValue,
+				CurrentStage = stage,
+				StageCurrent = stageCurrent,
+				StageMax = stageMax,
+				Drives = driveProgressTracker?.Snapshot(),
+			});
 		}
 
 		void TryDatabaseCheckpoint() {
@@ -1624,7 +1717,7 @@ namespace VDF.Core {
 		/// using audio fingerprint sliding-window matching.  Results are added to Duplicates.
 		/// The comparison loop runs in parallel; grouping is applied sequentially afterward.
 		/// </summary>
-		void ScanForPartialDuplicates() {
+		internal void ScanForPartialDuplicates() {
 			Logger.Instance.Info("Partial clip detection: building fingerprint index...");
 
 			// Build a quick lookup for paths already covered by visual duplicate groups.
@@ -1666,34 +1759,43 @@ namespace VDF.Core {
 					MaxDegreeOfParallelism = MatchingParallelDegree
 				},
 				i => {
+					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
+						return; // canceled while paused — the loop's token ends the remaining iterations
+
 					FileEntry source = videos[i];
-					IncrementProgress(Path.GetFileName(source.Path));
 					double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
-					if (sourceSec < 1.0) return;
 
-					for (int j = i + 1; j < videos.Count; j++) {
-						if (cancelationTokenSource.IsCancellationRequested) break;
-						FileEntry clip = videos[j];
-						double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
-						if (clipSec < 1.0) continue;
+					if (sourceSec >= 1.0) {
+						for (int j = i + 1; j < videos.Count; j++) {
+							if (cancelationTokenSource.IsCancellationRequested) break;
+							FileEntry clip = videos[j];
+							double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+							if (clipSec < 1.0) continue;
 
-						// Pre-filter 1: clip must be at least PartialClipMinRatio of source
-						if (clipSec / sourceSec < Settings.PartialClipMinRatio) continue;
+							// Pre-filter 1: clip must be at least PartialClipMinRatio of source
+							if (clipSec / sourceSec < Settings.PartialClipMinRatio) continue;
 
-						// Pre-filter 2: clip must be shorter than 95% of source (visual dup handles the rest)
-						if (clipSec / sourceSec >= 0.95) continue;
+							// Pre-filter 2: clip must be shorter than 95% of source (visual dup handles the rest)
+							if (clipSec / sourceSec >= 0.95) continue;
 
-						// Fingerprint block sanity (each block ≈ 1 second)
-						uint[] fpSource = source.AudioFingerprint!;
-						uint[] fpClip = clip.AudioFingerprint!;
-						if (fpClip.Length >= fpSource.Length) continue;
+							// Fingerprint block sanity (each block ≈ 1 second)
+							uint[] fpSource = source.AudioFingerprint!;
+							uint[] fpClip = clip.AudioFingerprint!;
+							if (fpClip.Length >= fpSource.Length) continue;
 
-						Interlocked.Increment(ref pairsChecked);
-						var (sim, offsetSec) = SlidingWindowCompare(fpClip, fpSource, simThreshold);
+							Interlocked.Increment(ref pairsChecked);
+							var (sim, offsetSec) = SlidingWindowCompare(fpClip, fpSource, simThreshold);
 
-						if (sim >= simThreshold)
-							matches.Add((i, j, sim, offsetSec));
+							if (sim >= simThreshold)
+								matches.Add((i, j, sim, offsetSec));
+						}
 					}
+
+					// Counted on completion, as every other compare loop does: a source is only done
+					// once its whole row of pairs has been checked. Counting at the loop head
+					// reported work that had not happened yet — the bar reached its maximum the
+					// moment the last iteration *started*.
+					IncrementProgress(Path.GetFileName(source.Path));
 				});
 
 			// --- Sequential phase: build groups from matches (preserving longest-source-first order) ---
@@ -1705,34 +1807,12 @@ namespace VDF.Core {
 			// Optional visual gate: drop pairs that match audio but differ visually at the
 			// matched offset (e.g. videos sharing a backing track but otherwise unrelated).
 			// Uses pHash when Settings.UsePHashing is on, else 32x32 grayscale percentage diff.
-			if (Settings.PartialClipRequireVisualMatch && assignments.Count > 0) {
-				int beforeCount = assignments.Count;
-				int dropped = 0;
-				var verified = new ConcurrentBag<(int, int, float, int, Guid)>();
-				try {
-					// Storage-tuned degree, NOT MatchingParallelDegree: unlike the audio
-					// fingerprint pass above (pure CPU over in-memory fingerprints), the visual
-					// gate decodes frames live off disk via GetGrayFrames, so it must respect the
-					// media-read cap that HDD users lower to avoid seek-thrash.
-					Parallel.ForEach(assignments, new ParallelOptions {
-						CancellationToken = cancelationTokenSource.Token,
-						MaxDegreeOfParallelism = ParallelDegree
-					}, a => {
-						bool pass = VerifyPartialClipVisually(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec, out float visualSim);
-						if (pass) {
-							verified.Add(a);
-						}
-						else {
-							Interlocked.Increment(ref dropped);
-							if (Settings.ExtendedFFToolsLogging)
-								Logger.Instance.Info($"[Partial] Visual gate dropped {System.IO.Path.GetFileName(videos[a.clipIdx].Path)} in {System.IO.Path.GetFileName(videos[a.sourceIdx].Path)}: visualSim={visualSim:P1} (threshold {Settings.PartialClipVisualThreshold:P0})");
-						}
+			if (Settings.PartialClipRequireVisualMatch && assignments.Count > 0)
+				assignments = RunPartialClipVisualGate(videos, assignments,
+					(source, clip, offsetSec) => {
+						bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim);
+						return (pass, visualSim);
 					});
-				}
-				catch (OperationCanceledException) { }
-				assignments = verified.OrderBy(a => a.Item1).ThenBy(a => a.Item2).ToList();
-				Logger.Instance.Info($"Partial clip detection: visual gate kept {assignments.Count}/{beforeCount} assignment(s), dropped {dropped}");
-			}
 
 			var addedSources = new HashSet<int>();
 
@@ -1752,6 +1832,54 @@ namespace VDF.Core {
 			}
 
 			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
+		}
+
+		/// <summary>
+		/// Runs <paramref name="verify"/> over every candidate assignment and returns the ones that
+		/// pass, ordered deterministically. Its own progress phase: the gate decodes frames off disk
+		/// and can outlast the audio pass that produced the assignments, so leaving it silent left
+		/// the UI showing that pass's completed counters for minutes on end (#831).
+		/// <paramref name="verify"/> is injected so tests can drive the phase without FFmpeg.
+		/// </summary>
+		internal List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> RunPartialClipVisualGate(
+			List<FileEntry> videos,
+			List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> assignments,
+			Func<FileEntry, FileEntry, int, (bool pass, float visualSim)> verify) {
+
+			currentStageLabel = T("Scan.Stage.PartialVisualVerify");
+			InitProgress(assignments.Count);
+
+			int beforeCount = assignments.Count;
+			int dropped = 0;
+			var verified = new ConcurrentBag<(int, int, float, int, Guid)>();
+			try {
+				// Storage-tuned degree, NOT MatchingParallelDegree: unlike the audio
+				// fingerprint pass above (pure CPU over in-memory fingerprints), the visual
+				// gate decodes frames live off disk via GetGrayFrames, so it must respect the
+				// media-read cap that HDD users lower to avoid seek-thrash.
+				Parallel.ForEach(assignments, new ParallelOptions {
+					CancellationToken = cancelationTokenSource.Token,
+					MaxDegreeOfParallelism = ParallelDegree
+				}, a => {
+					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
+						return; // canceled while paused — the loop's token ends the remaining iterations
+
+					var (pass, visualSim) = verify(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec);
+					if (pass) {
+						verified.Add(a);
+					}
+					else {
+						Interlocked.Increment(ref dropped);
+						if (Settings.ExtendedFFToolsLogging)
+							Logger.Instance.Info($"[Partial] Visual gate dropped {System.IO.Path.GetFileName(videos[a.clipIdx].Path)} in {System.IO.Path.GetFileName(videos[a.sourceIdx].Path)}: visualSim={visualSim:P1} (threshold {Settings.PartialClipVisualThreshold:P0})");
+					}
+					IncrementProgress(System.IO.Path.GetFileName(videos[a.clipIdx].Path));
+				});
+			}
+			catch (OperationCanceledException) { }
+			var kept = verified.OrderBy(a => a.Item1).ThenBy(a => a.Item2).ToList();
+			Logger.Instance.Info($"Partial clip detection: visual gate kept {kept.Count}/{beforeCount} assignment(s), dropped {dropped}");
+			return kept;
 		}
 
 		/// <summary>

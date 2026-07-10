@@ -19,5 +19,6 @@
   "Scan.Stage.SamplingFrames": "Frames abtasten",
   "Scan.Stage.AudioFingerprint": "Audio-Fingerabdruck",
   "Scan.Stage.ComparingDuplicates": "Duplikate vergleichen",
-  "Scan.Stage.PartialCompare": "Teilclips vergleichen"
+  "Scan.Stage.PartialCompare": "Teilclips vergleichen",
+  "Scan.Stage.PartialVisualVerify": "Teilclips visuell prüfen"
 }

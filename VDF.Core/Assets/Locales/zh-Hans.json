@@ -19,5 +19,6 @@
   "Scan.Stage.SamplingFrames": "采样帧",
   "Scan.Stage.AudioFingerprint": "音频指纹",
   "Scan.Stage.ComparingDuplicates": "比较重复项",
-  "Scan.Stage.PartialCompare": "比较部分片段"
+  "Scan.Stage.PartialCompare": "比较部分片段",
+  "Scan.Stage.PartialVisualVerify": "验证部分片段"
 }
