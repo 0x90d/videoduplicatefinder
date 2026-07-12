@@ -118,8 +118,10 @@ namespace VDF.Core {
 				}
 				catch (OperationCanceledException) { }
 			}
-			store.Save(videos.Select(v => v.Path).ToHashSet(
-				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal));
+			// Keep-set = the whole database, NOT this scan's eligible videos: pruning to the
+			// eligible set wiped other libraries' records on every alternating scan, and even
+			// evicted videos the earlier passes had just grouped.
+			store.Save(AllDatabasePaths());
 			if (cancelationTokenSource.IsCancellationRequested)
 				return;
 			Logger.Instance.Info($"AI partial detection: dense embeddings ready for {videos.Count - failed} video(s) ({cached} cached, {extracted} computed, {failed} failed).");

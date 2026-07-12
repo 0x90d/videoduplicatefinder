@@ -139,19 +139,22 @@ public class AiFrameExtractionTests {
 		var same2 = EntryFor(_fixture.H264_8bit!);
 		var different = EntryFor(_fixture.H264_Different!);
 
-		using (var pipeline = new EmbeddingPipeline(TestModels.TinyEmbedderPath, CancellationToken.None)) {
+		var store = new UnionEmbeddingStore();
+		using (var pipeline = new EmbeddingPipeline(TestModels.TinyEmbedderPath, store, CancellationToken.None)) {
 			foreach (var entry in new[] { same1, same2, different })
 				Assert.True(FfmpegEngine.GetGrayBytesFromVideo(entry, positions, 0, extendedLogging: false, embeddingSink: pipeline));
 			await pipeline.CompleteAsync();
 			Assert.False(pipeline.Faulted);
 		}
-		Assert.Equal(2, same1.Embeddings.Count);
+		foreach (float position in positions)
+			Assert.NotNull(store.GetEmbedding(same1, same1.GetGrayBytesIndex(position, 0)));
 
 		var engine = new ScanEngine {
 			// Percent 101 forces the classic check to always fail, so the verdict below
 			// can only come from the AI union — that's exactly the path under test.
 			Settings = { UseAiMatching = true, AiPercent = 94f, Percent = 101f, UsePHashing = false }
 		};
+		engine.unionEmbeddingStore = store;
 		engine.positionList.AddRange(positions);
 		foreach (var entry in new[] { same1, same2, different })
 			Assert.True(engine.TryBuildCompareSnapshot(entry, usePHashing: false));

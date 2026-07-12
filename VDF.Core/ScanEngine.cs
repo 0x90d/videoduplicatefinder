@@ -52,8 +52,12 @@ namespace VDF.Core {
 		CancellationTokenSource cancelationTokenSource = new();
 		internal readonly List<float> positionList = new();
 		// Live only while a scan's hashing phase runs (see StartSearch): receives decoded
-		// 224x224 RGB frames and writes int8 embeddings into FileEntry.Embeddings.
+		// 224x224 RGB frames and writes int8 embeddings into the union embedding sidecar.
 		AI.EmbeddingPipeline? aiEmbeddingPipeline;
+		// The union pass's embedding sidecar. Loaded when an AI-enabled scan starts (or
+		// lazily for a compare-only run), saved after the hashing phase, and released once
+		// the compare snapshots are built — embeddings only occupy memory while needed.
+		internal AI.UnionEmbeddingStore? unionEmbeddingStore;
 
 		public ScanEngine() =>
 			// Armed and disarmed by the isScanning setter, so an idle engine owns no ticking timer.
@@ -373,8 +377,10 @@ namespace VDF.Core {
 				Logger.Instance.Info(T("Log.FinishedBuildingFileList", SearchTimer.StopGetElapsedAndRestart()));
 				FilesEnumerated?.Invoke(this, new EventArgs());
 				try {
-					if (!cancelationTokenSource.IsCancellationRequested && Settings.UseAiMatching)
-						aiEmbeddingPipeline = new AI.EmbeddingPipeline(AI.AiComponents.ModelPath, cancelationTokenSource.Token);
+					if (!cancelationTokenSource.IsCancellationRequested && Settings.UseAiMatching) {
+						unionEmbeddingStore = AI.UnionEmbeddingStore.Load();
+						aiEmbeddingPipeline = new AI.EmbeddingPipeline(AI.AiComponents.ModelPath, unionEmbeddingStore, cancelationTokenSource.Token);
+					}
 					Logger.Instance.Info(T("Log.GatheringMediaInfo"));
 					if (!cancelationTokenSource.IsCancellationRequested)
 						await GatherInfos();
@@ -391,6 +397,9 @@ namespace VDF.Core {
 				finally {
 					aiEmbeddingPipeline?.Dispose();
 					aiEmbeddingPipeline = null;
+					// Persist whatever got embedded — also on cancel/error, the work is
+					// expensive. The store stays loaded for the chained compare phase.
+					unionEmbeddingStore?.Save(AllDatabasePaths());
 				}
 				Logger.Instance.Info(T("Log.FinishedGatheringHashes", SearchTimer.StopGetElapsedAndRestart()));
 				// Save before signaling completion: consumers (e.g. the CLI) may treat the
@@ -546,6 +555,16 @@ namespace VDF.Core {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		double GetGrayBytesIndex(FileEntry entry, float position) =>
 			entry.GetGrayBytesIndex(position, Settings.MaxSamplingDurationSeconds);
+
+		/// <summary>
+		/// Keep-set for the AI sidecar caches: every path the scan database knows. Sidecar
+		/// records are pruned only when their file left the database entirely — pruning by
+		/// the current scan's eligible set would wipe other libraries' expensive embeddings
+		/// on every alternating scan.
+		/// </summary>
+		static HashSet<string> AllDatabasePaths() =>
+			DatabaseUtils.Database.Select(e => e.Path).ToHashSet(
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
 		void PrepareCompare() {
 			if (positionList.Count == 0) {
@@ -1269,10 +1288,6 @@ namespace VDF.Core {
 					return false;
 				gray[j] = data;
 			}
-			// Missing embeddings never drop an entry — the classic modes still work and
-			// the AI pass simply abstains for null slots.
-			if (positionKeys != null)
-				BuildAiCompareSnapshot(entry, positionKeys, gray);
 
 			if (usePHashing) {
 				var phashes = new ulong[positionList.Count];
@@ -1295,6 +1310,12 @@ namespace VDF.Core {
 				}
 				entry.comparePHashes = phashes;
 			}
+			// AI snapshot last, after every validation that can still drop the entry —
+			// a dropped entry must leave no dangling snapshot behind (the end-of-phase
+			// cleanup only visits the validated ScanList). Missing embeddings never drop
+			// an entry — the classic modes still work and the AI pass abstains for null slots.
+			if (positionKeys != null)
+				BuildAiCompareSnapshot(entry, positionKeys, gray);
 			entry.compareGray = gray;
 			return true;
 		}
@@ -1307,10 +1328,11 @@ namespace VDF.Core {
 		/// generator on fade-outs and night scenes).
 		/// </summary>
 		void BuildAiCompareSnapshot(FileEntry entry, double[] positionKeys, byte[]?[] gray) {
+			AI.UnionEmbeddingStore? store = unionEmbeddingStore;
 			var embeddings = new byte[]?[positionKeys.Length];
 			var valid = new bool[positionKeys.Length];
 			for (int j = 0; j < positionKeys.Length; j++) {
-				entry.Embeddings.TryGetValue(positionKeys[j], out embeddings[j]);
+				embeddings[j] = store?.GetEmbedding(entry, positionKeys[j]);
 				valid[j] = gray[j] != null && GrayBytesUtils.VerifyGrayScaleValues(gray[j]!);
 			}
 			entry.compareEmbeddings = embeddings;
@@ -1479,6 +1501,12 @@ namespace VDF.Core {
 			bool usePHashing = Settings.UsePHashing;
 			int droppedSnapshots = 0;
 			{
+				if (Settings.UseAiMatching && unionEmbeddingStore == null) {
+					// Compare-only run (no scan phase loaded the sidecar in this process).
+					unionEmbeddingStore = AI.UnionEmbeddingStore.Load();
+					if (unionEmbeddingStore.Count == 0)
+						Logger.Instance.Info("AI matching: no cached embeddings found — the AI pass will abstain. Run a scan to compute them.");
+				}
 				List<FileEntry> validated = new(ScanList.Count);
 				foreach (FileEntry entry in ScanList) {
 					if (TryBuildCompareSnapshot(entry, usePHashing)) {
@@ -1490,6 +1518,9 @@ namespace VDF.Core {
 						droppedSnapshots++;
 				}
 				ScanList = validated;
+				// The snapshots now hold references to every embedding this compare needs;
+				// drop the store so the sidecar's memory is reclaimable after the phase.
+				unionEmbeddingStore = null;
 			}
 			if (droppedSnapshots > 0)
 				Logger.Instance.Warn($"Excluded {droppedSnapshots} file(s) with incomplete cached scan data (missing gray bytes for the current thumbnail positions). Rescan to repopulate.");

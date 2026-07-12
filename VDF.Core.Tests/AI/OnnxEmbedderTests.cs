@@ -85,20 +85,21 @@ public class OnnxEmbedderTests {
 	}
 
 	[Fact]
-	public async Task EmbeddingPipeline_WritesQuantizedEmbeddingsToEntries() {
+	public async Task EmbeddingPipeline_WritesQuantizedEmbeddingsToStore() {
 		var entry = new FileEntry { Folder = @"D:\media" };
 		entry.Path = @"D:\media\pipeline.mp4";
+		var store = new UnionEmbeddingStore();
 
-		using (var pipeline = new EmbeddingPipeline(TestModels.TinyEmbedderPath, CancellationToken.None)) {
+		using (var pipeline = new EmbeddingPipeline(TestModels.TinyEmbedderPath, store, CancellationToken.None)) {
 			Assert.True(pipeline.WantsEmbedding(entry, 1.0));
 			pipeline.SubmitFrame(entry, 1.0, PatternFrame(21));
 			pipeline.SubmitFrame(entry, 3.0, PatternFrame(22));
 			await pipeline.CompleteAsync();
 			Assert.Equal(2, pipeline.EmbeddedCount);
+			Assert.False(pipeline.WantsEmbedding(entry, 1.0));
 		}
 
-		Assert.Equal(2, entry.Embeddings.Count);
-		Assert.Equal(EmbeddingMath.Dimensions, entry.Embeddings[1.0]!.Length);
-		Assert.Equal(EmbeddingMath.Dimensions, entry.Embeddings[3.0]!.Length);
+		Assert.Equal(EmbeddingMath.Dimensions, store.GetEmbedding(entry, 1.0)!.Length);
+		Assert.Equal(EmbeddingMath.Dimensions, store.GetEmbedding(entry, 3.0)!.Length);
 	}
 }

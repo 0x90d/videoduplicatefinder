@@ -88,14 +88,10 @@ namespace VDF.Core {
 		/// </summary>
 		[MemoryPackOrder(10)]
 		public string? OsHash;
-		/// <summary>
-		/// Int8-quantized neural embeddings (see VDF.Core.AI), keyed like
-		/// <see cref="grayBytes"/>; 384 bytes per sampled position. Populated only while
-		/// AI matching is enabled; entries scanned by older versions load with an empty
-		/// dictionary (version-tolerant) and backfill on the next scan.
-		/// </summary>
-		[MemoryPackOrder(11)]
-		public Dictionary<double, byte[]?> Embeddings = new();
+		// Neural embeddings deliberately do NOT live on FileEntry: at library scale they
+		// would permanently bloat the main database and resident memory even for users who
+		// never enable AI matching. They are cached in the UnionEmbeddingStore sidecar
+		// (VDF.Core.AI), keyed by path and validated by size + mtime.
 
 		[MemoryPackIgnore]
 		internal bool invalid = true;
@@ -158,13 +154,14 @@ namespace VDF.Core {
 		/// re-extracts it: media info, gray frames, pHashes, audio fingerprint and every
 		/// error/audio flag. Identity data stays (path, dates, size, OsHash, manual
 		/// exclusion, reparse-point state) — this is the database editor's "clear cached
-		/// hashes" repair action, the lighter alternative to deleting the entry.
+		/// hashes" repair action, the lighter alternative to deleting the entry. AI
+		/// embeddings live in sidecar caches that self-validate by size + mtime, so they
+		/// need no explicit clearing here.
 		/// </summary>
 		public void ClearCachedMediaData() {
 			mediaInfo = null;
 			grayBytes.Clear();
 			PHashes.Clear();
-			Embeddings.Clear();
 			AudioFingerprint = null;
 			Flags.Set(EntryFlags.ThumbnailError | EntryFlags.MetadataError | EntryFlags.TooDark |
 				EntryFlags.NoAudioTrack | EntryFlags.AudioFingerprintError | EntryFlags.SilentAudioTrack, false);

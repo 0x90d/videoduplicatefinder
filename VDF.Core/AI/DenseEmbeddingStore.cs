@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using VDF.Core.Utils;
@@ -32,9 +33,11 @@ namespace VDF.Core.AI {
 		static ReadOnlySpan<byte> Magic => "VDFAI001"u8;
 		const int MaxSaneFrameCount = 100_000;
 
-		readonly Dictionary<string, DenseRecord> records = new(
+		// Concurrent: the sampling phase's Parallel.For has workers probing (TryGet) while
+		// others insert freshly computed records (Put) — a plain Dictionary would race.
+		readonly ConcurrentDictionary<string, DenseRecord> records = new(
 			CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-		readonly object writeLock = new();
+		readonly object saveLock = new();
 
 		internal static string StorePath =>
 			TestOverrideStorePath ??
@@ -65,8 +68,15 @@ namespace VDF.Core.AI {
 					if (interval <= 0 || frameCount < 0 || frameCount > MaxSaneFrameCount)
 						throw new IOException("implausible record header");
 					var frames = new byte[frameCount][];
-					for (int i = 0; i < frameCount; i++)
+					for (int i = 0; i < frameCount; i++) {
 						frames[i] = reader.ReadBytes(EmbeddingMath.Dimensions);
+						// ReadBytes returns a SHORT array at EOF instead of throwing — a file
+						// truncated inside a frame must count as corruption, or the poisoned
+						// record would be served forever (size/mtime still match) and every
+						// later Save would fail on its length check.
+						if (frames[i].Length != EmbeddingMath.Dimensions)
+							throw new IOException("truncated record");
+					}
 					store.records[file] = new DenseRecord(size, mtime, interval, frames);
 				}
 			}
@@ -88,23 +98,24 @@ namespace VDF.Core.AI {
 			return false;
 		}
 
-		internal void Put(string file, DenseRecord record) {
-			lock (writeLock)
-				records[file] = record;
-		}
+		internal void Put(string file, DenseRecord record) =>
+			records[file] = record;
 
 		/// <summary>
-		/// Persists the cache, pruning records for files no longer in the scan set so the
-		/// sidecar cannot grow without bound. Best-effort: failure only costs recompute time.
+		/// Persists the cache atomically. <paramref name="keepOnly"/> should be every path
+		/// known to the scan database — records are pruned only when their file left the
+		/// database entirely, so alternating scans between different libraries (or scans
+		/// with an offline drive) never throw cached embeddings away. Best-effort: failure
+		/// only costs recompute time.
 		/// </summary>
 		internal void Save(IReadOnlySet<string>? keepOnly) {
 			string path = StorePath;
 			string tempPath = path + ".tmp";
 			try {
-				lock (writeLock) {
+				lock (saveLock) {
 					if (keepOnly != null)
 						foreach (string stale in records.Keys.Where(k => !keepOnly.Contains(k)).ToList())
-							records.Remove(stale);
+							records.TryRemove(stale, out _);
 					using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16))
 					using (var writer = new BinaryWriter(stream, Encoding.UTF8)) {
 						writer.Write(Magic);

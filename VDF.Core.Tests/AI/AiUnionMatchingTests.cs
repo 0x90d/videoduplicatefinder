@@ -176,7 +176,9 @@ public class AiUnionMatchingTests {
 		entry.Path = @"D:\media\snap.mp4";
 		double key = entry.GetGrayBytesIndex(0.5f, 0);
 		entry.grayBytes[key] = GrayFrame(128);
-		entry.Embeddings[key] = UnitEmbedding(0);
+		var store = new UnionEmbeddingStore();
+		store.Put(entry, key, UnitEmbedding(0));
+		engine.unionEmbeddingStore = store;
 
 		Assert.True(engine.TryBuildCompareSnapshot(entry, usePHashing: false));
 		Assert.NotNull(entry.compareEmbeddings);

@@ -93,7 +93,7 @@ namespace VDF.Core.AI {
 			return embeddings;
 		}
 
-		/// <summary>Embeddings quantized for storage in <see cref="FileEntry.Embeddings"/>.</summary>
+		/// <summary>Embeddings quantized for storage in the embedding sidecar caches.</summary>
 		internal byte[][] EmbedBatchQuantized(IReadOnlyList<byte[]> rgbFrames) {
 			float[][] floats = EmbedBatch(rgbFrames);
 			var quantized = new byte[floats.Length][];

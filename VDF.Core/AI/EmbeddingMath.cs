@@ -20,10 +20,10 @@ using System.Runtime.InteropServices;
 namespace VDF.Core.AI {
 	/// <summary>
 	/// Math over quantized embedding vectors. Embeddings are L2-normalized float vectors
-	/// quantized to int8 (value = round(x·127), stored in byte[] so MemoryPack and
-	/// <see cref="FileEntry.Embeddings"/> can carry them without a custom formatter), so
-	/// cosine similarity reduces to an integer dot product divided by 127². Quantization
-	/// error on the similarity is &lt;1% — far below the matching thresholds in use.
+	/// quantized to int8 (value = round(x·127), stored in byte[] so the sidecar caches
+	/// can carry them without a custom formatter), so cosine similarity reduces to an
+	/// integer dot product divided by 127². Quantization error on the similarity is
+	/// &lt;1% — far below the matching thresholds in use.
 	/// </summary>
 	static class EmbeddingMath {
 		/// <summary>DINOv2-small embedding width.</summary>

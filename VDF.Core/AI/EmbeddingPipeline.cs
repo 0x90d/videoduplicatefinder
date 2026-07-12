@@ -33,7 +33,8 @@ namespace VDF.Core.AI {
 	/// Bounded producer/consumer stage between the (parallel, I/O-bound) frame decoders
 	/// and the (serial, CPU-bound) ONNX inference: decode workers submit RGB frames, one
 	/// worker thread batches them through <see cref="OnnxEmbedder"/> and writes int8
-	/// embeddings into <see cref="FileEntry.Embeddings"/>. On an inference failure the
+	/// embeddings into the <see cref="UnionEmbeddingStore"/> sidecar (thread-safe, so the
+	/// probing decode workers never race the writer). On an inference failure the
 	/// pipeline faults: remaining frames are drained and discarded (so producers never
 	/// block on the bounded queue) and affected entries simply stay without embeddings —
 	/// the AI pass abstains for them.
@@ -41,12 +42,14 @@ namespace VDF.Core.AI {
 	sealed class EmbeddingPipeline : IEmbeddingFrameSink, IDisposable {
 		readonly BlockingCollection<(FileEntry entry, double key, byte[] rgb)> queue = new(boundedCapacity: 256);
 		readonly OnnxEmbedder embedder;
+		readonly UnionEmbeddingStore store;
 		readonly CancellationToken token;
 		readonly Task worker;
 		volatile bool faulted;
 		int embeddedCount;
 
-		public EmbeddingPipeline(string modelPath, CancellationToken token) {
+		public EmbeddingPipeline(string modelPath, UnionEmbeddingStore store, CancellationToken token) {
+			this.store = store;
 			this.token = token;
 			embedder = new OnnxEmbedder(modelPath);
 			worker = Task.Run(WorkerLoop, CancellationToken.None);
@@ -56,7 +59,7 @@ namespace VDF.Core.AI {
 		public bool Faulted => faulted;
 
 		public bool WantsEmbedding(FileEntry entry, double positionKey) =>
-			!faulted && !entry.Embeddings.ContainsKey(positionKey);
+			!faulted && !store.HasEmbedding(entry, positionKey);
 
 		public void SubmitFrame(FileEntry entry, double positionKey, byte[] rgb224) {
 			if (faulted) return;
@@ -97,7 +100,7 @@ namespace VDF.Core.AI {
 
 					byte[][] embeddings = embedder.EmbedBatchQuantized(batchFrames);
 					for (int i = 0; i < embeddings.Length; i++) {
-						batchEntries[i].entry.Embeddings.TryAdd(batchEntries[i].key, embeddings[i]);
+						store.Put(batchEntries[i].entry, batchEntries[i].key, embeddings[i]);
 						Interlocked.Increment(ref embeddedCount);
 					}
 				}

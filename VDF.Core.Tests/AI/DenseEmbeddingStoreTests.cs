@@ -83,6 +83,30 @@ public class DenseEmbeddingStoreTests : IDisposable {
 	}
 
 	[Fact]
+	public void TruncatedFrames_RebuildAsEmptyStore() {
+		// Regression: BinaryReader.ReadBytes returns a SHORT array at EOF without
+		// throwing. A store truncated inside the last record's frame bytes must be
+		// treated as corrupt (rebuild), not accepted as a poisoned short-frame record
+		// that scores ~0 forever and makes every subsequent Save throw on its length check.
+		var record = Record(9);
+		var store = new DenseEmbeddingStore();
+		store.Put(@"D:\media\t.mp4", record);
+		store.Save(keepOnly: null);
+
+		string path = DenseEmbeddingStore.StorePath;
+		byte[] bytes = File.ReadAllBytes(path);
+		File.WriteAllBytes(path, bytes.AsSpan(0, bytes.Length - EmbeddingMath.Dimensions / 2).ToArray());
+
+		var loaded = DenseEmbeddingStore.Load();
+		Assert.Equal(0, loaded.Count);
+
+		// And the rebuilt store persists fine afterwards.
+		loaded.Put(@"D:\media\t.mp4", record);
+		loaded.Save(keepOnly: null);
+		Assert.Equal(1, DenseEmbeddingStore.Load().Count);
+	}
+
+	[Fact]
 	public void MissingFile_LoadsAsEmptyStore() {
 		Assert.Equal(0, DenseEmbeddingStore.Load().Count);
 	}
