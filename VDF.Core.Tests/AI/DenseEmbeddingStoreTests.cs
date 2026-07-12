@@ -83,6 +83,25 @@ public class DenseEmbeddingStoreTests : IDisposable {
 	}
 
 	[Fact]
+	public void EmptyFrameSlots_RoundTripThroughSaveAndLoad() {
+		// Invalid slots (dark/duplicated frames) are stored as empty arrays so the
+		// index↔time mapping survives persistence.
+		var valid = Record(5, frames: 1).Frames[0];
+		var record = new DenseEmbeddingStore.DenseRecord(1005, 2005, 15f,
+			new[] { valid, Array.Empty<byte>(), valid });
+		var store = new DenseEmbeddingStore();
+		store.Put(@"D:\media\slots.mp4", record);
+		store.Save(keepOnly: null);
+
+		var loaded = DenseEmbeddingStore.Load();
+		Assert.True(loaded.TryGet(@"D:\media\slots.mp4", 1005, 2005, out var got));
+		Assert.Equal(3, got.Frames.Length);
+		Assert.Equal(valid, got.Frames[0]);
+		Assert.Empty(got.Frames[1]);
+		Assert.Equal(valid, got.Frames[2]);
+	}
+
+	[Fact]
 	public void TruncatedFrames_RebuildAsEmptyStore() {
 		// Regression: BinaryReader.ReadBytes returns a SHORT array at EOF without
 		// throwing. A store truncated inside the last record's frame bytes must be

@@ -92,4 +92,84 @@ public class EmbeddingMathTests {
 		Assert.Equal(0f, EmbeddingMath.CosineSimilarity(
 			EmbeddingMath.QuantizeUnitVector(a), EmbeddingMath.QuantizeUnitVector(b)), 0.001f);
 	}
+
+	[Fact]
+	public void CosineSimilarity_NeverExceedsOne() {
+		// Regression: rounding pushes the quantized norm above 127 for most unit
+		// vectors, so the raw dot/127² quotient exceeds 1 — unclamped, near-identical
+		// pairs produced negative differences, >100% similarity in the UI, and the
+		// default 0-100 similarity filter silently hid them.
+		var rng = new Random(4);
+		for (int t = 0; t < 200; t++) {
+			float[] v = RandomUnitVector(rng);
+			byte[] q = EmbeddingMath.QuantizeUnitVector(v);
+			Assert.True(EmbeddingMath.CosineSimilarity(q, q) <= 1f);
+			Assert.True(EmbeddingMath.CosineSimilarityScalar(q, q) <= 1f);
+
+			// Near-identical pair (re-encode-level noise) — the systematic case.
+			var w = (float[])v.Clone();
+			w[t % w.Length] += 0.002f;
+			byte[] qw = EmbeddingMath.QuantizeUnitVector(w);
+			Assert.True(EmbeddingMath.CosineSimilarity(q, qw) <= 1f);
+		}
+	}
+
+	[Fact]
+	public void SignSignature_SelfDistanceIsZero_AndBitsMatchSigns() {
+		var rng = new Random(5);
+		byte[] q = EmbeddingMath.QuantizeUnitVector(RandomUnitVector(rng));
+		ulong[] sig = EmbeddingMath.SignSignature(q);
+		Assert.Equal(EmbeddingMath.SignatureWords, sig.Length);
+		Assert.Equal(0, EmbeddingMath.HammingDistance(sig, sig));
+		for (int i = 0; i < EmbeddingMath.Dimensions; i++) {
+			bool bit = (sig[i >> 6] & (1UL << (i & 63))) != 0;
+			Assert.Equal((sbyte)q[i] < 0, bit);
+		}
+	}
+
+	[Fact]
+	public void SignatureHammingBound_NeverRejectsPairsAboveThreshold() {
+		// The prefilter must be (near-)lossless: for pairs whose exact cosine clears the
+		// hit threshold, the sign-hamming distance must stay within the bound. Seeded,
+		// so the negligible theoretical tail probability cannot flake the test.
+		const float threshold = 0.89f;
+		int bound = EmbeddingMath.SignatureHammingBound(threshold);
+		Assert.InRange(bound, 1, EmbeddingMath.Dimensions);
+
+		var rng = new Random(6);
+		int tested = 0;
+		for (int t = 0; t < 2000; t++) {
+			// Correlated pair: base vector plus small noise → cosine near/above threshold.
+			float[] a = RandomUnitVector(rng);
+			var b = (float[])a.Clone();
+			for (int i = 0; i < b.Length; i++)
+				b[i] += (float)(rng.NextDouble() * 2 - 1) * 0.05f;
+			byte[] qa = EmbeddingMath.QuantizeUnitVector(a);
+			byte[] qb = EmbeddingMath.QuantizeUnitVector(b);
+			if (EmbeddingMath.CosineSimilarity(qa, qb) < threshold)
+				continue;
+			tested++;
+			int hamming = EmbeddingMath.HammingDistance(EmbeddingMath.SignSignature(qa), EmbeddingMath.SignSignature(qb));
+			Assert.True(hamming <= bound, $"true hit rejected by prefilter: hamming {hamming} > bound {bound}");
+		}
+		Assert.True(tested > 100, $"test generated too few above-threshold pairs ({tested})");
+	}
+
+	[Fact]
+	public void SignatureHammingBound_RejectsUnrelatedVectors() {
+		// Unrelated embeddings must (overwhelmingly) fail the prefilter — that is the
+		// entire speedup. Statistical, seeded.
+		const float threshold = 0.89f;
+		int bound = EmbeddingMath.SignatureHammingBound(threshold);
+		var rng = new Random(7);
+		int rejected = 0;
+		const int total = 500;
+		for (int t = 0; t < total; t++) {
+			byte[] qa = EmbeddingMath.QuantizeUnitVector(RandomUnitVector(rng));
+			byte[] qb = EmbeddingMath.QuantizeUnitVector(RandomUnitVector(rng));
+			if (EmbeddingMath.HammingDistance(EmbeddingMath.SignSignature(qa), EmbeddingMath.SignSignature(qb)) > bound)
+				rejected++;
+		}
+		Assert.True(rejected > total * 95 / 100, $"prefilter rejected only {rejected}/{total} unrelated pairs");
+	}
 }

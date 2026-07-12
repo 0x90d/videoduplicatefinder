@@ -77,6 +77,54 @@ public class AiPartialMatcherTests {
 	}
 
 	[Fact]
+	public void InvalidFrameSlots_AreNeverMatched() {
+		// A would-be match whose matching source region consists of invalid slots
+		// (dark/duplicated frames, stored as empty arrays) must yield no hits.
+		byte[][] sourceFrames = RandomEmbeddings(40, 42);
+		byte[][] clipFrames = sourceFrames.Skip(12).Take(15).ToArray();
+		for (int i = 12; i < 27; i++)
+			sourceFrames[i] = Array.Empty<byte>();
+		var source = new DenseEmbeddingStore.DenseRecord(0, 0, 5f, sourceFrames);
+		var clip = new DenseEmbeddingStore.DenseRecord(0, 0, 5f, clipFrames);
+
+		Assert.False(ScanEngine.TryMatchDenseFrames(source, clip, hitThreshold: 0.89f, out _, out _));
+	}
+
+	const int RgbFrameBytes = 224 * 224 * 3;
+
+	static byte[] RgbFrame(byte value) {
+		var f = new byte[RgbFrameBytes];
+		Array.Fill(f, value);
+		return f;
+	}
+
+	[Fact]
+	public void SelectUsableDenseFrames_ExcludesDarkAndDuplicatedFrames() {
+		// Dark frames embed near-identically regardless of content, and the fps
+		// round=up filter duplicates the previous keyframe across gaps — either would
+		// multiply one coincidental hit into a full false-positive evidence quorum.
+		byte[] black = RgbFrame(0x00);
+		byte[] bright = RgbFrame(0x80);
+		byte[] brightDuplicate = (byte[])bright.Clone();
+		byte[] other = RgbFrame(0xC0);
+
+		bool[] usable = ScanEngine.SelectUsableDenseFrames(new[] { black, bright, brightDuplicate, other, black });
+
+		Assert.Equal(new[] { false, true, false, true, false }, usable);
+	}
+
+	[Fact]
+	public void SelectUsableDenseFrames_KeepsDistinctBrightFrames() {
+		var rng = new Random(11);
+		var frames = new byte[6][];
+		for (int i = 0; i < frames.Length; i++) {
+			frames[i] = new byte[RgbFrameBytes];
+			rng.NextBytes(frames[i]);
+		}
+		Assert.All(ScanEngine.SelectUsableDenseFrames(frames), Assert.True);
+	}
+
+	[Fact]
 	public void MixedIntervals_StillAlignByTime() {
 		// Source sampled at 15 s, clip at 5 s — the offset math works in seconds, not indices.
 		byte[][] sourceFrames = RandomEmbeddings(40, 5);

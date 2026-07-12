@@ -542,9 +542,13 @@ namespace VDF.Core.FFTools {
 
 			// Filter chain: scale + gray
 			if (isRgbFrame) {
-				string vfChain = $"scale={AI.OnnxEmbedder.InputSide}:{AI.OnnxEmbedder.InputSide}:flags=bicubic,format=rgb24";
-				if (userVfFilter != null) vfChain = $"{userVfFilter},{vfChain}";
-				psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
+				// Deliberately NO user -vf here: the native decode path cannot apply
+				// CustomFFArguments, so embedding inputs must be uniformly unfiltered on
+				// every path — mixing filtered CLI frames with unfiltered native frames
+				// would silently sink AI similarity for exactly the files that fell back
+				// to the CLI (the dense AI sweep is equally unfiltered).
+				psi.ArgumentList.Add("-vf");
+				psi.ArgumentList.Add($"scale={AI.OnnxEmbedder.InputSide}:{AI.OnnxEmbedder.InputSide}:flags=bicubic,format=rgb24");
 				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
 				psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("rgb24");
 			}
@@ -824,7 +828,7 @@ namespace VDF.Core.FFTools {
 		/// for audio (which also means partial detection already requires the ffmpeg
 		/// executable). Returns null on failure; frame k represents ≈ k·interval seconds.
 		/// </summary>
-		internal static byte[][]? GetDenseAiFrames(string filePath, double intervalSeconds, int maxFrames, bool extendedLogging) {
+		internal static byte[][]? GetDenseAiFrames(string filePath, double intervalSeconds, int maxFrames, bool extendedLogging, CancellationToken cancelToken = default) {
 			const int frameBytes = AI.OnnxEmbedder.InputSide * AI.OnnxEmbedder.InputSide * 3;
 			var psi = new ProcessStartInfo {
 				FileName = FFmpegPath,
@@ -854,6 +858,8 @@ namespace VDF.Core.FFTools {
 
 			using var process = new Process { StartInfo = psi };
 			string errOut = string.Empty;
+			Task? readTask = null;
+			var ms = new MemoryStream();
 			try {
 				process.Start();
 				FFToolsUtils.LowerChildPriority(process);
@@ -862,13 +868,18 @@ namespace VDF.Core.FFTools {
 						errOut += Environment.NewLine + e.Data;
 				};
 				process.BeginErrorReadLine();
-				using var ms = new MemoryStream();
-				process.StandardOutput.BaseStream.CopyTo(ms);
+				// Async read so the wait below stays authoritative: a synchronous CopyTo
+				// only returns once ffmpeg closes stdout, which never happens when the
+				// process stalls mid-decode (dead network share, wedged demuxer) — the
+				// timeout and the user's Stop were unreachable in exactly those cases.
+				readTask = process.StandardOutput.BaseStream.CopyToAsync(ms, cancelToken);
 
 				// A keyframe-only sweep of a multi-hour file legitimately takes minutes —
 				// far beyond the seek-thumbnail timeout.
-				if (!process.WaitForExit((int)TimeSpan.FromMinutes(15).TotalMilliseconds))
+				if (!readTask.Wait((int)TimeSpan.FromMinutes(15).TotalMilliseconds, cancelToken))
 					throw new TimeoutException($"FFmpeg timed out on file: {filePath}");
+				if (!process.WaitForExit(30_000))
+					throw new TimeoutException($"FFmpeg did not exit after closing its output: {filePath}");
 				process.WaitForExit(); // flush async stderr handlers
 
 				if (process.ExitCode != 0)
@@ -885,16 +896,30 @@ namespace VDF.Core.FFTools {
 					Logger.Instance.Warn($"WARNING: Problems while dense-sampling AI frames from: {filePath}{errOut}");
 				return frames;
 			}
+			catch (OperationCanceledException) {
+				KillAndDrain(process, readTask);
+				throw;
+			}
 			catch (Exception e) {
+				KillAndDrain(process, readTask);
+				string? hint = FfmpegErrorClassifier.Classify(errOut);
+				Logger.Instance.Warn($"ERROR: Failed dense-sampling AI frames from: {filePath}{errOut}{Environment.NewLine}{e.Message}" +
+					(hint != null ? $"{Environment.NewLine}Hint: {hint}" : string.Empty));
+				return null;
+			}
+			finally {
+				ms.Dispose();
+			}
+
+			// Killing ffmpeg breaks the pipe, so the pending read completes promptly; the
+			// bounded wait observes its exception before the MemoryStream is disposed.
+			static void KillAndDrain(Process process, Task? readTask) {
 				try {
 					if (!process.HasExited)
 						process.Kill();
 				}
 				catch { }
-				string? hint = FfmpegErrorClassifier.Classify(errOut);
-				Logger.Instance.Warn($"ERROR: Failed dense-sampling AI frames from: {filePath}{errOut}{Environment.NewLine}{e.Message}" +
-					(hint != null ? $"{Environment.NewLine}Hint: {hint}" : string.Empty));
-				return null;
+				try { readTask?.Wait(2000); } catch { }
 			}
 		}
 

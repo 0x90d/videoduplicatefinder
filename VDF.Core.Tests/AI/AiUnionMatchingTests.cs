@@ -165,6 +165,29 @@ public class AiUnionMatchingTests {
 	}
 
 	[Fact]
+	public void ComputeAiSimilarity_AbstainsWhenMostPositionsAreInvalid() {
+		// The union verdict must not rest on a sliver of the sampled positions: with
+		// 4 positions and only 1 valid pair (e.g. a mostly-dark file), one coincidental
+		// bright frame pair must not decide the whole file.
+		var a = new FileEntry { Folder = @"D:\media" };
+		a.Path = @"D:\media\a.mp4";
+		var b = new FileEntry { Folder = @"D:\media" };
+		b.Path = @"D:\media\b.mp4";
+
+		byte[] same = UnitEmbedding(0);
+		a.compareEmbeddings = new[] { same, same, same, same };
+		b.compareEmbeddings = new[] { same, same, same, same };
+		a.compareEmbeddingValid = new[] { true, false, false, false };
+		b.compareEmbeddingValid = new[] { true, true, true, true };
+
+		Assert.Equal(-1f, ScanEngine.ComputeAiSimilarity(a, b));
+
+		// Two of four valid positions meet the quorum.
+		a.compareEmbeddingValid = new[] { true, true, false, false };
+		Assert.Equal(1f, ScanEngine.ComputeAiSimilarity(a, b), 0.02f);
+	}
+
+	[Fact]
 	public void TryBuildCompareSnapshot_PopulatesAlignedEmbeddings_AndToleratesMissing() {
 		var engine = Engine();
 		engine.positionList.Add(0.5f);

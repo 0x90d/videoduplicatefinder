@@ -447,6 +447,13 @@ namespace VDF.Core {
 				// pass only adds pairs audio could not see (no/replaced audio, music-only).
 				if (!cancelationTokenSource.IsCancellationRequested && Settings.EnableAiPartialDetection)
 					await Task.Run(ScanForPartialDuplicatesVisual, cancelationTokenSource.Token);
+				if (cancelationTokenSource.IsCancellationRequested) {
+					// The passes swallow their internal OperationCanceledExceptions, so a
+					// Stop pressed during any of them would otherwise fall through to
+					// ScanDone and present partial results as a completed scan.
+					AbortScanOnError(new OperationCanceledException());
+					return;
+				}
 				SearchTimer.Stop();
 				ElapsedTimer.Stop();
 				Logger.Instance.Info(T("Log.FinishedScanForDuplicates", SearchTimer.Elapsed));
@@ -1341,8 +1348,9 @@ namespace VDF.Core {
 
 		/// <summary>
 		/// Mean embedding similarity over the positions where both entries have a valid
-		/// (non-dark, successfully embedded) vector; -1 when no position qualifies —
-		/// the AI pass then abstains for this pair.
+		/// (non-dark, successfully embedded) vector; -1 when fewer than half of the
+		/// compared positions qualify — the AI pass then abstains for this pair rather
+		/// than letting one coincidental bright frame decide a mostly-dark file.
 		/// </summary>
 		internal static float ComputeAiSimilarity(FileEntry entry, FileEntry compItem) {
 			byte[]?[]? ea = entry.compareEmbeddings;
@@ -1366,7 +1374,8 @@ namespace VDF.Core {
 				sum += AI.EmbeddingMath.CosineSimilarity(x, y);
 				count++;
 			}
-			return count == 0 ? -1f : sum / count;
+			int requiredPositions = Math.Max(1, (n + 1) / 2);
+			return count < requiredPositions ? -1f : sum / count;
 		}
 
 		internal bool CheckIfDuplicate(FileEntry entry, byte[]?[]? overrideGray, ulong[]? overridePHashes, FileEntry compItem, out float difference) =>

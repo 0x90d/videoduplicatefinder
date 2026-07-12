@@ -89,23 +89,48 @@ namespace VDF.Core {
 							}
 							double duration = entry.mediaInfo!.Duration.TotalSeconds;
 							double interval = GetAiPartialIntervalSeconds(duration);
-							byte[][]? frames = FfmpegEngine.GetDenseAiFrames(entry.Path, interval, AiPartialMaxFramesPerFile, Settings.ExtendedFFToolsLogging);
+							byte[][]? frames = FfmpegEngine.GetDenseAiFrames(entry.Path, interval, AiPartialMaxFramesPerFile,
+								Settings.ExtendedFFToolsLogging, cancelationTokenSource.Token);
 							if (frames == null) {
 								Interlocked.Increment(ref failed);
 								return;
 							}
+							bool[] usable = SelectUsableDenseFrames(frames);
+							// Invalid slots (dark or duplicated frames) stay on the timeline as
+							// empty arrays — never embedded, never matched.
+							var embedded = new byte[frames.Length][];
+							var batch = new List<byte[]>(OnnxEmbedder.MaxBatch);
+							var batchSlots = new List<int>(OnnxEmbedder.MaxBatch);
 							// Inference is serial (one session, CPU-bound) while other files decode.
-							byte[][] embedded;
 							lock (embedLock) {
-								var all = new List<byte[]>(frames.Length);
-								for (int off = 0; off < frames.Length; off += OnnxEmbedder.MaxBatch)
-									all.AddRange(embedder.EmbedBatchQuantized(frames.Skip(off).Take(OnnxEmbedder.MaxBatch).ToArray()));
-								embedded = all.ToArray();
+								for (int f = 0; f < frames.Length; f++) {
+									embedded[f] = Array.Empty<byte>();
+									if (!usable[f])
+										continue;
+									batch.Add(frames[f]);
+									batchSlots.Add(f);
+									if (batch.Count == OnnxEmbedder.MaxBatch)
+										FlushBatch();
+								}
+								FlushBatch();
+
+								void FlushBatch() {
+									if (batch.Count == 0)
+										return;
+									byte[][] vectors = embedder.EmbedBatchQuantized(batch);
+									for (int k = 0; k < vectors.Length; k++)
+										embedded[batchSlots[k]] = vectors[k];
+									batch.Clear();
+									batchSlots.Clear();
+								}
 							}
 							var record = new DenseEmbeddingStore.DenseRecord(info.Length, info.LastWriteTimeUtc.Ticks, (float)interval, embedded);
 							store.Put(entry.Path, record);
 							dense[i] = record;
 							Interlocked.Increment(ref extracted);
+						}
+						catch (OperationCanceledException) {
+							throw;
 						}
 						catch (Exception e) {
 							Interlocked.Increment(ref failed);
@@ -128,6 +153,14 @@ namespace VDF.Core {
 
 			// ── Phase B: offset-consistent matching ─────────────────────────────
 			float hitThreshold = Settings.AiPartialHitPercent / 100f;
+			int hammingBound = EmbeddingMath.SignatureHammingBound(hitThreshold);
+			// Sign signatures once per frame: the popcount prefilter in
+			// TryMatchDenseFrames discards the vast majority of frame pairs at a
+			// fraction of the exact dot product's cost.
+			var signatures = new ulong[][]?[videos.Count];
+			for (int i = 0; i < videos.Count; i++)
+				if (dense[i] is { } record)
+					signatures[i] = ComputeDenseSignatures(record);
 			currentStageLabel = T("Scan.Stage.AiPartialCompare");
 			InitProgress(Math.Max(videos.Count - 1, 1));
 			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
@@ -148,17 +181,21 @@ namespace VDF.Core {
 					for (int j = i + 1; j < videos.Count; j++) {
 						if (cancelationTokenSource.IsCancellationRequested)
 							break;
+						double clipSec = videos[j].mediaInfo!.Duration.TotalSeconds;
+						// Same candidate prefilters as the audio pass. The list is sorted by
+						// duration descending, so the ratio only shrinks as j grows: the
+						// near-full-length pairs form a skippable prefix, and once below the
+						// minimum ratio nothing further can qualify.
+						double ratio = clipSec / sourceSec;
+						if (ratio >= 0.95)
+							continue;
+						if (ratio < Settings.PartialClipMinRatio)
+							break;
 						var clip = dense[j];
 						if (clip == null)
 							continue;
-						double clipSec = videos[j].mediaInfo!.Duration.TotalSeconds;
-						// Same candidate prefilters as the audio pass.
-						if (clipSec / sourceSec < Settings.PartialClipMinRatio)
-							continue;
-						if (clipSec / sourceSec >= 0.95)
-							continue;
 						Interlocked.Increment(ref pairsChecked);
-						if (TryMatchDenseFrames(source, clip, hitThreshold, out float sim, out int offsetSec))
+						if (TryMatchDenseFrames(source, clip, signatures[i]!, signatures[j]!, hitThreshold, hammingBound, out float sim, out int offsetSec))
 							matches.Add((i, j, sim, offsetSec));
 					}
 					IncrementProgress(Path.GetFileName(videos[i].Path));
@@ -185,6 +222,43 @@ namespace VDF.Core {
 		}
 
 		/// <summary>
+		/// Marks the frames of a dense sweep that may participate in matching. Excluded:
+		/// dark frames (they embed near-identically regardless of content — the union
+		/// pass's black-frame guard, applied here) and frames byte-identical to their
+		/// predecessor (the fps filter's round=up duplicates the previous keyframe across
+		/// gaps, and identical frames would multiply one coincidental hit into a full
+		/// evidence quorum). Excluded slots stay on the timeline so index↔time holds.
+		/// </summary>
+		internal static bool[] SelectUsableDenseFrames(byte[][] frames) {
+			var usable = new bool[frames.Length];
+			for (int f = 0; f < frames.Length; f++) {
+				if (!GrayBytesUtils.VerifyRgbFrameValues(frames[f]))
+					continue;
+				if (f > 0 && frames[f].AsSpan().SequenceEqual(frames[f - 1]))
+					continue;
+				usable[f] = true;
+			}
+			return usable;
+		}
+
+		/// <summary>Sign signatures aligned with the record's frames; empty for invalid slots.</summary>
+		internal static ulong[][] ComputeDenseSignatures(DenseEmbeddingStore.DenseRecord record) {
+			var signatures = new ulong[record.Frames.Length][];
+			for (int f = 0; f < record.Frames.Length; f++)
+				signatures[f] = record.Frames[f].Length == 0
+					? Array.Empty<ulong>()
+					: EmbeddingMath.SignSignature(record.Frames[f]);
+			return signatures;
+		}
+
+		/// <summary>Test/diagnostic convenience: computes signatures and bound on the fly.</summary>
+		internal static bool TryMatchDenseFrames(
+			DenseEmbeddingStore.DenseRecord source, DenseEmbeddingStore.DenseRecord clip,
+			float hitThreshold, out float similarity, out int offsetSeconds) =>
+			TryMatchDenseFrames(source, clip, ComputeDenseSignatures(source), ComputeDenseSignatures(clip),
+				hitThreshold, EmbeddingMath.SignatureHammingBound(hitThreshold), out similarity, out offsetSeconds);
+
+		/// <summary>
 		/// Frame-level matching between two dense embedding timelines. A pair matches
 		/// when at least <see cref="AiPartialMinConsistentHits"/> frame hits agree on one
 		/// time offset (±<see cref="AiPartialOffsetToleranceSeconds"/> — keyframe timing
@@ -193,14 +267,26 @@ namespace VDF.Core {
 		/// </summary>
 		internal static bool TryMatchDenseFrames(
 			DenseEmbeddingStore.DenseRecord source, DenseEmbeddingStore.DenseRecord clip,
-			float hitThreshold, out float similarity, out int offsetSeconds) {
+			ulong[][] sourceSignatures, ulong[][] clipSignatures,
+			float hitThreshold, int signatureHammingBound,
+			out float similarity, out int offsetSeconds) {
 			similarity = 0f;
 			offsetSeconds = 0;
 			List<(double offset, float cos)>? hits = null;
 			for (int c = 0; c < clip.Frames.Length; c++) {
+				byte[] clipFrame = clip.Frames[c];
+				if (clipFrame.Length == 0)
+					continue; // invalid slot (dark or duplicated frame)
+				ulong[] clipSignature = clipSignatures[c];
 				double clipTime = c * clip.IntervalSeconds;
 				for (int s = 0; s < source.Frames.Length; s++) {
-					float cos = EmbeddingMath.CosineSimilarity(clip.Frames[c], source.Frames[s]);
+					if (source.Frames[s].Length == 0)
+						continue;
+					// Sign-LSH prefilter: pairs whose sign patterns differ too much cannot
+					// reach the cosine threshold (see SignatureHammingBound) — skip the dot.
+					if (EmbeddingMath.HammingDistance(clipSignature, sourceSignatures[s]) > signatureHammingBound)
+						continue;
+					float cos = EmbeddingMath.CosineSimilarity(clipFrame, source.Frames[s]);
 					if (cos < hitThreshold)
 						continue;
 					hits ??= new List<(double, float)>();

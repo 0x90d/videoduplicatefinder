@@ -102,4 +102,22 @@ public class OnnxEmbedderTests {
 		Assert.Equal(EmbeddingMath.Dimensions, store.GetEmbedding(entry, 1.0)!.Length);
 		Assert.Equal(EmbeddingMath.Dimensions, store.GetEmbedding(entry, 3.0)!.Length);
 	}
+
+	[Fact]
+	public void EmbeddingPipeline_DisposeWithoutComplete_DrainsAndReturns() {
+		// Regression: Dispose must never free the native session while the worker may
+		// still be running inference — it now switches the worker to drain-discard mode
+		// and waits for it, so this returns promptly without embedding the backlog.
+		var entry = new FileEntry { Folder = @"D:\media" };
+		entry.Path = @"D:\media\abandoned.mp4";
+		var store = new UnionEmbeddingStore();
+
+		var pipeline = new EmbeddingPipeline(TestModels.TinyEmbedderPath, store, CancellationToken.None);
+		for (int i = 0; i < 64; i++)
+			pipeline.SubmitFrame(entry, i, PatternFrame(30 + i));
+		pipeline.Dispose();
+
+		// No assertion on the store: whatever was in flight may or may not have been
+		// embedded — the contract is orderly teardown, which reaching here proves.
+	}
 }

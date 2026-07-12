@@ -25,12 +25,17 @@ namespace VDF.Core.AI {
 	/// uses (~25 KB per video). Deliberately NOT part of the main scan database: the data
 	/// is bulky, only needed while that pass runs, and fully recomputable. Records are
 	/// validated by file size + mtime, so an edited file re-extracts. Plain length-prefixed
-	/// binary — no serializer dependency, trivially Native-AOT-safe.
+	/// binary — no serializer dependency, trivially Native-AOT-safe. A frame slot may be
+	/// EMPTY (length 0): the frame exists on the timeline but was excluded from matching
+	/// (too dark, or a duplicate of its predecessor) — the slot keeps the index↔time
+	/// mapping intact.
 	/// </summary>
 	sealed class DenseEmbeddingStore {
 		internal sealed record DenseRecord(long FileSize, long MTimeUtcTicks, float IntervalSeconds, byte[][] Frames);
 
-		static ReadOnlySpan<byte> Magic => "VDFAI001"u8;
+		// VDFAI003: v2 layout with a per-frame validity flag (VDFAI001 had none and
+		// never shipped; VDFAI002 is the union store's magic).
+		static ReadOnlySpan<byte> Magic => "VDFAI003"u8;
 		const int MaxSaneFrameCount = 100_000;
 
 		// Concurrent: the sampling phase's Parallel.For has workers probing (TryGet) while
@@ -69,6 +74,13 @@ namespace VDF.Core.AI {
 						throw new IOException("implausible record header");
 					var frames = new byte[frameCount][];
 					for (int i = 0; i < frameCount; i++) {
+						byte validity = reader.ReadByte();
+						if (validity == 0) {
+							frames[i] = Array.Empty<byte>();
+							continue;
+						}
+						if (validity != 1)
+							throw new IOException("bad frame validity flag");
 						frames[i] = reader.ReadBytes(EmbeddingMath.Dimensions);
 						// ReadBytes returns a SHORT array at EOF instead of throwing — a file
 						// truncated inside a frame must count as corruption, or the poisoned
@@ -126,8 +138,13 @@ namespace VDF.Core.AI {
 							writer.Write(record.IntervalSeconds);
 							writer.Write(record.Frames.Length);
 							foreach (byte[] frame in record.Frames) {
+								if (frame.Length == 0) {
+									writer.Write((byte)0); // invalid slot (dark/duplicate frame)
+									continue;
+								}
 								if (frame.Length != EmbeddingMath.Dimensions)
 									throw new InvalidOperationException($"Unexpected embedding length {frame.Length}");
+								writer.Write((byte)1);
 								writer.Write(frame);
 							}
 						}

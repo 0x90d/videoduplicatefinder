@@ -28,10 +28,11 @@ namespace VDF.Core.Utils {
 	public readonly record struct LogEntry(DateTime Timestamp, LogSeverity Severity, string Message, bool IsSessionStart = false);
 
 	public sealed class Logger {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		static Logger instance;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		public static Logger Instance => instance ??= new Logger();
+		// Eagerly initialized: `instance ??= new()` raced under parallel first access,
+		// briefly yielding TWO loggers — a subscriber on the first missed every entry
+		// raised through the second.
+		static readonly Logger instance = new();
+		public static Logger Instance => instance;
 		public event LogEventHandler? LogEntryAdded;
 		public delegate void LogEventHandler(LogEntry entry);
 		static readonly object lockObject = new();

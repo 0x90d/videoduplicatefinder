@@ -62,7 +62,11 @@ namespace VDF.Core.AI {
 			}
 			for (; i < len; i++)
 				dot += sa[i] * sb[i];
-			return dot / (QuantScale * QuantScale);
+			// Clamp: rounding pushes the quantized norm above 127 for many unit vectors
+			// (self-dot > 127², systematically for near-identical pairs), so the raw
+			// quotient exceeds 1. Unclamped this made `1 - similarity` negative — the
+			// GUI showed >100% and the default 0–100 similarity filter hid the pair.
+			return Math.Clamp(dot / (QuantScale * QuantScale), -1f, 1f);
 		}
 
 		/// <summary>Scalar reference implementation; the SIMD path is verified against it in tests.</summary>
@@ -73,7 +77,43 @@ namespace VDF.Core.AI {
 			int dot = 0;
 			for (int i = 0; i < len; i++)
 				dot += sa[i] * sb[i];
-			return dot / (QuantScale * QuantScale);
+			return Math.Clamp(dot / (QuantScale * QuantScale), -1f, 1f);
+		}
+
+		internal const int SignatureWords = Dimensions / 64;
+
+		/// <summary>Sign bitmask of a quantized vector — bit i set when component i is negative.</summary>
+		internal static ulong[] SignSignature(byte[] quantized) {
+			var signature = new ulong[SignatureWords];
+			ReadOnlySpan<sbyte> s = MemoryMarshal.Cast<byte, sbyte>(quantized);
+			int len = Math.Min(s.Length, Dimensions);
+			for (int i = 0; i < len; i++)
+				if (s[i] < 0)
+					signature[i >> 6] |= 1UL << (i & 63);
+			return signature;
+		}
+
+		internal static int HammingDistance(ulong[] a, ulong[] b) {
+			int distance = 0;
+			for (int i = 0; i < a.Length; i++)
+				distance += System.Numerics.BitOperations.PopCount(a[i] ^ b[i]);
+			return distance;
+		}
+
+		/// <summary>
+		/// Sign-LSH prefilter bound for <see cref="HammingDistance"/> over
+		/// <see cref="SignSignature"/>s: two unit vectors at angle θ differ in sign on a
+		/// dimension with probability θ/π, so vectors with cosine ≥ threshold have
+		/// expected sign-hamming E = D·acos(threshold)/π with σ² = D·p(1−p). Above
+		/// E + 4.6σ a pair can reach the cosine threshold only with negligible
+		/// probability (≈2·10⁻⁶ per frame pair — far below the matching pass's evidence
+		/// quorum), so the expensive exact dot product can be skipped.
+		/// </summary>
+		internal static int SignatureHammingBound(float cosineThreshold) {
+			double p = Math.Acos(Math.Clamp(cosineThreshold, -1f, 1f)) / Math.PI;
+			double expected = Dimensions * p;
+			double sigma = Math.Sqrt(Dimensions * p * (1 - p));
+			return (int)Math.Ceiling(expected + 4.6 * sigma);
 		}
 	}
 }

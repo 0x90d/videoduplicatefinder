@@ -118,10 +118,24 @@ namespace VDF.Core.AI {
 		}
 
 		public void Dispose() {
+			// Stop embedding the backlog but KEEP draining (faulted mode) so decode
+			// workers blocked in a bounded Add always unblock; the worker then exits
+			// after at most the one in-flight inference batch.
+			faulted = true;
 			queue.CompleteAdding();
-			try { worker.Wait(TimeSpan.FromSeconds(30)); } catch { }
-			embedder.Dispose();
-			queue.Dispose();
+			bool exited;
+			try { exited = worker.Wait(TimeSpan.FromSeconds(30)); }
+			catch { exited = worker.IsCompleted; }
+			if (exited) {
+				embedder.Dispose();
+				queue.Dispose();
+			}
+			else {
+				// Never free the native InferenceSession under an in-flight Run — that is
+				// a native use-after-free that kills the whole process. Leaking one wedged
+				// session is the lesser evil; the finalizers reclaim it eventually.
+				Logger.Instance.Warn("AI embedding worker did not stop in time — leaving the ONNX session alive instead of freeing it mid-inference.");
+			}
 		}
 	}
 }

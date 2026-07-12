@@ -40,6 +40,25 @@ namespace VDF.Core.Utils {
 			return 100d / data.Length * darkPixels < darkProcent;
 		}
 
+		/// <summary>
+		/// Dark-frame check for RGB24 embedding inputs — same convention as
+		/// <see cref="VerifyGrayScaleValues"/> (a pixel is dark when every channel is at
+		/// or below the black-pixel limit; the frame fails when at least
+		/// <paramref name="darkProcent"/> of pixels are dark). Dark frames embed
+		/// near-identically regardless of content, so they must never feed AI matching.
+		/// </summary>
+		public static bool VerifyRgbFrameValues(byte[] rgb, double darkProcent = 80) {
+			int pixels = rgb.Length / 3;
+			if (pixels == 0)
+				return false;
+			int darkPixels = 0;
+			for (int i = 0; i + 2 < rgb.Length; i += 3) {
+				if (rgb[i] <= BlackPixelLimit && rgb[i + 1] <= BlackPixelLimit && rgb[i + 2] <= BlackPixelLimit)
+					darkPixels++;
+			}
+			return 100d / pixels * darkPixels < darkProcent;
+		}
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe float PercentageDifferenceWithoutSpecificPixels(byte[] img1, byte[] img2, bool ignoreBlackPixels, bool ignoreWhitePixels) {
 			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
