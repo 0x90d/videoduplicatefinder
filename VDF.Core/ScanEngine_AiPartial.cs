@@ -45,9 +45,7 @@ namespace VDF.Core {
 		/// already grouped there (or by the visual duplicate scan) are skipped.
 		/// </summary>
 		internal void ScanForPartialDuplicatesVisual() {
-			var alreadyGrouped = new HashSet<string>(
-				Duplicates.Select(d => d.Path),
-				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+			var alreadyGrouped = BuildAlreadyGroupedPathSet();
 
 			var videos = DatabaseUtils.Database
 				.Where(e => !e.invalid && !e.IsImage &&
@@ -163,61 +161,19 @@ namespace VDF.Core {
 					signatures[i] = ComputeDenseSignatures(record);
 			currentStageLabel = T("Scan.Stage.AiPartialCompare");
 			InitProgress(Math.Max(videos.Count - 1, 1));
-			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
-			int pairsChecked = 0;
-			try {
-				Parallel.For(0, videos.Count - 1, new ParallelOptions {
-					CancellationToken = cancelationTokenSource.Token,
-					MaxDegreeOfParallelism = MatchingParallelDegree
-				}, i => {
-					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
-						return;
-					var source = dense[i];
-					if (source == null) {
-						IncrementProgress(Path.GetFileName(videos[i].Path));
-						return;
-					}
-					double sourceSec = videos[i].mediaInfo!.Duration.TotalSeconds;
-					for (int j = i + 1; j < videos.Count; j++) {
-						if (cancelationTokenSource.IsCancellationRequested)
-							break;
-						double clipSec = videos[j].mediaInfo!.Duration.TotalSeconds;
-						// Same candidate prefilters as the audio pass. The list is sorted by
-						// duration descending, so the ratio only shrinks as j grows: the
-						// near-full-length pairs form a skippable prefix, and once below the
-						// minimum ratio nothing further can qualify.
-						double ratio = clipSec / sourceSec;
-						if (ratio >= 0.95)
-							continue;
-						if (ratio < Settings.PartialClipMinRatio)
-							break;
-						var clip = dense[j];
-						if (clip == null)
-							continue;
-						Interlocked.Increment(ref pairsChecked);
-						if (TryMatchDenseFrames(source, clip, signatures[i]!, signatures[j]!, hitThreshold, hammingBound, out float sim, out int offsetSec))
-							matches.Add((i, j, sim, offsetSec));
-					}
-					IncrementProgress(Path.GetFileName(videos[i].Path));
-				});
-			}
-			catch (OperationCanceledException) { }
+			(var matches, int pairsChecked) = CollectPartialMatchCandidates(videos,
+				pairPrefilter: (i, j) => dense[i] != null && dense[j] != null,
+				tryMatchPair: (i, j) =>
+					TryMatchDenseFrames(dense[i]!, dense[j]!, signatures[i]!, signatures[j]!, hitThreshold, hammingBound, out float sim, out int offsetSec)
+						? (sim, offsetSec)
+						: null);
 			if (cancelationTokenSource.IsCancellationRequested)
 				return;
 
 			var assignments = AssignPartialClipGroups(matches);
-			var addedSources = new HashSet<int>();
-			foreach (var (si, ci, sim, offsetSec, groupId) in assignments) {
-				FileEntry source = videos[si];
-				FileEntry clip = videos[ci];
-				if (Settings.ExtendedFFToolsLogging)
-					Logger.Instance.Info($"[AI-Partial] {Path.GetFileName(clip.Path)} in {Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (hit threshold {Settings.AiPartialHitPercent:F0}%)");
-				if (addedSources.Add(si))
-					Duplicates.Add(new DuplicateItem(source, 0f, groupId, DuplicateFlags.None));
-				Duplicates.Add(new DuplicateItem(clip, 1f - sim, groupId, DuplicateFlags.PartialClip | DuplicateFlags.AiMatched) {
-					PartialClipOffset = TimeSpan.FromSeconds(offsetSec)
-				});
-			}
+			EmitPartialClipAssignments(videos, assignments, DuplicateFlags.PartialClip | DuplicateFlags.AiMatched,
+				(source, clip, sim, offsetSec) => Logger.Instance.Info(
+					$"[AI-Partial] {Path.GetFileName(clip.Path)} in {Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (hit threshold {Settings.AiPartialHitPercent:F0}%)"));
 			Logger.Instance.Info($"AI partial detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
 		}
 

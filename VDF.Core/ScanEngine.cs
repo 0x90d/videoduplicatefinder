@@ -1901,15 +1901,11 @@ namespace VDF.Core {
 		internal void ScanForPartialDuplicates() {
 			Logger.Instance.Info("Partial clip detection: building fingerprint index...");
 
-			// Build a quick lookup for paths already covered by visual duplicate groups.
-			var alreadyGrouped = new HashSet<string>(
-				Duplicates.Select(d => d.Path),
-				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-
 			// Collect eligible videos: not an image, has a usable fingerprint, not already grouped.
 			// Exclude silent/all-zero fingerprints: they Hamming-match any other silent track
 			// at 100% and produce meaningless partial-clip groups. Older scan databases written
 			// before this check may still contain all-zero fingerprints, so filter at read time.
+			var alreadyGrouped = BuildAlreadyGroupedPathSet();
 			var videos = DatabaseUtils.Database
 				.Where(e => !e.invalid && !e.IsImage &&
 						!e.Flags.Has(EntryFlags.SilentAudioTrack) &&
@@ -1930,53 +1926,16 @@ namespace VDF.Core {
 			currentStageLabel = T("Scan.Stage.PartialCompare");
 			InitProgress(videos.Count - 1);
 
-			// --- Parallel phase: compute all matches without mutating shared state ---
-			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
-			int pairsChecked = 0;
-
-			Parallel.For(0, videos.Count - 1,
-				new ParallelOptions {
-					CancellationToken = cancelationTokenSource.Token,
-					MaxDegreeOfParallelism = MatchingParallelDegree
+			(var matches, int pairsChecked) = CollectPartialMatchCandidates(videos,
+				pairPrefilter: (i, j) => {
+					if ((videos[j].mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds < 1.0)
+						return false;
+					// Fingerprint block sanity (each block ≈ 1 second)
+					return videos[j].AudioFingerprint!.Length < videos[i].AudioFingerprint!.Length;
 				},
-				i => {
-					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
-						return; // canceled while paused — the loop's token ends the remaining iterations
-
-					FileEntry source = videos[i];
-					double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
-
-					if (sourceSec >= 1.0) {
-						for (int j = i + 1; j < videos.Count; j++) {
-							if (cancelationTokenSource.IsCancellationRequested) break;
-							FileEntry clip = videos[j];
-							double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
-							if (clipSec < 1.0) continue;
-
-							// Pre-filter 1: clip must be at least PartialClipMinRatio of source
-							if (clipSec / sourceSec < Settings.PartialClipMinRatio) continue;
-
-							// Pre-filter 2: clip must be shorter than 95% of source (visual dup handles the rest)
-							if (clipSec / sourceSec >= 0.95) continue;
-
-							// Fingerprint block sanity (each block ≈ 1 second)
-							uint[] fpSource = source.AudioFingerprint!;
-							uint[] fpClip = clip.AudioFingerprint!;
-							if (fpClip.Length >= fpSource.Length) continue;
-
-							Interlocked.Increment(ref pairsChecked);
-							var (sim, offsetSec) = SlidingWindowCompare(fpClip, fpSource, simThreshold);
-
-							if (sim >= simThreshold)
-								matches.Add((i, j, sim, offsetSec));
-						}
-					}
-
-					// Counted on completion, as every other compare loop does: a source is only done
-					// once its whole row of pairs has been checked. Counting at the loop head
-					// reported work that had not happened yet — the bar reached its maximum the
-					// moment the last iteration *started*.
-					IncrementProgress(Path.GetFileName(source.Path));
+				tryMatchPair: (i, j) => {
+					var (sim, offsetSec) = SlidingWindowCompare(videos[j].AudioFingerprint!, videos[i].AudioFingerprint!, simThreshold);
+					return sim >= simThreshold ? (sim, offsetSec) : null;
 				});
 
 			// --- Sequential phase: build groups from matches (preserving longest-source-first order) ---
@@ -1995,24 +1954,94 @@ namespace VDF.Core {
 						return (pass, visualSim);
 					});
 
-			var addedSources = new HashSet<int>();
+			EmitPartialClipAssignments(videos, assignments, DuplicateFlags.PartialClip,
+				(source, clip, sim, offsetSec) => Logger.Instance.Info(
+					$"[Partial] {Path.GetFileName(clip.Path)} in {Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {clip.AudioFingerprint!.Length}/{source.AudioFingerprint!.Length} blocks)"));
 
+			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
+		}
+
+		/// <summary>Paths already covered by earlier passes' duplicate groups.</summary>
+		HashSet<string> BuildAlreadyGroupedPathSet() =>
+			new(Duplicates.Select(d => d.Path),
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+
+		/// <summary>
+		/// The candidate pair loop both partial passes (audio fingerprint and visual/AI)
+		/// share: an upper-triangular parallel sweep over duration-descending videos with
+		/// the common duration prefilters — the clip must be shorter than 95% of the
+		/// source (near-full-length pairs belong to the visual duplicate scan) and at
+		/// least <see cref="Settings.PartialClipMinRatio"/> of it. The list is sorted by
+		/// duration descending, so the ratio only shrinks as j grows: once below the
+		/// minimum nothing further in the row can qualify.
+		/// Progress counts a source as done only once its whole row of pairs has been
+		/// checked (counting at the loop head reported work that had not happened yet).
+		/// <paramref name="pairPrefilter"/> runs before a pair counts as checked;
+		/// <paramref name="tryMatchPair"/> returns similarity+offset for a match, null otherwise.
+		/// </summary>
+		(ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)> Matches, int PairsChecked)
+			CollectPartialMatchCandidates(
+				List<FileEntry> videos,
+				Func<int, int, bool>? pairPrefilter,
+				Func<int, int, (float sim, int offsetSec)?> tryMatchPair) {
+			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
+			int pairsChecked = 0;
+			try {
+				Parallel.For(0, videos.Count - 1,
+					new ParallelOptions {
+						CancellationToken = cancelationTokenSource.Token,
+						MaxDegreeOfParallelism = MatchingParallelDegree
+					},
+					i => {
+						if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
+							return; // canceled while paused — the loop's token ends the remaining iterations
+
+						double sourceSec = (videos[i].mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+						if (sourceSec >= 1.0) {
+							for (int j = i + 1; j < videos.Count; j++) {
+								if (cancelationTokenSource.IsCancellationRequested) break;
+								double clipSec = (videos[j].mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+								double ratio = clipSec / sourceSec;
+								if (ratio >= 0.95) continue;
+								if (ratio < Settings.PartialClipMinRatio) break;
+								if (pairPrefilter != null && !pairPrefilter(i, j)) continue;
+								Interlocked.Increment(ref pairsChecked);
+								if (tryMatchPair(i, j) is { } match)
+									matches.Add((i, j, match.sim, match.offsetSec));
+							}
+						}
+						IncrementProgress(Path.GetFileName(videos[i].Path));
+					});
+			}
+			catch (OperationCanceledException) { }
+			return (matches, pairsChecked);
+		}
+
+		/// <summary>
+		/// Adds the verified clip→source assignments to <see cref="Duplicates"/>: one
+		/// shared group per source (added once, difference 0) plus each clip flagged
+		/// with <paramref name="clipFlags"/> and its matched offset.
+		/// </summary>
+		void EmitPartialClipAssignments(
+			List<FileEntry> videos,
+			List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> assignments,
+			DuplicateFlags clipFlags,
+			Action<FileEntry, FileEntry, float, int> logMatch) {
+			var addedSources = new HashSet<int>();
 			foreach (var (si, ci, sim, offsetSec, groupId) in assignments) {
 				FileEntry source = videos[si];
 				FileEntry clip = videos[ci];
 
 				if (Settings.ExtendedFFToolsLogging)
-					Logger.Instance.Info($"[Partial] {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: sim={sim:P1} @ {offsetSec}s (threshold {Settings.PartialClipSimilarityThreshold:P0}, fp {clip.AudioFingerprint!.Length}/{source.AudioFingerprint!.Length} blocks)");
+					logMatch(source, clip, sim, offsetSec);
 
 				if (addedSources.Add(si))
 					Duplicates.Add(new DuplicateItem(source, 0f, groupId, DuplicateFlags.None));
 
-				Duplicates.Add(new DuplicateItem(clip, 1f - sim, groupId, DuplicateFlags.PartialClip) {
+				Duplicates.Add(new DuplicateItem(clip, 1f - sim, groupId, clipFlags) {
 					PartialClipOffset = TimeSpan.FromSeconds(offsetSec)
 				});
 			}
-
-			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
 		}
 
 		/// <summary>
