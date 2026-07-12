@@ -156,11 +156,53 @@ namespace VDF.Core.AI {
 			Directory.CreateDirectory(AiFolder);
 			using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
 
+			var downloads = new List<Func<CancellationToken, Task>>(2);
 			if (FindRuntimeLibrary() == null || !HasCurrentRuntimeVersion())
-				await DownloadRuntimeAsync(http, progress, token);
-
+				downloads.Add(ct => DownloadRuntimeAsync(http, progress, ct));
 			if (!File.Exists(ModelPath))
-				await DownloadModelAsync(http, progress, token);
+				downloads.Add(ct => DownloadModelAsync(http, progress, ct));
+			// The two archives come from different hosts (onnxruntime GitHub release vs
+			// the model mirror), so fetching them concurrently roughly halves the
+			// first-use wait. Consumers already key progress off AiDownloadProgress.Step.
+			await RunDownloadsAsync(downloads, token);
+		}
+
+		/// <summary>
+		/// Runs the given downloads concurrently. The first failure cancels the
+		/// remaining downloads (no point finishing a 100 MB sibling once the feature
+		/// cannot become ready) and its exception surfaces — specifically NOT the
+		/// sibling's induced OperationCanceledException, which Task.WhenAll would
+		/// otherwise rethrow when the canceled task comes first in the list.
+		/// </summary>
+		internal static async Task RunDownloadsAsync(IReadOnlyList<Func<CancellationToken, Task>> downloads, CancellationToken token) {
+			if (downloads.Count == 0)
+				return;
+			if (downloads.Count == 1) {
+				await downloads[0](token);
+				return;
+			}
+			using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+			List<Task> tasks = downloads.Select(RunOne).ToList();
+			async Task RunOne(Func<CancellationToken, Task> download) {
+				try {
+					await download(linkedCts.Token);
+				}
+				catch {
+					linkedCts.Cancel();
+					throw;
+				}
+			}
+			try {
+				await Task.WhenAll(tasks);
+			}
+			catch when (!token.IsCancellationRequested) {
+				foreach (Task t in tasks) {
+					Exception? real = t.Exception?.InnerExceptions.FirstOrDefault(e => e is not OperationCanceledException);
+					if (real != null)
+						System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(real).Throw();
+				}
+				throw;
+			}
 		}
 
 		static async Task DownloadRuntimeAsync(HttpClient http, IProgress<AiDownloadProgress>? progress, CancellationToken token) {

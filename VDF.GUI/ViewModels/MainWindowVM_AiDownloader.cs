@@ -15,7 +15,9 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,10 +71,17 @@ namespace VDF.GUI.ViewModels {
 			IsBusy = true;
 			IsBusyOverlayText = App.Lang["Message.AiDownloadPreparing"];
 			try {
-				var progress = new Progress<AiDownloadProgress>(p =>
-					IsBusyOverlayText = string.Format(CultureInfo.InvariantCulture,
-						App.Lang["Message.AiDownloadProgress"], p.Step,
-						VDF.Core.Utils.DownloadUtils.FormatBytes(p.BytesDone), VDF.Core.Utils.DownloadUtils.FormatBytes(p.BytesTotal)));
+				// The runtime and the model download concurrently; render one line per
+				// step (keyed by step name) instead of flickering between the two.
+				// Progress<T> posts to the UI thread, so the dictionary needs no lock.
+				var stepProgress = new Dictionary<string, (long Done, long? Total)>();
+				var progress = new Progress<AiDownloadProgress>(p => {
+					stepProgress[p.Step] = (p.BytesDone, p.BytesTotal);
+					IsBusyOverlayText = string.Join("\n", stepProgress.Select(s =>
+						string.Format(CultureInfo.InvariantCulture,
+							App.Lang["Message.AiDownloadProgress"], s.Key,
+							VDF.Core.Utils.DownloadUtils.FormatBytes(s.Value.Done), VDF.Core.Utils.DownloadUtils.FormatBytes(s.Value.Total))));
+				});
 				await AiComponents.DownloadAsync(progress, CancellationToken.None);
 				await MessageBoxService.Show(string.Format(CultureInfo.InvariantCulture,
 					App.Lang["Message.AiDownloadDone"], AiComponents.AiFolder));

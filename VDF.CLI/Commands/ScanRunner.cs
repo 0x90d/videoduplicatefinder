@@ -38,12 +38,14 @@ namespace VDF.CLI.Commands {
 			if (VDF.Core.AI.AiComponents.IsReady)
 				return;
 			Console.Error.WriteLine($"[scan] Downloading AI components (ONNX Runtime {VDF.Core.AI.AiComponents.RuntimeVersion} + model, ~100 MB) to '{VDF.Core.AI.AiComponents.AiFolder}'...");
-			long lastReported = -1;
+			// One line per ~5 MB, not per chunk — CI logs stay readable. Buckets are
+			// per step: the runtime and model download concurrently, and a shared
+			// counter would swallow whichever step reaches a bucket second.
+			var lastReported = new System.Collections.Concurrent.ConcurrentDictionary<string, long>();
 			var progress = new Progress<VDF.Core.AI.AiDownloadProgress>(p => {
-				// One line per ~5 MB, not per chunk — CI logs stay readable.
 				long bucket = p.BytesDone / (5 * 1024 * 1024);
-				if (bucket == Interlocked.Read(ref lastReported)) return;
-				Interlocked.Exchange(ref lastReported, bucket);
+				if (lastReported.TryGetValue(p.Step, out long prev) && prev == bucket) return;
+				lastReported[p.Step] = bucket;
 				Console.Error.WriteLine($"[scan]   {p.Step}: {p.BytesDone / (1024 * 1024)} MB{(p.BytesTotal.HasValue ? $" / {p.BytesTotal.Value / (1024 * 1024)} MB" : string.Empty)}");
 			});
 			await VDF.Core.AI.AiComponents.DownloadAsync(progress, ct);

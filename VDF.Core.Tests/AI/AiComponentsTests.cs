@@ -64,6 +64,52 @@ public class AiComponentsTests {
 	}
 
 	[Fact]
+	public async Task RunDownloadsAsync_RunsDownloadsConcurrently() {
+		// Each download only completes once the other has started — sequential
+		// execution would deadlock here and trip the timeout.
+		var aStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var bStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var downloads = new List<Func<CancellationToken, Task>> {
+			async ct => { aStarted.SetResult(); await bStarted.Task.WaitAsync(ct); },
+			async ct => { bStarted.SetResult(); await aStarted.Task.WaitAsync(ct); },
+		};
+
+		await AiComponents.RunDownloadsAsync(downloads, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+	}
+
+	[Fact]
+	public async Task RunDownloadsAsync_FailureCancelsSiblingAndSurfacesTheRealError() {
+		var siblingCanceled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var downloads = new List<Func<CancellationToken, Task>> {
+			// The sibling: runs "forever" until the failure cancels it. It is FIRST in
+			// the list, so a naive Task.WhenAll await would rethrow its cancellation
+			// instead of the real error below.
+			async ct => {
+				try { await Task.Delay(Timeout.Infinite, ct); }
+				finally { siblingCanceled.TrySetResult(); }
+			},
+			ct => Task.FromException(new IOException("model corrupt")),
+		};
+
+		var ex = await Assert.ThrowsAsync<IOException>(() =>
+			AiComponents.RunDownloadsAsync(downloads, CancellationToken.None));
+		Assert.Equal("model corrupt", ex.Message);
+		await siblingCanceled.Task.WaitAsync(TimeSpan.FromSeconds(10));
+	}
+
+	[Fact]
+	public async Task RunDownloadsAsync_UserCancellationSurfacesAsCancellation() {
+		using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+		var downloads = new List<Func<CancellationToken, Task>> {
+			ct => Task.Delay(Timeout.Infinite, ct),
+			ct => Task.Delay(Timeout.Infinite, ct),
+		};
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+			AiComponents.RunDownloadsAsync(downloads, cts.Token));
+	}
+
+	[Fact]
 	public void EnsureReady_HonorsTestOverride() {
 		string? prev = AiComponents.TestOverrideModelPath;
 		try {
