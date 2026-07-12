@@ -686,6 +686,147 @@ namespace VDF.Core.FFTools {
 			}
 			return bytes;
 		}
+
+		/// <summary>
+		/// CLI fallback fetching BOTH the 32x32 gray frame and the 224x224 RGB embedding
+		/// frame from one FFmpeg invocation — one seek+decode instead of two full runs
+		/// per sampled position. The filter graph splits the decoded frame into the exact
+		/// chains the two single-output calls use, so the results are byte-identical.
+		/// Gray arrives on stdout; RGB lands in a unique temp file, because two rawvideo
+		/// outputs on one pipe have no deterministic framing (the write order of ffmpeg's
+		/// muxers is not a contract across versions, and raw gray bytes cannot be told
+		/// apart from RGB header bytes after the fact).
+		/// Callers must ensure CustomFFArguments is empty: a user -vf belongs on the gray
+		/// chain but embedding inputs must stay unfiltered on every path, and remaining
+		/// custom args are ambiguous with two outputs — those scans keep the two-call path.
+		/// </summary>
+		internal static (byte[]? GrayBytes, byte[]? Rgb224) GetGrayAndRgb224Cli(string file, TimeSpan position, bool softwareDecodeOnly, bool extendedLogging) {
+			const int N = 32;
+			const int grayExpectedBytes = N * N;
+			int rgbExpectedBytes = AI.OnnxEmbedder.InputSide * AI.OnnxEmbedder.InputSide * 3;
+			string rgbTempPath = Path.Combine(Path.GetTempPath(), $"VDF.AiFrame.{Guid.NewGuid():N}.rgb");
+
+			var psi = new ProcessStartInfo {
+				FileName = FFmpegPath,
+				CreateNoWindow = true,
+				RedirectStandardInput = false,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
+				WindowStyle = ProcessWindowStyle.Hidden
+			};
+			psi.ArgumentList.Add("-hide_banner");
+			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("error");
+			psi.ArgumentList.Add("-nostdin");
+			if (HardwareAccelerationMode != FFHardwareAccelerationMode.none && !softwareDecodeOnly) {
+				psi.ArgumentList.Add("-hwaccel");
+				psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
+			}
+			bool isImage = FileUtils.IsImageFile(file);
+			// No input -ss for still images — see the matching comment in GetThumbnail (#801).
+			if (!isImage) {
+				psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(position.ToString(null, CultureInfo.InvariantCulture));
+			}
+			psi.ArgumentList.Add("-i"); psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
+			psi.ArgumentList.Add("-filter_complex");
+			psi.ArgumentList.Add(
+				$"[0:v]split=2[g][r];" +
+				$"[g]scale={N}:{N}:flags=bicubic,format=gray[gout];" +
+				$"[r]scale={AI.OnnxEmbedder.InputSide}:{AI.OnnxEmbedder.InputSide}:flags=bicubic,format=rgb24[rout]");
+			psi.ArgumentList.Add("-map"); psi.ArgumentList.Add("[gout]");
+			psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
+			psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
+			psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("gray");
+			psi.ArgumentList.Add("pipe:1");
+			psi.ArgumentList.Add("-map"); psi.ArgumentList.Add("[rout]");
+			psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
+			psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
+			psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("rgb24");
+			psi.ArgumentList.Add("-y");
+			psi.ArgumentList.Add(rgbTempPath);
+
+			using var process = new Process { StartInfo = psi };
+			string errOut = string.Empty;
+			string lastErrLine = string.Empty;
+			int repeatCount = 0;
+			byte[]? gray = null;
+			byte[]? rgb = null;
+			try {
+				process.EnableRaisingEvents = true;
+				process.Start();
+				FFToolsUtils.LowerChildPriority(process);
+				process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
+					if (e.Data?.Length > 0) {
+						if (e.Data == lastErrLine) {
+							repeatCount++;
+						}
+						else {
+							if (repeatCount > 0) {
+								errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+								repeatCount = 0;
+							}
+							errOut += Environment.NewLine + e.Data;
+							lastErrLine = e.Data;
+						}
+					}
+				});
+				process.BeginErrorReadLine();
+				using var ms = new MemoryStream();
+				process.StandardOutput.BaseStream.CopyTo(ms);
+
+				if (!process.WaitForExit(TimeoutDuration))
+					throw new TimeoutException($"FFmpeg timed out on file: {file}");
+				else
+					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+
+				if (process.ExitCode != 0)
+					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
+
+				gray = ms.ToArray();
+				if (gray.Length != grayExpectedBytes) {
+					errOut += $"{Environment.NewLine}graybytes length != {grayExpectedBytes} (got {gray.Length})";
+					gray = null;
+				}
+				if (File.Exists(rgbTempPath)) {
+					rgb = File.ReadAllBytes(rgbTempPath);
+					if (rgb.Length != rgbExpectedBytes) {
+						errOut += $"{Environment.NewLine}AI frame length != {rgbExpectedBytes} (got {rgb.Length})";
+						rgb = null;
+					}
+				}
+			}
+			catch (Exception e) {
+				errOut += $"{Environment.NewLine}{e.Message}";
+				try {
+					if (process.HasExited == false)
+						process.Kill();
+				}
+				catch { }
+				gray = null;
+				rgb = null;
+			}
+			finally {
+				try { if (File.Exists(rgbTempPath)) File.Delete(rgbTempPath); } catch { }
+			}
+			if (repeatCount > 0)
+				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+			// Same benign-demuxer-noise handling as GetThumbnail (#805/#809/#815).
+			if (gray != null && errOut.Length > 0 && isImage)
+				errOut = FilterBenignImageDemuxerNoise(errOut);
+			if (gray == null || rgb == null || (extendedLogging && errOut.Length > 0)) {
+				string what = gray == null ? "graybytes+AI frame" : "AI frame";
+				string message = $"{(gray == null || rgb == null ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {what} from: {file}";
+				if (extendedLogging) {
+					var args = string.Join(" ", psi.ArgumentList);
+					message += $":{Environment.NewLine}{FFmpegPath} {args}";
+				}
+				string? hint = gray == null ? FfmpegErrorClassifier.Classify(errOut) : null;
+				string hintSuffix = hint != null ? $"{Environment.NewLine}Hint: {hint}" : string.Empty;
+				Logger.Instance.Warn($"{message}{errOut}{hintSuffix}");
+			}
+			return (gray, rgb);
+		}
+
 		internal static bool GetGrayBytesFromVideo(FileEntry videoFile, List<float> positions, double maxSamplingDurationSeconds, bool extendedLogging, Action<int>? onSampleComplete = null, AI.IEmbeddingFrameSink? embeddingSink = null) {
 			// Count missing up front so the TooDark check below compares against samples
 			// we actually extracted this run, not the total positions (which may already
@@ -722,7 +863,30 @@ namespace VDF.Core.FFTools {
 			tooDarkCounter = 0;
 			for (int i = 0; i < positions.Count; i++) {
 				double position = videoFile.GetGrayBytesIndex(positions[i], maxSamplingDurationSeconds);
-				if (!videoFile.grayBytes.ContainsKey(position)) {
+				bool needGray = !videoFile.grayBytes.ContainsKey(position);
+				bool needRgb = embeddingSink?.WantsEmbedding(videoFile, position) == true;
+
+				// Both frames wanted: one seek+decode via the split filter instead of two
+				// full FFmpeg runs. Not with CustomFFArguments — see GetGrayAndRgb224Cli.
+				if (needGray && needRgb && string.IsNullOrWhiteSpace(CustomFFArguments)) {
+					(byte[]? data, byte[]? rgb) = GetGrayAndRgb224Cli(videoFile.Path, TimeSpan.FromSeconds(position), softwareDecodeOnly: false, extendedLogging);
+					if (data == null) {
+						videoFile.Flags.Set(EntryFlags.ThumbnailError);
+						return false;
+					}
+					if (!GrayBytesUtils.VerifyGrayScaleValues(data))
+						tooDarkCounter++;
+					videoFile.grayBytes.Add(position, data);
+					videoFile.PHashes.Add(position, pHash.PerceptualHash.ComputePHashFromGray32x32(data));
+					// RGB failure is not fatal — the entry simply stays without this
+					// embedding and the AI pass abstains for it.
+					if (rgb != null)
+						embeddingSink!.SubmitFrame(videoFile, position, rgb);
+					onSampleComplete?.Invoke(i + 1);
+					continue;
+				}
+
+				if (needGray) {
 					var data = GetThumbnail(new FfmpegSettings {
 						File = videoFile.Path,
 						Position = TimeSpan.FromSeconds(position),
@@ -740,14 +904,14 @@ namespace VDF.Core.FFTools {
 
 				// AI frame for the same position: its failure is not fatal — the entry
 				// simply stays without this embedding and the AI pass abstains for it.
-				if (embeddingSink?.WantsEmbedding(videoFile, position) == true) {
+				if (needRgb) {
 					byte[]? rgb = GetThumbnail(new FfmpegSettings {
 						File = videoFile.Path,
 						Position = TimeSpan.FromSeconds(position),
 						Rgb224 = true,
 					}, extendedLogging);
 					if (rgb != null)
-						embeddingSink.SubmitFrame(videoFile, position, rgb);
+						embeddingSink!.SubmitFrame(videoFile, position, rgb);
 				}
 				onSampleComplete?.Invoke(i + 1);
 			}

@@ -95,6 +95,79 @@ public class AiFrameExtractionTests {
 		Assert.Single(entry.grayBytes); // no re-extraction of gray data
 	}
 
+	[SkippableTheory]
+	[InlineData("video")]
+	[InlineData("jpeg")]
+	[InlineData("png")]
+	public void GetGrayAndRgb224Cli_MatchesTheTwoSingleCallOutputs(string kind) {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		string? file = kind switch {
+			"video" => _fixture.H264_8bit,
+			"jpeg" => _fixture.SampleJpeg,
+			_ => _fixture.SamplePng
+		};
+		Skip.If(file == null, $"{kind} test file not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = false;
+		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
+		FfmpegEngine.CustomFFArguments = string.Empty;
+
+		TimeSpan position = kind == "video" ? TimeSpan.FromSeconds(1) : TimeSpan.Zero;
+		bool softwareOnly = kind != "video";
+
+		(byte[]? gray, byte[]? rgb) = FfmpegEngine.GetGrayAndRgb224Cli(file!, position, softwareOnly, extendedLogging: false);
+
+		Assert.NotNull(gray);
+		Assert.NotNull(rgb);
+		Assert.Equal(32 * 32, gray!.Length);
+		Assert.Equal(Rgb224Bytes, rgb!.Length);
+
+		// The combined invocation must be a pure optimization: byte-identical to the
+		// two single-output runs, or cached gray bytes from mixed scans would drift.
+		byte[]? singleGray = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = file!, Position = position, GrayScale = 1, SoftwareDecodeOnly = softwareOnly
+		}, extendedLogging: false);
+		byte[]? singleRgb = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = file!, Position = position, Rgb224 = true, SoftwareDecodeOnly = softwareOnly
+		}, extendedLogging: false);
+
+		Assert.Equal(singleGray, gray);
+		Assert.Equal(singleRgb, rgb);
+	}
+
+	[SkippableFact]
+	public void GetGrayBytesFromVideo_WithCustomFFArguments_StillFeedsSinkViaTwoCallPath() {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = false;
+		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
+		// A user -vf disables the combined invocation (it belongs on the gray chain
+		// only); the sink must still receive its unfiltered frames via the old path.
+		FfmpegEngine.CustomFFArguments = "-vf hflip";
+
+		var entry = EntryFor(_fixture.H264_8bit!);
+		var sink = new RecordingSink();
+		var positions = new List<float> { 0.5f };
+
+		Assert.True(FfmpegEngine.GetGrayBytesFromVideo(entry, positions, 0, extendedLogging: false, embeddingSink: sink));
+
+		Assert.Single(entry.grayBytes);
+		var frame = Assert.Single(sink.Frames);
+		Assert.Equal(Rgb224Bytes, frame.rgb.Length);
+
+		// Embedding inputs are uniformly unfiltered — the user filter must not reach them.
+		FfmpegEngine.CustomFFArguments = string.Empty;
+		byte[]? unfilteredRgb = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+			File = _fixture.H264_8bit!,
+			Position = TimeSpan.FromSeconds(entry.grayBytes.Keys.First()),
+			Rgb224 = true,
+		}, extendedLogging: false);
+		Assert.Equal(unfilteredRgb, frame.rgb);
+	}
+
 	[SkippableFact]
 	public void GetThumbnail_Rgb224_ProcessMode_ReturnsPackedFrame() {
 		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);

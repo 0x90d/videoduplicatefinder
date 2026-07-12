@@ -2787,6 +2787,11 @@ namespace VDF.Core {
 				// Decode through FFmpeg — the same pipeline videos use — so image and video
 				// gray bytes share identical grayscale conversion and scaling.
 				byte[]? grayBytes;
+				// RGB frame from the combined CLI fallback; submitted only after the
+				// dark check below, so failed/too-dark images stay without an embedding
+				// exactly like on the two-call path.
+				byte[]? pendingRgb = null;
+				bool rgbFromCombinedCall = false;
 				int width, height;
 				if (!FfmpegEngine.TryGetImageInfoAndGrayBytes(imageFile.Path, out grayBytes, out width, out height, extendedLogging)) {
 					// CLI fallback. Read dimensions straight from the file header first: some
@@ -2799,12 +2804,20 @@ namespace VDF.Core {
 						width = stream?.Width ?? 0;
 						height = stream?.Height ?? 0;
 					}
-					grayBytes = FfmpegEngine.GetThumbnail(new FfmpegSettings {
-						File = imageFile.Path,
-						Position = TimeSpan.Zero,
-						GrayScale = 1,
-						SoftwareDecodeOnly = true,
-					}, extendedLogging);
+					if (embeddingSink?.WantsEmbedding(imageFile, 0) == true &&
+						string.IsNullOrWhiteSpace(FfmpegEngine.CustomFFArguments)) {
+						// Embedding wanted too: fetch gray + RGB in one decode instead of two.
+						(grayBytes, pendingRgb) = FfmpegEngine.GetGrayAndRgb224Cli(imageFile.Path, TimeSpan.Zero, softwareDecodeOnly: true, extendedLogging);
+						rgbFromCombinedCall = true;
+					}
+					else {
+						grayBytes = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+							File = imageFile.Path,
+							Position = TimeSpan.Zero,
+							GrayScale = 1,
+							SoftwareDecodeOnly = true,
+						}, extendedLogging);
+					}
 				}
 
 				if (grayBytes == null) {
@@ -2842,7 +2855,16 @@ namespace VDF.Core {
 				}
 
 				imageFile.grayBytes.Add(0, grayBytes);
-				TryQueueImageEmbeddingFrame(imageFile, embeddingSink, extendedLogging);
+				if (rgbFromCombinedCall) {
+					// The RGB frame came out of the same decode; a null here means the RGB
+					// branch failed — non-fatal, the AI pass abstains (no second attempt:
+					// the native path already failed for this file and the CLI just ran).
+					if (pendingRgb != null && embeddingSink?.WantsEmbedding(imageFile, 0) == true)
+						embeddingSink.SubmitFrame(imageFile, 0, pendingRgb);
+				}
+				else {
+					TryQueueImageEmbeddingFrame(imageFile, embeddingSink, extendedLogging);
+				}
 				return true;
 			}
 			catch (Exception ex) {
