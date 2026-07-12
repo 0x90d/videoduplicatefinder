@@ -82,7 +82,7 @@ namespace VDF.GUI.ViewModels {
 			Dispatcher.UIThread.InvokeAsync(() => {
 				logEntries.Add(entry);
 				if (!entry.IsSessionStart)
-					AppendLogTail($"{entry.Timestamp:HH:mm:ss} · {entry.Message}");
+					AppendLogTail(LogList.FormatTailLine(entry));
 				ScheduleLogRefresh();
 			});
 

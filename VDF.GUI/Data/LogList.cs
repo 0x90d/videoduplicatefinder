@@ -222,6 +222,29 @@ namespace VDF.GUI.Data {
 			return new LogListResult(rows, info, warning, error);
 		}
 
+		/// <summary>
+		/// Single-line form for the scanning screen's live tail (#832): multi-line payloads
+		/// (FFmpeg stderr dumps, stack traces) collapse to their first line so one failed
+		/// file cannot flood the screen, keeping the classifier's trailing "Hint:" line —
+		/// that is the plain-language part a user needs mid-scan. The full text stays
+		/// available in the Log window and the log file.
+		/// </summary>
+		public static string FormatTailLine(LogEntry entry) {
+			string message = entry.Message;
+			int nl = message.IndexOfAny(new[] { '\r', '\n' });
+			if (nl >= 0) {
+				string collapsed = message[..nl] + " …";
+				int hint = message.LastIndexOf("Hint: ", StringComparison.Ordinal);
+				if (hint > nl && message[hint - 1] is '\n' or '\r') {
+					string hintText = message[hint..];
+					int hintEnd = hintText.IndexOfAny(new[] { '\r', '\n' });
+					collapsed += " " + (hintEnd < 0 ? hintText : hintText[..hintEnd]);
+				}
+				message = collapsed;
+			}
+			return $"{entry.Timestamp:HH:mm:ss} · {message}";
+		}
+
 		/// <summary>Plain-text form used by copy/save — mirrors the log file's line shape.</summary>
 		public static string FormatLine(LogEntry entry) => entry switch {
 			{ IsSessionStart: true } => $"---------- {entry.Message} · {entry.Timestamp:HH:mm:ss} ----------",
