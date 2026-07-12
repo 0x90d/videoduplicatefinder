@@ -47,6 +47,7 @@ namespace VDF.Core.Utils {
 			".divx",
 			".m2t",
 			".m2ts",
+			".mts",
 			".vob",
 			".ts",
 			".rmvb",

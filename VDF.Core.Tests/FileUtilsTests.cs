@@ -85,4 +85,30 @@ public class FileUtilsTests {
 	[InlineData("archive.zip")]
 	public void IsImageFile_NonImage_False(string path) =>
 		Assert.False(FileUtils.IsImageFile(path));
+
+	// AVCHD camcorder footage: same MPEG-TS container as .m2ts, camcorders name it
+	// .MTS (uppercase on the card). Requested in discussion #766.
+	[Theory]
+	[InlineData(".mts")]
+	[InlineData(".MTS")]
+	[InlineData(".m2ts")]
+	[InlineData(".ts")]
+	public void IsVideoExtension_TransportStreamVariants_True(string extension) =>
+		Assert.True(FileUtils.IsVideoExtension(extension));
+
+	[Fact]
+	public void GetFilesRecursive_FindsMtsFiles() {
+		string dir = Path.Combine(Path.GetTempPath(), $"VDF.Test.{Guid.NewGuid():N}");
+		Directory.CreateDirectory(dir);
+		try {
+			File.WriteAllBytes(Path.Combine(dir, "camcorder.MTS"), new byte[] { 0x47 });
+			File.WriteAllBytes(Path.Combine(dir, "notes.txt"), new byte[] { 0x00 });
+			var files = FileUtils.GetFilesRecursive(dir, ignoreReadonly: false, ignoreReparsePoints: false,
+				recursive: true, includeImages: false, new List<string>(), CancellationToken.None);
+			Assert.Equal("camcorder.MTS", Assert.Single(files).Name);
+		}
+		finally {
+			Directory.Delete(dir, recursive: true);
+		}
+	}
 }
