@@ -359,6 +359,32 @@ namespace VDF.GUI.Data {
 			get => _PHashSampleRatioPercent;
 			set => this.RaiseAndSetIfChanged(ref _PHashSampleRatioPercent, Math.Clamp(value, 1f, 100f));
 		}
+		bool _UseAiMatching;
+		[JsonPropertyName("UseAiMatching")]
+		public bool UseAiMatching {
+			get => _UseAiMatching;
+			set => this.RaiseAndSetIfChanged(ref _UseAiMatching, value);
+		}
+		float _AiPercent = 94f;
+		/// <summary>Similarity threshold (percent = cosine·100) for the AI matching pass.</summary>
+		[JsonPropertyName("AiPercent")]
+		public float AiPercent {
+			get => _AiPercent;
+			set => this.RaiseAndSetIfChanged(ref _AiPercent, Math.Clamp(value, 50f, 100f));
+		}
+		bool _EnableAiPartialDetection;
+		[JsonPropertyName("EnableAiPartialDetection")]
+		public bool EnableAiPartialDetection {
+			get => _EnableAiPartialDetection;
+			set => this.RaiseAndSetIfChanged(ref _EnableAiPartialDetection, value);
+		}
+		float _AiPartialHitPercent = 89f;
+		/// <summary>Per-frame hit threshold (percent) for the visual partial-duplicate pass.</summary>
+		[JsonPropertyName("AiPartialHitPercent")]
+		public float AiPartialHitPercent {
+			get => _AiPartialHitPercent;
+			set => this.RaiseAndSetIfChanged(ref _AiPartialHitPercent, Math.Clamp(value, 70f, 99f));
+		}
 		bool _UseExifCreationDate;
 		[JsonPropertyName("UseExifCreationDate")]
 		public bool UseExifCreationDate {

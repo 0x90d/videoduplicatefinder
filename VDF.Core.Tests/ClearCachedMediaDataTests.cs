@@ -33,6 +33,7 @@ public class ClearCachedMediaDataTests {
 		entry.Path = @"D:\media\clip.mp4";
 		entry.grayBytes[0.25] = new byte[] { 1, 2 };
 		entry.PHashes[0.25] = 42UL;
+		entry.Embeddings[0.25] = new byte[] { 3, 4 };
 		entry.Flags.Set(EntryFlags.ThumbnailError | EntryFlags.MetadataError | EntryFlags.TooDark |
 			EntryFlags.NoAudioTrack | EntryFlags.AudioFingerprintError | EntryFlags.SilentAudioTrack);
 		return entry;
@@ -46,6 +47,7 @@ public class ClearCachedMediaDataTests {
 		Assert.Null(entry.mediaInfo);
 		Assert.Empty(entry.grayBytes);
 		Assert.Empty(entry.PHashes);
+		Assert.Empty(entry.Embeddings);
 		Assert.Null(entry.AudioFingerprint);
 		Assert.False(entry.HasThubmanilError);
 		Assert.False(entry.HasMetadataError);

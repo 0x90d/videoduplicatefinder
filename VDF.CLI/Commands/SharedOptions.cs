@@ -147,6 +147,26 @@ namespace VDF.CLI.Commands {
 			CustomParser = r => ParseInvariantDouble(r, 0.85)
 		};
 
+		internal static readonly Option<bool> AiMatching = new("--ai-matching") {
+			Description = "Additional AI matching pass with neural image embeddings: finds cropped, mirrored or heavily edited copies the classic methods miss. Downloads the AI components (ONNX Runtime + model, ~100 MB) on first use."
+		};
+
+		internal static readonly Option<float> AiPercent = new("--ai-percent") {
+			Description = "Similarity threshold (50-100) for the AI matching pass. Default: 94.",
+			DefaultValueFactory = _ => 94f,
+			CustomParser = r => ParseInvariantFloat(r, 94f)
+		};
+
+		internal static readonly Option<bool> AiPartial = new("--ai-partial") {
+			Description = "Detect partial/time-shifted duplicates visually via dense AI keyframe matching (works without audio, unlike --partial-clip-detection). Downloads the AI components on first use."
+		};
+
+		internal static readonly Option<float> AiPartialHitPercent = new("--ai-partial-hit-percent") {
+			Description = "Per-frame hit threshold (70-99) for visual partial detection. Default: 89.",
+			DefaultValueFactory = _ => 89f,
+			CustomParser = r => ParseInvariantFloat(r, 89f)
+		};
+
 		internal static readonly Option<int> CheckpointInterval = new("--checkpoint-interval") {
 			Description = "Database checkpoint interval in minutes during scanning. 0 = disabled. Default: 5.",
 			DefaultValueFactory = _ => 5
@@ -213,6 +233,10 @@ namespace VDF.CLI.Commands {
 			s.PartialClipSimilarityThreshold = r.GetValue(PartialClipSimilarityThreshold);
 			s.PartialClipRequireVisualMatch = r.GetValue(PartialClipRequireVisualMatch);
 			s.PartialClipVisualThreshold = r.GetValue(PartialClipVisualThreshold);
+			s.UseAiMatching = r.GetValue(AiMatching);
+			s.AiPercent = Math.Clamp(r.GetValue(AiPercent), 50f, 100f);
+			s.EnableAiPartialDetection = r.GetValue(AiPartial);
+			s.AiPartialHitPercent = Math.Clamp(r.GetValue(AiPartialHitPercent), 70f, 99f);
 		}
 
 		internal static void AddScanOptions(Command cmd) {
@@ -237,6 +261,10 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(PartialClipSimilarityThreshold);
 			cmd.Options.Add(PartialClipRequireVisualMatch);
 			cmd.Options.Add(PartialClipVisualThreshold);
+			cmd.Options.Add(AiMatching);
+			cmd.Options.Add(AiPercent);
+			cmd.Options.Add(AiPartial);
+			cmd.Options.Add(AiPartialHitPercent);
 			cmd.Options.Add(SettingsFile);
 			cmd.Options.Add(Format);
 			cmd.Options.Add(Output);

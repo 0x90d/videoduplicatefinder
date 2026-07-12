@@ -88,6 +88,14 @@ namespace VDF.Core {
 		/// </summary>
 		[MemoryPackOrder(10)]
 		public string? OsHash;
+		/// <summary>
+		/// Int8-quantized neural embeddings (see VDF.Core.AI), keyed like
+		/// <see cref="grayBytes"/>; 384 bytes per sampled position. Populated only while
+		/// AI matching is enabled; entries scanned by older versions load with an empty
+		/// dictionary (version-tolerant) and backfill on the next scan.
+		/// </summary>
+		[MemoryPackOrder(11)]
+		public Dictionary<double, byte[]?> Embeddings = new();
 
 		[MemoryPackIgnore]
 		internal bool invalid = true;
@@ -103,6 +111,13 @@ namespace VDF.Core {
 		internal byte[]?[]? compareGray;
 		[MemoryPackIgnore]
 		internal ulong[]? comparePHashes;
+		// AI-pass snapshot, aligned like compareGray: the entry's quantized embeddings and,
+		// as black-frame guard, whether each position's gray frame has enough non-dark
+		// pixels to make its embedding trustworthy (two dark frames embed near-identically).
+		[MemoryPackIgnore]
+		internal byte[]?[]? compareEmbeddings;
+		[MemoryPackIgnore]
+		internal bool[]? compareEmbeddingValid;
 		[MemoryPackIgnore]
 		internal int compareIndex;
 
@@ -149,6 +164,7 @@ namespace VDF.Core {
 			mediaInfo = null;
 			grayBytes.Clear();
 			PHashes.Clear();
+			Embeddings.Clear();
 			AudioFingerprint = null;
 			Flags.Set(EntryFlags.ThumbnailError | EntryFlags.MetadataError | EntryFlags.TooDark |
 				EntryFlags.NoAudioTrack | EntryFlags.AudioFingerprintError | EntryFlags.SilentAudioTrack, false);

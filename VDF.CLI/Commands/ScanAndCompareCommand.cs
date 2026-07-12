@@ -60,6 +60,7 @@ namespace VDF.CLI.Commands {
 
 				ScanRunner.WireProgress(engine);
 
+				await ScanRunner.EnsureAiComponentsAsync(engine.Settings, ct);
 				var duplicates = await ScanRunner.RunScanAndCompareAsync(engine, ct);
 
 				var format = Enum.TryParse<OutputFormat>(parseResult.GetValue(SharedOptions.Format), true, out var fmt) ? fmt : OutputFormat.Text;

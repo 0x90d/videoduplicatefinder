@@ -46,6 +46,7 @@ namespace VDF.GUI.ViewModels {
 			sb.AppendLine($"Hardware accel:     {Scanner.Settings.HardwareAccelerationMode}");
 			sb.AppendLine($"Percent:            {Scanner.Settings.Percent}");
 			sb.AppendLine($"Use pHash:          {Scanner.Settings.UsePHashing}");
+			sb.AppendLine($"AI matching:        setting={Scanner.Settings.UseAiMatching} (threshold {Scanner.Settings.AiPercent}%), partial={Scanner.Settings.EnableAiPartialDetection} (hit {Scanner.Settings.AiPartialHitPercent}%), components={VDF.Core.AI.AiComponents.GetState()} (runtime {VDF.Core.AI.AiComponents.RuntimeVersion})");
 			sb.AppendLine($"Compare flipped:    {Scanner.Settings.CompareHorizontallyFlipped}");
 			sb.AppendLine($"Ignore black/white: {Scanner.Settings.IgnoreBlackPixels}/{Scanner.Settings.IgnoreWhitePixels}");
 			sb.AppendLine($"Thumbnails:         {Scanner.Settings.ThumbnailCount}");

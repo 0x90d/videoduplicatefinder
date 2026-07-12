@@ -275,6 +275,35 @@
               </views:SettingRow>
 
               <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiMatching.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiMatching.Desc]}"
+                  SearchTags="ai neural embedding machine learning crop flip transformed">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseAiMatching}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiPercent.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiPercent.Desc]}"
+                  SearchTags="ai threshold similarity"
+                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UseAiMatching}">
+                <NumericUpDown Classes="stepper" FormatString="\{0\}%" Increment="0.5" Maximum="100" Minimum="50"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AiPercent}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiComponents.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiComponents.Desc]}"
+                  SearchTags="ai download onnx runtime model components">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                  <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="0.8" MaxWidth="260" TextWrapping="Wrap"
+                             Text="{Binding AiComponentsStatusText}" />
+                  <Button FontSize="12.5" VerticalAlignment="Center" Command="{Binding DownloadAiComponentsCommand}"
+                          Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiComponents.Download]}" />
+                </StackPanel>
+              </views:SettingRow>
+
+              <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Flip.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Flip.Desc]}"
                   SearchTags="mirror flip">
@@ -417,6 +446,23 @@
                   IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipRequireVisualMatch}">
                 <NumericUpDown Classes="stepper" Increment="0.1" Minimum="1" Maximum="100"
                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PartialClipVisualThresholdPercent}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiPartial.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiPartial.Desc]}"
+                  SearchTags="ai partial time shift trimmed cut silent dubbed visual">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnableAiPartialDetection}" />
+              </views:SettingRow>
+
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiPartialHit.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiPartialHit.Desc]}"
+                  SearchTags="ai partial threshold frame hit"
+                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=EnableAiPartialDetection}">
+                <NumericUpDown Classes="stepper" FormatString="\{0\}%" Increment="1" Maximum="99" Minimum="70"
+                               Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AiPartialHitPercent}" />
               </views:SettingRow>
             </StackPanel>
 

@@ -1527,6 +1527,14 @@ Non-Windows setup:
 				await MessageBoxService.Show(App.Lang["Message.NativeFfmpegAutoNotSupported"]);
 				return;
 			}
+			if ((SettingsFile.Instance.UseAiMatching || SettingsFile.Instance.EnableAiPartialDetection) &&
+				!VDF.Core.AI.AiComponents.IsReady) {
+				if (await MessageBoxService.Show(App.Lang["Message.AiComponentsMissingPrompt"], MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+					return;
+				await DownloadAiComponentsAsync();
+				if (!VDF.Core.AI.AiComponents.IsReady)
+					return;
+			}
 			if (SettingsFile.Instance.Includes.Count == 0) {
 				await MessageBoxService.Show(App.Lang["Message.NoScanFolders"]);
 				return;
@@ -1637,6 +1645,10 @@ Non-Windows setup:
 			Scanner.Settings.SameFolderDepth = SettingsFile.Instance.SameFolderDepth;
 			Scanner.Settings.UsePHashing = SettingsFile.Instance.UsePHash;
 			Scanner.Settings.PHashRequiredMatchingSampleRatio = SettingsFile.Instance.PHashSampleRatioPercent / 100f;
+			Scanner.Settings.UseAiMatching = SettingsFile.Instance.UseAiMatching;
+			Scanner.Settings.AiPercent = SettingsFile.Instance.AiPercent;
+			Scanner.Settings.EnableAiPartialDetection = SettingsFile.Instance.EnableAiPartialDetection;
+			Scanner.Settings.AiPartialHitPercent = SettingsFile.Instance.AiPartialHitPercent;
 			Scanner.Settings.UseExifCreationDate = SettingsFile.Instance.UseExifCreationDate;
 			Scanner.Settings.FilePathNotContainsTexts = SettingsFile.Instance.FilePathNotContainsTexts.ToList();
 			Scanner.Settings.FilterByFileSize = SettingsFile.Instance.FilterByFileSize;

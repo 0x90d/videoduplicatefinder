@@ -10,6 +10,10 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+    <!-- Full package (not .Managed): brings the native onnxruntime library into the
+         test output so OnnxEmbedder tests run without the on-demand download. The
+         version must match VDF.Core's Microsoft.ML.OnnxRuntime.Managed reference. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.2" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
@@ -20,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />
+    <ProjectReference Include="..\VDF.TestSupport\VDF.TestSupport.csproj" />
   </ItemGroup>
 
   <ItemGroup>

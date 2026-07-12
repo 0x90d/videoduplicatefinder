@@ -185,6 +185,10 @@ namespace VDF.Core.ViewModels {
 				? $"@ {PartialClipOffset:hh\\:mm\\:ss}"
 				: string.Empty;
 
+		/// <summary>This pair was found only by the AI embedding pass (chip in the results list).</summary>
+		[JsonIgnore]
+		public bool IsAiMatched => Flags.HasFlag(DuplicateFlags.AiMatched);
+
 		[JsonIgnore]
 		public Action? ThumbnailsUpdated;
 		public void SetThumbnails(List<byte[]>? images, List<TimeSpan> timeSpans) {

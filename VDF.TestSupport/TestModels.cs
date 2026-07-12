@@ -14,13 +14,15 @@
 // */
 //
 
-namespace VDF.Core {
-	[Flags]
-	public enum DuplicateFlags : short
-	{
-		None = 0,
-		Flipped = 1,
-		PartialClip = 2,  // This item is a partial clip (audio- or AI-matched) of another item in the same group
-		AiMatched = 4,    // Found only by the AI embedding pass, not by the classic gray-bytes/pHash check
-	};
+namespace VDF.TestSupport;
+
+public static class TestModels {
+	/// <summary>
+	/// Deterministic stand-in for the DINOv2 model: same I/O contract
+	/// (pixel_values [B,3,224,224] float → [B,384] float) built from
+	/// AveragePool → Flatten → seeded fixed random projection. Content-sensitive
+	/// enough for same-frame matching tests, tiny enough to check in.
+	/// </summary>
+	public static string TinyEmbedderPath =>
+		Path.Combine(AppContext.BaseDirectory, "TestData", "tiny-embedder.onnx");
 }

@@ -70,6 +70,10 @@ namespace VDF.Web.Services {
 			public double PartialClipSimilarityThreshold { get; set; } = 0.80;
 			public bool PartialClipRequireVisualMatch { get; set; } = true;
 			public double PartialClipVisualThreshold { get; set; } = 0.85;
+			public bool UseAiMatching { get; set; }
+			public float AiPercent { get; set; } = 94f;
+			public bool EnableAiPartialDetection { get; set; }
+			public float AiPartialHitPercent { get; set; } = 89f;
 
 			// WebUI-only settings (not in VDF.Core Settings)
 			/// <summary>Whether to automatically load HQ thumbnails on the results page.</summary>
@@ -149,6 +153,10 @@ namespace VDF.Web.Services {
 				s.PartialClipSimilarityThreshold = dto.PartialClipSimilarityThreshold;
 				s.PartialClipRequireVisualMatch = dto.PartialClipRequireVisualMatch;
 				s.PartialClipVisualThreshold = dto.PartialClipVisualThreshold;
+				s.UseAiMatching = dto.UseAiMatching;
+				s.AiPercent = dto.AiPercent;
+				s.EnableAiPartialDetection = dto.EnableAiPartialDetection;
+				s.AiPartialHitPercent = dto.AiPartialHitPercent;
 				// WebUI-only
 				AutoLoadThumbnails = dto.AutoLoadThumbnails;
 				ThumbnailWidth = Math.Clamp(dto.ThumbnailWidth, 48, 960);
@@ -207,6 +215,10 @@ namespace VDF.Web.Services {
 					PartialClipSimilarityThreshold = s.PartialClipSimilarityThreshold,
 					PartialClipRequireVisualMatch = s.PartialClipRequireVisualMatch,
 					PartialClipVisualThreshold = s.PartialClipVisualThreshold,
+					UseAiMatching = s.UseAiMatching,
+					AiPercent = s.AiPercent,
+					EnableAiPartialDetection = s.EnableAiPartialDetection,
+					AiPartialHitPercent = s.AiPartialHitPercent,
 					// WebUI-only
 					AutoLoadThumbnails = AutoLoadThumbnails,
 					ThumbnailWidth = ThumbnailWidth,

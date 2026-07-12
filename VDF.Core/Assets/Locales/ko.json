@@ -20,5 +20,8 @@
   "Scan.Stage.AudioFingerprint": "오디오 지문",
   "Scan.Stage.ComparingDuplicates": "중복 비교",
   "Scan.Stage.PartialCompare": "부분 클립 비교",
-  "Scan.Stage.PartialVisualVerify": "부분 클립 확인"
+  "Scan.Stage.PartialVisualVerify": "부분 클립 확인",
+  "Scan.Stage.AiEmbedding": "AI 임베딩 계산 중",
+  "Scan.Stage.AiDenseSampling": "AI 부분 감지: 키프레임 샘플링",
+  "Scan.Stage.AiPartialCompare": "AI 부분 감지: 클립 비교"
 }

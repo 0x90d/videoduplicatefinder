@@ -20,5 +20,8 @@
   "Scan.Stage.AudioFingerprint": "音频指纹",
   "Scan.Stage.ComparingDuplicates": "比较重复项",
   "Scan.Stage.PartialCompare": "比较部分片段",
-  "Scan.Stage.PartialVisualVerify": "验证部分片段"
+  "Scan.Stage.PartialVisualVerify": "验证部分片段",
+  "Scan.Stage.AiEmbedding": "正在计算 AI 嵌入",
+  "Scan.Stage.AiDenseSampling": "AI 部分检测：采样关键帧",
+  "Scan.Stage.AiPartialCompare": "AI 部分检测：匹配片段"
 }

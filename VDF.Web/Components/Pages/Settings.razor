@@ -87,6 +87,18 @@
     </label>
     <label>
         <input type="checkbox"
+               checked="@Scan.Settings.UseAiMatching"
+               @onchange="e => Scan.Settings.UseAiMatching = (bool)e.Value!" />
+        AI matching (additional pass; downloads ONNX Runtime + model on first scan, ~100 MB)
+    </label>
+    <label>
+        <input type="checkbox"
+               checked="@Scan.Settings.EnableAiPartialDetection"
+               @onchange="e => Scan.Settings.EnableAiPartialDetection = (bool)e.Value!" />
+        Detect partial duplicates visually (AI)
+    </label>
+    <label>
+        <input type="checkbox"
                checked="@Scan.Settings.CompareHorizontallyFlipped"
                @onchange="e => Scan.Settings.CompareHorizontallyFlipped = (bool)e.Value!" />
         Compare horizontally flipped

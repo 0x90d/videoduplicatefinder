@@ -554,6 +554,21 @@
                     HorizontalAlignment="Center"
                     Text="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityToFormattedConverter}}" />
               </Border>
+              <!-- AI chip: pair found only by the AI embedding pass, not the classic check -->
+              <Border
+                  Classes="simchip"
+                  DockPanel.Dock="Right"
+                  Margin="6,0,0,0"
+                  Padding="6,2"
+                  VerticalAlignment="Center"
+                  IsVisible="{Binding Item.ItemInfo.IsAiMatched}"
+                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.AiMatchedTooltip]}">
+                <TextBlock
+                    FontSize="12"
+                    FontWeight="Bold"
+                    HorizontalAlignment="Center"
+                    Text="AI" />
+              </Border>
               <!-- Clip offset: position of a partial clip inside the longer source video.
                    The column only exists while partial-clip detection is on or the
                    results contain partial clips (maintainer decision). -->

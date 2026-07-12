@@ -148,6 +148,27 @@ namespace VDF.Core {
 		/// </summary>
 		public double PartialClipVisualThreshold = 0.85;
 
+		// ── AI matching (neural embeddings) ─────────────────────────────────
+		/// <summary>
+		/// Additional matching pass using neural image embeddings (DINOv2 via ONNX
+		/// Runtime). A pair that fails the classic gray-bytes/pHash check is still
+		/// reported (flagged <see cref="DuplicateFlags.AiMatched"/>) when the mean
+		/// embedding similarity of its sampled positions reaches <see cref="AiPercent"/>.
+		/// Requires the AI components (ONNX Runtime + model) — see AI.AiComponents.
+		/// </summary>
+		public bool UseAiMatching;
+		/// <summary>Similarity threshold (percent = cosine·100) for the AI matching pass.</summary>
+		public float AiPercent = 94f;
+		/// <summary>
+		/// Detect partial/time-shifted duplicates visually: dense keyframe embeddings
+		/// matched by temporal offset consistency. Unlike <see cref="EnablePartialClipDetection"/>
+		/// this needs no audio track, so it also covers silent, muted and re-dubbed copies.
+		/// Requires the same AI components as <see cref="UseAiMatching"/>.
+		/// </summary>
+		public bool EnableAiPartialDetection;
+		/// <summary>Per-frame hit threshold (percent) for visual partial detection.</summary>
+		public float AiPartialHitPercent = 89f;
+
 		// ── Database checkpoints ────────────────────────────────────────────
 		/// <summary>
 		/// Interval in minutes between automatic database saves during scanning.

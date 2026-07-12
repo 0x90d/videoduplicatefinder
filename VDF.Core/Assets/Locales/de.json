@@ -20,5 +20,8 @@
   "Scan.Stage.AudioFingerprint": "Audio-Fingerabdruck",
   "Scan.Stage.ComparingDuplicates": "Duplikate vergleichen",
   "Scan.Stage.PartialCompare": "Teilclips vergleichen",
-  "Scan.Stage.PartialVisualVerify": "Teilclips visuell prüfen"
+  "Scan.Stage.PartialVisualVerify": "Teilclips visuell prüfen",
+  "Scan.Stage.AiEmbedding": "KI-Embeddings berechnen",
+  "Scan.Stage.AiDenseSampling": "KI-Teilclips: Keyframes abtasten",
+  "Scan.Stage.AiPartialCompare": "KI-Teilclips: vergleichen"
 }

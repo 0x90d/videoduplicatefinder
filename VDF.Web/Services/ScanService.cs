@@ -116,6 +116,13 @@ namespace VDF.Web.Services {
 			_engine.Duplicates.Clear();
 			ClearThumbnailCaches();
 			try {
+				// Headless first-use AI component download, like the CLI — PrepareSearch
+				// fails fast on missing components otherwise.
+				if ((_engine.Settings.UseAiMatching || _engine.Settings.EnableAiPartialDetection) &&
+					!VDF.Core.AI.AiComponents.IsReady) {
+					VDF.Core.Utils.Logger.Instance.Info("Downloading AI components (ONNX Runtime + model, ~100 MB)...");
+					VDF.Core.AI.AiComponents.DownloadAsync(null, _cts.Token).GetAwaiter().GetResult();
+				}
 				_engine.StartSearch();
 			}
 			catch (Exception ex) {

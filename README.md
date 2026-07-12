@@ -8,6 +8,7 @@ Video Duplicate Finder is a cross-platform software to find duplicated video (an
 - Optional calling ffmpeg functions natively for even more speed
 - Finds duplicate videos / images based on similarity (optional scan against pHash at zero cost)
 - Partial clip detection — finds when a shorter video is a partial clip of a longer one (audio fingerprinting)
+- Optional AI matching — neural image embeddings find cropped, mirrored, zoomed and heavily edited copies the classic methods miss, and locate trimmed clips inside longer recordings without needing audio. Runs 100% locally.
 - Desktop GUI (Windows, Linux, macOS)
 - Headless CLI for scripting and automation
 - Web UI for remote/headless/NAS use
@@ -30,7 +31,36 @@ In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detectio
 | Require visual confirmation | on | Reject audio matches whose frames at the matched offset don't also look similar. |
 | Min visual similarity (%) | 85 | Minimum frame similarity for the visual confirmation step. |
 
-> **Note:** Partial clip detection requires audio tracks in both files. Videos without audio are skipped.
+> **Note:** Partial clip detection requires audio tracks in both files. Videos without audio are skipped — for those, see the visual variant under **AI Matching** below.
+
+---
+
+# AI Matching (optional)
+
+VDF can additionally compare videos with neural image embeddings (a [DINOv2](https://github.com/facebookresearch/dinov2) vision model running via [ONNX Runtime](https://onnxruntime.ai/)). The classic comparison stays authoritative — the AI pass only **adds** pairs it is confident about, so enabling it never hides results you would otherwise get. It is good at exactly the cases pixel-based methods miss:
+
+- **Transformed copies** — cropped, mirrored, zoomed, letterboxed, color-graded or otherwise heavily edited versions of the same video. Pairs found this way are marked with an **AI** chip in the results.
+- **Visual partial detection** — finds trimmed cuts and clips contained in longer recordings by matching sampled keyframes with a consistent time offset. Unlike the audio-based partial clip detection above, this also works on silent, muted and re-dubbed videos. Matches appear with the same **Clip Offset** column.
+
+### Enabling it
+
+Both switches are independent and off by default:
+
+| Setting | Where | Default | Description |
+|---------|-------|---------|-------------|
+| AI matching (additional pass) | Settings → Matching | off | Enables the embedding comparison on top of the selected classic mode. |
+| AI similarity threshold (%) | Settings → Matching | 94 | How similar two files' embeddings must be. Lower to ~92 to find more aggressively edited copies at a slightly higher false-positive risk. |
+| Detect partial duplicates visually (AI) | Settings → Partial Clip Detection | off | Dense keyframe matching for trimmed/embedded clips, no audio needed. |
+| AI frame hit threshold (%) | Settings → Partial Clip Detection | 89 | Per-keyframe similarity needed for a hit; at least 4 hits must agree on one time offset before two videos are paired. Raise it if unrelated videos get paired. |
+
+CLI: `--ai-matching`, `--ai-percent`, `--ai-partial`, `--ai-partial-hit-percent`.
+
+### Components, privacy & footprint
+
+- On first use VDF downloads two components (**~100 MB** once): the ONNX Runtime library from the [official Microsoft release](https://github.com/microsoft/onnxruntime/releases) and the embedding model (integrity-checked against a pinned SHA256). They are stored next to the scan database. The GUI asks before downloading; CLI/Web/Docker download automatically when an AI option is enabled.
+- **Everything runs locally on your CPU.** No cloud services, no accounts, nothing is uploaded — the model analyzes your frames on your machine, full stop.
+- Cost: roughly 50 ms per file during hashing; embeddings are cached in the scan database (~2 KB per file), so rescans stay fast. Visual partial detection keeps its keyframe cache in a separate `DenseEmbeddings.db` sidecar (~25 KB per video) that cleans itself up.
+- Supported on all release platforms (Windows, Linux x64/ARM64, macOS Intel & Apple Silicon).
 
 ---
 
@@ -148,6 +178,10 @@ vdf-cli scan-and-compare \
 | `--partial-clip-detection` | Enable partial clip detection (audio fingerprinting) | off |
 | `--partial-clip-min-ratio <n>` | Min clip/source duration ratio (0.0–1.0) | 0.10 |
 | `--partial-clip-similarity <n>` | Min audio fingerprint similarity (0.0–1.0) | 0.80 |
+| `--ai-matching` | AI matching pass (downloads components on first use) | off |
+| `--ai-percent <n>` | AI similarity threshold (50–100) | 94 |
+| `--ai-partial` | Visual partial detection via AI keyframes (no audio needed) | off |
+| `--ai-partial-hit-percent <n>` | Per-keyframe hit threshold (70–99) | 89 |
 | `--format json\|text\|csv` | Output format | text |
 | `--output <file>` | Write results to file instead of stdout | stdout |
 | `--settings <file>` | Load full settings from a JSON file | — |
@@ -321,7 +355,9 @@ docker compose pull && docker compose up -d
 <img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
 
 # License
-Video Duplicate Finder is licensed under AGPLv3
+Video Duplicate Finder is licensed under AGPLv3.
+
+The optional AI components are downloaded separately on first use and carry their own licenses: ONNX Runtime (MIT) and the DINOv2-small embedding model (Apache-2.0). Neither is bundled with or linked into the release binaries.
 
 # Credits / Third Party
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia)
@@ -330,6 +366,9 @@ Video Duplicate Finder is licensed under AGPLv3
 - [MemoryPack](https://github.com/Cysharp/MemoryPack)
 
 - [AcoustID.NET by wo80](https://github.com/wo80/AcoustID.NET) — the audio fingerprinting pipeline (Chromaprint-style chroma extraction, FIR smoothing, and fingerprint encoding) used for partial clip detection is derived from this library, licensed under LGPL 2.1
+
+- [ONNX Runtime](https://github.com/microsoft/onnxruntime) (Microsoft, MIT) — inference engine for the optional AI matching feature
+- [DINOv2](https://github.com/facebookresearch/dinov2) (Meta AI, Apache-2.0) — the image embedding model behind AI matching, used as the int8-quantized ONNX export from [Xenova/dinov2-small](https://huggingface.co/Xenova/dinov2-small) (mirrored on this repo's [ai-models-v1 release](https://github.com/0x90d/videoduplicatefinder/releases/tag/ai-models-v1))
 
 # Building
 - .NET 10.x

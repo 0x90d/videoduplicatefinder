@@ -20,5 +20,8 @@
   "Scan.Stage.AudioFingerprint": "empreinte audio",
   "Scan.Stage.ComparingDuplicates": "comparaison des doublons",
   "Scan.Stage.PartialCompare": "comparaison des clips partiels",
-  "Scan.Stage.PartialVisualVerify": "vérification des clips partiels"
+  "Scan.Stage.PartialVisualVerify": "vérification des clips partiels",
+  "Scan.Stage.AiEmbedding": "calcul des embeddings IA",
+  "Scan.Stage.AiDenseSampling": "IA partiel : échantillonnage des images clés",
+  "Scan.Stage.AiPartialCompare": "IA partiel : comparaison des clips"
 }

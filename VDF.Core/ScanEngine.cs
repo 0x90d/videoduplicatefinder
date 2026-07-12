@@ -51,6 +51,9 @@ namespace VDF.Core {
 		internal PauseTokenSource pauseTokenSource = new();
 		CancellationTokenSource cancelationTokenSource = new();
 		internal readonly List<float> positionList = new();
+		// Live only while a scan's hashing phase runs (see StartSearch): receives decoded
+		// 224x224 RGB frames and writes int8 embeddings into FileEntry.Embeddings.
+		AI.EmbeddingPipeline? aiEmbeddingPipeline;
 
 		public ScanEngine() =>
 			// Armed and disarmed by the isScanning setter, so an idle engine owns no ticking timer.
@@ -369,9 +372,26 @@ namespace VDF.Core {
 				await BuildFileList(cancelationTokenSource.Token);
 				Logger.Instance.Info(T("Log.FinishedBuildingFileList", SearchTimer.StopGetElapsedAndRestart()));
 				FilesEnumerated?.Invoke(this, new EventArgs());
-				Logger.Instance.Info(T("Log.GatheringMediaInfo"));
-				if (!cancelationTokenSource.IsCancellationRequested)
-					await GatherInfos();
+				try {
+					if (!cancelationTokenSource.IsCancellationRequested && Settings.UseAiMatching)
+						aiEmbeddingPipeline = new AI.EmbeddingPipeline(AI.AiComponents.ModelPath, cancelationTokenSource.Token);
+					Logger.Instance.Info(T("Log.GatheringMediaInfo"));
+					if (!cancelationTokenSource.IsCancellationRequested)
+						await GatherInfos();
+					if (aiEmbeddingPipeline != null) {
+						// The bounded queue keeps this drain short, but on a slow CPU a few
+						// hundred frames can still be pending — give the wait its own stage.
+						currentStageLabel = T("Scan.Stage.AiEmbedding");
+						InitProgress(1);
+						await aiEmbeddingPipeline.CompleteAsync();
+						IncrementProgress(string.Empty);
+						Logger.Instance.Info($"AI embeddings computed for this scan: {aiEmbeddingPipeline.EmbeddedCount}");
+					}
+				}
+				finally {
+					aiEmbeddingPipeline?.Dispose();
+					aiEmbeddingPipeline = null;
+				}
 				Logger.Instance.Info(T("Log.FinishedGatheringHashes", SearchTimer.StopGetElapsedAndRestart()));
 				// Save before signaling completion: consumers (e.g. the CLI) may treat the
 				// event as "done" and exit the process, which previously killed this thread
@@ -414,6 +434,10 @@ namespace VDF.Core {
 					await Task.Run(ScanForDuplicates, cancelationTokenSource.Token);
 				if (!cancelationTokenSource.IsCancellationRequested && Settings.EnablePartialClipDetection)
 					await Task.Run(ScanForPartialDuplicates, cancelationTokenSource.Token);
+				// After the audio pass: videos it already grouped are excluded, the visual
+				// pass only adds pairs audio could not see (no/replaced audio, music-only).
+				if (!cancelationTokenSource.IsCancellationRequested && Settings.EnableAiPartialDetection)
+					await Task.Run(ScanForPartialDuplicatesVisual, cancelationTokenSource.Token);
 				SearchTimer.Stop();
 				ElapsedTimer.Stop();
 				Logger.Instance.Info(T("Log.FinishedScanForDuplicates", SearchTimer.Elapsed));
@@ -465,6 +489,9 @@ namespace VDF.Core {
 				throw new FFNotFoundException("Cannot find FFprobe");
 			if (Settings.UseNativeFfmpegBinding && !FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist)
 				throw new FFNotFoundException($"Cannot find FFmpeg libraries. {FFTools.FFmpegNative.FFmpegHelper.DescribeExpectedLibraries()}");
+			// Fail fast with an actionable message instead of erroring on every file later.
+			if (Settings.UseAiMatching || Settings.EnableAiPartialDetection)
+				AI.AiComponents.EnsureReady();
 
 			CancelAllTasks();
 
@@ -950,6 +977,18 @@ namespace VDF.Core {
 									break;
 								}
 							}
+							// A gray-complete entry may still need embedding backfill — but only
+							// when the file is actually readable; tombstones (deleted files kept
+							// for comparison) stay fully-cached and the AI pass abstains for them.
+							if (hasAllInformation && aiEmbeddingPipeline != null && File.Exists(entry.Path)) {
+								if (entry.IsImage) {
+									hasAllInformation = !aiEmbeddingPipeline.WantsEmbedding(entry, 0);
+								}
+								else {
+									for (int i = 0; i < positionList.Count && hasAllInformation; i++)
+										hasAllInformation = !aiEmbeddingPipeline.WantsEmbedding(entry, GetGrayBytesIndex(entry, positionList[i]));
+								}
+							}
 							if (hasAllInformation) {
 								// Thumbnails are cached but audio fingerprint might still be needed
 								if (Settings.EnablePartialClipDetection &&
@@ -998,17 +1037,24 @@ namespace VDF.Core {
 						entry.PHashes ??= new Dictionary<double, ulong?>();
 
 
-						if (entry.IsImage && entry.grayBytes.Count == 0) {
-							if (!GetGrayBytesFromImage(entry, Settings.UseExifCreationDate, Settings.ExtendedFFToolsLogging))
-								entry.invalid = true;
+						if (entry.IsImage) {
+							if (entry.grayBytes.Count == 0) {
+								if (!GetGrayBytesFromImage(entry, Settings.UseExifCreationDate, Settings.ExtendedFFToolsLogging, aiEmbeddingPipeline))
+									entry.invalid = true;
+							}
+							else {
+								// Gray bytes cached from an earlier scan — backfill just the embedding.
+								TryQueueImageEmbeddingFrame(entry, aiEmbeddingPipeline, Settings.ExtendedFFToolsLogging);
+							}
 						}
-						else if (!entry.IsImage) {
+						else {
 							string entryPath = entry.Path;
 							int totalSamples = positionList.Count;
 							string samplingLabel = T("Scan.Stage.SamplingFrames");
 							if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.MaxSamplingDurationSeconds,
 									Settings.ExtendedFFToolsLogging,
-									onSampleComplete: (done) => ReportStage(entryPath, samplingLabel, done, totalSamples)))
+									onSampleComplete: (done) => ReportStage(entryPath, samplingLabel, done, totalSamples),
+									embeddingSink: aiEmbeddingPipeline))
 								entry.invalid = true;
 						}
 
@@ -1208,16 +1254,25 @@ namespace VDF.Core {
 				if (!entry.grayBytes.TryGetValue(0, out byte[]? imageGray) || imageGray == null)
 					return false;
 				entry.compareGray = new[] { imageGray };
+				if (Settings.UseAiMatching)
+					BuildAiCompareSnapshot(entry, new[] { (double)0 }, entry.compareGray);
 				return true;
 			}
 
 			var gray = new byte[]?[positionList.Count];
+			var positionKeys = Settings.UseAiMatching ? new double[positionList.Count] : null;
 			for (int j = 0; j < positionList.Count; j++) {
 				double idx = GetGrayBytesIndex(entry, positionList[j]);
+				if (positionKeys != null)
+					positionKeys[j] = idx;
 				if (!entry.grayBytes.TryGetValue(idx, out byte[]? data) || data == null)
 					return false;
 				gray[j] = data;
 			}
+			// Missing embeddings never drop an entry — the classic modes still work and
+			// the AI pass simply abstains for null slots.
+			if (positionKeys != null)
+				BuildAiCompareSnapshot(entry, positionKeys, gray);
 
 			if (usePHashing) {
 				var phashes = new ulong[positionList.Count];
@@ -1244,7 +1299,81 @@ namespace VDF.Core {
 			return true;
 		}
 
-		internal bool CheckIfDuplicate(FileEntry entry, byte[]?[]? overrideGray, ulong[]? overridePHashes, FileEntry compItem, out float difference) {
+		/// <summary>
+		/// AI-pass snapshot: the entry's quantized embeddings aligned with the compare
+		/// order, plus the black-frame guard — an embedding only participates when its
+		/// gray frame has enough non-dark pixels (dark frames embed near-identically
+		/// regardless of content, which would turn the union pass into a false-positive
+		/// generator on fade-outs and night scenes).
+		/// </summary>
+		void BuildAiCompareSnapshot(FileEntry entry, double[] positionKeys, byte[]?[] gray) {
+			var embeddings = new byte[]?[positionKeys.Length];
+			var valid = new bool[positionKeys.Length];
+			for (int j = 0; j < positionKeys.Length; j++) {
+				entry.Embeddings.TryGetValue(positionKeys[j], out embeddings[j]);
+				valid[j] = gray[j] != null && GrayBytesUtils.VerifyGrayScaleValues(gray[j]!);
+			}
+			entry.compareEmbeddings = embeddings;
+			entry.compareEmbeddingValid = valid;
+		}
+
+		/// <summary>
+		/// Mean embedding similarity over the positions where both entries have a valid
+		/// (non-dark, successfully embedded) vector; -1 when no position qualifies —
+		/// the AI pass then abstains for this pair.
+		/// </summary>
+		internal static float ComputeAiSimilarity(FileEntry entry, FileEntry compItem) {
+			byte[]?[]? ea = entry.compareEmbeddings;
+			byte[]?[]? eb = compItem.compareEmbeddings;
+			if (ea == null || eb == null)
+				return -1f;
+			bool[]? va = entry.compareEmbeddingValid;
+			bool[]? vb = compItem.compareEmbeddingValid;
+			int n = Math.Min(ea.Length, eb.Length);
+			float sum = 0f;
+			int count = 0;
+			for (int j = 0; j < n; j++) {
+				byte[]? x = ea[j];
+				byte[]? y = eb[j];
+				if (x == null || y == null)
+					continue;
+				if (va != null && j < va.Length && !va[j])
+					continue;
+				if (vb != null && j < vb.Length && !vb[j])
+					continue;
+				sum += AI.EmbeddingMath.CosineSimilarity(x, y);
+				count++;
+			}
+			return count == 0 ? -1f : sum / count;
+		}
+
+		internal bool CheckIfDuplicate(FileEntry entry, byte[]?[]? overrideGray, ulong[]? overridePHashes, FileEntry compItem, out float difference) =>
+			CheckIfDuplicate(entry, overrideGray, overridePHashes, compItem, out difference, out _);
+
+		/// <summary>
+		/// The pair verdict: the classic gray-bytes/pHash check, unioned with the AI
+		/// embedding pass when <see cref="Settings.UseAiMatching"/> is on — a pair the
+		/// classic mode rejects still counts as a duplicate when the mean embedding
+		/// similarity reaches <see cref="Settings.AiPercent"/> (<paramref name="aiMatched"/>
+		/// reports that case so callers can flag it). The AI pass only runs on the
+		/// normal orientation: embeddings are measured flip-robust, so re-running it
+		/// for the flipped comparison would only duplicate work.
+		/// </summary>
+		internal bool CheckIfDuplicate(FileEntry entry, byte[]?[]? overrideGray, ulong[]? overridePHashes, FileEntry compItem, out float difference, out bool aiMatched) {
+			aiMatched = false;
+			if (CheckIfDuplicateClassic(entry, overrideGray, overridePHashes, compItem, out difference))
+				return true;
+			if (overrideGray != null || !Settings.UseAiMatching)
+				return false;
+			float aiSimilarity = ComputeAiSimilarity(entry, compItem);
+			if (aiSimilarity < Settings.AiPercent / 100f)
+				return false;
+			difference = 1f - aiSimilarity;
+			aiMatched = true;
+			return true;
+		}
+
+		bool CheckIfDuplicateClassic(FileEntry entry, byte[]?[]? overrideGray, ulong[]? overridePHashes, FileEntry compItem, out float difference) {
 			byte[]?[] grayBytes = overrideGray ?? entry.compareGray!;
 			float differenceLimit = 1.0f - Settings.Percent / 100f;
 			bool ignoreBlackPixels = Settings.IgnoreBlackPixels;
@@ -1468,11 +1597,15 @@ namespace VDF.Core {
 			bool TryCheckDuplicate(FileEntry entry, FileEntry compItem, byte[]?[]? flippedGrayBytes, ulong[]? flippedPHashes, out float difference, out DuplicateFlags flags) {
 				flags = DuplicateFlags.None;
 				difference = 0;
-				bool isDuplicate = CheckIfDuplicate(entry, null, null, compItem, out difference);
+				bool isDuplicate = CheckIfDuplicate(entry, null, null, compItem, out difference, out bool aiMatched);
+				if (aiMatched)
+					flags |= DuplicateFlags.AiMatched;
 				if (Settings.CompareHorizontallyFlipped &&
 					CheckIfDuplicate(entry, flippedGrayBytes, flippedPHashes, compItem, out float flippedDifference)) {
 					if (!isDuplicate || flippedDifference < difference) {
-						flags |= DuplicateFlags.Flipped;
+						// The flipped pass is classic-only, so a better flipped match
+						// supersedes an AI-only verdict (and its flag) with a classic one.
+						flags = (flags & ~DuplicateFlags.AiMatched) | DuplicateFlags.Flipped;
 						isDuplicate = true;
 						difference = flippedDifference;
 					}
@@ -1707,6 +1840,8 @@ namespace VDF.Core {
 			foreach (FileEntry entry in ScanList) {
 				entry.compareGray = null;
 				entry.comparePHashes = null;
+				entry.compareEmbeddings = null;
+				entry.compareEmbeddingValid = null;
 			}
 			matchingRequiredSampleMatches = null;
 		}
@@ -2583,7 +2718,25 @@ namespace VDF.Core {
 			ThumbnailsRetrieved?.Invoke(this, new EventArgs());
 		}
 
-		static bool GetGrayBytesFromImage(FileEntry imageFile, bool useExifIfAvailable, bool extendedLogging) {
+		/// <summary>
+		/// Fetches the 224x224 RGB frame for an image and queues it for embedding when the
+		/// sink still needs it. Failures are non-fatal: the image just stays without an
+		/// embedding and the AI pass abstains for it.
+		/// </summary>
+		static void TryQueueImageEmbeddingFrame(FileEntry imageFile, AI.IEmbeddingFrameSink? embeddingSink, bool extendedLogging) {
+			if (embeddingSink?.WantsEmbedding(imageFile, 0) != true)
+				return;
+			byte[]? rgb = FfmpegEngine.GetThumbnail(new FfmpegSettings {
+				File = imageFile.Path,
+				Position = TimeSpan.Zero,
+				Rgb224 = true,
+				SoftwareDecodeOnly = true,
+			}, extendedLogging);
+			if (rgb != null)
+				embeddingSink.SubmitFrame(imageFile, 0, rgb);
+		}
+
+		static bool GetGrayBytesFromImage(FileEntry imageFile, bool useExifIfAvailable, bool extendedLogging, AI.IEmbeddingFrameSink? embeddingSink = null) {
 			try {
 				// Decode through FFmpeg — the same pipeline videos use — so image and video
 				// gray bytes share identical grayscale conversion and scaling.
@@ -2643,6 +2796,7 @@ namespace VDF.Core {
 				}
 
 				imageFile.grayBytes.Add(0, grayBytes);
+				TryQueueImageEmbeddingFrame(imageFile, embeddingSink, extendedLogging);
 				return true;
 			}
 			catch (Exception ex) {
