@@ -70,6 +70,7 @@ namespace VDF.GUI.ViewModels {
 			IsAiDownloadInProgress = true;
 			IsBusy = true;
 			IsBusyOverlayText = App.Lang["Message.AiDownloadPreparing"];
+			CancellationToken cancelToken = BeginCancelableBusyOperation();
 			try {
 				// The runtime and the model download concurrently; render one line per
 				// step (keyed by step name) instead of flickering between the two.
@@ -82,15 +83,21 @@ namespace VDF.GUI.ViewModels {
 							App.Lang["Message.AiDownloadProgress"], s.Key,
 							VDF.Core.Utils.DownloadUtils.FormatBytes(s.Value.Done), VDF.Core.Utils.DownloadUtils.FormatBytes(s.Value.Total))));
 				});
-				await AiComponents.DownloadAsync(progress, CancellationToken.None);
+				await AiComponents.DownloadAsync(progress, cancelToken);
 				await MessageBoxService.Show(string.Format(CultureInfo.InvariantCulture,
 					App.Lang["Message.AiDownloadDone"], AiComponents.AiFolder));
+			}
+			catch (OperationCanceledException) {
+				// User pressed the overlay's Cancel button — back to idle, no message box.
+				// Callers re-check AiComponents.IsReady, so a canceled first-use download
+				// simply keeps the scan from starting.
 			}
 			catch (Exception ex) {
 				await MessageBoxService.Show(string.Format(CultureInfo.InvariantCulture,
 					App.Lang["Message.AiDownloadFailed"], ex.Message));
 			}
 			finally {
+				EndCancelableBusyOperation();
 				IsBusy = false;
 				IsBusyOverlayText = string.Empty;
 				IsAiDownloadInProgress = false;

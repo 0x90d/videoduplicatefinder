@@ -275,6 +275,12 @@
                                         HorizontalAlignment="Center"
                                         FontSize="14"
                                         Text="{Binding IsBusyOverlayText}" />
+                                    <Button
+                                        Margin="0,15,0,0"
+                                        HorizontalAlignment="Center"
+                                        Command="{Binding CancelBusyCommand}"
+                                        Content="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Cancel]}"
+                                        IsVisible="{Binding IsBusyCancelable}" />
                                 </StackPanel>
                             </Grid>
                         </Grid>

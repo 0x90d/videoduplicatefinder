@@ -46,6 +46,7 @@ namespace VDF.GUI.ViewModels {
 			IsBusyOverlayText = App.Lang["Message.FfmpegDownloadPreparing"];
 			string? errorMessage = null;
 			string? targetFolder = null;
+			CancellationToken cancelToken = BeginCancelableBusyOperation();
 
 			try {
 				var progress = new Progress<FfmpegDownloadProgress>(p => IsBusyOverlayText = p.Phase switch {
@@ -59,7 +60,12 @@ namespace VDF.GUI.ViewModels {
 						DownloadUtils.FormatBytes(p.BytesDone),
 						DownloadUtils.FormatBytes(p.BytesTotal)),
 				});
-				targetFolder = await FfmpegDownloader.DownloadAndInstallAsync(progress, CancellationToken.None);
+				targetFolder = await FfmpegDownloader.DownloadAndInstallAsync(progress, cancelToken);
+			}
+			catch (OperationCanceledException) {
+				// User pressed the overlay's Cancel button — the finally below restores
+				// the idle state; returning skips the install-instructions message box.
+				return;
 			}
 			catch (PlatformNotSupportedException) {
 				errorMessage = App.Lang["Message.FfmpegDownloadUnsupported"];
@@ -77,6 +83,7 @@ namespace VDF.GUI.ViewModels {
 				errorMessage = string.Format(CultureInfo.InvariantCulture, App.Lang["Message.FfmpegDownloadFailed"], ex.Message);
 			}
 			finally {
+				EndCancelableBusyOperation();
 				IsBusy = false;
 				IsBusyOverlayText = string.Empty;
 				IsFfmpegDownloadInProgress = false;

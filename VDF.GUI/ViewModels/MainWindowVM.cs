@@ -25,6 +25,7 @@ using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
@@ -193,6 +194,33 @@ namespace VDF.GUI.ViewModels {
 			get => _IsBusy;
 			set => this.RaiseAndSetIfChanged(ref _IsBusy, value);
 		}
+		bool _IsBusyCancelable;
+		/// <summary>Shows the busy overlay's Cancel button while a cancelable operation runs.</summary>
+		public bool IsBusyCancelable {
+			get => _IsBusyCancelable;
+			set => this.RaiseAndSetIfChanged(ref _IsBusyCancelable, value);
+		}
+		CancellationTokenSource? busyCancellation;
+		/// <summary>
+		/// Registers a cancel source for the current busy-overlay operation and shows the
+		/// overlay's Cancel button. Pair with <see cref="EndCancelableBusyOperation"/> in a
+		/// finally block. Everything runs on the UI thread (ReactiveCommand + await
+		/// continuations), so begin/cancel/end cannot race.
+		/// </summary>
+		internal CancellationToken BeginCancelableBusyOperation() {
+			busyCancellation = new CancellationTokenSource();
+			IsBusyCancelable = true;
+			return busyCancellation.Token;
+		}
+		internal void EndCancelableBusyOperation() {
+			IsBusyCancelable = false;
+			CancellationTokenSource? cts = busyCancellation;
+			busyCancellation = null;
+			cts?.Dispose();
+		}
+		public ReactiveCommand<Unit, Unit> CancelBusyCommand => ReactiveCommand.Create(() => {
+			busyCancellation?.Cancel();
+		});
 		int _ScanProgressMaxValue = 100;
 		public int ScanProgressMaxValue {
 			get => _ScanProgressMaxValue;
