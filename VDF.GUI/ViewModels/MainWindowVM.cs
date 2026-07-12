@@ -1376,21 +1376,8 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
-		static int MapToFfmpegMajor(int avcodecMajor, int avformatMajor, int avutilMajor) {
-			int[] majors = { avcodecMajor, avformatMajor, avutilMajor };
-			int want = 0;
-			foreach (var m in majors) {
-				int v = m switch {
-					62 => 8,
-					61 => 7,
-					60 => 6,
-					59 => 5,
-					_ => 0
-				};
-				if (v > want) want = v;
-			}
-			return want;
-		}
+		static int MapToFfmpegMajor(int avcodecMajor, int avformatMajor, int avutilMajor) =>
+			Core.FFTools.FfmpegDownloader.MapToFfmpegMajor(avcodecMajor, avformatMajor, avutilMajor);
 
 		static string ArchString(Architecture a) => a switch {
 			Architecture.X64 => "x64 (64-bit)",

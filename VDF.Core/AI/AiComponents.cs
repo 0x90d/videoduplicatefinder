@@ -14,8 +14,6 @@
 // */
 //
 
-using System.Diagnostics;
-using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
@@ -174,14 +172,14 @@ namespace VDF.Core.AI {
 			Directory.CreateDirectory(tempRoot);
 			string archivePath = Path.Combine(tempRoot, archiveName);
 			try {
-				await DownloadFileAsync(http, url, archivePath, $"ONNX Runtime {RuntimeVersion}", progress, token);
+				string runtimeStep = $"ONNX Runtime {RuntimeVersion}";
+				await DownloadUtils.DownloadFileAsync(http, url, archivePath, runtimeStep,
+					(done, total) => progress?.Report(new AiDownloadProgress(runtimeStep, done, total)), token);
 
 				string extractDir = Path.Combine(tempRoot, "extracted");
 				Directory.CreateDirectory(extractDir);
-				if (archiveName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-					ZipFile.ExtractToDirectory(archivePath, extractDir);
-				else
-					ExtractTarGz(archivePath, extractDir);
+				ArchiveUtils.Extract(archivePath, extractDir,
+					archiveName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ? ArchiveKind.Zip : ArchiveKind.TarGz);
 
 				// Purge any previously installed runtime BEFORE copying: the Linux/macOS
 				// library names carry the version (libonnxruntime.so.1.23.2), so upgraded
@@ -217,13 +215,14 @@ namespace VDF.Core.AI {
 			// Unique temp name for the same two-process reason as the runtime download;
 			// the final File.Move is atomic either way.
 			string tempPath = ModelPath + $".{Guid.NewGuid():N}.download";
+			Action<long, long?> onProgress = (done, total) => progress?.Report(new AiDownloadProgress("AI model", done, total));
 			try {
 				try {
-					await DownloadFileAsync(http, new Uri(ModelPrimaryUrl), tempPath, "AI model", progress, token);
+					await DownloadUtils.DownloadFileAsync(http, new Uri(ModelPrimaryUrl), tempPath, "AI model", onProgress, token);
 				}
 				catch (Exception e) when (e is not OperationCanceledException) {
 					Logger.Instance.Info($"AI model mirror unavailable ({e.Message}), falling back to upstream source.");
-					await DownloadFileAsync(http, new Uri(ModelFallbackUrl), tempPath, "AI model", progress, token);
+					await DownloadUtils.DownloadFileAsync(http, new Uri(ModelFallbackUrl), tempPath, "AI model", onProgress, token);
 				}
 
 				string hash = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(tempPath, token)));
@@ -236,56 +235,5 @@ namespace VDF.Core.AI {
 			}
 		}
 
-		// With ResponseHeadersRead, HttpClient.Timeout only covers the headers — the body
-		// reads below are otherwise unguarded, and a connection that stalls mid-transfer
-		// (no data, no FIN) would hang forever; the GUI shows a modal busy overlay with no
-		// cancel during this download, so "forever" meant killing the app.
-		static readonly TimeSpan ReadStallTimeout = TimeSpan.FromSeconds(90);
-
-		static async Task DownloadFileAsync(HttpClient http, Uri url, string destination, string displayName, IProgress<AiDownloadProgress>? progress, CancellationToken token) {
-			using HttpResponseMessage response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
-			response.EnsureSuccessStatusCode();
-			long? total = response.Content.Headers.ContentLength;
-			await using Stream source = await response.Content.ReadAsStreamAsync(token);
-			await using var target = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
-			var buffer = new byte[81920];
-			long readTotal = 0;
-			while (true) {
-				int read;
-				using (var readCts = CancellationTokenSource.CreateLinkedTokenSource(token)) {
-					readCts.CancelAfter(ReadStallTimeout);
-					try {
-						read = await source.ReadAsync(buffer, readCts.Token);
-					}
-					catch (OperationCanceledException) when (!token.IsCancellationRequested) {
-						throw new TimeoutException($"The {displayName} download stalled (no data received for {ReadStallTimeout.TotalSeconds:0} seconds).");
-					}
-				}
-				if (read == 0)
-					break;
-				await target.WriteAsync(buffer.AsMemory(0, read), token);
-				readTotal += read;
-				progress?.Report(new AiDownloadProgress(displayName, readTotal, total));
-			}
-		}
-
-		static void ExtractTarGz(string archivePath, string targetFolder) {
-			// Only reached on Linux/macOS, where tar is part of the base system —
-			// the same approach the FFmpeg downloader uses for .tar.xz archives.
-			var psi = new ProcessStartInfo {
-				FileName = "tar",
-				CreateNoWindow = true,
-				RedirectStandardError = true,
-			};
-			psi.ArgumentList.Add("-xzf");
-			psi.ArgumentList.Add(archivePath);
-			psi.ArgumentList.Add("-C");
-			psi.ArgumentList.Add(targetFolder);
-			using Process process = Process.Start(psi) ?? throw new IOException("Failed to start tar.");
-			string error = process.StandardError.ReadToEnd();
-			process.WaitForExit();
-			if (process.ExitCode != 0)
-				throw new IOException(string.IsNullOrWhiteSpace(error) ? "Failed to extract archive." : error);
-		}
 	}
 }

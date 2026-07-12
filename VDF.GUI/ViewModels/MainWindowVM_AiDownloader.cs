@@ -71,7 +71,8 @@ namespace VDF.GUI.ViewModels {
 			try {
 				var progress = new Progress<AiDownloadProgress>(p =>
 					IsBusyOverlayText = string.Format(CultureInfo.InvariantCulture,
-						App.Lang["Message.AiDownloadProgress"], p.Step, FormatBytes(p.BytesDone), FormatBytes(p.BytesTotal)));
+						App.Lang["Message.AiDownloadProgress"], p.Step,
+						VDF.Core.Utils.DownloadUtils.FormatBytes(p.BytesDone), VDF.Core.Utils.DownloadUtils.FormatBytes(p.BytesTotal)));
 				await AiComponents.DownloadAsync(progress, CancellationToken.None);
 				await MessageBoxService.Show(string.Format(CultureInfo.InvariantCulture,
 					App.Lang["Message.AiDownloadDone"], AiComponents.AiFolder));
