@@ -421,7 +421,9 @@ namespace VDF.GUI.ViewModels {
 					or nameof(SettingsFile.CompareHorizontallyFlipped)
 					or nameof(SettingsFile.IgnoreBlackPixels)
 					or nameof(SettingsFile.IgnoreWhitePixels)
-					or nameof(SettingsFile.EnablePartialClipDetection))
+					or nameof(SettingsFile.EnablePartialClipDetection)
+					or nameof(SettingsFile.UseAiMatching)
+					or nameof(SettingsFile.EnableAiPartialDetection))
 					RefreshScanProfileSelection();
 			};
 

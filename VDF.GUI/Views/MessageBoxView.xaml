@@ -15,8 +15,12 @@
     WindowStartupLocation="CenterOwner">
     <ScrollViewer x:Name="ScrollViewerMessageboxContent" VerticalScrollBarVisibility="Auto">
         <Grid x:Name="GridMessageboxContent" RowDefinitions="Auto, Auto">
+            <!-- MaxWidth must be set here, not only on the window: SizeToContent measures
+                 the text at infinite width first, so the window's own MaxWidth clamp CLIPS
+                 an unbroken line (e.g. a long path) instead of wrapping it. -->
             <TextBlock
                 Grid.Row="0"
+                MaxWidth="560"
                 Margin="10,20,10,20"
                 HorizontalAlignment="Center"
                 Text="{Binding Message}"

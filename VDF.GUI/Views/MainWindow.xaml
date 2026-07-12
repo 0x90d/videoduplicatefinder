@@ -118,10 +118,11 @@
                 VerticalAlignment="Top"
                 Orientation="Horizontal"
                 Spacing="2">
+                <!-- "New scan" returns to the Setup screen (discarding the shown results)
+                     instead of immediately rescanning with the current settings. -->
                 <Button
                     Classes="navlink"
-                    Command="{Binding StartScanCommand}"
-                    CommandParameter="FullScan"
+                    Command="{Binding NewScanCommand}"
                     Content="{Binding Source={x:Static local:App.Lang}, Path=[Shell.NewScan]}"
                     IsVisible="{Binding ShowNavNewScan}" />
                 <Button
@@ -245,9 +246,7 @@
                                     x:Name="NewResultsView"
                                     IsVisible="{Binding IsReviewState}" />
                             </Grid>
-                            <Grid
-                                x:Name="BusyIndicator"
-                                Opacity="0.8">
+                            <Grid x:Name="BusyIndicator">
                                 <!-- Scans render in the window center (Scanning state) — the busy
                                      curtain only covers non-scan operations (delete, import, …). -->
                                 <Grid.IsVisible>
@@ -256,6 +255,9 @@
                                         <Binding Path="!IsScanning" />
                                     </MultiBinding>
                                 </Grid.IsVisible>
+                                <!-- Curtain: fades the view underneath and swallows its input;
+                                     kept as a sibling so the panel itself stays fully opaque. -->
+                                <Border Background="{actipro:ThemeResource Container1BackgroundBrush}" Opacity="0.85" />
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <ProgressBar
                                         Height="10"

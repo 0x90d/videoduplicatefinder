@@ -23,6 +23,7 @@ using VDF.Core;
 using VDF.Core.Utils;
 using VDF.GUI.Data;
 using VDF.GUI.Utils;
+using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
 
@@ -94,6 +95,30 @@ namespace VDF.GUI.ViewModels {
 			this.RaisePropertyChanged(nameof(IsScanningState));
 			this.RaisePropertyChanged(nameof(IsReviewState));
 			RaiseShellNavChanged(); // "New scan" nav link follows the Review state
+		}
+
+		/// <summary>
+		/// Titlebar "New scan": discards the current results and returns to the Setup
+		/// screen so folders/profile can be changed first — it does NOT start the scan
+		/// (the Setup screen's own Scan button does). Quick re-runs with unchanged
+		/// settings live in the ⋯ menu (Rescan). The saved-results backup file on disk
+		/// is left untouched.
+		/// </summary>
+		public ReactiveCommand<Unit, Unit> NewScanCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (Duplicates.Count > 0 &&
+				await MessageBoxService.Show(App.Lang["Message.NewScanDiscardPrompt"],
+					MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+				return;
+			DiscardResultsToSetup();
+		});
+
+		internal void DiscardResultsToSetup() {
+			Duplicates.Clear(); // Reset event → checked counters/undo stack clear + state raise
+			ShowNoDuplicatesNotice = false;
+			BuildActiveResultsView();
+			RefreshGroupStats();
+			// The fingerprint database may have grown since these results were produced.
+			RebuildSetupFolders();
 		}
 
 		// ---------- welcome strip ----------
@@ -235,6 +260,7 @@ namespace VDF.GUI.ViewModels {
 		public ScanProfileOptionVM[] ScanProfileOptions { get; } = {
 			new(ScanProfile.ExactAndNear, App.Lang["Profile.Exact.Name"], App.Lang["Profile.Exact.Desc"], App.Lang["Profile.Exact.Time"]),
 			new(ScanProfile.EditedAndAltered, App.Lang["Profile.Edited.Name"], App.Lang["Profile.Edited.Desc"], App.Lang["Profile.Edited.Time"]),
+			new(ScanProfile.AiScan, App.Lang["Profile.Ai.Name"], App.Lang["Profile.Ai.Desc"], App.Lang["Profile.Ai.Time"]),
 			new(ScanProfile.DeepClean, App.Lang["Profile.Deep.Name"], App.Lang["Profile.Deep.Desc"], App.Lang["Profile.Deep.Time"]),
 			new(ScanProfile.Custom, App.Lang["Profile.Custom.Name"], App.Lang["Profile.Custom.Desc"], string.Empty),
 		};

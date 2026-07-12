@@ -23,7 +23,11 @@ namespace VDF.GUI.Data {
 		ExactAndNear,
 		/// <summary>Also finds crops, watermarks, flips and quality changes. The default.</summary>
 		EditedAndAltered,
-		/// <summary>Everything above plus clips cut out of longer videos (audio match).</summary>
+		/// <summary>Everything above plus AI matching for re-edited copies and clips cut out
+		/// of longer videos — visual only, no audio decoding (maintainer decision 2026-07-12).</summary>
+		AiScan,
+		/// <summary>Everything above plus audio-fingerprint clip matching — the most
+		/// thorough combination, and the slowest first scan.</summary>
 		DeepClean,
 		/// <summary>The user's own knob values, untouched.</summary>
 		Custom,
@@ -36,6 +40,8 @@ namespace VDF.GUI.Data {
 		[JsonInclude] public bool IgnoreBlackPixels { get; set; }
 		[JsonInclude] public bool IgnoreWhitePixels { get; set; }
 		[JsonInclude] public bool EnablePartialClipDetection { get; set; }
+		[JsonInclude] public bool UseAiMatching { get; set; }
+		[JsonInclude] public bool EnableAiPartialDetection { get; set; }
 	}
 
 	/// <summary>
@@ -54,6 +60,8 @@ namespace VDF.GUI.Data {
 			IgnoreBlackPixels = false,
 			IgnoreWhitePixels = false,
 			EnablePartialClipDetection = false,
+			UseAiMatching = false,
+			EnableAiPartialDetection = false,
 		};
 		internal static readonly ScanKnobs EditedAndAltered = new() {
 			Percent = 92f,
@@ -61,6 +69,19 @@ namespace VDF.GUI.Data {
 			IgnoreBlackPixels = true,
 			IgnoreWhitePixels = true,
 			EnablePartialClipDetection = false,
+			UseAiMatching = false,
+			EnableAiPartialDetection = false,
+		};
+		internal static readonly ScanKnobs AiScan = new() {
+			Percent = 92f,
+			CompareHorizontallyFlipped = true,
+			IgnoreBlackPixels = true,
+			IgnoreWhitePixels = true,
+			// Deliberately NO audio pass: the AI partial pass covers clips visually
+			// without decoding every file's full audio track.
+			EnablePartialClipDetection = false,
+			UseAiMatching = true,
+			EnableAiPartialDetection = true,
 		};
 		internal static readonly ScanKnobs DeepClean = new() {
 			Percent = 92f,
@@ -68,11 +89,14 @@ namespace VDF.GUI.Data {
 			IgnoreBlackPixels = true,
 			IgnoreWhitePixels = true,
 			EnablePartialClipDetection = true,
+			UseAiMatching = true,
+			EnableAiPartialDetection = true,
 		};
 
 		internal static ScanKnobs? BundleFor(ScanProfile profile) => profile switch {
 			ScanProfile.ExactAndNear => ExactAndNear,
 			ScanProfile.EditedAndAltered => EditedAndAltered,
+			ScanProfile.AiScan => AiScan,
 			ScanProfile.DeepClean => DeepClean,
 			_ => null,
 		};
@@ -83,6 +107,8 @@ namespace VDF.GUI.Data {
 			IgnoreBlackPixels = settings.IgnoreBlackPixels,
 			IgnoreWhitePixels = settings.IgnoreWhitePixels,
 			EnablePartialClipDetection = settings.EnablePartialClipDetection,
+			UseAiMatching = settings.UseAiMatching,
+			EnableAiPartialDetection = settings.EnableAiPartialDetection,
 		};
 
 		internal static bool Matches(SettingsFile settings, ScanKnobs knobs) =>
@@ -90,12 +116,15 @@ namespace VDF.GUI.Data {
 			settings.CompareHorizontallyFlipped == knobs.CompareHorizontallyFlipped &&
 			settings.IgnoreBlackPixels == knobs.IgnoreBlackPixels &&
 			settings.IgnoreWhitePixels == knobs.IgnoreWhitePixels &&
-			settings.EnablePartialClipDetection == knobs.EnablePartialClipDetection;
+			settings.EnablePartialClipDetection == knobs.EnablePartialClipDetection &&
+			settings.UseAiMatching == knobs.UseAiMatching &&
+			settings.EnableAiPartialDetection == knobs.EnableAiPartialDetection;
 
 		/// <summary>The profile the current knob values correspond to; Custom when none match.</summary>
 		internal static ScanProfile Detect(SettingsFile settings) =>
 			Matches(settings, ExactAndNear) ? ScanProfile.ExactAndNear :
 			Matches(settings, DeepClean) ? ScanProfile.DeepClean :
+			Matches(settings, AiScan) ? ScanProfile.AiScan :
 			Matches(settings, EditedAndAltered) ? ScanProfile.EditedAndAltered :
 			ScanProfile.Custom;
 
@@ -121,6 +150,8 @@ namespace VDF.GUI.Data {
 			settings.IgnoreBlackPixels = knobs.IgnoreBlackPixels;
 			settings.IgnoreWhitePixels = knobs.IgnoreWhitePixels;
 			settings.EnablePartialClipDetection = knobs.EnablePartialClipDetection;
+			settings.UseAiMatching = knobs.UseAiMatching;
+			settings.EnableAiPartialDetection = knobs.EnableAiPartialDetection;
 		}
 	}
 }

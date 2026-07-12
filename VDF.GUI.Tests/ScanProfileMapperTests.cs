@@ -39,14 +39,54 @@ namespace VDF.GUI.Tests {
 		}
 
 		[Fact]
-		public void DeepClean_IsEditedPlusPartialClips() {
+		public void AiScan_IsEditedPlusAiPasses_WithoutAudio() {
+			var settings = new SettingsFile();
+			ScanProfileMapper.Apply(ScanProfile.AiScan, settings);
+
+			Assert.True(settings.UseAiMatching);
+			Assert.True(settings.EnableAiPartialDetection);
+			// The card's whole point: clips are found visually, no full audio decode.
+			Assert.False(settings.EnablePartialClipDetection);
+			Assert.Equal(ScanProfile.AiScan, ScanProfileMapper.Detect(settings));
+
+			settings.UseAiMatching = false;
+			settings.EnableAiPartialDetection = false;
+			Assert.Equal(ScanProfile.EditedAndAltered, ScanProfileMapper.Detect(settings));
+		}
+
+		[Fact]
+		public void DeepClean_IsAiScanPlusAudioPartialClips() {
 			var settings = new SettingsFile();
 			ScanProfileMapper.Apply(ScanProfile.DeepClean, settings);
 
 			Assert.True(settings.EnablePartialClipDetection);
+			Assert.True(settings.UseAiMatching);
+			Assert.True(settings.EnableAiPartialDetection);
 			Assert.Equal(ScanProfile.DeepClean, ScanProfileMapper.Detect(settings));
 			settings.EnablePartialClipDetection = false;
-			Assert.Equal(ScanProfile.EditedAndAltered, ScanProfileMapper.Detect(settings));
+			Assert.Equal(ScanProfile.AiScan, ScanProfileMapper.Detect(settings));
+		}
+
+		[Fact]
+		public void ToggleAiKnob_SwitchesDetectionToCustom() {
+			var settings = new SettingsFile();
+			ScanProfileMapper.Apply(ScanProfile.EditedAndAltered, settings);
+
+			settings.UseAiMatching = true;
+			Assert.Equal(ScanProfile.Custom, ScanProfileMapper.Detect(settings));
+		}
+
+		[Fact]
+		public void LegacyDeepCleanValues_AudioWithoutAi_DetectAsCustom() {
+			// Users who selected the pre-AI Deep clean bundle (audio partial on, AI off)
+			// keep their behavior but the card shows Custom — the profile is derived.
+			var settings = new SettingsFile();
+			settings.Percent = 92f;
+			settings.CompareHorizontallyFlipped = true;
+			settings.IgnoreBlackPixels = true;
+			settings.IgnoreWhitePixels = true;
+			settings.EnablePartialClipDetection = true;
+			Assert.Equal(ScanProfile.Custom, ScanProfileMapper.Detect(settings));
 		}
 
 		[Fact]
