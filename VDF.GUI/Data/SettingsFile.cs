@@ -385,6 +385,9 @@ namespace VDF.GUI.Data {
 			get => _AiPartialHitPercent;
 			set => this.RaiseAndSetIfChanged(ref _AiPartialHitPercent, Math.Clamp(value, 70f, 99f));
 		}
+		/// <summary>GUI mirror of Core Settings.NeedsAiComponents — keep the two in sync.</summary>
+		[JsonIgnore]
+		public bool NeedsAiComponents => UseAiMatching || EnableAiPartialDetection;
 		bool _UseExifCreationDate;
 		[JsonPropertyName("UseExifCreationDate")]
 		public bool UseExifCreationDate {

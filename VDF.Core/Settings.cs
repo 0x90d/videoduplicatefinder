@@ -168,6 +168,13 @@ namespace VDF.Core {
 		public bool EnableAiPartialDetection;
 		/// <summary>Per-frame hit threshold (percent) for visual partial detection.</summary>
 		public float AiPartialHitPercent = 89f;
+		/// <summary>
+		/// True when any enabled feature requires the AI components (ONNX Runtime + model)
+		/// — the single gate every frontend and the engine check before scanning. New
+		/// AI-backed settings must be added here, not at the call sites.
+		/// </summary>
+		[System.Text.Json.Serialization.JsonIgnore]
+		public bool NeedsAiComponents => UseAiMatching || EnableAiPartialDetection;
 
 		// ── Database checkpoints ────────────────────────────────────────────
 		/// <summary>

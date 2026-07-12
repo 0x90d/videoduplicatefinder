@@ -1527,7 +1527,7 @@ Non-Windows setup:
 				await MessageBoxService.Show(App.Lang["Message.NativeFfmpegAutoNotSupported"]);
 				return;
 			}
-			if ((SettingsFile.Instance.UseAiMatching || SettingsFile.Instance.EnableAiPartialDetection) &&
+			if (SettingsFile.Instance.NeedsAiComponents &&
 				!VDF.Core.AI.AiComponents.IsReady) {
 				if (await MessageBoxService.Show(App.Lang["Message.AiComponentsMissingPrompt"], MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
 					return;

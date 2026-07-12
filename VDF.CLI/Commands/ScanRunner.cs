@@ -33,7 +33,7 @@ namespace VDF.CLI.Commands {
 		/// before StartSearch, whose PrepareSearch fails fast on missing components.
 		/// </summary>
 		internal static async Task EnsureAiComponentsAsync(VDF.Core.Settings settings, CancellationToken ct) {
-			if (!settings.UseAiMatching && !settings.EnableAiPartialDetection)
+			if (!settings.NeedsAiComponents)
 				return;
 			if (VDF.Core.AI.AiComponents.IsReady)
 				return;

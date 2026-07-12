@@ -122,7 +122,7 @@ namespace VDF.Web.Services {
 				// blocked on: this runs on the Blazor circuit's synchronization context,
 				// and a sync-over-async wait deadlocks the whole circuit (the download's
 				// continuations queue behind the blocked handler forever).
-				if ((_engine.Settings.UseAiMatching || _engine.Settings.EnableAiPartialDetection) &&
+				if (_engine.Settings.NeedsAiComponents &&
 					!VDF.Core.AI.AiComponents.IsReady) {
 					VDF.Core.Utils.Logger.Instance.Info("Downloading AI components (ONNX Runtime + model, ~100 MB)...");
 					await VDF.Core.AI.AiComponents.DownloadAsync(null, _cts.Token);

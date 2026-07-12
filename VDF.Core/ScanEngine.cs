@@ -506,7 +506,7 @@ namespace VDF.Core {
 			if (Settings.UseNativeFfmpegBinding && !FFTools.FFmpegNative.FFmpegHelper.DoFFmpegLibraryFilesExist)
 				throw new FFNotFoundException($"Cannot find FFmpeg libraries. {FFTools.FFmpegNative.FFmpegHelper.DescribeExpectedLibraries()}");
 			// Fail fast with an actionable message instead of erroring on every file later.
-			if (Settings.UseAiMatching || Settings.EnableAiPartialDetection)
+			if (Settings.NeedsAiComponents)
 				AI.AiComponents.EnsureReady();
 
 			CancelAllTasks();

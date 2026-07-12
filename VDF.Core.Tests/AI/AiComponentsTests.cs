@@ -44,6 +44,25 @@ public class AiComponentsTests {
 		Assert.All(AiComponents.ModelSha256, c => Assert.True(Uri.IsHexDigit(c)));
 	}
 
+	[Theory]
+	[InlineData(false, false, false)]
+	[InlineData(true, false, true)]
+	[InlineData(false, true, true)]
+	[InlineData(true, true, true)]
+	public void NeedsAiComponents_TracksEveryAiFeature(bool union, bool partial, bool expected) {
+		var settings = new Settings { UseAiMatching = union, EnableAiPartialDetection = partial };
+		Assert.Equal(expected, settings.NeedsAiComponents);
+	}
+
+	[Fact]
+	public void NeedsAiComponents_IsNotSerializedIntoSettingsJson() {
+		// Computed gate only — persisting it would add a dead key that a hand-edited
+		// settings file could set to a value the getter then silently contradicts.
+		string json = System.Text.Json.JsonSerializer.Serialize(
+			new Settings { UseAiMatching = true }, VDF.Core.Utils.CoreJsonContext.Default.Settings);
+		Assert.DoesNotContain("NeedsAiComponents", json);
+	}
+
 	[Fact]
 	public void EnsureReady_HonorsTestOverride() {
 		string? prev = AiComponents.TestOverrideModelPath;
