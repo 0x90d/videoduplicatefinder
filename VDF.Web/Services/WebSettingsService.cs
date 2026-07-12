@@ -154,9 +154,12 @@ namespace VDF.Web.Services {
 				s.PartialClipRequireVisualMatch = dto.PartialClipRequireVisualMatch;
 				s.PartialClipVisualThreshold = dto.PartialClipVisualThreshold;
 				s.UseAiMatching = dto.UseAiMatching;
-				s.AiPercent = dto.AiPercent;
+				// Same clamps as the GUI setters and the CLI options: a hand-edited value
+				// like 0.94 (cosine fraction instead of percent) would otherwise flow into
+				// the engine as a ~0.01 threshold and flag nearly every pair as AI-matched.
+				s.AiPercent = Math.Clamp(dto.AiPercent, 50f, 100f);
 				s.EnableAiPartialDetection = dto.EnableAiPartialDetection;
-				s.AiPartialHitPercent = dto.AiPartialHitPercent;
+				s.AiPartialHitPercent = Math.Clamp(dto.AiPartialHitPercent, 70f, 99f);
 				// WebUI-only
 				AutoLoadThumbnails = dto.AutoLoadThumbnails;
 				ThumbnailWidth = Math.Clamp(dto.ThumbnailWidth, 48, 960);

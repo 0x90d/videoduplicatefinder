@@ -574,6 +574,12 @@ namespace VDF.Core {
 				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
 		void PrepareCompare() {
+			// Fail fast like PrepareSearch: the visual partial pass constructs the ONNX
+			// session at the END of a compare run — without this gate a compare-only run
+			// with missing components dies hours in with a raw DllNotFoundException. The
+			// union pass only reads cached embeddings at compare time and needs nothing.
+			if (Settings.EnableAiPartialDetection)
+				AI.AiComponents.EnsureReady();
 			if (positionList.Count == 0) {
 				// Fresh process running compare-only (CLI 'compare' on an existing database):
 				// the list is built during PrepareSearch, which never ran here (issue #790).

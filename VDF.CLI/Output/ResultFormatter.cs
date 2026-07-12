@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -42,24 +43,29 @@ namespace VDF.CLI.Output {
 		}
 
 		static string FormatCsv(IEnumerable<DuplicateItem> duplicates) {
+			// All numbers invariant: on a comma-decimal locale (de-DE) culture-formatted
+			// values like "60,000" inject extra CSV columns and shift every field after them.
+			var inv = CultureInfo.InvariantCulture;
 			var sb = new StringBuilder();
 			sb.AppendLine("GroupId,Similarity,Path,Size,Duration,FrameSize,Format,Fps,BitRateKbs,AudioFormat,DateCreated,IsImage,Flags,PartialClipOffset");
 			foreach (var d in duplicates.OrderBy(d => d.GroupId).ThenByDescending(d => d.Similarity)) {
 				sb.AppendLine(string.Join(",",
 					d.GroupId,
-					d.Similarity.ToString("F1"),
+					d.Similarity.ToString("F1", inv),
 					CsvEscape(d.Path),
 					d.SizeLong,
-					d.Duration.TotalSeconds.ToString("F3"),
+					d.Duration.TotalSeconds.ToString("F3", inv),
 					CsvEscape(d.FrameSize ?? string.Empty),
 					CsvEscape(d.Format ?? string.Empty),
-					d.Fps.ToString("F2"),
-					d.BitRateKbs,
+					d.Fps.ToString("F2", inv),
+					d.BitRateKbs.ToString(inv),
 					CsvEscape(d.AudioFormat ?? string.Empty),
 					d.DateCreated.ToString("O"),
 					d.IsImage,
-					d.Flags,
-					d.PartialClipOffset.TotalSeconds.ToString("F0")
+					// Multi-bit values render as "PartialClip, AiMatched" — the comma must
+					// not become an extra CSV column.
+					CsvEscape(d.Flags.ToString()),
+					d.PartialClipOffset.TotalSeconds.ToString("F0", inv)
 				));
 			}
 			return sb.ToString();
@@ -81,7 +87,10 @@ namespace VDF.CLI.Output {
 				foreach (var item in group.OrderByDescending(d => d.Similarity)) {
 					string best = item.IsBestBitRateKbs || item.IsBestFrameSize ? " [best]" : string.Empty;
 					string partial = item.PartialClipOffsetDisplay.Length > 0 ? $" [partial clip {item.PartialClipOffsetDisplay}]" : string.Empty;
-					sb.AppendLine($"  {item.Similarity,6:F1}%  {item.Path}{best}{partial}");
+					// AI-union pairs are the lower-confidence matches — users need to see
+					// which pairing came from the AI pass before acting on it.
+					string ai = item.Flags.HasFlag(VDF.Core.DuplicateFlags.AiMatched) ? " [AI]" : string.Empty;
+					sb.AppendLine($"  {item.Similarity,6:F1}%  {item.Path}{best}{partial}{ai}");
 					if (!item.IsImage) {
 						string details = $"         {item.FrameSize ?? "?"}, {item.Format ?? "?"}, {item.Fps:F2} fps, {item.BitRateKbs} kbps, {item.Duration:hh\\:mm\\:ss}";
 						sb.AppendLine(details);

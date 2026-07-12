@@ -194,31 +194,33 @@ namespace VDF.CLI.Commands {
 			if (excludes != null)
 				foreach (var p in excludes) s.BlackList.Add(p);
 
-			s.Threshhold = r.GetValue(Threshold);
-			s.Percent = r.GetValue(Percent);
-			// Commands that don't register --parallelism (e.g. 'compare') get default(int) == 0
-			// back from GetValue, and 0 is the one value ParallelOptions rejects (#804). Remap
-			// only that sentinel to the documented default of 1; -1 (unbounded) and any positive
-			// value the user actually passed are left untouched.
-			int parallelism = r.GetValue(Parallelism);
-			s.MaxDegreeOfParallelism = parallelism == 0 ? 1 : parallelism;
-			// 0 (also what commands that don't register the option get back) = automatic
-			// CPU-headroom cap resolved by the engine.
-			s.MatchingMaxDegreeOfParallelism = r.GetValue(MatchingParallelism);
-			s.IncludeSubDirectories = !r.GetValue(NoSubdirs);
-			s.IncludeImages = r.GetValue(IncludeImages);
-			s.UsePHashing = r.GetValue(UsePhash);
-			// --phash-sample-ratio is only registered on commands that expose pHash tuning;
-			// for the rest GetResult is null and we keep the documented default. When it IS
-			// present, clamp to [0.01, 1] — GetValue returns the 0.6 DefaultValueFactory when
-			// omitted, and an explicit 0 clamps to the 0.01 minimum instead of being mistaken
-			// for "unset" (avoids the 0-sentinel overload the --parallelism/#804 remap has).
+			// Every assignment is guarded on the option being PRESENT on the parsed
+			// command: a registered option always yields a result (implicit when the
+			// user omitted it, so the documented CLI defaults still apply), while an
+			// UNREGISTERED option yields null — unconditional GetValue returned
+			// default(T) for those and silently force-reset engine settings. That was
+			// the #804 --parallelism crash, and it also made 'compare' clear
+			// UseAiMatching/EnableAiPartialDetection/UsePHashing behind the user's
+			// back, so the documented scan-then-compare workflow lost those passes.
+			if (r.GetResult(Threshold) != null) s.Threshhold = r.GetValue(Threshold);
+			if (r.GetResult(Percent) != null) s.Percent = r.GetValue(Percent);
+			if (r.GetResult(Parallelism) != null) {
+				// 0 is the one value ParallelOptions rejects (#804): remap that sentinel to
+				// the documented default of 1; -1 (unbounded) and positive values pass through.
+				int parallelism = r.GetValue(Parallelism);
+				s.MaxDegreeOfParallelism = parallelism == 0 ? 1 : parallelism;
+			}
+			// 0 = automatic CPU-headroom cap resolved by the engine.
+			if (r.GetResult(MatchingParallelism) != null) s.MatchingMaxDegreeOfParallelism = r.GetValue(MatchingParallelism);
+			if (r.GetResult(NoSubdirs) != null) s.IncludeSubDirectories = !r.GetValue(NoSubdirs);
+			if (r.GetResult(IncludeImages) != null) s.IncludeImages = r.GetValue(IncludeImages);
+			if (r.GetResult(UsePhash) != null) s.UsePHashing = r.GetValue(UsePhash);
+			// Clamp to [0.01, 1]: an explicit 0 clamps to the 0.01 minimum instead of being
+			// mistaken for "unset" (avoids the 0-sentinel overload the #804 remap has).
 			if (r.GetResult(PhashSampleRatio) != null)
 				s.PHashRequiredMatchingSampleRatio = (float)Math.Clamp(r.GetValue(PhashSampleRatio), 0.01d, 1d);
-			else
-				s.PHashRequiredMatchingSampleRatio = 0.6f;
-			s.UseNativeFfmpegBinding = r.GetValue(NativeFfmpeg);
-			s.HardwareAccelerationMode = r.GetValue(HardwareAccel);
+			if (r.GetResult(NativeFfmpeg) != null) s.UseNativeFfmpegBinding = r.GetValue(NativeFfmpeg);
+			if (r.GetResult(HardwareAccel) != null) s.HardwareAccelerationMode = r.GetValue(HardwareAccel);
 
 			var db = r.GetValue(Database);
 			if (db != null) s.CustomDatabaseFolder = db;
@@ -226,17 +228,50 @@ namespace VDF.CLI.Commands {
 			var ffArgs = r.GetValue(CustomFfArgs);
 			if (ffArgs != null) s.CustomFFArguments = ffArgs;
 
-			s.DatabaseCheckpointIntervalMinutes = r.GetValue(CheckpointInterval);
-			s.IncludeNonExistingFiles = r.GetValue(IncludeNonExistingFiles);
-			s.EnablePartialClipDetection = r.GetValue(EnablePartialClipDetection);
-			s.PartialClipMinRatio = r.GetValue(PartialClipMinRatio);
-			s.PartialClipSimilarityThreshold = r.GetValue(PartialClipSimilarityThreshold);
-			s.PartialClipRequireVisualMatch = r.GetValue(PartialClipRequireVisualMatch);
-			s.PartialClipVisualThreshold = r.GetValue(PartialClipVisualThreshold);
-			s.UseAiMatching = r.GetValue(AiMatching);
-			s.AiPercent = Math.Clamp(r.GetValue(AiPercent), 50f, 100f);
-			s.EnableAiPartialDetection = r.GetValue(AiPartial);
-			s.AiPartialHitPercent = Math.Clamp(r.GetValue(AiPartialHitPercent), 70f, 99f);
+			if (r.GetResult(CheckpointInterval) != null) s.DatabaseCheckpointIntervalMinutes = r.GetValue(CheckpointInterval);
+			if (r.GetResult(IncludeNonExistingFiles) != null) s.IncludeNonExistingFiles = r.GetValue(IncludeNonExistingFiles);
+			if (r.GetResult(EnablePartialClipDetection) != null) s.EnablePartialClipDetection = r.GetValue(EnablePartialClipDetection);
+			if (r.GetResult(PartialClipMinRatio) != null) s.PartialClipMinRatio = r.GetValue(PartialClipMinRatio);
+			if (r.GetResult(PartialClipSimilarityThreshold) != null) s.PartialClipSimilarityThreshold = r.GetValue(PartialClipSimilarityThreshold);
+			if (r.GetResult(PartialClipRequireVisualMatch) != null) s.PartialClipRequireVisualMatch = r.GetValue(PartialClipRequireVisualMatch);
+			if (r.GetResult(PartialClipVisualThreshold) != null) s.PartialClipVisualThreshold = r.GetValue(PartialClipVisualThreshold);
+			if (r.GetResult(AiMatching) != null) s.UseAiMatching = r.GetValue(AiMatching);
+			if (r.GetResult(AiPercent) != null) s.AiPercent = Math.Clamp(r.GetValue(AiPercent), 50f, 100f);
+			if (r.GetResult(AiPartial) != null) s.EnableAiPartialDetection = r.GetValue(AiPartial);
+			if (r.GetResult(AiPartialHitPercent) != null) s.AiPartialHitPercent = Math.Clamp(r.GetValue(AiPartialHitPercent), 70f, 99f);
+		}
+
+		/// <summary>
+		/// Options meaningful for a compare-only run: everything the compare phase itself
+		/// consumes (matching modes, thresholds, the partial/AI passes and the media-decode
+		/// options their on-demand frame checks use). Keeps the two-step scan→compare
+		/// workflow at feature parity with scan-and-compare.
+		/// </summary>
+		internal static void AddCompareOptions(Command cmd) {
+			cmd.Options.Add(Threshold);
+			cmd.Options.Add(Percent);
+			cmd.Options.Add(Parallelism);
+			cmd.Options.Add(MatchingParallelism);
+			cmd.Options.Add(IncludeImages);
+			cmd.Options.Add(Database);
+			cmd.Options.Add(IncludeNonExistingFiles);
+			cmd.Options.Add(UsePhash);
+			cmd.Options.Add(PhashSampleRatio);
+			cmd.Options.Add(NativeFfmpeg);
+			cmd.Options.Add(HardwareAccel);
+			cmd.Options.Add(CustomFfArgs);
+			cmd.Options.Add(EnablePartialClipDetection);
+			cmd.Options.Add(PartialClipMinRatio);
+			cmd.Options.Add(PartialClipSimilarityThreshold);
+			cmd.Options.Add(PartialClipRequireVisualMatch);
+			cmd.Options.Add(PartialClipVisualThreshold);
+			cmd.Options.Add(AiMatching);
+			cmd.Options.Add(AiPercent);
+			cmd.Options.Add(AiPartial);
+			cmd.Options.Add(AiPartialHitPercent);
+			cmd.Options.Add(SettingsFile);
+			cmd.Options.Add(Format);
+			cmd.Options.Add(Output);
 		}
 
 		internal static void AddScanOptions(Command cmd) {

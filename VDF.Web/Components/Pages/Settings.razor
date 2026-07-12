@@ -91,12 +91,28 @@
                @onchange="e => Scan.Settings.UseAiMatching = (bool)e.Value!" />
         AI matching (additional pass; downloads ONNX Runtime + model on first scan, ~100 MB)
     </label>
+    @if (Scan.Settings.UseAiMatching) {
+        <label>
+            AI similarity threshold % (50–100)
+            <input type="number" min="50" max="100" step="0.5"
+                   value="@Scan.Settings.AiPercent.ToString(CultureInfo.InvariantCulture)"
+                   @onchange="e => Scan.Settings.AiPercent = Math.Clamp(ParseFloat(e.Value), 50f, 100f)" />
+        </label>
+    }
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.EnableAiPartialDetection"
                @onchange="e => Scan.Settings.EnableAiPartialDetection = (bool)e.Value!" />
         Detect partial duplicates visually (AI)
     </label>
+    @if (Scan.Settings.EnableAiPartialDetection) {
+        <label>
+            AI partial per-frame hit threshold % (70–99)
+            <input type="number" min="70" max="99" step="0.5"
+                   value="@Scan.Settings.AiPartialHitPercent.ToString(CultureInfo.InvariantCulture)"
+                   @onchange="e => Scan.Settings.AiPartialHitPercent = Math.Clamp(ParseFloat(e.Value), 70f, 99f)" />
+        </label>
+    }
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.CompareHorizontallyFlipped"

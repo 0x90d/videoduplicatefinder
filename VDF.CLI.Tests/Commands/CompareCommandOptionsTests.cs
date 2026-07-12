@@ -60,4 +60,50 @@ public class CompareCommandOptionsTests {
 
 		Assert.Equal(-1, settings.MaxDegreeOfParallelism);
 	}
+
+	[Fact]
+	public void Compare_RegistersAndHonorsCompareTimeModes() {
+		// Regression: 'compare' registered none of the matching-mode options, so the
+		// documented scan-then-compare workflow silently lost --use-phash,
+		// --partial-clip-detection and both AI passes.
+		var cmd = CompareCommand.Build();
+		var parse = cmd.Parse(new[] { "--use-phash", "--partial-clip-detection", "--ai-matching", "--ai-partial", "--ai-percent", "92" });
+		Assert.Empty(parse.Errors);
+
+		var settings = new Settings();
+		SharedOptions.ApplyToSettings(settings, parse);
+
+		Assert.True(settings.UsePHashing);
+		Assert.True(settings.EnablePartialClipDetection);
+		Assert.True(settings.UseAiMatching);
+		Assert.True(settings.EnableAiPartialDetection);
+		Assert.Equal(92f, settings.AiPercent, 3);
+	}
+
+	[Fact]
+	public void ApplyToSettings_LeavesUnregisteredOptionsUntouched() {
+		// The mechanism behind the class of bugs above: for an option the command never
+		// registered, GetValue returns default(T) and the old unconditional assignments
+		// force-reset preloaded settings (from a settings file or engine defaults).
+		var bare = new System.CommandLine.Command("bare");
+		bare.Options.Add(SharedOptions.Percent); // one registered option as control
+
+		var settings = new Settings {
+			UseAiMatching = true,
+			EnableAiPartialDetection = true,
+			UsePHashing = true,
+			EnablePartialClipDetection = true,
+			AiPercent = 92f,
+			Threshhold = 7,
+		};
+		SharedOptions.ApplyToSettings(settings, bare.Parse(Array.Empty<string>()));
+
+		Assert.True(settings.UseAiMatching);
+		Assert.True(settings.EnableAiPartialDetection);
+		Assert.True(settings.UsePHashing);
+		Assert.True(settings.EnablePartialClipDetection);
+		Assert.Equal(92f, settings.AiPercent, 3);
+		Assert.Equal(7, settings.Threshhold);
+		Assert.Equal(96f, settings.Percent, 3); // registered option still applies its default
+	}
 }

@@ -23,25 +23,23 @@ namespace VDF.CLI.Commands {
 		internal static Command Build() {
 			var cmd = new Command("compare", "Compare previously scanned hashes and output duplicate groups. Requires a prior 'scan' run.");
 
-			cmd.Options.Add(SharedOptions.Threshold);
-			cmd.Options.Add(SharedOptions.Percent);
-			cmd.Options.Add(SharedOptions.Parallelism);
-			cmd.Options.Add(SharedOptions.MatchingParallelism);
-			cmd.Options.Add(SharedOptions.IncludeImages);
-			cmd.Options.Add(SharedOptions.Database);
-			cmd.Options.Add(SharedOptions.IncludeNonExistingFiles);
-			cmd.Options.Add(SharedOptions.SettingsFile);
-			cmd.Options.Add(SharedOptions.Format);
-			cmd.Options.Add(SharedOptions.Output);
+			SharedOptions.AddCompareOptions(cmd);
 
 			cmd.SetAction(async (parseResult, ct) => {
 				var engine = new ScanEngine();
+				// Settings file first, explicit flags second — same layering as scan-and-compare.
+				engine.Settings = ScanRunner.LoadOrCreateSettings(parseResult.GetValue(SharedOptions.SettingsFile));
 				SharedOptions.ApplyToSettings(engine.Settings, parseResult);
 				// 'compare' has no --include option; without this, the empty include list
 				// would make the inclusion filter skip every database entry (0 results, #790).
 				if (engine.Settings.IncludeList.Count == 0)
 					engine.Settings.ScanAgainstEntireDatabase = true;
 				ScanRunner.WireProgress(engine);
+
+				// Compare-time AI needs: the union pass only reads embeddings cached by the
+				// scan, but --ai-partial constructs the ONNX session — provision like scan does.
+				if (engine.Settings.EnableAiPartialDetection)
+					await ScanRunner.EnsureAiComponentsAsync(engine.Settings, ct);
 
 				var duplicates = await ScanRunner.RunCompareAsync(engine, ct);
 

@@ -22,7 +22,7 @@ namespace VDF.CLI.Tests.Output;
 
 public class ResultFormatterTests {
 	static DuplicateItem MakeItem(Guid groupId, float similarity = 95f, string path = "/test/video.mp4",
-		long size = 1024) {
+		long size = 1024, VDF.Core.DuplicateFlags flags = VDF.Core.DuplicateFlags.None) {
 		var json = JsonSerializer.Serialize(new {
 			GroupId = groupId,
 			SizeLong = size,
@@ -35,7 +35,7 @@ public class ResultFormatterTests {
 			Path = path,
 			Folder = "/test",
 			IsImage = false,
-			Flags = 0,
+			Flags = (short)flags,
 			Fps = 30.0f,
 			Format = "h264",
 			FrameSize = "1920x1080",
@@ -101,6 +101,67 @@ public class ResultFormatterTests {
 
 		// Path with comma should be quoted
 		Assert.Contains("\"/test/my,video.mp4\"", result);
+	}
+
+	[Fact]
+	public void Format_Csv_MultiBitFlags_StayOneColumn() {
+		// Regression: [Flags] ToString() of a multi-bit value is "PartialClip, AiMatched" —
+		// unescaped, the embedded comma injected an extra CSV column and shifted every
+		// AI-partial row's PartialClipOffset into the wrong field.
+		var items = new List<DuplicateItem> {
+			MakeItem(Group1, flags: VDF.Core.DuplicateFlags.PartialClip | VDF.Core.DuplicateFlags.AiMatched),
+		};
+
+		string result = ResultFormatter.Format(items, OutputFormat.Csv);
+
+		var lines = result.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+		int headerColumns = lines[0].Split(',').Length;
+		// Count data columns respecting quotes: a quoted field may contain commas.
+		int dataColumns = CountCsvColumns(lines[1].Trim());
+		Assert.Equal(headerColumns, dataColumns);
+		Assert.Contains("\"PartialClip, AiMatched\"", lines[1]);
+	}
+
+	static int CountCsvColumns(string line) {
+		int columns = 1;
+		bool inQuotes = false;
+		foreach (char c in line) {
+			if (c == '"') inQuotes = !inQuotes;
+			else if (c == ',' && !inQuotes) columns++;
+		}
+		return columns;
+	}
+
+	[Fact]
+	public void Format_Csv_IsInvariant_UnderCommaDecimalLocale() {
+		// Regression: numeric fields were culture-formatted, so on de-DE a duration of
+		// 60.000 seconds rendered as "60,000" — the decimal comma injected extra CSV
+		// columns into every row.
+		var prev = System.Globalization.CultureInfo.CurrentCulture;
+		System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+		try {
+			var items = new List<DuplicateItem> { MakeItem(Group1, similarity: 95.5f) };
+			string result = ResultFormatter.Format(items, OutputFormat.Csv);
+			var lines = result.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+			Assert.Equal(lines[0].Split(',').Length, CountCsvColumns(lines[1].Trim()));
+			Assert.Contains("95.5", lines[1]);
+		}
+		finally {
+			System.Globalization.CultureInfo.CurrentCulture = prev;
+		}
+	}
+
+	[Fact]
+	public void Format_Text_MarksAiMatchedItems() {
+		var items = new List<DuplicateItem> {
+			MakeItem(Group1, path: "/test/ai.mp4", flags: VDF.Core.DuplicateFlags.AiMatched),
+			MakeItem(Group1, path: "/test/classic.mp4"),
+		};
+
+		string result = ResultFormatter.Format(items, OutputFormat.Text);
+
+		Assert.Contains("[AI]", result);
+		Assert.DoesNotContain("classic.mp4 [AI]", result);
 	}
 
 	[Fact]

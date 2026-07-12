@@ -62,6 +62,7 @@
 	/* Badge colors */
 	--badge-best-bg: #3b82f6;
 	--badge-clip-bg: #8b5cf6;
+	--badge-ai-bg: #0d9488;
 
 	/* Card */
 	--card-border: #333;
@@ -127,6 +128,7 @@
 
 	--badge-best-bg: #2563eb;
 	--badge-clip-bg: #7c3aed;
+	--badge-ai-bg: #0f766e;
 
 	--card-border: #e2e8f0;
 	--card-hover-border: #2563eb;
@@ -631,6 +633,7 @@ input.input-invalid:focus { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2); }
 .card-badges { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem; }
 .badge-best { background: var(--badge-best-bg); color: #fff; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .badge-partial-clip { background: var(--badge-clip-bg); color: #fff; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-ai-matched { background: var(--badge-ai-bg); color: #fff; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 11px; font-weight: 600; }
 
 /* ===== Hidden cards indicator ===== */
 .hidden-indicator {

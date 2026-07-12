@@ -291,6 +291,9 @@ else {
                                     @if (item.Flags.HasFlag(VDF.Core.DuplicateFlags.PartialClip)) {
                                         <span class="badge-partial-clip">partial clip @item.PartialClipOffsetDisplay</span>
                                     }
+                                    @if (item.Flags.HasFlag(VDF.Core.DuplicateFlags.AiMatched)) {
+                                        <span class="badge-ai-matched">AI match</span>
+                                    }
                                 </div>
                             </div>
                         </div>

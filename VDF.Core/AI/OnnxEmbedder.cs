@@ -41,7 +41,9 @@ namespace VDF.Core.AI {
 
 		public OnnxEmbedder(string modelPath) {
 			AiComponents.EnsureResolverInstalled();
-			var options = new SessionOptions();
+			// InferenceSession does NOT take ownership of caller-supplied options —
+			// without the using this native handle waited for its finalizer.
+			using var options = new SessionOptions();
 			// The embedder shares the machine with the decode workers during hashing;
 			// give inference a portion of the cores, not all of them.
 			options.IntraOpNumThreads = Math.Clamp(Environment.ProcessorCount / 2, 1, 8);

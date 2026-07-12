@@ -25,6 +25,9 @@ namespace VDF.CLI.Commands {
 
 			cmd.SetAction(async (parseResult, ct) => {
 				var engine = new ScanEngine();
+				// Settings file first, explicit flags second — same layering as scan-and-compare
+				// (the option was registered but silently ignored here before).
+				engine.Settings = ScanRunner.LoadOrCreateSettings(parseResult.GetValue(SharedOptions.SettingsFile));
 				SharedOptions.ApplyToSettings(engine.Settings, parseResult);
 
 				if (engine.Settings.IncludeList.Count == 0) {

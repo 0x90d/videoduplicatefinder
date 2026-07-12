@@ -167,19 +167,33 @@ namespace VDF.Core.AI {
 
 		static async Task DownloadRuntimeAsync(HttpClient http, IProgress<AiDownloadProgress>? progress, CancellationToken token) {
 			(Uri url, string archiveName) = GetRuntimeDownloadPlan();
-			string tempRoot = Path.Combine(Path.GetTempPath(), "VDF.AiDownload");
+			// Per-attempt temp dir: a fixed shared path let two VDF processes (GUI + CLI,
+			// or Web + CLI in one container) clobber each other's in-progress download —
+			// FileShare.None collisions, or one process's cleanup deleting the other's files.
+			string tempRoot = Path.Combine(Path.GetTempPath(), $"VDF.AiDownload.{Guid.NewGuid():N}");
 			Directory.CreateDirectory(tempRoot);
 			string archivePath = Path.Combine(tempRoot, archiveName);
 			try {
 				await DownloadFileAsync(http, url, archivePath, $"ONNX Runtime {RuntimeVersion}", progress, token);
 
 				string extractDir = Path.Combine(tempRoot, "extracted");
-				if (Directory.Exists(extractDir)) Directory.Delete(extractDir, true);
 				Directory.CreateDirectory(extractDir);
 				if (archiveName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
 					ZipFile.ExtractToDirectory(archivePath, extractDir);
 				else
 					ExtractTarGz(archivePath, extractDir);
+
+				// Purge any previously installed runtime BEFORE copying: the Linux/macOS
+				// library names carry the version (libonnxruntime.so.1.23.2), so upgraded
+				// installs would otherwise accumulate versions and FindRuntimeLibrary's
+				// tie-break could keep loading the stale one while the marker claims the
+				// new version — with GetState() reporting Ready, only deleting the ai
+				// folder by hand would have recovered.
+				foreach (string old in Directory.EnumerateFiles(AiFolder)) {
+					string oldName = Path.GetFileName(old);
+					if (oldName.Contains("onnxruntime", StringComparison.OrdinalIgnoreCase))
+						try { File.Delete(old); } catch { /* loaded/locked — overwritten below */ }
+				}
 
 				// Archives lay out onnxruntime-<rid>-<ver>/lib/<libraries>; flatten lib/ into AiFolder.
 				string? libDir = Directory.EnumerateDirectories(extractDir, "lib", SearchOption.AllDirectories).FirstOrDefault();
@@ -200,7 +214,9 @@ namespace VDF.Core.AI {
 		}
 
 		static async Task DownloadModelAsync(HttpClient http, IProgress<AiDownloadProgress>? progress, CancellationToken token) {
-			string tempPath = ModelPath + ".download";
+			// Unique temp name for the same two-process reason as the runtime download;
+			// the final File.Move is atomic either way.
+			string tempPath = ModelPath + $".{Guid.NewGuid():N}.download";
 			try {
 				try {
 					await DownloadFileAsync(http, new Uri(ModelPrimaryUrl), tempPath, "AI model", progress, token);
@@ -220,6 +236,12 @@ namespace VDF.Core.AI {
 			}
 		}
 
+		// With ResponseHeadersRead, HttpClient.Timeout only covers the headers — the body
+		// reads below are otherwise unguarded, and a connection that stalls mid-transfer
+		// (no data, no FIN) would hang forever; the GUI shows a modal busy overlay with no
+		// cancel during this download, so "forever" meant killing the app.
+		static readonly TimeSpan ReadStallTimeout = TimeSpan.FromSeconds(90);
+
 		static async Task DownloadFileAsync(HttpClient http, Uri url, string destination, string displayName, IProgress<AiDownloadProgress>? progress, CancellationToken token) {
 			using HttpResponseMessage response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
 			response.EnsureSuccessStatusCode();
@@ -228,8 +250,19 @@ namespace VDF.Core.AI {
 			await using var target = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
 			var buffer = new byte[81920];
 			long readTotal = 0;
-			int read;
-			while ((read = await source.ReadAsync(buffer, token)) > 0) {
+			while (true) {
+				int read;
+				using (var readCts = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+					readCts.CancelAfter(ReadStallTimeout);
+					try {
+						read = await source.ReadAsync(buffer, readCts.Token);
+					}
+					catch (OperationCanceledException) when (!token.IsCancellationRequested) {
+						throw new TimeoutException($"The {displayName} download stalled (no data received for {ReadStallTimeout.TotalSeconds:0} seconds).");
+					}
+				}
+				if (read == 0)
+					break;
 				await target.WriteAsync(buffer.AsMemory(0, read), token);
 				readTotal += read;
 				progress?.Report(new AiDownloadProgress(displayName, readTotal, total));
