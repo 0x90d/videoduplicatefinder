@@ -11,6 +11,7 @@
     <InternalsVisibleTo Include="VDF.Web" />
     <InternalsVisibleTo Include="VDF.Core.Tests" />
     <InternalsVisibleTo Include="VDF.CLI.Tests" />
+    <InternalsVisibleTo Include="VDF.Web.Tests" />
     <InternalsVisibleTo Include="VDF.IntegrationTests" />
     <InternalsVisibleTo Include="VDF.Benchmarks" />
   </ItemGroup>

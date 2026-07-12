@@ -56,6 +56,8 @@ namespace VDF.Web.Services {
 		public int FilesHashed { get; private set; }
 		public IReadOnlyCollection<DuplicateItem> Duplicates => _engine.Duplicates;
 		public Settings Settings => _engine.Settings;
+		/// <summary>Test seam: lets tests seed results without driving a real scan.</summary>
+		internal ScanEngine Engine => _engine;
 
 		/// <summary>Caches for the thumbnail endpoints — cleared whenever the results change wholesale.</summary>
 		public System.Collections.Concurrent.ConcurrentDictionary<string, byte[]> HqThumbCache { get; } = new();

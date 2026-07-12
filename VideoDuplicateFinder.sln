@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VDF.Benchmarks", "VDF.Bench
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VDF.GUI.Tests", "VDF.GUI.Tests\VDF.GUI.Tests.csproj", "{7996B571-4F34-42D9-9260-4B338D89D15A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VDF.Web.Tests", "VDF.Web.Tests\VDF.Web.Tests.csproj", "{53C19987-16E6-42AB-83D2-F7DE37678168}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -167,6 +169,18 @@ Global
 		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|x64.Build.0 = Release|Any CPU
 		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|x86.ActiveCfg = Release|Any CPU
 		{7996B571-4F34-42D9-9260-4B338D89D15A}.Release|x86.Build.0 = Release|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Debug|x64.Build.0 = Debug|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Debug|x86.Build.0 = Debug|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Release|x64.ActiveCfg = Release|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Release|x64.Build.0 = Release|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Release|x86.ActiveCfg = Release|Any CPU
+		{53C19987-16E6-42AB-83D2-F7DE37678168}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

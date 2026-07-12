@@ -23,6 +23,10 @@ jobs:
       run: dotnet test VDF.Core.Tests/VDF.Core.Tests.csproj -c Release -v q
     - name: Run CLI Tests
       run: dotnet test VDF.CLI.Tests/VDF.CLI.Tests.csproj -c Release -v q
+    - name: Run GUI Tests
+      run: dotnet test VDF.GUI.Tests/VDF.GUI.Tests.csproj -c Release -v q
+    - name: Run Web Tests
+      run: dotnet test VDF.Web.Tests/VDF.Web.Tests.csproj -c Release -v q
     - name: Install FFmpeg
       run: choco install ffmpeg -y --no-progress
     - name: Run Integration Tests

@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="VDF.IntegrationTests" />
+    <InternalsVisibleTo Include="VDF.Web.Tests" />
   </ItemGroup>
 
 </Project>

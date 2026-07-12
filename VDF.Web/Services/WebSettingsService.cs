@@ -89,8 +89,12 @@ namespace VDF.Web.Services {
 		public int ThumbnailWidth { get; set; } = 480;
 		public int ThumbnailJpegQuality { get; set; } = 85;
 
+		/// <summary>Test hook: redirects the settings file away from the user's real one.</summary>
+		internal static string? TestOverrideSettingsPath;
+
 		static string SettingsPath {
 			get {
+				if (TestOverrideSettingsPath != null) return TestOverrideSettingsPath;
 				string folder;
 				if (OperatingSystem.IsWindows())
 					folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VDF");
