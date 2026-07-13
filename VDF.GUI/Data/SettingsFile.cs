@@ -649,7 +649,10 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref _PartialClipVisualThresholdPercent, value);
 		}
 
-		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "FPS", "Bitrate", "Audio Bitrate", "Size"];
+		// Video bitrate ranks above FPS: among equal-resolution re-encodes bitrate is the
+		// stronger quality signal, and a marginally higher framerate must not outrank a
+		// much better encode (#839). Saved user orders are untouched.
+		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "Bitrate", "FPS", "Audio Bitrate", "Size"];
 		[JsonPropertyName("QualityCriteriaOrder")]
 		public List<string> QualityCriteriaOrder {
 			get => _QualityCriteriaOrder;

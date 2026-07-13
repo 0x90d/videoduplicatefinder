@@ -712,7 +712,8 @@
                   <Border IsVisible="{Binding IsBest}"
                           Background="{DynamicResource VdfGoodSoftBrush}"
                           BorderBrush="{DynamicResource VdfGoodBorderBrush}" BorderThickness="1"
-                          CornerRadius="3" Padding="5,0" VerticalAlignment="Center">
+                          CornerRadius="3" Padding="5,0" VerticalAlignment="Center"
+                          ToolTip.Tip="{Binding BestTooltip}">
                     <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.Best]}"
                                FontSize="10" FontWeight="Bold"
                                Foreground="{DynamicResource VdfGoodBrush}" />

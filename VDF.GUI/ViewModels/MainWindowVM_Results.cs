@@ -82,6 +82,16 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
+		/// <summary>
+		/// BEST badge tooltip: names the criterion that produced the winner — the ranking
+		/// looked arbitrary without it (#839) — and points to where the order is configured.
+		/// Null criterion = the group stayed effectively tied through every criterion.
+		/// </summary>
+		internal static string BestBadgeTooltip(VDF.Core.Utils.QualityRanker.Criterion<DuplicateItemVM>? decidedBy) =>
+			decidedBy == null
+				? App.Lang["Results.Row.BestTipTied"]
+				: string.Format(App.Lang["Results.Row.BestTip"], App.Lang[$"QualityCriteria.{decidedBy.Name}"]);
+
 		GroupSummaryFormats BuildGroupSummaryFormats() => new() {
 			GroupTitle = App.Lang["Results.GroupTitle"],
 			Files = App.Lang["Results.Summary.Files"],
@@ -100,8 +110,11 @@ namespace VDF.GUI.ViewModels {
 				SortDescending = SettingsFile.Instance.ResultsSortDescending,
 				CollapsedGroups = collapsedResultsGroups,
 				ExpandedDetails = expandedResultsDetails,
-				PickBest = members => VDF.Core.Utils.QualityRanker.PickKeeper(
-					members.ToList(), ResolveCriteria(QualityCriteriaOrder), d => d.ItemInfo.IsImage),
+				PickBest = members => {
+					var (keep, decidedBy) = VDF.Core.Utils.QualityRanker.PickKeeperWithReason(
+						members.ToList(), ResolveCriteria(QualityCriteriaOrder), d => d.ItemInfo.IsImage);
+					return (keep, BestBadgeTooltip(decidedBy));
+				},
 				Formats = BuildGroupSummaryFormats(),
 			});
 			resultsGroups = result.Groups;

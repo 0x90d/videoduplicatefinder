@@ -67,6 +67,8 @@ namespace VDF.GUI.ViewModels {
 		public ResultsGroupHeader Group { get; internal set; } = null!;
 		/// <summary>The member the quality ranker would keep; shown as the BEST badge.</summary>
 		public bool IsBest { get; internal set; }
+		/// <summary>BEST badge tooltip: which quality criterion decided (#839).</summary>
+		public string? BestTooltip { get; internal set; }
 		/// <summary>
 		/// This member's HDR format beats at least one other member of the group — only
 		/// then does the HDR chip turn green. In uniform groups (all HDR10, or all SDR)

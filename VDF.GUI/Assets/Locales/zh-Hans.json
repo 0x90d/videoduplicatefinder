@@ -620,6 +620,8 @@
 	"Results.Group.Compare": "比较",
 	"Results.Group.KeepBest": "保留最佳",
 	"Results.Row.Best": "最佳",
+	"Results.Row.BestTip": "本组中质量最高的文件，判定依据：{0}。排序标准可在 自动选择 > 选择最低质量 中修改。",
+	"Results.Row.BestTipTied": "本组中质量最高的文件；各文件在所有质量标准上基本相同。排序标准可在 自动选择 > 选择最低质量 中修改。",
 	"Results.Row.ToggleCheck": "切换勾选",
 	"Results.Action.CheckedSuffix": "个已勾选",
 	"Results.Action.Delete": "删除",

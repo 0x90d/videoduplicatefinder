@@ -26,48 +26,61 @@ namespace VDF.Core.Utils {
 			// where "less is better" - e.g. file size as a disk-space tiebreaker once
 			// every quality signal has already tied.
 			public bool Ascending { get; }
-			public Criterion(string name, Func<T, IComparable> accessor, bool videoOnly, bool ascending = false) {
+			// Optional near-tie test: when it returns true for two values, they count as
+			// tied and the NEXT criterion decides. Without it only exact equality ties,
+			// which made near-continuous values (duration in ticks, bitrate in kbps)
+			// effectively always decisive - a file 200ms longer beat one with double the
+			// resolution (#839).
+			public Func<IComparable, IComparable, bool>? NearTie { get; }
+			public Criterion(string name, Func<T, IComparable> accessor, bool videoOnly, bool ascending = false,
+				Func<IComparable, IComparable, bool>? nearTie = null) {
 				Name = name;
 				Accessor = accessor;
 				VideoOnly = videoOnly;
 				Ascending = ascending;
+				NearTie = nearTie;
 			}
+			internal bool Ties(IComparable a, IComparable b) => NearTie?.Invoke(a, b) ?? Equals(a, b);
 		}
 
 		// Picks the item to keep from `items` by walking `criteria` in priority order.
-		// Each criterion is "higher value wins" unless Ascending is set; on a tie, the
-		// next criterion runs only against the items that tied - never against the
+		// Each criterion is "higher value wins" unless Ascending is set; on a (near-)tie,
+		// the next criterion runs only against the items that tied - never against the
 		// original full list. Walking stops as soon as a criterion produces a unique
-		// winner, or when all criteria are exhausted (the first remaining tied item wins).
-		// `isImage(keep)` skips video-only criteria for image items.
-		public static T PickKeeper<T>(IList<T> items, IEnumerable<Criterion<T>> criteria, Func<T, bool> isImage) {
+		// winner, or when all criteria are exhausted (the best item of the last applied
+		// criterion wins). `isImage(keep)` skips video-only criteria for image items.
+		public static T PickKeeper<T>(IList<T> items, IEnumerable<Criterion<T>> criteria, Func<T, bool> isImage) =>
+			PickKeeperWithReason(items, criteria, isImage).Keeper;
+
+		/// <summary>
+		/// Like PickKeeper, but also reports WHICH criterion produced the unique winner
+		/// (null when the candidates stayed effectively tied through every criterion).
+		/// Feeds the BEST badge tooltip (#839).
+		/// </summary>
+		public static (T Keeper, Criterion<T>? DecidedBy) PickKeeperWithReason<T>(IList<T> items, IEnumerable<Criterion<T>> criteria, Func<T, bool> isImage) {
 			if (items.Count == 0)
 				throw new ArgumentException("Items must not be empty.", nameof(items));
 
 			IList<T> candidates = items;
 			T keep = candidates[0];
-			bool anyApplied = false;
-			Criterion<T>? last = null;
 
 			foreach (var criterion in criteria) {
+				if (candidates.Count <= 1)
+					break;
 				if (criterion.VideoOnly && isImage(keep))
 					continue;
-
-				if (anyApplied) {
-					var keepValue = last!.Accessor(keep);
-					var tied = candidates.Where(d => Equals(last.Accessor(d), keepValue)).ToList();
-					if (tied.Count <= 1) break;
-					candidates = tied;
-				}
 
 				keep = criterion.Ascending
 					? candidates.OrderBy(criterion.Accessor).First()
 					: candidates.OrderByDescending(criterion.Accessor).First();
-				anyApplied = true;
-				last = criterion;
+				var keepValue = criterion.Accessor(keep);
+				var tied = candidates.Where(d => criterion.Ties(criterion.Accessor(d), keepValue)).ToList();
+				if (tied.Count <= 1)
+					return (keep, criterion);
+				candidates = tied;
 			}
 
-			return keep;
+			return (keep, null);
 		}
 	}
 }

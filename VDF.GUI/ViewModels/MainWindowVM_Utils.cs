@@ -21,12 +21,28 @@ using VDF.Core.Utils;
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
 
+		// Near-tie tolerances (#839): without them, near-continuous values decide alone —
+		// a re-encode 200ms longer beat a file with double the resolution because
+		// durations almost never tie to the tick. Values within tolerance pass the
+		// decision on to the next criterion. Meaningful differences (a trimmed copy vs.
+		// the full video, 25 vs. 50 fps) still decide.
+		static bool DurationTies(IComparable a, IComparable b) {
+			double x = ((TimeSpan)a).TotalSeconds, y = ((TimeSpan)b).TotalSeconds;
+			double diff = Math.Abs(x - y);
+			return diff <= 1 || diff <= Math.Max(x, y) * 0.01;
+		}
+		static bool FpsTies(IComparable a, IComparable b) => Math.Abs((float)a - (float)b) <= 0.5f;
+		static bool BitrateTies(IComparable a, IComparable b) {
+			decimal x = (decimal)a, y = (decimal)b;
+			return Math.Abs(x - y) <= Math.Max(x, y) * 0.05m;
+		}
+
 		internal static readonly Dictionary<string, QualityRanker.Criterion<DuplicateItemVM>> QualityCriteriaMap = new() {
-			["Duration"] = new("Duration", d => d.ItemInfo.Duration, videoOnly: true),
+			["Duration"] = new("Duration", d => d.ItemInfo.Duration, videoOnly: true, nearTie: DurationTies),
 			["Resolution"] = new("Resolution", d => d.ItemInfo.FrameSizeInt, videoOnly: false),
-			["FPS"] = new("FPS", d => d.ItemInfo.Fps, videoOnly: true),
-			["Bitrate"] = new("Bitrate", d => d.ItemInfo.BitRateKbs, videoOnly: true),
-			["Audio Bitrate"] = new("Audio Bitrate", d => d.ItemInfo.AudioSampleRate, videoOnly: true),
+			["Bitrate"] = new("Bitrate", d => d.ItemInfo.BitRateKbs, videoOnly: true, nearTie: BitrateTies),
+			["FPS"] = new("FPS", d => d.ItemInfo.Fps, videoOnly: true, nearTie: FpsTies),
+			["Audio Bitrate"] = new("Audio Bitrate", d => d.ItemInfo.AudioBitRateKbs, videoOnly: true, nearTie: BitrateTies),
 			["Size"] = new("Size", d => d.ItemInfo.SizeLong, videoOnly: false, ascending: true),
 		};
 

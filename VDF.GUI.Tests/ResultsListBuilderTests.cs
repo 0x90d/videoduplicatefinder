@@ -201,17 +201,21 @@ namespace VDF.GUI.Tests {
 		}
 
 		[Fact]
-		public void PickBest_MarksExactlyTheReturnedItem() {
+		public void PickBest_MarksExactlyTheReturnedItem_AndCarriesTooltip() {
 			Guid g = Guid.NewGuid();
 			var winner = Item(g, "winner", size: 900);
 			var result = ResultsListBuilder.Build(Request(
 				Item(g, "loser", size: 100), winner) with {
-				PickBest = members => members.First(m => m.ItemInfo.Path == "winner")
+				PickBest = members => (members.First(m => m.ItemInfo.Path == "winner"), "decided by Resolution")
 			});
 
 			Assert.Equal(new[] { true, false },
 				result.Groups[0].Rows.Select(r => r.IsBest).ToArray());
-			Assert.Same(winner, result.Groups[0].Rows.Single(r => r.IsBest).Item);
+			var bestRow = result.Groups[0].Rows.Single(r => r.IsBest);
+			Assert.Same(winner, bestRow.Item);
+			// The badge tooltip lands on the best row only (#839).
+			Assert.Equal("decided by Resolution", bestRow.BestTooltip);
+			Assert.Null(result.Groups[0].Rows.Single(r => !r.IsBest).BestTooltip);
 		}
 
 		[Fact]
@@ -219,7 +223,7 @@ namespace VDF.GUI.Tests {
 			Guid g = Guid.NewGuid();
 			int calls = 0;
 			var result = ResultsListBuilder.Build(Request(Item(g, "only")) with {
-				PickBest = members => { calls++; return members[0]; }
+				PickBest = members => { calls++; return (members[0], null); }
 			});
 
 			Assert.Equal(0, calls);

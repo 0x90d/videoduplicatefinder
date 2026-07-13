@@ -122,6 +122,65 @@ public class QualityRankerTests {
 		Assert.Equal(b, QualityRanker.PickKeeper(new[] { a, b }, new[] { Duration, Resolution }, _ => false));
 	}
 
+	// ---------- near-tie tolerance + deciding criterion (#839) ----------
+
+	static QualityRanker.Criterion<Item> DurationNearTie = new("Duration", i => i.Duration, videoOnly: true,
+		nearTie: (a, b) => Math.Abs(((TimeSpan)a - (TimeSpan)b).TotalSeconds) <= 1);
+
+	// Regression test for issue #839: with exact-equality ties a file 200ms longer beat
+	// one with much higher resolution, because TimeSpans almost never tie to the tick.
+	[Fact]
+	public void Issue839_NearTiedDuration_PassesDecisionToNextCriterion() {
+		var longer720p   = new Item("A_720p_longer", Resolution: 2000, Duration: TimeSpan.FromSeconds(1200.2), Bitrate: 5000, Fps: 30, AudioSampleRate: 44100);
+		var shorter1080p = new Item("B_1080p",       Resolution: 3000, Duration: TimeSpan.FromSeconds(1200.0), Bitrate: 5000, Fps: 30, AudioSampleRate: 44100);
+
+		// The exact-equality criterion documents the old behavior: longest always wins.
+		Assert.Equal(longer720p,
+			QualityRanker.PickKeeper(new[] { longer720p, shorter1080p }, new[] { Duration, Resolution }, _ => false));
+
+		// With the near-tie tolerance the next criterion decides.
+		var (keeper, decidedBy) = QualityRanker.PickKeeperWithReason(
+			new[] { longer720p, shorter1080p }, new[] { DurationNearTie, Resolution }, _ => false);
+		Assert.Equal(shorter1080p, keeper);
+		Assert.Equal("Resolution", decidedBy!.Name);
+	}
+
+	[Fact]
+	public void NearTie_MeaningfulDifferenceStillDecides() {
+		// A short clip vs. the full recording: 15 minutes apart is far outside the
+		// tolerance, so Duration still decides (longest = most content).
+		var clip = new Item("clip", Resolution: 3000, Duration: TimeSpan.FromSeconds(300), Bitrate: 9000, Fps: 30, AudioSampleRate: 44100);
+		var full = new Item("full", Resolution: 2000, Duration: TimeSpan.FromSeconds(1200), Bitrate: 1000, Fps: 30, AudioSampleRate: 44100);
+
+		var (keeper, decidedBy) = QualityRanker.PickKeeperWithReason(
+			new[] { clip, full }, new[] { DurationNearTie, Resolution }, _ => false);
+		Assert.Equal(full, keeper);
+		Assert.Equal("Duration", decidedBy!.Name);
+	}
+
+	[Fact]
+	public void PickKeeperWithReason_AllTied_ReportsNoDecidingCriterion() {
+		var a = new Item("A", Resolution: 3000, Duration: TimeSpan.FromSeconds(30), Bitrate: 5000, Fps: 30, AudioSampleRate: 44100);
+		var b = new Item("B", Resolution: 3000, Duration: TimeSpan.FromSeconds(30), Bitrate: 5000, Fps: 30, AudioSampleRate: 44100);
+
+		var (keeper, decidedBy) = QualityRanker.PickKeeperWithReason(
+			new[] { a, b }, new[] { Resolution, Duration, Bitrate }, _ => false);
+		Assert.Equal(a, keeper);
+		Assert.Null(decidedBy);
+	}
+
+	[Fact]
+	public void PickKeeperWithReason_ReportsTheCriterionThatProducedTheUniqueWinner() {
+		// Resolution ties, Duration decides.
+		var a = new Item("A", Resolution: 3000, Duration: TimeSpan.FromSeconds(60), Bitrate: 5000, Fps: 30, AudioSampleRate: 44100);
+		var b = new Item("B", Resolution: 3000, Duration: TimeSpan.FromSeconds(30), Bitrate: 9000, Fps: 60, AudioSampleRate: 48000);
+
+		var (keeper, decidedBy) = QualityRanker.PickKeeperWithReason(
+			new[] { a, b }, new[] { Resolution, Duration, Bitrate }, _ => false);
+		Assert.Equal(a, keeper);
+		Assert.Equal("Duration", decidedBy!.Name);
+	}
+
 	// Regression test for issue #765: when used as a final tiebreaker, the Size criterion
 	// is intentionally ascending - smaller file wins. The premise is that every preceding
 	// quality signal has already tied, so the larger file is just disk-space overhead.

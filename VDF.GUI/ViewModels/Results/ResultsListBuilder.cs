@@ -30,8 +30,11 @@ namespace VDF.GUI.ViewModels {
 		public IReadOnlySet<Guid>? CollapsedGroups { get; init; }
 		/// <summary>Items whose details panel is expanded (a details row follows their row).</summary>
 		public IReadOnlySet<DuplicateItemVM>? ExpandedDetails { get; init; }
-		/// <summary>Picks the member the BEST badge goes to. Null: no badges.</summary>
-		public Func<IReadOnlyList<DuplicateItemVM>, DuplicateItemVM?>? PickBest { get; init; }
+		/// <summary>
+		/// Picks the member the BEST badge goes to, plus the badge's tooltip text
+		/// (which criterion decided, #839). Null: no badges.
+		/// </summary>
+		public Func<IReadOnlyList<DuplicateItemVM>, (DuplicateItemVM? Best, string? Tooltip)>? PickBest { get; init; }
 		/// <summary>Tombstone test, replaceable for tests. Defaults to <see cref="DuplicateItemVM.IsTombstone"/>.</summary>
 		public Func<DuplicateItemVM, bool>? IsTombstone { get; init; }
 		/// <summary>Offline test, replaceable for tests. Defaults to <see cref="DuplicateItemVM.IsOffline"/>.</summary>
@@ -111,10 +114,12 @@ namespace VDF.GUI.ViewModels {
 					row.Group = header;
 
 				if (request.PickBest != null && members.Count >= 2) {
-					var best = request.PickBest(members);
+					var (best, tooltip) = request.PickBest(members);
 					if (best != null)
-						foreach (var row in rows)
+						foreach (var row in rows) {
 							row.IsBest = ReferenceEquals(row.Item, best);
+							row.BestTooltip = row.IsBest ? tooltip : null;
+						}
 				}
 
 				// HDR chip highlight: green only when this member's format outranks

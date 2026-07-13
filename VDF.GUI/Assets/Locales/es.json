@@ -620,6 +620,8 @@
 	"Results.Group.Compare": "Comparar",
 	"Results.Group.KeepBest": "Conservar mejor",
 	"Results.Row.Best": "MEJOR",
+	"Results.Row.BestTip": "La mayor calidad de este grupo, decidida por: {0}. El orden de clasificación se puede cambiar en Selección automática > Seleccionar la calidad más baja.",
+	"Results.Row.BestTipTied": "La mayor calidad de este grupo; los archivos son prácticamente iguales en todos los criterios de calidad. El orden se puede cambiar en Selección automática > Seleccionar la calidad más baja.",
 	"Results.Row.ToggleCheck": "Alternar casilla",
 	"Results.Action.CheckedSuffix": "marcados",
 	"Results.Action.Delete": "Eliminar",
