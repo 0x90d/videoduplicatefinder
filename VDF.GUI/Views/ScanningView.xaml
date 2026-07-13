@@ -9,12 +9,15 @@
     x:DataType="vm:MainWindowVM">
 
   <!-- Mockup .scancard: centered 780px column; counts + remaining top-right,
-       elapsed + current file directly under the bar, bordered trust note. -->
-  <Grid>
+       elapsed + current file directly under the bar, bordered trust note.
+       The log tail lives OUTSIDE the card and stretches with the window so long
+       paths and remediation hints are not clipped to 780px (#836). -->
+  <Grid RowDefinitions="Auto,*">
     <StackPanel
+        Grid.Row="0"
         Width="780"
         MaxWidth="780"
-        Margin="32,44,32,24"
+        Margin="32,44,32,0"
         HorizontalAlignment="Center"
         VerticalAlignment="Top">
 
@@ -128,19 +131,26 @@
         </Border>
       </StackPanel>
 
-      <!-- last few log lines (mockup .logtail) -->
-      <Border Margin="0,26,0,0" Padding="0,12,0,0"
-              BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
-              BorderThickness="0,1,0,0">
-        <ItemsControl ItemsSource="{Binding LogTail}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="x:String">
-              <TextBlock FontSize="11.5" Opacity="0.55" Margin="0,1.5"
-                         TextTrimming="CharacterEllipsis" Text="{Binding}" />
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </Border>
     </StackPanel>
+
+    <!-- last few log lines (mockup .logtail): full window width, hover for the
+         complete message (#836) -->
+    <Border Grid.Row="1" Margin="32,26,32,24" Padding="0,12,0,0"
+            VerticalAlignment="Top"
+            BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+            BorderThickness="0,1,0,0">
+      <ItemsControl ItemsSource="{Binding LogTail}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="data:LogTailRow">
+            <TextBlock FontSize="11.5" Opacity="0.55" Margin="0,1.5"
+                       TextTrimming="CharacterEllipsis" Text="{Binding Display}">
+              <ToolTip.Tip>
+                <TextBlock MaxWidth="800" TextWrapping="Wrap" Text="{Binding Tooltip}" />
+              </ToolTip.Tip>
+            </TextBlock>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Border>
   </Grid>
 </UserControl>

@@ -77,7 +77,16 @@ namespace VDF.GUI.Data {
 				return nl < 0 ? Message : Message[..nl] + " …";
 			}
 		}
+		/// <summary>Hover text: the untrimmed message, size-capped (see LogList.TooltipText).</summary>
+		public string TooltipMessage => LogList.TooltipText(Message);
 	}
+
+	/// <summary>
+	/// One scanning-screen tail line: the collapsed display form plus the full message
+	/// for the hover tooltip, so a line clipped by the window width can still be read
+	/// in place (#836).
+	/// </summary>
+	public sealed record LogTailRow(string Display, string Tooltip);
 
 	public sealed class LogListResult {
 		internal LogListResult(IReadOnlyList<LogRow> rows, int infoCount, int warningCount, int errorCount) {
@@ -243,6 +252,19 @@ namespace VDF.GUI.Data {
 				message = collapsed;
 			}
 			return $"{entry.Timestamp:HH:mm:ss} · {message}";
+		}
+
+		public static LogTailRow BuildTailRow(LogEntry entry) =>
+			new(FormatTailLine(entry), TooltipText(entry.Message));
+
+		/// <summary>
+		/// Tooltip form of a tail line: the untrimmed message, so the remediation part a
+		/// clipped line hides ("switching to pro…") is a hover away — but capped so a
+		/// hundred lines of FFmpeg stderr cannot cover the whole screen (#836).
+		/// </summary>
+		internal static string TooltipText(string message) {
+			const int MaxChars = 1500;
+			return message.Length <= MaxChars ? message : message[..MaxChars] + " …";
 		}
 
 		/// <summary>Plain-text form used by copy/save — mirrors the log file's line shape.</summary>

@@ -290,4 +290,29 @@ public class LogListTests {
 		var entry = Error("first line\r\nHint: use software decoding.\r\ntrailing stderr");
 		Assert.Equal("09:41:00 · first line … Hint: use software decoding.", LogList.FormatTailLine(entry));
 	}
+
+	// ---------- scanning-screen tail tooltips (#836) ----------
+
+	[Fact]
+	public void BuildTailRow_CarriesCollapsedDisplayAndFullTooltip() {
+		var entry = Warn("Failed using native FFmpeg binding on 'D:\\clips\\a.mp4', switching to process mode. Exception: X\r\nstderr detail");
+		var row = LogList.BuildTailRow(entry);
+		Assert.Equal(LogList.FormatTailLine(entry), row.Display);
+		Assert.Equal(entry.Message, row.Tooltip);
+		Assert.Contains("switching to process mode", row.Tooltip);
+		Assert.Contains("stderr detail", row.Tooltip);
+	}
+
+	[Fact]
+	public void TooltipText_ShortMessage_Untouched() =>
+		Assert.Equal("Scan done.", LogList.TooltipText("Scan done."));
+
+	[Fact]
+	public void TooltipText_HugeStderrDump_IsCapped() {
+		string huge = string.Join("\r\n", Enumerable.Repeat("[h264 @ 0x1] Invalid NAL unit size (386048 > 162).", 100));
+		string tooltip = LogList.TooltipText(huge);
+		Assert.True(tooltip.Length < huge.Length);
+		Assert.Equal(1500 + 2, tooltip.Length); // 1500 chars + " …"
+		Assert.EndsWith(" …", tooltip);
+	}
 }

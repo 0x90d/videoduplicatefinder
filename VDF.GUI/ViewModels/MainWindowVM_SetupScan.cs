@@ -306,10 +306,10 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		/// <summary>Last few log lines, shown under the scan card.</summary>
-		public ObservableCollection<string> LogTail { get; } = new();
+		public ObservableCollection<LogTailRow> LogTail { get; } = new();
 		internal const int LogTailLength = 4;
-		internal void AppendLogTail(string message) {
-			LogTail.Add(message);
+		internal void AppendLogTail(LogTailRow row) {
+			LogTail.Add(row);
 			while (LogTail.Count > LogTailLength)
 				LogTail.RemoveAt(0);
 		}

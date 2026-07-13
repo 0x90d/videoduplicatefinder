@@ -164,7 +164,10 @@
         </DataTemplate>
         <!-- log row: time · dot · message · ×N chip -->
         <DataTemplate DataType="data:LogMessageRow">
-          <Grid ColumnDefinitions="66,10,*,Auto" Margin="20,1.5" ToolTip.Tip="{Binding Message}">
+          <Grid ColumnDefinitions="66,10,*,Auto" Margin="20,1.5">
+            <ToolTip.Tip>
+              <TextBlock MaxWidth="800" TextWrapping="Wrap" Text="{Binding TooltipMessage}" />
+            </ToolTip.Tip>
             <TextBlock
                 Grid.Column="0"
                 FontSize="12"
