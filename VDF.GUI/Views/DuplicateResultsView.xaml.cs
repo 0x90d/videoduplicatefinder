@@ -14,7 +14,9 @@
 // */
 //
 
+using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -89,6 +91,45 @@ namespace VDF.GUI.Views {
 
 		void OnPreviewGripDragDelta(object? sender, VectorEventArgs e) {
 			SettingsFile.Instance.ResultsPreviewWidth += e.Vector.X;
+		}
+
+		ScrollViewer? resultsScrollViewer;
+		bool headerInsetHooked;
+
+		// The header strip sits outside the list's scroll viewport, so whenever the
+		// vertical scrollbar reserves width the right-docked row cells end left of
+		// their headers (#837). Keep the header's usable width in lockstep with the
+		// viewport instead of guessing a scrollbar width.
+		void OnResultsListTemplateApplied(object? sender, TemplateAppliedEventArgs e) {
+			resultsScrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+			if (resultsScrollViewer == null) return;
+			resultsScrollViewer.PropertyChanged += (_, args) => {
+				if (args.Property == ScrollViewer.ViewportProperty)
+					SyncHeaderInset();
+			};
+			if (!headerInsetHooked && this.FindControl<Border>("ColumnHeaderStrip") is { } header) {
+				headerInsetHooked = true;
+				header.PropertyChanged += (_, args) => {
+					if (args.Property == BoundsProperty)
+						SyncHeaderInset();
+				};
+			}
+			SyncHeaderInset();
+		}
+
+		void SyncHeaderInset() {
+			if (resultsScrollViewer == null) return;
+			var header = this.FindControl<Border>("ColumnHeaderStrip");
+			var columns = this.FindControl<DockPanel>("HeaderColumns");
+			if (header == null || columns == null) return;
+			double viewport = resultsScrollViewer.Viewport.Width;
+			if (viewport <= 0) return;
+			// Header strip and ListBox share the same outer width and the same 6px
+			// horizontal padding (strip padding vs. row Border padding), so whatever
+			// outer width the viewport does NOT get is exactly the scroll chrome.
+			double inset = Math.Max(0, header.Bounds.Width - viewport);
+			if (Math.Abs(columns.Margin.Right - inset) > 0.5)
+				columns.Margin = new Thickness(0, 0, inset, 0);
 		}
 
 		// Hover-diff: same contract as the classic grid — Tag carries the metric name.

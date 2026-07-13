@@ -278,10 +278,14 @@
       </WrapPanel>
     </Border>
 
-    <!-- ======== Column header strip (right-click: column menu) ======== -->
+    <!-- ======== Column header strip (right-click: column menu) ========
+         Horizontal padding matches the row padding (6), and HeaderColumns gets a
+         right inset synced to the list's viewport in code-behind — otherwise the
+         vertical scrollbar shifts every row cell left of its header (#837). -->
     <Border
+        x:Name="ColumnHeaderStrip"
         Grid.Row="2"
-        Padding="8,4"
+        Padding="6,4"
         Background="{actipro:ThemeResource Container2BackgroundBrush}"
         BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
         BorderThickness="0,0,0,1">
@@ -318,7 +322,7 @@
               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsCompactRows}" />
         </ContextMenu>
       </Border.ContextMenu>
-      <DockPanel LastChildFill="True">
+      <DockPanel x:Name="HeaderColumns" LastChildFill="True">
         <Border DockPanel.Dock="Left" Width="30" />
         <Grid DockPanel.Dock="Left"
               Width="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsPreviewWidth}"
@@ -368,6 +372,8 @@
         Grid.Row="3"
         Classes="results"
         Background="Transparent"
+        Padding="0"
+        TemplateApplied="OnResultsListTemplateApplied"
         ItemsSource="{Binding ResultsRows}"
         SelectionMode="Multiple"
         SelectionChanged="OnResultsSelectionChanged"
@@ -557,21 +563,6 @@
                     HorizontalAlignment="Center"
                     Text="{Binding Item.ItemInfo.Similarity, Converter={StaticResource SimilarityToFormattedConverter}}" />
               </Border>
-              <!-- AI chip: pair found only by the AI embedding pass, not the classic check -->
-              <Border
-                  Classes="simchip"
-                  DockPanel.Dock="Right"
-                  Margin="6,0,0,0"
-                  Padding="6,2"
-                  VerticalAlignment="Center"
-                  IsVisible="{Binding Item.ItemInfo.IsAiMatched}"
-                  ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.AiMatchedTooltip]}">
-                <TextBlock
-                    FontSize="12"
-                    FontWeight="Bold"
-                    HorizontalAlignment="Center"
-                    Text="AI" />
-              </Border>
               <!-- Clip offset: position of a partial clip inside the longer source video.
                    The column only exists while partial-clip detection is on or the
                    results contain partial clips (maintainer decision). -->
@@ -702,6 +693,22 @@
                      the neighboring metadata columns. -->
                 <DockPanel LastChildFill="True">
                   <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
+                  <!-- AI chip: pair found only by the AI embedding pass, not the classic
+                       check. Lives with the badges — as a docked pseudo-column it shifted
+                       every metadata cell on AI-matched rows out of alignment (#837). -->
+                  <Border
+                      Classes="simchip"
+                      Padding="5,0"
+                      CornerRadius="3"
+                      VerticalAlignment="Center"
+                      IsVisible="{Binding Item.ItemInfo.IsAiMatched}"
+                      ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.AiMatchedTooltip]}">
+                    <TextBlock
+                        FontSize="10"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"
+                        Text="AI" />
+                  </Border>
                   <Border IsVisible="{Binding IsBest}"
                           Background="{DynamicResource VdfGoodSoftBrush}"
                           BorderBrush="{DynamicResource VdfGoodBorderBrush}" BorderThickness="1"
