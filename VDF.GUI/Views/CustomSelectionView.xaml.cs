@@ -14,10 +14,8 @@
 // */
 //
 
-using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 
 namespace VDF.GUI.Views {
@@ -30,22 +28,6 @@ namespace VDF.GUI.Views {
 			InitializeComponent();
 			Owner = ApplicationHelpers.MainWindow;
 
-			if (SettingsFile.Instance.UseMica &&
-				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
-				Environment.OSVersion.Version.Build >= 22000) {
-				Background = null;
-				TransparencyLevelHint = new List<WindowTransparencyLevel> { WindowTransparencyLevel.Mica };
-				// Avalonia 12: ExtendClientAreaChromeHints was removed; WindowDecorations.Full
-				// (system chrome) is the default, matching the old PreferSystemChrome behavior.
-				if (SettingsFile.Instance.DarkMode)
-					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundBlack")!.IsVisible = true;
-				else
-					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundWhite")!.IsVisible = true;
-			}
-
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-				this.FindControl<TextBlock>("TextBlockWindowTitle")!.IsVisible = false;
-			}
 			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
 				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 		}

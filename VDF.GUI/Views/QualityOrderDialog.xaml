@@ -1,6 +1,7 @@
 <!-- Dialog for selecting the order of quality criteria -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:VDF.GUI.ViewModels"
@@ -8,41 +9,57 @@
         xmlns:app="clr-namespace:VDF.GUI;assembly=VDF.GUI"
         x:DataType="vm:QualityOrderVM"
         CanResize="false"
+        MaxWidth="460"
+        Icon="/Assets/icon.ico"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner"
         Title="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Title]}">
-    <Window.DataContext>
-        <vm:QualityOrderVM />
-    </Window.DataContext>
-    <StackPanel Margin="16">
-        <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Description]}" Margin="0,0,0,8" />
-        <ListBox x:Name="CriteriaListBox" ItemsSource="{Binding CriteriaOrder}"
-         SelectedItem="{Binding SelectedItem, Mode=TwoWay}" Height="180">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:QualityCriterionOption">
-                    <TextBlock Text="{Binding Display}" />
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+    <StackPanel Margin="16" Spacing="12">
+        <TextBlock Opacity="0.8"
+                   Text="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Description]}"
+                   TextWrapping="Wrap" />
+        <Border Padding="6"
+                Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+            <ListBox x:Name="CriteriaListBox"
+                     Height="200"
+                     Background="Transparent"
+                     ItemsSource="{Binding CriteriaOrder}"
+                     SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="CornerRadius" Value="6" />
+                        <Setter Property="Padding" Value="10,6" />
+                    </Style>
+                </ListBox.Styles>
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:QualityCriterionOption">
+                        <TextBlock Text="{Binding Display}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
             <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.BtnMoveUp]}"
-                    Margin="4"
                     Command="{Binding MoveUpCommand}"
                     CommandParameter="{Binding ElementName=CriteriaListBox, Path=SelectedIndex}" />
-            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.BtnMoveDown]}"
-                    Margin="4"
+            <Button Grid.Column="1"
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.BtnMoveDown]}"
                     Command="{Binding MoveDownCommand}"
                     CommandParameter="{Binding ElementName=CriteriaListBox, Path=SelectedIndex}" />
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.OK]}"
-                    Width="80"
+            <Button Grid.Column="3"
+                    Classes="accent"
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.OK]}"
+                    MinWidth="90"
                     IsDefault="True"
                     Click="Ok_Click" />
-            <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Cancel]}"
-                    Width="80"
-                    Margin="8,0,0,0"
-                    Click="Cancel_Click"  />
-        </StackPanel>
+            <Button Grid.Column="4"
+                    Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Cancel]}"
+                    MinWidth="90"
+                    IsCancel="True"
+                    Click="Cancel_Click" />
+        </Grid>
     </StackPanel>
 </Window>
