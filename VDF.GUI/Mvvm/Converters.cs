@@ -122,18 +122,31 @@ namespace VDF.GUI.Mvvm {
 	}
 
 	/// <summary>
-	/// Results-list sizing: [0] ResultsPreviewWidth, [1] ResultsCompactRows,
-	/// [2] ShowThumbnailColumn (optional). Parameter "row" yields the uniform row
+	/// Results-list sizing: [0] ResultsPreviewWidth, [1] ResultsCompactRows, then in any
+	/// order a bool (ShowThumbnailColumn) and/or the row's composite Bitmap (Item.Thumbnail,
+	/// whose aspect ratio drives the height once loaded). Parameter "row" yields the row
 	/// height, anything else the thumbnail height. Logic lives in ResultsRowSizing.
 	/// </summary>
 	public sealed class ResultsRowSizingConverter : IMultiValueConverter {
 		public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) {
 			double width = values.Count > 0 && values[0] is double d ? d : 160;
 			bool compact = values.Count > 1 && values[1] is true;
-			bool previewVisible = values.Count < 3 || values[2] is true;
+			bool previewVisible = true;
+			double thumbWidth = 0, thumbHeight = 0;
+			for (int i = 2; i < values.Count; i++) {
+				switch (values[i]) {
+					case bool visible:
+						previewVisible = visible;
+						break;
+					case Avalonia.Media.Imaging.Bitmap bmp:
+						thumbWidth = bmp.Size.Width;
+						thumbHeight = bmp.Size.Height;
+						break;
+				}
+			}
 			return string.Equals(parameter as string, "row", StringComparison.OrdinalIgnoreCase)
-				? Utils.ResultsRowSizing.RowHeight(width, compact, previewVisible)
-				: Utils.ResultsRowSizing.ImageHeight(width, compact);
+				? Utils.ResultsRowSizing.RowHeight(width, compact, previewVisible, thumbWidth, thumbHeight)
+				: Utils.ResultsRowSizing.ImageHeight(width, compact, thumbWidth, thumbHeight);
 		}
 	}
 

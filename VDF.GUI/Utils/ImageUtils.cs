@@ -29,33 +29,42 @@ namespace VDF.GUI.Utils {
 		const long MaxCompositeBufferBytes = 256_000_000;
 
 		/// <summary>
-		/// Composes <paramref name="encodedImages"/> (JPEG/PNG bytes) into a horizontal-strip
-		/// thumbnail and returns a Bitmap for immediate UI use. If <paramref name="jpegOut"/> is
-		/// supplied, the strip JPEG is written there FIRST, before the UI bitmap is built — that
-		/// way a failure on the Avalonia side still produces a valid cache entry (issue #751).
-		/// Decoding uses Avalonia/Skia; the strip JPEG is encoded via FFmpeg.
+		/// Composes <paramref name="encodedImages"/> (JPEG/PNG bytes) into a composite
+		/// thumbnail and returns a Bitmap for immediate UI use. Few frames sit in a single
+		/// row; many frames wrap into a grid (ThumbnailGridLayout) so a high thumbnail
+		/// count doesn't degenerate into an ultra-wide strip of tiny frames (#834).
+		/// If <paramref name="jpegOut"/> is supplied, the composite JPEG is written there
+		/// FIRST, before the UI bitmap is built — that way a failure on the Avalonia side
+		/// still produces a valid cache entry (issue #751).
+		/// Decoding uses Avalonia/Skia; the composite JPEG is encoded via FFmpeg.
 		/// </summary>
 		public static unsafe Bitmap? JoinImages(IReadOnlyList<byte[]> encodedImages, Stream? jpegOut = null) {
 			if (encodedImages == null || encodedImages.Count == 0) return null;
 
 			var parts = new List<WriteableBitmap>(encodedImages.Count);
 			try {
-				int totalWidth = 0, maxHeight = 0;
+				int cellWidth = 0, cellHeight = 0;
 				foreach (var bytes in encodedImages) {
 					if (bytes == null || bytes.Length == 0) continue;
 					using var ms = new MemoryStream(bytes);
 					var part = WriteableBitmap.Decode(ms);
 					parts.Add(part);
-					totalWidth += part.PixelSize.Width;
-					maxHeight = Math.Max(maxHeight, part.PixelSize.Height);
+					cellWidth = Math.Max(cellWidth, part.PixelSize.Width);
+					cellHeight = Math.Max(cellHeight, part.PixelSize.Height);
 				}
-				if (parts.Count == 0 || totalWidth <= 0 || maxHeight <= 0) return null;
-				if ((long)totalWidth * maxHeight * 4 > MaxCompositeBufferBytes) return null;
+				if (parts.Count == 0 || cellWidth <= 0 || cellHeight <= 0) return null;
 
-				// Compose raw BGRA strip (rows shorter than maxHeight stay transparent).
-				byte[] strip = new byte[totalWidth * maxHeight * 4];
-				int xOffset = 0;
-				foreach (var part in parts) {
+				int columns = ThumbnailGridLayout.Columns(parts.Count, (double)cellWidth / cellHeight);
+				int rows = ThumbnailGridLayout.Rows(parts.Count, columns);
+				int gridWidth = columns * cellWidth, gridHeight = rows * cellHeight;
+				if ((long)gridWidth * gridHeight * 4 > MaxCompositeBufferBytes) return null;
+
+				// Compose raw BGRA grid (cells smaller than the grid cell stay transparent).
+				byte[] strip = new byte[(long)gridWidth * gridHeight * 4];
+				for (int i = 0; i < parts.Count; i++) {
+					var part = parts[i];
+					int xOffset = (i % columns) * cellWidth;
+					int yOffset = (i / columns) * cellHeight;
 					using var fb = part.Lock();
 					int w = fb.Size.Width, h = fb.Size.Height;
 					bool isRgba = fb.Format == PixelFormat.Rgba8888;
@@ -64,7 +73,7 @@ namespace VDF.GUI.Utils {
 					byte* src = (byte*)fb.Address;
 					for (int y = 0; y < h; y++) {
 						var srcRow = new ReadOnlySpan<byte>(src + (long)y * fb.RowBytes, w * 4);
-						var dstRow = strip.AsSpan(((y * totalWidth) + xOffset) * 4, w * 4);
+						var dstRow = strip.AsSpan((((yOffset + y) * gridWidth) + xOffset) * 4, w * 4);
 						if (!isRgba) {
 							srcRow.CopyTo(dstRow);
 						}
@@ -77,12 +86,11 @@ namespace VDF.GUI.Utils {
 							}
 						}
 					}
-					xOffset += part.PixelSize.Width;
 				}
 
-				// Encode the strip via FFmpeg. The cache write happens before the UI bitmap is
-				// decoded, preserving the cache-first guarantee.
-				byte[]? jpeg = FfmpegEngine.EncodeJpegFromBgra(strip, totalWidth, maxHeight, MaxDisplayableCompositeWidth);
+				// Encode the composite via FFmpeg. The cache write happens before the UI bitmap
+				// is decoded, preserving the cache-first guarantee.
+				byte[]? jpeg = FfmpegEngine.EncodeJpegFromBgra(strip, gridWidth, gridHeight, MaxDisplayableCompositeWidth);
 				if (jpeg != null) {
 					if (jpegOut != null) {
 						try {
@@ -97,17 +105,17 @@ namespace VDF.GUI.Utils {
 				}
 
 				// FFmpeg encode failed — still give the UI something (no cache entry written).
-				if (totalWidth > MaxDisplayableCompositeWidth) return null;
+				if (gridWidth > MaxDisplayableCompositeWidth) return null;
 				var fallback = new WriteableBitmap(
-					new PixelSize(totalWidth, maxHeight),
+					new PixelSize(gridWidth, gridHeight),
 					new Vector(96, 96),
 					PixelFormat.Bgra8888,
 					AlphaFormat.Unpremul);
 				using (var fb = fallback.Lock()) {
 					byte* dest = (byte*)fb.Address;
-					int rowBytes = totalWidth * 4;
+					int rowBytes = gridWidth * 4;
 					fixed (byte* src = strip) {
-						for (int y = 0; y < maxHeight; y++)
+						for (int y = 0; y < gridHeight; y++)
 							Buffer.MemoryCopy(src + (long)y * rowBytes, dest + (long)y * fb.RowBytes, rowBytes, rowBytes);
 					}
 				}

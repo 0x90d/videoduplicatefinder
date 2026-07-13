@@ -37,9 +37,42 @@ namespace VDF.GUI.Tests {
 		[Fact]
 		public void ImageHeight_IsClamped() {
 			Assert.Equal(40, ResultsRowSizing.ImageHeight(10, compact: false));
-			Assert.Equal(340, ResultsRowSizing.ImageHeight(5000, compact: false));
+			Assert.Equal(600, ResultsRowSizing.ImageHeight(5000, compact: false));
 			Assert.Equal(28, ResultsRowSizing.ImageHeight(10, compact: true));
-			Assert.Equal(200, ResultsRowSizing.ImageHeight(5000, compact: true));
+			Assert.Equal(340, ResultsRowSizing.ImageHeight(5000, compact: true));
+		}
+
+		// #834: a loaded wide filmstrip must not reserve the mockup-ratio box — the row
+		// shrinks to what the image actually renders at (Uniform, fills cell width).
+		[Fact]
+		public void ImageHeight_FollowsLoadedCompositeAspect() {
+			// 2 frames at 100×56 joined horizontally -> 200×56 composite.
+			double h = ResultsRowSizing.ImageHeight(480, compact: false, thumbWidth: 200, thumbHeight: 56);
+			Assert.Equal(56, h);
+			// Without the composite the same column width reserved a ~298px box.
+			Assert.True(h < ResultsRowSizing.ImageHeight(480, compact: false) / 4);
+		}
+
+		[Fact]
+		public void ImageHeight_NeverUpscalesPastComposite() {
+			// DownOnly (#787): a 640×90 strip in a 1600px column renders at natural size.
+			Assert.Equal(90, ResultsRowSizing.ImageHeight(1600, compact: false, thumbWidth: 640, thumbHeight: 90));
+		}
+
+		[Fact]
+		public void ImageHeight_GrowsWithColumnUntilNaturalSize() {
+			// 1200×300 composite: at 960px column it renders width-limited...
+			double h = ResultsRowSizing.ImageHeight(960, compact: false, thumbWidth: 1200, thumbHeight: 300);
+			Assert.Equal((960 - 8) * 300d / 1200, h, precision: 5);
+			// ...and keeps growing as the column widens (the reporter's actual complaint).
+			Assert.True(ResultsRowSizing.ImageHeight(1400, compact: false, thumbWidth: 1200, thumbHeight: 300) > h);
+		}
+
+		[Fact]
+		public void ImageHeight_PortraitCompositeIsCappedByEstimate() {
+			// A tall portrait still must not blow the row up past the mockup-ratio box.
+			double cap = ResultsRowSizing.ImageHeight(200, compact: false);
+			Assert.Equal(cap, ResultsRowSizing.ImageHeight(200, compact: false, thumbWidth: 100, thumbHeight: 178));
 		}
 
 		[Fact]
@@ -47,6 +80,12 @@ namespace VDF.GUI.Tests {
 			double row = ResultsRowSizing.RowHeight(340, compact: false, previewVisible: true);
 			double image = ResultsRowSizing.ImageHeight(340, compact: false);
 			Assert.True(row > image);
+		}
+
+		[Fact]
+		public void RowHeight_ShrinksToTextBaselineForThinStrips() {
+			// The 200×56 strip fits inside the text lines' room -> no empty box (#834).
+			Assert.Equal(68, ResultsRowSizing.RowHeight(480, compact: false, previewVisible: true, thumbWidth: 200, thumbHeight: 56));
 		}
 
 		[Fact]

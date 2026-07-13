@@ -438,13 +438,15 @@
               Classes="resultrow"
               Classes.checked="{Binding Item.Checked}"
               Padding="6,0">
-            <!-- Uniform row height follows the Preview column width so dragging the
-                 grip (or raising the thumbnail width setting) scales the whole layout. -->
+            <!-- Row height follows the Preview column width and, once loaded, the
+                 composite's real aspect ratio — a wide filmstrip no longer floats in
+                 a mostly-empty box (#834). -->
             <Border.Height>
               <MultiBinding Converter="{StaticResource ResultsRowSizingConverter}" ConverterParameter="row">
                 <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsPreviewWidth" />
                 <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsCompactRows" />
                 <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ShowThumbnailColumn" />
+                <Binding Path="Item.Thumbnail" />
               </MultiBinding>
             </Border.Height>
             <Border.ContextMenu>
@@ -533,6 +535,7 @@
                     <MultiBinding Converter="{StaticResource ResultsRowSizingConverter}" ConverterParameter="image">
                       <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsPreviewWidth" />
                       <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsCompactRows" />
+                      <Binding Path="Item.Thumbnail" />
                     </MultiBinding>
                   </Image.Height>
                 </Image>

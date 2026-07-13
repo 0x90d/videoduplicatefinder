@@ -54,8 +54,12 @@ namespace VDF.GUI.ViewModels {
 					// ThumbnailMaxWidth values don't collide. Without it, re-scanning at a
 					// larger width keeps serving the old, lower-resolution JPEG (AppendIfMissing
 					// never overwrites), which the UI then upscales -> fuzzy/pixelated (issue #776).
+					// Frame count and grid-layout version ("g1") are keyed for the same reason:
+					// the composite's shape depends on both, so a rescan with a different
+					// thumbnail count must not keep serving the old composite (#834).
 					var key = ThumbCacheHelpers.XxHash64Hex(
-						ItemInfo.Path + "|w=" + SettingsFile.Instance.ThumbnailMaxWidth);
+						ItemInfo.Path + "|w=" + SettingsFile.Instance.ThumbnailMaxWidth
+						+ "|n=" + ItemInfo.ImageList.Count + "|g1");
 
 					ThumbCacheHelpers.Provider?.AppendIfMissing(key, stream => {
 						var uiBmp = ImageUtils.JoinImages(ItemInfo.ImageList, stream);
