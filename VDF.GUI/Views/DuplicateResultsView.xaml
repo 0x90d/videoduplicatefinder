@@ -71,6 +71,13 @@
       <Setter Property="Background" Value="{DynamicResource VdfSelBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource VdfDangerBrush}" />
     </Style>
+    <!-- Checked row that is ALSO list-selected: the opaque checked tint sits on top
+         of the ListBoxItem's own selection highlight, which left selection nearly
+         invisible (only the foreground shifted). A clearly brighter tint step makes
+         the selected row stand out inside a block of checked rows. -->
+    <Style Selector="ListBox.results ListBoxItem:selected Border.resultrow.checked">
+      <Setter Property="Background" Value="{DynamicResource VdfSelActiveBrush}" />
+    </Style>
     <!-- similarity chip: mockup .simchip — soft surface, colored text, 45%-alpha
          border; tier classes (mid/low) are bound from the similarity value -->
     <Style Selector="Border.simchip">
