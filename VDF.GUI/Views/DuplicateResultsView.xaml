@@ -488,6 +488,12 @@
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).RenameFileCommand}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.RenameFile]}"
                     InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[RenameFile]}" />
+                <!-- Moves the highlighted row(s) with database path tracking - unlike the
+                     action bar's move, this doesn't require checking the file (checked
+                     means "delete"; the file you relocate is usually the keeper) (#843). -->
+                <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).MoveSelectedItemsCommand}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
                 <Separator />
                 <MenuItem
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleCheckboxCommand}"
