@@ -74,5 +74,36 @@ namespace VDF.GUI.Tests {
 			vm.CancelBackgroundWork(); // nothing in flight - must not throw
 			Assert.False(vm.IsLoadingThumbnails);
 		}
+
+		// A LargeThumbnailDuplicateItem whose grab never returns, standing in for a
+		// hung/glacial FFmpeg decode (network share, corrupt file).
+		sealed class StuckItem : LargeThumbnailDuplicateItem {
+			readonly ManualResetEventSlim _gate;
+			public StuckItem(ManualResetEventSlim gate) : base(new DuplicateItemVM(new DuplicateItem {
+				Path = @"Z:\does\not\exist\stuck.mp4",
+				GroupId = Guid.NewGuid(),
+				IsImage = false,
+				ThumbnailTimestamps = new List<TimeSpan> { TimeSpan.FromSeconds(1) },
+			})) => _gate = gate;
+			public override void LoadThumbnail(CancellationToken ct = default, Action? frameLoaded = null) {
+				_gate.Wait(); // simulates FFmpeg never coming back
+				IsLoadingThumbnail = false;
+			}
+		}
+
+		// User report 2026-07-14 (second): Cancel appeared completely dead because the
+		// load awaited WhenAll behind an in-flight FFmpeg grab. Cancel must surface
+		// even while a grab is stuck.
+		[Fact]
+		public async Task Cancel_ReturnsEvenWhileAGrabIsStuck() {
+			using var gate = new ManualResetEventSlim(false);
+			var vm = new ThumbnailComparerVM(new List<LargeThumbnailDuplicateItem> { new StuckItem(gate) });
+			var load = vm.LoadThumbnailsAsync();
+			vm.CancelBackgroundWork();
+			var finished = await Task.WhenAny(load, Task.Delay(5000)) == load;
+			gate.Set(); // unblock the stranded worker thread before asserting
+			Assert.True(finished, "LoadThumbnailsAsync did not return after cancel while a grab was in flight");
+			Assert.False(vm.IsLoadingThumbnails);
+		}
 	}
 }

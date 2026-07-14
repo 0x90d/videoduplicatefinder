@@ -822,25 +822,36 @@ namespace VDF.GUI.ViewModels {
 
 				var sem = new SemaphoreSlim(maxParallel, maxParallel);
 				int done = 0;
-				int total = itemsToLoad.Count;
+				// Frame-level progress: one unit per extracted frame, so multi-frame
+				// videos move the bar long before a whole item completes (a two-item
+				// group used to sit at 0% until the first file finished entirely).
+				int total = Math.Max(1, itemsToLoad.Sum(i =>
+					i.Item.ItemInfo.IsImage ? 1 : Math.Max(1, i.Item.ItemInfo.ThumbnailTimestamps.Count)));
+				void ReportFrame() {
+					var finished = Interlocked.Increment(ref done);
+					var p = Math.Clamp((double)finished / total, 0, 1);
+					if (ct.IsCancellationRequested) return; // stale load must not stomp a newer bar
+					RxSchedulers.MainThreadScheduler.Schedule(() => {
+						LoadProgress = p;
+						this.RaisePropertyChanged(nameof(LoadProgressText));
+					});
+				}
 
 				var tasks = itemsToLoad.Select(async item => {
 					await sem.WaitAsync(ct).ConfigureAwait(false);
 					try {
-						await Task.Run(() => item.LoadThumbnail(), ct).ConfigureAwait(false);
+						await Task.Run(() => item.LoadThumbnail(ct, ReportFrame), ct).ConfigureAwait(false);
 					}
 					finally {
 						sem.Release();
-						var finished = Interlocked.Increment(ref done);
-						var p = Math.Clamp((double)finished / total, 0, 1);
-						RxSchedulers.MainThreadScheduler.Schedule(() => {
-							LoadProgress = p;
-							this.RaisePropertyChanged(nameof(LoadProgressText));
-						});
 					}
-				});
+				}).ToList();
 
-				await Task.WhenAll(tasks);
+				// WaitAsync surfaces a cancel IMMEDIATELY. Awaiting WhenAll alone sat
+				// behind whatever FFmpeg grab was in flight - with a hung or very slow
+				// decode the Cancel button and window close appeared completely dead.
+				// The detached tasks stop at the next frame boundary via the token.
+				await Task.WhenAll(tasks).WaitAsync(ct);
 			}
 		}
 	}
@@ -857,7 +868,8 @@ namespace VDF.GUI.ViewModels {
 		public bool IsCurrent { get => _isCurrent; set => this.RaiseAndSetIfChanged(ref _isCurrent, value); }
 	}
 
-	public sealed class LargeThumbnailDuplicateItem : ReactiveObject {
+	// Unsealed so tests can stub LoadThumbnail (stuck-grab cancellation regression).
+	public class LargeThumbnailDuplicateItem : ReactiveObject {
 		public DuplicateItemVM Item { get; }
 		/// <summary>Set by MainWindowVM: this item is the group's quality keeper (BEST badge + pane tint).</summary>
 		public bool IsGroupBest { get; set; }
@@ -885,7 +897,15 @@ namespace VDF.GUI.ViewModels {
 			Item = duplicateItem;
 		}
 
-		public void LoadThumbnail() {
+		/// <summary>
+		/// Extracts the full-size frames and joins them into the pane strip. The token
+		/// is checked between frame grabs — a single FFmpeg call can't be aborted, but
+		/// a cancel stops the item at the next frame boundary instead of grinding
+		/// through the rest; whatever was already grabbed still gets shown.
+		/// <paramref name="frameLoaded"/> fires once per attempted frame for the
+		/// overlay's frame-level progress. Virtual for tests.
+		/// </summary>
+		public virtual void LoadThumbnail(CancellationToken ct = default, Action? frameLoaded = null) {
 			try {
 				List<Bitmap> l = new(Item.ItemInfo.IsImage ? 1 : Item.ItemInfo.ThumbnailTimestamps.Count);
 				_frames.Clear();
@@ -894,9 +914,11 @@ namespace VDF.GUI.ViewModels {
 					var bmp = new Bitmap(Item.ItemInfo.Path);
 					l.Add(bmp);
 					_frames.Add(bmp);
+					frameLoaded?.Invoke();
 				}
 				else {
 					for (int i = 0; i < Item.ItemInfo.ThumbnailTimestamps.Count; i++) {
+						if (ct.IsCancellationRequested) break;
 						var b = FfmpegEngine.GetThumbnail(new FfmpegSettings {
 							File = Item.ItemInfo.Path,
 							Position = Item.ItemInfo.ThumbnailTimestamps[i],
@@ -909,6 +931,7 @@ namespace VDF.GUI.ViewModels {
 							l.Add(bmp);
 							_frames.Add(bmp);
 						}
+						frameLoaded?.Invoke();
 					}
 				}
 
