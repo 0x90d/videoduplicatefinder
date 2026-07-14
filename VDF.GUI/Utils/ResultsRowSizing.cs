@@ -16,11 +16,13 @@
 
 namespace VDF.GUI.Utils {
 	/// <summary>
-	/// Sizing rules of the new results list: the Preview column width sets the thumbnail
-	/// size, and the row height follows the loaded composite's real aspect ratio so the
-	/// preview fills its row instead of floating in an empty box (#834). While the
-	/// thumbnail is still loading, the mockup ratio serves as the estimate. Pure math,
-	/// unit-tested.
+	/// Sizing rules of the new results list. Single-frame previews: the Preview column
+	/// width sets the thumbnail size and the row height follows the composite's real
+	/// aspect ratio so the preview fills its row instead of floating in an empty box
+	/// (#834). Multi-frame previews re-wrap to the column width at display time
+	/// (WrappedPreviewLayout), and the row reserves the resulting wrap height. While
+	/// the thumbnail is still loading, the mockup ratio serves as the estimate.
+	/// Pure math, unit-tested.
 	/// </summary>
 	internal static class ResultsRowSizing {
 		// Height/width ratio from the approved mockup (thumb height = 0.62 × column width).
@@ -30,16 +32,26 @@ namespace VDF.GUI.Utils {
 		// Horizontal space the preview cell loses to the image's right margin.
 		const double PreviewGutter = 8;
 
-		internal static double ImageHeight(double previewWidth, bool compact, double thumbWidth = 0, double thumbHeight = 0) {
+		internal static double ImageHeight(double previewWidth, bool compact, double thumbWidth = 0, double thumbHeight = 0, int frameCount = 0, int gridColumns = 0) {
 			double min = compact ? 28 : 40;
 			double max = compact ? 340 : 600;
 			double estimate = Math.Clamp(previewWidth * (compact ? CompactRatio : ComfortableRatio), min, max);
 			if (thumbWidth <= 0 || thumbHeight <= 0)
 				return estimate;
-			// The Image renders Uniform + DownOnly: it fills the cell width but never
-			// upscales past the composite bitmap (#787), so reserve exactly the height
-			// it will actually get. The estimate stays as ceiling so portrait content
-			// can't blow the row up.
+			if (frameCount > 1 && gridColumns >= 1) {
+				// Multi-frame composite: the preview re-wraps the stored grid to the
+				// column width at display time (WrappedFilmstrip), so the row reserves
+				// exactly the height that wrap produces (#834/#847).
+				int compositeRows = ThumbnailGridLayout.Rows(frameCount, gridColumns);
+				var layout = WrappedPreviewLayout.Compute(
+					Math.Max(previewWidth - PreviewGutter, 16), compact,
+					thumbWidth / gridColumns, thumbHeight / compositeRows, frameCount);
+				return Math.Max(min, layout.TotalHeight);
+			}
+			// The single image renders Uniform + DownOnly: it fills the cell width but
+			// never upscales past the composite bitmap (#787), so reserve exactly the
+			// height it will actually get. The estimate stays as ceiling so portrait
+			// content can't blow the row up.
 			double displayedWidth = Math.Min(Math.Max(previewWidth - PreviewGutter, 16), thumbWidth);
 			return Math.Clamp(displayedWidth * thumbHeight / thumbWidth, min, estimate);
 		}
@@ -49,11 +61,11 @@ namespace VDF.GUI.Utils {
 		/// text lines (file name + path) need. Without the preview column the text
 		/// baseline alone decides.
 		/// </summary>
-		internal static double RowHeight(double previewWidth, bool compact, bool previewVisible, double thumbWidth = 0, double thumbHeight = 0) {
+		internal static double RowHeight(double previewWidth, bool compact, bool previewVisible, double thumbWidth = 0, double thumbHeight = 0, int frameCount = 0, int gridColumns = 0) {
 			double textBaseline = compact ? 42 : 68;
 			if (!previewVisible)
 				return textBaseline;
-			return Math.Max(textBaseline, ImageHeight(previewWidth, compact, thumbWidth, thumbHeight) + (compact ? 8 : 12));
+			return Math.Max(textBaseline, ImageHeight(previewWidth, compact, thumbWidth, thumbHeight, frameCount, gridColumns) + (compact ? 8 : 12));
 		}
 	}
 }

@@ -49,31 +49,67 @@ namespace VDF.GUI.ViewModels {
 			if (ItemInfo == null) return;
 			ItemInfo.ThumbnailsUpdated += () => {
 				try {
+					// The grid layout is decided HERE, not inside JoinImages, and persisted
+					// on the item: the results view needs it to slice the composite back
+					// into frames and re-wrap them to the Preview column width
+					// (WrappedFilmstrip, #834/#847) — including when the composite itself
+					// comes straight from the cache and JoinImages never runs.
+					int frameCount = ItemInfo.ImageList.Count;
+					int gridColumns = frameCount > 1
+						? Utils.ThumbnailGridLayout.Columns(frameCount, ThumbnailFrameAspect(ItemInfo))
+						: 1;
 
 					// Width is part of the key so thumbnails generated at different
 					// ThumbnailMaxWidth values don't collide. Without it, re-scanning at a
 					// larger width keeps serving the old, lower-resolution JPEG (AppendIfMissing
 					// never overwrites), which the UI then upscales -> fuzzy/pixelated (issue #776).
-					// Frame count and grid-layout version ("g1") are keyed for the same reason:
+					// Frame count and grid-layout version ("g2") are keyed for the same reason:
 					// the composite's shape depends on both, so a rescan with a different
-					// thumbnail count must not keep serving the old composite (#834).
+					// thumbnail count must not keep serving the old composite (#834). "g2"
+					// = per-index cell placement with caller-chosen columns.
 					var key = ThumbCacheHelpers.XxHash64Hex(
 						ItemInfo.Path + "|w=" + SettingsFile.Instance.ThumbnailMaxWidth
-						+ "|n=" + ItemInfo.ImageList.Count + "|g1");
+						+ "|n=" + frameCount + "|g2");
 
 					ThumbCacheHelpers.Provider?.AppendIfMissing(key, stream => {
-						var uiBmp = ImageUtils.JoinImages(ItemInfo.ImageList, stream);
+						var uiBmp = ImageUtils.JoinImages(ItemInfo.ImageList, stream, gridColumns);
 						if (uiBmp != null) {
 							LRUBitmapCache.GetOrCreate(key, () => uiBmp);
 						}
 					});
 					ThumbnailKey = key;
+					_ThumbnailFrameCount = frameCount;
+					_ThumbnailGridColumns = gridColumns;
 
 				}
 				catch { /* ignore */ }
-				Dispatcher.UIThread.Post(() => this.RaisePropertyChanged(nameof(Thumbnail)), DispatcherPriority.Render);
+				Dispatcher.UIThread.Post(() => {
+					this.RaisePropertyChanged(nameof(ThumbnailFrameCount));
+					this.RaisePropertyChanged(nameof(ThumbnailGridColumns));
+					this.RaisePropertyChanged(nameof(Thumbnail));
+				}, DispatcherPriority.Render);
 
 			};
+		}
+
+		/// <summary>
+		/// Aspect ratio hint for choosing the composite's storage grid. The extracted
+		/// frames keep the source aspect (scaled to ThumbnailMaxWidth), so the media's
+		/// FrameSize ("WxH") is used without decoding anything. Only the CHOICE of grid
+		/// depends on this — compose and display both receive the chosen column count,
+		/// so a wrong hint (e.g. rotated video) can't misalign the slices.
+		/// </summary>
+		internal static double ThumbnailFrameAspect(DuplicateItem item) {
+			var frameSize = item.FrameSize;
+			if (!string.IsNullOrEmpty(frameSize)) {
+				int split = frameSize.IndexOf('x');
+				if (split > 0
+					&& int.TryParse(frameSize.AsSpan(0, split), out int width)
+					&& int.TryParse(frameSize.AsSpan(split + 1), out int height)
+					&& width > 0 && height > 0)
+					return (double)width / height;
+			}
+			return 16.0 / 9;
 		}
 		public DuplicateItem ItemInfo { get; set; }
 
@@ -88,6 +124,22 @@ namespace VDF.GUI.ViewModels {
 
 		[JsonInclude]
 		public string ThumbnailKey { get; set; }
+
+		// Storage-grid geometry of the composite behind ThumbnailKey, persisted with it
+		// so restored results can slice the frames back out. 0 = unknown (results saved
+		// before display-time wrapping existed): the composite renders as one image.
+		int _ThumbnailFrameCount;
+		[JsonInclude]
+		public int ThumbnailFrameCount {
+			get => _ThumbnailFrameCount;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailFrameCount, value);
+		}
+		int _ThumbnailGridColumns;
+		[JsonInclude]
+		public int ThumbnailGridColumns {
+			get => _ThumbnailGridColumns;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailGridColumns, value);
+		}
 
 		[JsonIgnore]
 		private Bitmap? _thumbnail;
