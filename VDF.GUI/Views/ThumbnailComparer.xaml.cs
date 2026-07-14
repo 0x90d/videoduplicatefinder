@@ -100,6 +100,10 @@ namespace VDF.GUI.Views {
 		}
 
 		private void ThumbnailComparer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
+			// A close mid-load must stop the thumbnail/frame extraction work — the
+			// window is gone, nothing should keep FFmpeg grinding in the background.
+			if (DataContext is ThumbnailComparerVM vm)
+				vm.CancelBackgroundWork();
 			SaveWindowPlacement();
 		}
 

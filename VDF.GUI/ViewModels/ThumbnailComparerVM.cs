@@ -263,6 +263,18 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit>? PreviousGroupCommand { get; }
 		public ReactiveCommand<Unit, Unit>? NextGroupCommand { get; }
+		public ReactiveCommand<Unit, Unit> CancelThumbnailLoadingCommand { get; }
+
+		/// <summary>
+		/// Stops the thumbnail load and any frame extraction. Wired to the loading
+		/// overlay's Cancel button and to window close, so an expensive load (many
+		/// items, slow disk) can neither trap the user in the overlay nor keep
+		/// FFmpeg busy after the window is gone.
+		/// </summary>
+		public void CancelBackgroundWork() {
+			_loadCts?.Cancel();
+			_frameExtractCts?.Cancel();
+		}
 
 		public ThumbnailComparerVM(List<LargeThumbnailDuplicateItem> duplicateItemVMs)
 			: this(duplicateItemVMs, null, null, null) { }
@@ -327,6 +339,7 @@ namespace VDF.GUI.ViewModels {
 			SelectBasePositionCommand = ReactiveCommand.Create<FrameStripEntry>(entry => {
 				if (entry != null) BaseThumbnailIndex = entry.Index;
 			});
+			CancelThumbnailLoadingCommand = ReactiveCommand.Create(CancelBackgroundWork);
 			UpdateGroupInfo();
 		}
 
@@ -791,6 +804,11 @@ namespace VDF.GUI.ViewModels {
 			}
 			catch (OperationCanceledException) {
 				IsLoadingThumbnails = false;
+				// Panes whose load never ran must not spin forever after a cancel.
+				foreach (var item in Items)
+					if (item.Thumbnail == null)
+						item.IsLoadingThumbnail = false;
+				AssignDefaultSelections();
 			}
 		}
 

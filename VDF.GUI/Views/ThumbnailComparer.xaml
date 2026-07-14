@@ -702,9 +702,12 @@
                 </DockPanel>
             </Border>
 
-            <!-- loading overlay -->
+            <!-- loading overlay. Starts BELOW the titlebar row: covering it made the
+                 window uncloseable while a slow load ran (the "✕ Close comparer"
+                 button and caption area sat under the hit-testable dim layer). -->
             <Border
-                Grid.RowSpan="4"
+                Grid.Row="1"
+                Grid.RowSpan="3"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 Background="#80000000"
@@ -721,6 +724,12 @@
                         Minimum="0"
                         Value="{Binding LoadProgress}" />
                     <TextBlock HorizontalAlignment="Center" Text="{Binding LoadProgressText}" />
+                    <Button
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Center"
+                        Padding="18,5"
+                        Command="{Binding CancelThumbnailLoadingCommand}"
+                        Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Cancel]}" />
                 </StackPanel>
             </Border>
         </Grid>
