@@ -39,9 +39,9 @@ namespace VDF.GUI.ViewModels {
 			}
 			sb.AppendLine();
 			sb.AppendLine();
-			sb.AppendLine($"Example: item.{nameof(DuplicateItem.IsImage)} && arg.{nameof(DuplicateItemVM.ItemInfo)}.{nameof(DuplicateItem.SizeLong)} > 3000");
+			sb.AppendLine($"Example: item.{nameof(DuplicateItem.IsImage)} && item.{nameof(DuplicateItem.SizeLong)} > 3000");
 			sb.AppendLine($"Example: item.{nameof(DuplicateItem.Path)}.Contains(\"imageFolder\")");
-			sb.AppendLine($"Example: item.{nameof(DuplicateItem.Duration)}.Minute > 15");
+			sb.AppendLine($"Example: item.{nameof(DuplicateItem.Duration)}.{nameof(TimeSpan.Minutes)} > 15");
 			sb.AppendLine($"Example: Regex.IsMatch(item.{nameof(DuplicateItem.Path)}, \"S\\\\d+E\\\\d+\")");
 			sb.AppendLine("Note: Expression uses 'Dynamic Expresso' library which understands C# syntax");
 

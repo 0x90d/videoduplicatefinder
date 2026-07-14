@@ -17,11 +17,8 @@
 using System.Linq;
 using System.Reactive;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using DynamicExpresso;
-using DynamicExpresso.Exceptions;
 using ReactiveUI;
 using VDF.Core;
 using VDF.Core.Utils;
@@ -64,20 +61,9 @@ namespace VDF.GUI.ViewModels {
 			bool skipIfAllMatches = false;
 			bool userAsked = false;
 
-			const string shortIdentifier = "item";
-
 			Func<DuplicateItem, bool> interpreter;
 			try {
-				// Use PrimitiveTypes only — avoids registering types like Convert, Activator, etc.
-				// that could be abused if a malicious expression is loaded from a crafted settings file.
-				// Assignments are disabled: "item.IsBestSize = true" (a typo for ==) would otherwise
-				// WRITE the property on every item and match everything; now it's a parse error.
-				interpreter = new Interpreter(InterpreterOptions.PrimitiveTypes | InterpreterOptions.SystemKeywords)
-					.EnableAssignment(AssignmentOperators.None)
-					.Reference(typeof(TimeSpan))
-					.Reference(typeof(Math))
-					.Reference(typeof(Regex))
-					.ParseAsDelegate<Func<DuplicateItem, bool>>(SettingsFile.Instance.LastCustomSelectExpression, shortIdentifier);
+				interpreter = Utils.SelectionExpression.Compile(SettingsFile.Instance.LastCustomSelectExpression);
 			}
 			catch (Exception ex) {
 				await MessageBoxService.Show($"Expression error: {ex.Message}");
