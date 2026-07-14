@@ -504,6 +504,7 @@
 	"Message.DeleteConfirmStats": "Concernés : {0} fichier(s), {1} au total",
 	"Message.ReplaceWithLinksConfirm": "Voulez-vous vraiment remplacer les fichiers cochés par des liens vers le fichier conservé de leur groupe ?",
 	"Message.DeleteCompletedWithFailures": "{0} fichier(s) sur {1} supprimé(s) ; {2} en échec. Voir le journal pour plus de détails.",
+	"Message.DeleteMissingFilesNotice": "{0} des fichiers sélectionnés sont introuvables sur le disque (disque indisponible ou chemin modifié ?). Leurs entrées ont été retirées de la liste, mais aucun fichier n'a été supprimé et aucun espace n'a été libéré.",
 	"Message.DeleteFromListConfirm": "Are you sure to delete selected from list (keep files)?",
 	"Message.DeleteFromListBlacklistConfirm": "Are you sure to delete selected from list (keep files) and blacklist them?",
 	"MainWindow.Settings.KeyboardShortcuts": "Raccourcis Clavier",

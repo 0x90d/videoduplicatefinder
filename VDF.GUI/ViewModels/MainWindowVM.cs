@@ -1890,6 +1890,7 @@ Non-Windows setup:
 			// caught. This set records the groups that already kept theirs.
 			var tombstonedGroups = new HashSet<Guid>();
 			long freedBytes = 0;
+			int missingOnDisk = 0;
 			int total = toDelete.Count;
 			IsBusy = true;
 			IsBusyOverlayText = string.Format(App.Lang["Busy.Deleting"], 0, total);
@@ -1938,10 +1939,10 @@ Non-Windows setup:
 							// Path-only entry for the database lookup; FileEntry(string)
 							// stats the file and throws once it's gone.
 							var fe = new FileEntry { Path = dub.ItemInfo.Path };
-							bool exists = File.Exists(dub.ItemInfo.Path);
 
 							if (createLinks) {
-								if (!exists) {
+								if (!File.Exists(dub.ItemInfo.Path)) {
+									missingOnDisk++;
 									Logger.Instance.Warn($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
 								}
 								else {
@@ -1960,29 +1961,18 @@ Non-Windows setup:
 								}
 							}
 							else if (fromDisk) {
-								if (!exists) {
-									if (batchRecycled.Contains(dub)) {
+								switch (DiskDeletion.DeleteOne(dub.ItemInfo.Path, permanently, batchedRecycle,
+										batchRecycled.Contains(dub), File.Exists, File.Delete, FileUtils.MoveToTrash)) {
+									case DiskDeletion.Outcome.Deleted:
+									case DiskDeletion.Outcome.AlreadyRecycled:
 										freedBytes += CheckedSizeOf(dub);
-									}
-									else {
-										// File was already gone — treat as successfully deleted
-										// so the entry is still removed from the list and database.
+										break;
+									case DiskDeletion.Outcome.MissingEntryOnly:
+										// File was already gone; the entry is still removed from the
+										// list and database, but the user gets told afterwards.
+										missingOnDisk++;
 										Logger.Instance.Warn($"'{dub.ItemInfo.Path}' no longer exists on disk; removing entry only.");
-									}
-								}
-								else if (batchedRecycle) {
-									// Batch ran but this file is still there.
-									throw new Exception("the shell did not move the file to the recycle bin");
-								}
-								else if (!permanently) {
-									// Linux/macOS: attempt to move to system trash, fall back to permanent delete
-									if (!FileUtils.MoveToTrash(dub.ItemInfo.Path))
-										File.Delete(dub.ItemInfo.Path);
-									freedBytes += CheckedSizeOf(dub);
-								}
-								else {
-									File.Delete(dub.ItemInfo.Path);
-									freedBytes += CheckedSizeOf(dub);
+										break;
 								}
 							}
 
@@ -2009,6 +1999,16 @@ Non-Windows setup:
 							ReportProgress();
 						}
 					}
+
+					if (missingOnDisk > 0)
+						Logger.Instance.Warn($"{missingOnDisk} of {total} selected files were not found on disk; their entries were removed from the results, but no data was deleted for them.");
+
+					// Persist the database changes while still off the UI thread. This used
+					// to run last, after the results refresh, on the UI thread - where an
+					// exception in the refresh (dispatcher exceptions are swallowed to keep
+					// the app alive) could silently skip the save.
+					if (actuallyDeleted.Count > 0)
+						ScanEngine.SaveDatabase();
 				});
 			}
 			finally {
@@ -2023,27 +2023,39 @@ Non-Windows setup:
 				await MessageBoxService.Show(string.Format(App.Lang["Message.DeleteCompletedWithFailures"],
 					actuallyDeleted.Count, toDelete.Count, failedCount));
 
+			// "File not found" is treated as success above so stale entries clean up,
+			// but a batch full of them means an unavailable drive, not a deletion -
+			// without this notice 2000 entries once vanished while every file
+			// silently stayed on disk.
+			if (missingOnDisk > 0)
+				await MessageBoxService.Show(string.Format(App.Lang["Message.DeleteMissingFilesNotice"], missingOnDisk));
+
 			if (actuallyDeleted.Count == 0)
 				return;
 
-			// Remove deleted items from flat list
-			foreach (var item in actuallyDeleted) {
+			try {
+				// Remove deleted items from flat list (single pass; searching the list
+				// per deleted item was O(deleted x list) and stalled on big batches)
 				for (int i = Duplicates.Count - 1; i >= 0; i--)
-					if (ReferenceEquals(Duplicates[i], item)) { Duplicates.RemoveAt(i); break; }
+					if (actuallyDeleted.Contains(Duplicates[i]))
+						Duplicates.RemoveAt(i);
+
+				// When ExcludeHardLinks is enabled, remove items within each group
+				// that are hardlinks of another remaining item in the same group.
+				if (SettingsFile.Instance.ExcludeHardLinks)
+					DropHardLinkDuplicates();
+
+				// Drop groups that have only one item left (no longer duplicates)
+				DropSingletonGroups();
+
+				RefreshGroupStats();
+				RefreshResultsView();
 			}
-
-			// When ExcludeHardLinks is enabled, remove items within each group
-			// that are hardlinks of another remaining item in the same group.
-			if (SettingsFile.Instance.ExcludeHardLinks)
-				DropHardLinkDuplicates();
-
-			// Drop groups that have only one item left (no longer duplicates)
-			DropSingletonGroups();
-
-			RefreshGroupStats();
-			RefreshResultsView();
-
-			ScanEngine.SaveDatabase();
+			catch (Exception ex) {
+				// Files and database are already handled; a view-refresh failure must
+				// not abort the rest of this method (the backup below).
+				Logger.Instance.Error($"Updating the results view after deletion failed: {ex}");
+			}
 
 			if (SettingsFile.Instance.BackupAfterListChanged)
 				await ExportScanResults(BackupScanResultsFile);

@@ -504,6 +504,7 @@
 	"Message.DeleteConfirmStats": "Betroffen: {0} Datei(en), insgesamt {1}",
 	"Message.ReplaceWithLinksConfirm": "Sollen die ausgewählten Dateien wirklich durch Links auf die in ihrer Gruppe verbleibende Datei ersetzt werden?",
 	"Message.DeleteCompletedWithFailures": "{0} von {1} Datei(en) entfernt; {2} fehlgeschlagen. Details im Log.",
+	"Message.DeleteMissingFilesNotice": "{0} der ausgewählten Datei(en) wurden auf dem Datenträger nicht gefunden (Laufwerk nicht verfügbar oder Pfad geändert?). Ihre Einträge wurden aus der Liste entfernt, es wurden aber keine Dateien gelöscht und kein Speicherplatz freigegeben.",
 	"Message.DeleteFromListConfirm": "Are you sure to delete selected from list (keep files)?",
 	"Message.DeleteFromListBlacklistConfirm": "Are you sure to delete selected from list (keep files) and blacklist them?",
 	"MainWindow.Settings.KeyboardShortcuts": "Tastaturkürzel",

@@ -504,6 +504,7 @@
 	"Message.DeleteConfirmStats": "Affected: {0} file(s), {1} in total",
 	"Message.ReplaceWithLinksConfirm": "Are you sure you want to replace the checked files with links to the file kept in their group?",
 	"Message.DeleteCompletedWithFailures": "Removed {0} of {1} file(s); {2} failed. See the log for details.",
+	"Message.DeleteMissingFilesNotice": "{0} of the selected file(s) could not be found on disk (drive unavailable or path changed?). Their entries were removed from the list, but no files were deleted and no space was freed.",
 	"Message.DeleteFromListConfirm": "Are you sure to delete selected from list (keep files)?",
 	"Message.DeleteFromListBlacklistConfirm": "Are you sure to delete selected from list (keep files) and blacklist them?",
 	"MainWindow.Settings.KeyboardShortcuts": "Keyboard Shortcuts",

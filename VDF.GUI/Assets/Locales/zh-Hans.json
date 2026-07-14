@@ -504,6 +504,7 @@
 	"Message.DeleteConfirmStats": "涉及 {0} 个文件，共 {1}",
 	"Message.ReplaceWithLinksConfirm": "确定要将选中的文件替换为指向其组中保留文件的链接吗？",
 	"Message.DeleteCompletedWithFailures": "已移除 {0}/{1} 个文件；{2} 个失败。详情请查看日志。",
+	"Message.DeleteMissingFilesNotice": "在磁盘上找不到所选文件中的 {0} 个（驱动器不可用或路径已更改？）。这些条目已从列表中移除，但没有删除任何文件，也没有释放任何空间。",
 	"Message.DeleteFromListConfirm": "Are you sure to delete selected from list (keep files)?",
 	"Message.DeleteFromListBlacklistConfirm": "Are you sure to delete selected from list (keep files) and blacklist them?",
 	"MainWindow.Settings.KeyboardShortcuts": "键盘快捷键",

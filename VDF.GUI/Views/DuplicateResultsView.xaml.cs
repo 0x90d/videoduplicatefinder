@@ -56,13 +56,9 @@ namespace VDF.GUI.Views {
 		// Group headers are rendered inside the same ListBox as file rows; they must never
 		// count as "selected duplicates", so any header that sneaks into the selection
 		// (marquee/range selection) is dropped again immediately.
-		void OnResultsSelectionChanged(object? sender, SelectionChangedEventArgs e) {
-			var selected = ResultsListControl.SelectedItems;
-			if (selected == null) return;
-			for (int i = selected.Count - 1; i >= 0; i--)
-				if (selected[i] is ResultsGroupHeader)
-					selected.RemoveAt(i);
-		}
+		readonly SelectionHeaderCleanup selectionHeaderCleanup = new();
+		void OnResultsSelectionChanged(object? sender, SelectionChangedEventArgs e) =>
+			selectionHeaderCleanup.Run(ResultsListControl.SelectedItems);
 
 		// The DataGrid selected rows on right-click; ListBox doesn't. Mirror that behavior
 		// so the context menu acts on the row under the cursor.

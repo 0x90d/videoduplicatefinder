@@ -504,6 +504,7 @@
 	"Message.DeleteConfirmStats": "대상: {0}개 파일, 총 {1}",
 	"Message.ReplaceWithLinksConfirm": "체크된 파일을 각 그룹에서 유지되는 파일로 향하는 링크로 교체하시겠습니까?",
 	"Message.DeleteCompletedWithFailures": "{1}개 중 {0}개 파일을 제거했습니다. {2}개 실패. 자세한 내용은 로그를 확인하세요.",
+	"Message.DeleteMissingFilesNotice": "선택한 파일 중 {0}개를 디스크에서 찾을 수 없습니다(드라이브 사용 불가 또는 경로 변경?). 해당 항목은 목록에서 제거되었지만 실제로 삭제된 파일은 없으며 공간도 확보되지 않았습니다.",
 	"Message.DeleteFromListConfirm": "선택 항목을 목록에서 삭제할까요(파일 유지)?",
 	"Message.DeleteFromListBlacklistConfirm": "선택 항목을 목록에서 삭제하고(파일 유지) 블랙리스트에 넣을까요?",
 	"MainWindow.Settings.KeyboardShortcuts": "키보드 단축키",
