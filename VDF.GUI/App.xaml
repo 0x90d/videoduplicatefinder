@@ -25,7 +25,9 @@
                     <SolidColorBrush x:Key="VdfDangerBrush" Color="#BB4237" />
                     <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#F7E5E3" />
                     <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#73BB4237" />
-                    <SolidColorBrush x:Key="VdfSelBrush" Color="#E8F1EF" />
+                    <!-- Checked-row tint: red family because checked means "will be
+                         deleted", and clearly above the row background (#841). -->
+                    <SolidColorBrush x:Key="VdfSelBrush" Color="#F9DFDA" />
                     <SolidColorBrush x:Key="VdfTombBrush" Color="#A93B31" />
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#8A9793" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#F7FAF9" />
@@ -41,7 +43,10 @@
                     <SolidColorBrush x:Key="VdfDangerBrush" Color="#E06A5E" />
                     <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#391914" />
                     <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#73E06A5E" />
-                    <SolidColorBrush x:Key="VdfSelBrush" Color="#1D2A27" />
+                    <!-- Checked-row tint: red family because checked means "will be
+                         deleted"; the old #1D2A27 green was nearly invisible against
+                         the dark row background (#841). -->
+                    <SolidColorBrush x:Key="VdfSelBrush" Color="#43221B" />
                     <SolidColorBrush x:Key="VdfTombBrush" Color="#C05248" />
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#6D7B76" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#1C2422" />

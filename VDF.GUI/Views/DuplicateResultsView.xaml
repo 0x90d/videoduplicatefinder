@@ -58,12 +58,18 @@
       <Setter Property="FontSize" Value="12" />
       <Setter Property="CornerRadius" Value="12" />
     </Style>
-    <!-- checked rows use the mockup's exact selection tint (the "sel" token) -->
+    <!-- Checked rows: red tint (checked = marked for deletion) plus a danger-colored
+         left edge bar, so they stay clearly visible in dark mode where a background
+         tint alone drowned against the near-black rows (#841). The 3px edge slot is
+         always reserved (transparent when unchecked) so content never shifts. -->
     <Style Selector="Border.resultrow">
       <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="3,0,0,0" />
     </Style>
     <Style Selector="Border.resultrow.checked">
       <Setter Property="Background" Value="{DynamicResource VdfSelBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfDangerBrush}" />
     </Style>
     <!-- similarity chip: mockup .simchip — soft surface, colored text, 45%-alpha
          border; tier classes (mid/low) are bound from the similarity value -->
@@ -440,10 +446,12 @@
 
         <!-- ~~~~ File row ~~~~ -->
         <DataTemplate DataType="vm:ResultsItemRow">
+          <!-- Left padding is 3 because the resultrow style reserves a 3px edge-bar
+               border slot; 3+3 keeps the content aligned with the header row. -->
           <Border
               Classes="resultrow"
               Classes.checked="{Binding Item.Checked}"
-              Padding="6,0">
+              Padding="3,0,6,0">
             <!-- Row height follows the Preview column width and, once loaded, the
                  preview's real shape: single frames keep their aspect ratio (#834),
                  multi-frame previews re-wrap to the column width (WrappedFilmstrip,
