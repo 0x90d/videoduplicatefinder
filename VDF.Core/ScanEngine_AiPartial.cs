@@ -67,79 +67,109 @@ namespace VDF.Core {
 			int extracted = 0, cached = 0, failed = 0;
 			using (var embedder = new OnnxEmbedder(AiComponents.ModelPath)) {
 				object embedLock = new();
-				try {
-					// Storage-tuned degree: this phase reads whole files off disk.
-					Parallel.For(0, videos.Count, new ParallelOptions {
-						CancellationToken = cancelationTokenSource.Token,
-						MaxDegreeOfParallelism = ParallelDegree
-					}, i => {
-						if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
+				void ProcessVideo(int i) {
+					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
+						return;
+					FileEntry entry = videos[i];
+					try {
+						var info = new FileInfo(entry.Path);
+						if (!info.Exists)
 							return;
-						FileEntry entry = videos[i];
-						try {
-							var info = new FileInfo(entry.Path);
-							if (!info.Exists)
-								return;
-							if (store.TryGet(entry.Path, info.Length, info.LastWriteTimeUtc.Ticks, out var cachedRecord)) {
-								dense[i] = cachedRecord;
-								Interlocked.Increment(ref cached);
-								return;
-							}
-							double duration = entry.mediaInfo!.Duration.TotalSeconds;
-							double interval = GetAiPartialIntervalSeconds(duration);
-							byte[][]? frames = FfmpegEngine.GetDenseAiFrames(entry.Path, interval, AiPartialMaxFramesPerFile,
-								Settings.ExtendedFFToolsLogging, cancelationTokenSource.Token);
-							if (frames == null) {
-								Interlocked.Increment(ref failed);
-								return;
-							}
-							bool[] usable = SelectUsableDenseFrames(frames);
-							// Invalid slots (dark or duplicated frames) stay on the timeline as
-							// empty arrays — never embedded, never matched.
-							var embedded = new byte[frames.Length][];
-							var batch = new List<byte[]>(OnnxEmbedder.MaxBatch);
-							var batchSlots = new List<int>(OnnxEmbedder.MaxBatch);
-							// Inference is serial (one session, CPU-bound) while other files decode.
-							lock (embedLock) {
-								for (int f = 0; f < frames.Length; f++) {
-									embedded[f] = Array.Empty<byte>();
-									if (!usable[f])
-										continue;
-									batch.Add(frames[f]);
-									batchSlots.Add(f);
-									if (batch.Count == OnnxEmbedder.MaxBatch)
-										FlushBatch();
-								}
-								FlushBatch();
-
-								void FlushBatch() {
-									if (batch.Count == 0)
-										return;
-									byte[][] vectors = embedder.EmbedBatchQuantized(batch);
-									for (int k = 0; k < vectors.Length; k++)
-										embedded[batchSlots[k]] = vectors[k];
-									batch.Clear();
-									batchSlots.Clear();
-								}
-							}
-							var record = new DenseEmbeddingStore.DenseRecord(info.Length, info.LastWriteTimeUtc.Ticks, (float)interval, embedded);
-							store.Put(entry.Path, record);
-							dense[i] = record;
-							Interlocked.Increment(ref extracted);
+						if (store.TryGet(entry.Path, info.Length, info.LastWriteTimeUtc.Ticks, out var cachedRecord)) {
+							dense[i] = cachedRecord;
+							Interlocked.Increment(ref cached);
+							return;
 						}
-						catch (OperationCanceledException) {
-							throw;
-						}
-						catch (Exception e) {
+						double duration = entry.mediaInfo!.Duration.TotalSeconds;
+						double interval = GetAiPartialIntervalSeconds(duration);
+						byte[][]? frames = FfmpegEngine.GetDenseAiFrames(entry.Path, interval, AiPartialMaxFramesPerFile,
+							Settings.ExtendedFFToolsLogging, cancelationTokenSource.Token);
+						if (frames == null) {
 							Interlocked.Increment(ref failed);
-							Logger.Instance.Warn($"AI partial detection: dense sampling failed for '{entry.Path}': {e.Message}");
+							return;
 						}
-						finally {
-							IncrementProgress(Path.GetFileName(entry.Path));
+						bool[] usable = SelectUsableDenseFrames(frames);
+						// Invalid slots (dark or duplicated frames) stay on the timeline as
+						// empty arrays — never embedded, never matched.
+						var embedded = new byte[frames.Length][];
+						var batch = new List<byte[]>(OnnxEmbedder.MaxBatch);
+						var batchSlots = new List<int>(OnnxEmbedder.MaxBatch);
+						// Inference is serial (one session, CPU-bound) while other files decode.
+						lock (embedLock) {
+							for (int f = 0; f < frames.Length; f++) {
+								embedded[f] = Array.Empty<byte>();
+								if (!usable[f])
+									continue;
+								batch.Add(frames[f]);
+								batchSlots.Add(f);
+								if (batch.Count == OnnxEmbedder.MaxBatch)
+									FlushBatch();
+							}
+							FlushBatch();
+
+							void FlushBatch() {
+								if (batch.Count == 0)
+									return;
+								byte[][] vectors = embedder.EmbedBatchQuantized(batch);
+								for (int k = 0; k < vectors.Length; k++)
+									embedded[batchSlots[k]] = vectors[k];
+								batch.Clear();
+								batchSlots.Clear();
+							}
 						}
-					});
+						var record = new DenseEmbeddingStore.DenseRecord(info.Length, info.LastWriteTimeUtc.Ticks, (float)interval, embedded);
+						store.Put(entry.Path, record);
+						dense[i] = record;
+						Interlocked.Increment(ref extracted);
+					}
+					catch (OperationCanceledException) {
+						throw;
+					}
+					catch (Exception e) {
+						Interlocked.Increment(ref failed);
+						Logger.Instance.Warn($"AI partial detection: dense sampling failed for '{entry.Path}': {e.Message}");
+					}
+					finally {
+						IncrementProgress(Path.GetFileName(entry.Path));
+					}
+				}
+
+				try {
+					// Per-drive concurrency (#857): this phase reads WHOLE files off disk
+					// (GetDenseAiFrames decodes the full video), so it must respect the same
+					// per-drive caps as the gather pass. The previous flat global degree let
+					// every worker pile onto whatever drive the queue served next,
+					// seek-thrashing spinning disks and network shares.
+					List<DriveScanGroup> driveGroups = DriveScanPlanner.PartitionByDrive(videos);
+					int[][] groupIndexes = DriveScanPlanner.MapEntryIndexes(videos, driveGroups);
+					if (Settings.MaxDegreeOfParallelism == 1) {
+						// Documented promise: 1 = strictly one file at a time (drives sequential).
+						foreach (int[] indexes in groupIndexes)
+							foreach (int i in indexes) {
+								cancelationTokenSource.Token.ThrowIfCancellationRequested();
+								ProcessVideo(i);
+							}
+					}
+					else {
+						DriveScanPlanner.ClassifyGroups(driveGroups, Settings.DriveTypeOverrides,
+							DriveScanPlanner.IsNetworkRoot,
+							group => DriveScanPlanner.ProbeSeekLatencyMs(group.Entries));
+						DriveScanPlanner.AssignParallelism(driveGroups, Settings.MaxDegreeOfParallelism, Settings.HddMaxDegreeOfParallelism, Environment.ProcessorCount);
+						var driveTasks = new List<Task>(driveGroups.Count);
+						for (int g = 0; g < driveGroups.Count; g++) {
+							DriveScanGroup group = driveGroups[g];
+							int[] indexes = groupIndexes[g];
+							Logger.Instance.Info($"AI partial detection: drive '{group.Root}': {indexes.Length:N0} video(s), concurrency {group.DegreeOfParallelism} ({(group.SpeedClass == DriveSpeedClass.Fast ? "fast" : "slow")}, {group.ClassSource})");
+							driveTasks.Add(Task.Run(() => Parallel.ForEach(indexes, new ParallelOptions {
+								CancellationToken = cancelationTokenSource.Token,
+								MaxDegreeOfParallelism = group.DegreeOfParallelism
+							}, ProcessVideo)));
+						}
+						Task.WaitAll(driveTasks.ToArray());
+					}
 				}
 				catch (OperationCanceledException) { }
+				catch (AggregateException ae) when (ae.Flatten().InnerExceptions.All(e => e is OperationCanceledException)) { }
 			}
 			// Keep-set = the whole database, NOT this scan's eligible videos: pruning to the
 			// eligible set wiped other libraries' records on every alternating scan, and even

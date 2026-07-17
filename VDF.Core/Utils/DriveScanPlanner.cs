@@ -144,6 +144,27 @@ namespace VDF.Core.Utils {
 			return groups.Values.OrderBy(g => g.Root, StringComparer.OrdinalIgnoreCase).ToList();
 		}
 
+		/// <summary>
+		/// Maps each group's entries back to their indices in <paramref name="entries"/>
+		/// (entries are unique by path). Lets an index-addressed pipeline (e.g. the AI
+		/// dense-sampling pass writing into one result slot per video) run per-drive
+		/// loops while keeping its original indexing.
+		/// </summary>
+		internal static int[][] MapEntryIndexes(IReadOnlyList<FileEntry> entries, IReadOnlyList<DriveScanGroup> groups) {
+			var indexByEntry = new Dictionary<FileEntry, int>(entries.Count);
+			for (int i = 0; i < entries.Count; i++)
+				indexByEntry[entries[i]] = i;
+			var result = new int[groups.Count][];
+			for (int g = 0; g < groups.Count; g++) {
+				List<FileEntry> groupEntries = groups[g].Entries;
+				var indexes = new int[groupEntries.Count];
+				for (int k = 0; k < groupEntries.Count; k++)
+					indexes[k] = indexByEntry[groupEntries[k]];
+				result[g] = indexes;
+			}
+			return result;
+		}
+
 		/// <summary>Current mount roots, longest first so nested mounts win the prefix match.</summary>
 		internal static List<string> SnapshotMountRoots() {
 			var roots = new List<string>();

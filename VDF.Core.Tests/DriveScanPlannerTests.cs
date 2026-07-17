@@ -152,6 +152,45 @@ public class DriveScanPlannerTests {
 		Assert.Equal(entries.Length, groups.Sum(g => g.Entries.Count));
 	}
 
+	// ── MapEntryIndexes ─────────────────────────────────────────────────────
+
+	// #857: the AI dense-sampling pass writes into one result slot per video, so its
+	// per-drive loops address videos by their ORIGINAL list index. A wrong mapping
+	// here would silently attach embeddings to the wrong file.
+	[Fact]
+	public void MapEntryIndexes_MapsEveryEntryToItsOriginalIndex_ExactlyOnce() {
+		var entries = new List<FileEntry> {
+			Entry(@"D:\videos\long.mp4", @"D:\videos"),   // 0
+			Entry(@"C:\clips\mid.mp4", @"C:\clips"),      // 1
+			Entry(@"D:\videos\short.mp4", @"D:\videos"),  // 2
+			Entry(@"C:\other\tiny.mp4", @"C:\other"),     // 3
+		};
+		var groups = DriveScanPlanner.PartitionByDrive(entries, new[] { @"C:\", @"D:\" });
+		int[][] indexes = DriveScanPlanner.MapEntryIndexes(entries, groups);
+
+		Assert.Equal(groups.Count, indexes.Length);
+		for (int g = 0; g < groups.Count; g++)
+			for (int k = 0; k < indexes[g].Length; k++)
+				Assert.Same(groups[g].Entries[k], entries[indexes[g][k]]);
+		// Every original index appears exactly once across all groups.
+		Assert.Equal(new[] { 0, 1, 2, 3 }, indexes.SelectMany(i => i).OrderBy(i => i).ToArray());
+	}
+
+	[Fact]
+	public void MapEntryIndexes_PreservesInputOrderWithinAGroup() {
+		var entries = new List<FileEntry> {
+			Entry(@"C:\a\3.mp4", @"C:\a"),
+			Entry(@"C:\a\1.mp4", @"C:\a"),
+			Entry(@"C:\a\2.mp4", @"C:\a"),
+		};
+		var groups = DriveScanPlanner.PartitionByDrive(entries, new[] { @"C:\" });
+		int[][] indexes = DriveScanPlanner.MapEntryIndexes(entries, groups);
+
+		// The AI pass sorts videos longest-first before partitioning; that order must
+		// survive within each drive group so long files still start first per drive.
+		Assert.Equal(new[] { 0, 1, 2 }, indexes[0]);
+	}
+
 	// ── ClassifyGroups ──────────────────────────────────────────────────────
 
 	[Fact]
