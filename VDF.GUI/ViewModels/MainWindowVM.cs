@@ -1911,18 +1911,21 @@ Non-Windows setup:
 							IsBusyOverlayText = string.Format(App.Lang["Busy.Deleting"], current, total));
 					}
 
-					// Windows recycle-bin deletes go through a single batched shell
-					// operation — one SHFileOperation per file pays the full shell
-					// round-trip each time and is dramatically slower for big batches.
-					// Per-file success is determined afterwards by re-checking existence.
+					// Windows recycle-bin deletes go through batched shell operations —
+					// one SHFileOperation per file pays the full shell round-trip each
+					// time and is dramatically slower for big batches. Batches run per
+					// CHUNK, interleaved with the per-file accounting below: recycling
+					// the whole selection in one call kept the "Deleting files... 0/N"
+					// overlay frozen for the entire operation (#849 report), because the
+					// shell call IS the deletion and the counting only ran afterwards.
+					// Per-file success is determined by re-checking existence.
 					bool batchedRecycle = fromDisk && !permanently && !createLinks && CoreUtils.IsWindows;
-					var batchRecycled = new HashSet<DuplicateItemVM>(ReferenceEqualityComparer<DuplicateItemVM>.Instance);
-					if (batchedRecycle) {
-						var existing = toDelete.Where(d => File.Exists(d.ItemInfo.Path)).ToList();
-						if (existing.Count > 0) {
+					DiskDeletion.RunChunked(toDelete, DiskDeletion.RecycleChunkSize, batchedRecycle,
+						d => d.ItemInfo.Path, File.Exists,
+						paths => {
 							var fs = new FileUtils.SHFILEOPSTRUCT {
 								wFunc = FileUtils.FileOperationType.FO_DELETE,
-								pFrom = string.Join('\0', existing.Select(d => d.ItemInfo.Path)) + "\0\0",
+								pFrom = string.Join('\0', paths) + "\0\0",
 								fFlags = FileUtils.FileOperationFlags.FOF_ALLOWUNDO |
 										 FileUtils.FileOperationFlags.FOF_NOCONFIRMATION |
 										 FileUtils.FileOperationFlags.FOF_NOERRORUI |
@@ -1930,13 +1933,9 @@ Non-Windows setup:
 							};
 							int result = FileUtils.SHFileOperation(ref fs);
 							if (result != 0)
-								Logger.Instance.Warn($"SHFileOperation returned {result:X} for a batch of {existing.Count} file(s); checking which files were actually recycled.");
-							foreach (var d in existing)
-								batchRecycled.Add(d);
-						}
-					}
-
-					foreach (var dub in toDelete) {
+								Logger.Instance.Warn($"SHFileOperation returned {result:X} for a batch of {paths.Count} file(s); checking which files were actually recycled.");
+						},
+						(dub, wasBatchRecycled) => {
 						try {
 							// Path-only entry for the database lookup; FileEntry(string)
 							// stats the file and throws once it's gone.
@@ -1964,7 +1963,7 @@ Non-Windows setup:
 							}
 							else if (fromDisk) {
 								switch (DiskDeletion.DeleteOne(dub.ItemInfo.Path, permanently, batchedRecycle,
-										batchRecycled.Contains(dub), File.Exists, File.Delete, FileUtils.MoveToTrash)) {
+										wasBatchRecycled, File.Exists, File.Delete, FileUtils.MoveToTrash)) {
 									case DiskDeletion.Outcome.Deleted:
 									case DiskDeletion.Outcome.AlreadyRecycled:
 										freedBytes += CheckedSizeOf(dub);
@@ -2000,7 +1999,7 @@ Non-Windows setup:
 							done++;
 							ReportProgress();
 						}
-					}
+					});
 
 					if (missingOnDisk > 0)
 						Logger.Instance.Warn($"{missingOnDisk} of {total} selected files were not found on disk; their entries were removed from the results, but no data was deleted for them.");

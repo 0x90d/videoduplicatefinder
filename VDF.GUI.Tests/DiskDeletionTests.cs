@@ -99,5 +99,71 @@ namespace VDF.GUI.Tests {
 			Assert.True(Throws(() => DiskDeletion.DeleteOne(P, permanently: false, batchedRecycle: false, batchRecycled: false,
 				fileExists: _ => true, deleteFile: _ => { }, moveToTrash: _ => true)));
 		}
+
+		// ── RunChunked ──────────────────────────────────────────────────────
+		// Regression (#849 report): recycling the whole selection in ONE shell call kept
+		// the "Deleting files... 0/N" overlay frozen for the entire operation, because
+		// the counting loop only ran after the shell returned. The loop must recycle and
+		// process chunk by chunk so progress can advance in between.
+
+		[Fact]
+		public void RunChunked_InterleavesRecycleAndProcessing_PerChunk() {
+			var items = Enumerable.Range(0, 120).Select(i => $"f{i}").ToList();
+			var log = new List<string>();
+			DiskDeletion.RunChunked(items, chunkSize: 50, batchedRecycle: true,
+				pathOf: s => s, fileExists: _ => true,
+				recycleBatch: paths => log.Add($"recycle:{paths.Count}"),
+				processOne: (s, _) => log.Add($"process:{s}"));
+
+			// recycle(50), 50x process, recycle(50), 50x process, recycle(20), 20x process
+			Assert.Equal("recycle:50", log[0]);
+			Assert.Equal("recycle:50", log[51]);
+			Assert.Equal("recycle:20", log[102]);
+			Assert.Equal(items.Count + 3, log.Count);
+			// Every item processed exactly once, in original order.
+			Assert.Equal(items, log.Where(l => l.StartsWith("process:")).Select(l => l["process:".Length..]));
+		}
+
+		[Fact]
+		public void RunChunked_RecyclesOnlyExistingFiles_AndFlagsThem() {
+			var items = new List<string> { "gone1", "there1", "gone2", "there2" };
+			var recycledPaths = new List<string>();
+			var flagged = new Dictionary<string, bool>();
+			DiskDeletion.RunChunked(items, chunkSize: 10, batchedRecycle: true,
+				pathOf: s => s, fileExists: p => p.StartsWith("there"),
+				recycleBatch: recycledPaths.AddRange,
+				processOne: (s, wasRecycled) => flagged[s] = wasRecycled);
+
+			Assert.Equal(new[] { "there1", "there2" }, recycledPaths);
+			Assert.True(flagged["there1"]);
+			Assert.True(flagged["there2"]);
+			Assert.False(flagged["gone1"]);
+			Assert.False(flagged["gone2"]);
+		}
+
+		[Fact]
+		public void RunChunked_WithoutBatchedRecycle_NeverTouchesShellOrFileSystem() {
+			var items = new List<string> { "a", "b", "c" };
+			var processed = new List<string>();
+			DiskDeletion.RunChunked(items, chunkSize: 2, batchedRecycle: false,
+				pathOf: s => s,
+				fileExists: _ => throw new InvalidOperationException("existence must not be probed when batching is off"),
+				recycleBatch: _ => throw new InvalidOperationException("shell must not be invoked when batching is off"),
+				processOne: (s, wasRecycled) => { Assert.False(wasRecycled); processed.Add(s); });
+
+			Assert.Equal(items, processed);
+		}
+
+		[Fact]
+		public void RunChunked_AllFilesMissing_SkipsShellCallButStillProcesses() {
+			var items = new List<string> { "gone1", "gone2" };
+			var processed = new List<string>();
+			DiskDeletion.RunChunked(items, chunkSize: 10, batchedRecycle: true,
+				pathOf: s => s, fileExists: _ => false,
+				recycleBatch: _ => throw new InvalidOperationException("empty chunks must not reach the shell"),
+				processOne: (s, wasRecycled) => { Assert.False(wasRecycled); processed.Add(s); });
+
+			Assert.Equal(items, processed);
+		}
 	}
 }
