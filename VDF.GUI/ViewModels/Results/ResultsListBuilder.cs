@@ -87,6 +87,11 @@ namespace VDF.GUI.ViewModels {
 			var headers = new List<ResultsGroupHeader>(groupOrder.Count);
 			foreach (var gid in groupOrder) {
 				var members = groupsById[gid];
+				// A duplicate group needs at least two visible members. Per-item filters
+				// can strand a single row (e.g. similarity 100-100 keeps only the member
+				// that carries exactly 100, #858), which rendered as a meaningless
+				// "group of one" — such groups vanish from the view entirely.
+				if (members.Count < 2) continue;
 				SortMembers(members, request.SortMode, request.SortDescending);
 
 				long total = 0, largest = 0;

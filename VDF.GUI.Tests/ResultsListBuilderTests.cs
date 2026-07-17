@@ -144,7 +144,8 @@ namespace VDF.GUI.Tests {
 		public void FolderPathMode_AscendingSortsAlphabetically() {
 			Guid z = Guid.NewGuid(), a = Guid.NewGuid();
 			var result = ResultsListBuilder.Build(Request(
-				Item(z, @"Z:\zebra.mp4"), Item(a, @"A:\apple.mp4")) with {
+				Item(z, @"Z:\zebra.mp4"), Item(z, @"Z:\zebra2.mp4"),
+				Item(a, @"A:\apple.mp4"), Item(a, @"A:\apple2.mp4")) with {
 				SortMode = ResultsSortMode.FolderPath,
 				SortDescending = false
 			});
@@ -171,15 +172,15 @@ namespace VDF.GUI.Tests {
 			Guid kept = Guid.NewGuid(), dropped = Guid.NewGuid();
 			var result = ResultsListBuilder.Build(Request(
 				Item(dropped, "hidden1"), Item(dropped, "hidden2"),
-				Item(kept, "visible", size: 500), Item(kept, "hidden3")) with {
+				Item(kept, "visible1", size: 500), Item(kept, "visible2"), Item(kept, "hidden3")) with {
 				Filter = d => d.ItemInfo.Path.StartsWith("visible")
 			});
 
 			var group = Assert.Single(result.Groups);
 			Assert.Equal(kept, group.GroupId);
-			Assert.Equal(1, group.FileCount); // singleton after filtering still shown
+			Assert.Equal(2, group.FileCount);
 			Assert.Equal(1, group.GroupNumber);
-			Assert.Equal(2, result.Rows.Count);
+			Assert.Equal(3, result.Rows.Count);
 		}
 
 		[Fact]
@@ -222,12 +223,13 @@ namespace VDF.GUI.Tests {
 		public void PickBest_SkipsSingletonGroups() {
 			Guid g = Guid.NewGuid();
 			int calls = 0;
+			// Singleton groups no longer render at all (#858), so PickBest must not run.
 			var result = ResultsListBuilder.Build(Request(Item(g, "only")) with {
 				PickBest = members => { calls++; return (members[0], null); }
 			});
 
 			Assert.Equal(0, calls);
-			Assert.False(result.Groups[0].Rows[0].IsBest);
+			Assert.Empty(result.Groups);
 		}
 
 		[Fact]
@@ -362,6 +364,37 @@ namespace VDF.GUI.Tests {
 			Assert.Equal("Gruppe 1", result.Groups[0].Title);
 			Assert.Contains("2 Dateien", result.Groups[0].Summary);
 			Assert.Contains("spart bis zu", result.Groups[0].Summary);
+		}
+
+		// Regression #858: a similarity filter of 100-100 kept only the member carrying
+		// exactly 100 (e.g. a later-joined member, or a partial-clip source which is
+		// pinned at 100) and rendered a meaningless "group of one". A group must keep
+		// at least two visible members or disappear entirely.
+		[Fact]
+		public void GroupsReducedToOneVisibleMember_AreHiddenEntirely() {
+			Guid mixed = Guid.NewGuid(), exact = Guid.NewGuid();
+			var result = ResultsListBuilder.Build(Request(
+				Item(mixed, "m1", similarity: 100f), Item(mixed, "m2", similarity: 99.5f),
+				Item(exact, "e1", similarity: 100f), Item(exact, "e2", similarity: 100f)) with {
+				Filter = d => d.ItemInfo.Similarity >= 100f
+			});
+
+			var group = Assert.Single(result.Groups);
+			Assert.Equal(exact, group.GroupId);
+			Assert.Equal(3, result.Rows.Count); // 1 header + 2 rows, nothing from 'mixed'
+		}
+
+		[Fact]
+		public void SingletonGroupsInInput_AreNotRendered() {
+			Guid pair = Guid.NewGuid();
+			var result = ResultsListBuilder.Build(Request(
+				Item(Guid.NewGuid(), "orphan"),
+				Item(pair, "a"), Item(pair, "b")));
+
+			var group = Assert.Single(result.Groups);
+			Assert.Equal(pair, group.GroupId);
+			Assert.DoesNotContain(result.Rows.OfType<ResultsItemRow>(),
+				r => r.Item.ItemInfo.Path == "orphan");
 		}
 
 		[Fact]

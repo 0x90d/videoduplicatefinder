@@ -146,7 +146,8 @@ namespace VDF.GUI.Tests {
 			var built = Build(new[] { Item(g, "a", 500), Item(g, "b") });
 			// Anchor from a list state that no longer exists at all (e.g. stale reference
 			// whose group id never appears in the old order) — leave the scroll alone.
-			var foreign = Build(new[] { Item(Guid.NewGuid(), "x", 500), Item(Guid.NewGuid(), "x2") });
+			var fg = Guid.NewGuid();
+			var foreign = Build(new[] { Item(fg, "x", 500), Item(fg, "x2") });
 			var target = ResultsScrollAnchor.FindRestoreTarget(foreign.Rows[0], Order(built), built.Rows);
 			Assert.Null(target);
 		}
