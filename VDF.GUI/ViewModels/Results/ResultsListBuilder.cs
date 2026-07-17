@@ -58,8 +58,19 @@ namespace VDF.GUI.ViewModels {
 
 		public static ResultsBuildResult Build(ResultsBuildRequest request) {
 			Func<DuplicateItemVM, bool> filter = request.Filter ?? (_ => true);
-			Func<DuplicateItemVM, bool> isTombstone = request.IsTombstone ?? (d => d.IsTombstone);
-			Func<DuplicateItemVM, bool> isOffline = request.IsOffline ?? (d => d.IsOffline);
+			Func<DuplicateItemVM, bool> isTombstone;
+			Func<DuplicateItemVM, bool> isOffline;
+			if (request.IsTombstone == null && request.IsOffline == null) {
+				// The plain defaults (DuplicateItemVM.IsTombstone/IsOffline) stat each
+				// missing file twice and query DriveInfo per file — Build runs on the UI
+				// thread on every list change, so a large result set with missing files
+				// turned every rebuild into thousands of filesystem probes.
+				(isTombstone, isOffline) = CreateCachedPathStatus(File.Exists, VDF.Core.ScanEngine.IsDriveReady);
+			}
+			else {
+				isTombstone = request.IsTombstone ?? (d => d.IsTombstone);
+				isOffline = request.IsOffline ?? (d => d.IsOffline);
+			}
 
 			// Group in first-appearance order so ties keep a stable, predictable order.
 			var groupsById = new Dictionary<Guid, List<DuplicateItemVM>>();
@@ -154,6 +165,32 @@ namespace VDF.GUI.ViewModels {
 			}
 
 			return new ResultsBuildResult { Rows = flat, Groups = headers, HasPartialClips = hasPartialClips };
+		}
+
+		/// <summary>
+		/// Tombstone/offline classification with per-build caching: one existence probe
+		/// per path and one drive-readiness probe per volume root, shared by both
+		/// predicates. Same classification as <see cref="VDF.Core.ScanEngine.PathIsTombstone"/>
+		/// / PathIsOffline, minus the redundant filesystem hits.
+		/// </summary>
+		internal static (Func<DuplicateItemVM, bool> IsTombstone, Func<DuplicateItemVM, bool> IsOffline) CreateCachedPathStatus(
+			Func<string, bool> fileExists, Func<string, bool> driveReady) {
+			var existsCache = new Dictionary<string, bool>(StringComparer.Ordinal);
+			var readyCache = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+			bool Exists(string path) {
+				if (!existsCache.TryGetValue(path, out bool v))
+					existsCache[path] = v = fileExists(path);
+				return v;
+			}
+			bool Ready(string path) {
+				string root = Path.GetPathRoot(path) ?? string.Empty;
+				if (!readyCache.TryGetValue(root, out bool v))
+					readyCache[root] = v = driveReady(path);
+				return v;
+			}
+			return (
+				d => !Exists(d.ItemInfo.Path) && Ready(d.ItemInfo.Path),
+				d => !Exists(d.ItemInfo.Path) && !Ready(d.ItemInfo.Path));
 		}
 
 		/// <summary>

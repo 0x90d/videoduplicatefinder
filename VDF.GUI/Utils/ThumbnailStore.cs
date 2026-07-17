@@ -85,7 +85,7 @@ namespace VDF.GUI.Utils {
 	///  - thumbs.pack : Binary data (JPEGs in sequence)
 	///  - thumbs.idx  : JSON { key -> (offset,length) }
 	/// </summary>
-	public sealed class ThumbPack  {
+	public sealed class ThumbPack : IDisposable {
 		readonly FileStream _fs;
 		readonly string _packPath;
 		readonly string _idxPath;
@@ -130,22 +130,34 @@ namespace VDF.GUI.Utils {
 		public (long off, int len) AppendIfMissing(string key, Action<Stream> writeJpeg) {
 			lock (_gate) {
 				if (_idx.TryGetValue(key, out var e) && e.Item2 > 0) return e;
+			}
+			// Run writeJpeg OUTSIDE the lock: it is expensive (decode frames, compose the
+			// grid, FFmpeg-encode). Holding _gate through it serialized every thumbnail
+			// worker AND blocked the UI thread — whose Thumbnail getter takes the same
+			// lock via OpenKey — behind the whole worker convoy for the duration of a
+			// retrieval pass (Linux forum report: minutes-long GUI stalls on big scans).
+			using var buffer = new MemoryStream();
+			writeJpeg(buffer);
+			int len = checked((int)buffer.Length);
+			lock (_gate) {
+				// A concurrent writer may have finished the same key while we encoded.
+				if (_idx.TryGetValue(key, out var e) && e.Item2 > 0) return e;
 				_fs.Seek(0, SeekOrigin.End);
 				long off = _fs.Position;
-				using (var limiting = new LengthCountingStream(_fs)) {
-					writeJpeg(limiting);
-					limiting.Flush();
-					int len = checked((int)limiting.BytesWritten);
-					if (len == 0) {
-						// Don't record an empty entry. Leaving _idx untouched (or unchanged
-						// if a previous empty entry existed) means OpenKey returns null, the
-						// Thumbnail getter sees no key match, and the next retry re-attempts
-						// extraction instead of serving back broken data forever.
-						return (off, 0);
-					}
-					_idx[key] = (off, len);
-					return (off, len);
+				if (len == 0) {
+					// Don't record an empty entry. Leaving _idx untouched (or unchanged
+					// if a previous empty entry existed) means OpenKey returns null, the
+					// Thumbnail getter sees no key match, and the next retry re-attempts
+					// extraction instead of serving back broken data forever.
+					return (off, 0);
 				}
+				buffer.Position = 0;
+				buffer.CopyTo(_fs);
+				// OpenKey reads through an independent handle on the pack file; without a
+				// flush the bytes sit in _fs's write buffer and read back as zeros.
+				_fs.Flush();
+				_idx[key] = (off, len);
+				return (off, len);
 			}
 		}
 
@@ -160,7 +172,11 @@ namespace VDF.GUI.Utils {
 			lock (_gate) {
 				if (!_idx.TryGetValue(key, out var e)) return null;
 				var rfs = new FileStream(_packPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128 * 1024, useAsync: false);
-				return new StreamSlice(rfs, e.off, e.len, leaveOpen: true);
+				// The slice must OWN rfs (leaveOpen: false): nothing else references it, so
+				// leaveOpen leaked one file descriptor per thumbnail load until a GC ran a
+				// finalizer pass — enough to exhaust the default Linux fd limit while
+				// scrolling a large result list, strangling the whole process.
+				return new StreamSlice(rfs, e.off, e.len, leaveOpen: false);
 			}
 		}
 		public void FlushIndex() {
@@ -170,12 +186,41 @@ namespace VDF.GUI.Utils {
 			}
 		}
 
-		public void CopyTo(Stream destination) {
+		/// <summary>
+		/// Consistent point-in-time view for export: the flushed pack length plus an index
+		/// (as UTF-8 JSON) containing only entries that lie entirely within that length.
+		/// Entries appended afterwards end up in neither, so the exported pair stays
+		/// coherent while <see cref="CopyPackTo"/> runs without any lock held — the old
+		/// whole-pack copy under _gate blocked every OpenKey (and with it the UI thread)
+		/// for the duration of a potentially multi-GB copy.
+		/// </summary>
+		public (long PackLength, byte[] IndexJson) SnapshotForExport() {
 			lock (_gate) {
 				_fs.Flush();
-				_fs.Seek(0, SeekOrigin.Begin);
-				_fs.CopyTo(destination);
-				_fs.Seek(0, SeekOrigin.End);
+				long len = _fs.Length;
+				Dictionary<string, (long, int)> snap = new(_idx.Count);
+				foreach (var kv in _idx)
+					if (kv.Value.off + kv.Value.len <= len)
+						snap[kv.Key] = kv.Value;
+				byte[] json = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(snap, Data.GuiJsonFieldsContext.Default.ThumbPackIndex);
+				return (len, json);
+			}
+		}
+
+		/// <summary>
+		/// Copies the first <paramref name="length"/> bytes of the pack (a length captured
+		/// by <see cref="SnapshotForExport"/>) through an independent read handle. No lock
+		/// is held; concurrent appends and reads proceed unhindered.
+		/// </summary>
+		public void CopyPackTo(Stream destination, long length) {
+			using var rfs = new FileStream(_packPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128 * 1024, useAsync: false);
+			byte[] buffer = new byte[128 * 1024];
+			long remaining = length;
+			while (remaining > 0) {
+				int n = rfs.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
+				if (n <= 0) break;
+				destination.Write(buffer, 0, n);
+				remaining -= n;
 			}
 		}
 
@@ -222,33 +267,6 @@ namespace VDF.GUI.Utils {
 		public override void SetLength(long value) => throw new NotSupportedException();
 		public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 		protected override void Dispose(bool disposing) { if (!disposing || _leaveOpen) return; try { _fs.Dispose(); } catch { } }
-	}
-
-	internal sealed class LengthCountingStream : Stream {
-		readonly Stream _inner;
-		public long BytesWritten { get; private set; }
-		public LengthCountingStream(Stream inner) => _inner = inner;
-		public override bool CanRead => false; public override bool CanSeek => false; public override bool CanWrite => true;
-		public override long Length => throw new NotSupportedException();
-		public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-		public override void Flush() => _inner.Flush();
-		public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-		public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-		public override void SetLength(long value) => throw new NotSupportedException();
-		public override void Write(byte[] buffer, int offset, int count) {
-			_inner.Write(buffer, offset, count);
-			BytesWritten += count;
-		}
-
-		public override void Write(ReadOnlySpan<byte> buffer) {
-			_inner.Write(buffer);
-			BytesWritten += buffer.Length;
-		}
-
-		public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ct = default) {
-			BytesWritten += buffer.Length;
-			return _inner.WriteAsync(buffer, ct);
-		}
 	}
 
 	/// <summary> Small, size-limited LRU cache for UI bitmaps (RAM capped). </summary>

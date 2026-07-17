@@ -363,5 +363,51 @@ namespace VDF.GUI.Tests {
 			Assert.Contains("2 Dateien", result.Groups[0].Summary);
 			Assert.Contains("spart bis zu", result.Groups[0].Summary);
 		}
+
+		[Fact]
+		public void CachedPathStatus_ClassifiesLikeTheEngine() {
+			// missing + drive ready = tombstone; missing + drive gone = offline;
+			// existing = neither. Separate instances because readiness is cached per root.
+			var (tomb, off) = ResultsListBuilder.CreateCachedPathStatus(_ => false, _ => true);
+			var item = Item(Guid.NewGuid(), Path.GetFullPath("missing.mp4"));
+			Assert.True(tomb(item));
+			Assert.False(off(item));
+
+			var (tomb2, off2) = ResultsListBuilder.CreateCachedPathStatus(_ => false, _ => false);
+			Assert.False(tomb2(item));
+			Assert.True(off2(item));
+
+			var (tomb3, off3) = ResultsListBuilder.CreateCachedPathStatus(_ => true, _ => throw new InvalidOperationException("existing files must not probe the drive"));
+			Assert.False(tomb3(item));
+			Assert.False(off3(item));
+		}
+
+		// Regression (Linux forum report): every rebuild ran File.Exists twice and a
+		// DriveInfo query once PER MISSING FILE on the UI thread — thousands of
+		// filesystem probes per list change on big scans. One existence probe per path,
+		// one readiness probe per volume root.
+		[Fact]
+		public void CachedPathStatus_ProbesOncePerPath_AndOncePerRoot() {
+			int existsCalls = 0, driveCalls = 0;
+			// driveReady false => tombstone is false and Build falls through to isOffline,
+			// so BOTH predicates run per item and must share the caches.
+			var (tomb, off) = ResultsListBuilder.CreateCachedPathStatus(
+				_ => { existsCalls++; return false; },
+				_ => { driveCalls++; return false; });
+
+			// Same call pattern as Build: isTombstone first, isOffline only when needed.
+			var items = new[] {
+				Item(Guid.NewGuid(), Path.GetFullPath("m1.mp4")),
+				Item(Guid.NewGuid(), Path.GetFullPath("m2.mp4")),
+				Item(Guid.NewGuid(), Path.GetFullPath("m3.mp4")),
+			};
+			foreach (var i in items) {
+				bool t = tomb(i);
+				if (!t) _ = off(i);
+			}
+
+			Assert.Equal(items.Length, existsCalls);
+			Assert.Equal(1, driveCalls); // all paths share one volume root
+		}
 	}
 }

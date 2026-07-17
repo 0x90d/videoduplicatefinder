@@ -50,6 +50,10 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _SelectedLogItem, value);
 		}
 		List<HashSet<string>> GroupBlacklist = new();
+		// Serializes scan-result exports: automatic backups (after deletes, marks,
+		// thumbnail retrieval) can overlap a user-triggered export, and both write the
+		// same .tmp file next to the target.
+		readonly SemaphoreSlim scanResultsExportGate = new(1, 1);
 		public string BackupScanResultsFile =>
 			Path.Combine(CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder), "backup.scanresults");
 		public string BlacklistedGroupsFile =>
@@ -945,6 +949,7 @@ namespace VDF.GUI.ViewModels {
 
 			if (string.IsNullOrEmpty(path)) return;
 
+			await scanResultsExportGate.WaitAsync();
 			IsBusy = true;
 			IsBusyOverlayText = App.Lang["Busy.SavingScanResults"];
 			var dir = Path.GetDirectoryName(path)!;
@@ -953,46 +958,42 @@ namespace VDF.GUI.ViewModels {
 			try {
 				var snapshot = Duplicates.ToList();
 				var envelope = new ScanResultsEnvelope { Version = ScanResultsEnvelope.CurrentVersion, Items = snapshot };
+				var typeInfo = envelopeTypeInfo ?? GuiJsonFieldsContext.Default.ScanResultsEnvelope;
+				var pack = Utils.ThumbCacheHelpers.Provider;
 
-				if (!includeThumbnails) {
-					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
-					await JsonSerializer.SerializeAsync(fs, envelope, envelopeTypeInfo ?? GuiJsonFieldsContext.Default.ScanResultsEnvelope);
-				}
-				else {
-					await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
-					using var zip = new ZipArchive(fs, ZipArchiveMode.Create, leaveOpen: false);
-					var jsonEntry = zip.CreateEntry("scan.json", CompressionLevel.NoCompression);
-
-					await using (var es = jsonEntry.Open()) {
-						await JsonSerializer.SerializeAsync(es, envelope, envelopeTypeInfo ?? GuiJsonFieldsContext.Default.ScanResultsEnvelope);
-						await es.FlushAsync();
-					}
-
-					Utils.ThumbCacheHelpers.Provider?.FlushIndex();
-
-					if (TempDirectory != null) {
-						var packPath = Path.Combine(TempDirectory.Path, "thumbs.pack");
-						var idxPath = Path.Combine(TempDirectory.Path, "thumbs.idx");
-
-						if (File.Exists(packPath) && Utils.ThumbCacheHelpers.Provider != null) {
-							var packEntry = zip.CreateEntry("thumbs.pack", CompressionLevel.NoCompression);
-							using var es = packEntry.Open();
-							Utils.ThumbCacheHelpers.Provider.CopyTo(es);
+				// Serialization and the pack copy are heavy file/CPU work; on a large scan
+				// the automatic backup used to freeze the GUI for its entire duration
+				// (it runs on the UI thread right after "Thumbnail loading complete" and
+				// after every deletion batch).
+				await Task.Run(() => {
+					using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 128 * 1024)) {
+						if (!includeThumbnails) {
+							JsonSerializer.Serialize(fs, envelope, typeInfo);
 						}
+						else {
+							using var zip = new ZipArchive(fs, ZipArchiveMode.Create, leaveOpen: false);
+							var jsonEntry = zip.CreateEntry("scan.json", CompressionLevel.NoCompression);
+							using (var es = jsonEntry.Open())
+								JsonSerializer.Serialize(es, envelope, typeInfo);
 
-						if (File.Exists(idxPath)) {
-							var idxEntry = zip.CreateEntry("thumbs.idx", CompressionLevel.NoCompression);
-							using var es = idxEntry.Open();
-							using var fs2 = File.OpenRead(idxPath);
-							fs2.CopyTo(es);
+							if (pack != null) {
+								// Snapshot under the pack lock is cheap (length + index); the
+								// multi-GB copy itself runs lock-free so thumbnail loads in
+								// the UI stay responsive during a backup.
+								var (packLength, indexJson) = pack.SnapshotForExport();
+								var packEntry = zip.CreateEntry("thumbs.pack", CompressionLevel.NoCompression);
+								using (var es = packEntry.Open())
+									pack.CopyPackTo(es, packLength);
+								var idxEntry = zip.CreateEntry("thumbs.idx", CompressionLevel.NoCompression);
+								using (var es = idxEntry.Open())
+									es.Write(indexJson, 0, indexJson.Length);
+							}
 						}
 					}
-				}
-
-				File.Move(tmp, path, overwrite: true);
+					File.Move(tmp, path, overwrite: true);
+				});
 			}
 			catch (Exception ex) {
-				IsBusy = false;
 				string error = string.Format(App.Lang["Message.ExportScanResultsFailed"], ex);
 				Logger.Instance.Error(error);
 				await MessageBoxService.Show(error);
@@ -1000,6 +1001,7 @@ namespace VDF.GUI.ViewModels {
 			finally {
 				try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* ignore */ }
 				IsBusy = false;
+				scanResultsExportGate.Release();
 			}
 		}
 
