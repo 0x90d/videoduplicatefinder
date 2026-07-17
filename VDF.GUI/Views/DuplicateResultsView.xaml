@@ -768,16 +768,27 @@
                       Text="{Binding Item.ItemInfo.Path, Converter={StaticResource FileNameConverter}}"
                       ToolTip.Tip="{Binding Item.ItemInfo.Path, Converter={StaticResource FileNameConverter}}" />
                 </DockPanel>
-                <!-- Border supplies the hit-test surface for hover tooltip + click-to-copy -->
+                <!-- Border supplies the hit-test surface for hover tooltip + click-to-copy
+                     (copy fires only on an already-selected row, #849) -->
                 <Border
                     Background="Transparent"
                     IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!ResultsCompactRows}"
                     ToolTip.Tip="{Binding Item.ItemInfo.Path}"
                     PointerPressed="OnPathPointerPressed">
-                  <ctl:MiddleEllipsisTextBlock
-                      FontSize="11.5"
-                      Opacity="0.65"
-                      Text="{Binding Item.ItemInfo.Path, Converter={StaticResource DirectoryPathConverter}}" />
+                  <DockPanel>
+                    <TextBlock
+                        DockPanel.Dock="Right"
+                        Margin="8,0,0,0"
+                        FontSize="11.5"
+                        VerticalAlignment="Center"
+                        Foreground="{DynamicResource VdfGoodBrush}"
+                        IsVisible="{Binding Item.PathCopiedFlash}"
+                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.PathCopied]}" />
+                    <ctl:MiddleEllipsisTextBlock
+                        FontSize="11.5"
+                        Opacity="0.65"
+                        Text="{Binding Item.ItemInfo.Path, Converter={StaticResource DirectoryPathConverter}}" />
+                  </DockPanel>
                 </Border>
               </StackPanel>
             </DockPanel>

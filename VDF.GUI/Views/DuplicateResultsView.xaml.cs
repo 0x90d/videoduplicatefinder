@@ -117,12 +117,20 @@ namespace VDF.GUI.Views {
 			e.Handled = true;
 		}
 
-		// Click on the path line copies the full path (locked design decision 5).
+		// Click on the path line copies the full path (locked design decision 5), but only
+		// when the row was already selected — see ResultsInteractionRules (#849). This
+		// handler runs on the path element BEFORE the event bubbles up to the ListBoxItem,
+		// so SelectedItems still holds the pre-click selection here.
 		async void OnPathPointerPressed(object? sender, PointerPressedEventArgs e) {
-			if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
 			if ((sender as Control)?.DataContext is not ResultsItemRow row) return;
-			if (TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard)
+			bool rowWasAlreadySelected = ResultsListControl.SelectedItems?.Contains(row) == true;
+			if (!ResultsInteractionRules.ShouldCopyPathOnPointerPress(
+					e.GetCurrentPoint(this).Properties.IsLeftButtonPressed, rowWasAlreadySelected))
+				return;
+			if (TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard) {
 				await clipboard.SetTextAsync(row.Item.ItemInfo.Path);
+				await row.Item.FlashPathCopiedAsync();
+			}
 		}
 
 		void OnPreviewGripDragDelta(object? sender, VectorEventArgs e) {

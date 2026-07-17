@@ -623,6 +623,7 @@
 	"Results.Row.Best": "BESTE",
 	"Results.Row.BestTip": "Höchste Qualität in dieser Gruppe, entschieden durch: {0}. Die Rangfolge lässt sich unter Auto-Auswahl > Niedrigste Qualität auswählen ändern.",
 	"Results.Row.BestTipTied": "Höchste Qualität in dieser Gruppe; die Dateien sind bei allen Qualitätskriterien praktisch gleich. Die Rangfolge lässt sich unter Auto-Auswahl > Niedrigste Qualität auswählen ändern.",
+	"Results.Row.PathCopied": "Kopiert",
 	"Results.Row.ToggleCheck": "Markierung umschalten",
 	"Results.Action.CheckedSuffix": "markiert",
 	"Results.Action.Delete": "Löschen",

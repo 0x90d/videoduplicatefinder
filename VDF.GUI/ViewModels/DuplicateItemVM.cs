@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Text.Json.Serialization;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media.Imaging;
@@ -173,6 +174,27 @@ namespace VDF.GUI.ViewModels {
 		public bool Checked {
 			get => _Checked;
 			set => this.RaiseAndSetIfChanged(ref _Checked, value);
+		}
+
+		bool _PathCopiedFlash;
+		/// <summary>Transient "Copied" badge next to the path after a deliberate copy click (#849).</summary>
+		[JsonIgnore]
+		public bool PathCopiedFlash {
+			get => _PathCopiedFlash;
+			set => this.RaiseAndSetIfChanged(ref _PathCopiedFlash, value);
+		}
+
+		int pathCopiedFlashVersion;
+		/// <summary>
+		/// Shows the badge for <paramref name="durationMs"/>; rapid re-copies extend the
+		/// flash instead of an older timer hiding a newer badge early.
+		/// </summary>
+		internal async Task FlashPathCopiedAsync(int durationMs = 1500) {
+			int version = Interlocked.Increment(ref pathCopiedFlashVersion);
+			PathCopiedFlash = true;
+			await Task.Delay(durationMs);
+			if (version == Volatile.Read(ref pathCopiedFlashVersion))
+				PathCopiedFlash = false;
 		}
 
 		// Hover-diff display: when non-null, shown instead of the normal value

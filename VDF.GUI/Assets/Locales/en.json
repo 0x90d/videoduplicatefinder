@@ -623,6 +623,7 @@
 	"Results.Row.Best": "BEST",
 	"Results.Row.BestTip": "Highest quality in this group, decided by: {0}. The ranking order can be changed under Auto-select > Check Lowest Quality.",
 	"Results.Row.BestTipTied": "Highest quality in this group; the files are effectively equal on all quality criteria. The ranking order can be changed under Auto-select > Check Lowest Quality.",
+	"Results.Row.PathCopied": "Copied",
 	"Results.Row.ToggleCheck": "Toggle checkbox",
 	"Results.Action.CheckedSuffix": "checked",
 	"Results.Action.Delete": "Delete",
