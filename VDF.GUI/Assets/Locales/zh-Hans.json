@@ -403,6 +403,7 @@
 	"Message.RescanConfirm": "确定要重新扫描吗？",
 	"Message.SettingsLoadFailed": "无法加载设置，VDF 已使用默认设置启动。\n\n{0}",
 	"Message.RestartRequired": "请重启 VDF 以应用新设置。",
+	"Message.ThumbnailCountFullScan": "快速重新扫描之间无法更改缩略图数量。需要进行完整扫描。",
 	"Message.SaveResultsPrompt": "是否保存结果并在下次启动 VDF 时继续？",
 	"Message.ClearAllExcludedConfirm": "确定要清空所有被排除文件夹的列表吗？",
 	"Message.ClearAllIncludedConfirm": "确定要清空所有包含文件夹的列表吗？",

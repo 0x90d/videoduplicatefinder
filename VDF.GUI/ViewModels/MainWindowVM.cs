@@ -496,11 +496,27 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		public async void Thumbnails_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) {
-			bool isReadyToCompare = IsGathered;
-			isReadyToCompare &= Scanner.Settings.ThumbnailCount == e.NewValue;
-			if (!isReadyToCompare && ApplicationHelpers.MainWindowDataContext.IsReadyToCompare)
-				await MessageBoxService.Show($"Number of thumbnails can't be changed between quick rescans. Full scan will be required.");
+			var (isReadyToCompare, showWarning) = EvaluateThumbnailCountChange(
+				IsGathered, Scanner.Settings.ThumbnailCount, e.NewValue, ApplicationHelpers.MainWindowDataContext.IsReadyToCompare);
+			// The flag must flip BEFORE the dialog await: it used to be reset only after
+			// the box was dismissed, so every further arrow click made in the meantime
+			// still saw wasReady == true and stacked another box on top (2026-07-17
+			// report - clicking the stepper kept spawning boxes until one OK was hit).
 			ApplicationHelpers.MainWindowDataContext.IsReadyToCompare = isReadyToCompare;
+			if (showWarning)
+				await MessageBoxService.Show(App.Lang["Message.ThumbnailCountFullScan"]);
+		}
+
+		/// <summary>
+		/// Thumbnail-count change vs. quick-rescan readiness: changing the count away
+		/// from what the last scan used forces a full scan (warn once); changing it back
+		/// restores quick-rescan readiness silently. Callers must apply the flag before
+		/// showing the warning dialog.
+		/// </summary>
+		internal static (bool IsReadyToCompare, bool ShowWarning) EvaluateThumbnailCountChange(
+				bool isGathered, int engineThumbnailCount, decimal? newValue, bool wasReadyToCompare) {
+			bool ready = isGathered && engineThumbnailCount == newValue;
+			return (ready, !ready && wasReadyToCompare);
 		}
 
 		private void Scanner_ThumbnailProgress(int arg1, int arg2) => Dispatcher.UIThread.Post(() => {

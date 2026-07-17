@@ -638,23 +638,46 @@
                   <TextBlock FontSize="11.5" Opacity="0.8" Text="{Binding Item.ItemInfo.AudioChannel, TargetNullValue=''}" />
                 </StackPanel>
               </StackPanel>
-              <!-- Bitrate: video over audio, same two-line convention as the other columns -->
-              <StackPanel
+              <!-- Bitrate: video over audio, same two-line convention as the other
+                   columns. One hover zone for both metrics (this cell previously had
+                   no hover-diff at all - the VM's bitrate cases were unreachable). -->
+              <Border
                   DockPanel.Dock="Right"
                   Width="90"
                   VerticalAlignment="Center"
+                  Background="Transparent"
+                  Tag="bitrate,audiobitrate"
+                  PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited"
                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowBitrateColumn}">
+                <StackPanel>
                 <TextBlock FontSize="12" Classes="metric-diff"
                            IsVisible="{Binding !Item.ItemInfo.IsImage}"
                            Classes.hi="{Binding Item.ItemInfo.IsBestBitRateKbs}"
                            Classes.lo="{Binding !Item.ItemInfo.IsBestBitRateKbs}"
-                           Text="{Binding Item.ItemInfo.BitRateKbs, Converter={StaticResource BitrateDisplayConverter}}" />
+                           Classes.eq="{Binding Item.BitRateDiff, Converter={StaticResource EqualDiffConverter}}"
+                           Classes.diffing="{Binding Item.BitRateDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <TextBlock.Text>
+                    <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
+                      <Binding Path="Item.ItemInfo.BitRateKbs" Converter="{StaticResource BitrateDisplayConverter}" />
+                      <Binding Path="Item.BitRateDiff" />
+                    </MultiBinding>
+                  </TextBlock.Text>
+                </TextBlock>
                 <TextBlock FontSize="11.5" Classes="metric-diff"
                            IsVisible="{Binding !Item.ItemInfo.IsImage}"
                            Classes.hi="{Binding Item.ItemInfo.IsBestAudioBitRateKbs}"
                            Classes.lo="{Binding !Item.ItemInfo.IsBestAudioBitRateKbs}"
-                           Text="{Binding Item.ItemInfo.AudioBitRateKbs, Converter={StaticResource BitrateDisplayConverter}}" />
-              </StackPanel>
+                           Classes.eq="{Binding Item.AudioBitRateDiff, Converter={StaticResource EqualDiffConverter}}"
+                           Classes.diffing="{Binding Item.AudioBitRateDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <TextBlock.Text>
+                    <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
+                      <Binding Path="Item.ItemInfo.AudioBitRateKbs" Converter="{StaticResource BitrateDisplayConverter}" />
+                      <Binding Path="Item.AudioBitRateDiff" />
+                    </MultiBinding>
+                  </TextBlock.Text>
+                </TextBlock>
+                </StackPanel>
+              </Border>
               <!-- Size · Date -->
               <StackPanel
                   DockPanel.Dock="Right"

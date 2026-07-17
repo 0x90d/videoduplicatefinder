@@ -408,6 +408,7 @@
 	"Message.RescanConfirm": "비교만 다시 실행할까요? (파일 재수집 없이 현재 기준으로 재비교)",
 	"Message.SettingsLoadFailed": "설정을 불러올 수 없어 VDF가 기본 설정으로 시작되었습니다.\n\n{0}",
 	"Message.RestartRequired": "새 설정을 적용하려면 VDF를 재시작하세요.",
+	"Message.ThumbnailCountFullScan": "빠른 재검사 사이에는 썸네일 수를 변경할 수 없습니다. 전체 검사가 필요합니다.",
 	"Message.SaveResultsPrompt": "결과를 저장하고 다음에 VDF를 시작할 때 이어서 쓰시겠습니까?",
 	"Message.ClearAllExcludedConfirm": "제외된 모든 폴더 목록을 정말 비우시겠습니까?",
 	"Message.ClearAllIncludedConfirm": "포함된 모든 폴더 목록을 정말 비우시겠습니까?",

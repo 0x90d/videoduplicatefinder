@@ -408,6 +408,7 @@
 	"Message.RescanConfirm": "Are you sure to perform a rescan?",
 	"Message.SettingsLoadFailed": "Your settings could not be loaded, so VDF started with default settings.\n\n{0}",
 	"Message.RestartRequired": "Please restart VDF to apply new settings.",
+	"Message.ThumbnailCountFullScan": "Number of thumbnails can't be changed between quick rescans. Full scan will be required.",
 	"Message.SaveResultsPrompt": "Do you want to save the results and continue next time you start VDF?",
 	"Message.ClearAllExcludedConfirm": "Are you sure you want to clear the list of ALL excluded folders?",
 	"Message.ClearAllIncludedConfirm": "Are you sure you want to clear the list of ALL included folders?",

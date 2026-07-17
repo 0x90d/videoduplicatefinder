@@ -403,6 +403,7 @@
 	"Message.RescanConfirm": "Möchten Sie wirklich einen erneuten Scan durchführen?",
 	"Message.SettingsLoadFailed": "Die Einstellungen konnten nicht geladen werden, daher wurde VDF mit Standardeinstellungen gestartet.\n\n{0}",
 	"Message.RestartRequired": "Bitte starten Sie VDF neu, um neue Einstellungen zu übernehmen.",
+	"Message.ThumbnailCountFullScan": "Die Anzahl der Thumbnails kann zwischen schnellen Rescans nicht geändert werden. Ein vollständiger Scan ist erforderlich.",
 	"Message.SaveResultsPrompt": "Möchten Sie die Ergebnisse speichern und beim nächsten Start von VDF fortfahren?",
 	"Message.ClearAllExcludedConfirm": "Sind Sie sicher, dass Sie die Liste ALLER ausgeschlossenen Ordner löschen möchten?",
 	"Message.ClearAllIncludedConfirm": "Sind Sie sicher, dass Sie die Liste ALLER eingeschlossenen Ordner löschen möchten?",

@@ -79,6 +79,23 @@ namespace VDF.GUI.Tests {
 		}
 
 		[Fact]
+		public void BitrateMetrics_DiffLikeTheOthers() {
+			// The bitrate cell had no hover zone at all until 2026-07-17 - these VM
+			// cases were unreachable dead code. Now that the XAML routes through them,
+			// pin their behavior.
+			var best = Item();
+			best.ItemInfo.BitRateKbs = 1000;
+			best.ItemInfo.IsBestBitRateKbs = true;
+			var worse = Item();
+			worse.ItemInfo.BitRateKbs = 750;
+
+			MainWindowVM.ApplyHoverDiffs(new[] { best, worse }, "bitrate", Best);
+
+			Assert.Equal(Best, best.BitRateDiff);
+			Assert.Equal("-25%", worse.BitRateDiff);
+		}
+
+		[Fact]
 		public void AllTiedOn_CoversEveryHoverableMetric() {
 			var a = Item(duration: TimeSpan.FromMinutes(1), frameSizeInt: 100, size: 5);
 			var b = Item(duration: TimeSpan.FromMinutes(1), frameSizeInt: 100, size: 5);
