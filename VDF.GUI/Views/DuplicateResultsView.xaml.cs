@@ -51,6 +51,46 @@ namespace VDF.GUI.Views {
 				ResultsListControl.SelectedItem = row;
 				ResultsListControl.ScrollIntoView(row);
 			};
+			vm.ResultsAnchorProvider = TopmostVisibleRow;
+			vm.ResultsScrollToRow = ScrollRowToTop;
+		}
+
+		/// <summary>Row whose realized container is topmost in the viewport (partially visible counts).</summary>
+		object? TopmostVisibleRow() {
+			if (resultsScrollViewer == null) return null;
+			object? best = null;
+			double bestTop = double.MaxValue;
+			foreach (var container in ResultsListControl.GetRealizedContainers()) {
+				if (container.TranslatePoint(new Point(0, 0), resultsScrollViewer) is not { } p) continue;
+				if (p.Y + container.Bounds.Height <= 0) continue; // fully above the viewport
+				if (p.Y < bestTop) {
+					bestTop = p.Y;
+					best = container.DataContext;
+				}
+			}
+			return best;
+		}
+
+		/// <summary>
+		/// Scrolls the row to the TOP of the viewport once the rebuilt list has a layout.
+		/// ScrollIntoView alone only guarantees visibility (the row lands at whichever
+		/// edge is closer), which still reads as "shuffled to a random place".
+		/// </summary>
+		void ScrollRowToTop(object row) {
+			Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+				int index = ResultsListControl.Items.IndexOf(row);
+				if (index < 0) return;
+				ResultsListControl.ScrollIntoView(index);
+				// ScrollIntoView realized the container; align its top edge after layout.
+				Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+					if (resultsScrollViewer == null) return;
+					var container = ResultsListControl.ContainerFromIndex(index);
+					if (container?.TranslatePoint(new Point(0, 0), resultsScrollViewer) is not { } p) return;
+					resultsScrollViewer.Offset = new Vector(
+						resultsScrollViewer.Offset.X,
+						Math.Max(0, resultsScrollViewer.Offset.Y + p.Y));
+				}, Avalonia.Threading.DispatcherPriority.Loaded);
+			}, Avalonia.Threading.DispatcherPriority.Loaded);
 		}
 
 		// Group headers are rendered inside the same ListBox as file rows; they must never

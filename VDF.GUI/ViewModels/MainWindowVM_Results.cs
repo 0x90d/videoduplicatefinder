@@ -49,6 +49,10 @@ namespace VDF.GUI.ViewModels {
 		// ignorant of the concrete ListBox.
 		internal Func<List<DuplicateItemVM>>? NewResultsSelectionProvider;
 		internal Action<ResultsItemRow>? NewResultsSelectAndScrollTo;
+		/// <summary>Topmost visible row before a rebuild (scroll anchor, see <see cref="ResultsScrollAnchor"/>).</summary>
+		internal Func<object?>? ResultsAnchorProvider;
+		/// <summary>Scrolls the given row of the rebuilt list to the top of the viewport.</summary>
+		internal Action<object>? ResultsScrollToRow;
 
 		public ResultsSortOption[] ResultsSortOptions { get; } = {
 			new(App.Lang["Results.Sort.WastedSpace"], ResultsSortMode.WastedSpace),
@@ -103,6 +107,8 @@ namespace VDF.GUI.ViewModels {
 
 		/// <summary>Rebuilds the flattened list from the current duplicates, filter and sort.</summary>
 		internal void RebuildResultsList() {
+			object? anchor = ResultsAnchorProvider?.Invoke();
+			List<Guid> oldGroupOrder = resultsGroups.ConvertAll(g => g.GroupId);
 			var result = ResultsListBuilder.Build(new ResultsBuildRequest {
 				Items = Duplicates.ToList(),
 				Filter = DuplicatesFilterCore,
@@ -122,6 +128,11 @@ namespace VDF.GUI.ViewModels {
 			ResultsRows.Clear();
 			ResultsRows.AddRange(result.Rows);
 			this.RaisePropertyChanged(nameof(ResultsShowClipOffsetColumn));
+			// The rebuild replaced every row object while the ScrollViewer kept its pixel
+			// offset — without restoring the anchor, deleting groups dumps the user at a
+			// random position in the list.
+			if (ResultsScrollAnchor.FindRestoreTarget(anchor, oldGroupOrder, result.Rows) is { } target)
+				ResultsScrollToRow?.Invoke(target);
 		}
 
 		/// <summary>Refreshes the results list after filter/sort/list changes.</summary>
