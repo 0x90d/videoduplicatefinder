@@ -27,12 +27,35 @@ namespace VDF.GUI.ViewModels {
 			var groupId = item.ItemInfo.GroupId;
 			_lastHoveredGroupId = groupId;
 			var groupItems = Duplicates.Where(d => d.ItemInfo.GroupId == groupId).ToList();
+			ApplyHoverDiffs(groupItems, metric, BestLabel);
+		}
+
+		/// <summary>
+		/// True when every group member has the same value for the metric. Hover-diff
+		/// shows nothing in that case: with a tie, every member is "best", and replacing
+		/// identical values with the word BEST on every row conveys nothing and reads as
+		/// corrupted cells (#849 report).
+		/// </summary>
+		internal static bool AllTiedOn(IReadOnlyList<DuplicateItemVM> items, string metric) => metric switch {
+			"duration" => items.Select(i => i.ItemInfo.Duration).Distinct().Count() <= 1,
+			"framesize" => items.Select(i => i.ItemInfo.FrameSizeInt).Distinct().Count() <= 1,
+			"size" => items.Select(i => i.ItemInfo.SizeLong).Distinct().Count() <= 1,
+			"fps" => items.Select(i => i.ItemInfo.Fps).Distinct().Count() <= 1,
+			"bitrate" => items.Select(i => i.ItemInfo.BitRateKbs).Distinct().Count() <= 1,
+			"audiosamplerate" => items.Select(i => i.ItemInfo.AudioSampleRate).Distinct().Count() <= 1,
+			"audiobitrate" => items.Select(i => i.ItemInfo.AudioBitRateKbs).Distinct().Count() <= 1,
+			_ => false,
+		};
+
+		internal static void ApplyHoverDiffs(IReadOnlyList<DuplicateItemVM> groupItems, string metric, string bestLabel) {
+			if (AllTiedOn(groupItems, metric))
+				return;
 
 			foreach (var gi in groupItems) {
 				switch (metric) {
 					case "duration":
 						if (gi.ItemInfo.IsBestDuration)
-							gi.DurationDiff = BestLabel;
+							gi.DurationDiff = bestLabel;
 						else {
 							var bestDuration = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestDuration)?.ItemInfo.Duration
 								?? groupItems.Max(i => i.ItemInfo.Duration);
@@ -43,7 +66,7 @@ namespace VDF.GUI.ViewModels {
 
 					case "framesize":
 						if (gi.ItemInfo.IsBestFrameSize)
-							gi.FrameSizeDiff = BestLabel;
+							gi.FrameSizeDiff = bestLabel;
 						else {
 							int bestPixels = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestFrameSize)?.ItemInfo.FrameSizeInt
 								?? groupItems.Max(i => i.ItemInfo.FrameSizeInt);
@@ -56,7 +79,7 @@ namespace VDF.GUI.ViewModels {
 
 					case "size":
 						if (gi.ItemInfo.IsBestSize)
-							gi.SizeDiff = BestLabel;
+							gi.SizeDiff = bestLabel;
 						else {
 							long bestSize = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestSize)?.ItemInfo.SizeLong
 								?? groupItems.Max(i => i.ItemInfo.SizeLong);
@@ -69,7 +92,7 @@ namespace VDF.GUI.ViewModels {
 
 					case "fps":
 						if (gi.ItemInfo.IsBestFps)
-							gi.FpsDiff = BestLabel;
+							gi.FpsDiff = bestLabel;
 						else {
 							float bestFps = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestFps)?.ItemInfo.Fps
 								?? groupItems.Max(i => i.ItemInfo.Fps);
@@ -82,7 +105,7 @@ namespace VDF.GUI.ViewModels {
 
 					case "bitrate":
 						if (gi.ItemInfo.IsBestBitRateKbs)
-							gi.BitRateDiff = BestLabel;
+							gi.BitRateDiff = bestLabel;
 						else {
 							decimal bestBitRate = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestBitRateKbs)?.ItemInfo.BitRateKbs
 								?? groupItems.Max(i => i.ItemInfo.BitRateKbs);
@@ -95,7 +118,7 @@ namespace VDF.GUI.ViewModels {
 
 					case "audiosamplerate":
 						if (gi.ItemInfo.IsBestAudioSampleRate)
-							gi.AudioSampleRateDiff = BestLabel;
+							gi.AudioSampleRateDiff = bestLabel;
 						else {
 							int bestRate = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestAudioSampleRate)?.ItemInfo.AudioSampleRate
 								?? groupItems.Max(i => i.ItemInfo.AudioSampleRate);
@@ -108,7 +131,7 @@ namespace VDF.GUI.ViewModels {
 
 					case "audiobitrate":
 						if (gi.ItemInfo.IsBestAudioBitRateKbs)
-							gi.AudioBitRateDiff = BestLabel;
+							gi.AudioBitRateDiff = bestLabel;
 						else {
 							decimal bestAudioBitRate = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestAudioBitRateKbs)?.ItemInfo.AudioBitRateKbs
 								?? groupItems.Max(i => i.ItemInfo.AudioBitRateKbs);

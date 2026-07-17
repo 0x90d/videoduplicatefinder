@@ -176,15 +176,60 @@ namespace VDF.GUI.Views {
 				columns.Margin = new Thickness(0, 0, inset, 0);
 		}
 
-		// Hover-diff: same contract as the classic grid — Tag carries the metric name.
+		// Hover-diff. Tag carries the metric name(s), comma-separated: a two-line cell
+		// (Duration·Res) is ONE hover zone activating both its metrics — separate stacked
+		// zones made the display flip on tiny vertical mouse moves (#849 gif).
+		//
+		// Timing: activation waits for the pointer to rest (a raw PointerEntered swap
+		// flipped values the instant the cursor crossed a cell on its way elsewhere),
+		// and clearing gets a short grace so moving between rows of the same group —
+		// whose diffs are identical — doesn't clear and re-flash them. The swap itself
+		// fades in via the metric-diff.diffing animation in XAML.
+		static readonly TimeSpan HoverActivateDelay = TimeSpan.FromMilliseconds(160);
+		static readonly TimeSpan HoverClearGrace = TimeSpan.FromMilliseconds(120);
+		Avalonia.Threading.DispatcherTimer? metricHoverTimer;
+		Avalonia.Threading.DispatcherTimer? metricClearTimer;
+		DuplicateItemVM? activeDiffItem;
+		string? activeDiffMetrics;
+
 		void OnMetricPointerEntered(object? sender, PointerEventArgs e) {
-			if (sender is Border { Tag: string metric, DataContext: ResultsItemRow row })
-				ViewModel?.SetHoveredMetric(row.Item, metric);
+			if (sender is not Border { Tag: string metrics, DataContext: ResultsItemRow row }) return;
+			metricHoverTimer?.Stop();
+			// Same group, same metrics: the shown diffs are already correct — just keep them.
+			if (activeDiffItem != null && activeDiffMetrics == metrics &&
+				activeDiffItem.ItemInfo.GroupId == row.Item.ItemInfo.GroupId) {
+				metricClearTimer?.Stop();
+				return;
+			}
+			metricHoverTimer = RunOnce(HoverActivateDelay, () => {
+				if (ViewModel is not { } vm) return;
+				metricClearTimer?.Stop();
+				if (activeDiffItem != null)
+					vm.ClearHoveredMetric(activeDiffItem);
+				foreach (var metric in metrics.Split(','))
+					vm.SetHoveredMetric(row.Item, metric);
+				activeDiffItem = row.Item;
+				activeDiffMetrics = metrics;
+			});
 		}
 
 		void OnMetricPointerExited(object? sender, PointerEventArgs e) {
-			if (sender is Border { DataContext: ResultsItemRow row })
-				ViewModel?.ClearHoveredMetric(row.Item);
+			metricHoverTimer?.Stop();
+			if (activeDiffItem == null) return;
+			metricClearTimer?.Stop();
+			metricClearTimer = RunOnce(HoverClearGrace, () => {
+				if (activeDiffItem != null)
+					ViewModel?.ClearHoveredMetric(activeDiffItem);
+				activeDiffItem = null;
+				activeDiffMetrics = null;
+			});
+		}
+
+		static Avalonia.Threading.DispatcherTimer RunOnce(TimeSpan delay, Action action) {
+			var timer = new Avalonia.Threading.DispatcherTimer { Interval = delay };
+			timer.Tick += (_, _) => { timer.Stop(); action(); };
+			timer.Start();
+			return timer;
 		}
 	}
 }

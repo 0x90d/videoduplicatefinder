@@ -117,6 +117,21 @@
     <Style Selector="TextBlock.metric-diff.eq">
       <Setter Property="Foreground" Value="{DynamicResource VdfMutedBrush}" />
     </Style>
+    <!-- Hover-diff swap fades in instead of snapping (#849 report: values flipping
+         "suddenly forth and back"). Only activation animates; clearing restores the
+         familiar values immediately. -->
+    <Style Selector="TextBlock.metric-diff.diffing">
+      <Style.Animations>
+        <Animation Duration="0:0:0.18" FillMode="Forward">
+          <KeyFrame Cue="0%">
+            <Setter Property="Opacity" Value="0" />
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="Opacity" Value="1" />
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
     <!-- HDR chip: neutral bordered info chip; green when it wins a mixed group -->
     <Style Selector="Border.hdrchip">
       <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container3BorderBrush}" />
@@ -604,7 +619,8 @@
                   <TextBlock FontSize="12" Opacity="0.5" Text="·" />
                   <Border Tag="fps" Background="Transparent"
                           PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                    <TextBlock FontSize="12" Classes="metric-diff">
+                    <TextBlock FontSize="12" Classes="metric-diff"
+                               Classes.diffing="{Binding Item.FpsDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                       <TextBlock.Text>
                         <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0} fps">
                           <Binding Path="Item.ItemInfo.Fps" />
@@ -650,7 +666,8 @@
                   <TextBlock FontSize="12" Classes="metric-diff"
                              Classes.hi="{Binding Item.ItemInfo.IsBestSize}"
                              Classes.lo="{Binding !Item.ItemInfo.IsBestSize}"
-                             Classes.eq="{Binding Item.SizeDiff, Converter={StaticResource EqualDiffConverter}}">
+                             Classes.eq="{Binding Item.SizeDiff, Converter={StaticResource EqualDiffConverter}}"
+                             Classes.diffing="{Binding Item.SizeDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock.Text>
                       <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
                         <Binding Path="Item.ItemInfo.Size" />
@@ -662,42 +679,43 @@
                 <TextBlock FontSize="11.5" Opacity="0.8"
                            Text="{Binding Item.ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}" />
               </StackPanel>
-              <!-- Duration · Resolution -->
-              <StackPanel
+              <!-- Duration · Resolution: ONE hover zone for both metrics — two stacked
+                   zones flipped the display on tiny vertical mouse moves (#849) -->
+              <Border
                   DockPanel.Dock="Right"
                   Width="110"
                   VerticalAlignment="Center"
+                  Background="Transparent"
+                  Tag="duration,framesize"
+                  PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited"
                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}">
-                <Border Tag="duration" Background="Transparent"
-                        IsVisible="{Binding !Item.ItemInfo.IsImage}"
-                        PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                  <TextBlock FontSize="12" Classes="metric-diff"
-                             Classes.hi="{Binding Item.ItemInfo.IsBestDuration}"
-                             Classes.lo="{Binding !Item.ItemInfo.IsBestDuration}"
-                             Classes.eq="{Binding Item.DurationDiff, Converter={StaticResource EqualDiffConverter}}">
+                <StackPanel>
+                <TextBlock FontSize="12" Classes="metric-diff"
+                           IsVisible="{Binding !Item.ItemInfo.IsImage}"
+                           Classes.hi="{Binding Item.ItemInfo.IsBestDuration}"
+                           Classes.lo="{Binding !Item.ItemInfo.IsBestDuration}"
+                           Classes.eq="{Binding Item.DurationDiff, Converter={StaticResource EqualDiffConverter}}"
+                           Classes.diffing="{Binding Item.DurationDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <TextBlock.Text>
+                    <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0:hh\:mm\:ss}">
+                      <Binding Path="Item.ItemInfo.Duration" />
+                      <Binding Path="Item.DurationDiff" />
+                    </MultiBinding>
+                  </TextBlock.Text>
+                </TextBlock>
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <TextBlock FontSize="11.5" Classes="metric-diff"
+                             Classes.hi="{Binding Item.ItemInfo.IsBestFrameSize}"
+                             Classes.lo="{Binding !Item.ItemInfo.IsBestFrameSize}"
+                             Classes.eq="{Binding Item.FrameSizeDiff, Converter={StaticResource EqualDiffConverter}}"
+                             Classes.diffing="{Binding Item.FrameSizeDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock.Text>
-                      <MultiBinding Converter="{StaticResource MetricDisplayConverter}" ConverterParameter="{}{0:hh\:mm\:ss}">
-                        <Binding Path="Item.ItemInfo.Duration" />
-                        <Binding Path="Item.DurationDiff" />
+                      <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
+                        <Binding Path="Item.ItemInfo.FrameSize" />
+                        <Binding Path="Item.FrameSizeDiff" />
                       </MultiBinding>
                     </TextBlock.Text>
                   </TextBlock>
-                </Border>
-                <StackPanel Orientation="Horizontal" Spacing="5">
-                  <Border Tag="framesize" Background="Transparent"
-                          PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
-                    <TextBlock FontSize="11.5" Classes="metric-diff"
-                               Classes.hi="{Binding Item.ItemInfo.IsBestFrameSize}"
-                               Classes.lo="{Binding !Item.ItemInfo.IsBestFrameSize}"
-                               Classes.eq="{Binding Item.FrameSizeDiff, Converter={StaticResource EqualDiffConverter}}">
-                      <TextBlock.Text>
-                        <MultiBinding Converter="{StaticResource MetricDisplayConverter}">
-                          <Binding Path="Item.ItemInfo.FrameSize" />
-                          <Binding Path="Item.FrameSizeDiff" />
-                        </MultiBinding>
-                      </TextBlock.Text>
-                    </TextBlock>
-                  </Border>
                   <!-- HDR chip: neutral information; green only when this member's
                        format outranks another member of the group -->
                   <Border Classes="hdrchip" Classes.best="{Binding HdrIsUpgrade}"
@@ -705,7 +723,8 @@
                     <TextBlock Text="{Binding Item.ItemInfo.HdrFormat}" />
                   </Border>
                 </StackPanel>
-              </StackPanel>
+                </StackPanel>
+              </Border>
               <!-- File name + path (fills remaining width) -->
               <StackPanel Margin="6,0,6,0" VerticalAlignment="Center" Spacing="1">
                 <!-- Badges dock right so the name gets a finite width and its trimming
