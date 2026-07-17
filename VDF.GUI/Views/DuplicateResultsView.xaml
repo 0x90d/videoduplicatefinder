@@ -845,8 +845,7 @@
         IsVisible="{Binding !!DuplicatesCheckedCounter}">
       <DockPanel LastChildFill="False">
         <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold">
-          <Run Text="{Binding DuplicatesCheckedCounter, Mode=OneWay}" />
-          <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.CheckedSuffix]}" />
+          <Run Text="{Binding CheckedSummaryText, Mode=OneWay}" />
           <Run Text=" · " />
           <Run Text="{Binding DuplicatesCheckedSize, Mode=OneWay}" />
         </TextBlock>

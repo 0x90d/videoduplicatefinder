@@ -269,8 +269,18 @@ namespace VDF.GUI.ViewModels {
 		int _DuplicatesCheckedCounter;
 		public int DuplicatesCheckedCounter {
 			get => _DuplicatesCheckedCounter;
-			set => this.RaiseAndSetIfChanged(ref _DuplicatesCheckedCounter, value);
+			set {
+				this.RaiseAndSetIfChanged(ref _DuplicatesCheckedCounter, value);
+				this.RaisePropertyChanged(nameof(CheckedSummaryText));
+			}
 		}
+
+		/// <summary>Action-bar label "N checked from M groups" (group count asked for in the #849 thread).</summary>
+		public string CheckedSummaryText => FormatCheckedSummary(DuplicatesCheckedCounter, checkedCountByGroup.Count,
+			App.Lang["Results.Action.CheckedSummary"], App.Lang["Results.Action.CheckedSummarySingleGroup"]);
+
+		internal static string FormatCheckedSummary(int checkedCount, int groupCount, string pluralFormat, string singleGroupFormat) =>
+			string.Format(groupCount == 1 ? singleGroupFormat : pluralFormat, checkedCount, groupCount);
 		long _DuplicatesCheckedSizeInternal;
 		long DuplicatesCheckedSizeInternal {
 			get => _DuplicatesCheckedSizeInternal;
@@ -353,6 +363,7 @@ namespace VDF.GUI.ViewModels {
 				checkedCountByGroup.Remove(groupId);
 			else
 				checkedCountByGroup[groupId] = count;
+			this.RaisePropertyChanged(nameof(CheckedSummaryText));
 		}
 		public bool IsMultiOpenSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultiple);
 		public bool IsMultiOpenInFolderSupported => !string.IsNullOrEmpty(SettingsFile.Instance.CustomCommands.OpenMultipleInFolder);
