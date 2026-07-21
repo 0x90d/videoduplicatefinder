@@ -39,17 +39,48 @@ namespace VDF.Core.Utils {
 		const string FilePrefix = "scan-inflight-";
 
 		static string? journalFolder;
+		static volatile bool shutdownCleared;
+		static int processExitHookRegistered;
 		[ThreadStatic] static string? threadFile;
 
 		internal readonly record struct Suspect(string Phase, string Path);
 
 		/// <summary>Sets the folder breadcrumbs live in (the database folder). While null, Begin/End/Collect are no-ops.</summary>
-		internal static void Initialize(string? folder) => journalFolder = folder;
+		internal static void Initialize(string? folder) {
+			journalFolder = folder;
+			shutdownCleared = false;
+			// Covers every frontend (GUI window close, CLI Ctrl+C, Web SIGTERM) without
+			// per-frontend wiring. A native access violation never runs ProcessExit —
+			// its breadcrumbs survive, which is the entire crash signal.
+			if (folder != null && Interlocked.Exchange(ref processExitHookRegistered, 1) == 0)
+				AppDomain.CurrentDomain.ProcessExit += (_, _) => ClearOnCleanShutdown();
+		}
+
+		/// <summary>
+		/// Graceful-shutdown hook: a process that gets here did NOT die inside native code,
+		/// so any in-flight breadcrumbs are innocent (the user closed the app or aborted the
+		/// scan mid-file) and must not be quarantined at the next scan.
+		/// </summary>
+		internal static void ClearOnCleanShutdown() {
+			shutdownCleared = true; // stop new Begin() writes first, then blank what exists
+			string? folder = journalFolder;
+			if (folder == null)
+				return;
+			try {
+				foreach (string file in Directory.EnumerateFiles(folder, FilePrefix + "*.txt")) {
+					try {
+						File.WriteAllText(file, string.Empty);
+					}
+					catch (Exception) { }
+				}
+			}
+			catch (Exception) { }
+		}
 
 		/// <summary>Records that this thread is about to process <paramref name="mediaFile"/>.</summary>
 		internal static void Begin(string phase, string mediaFile) {
 			string? folder = journalFolder;
-			if (folder == null)
+			if (folder == null || shutdownCleared)
 				return;
 			try {
 				// Not cached across calls: the database folder can change between scans.

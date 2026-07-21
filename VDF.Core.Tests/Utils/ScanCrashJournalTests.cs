@@ -86,6 +86,30 @@ public class ScanCrashJournalTests : IDisposable {
 		Assert.Empty(BreadcrumbFiles());
 	}
 
+	[Fact]
+	public void CleanShutdown_BlanksInFlightBreadcrumbs() {
+		// Closing the app (or Ctrl+C) mid-scan is not a crash: the files that were in
+		// flight are innocent and must not be quarantined at the next scan.
+		ScanCrashJournal.Begin(ScanCrashJournal.PhaseAudio, @"C:\videos\innocent.mp4");
+
+		ScanCrashJournal.ClearOnCleanShutdown();
+
+		Assert.Empty(ScanCrashJournal.CollectLeftovers());
+	}
+
+	[Fact]
+	public void CleanShutdown_StopsNewBreadcrumbWrites() {
+		ScanCrashJournal.ClearOnCleanShutdown();
+		ScanCrashJournal.Begin(ScanCrashJournal.PhaseSampling, @"C:\videos\late.mp4");
+
+		Assert.Empty(ScanCrashJournal.CollectLeftovers());
+
+		// The next scan session re-enables the journal.
+		ScanCrashJournal.Initialize(tempDir);
+		ScanCrashJournal.Begin(ScanCrashJournal.PhaseSampling, @"C:\videos\next-scan.mp4");
+		Assert.Single(ScanCrashJournal.CollectLeftovers());
+	}
+
 	[Theory]
 	[InlineData("sampling|C:\\videos\\a.mp4", true, "sampling", "C:\\videos\\a.mp4")]
 	[InlineData("audio|/mnt/media/pipe|name.mp4", true, "audio", "/mnt/media/pipe|name.mp4")] // split at FIRST pipe only

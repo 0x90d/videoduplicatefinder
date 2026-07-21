@@ -84,6 +84,11 @@ namespace VDF.GUI {
 
 				try { TempExtractionManager.DisposeAll(); }
 				catch { /* ignore */ }
+
+				// This exit is not a native crash — files a scan still had in flight are
+				// innocent and must not be quarantined at the next scan (#861).
+				try { VDF.Core.Utils.ScanCrashJournal.ClearOnCleanShutdown(); }
+				catch { /* ignore */ }
 			}
 			catch { /* last resort */ }
 		}
