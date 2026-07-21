@@ -50,6 +50,9 @@ namespace VDF.Core.Utils {
 
 		static string DatabaseFolder => _resolvedDatabaseFolder ??= ResolveDatabaseFolder();
 
+		/// <summary>Resolved folder the database (and its sidecar files) live in.</summary>
+		internal static string GetDatabaseFolderPath() => DatabaseFolder;
+
 		static string CurrentDatabasePath => FileUtils.SafePathCombine(DatabaseFolder, "ScannedFiles.db");
 		static string TempDatabasePath => FileUtils.SafePathCombine(DatabaseFolder, "ScannedFiles_new.db");
 

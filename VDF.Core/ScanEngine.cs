@@ -516,6 +516,7 @@ namespace VDF.Core {
 			FfmpegEngine.UseNativeBinding = Settings.UseNativeFfmpegBinding;
 			DatabaseUtils.CustomDatabaseFolder = Settings.CustomDatabaseFolder;
 			DatabaseUtils.InvalidateDatabaseFolder();
+			ScanCrashJournal.Initialize(DatabaseUtils.GetDatabaseFolderPath());
 			Duplicates.Clear();
 			positionList.Clear();
 			ElapsedTimer.Reset();
@@ -623,9 +624,63 @@ namespace VDF.Core {
 			isScanning = false;
 		}
 
+		/// <summary>
+		/// #861: a native access violation (corrupt file inside an FFmpeg library) kills the
+		/// process without any managed error path — nothing gets flagged, so every following
+		/// scan re-attempts the same file and dies at the same point. If a previous session
+		/// left crash breadcrumbs, flag the files that were in flight like a completed
+		/// failure: they are skipped from now on (recoverable via the "always retry failed
+		/// files" setting) and the log finally names the file that took the app down.
+		/// </summary>
+		void QuarantineCrashSuspects() {
+			List<ScanCrashJournal.Suspect> suspects = ScanCrashJournal.CollectLeftovers();
+			ApplyCrashQuarantine(DatabaseUtils.Database, suspects,
+				entry => Logger.Instance.Warn(T("Log.CrashQuarantine", entry.Path)));
+		}
+
+		/// <summary>
+		/// Whether an entry still needs an audio-fingerprint extraction pass.
+		/// Crash-quarantined entries (#861) carry AudioFingerprintError with a null
+		/// fingerprint; <paramref name="alwaysRetryFailedSampling"/> re-enables exactly
+		/// those, while completed failures stay blocked by their non-null (empty) fingerprint.
+		/// </summary>
+		internal static bool NeedsAudioFingerprint(FileEntry entry, bool partialClipDetectionEnabled, bool alwaysRetryFailedSampling) =>
+			partialClipDetectionEnabled &&
+			!entry.IsImage &&
+			!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
+			(!entry.Flags.Has(EntryFlags.AudioFingerprintError) || alwaysRetryFailedSampling) &&
+			!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
+			entry.AudioFingerprint == null;
+
+		/// <summary>Flags every database entry named by a crash suspect; returns how many were flagged.</summary>
+		internal static int ApplyCrashQuarantine(IEnumerable<FileEntry> entries,
+			IReadOnlyList<ScanCrashJournal.Suspect> suspects, Action<FileEntry>? onQuarantined = null) {
+			if (suspects.Count == 0)
+				return 0;
+			var byPath = new Dictionary<string, string>(
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+			foreach (ScanCrashJournal.Suspect suspect in suspects)
+				byPath.TryAdd(suspect.Path, suspect.Phase);
+			int flagged = 0;
+			foreach (FileEntry entry in entries) {
+				if (!byPath.TryGetValue(entry.Path, out string? phase))
+					continue;
+				// Audio crashes only poison the fingerprint pass — the entry's gray bytes
+				// are typically fine, so it must stay comparable by video.
+				if (phase == ScanCrashJournal.PhaseAudio)
+					entry.Flags.Set(EntryFlags.AudioFingerprintError);
+				else
+					entry.Flags.Set(EntryFlags.ThumbnailError);
+				flagged++;
+				onQuarantined?.Invoke(entry);
+			}
+			return flagged;
+		}
+
 		Task BuildFileList(CancellationToken cancellationToken) => Task.Run(() => {
 
 			DatabaseUtils.LoadDatabase();
+			QuarantineCrashSuspects();
 			if (DatabaseUtils.DbVersion < 2)
 				Settings.UsePHashing = false;
 
@@ -1023,17 +1078,18 @@ namespace VDF.Core {
 							}
 							if (hasAllInformation) {
 								// Thumbnails are cached but audio fingerprint might still be needed
-								if (Settings.EnablePartialClipDetection &&
-									!entry.IsImage &&
-									!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
-									!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
-									!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
-									entry.AudioFingerprint == null) {
+								if (NeedsAudioFingerprint(entry, Settings.EnablePartialClipDetection, Settings.AlwaysRetryFailedSampling)) {
 									string cachedAudioPath = entry.Path;
 									string audioStageLabel = T("Scan.Stage.AudioFingerprint");
 									ReportStage(cachedAudioPath, audioStageLabel);
-									ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
-										onProgress: p => ReportStage(cachedAudioPath, audioStageLabel, (int)(p * 100), 100));
+									ScanCrashJournal.Begin(ScanCrashJournal.PhaseAudio, cachedAudioPath);
+									try {
+										ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
+											onProgress: p => ReportStage(cachedAudioPath, audioStageLabel, (int)(p * 100), 100));
+									}
+									finally {
+										ScanCrashJournal.End();
+									}
 								}
 								CompleteEntry(entry, driveCounter);
 								return ValueTask.CompletedTask;
@@ -1070,39 +1126,52 @@ namespace VDF.Core {
 
 
 						if (entry.IsImage) {
-							if (entry.grayBytes.Count == 0) {
-								if (!GetGrayBytesFromImage(entry, Settings.UseExifCreationDate, Settings.ExtendedFFToolsLogging, aiEmbeddingPipeline))
-									entry.invalid = true;
+							ScanCrashJournal.Begin(ScanCrashJournal.PhaseImage, entry.Path);
+							try {
+								if (entry.grayBytes.Count == 0) {
+									if (!GetGrayBytesFromImage(entry, Settings.UseExifCreationDate, Settings.ExtendedFFToolsLogging, aiEmbeddingPipeline))
+										entry.invalid = true;
+								}
+								else {
+									// Gray bytes cached from an earlier scan — backfill just the embedding.
+									TryQueueImageEmbeddingFrame(entry, aiEmbeddingPipeline, Settings.ExtendedFFToolsLogging);
+								}
 							}
-							else {
-								// Gray bytes cached from an earlier scan — backfill just the embedding.
-								TryQueueImageEmbeddingFrame(entry, aiEmbeddingPipeline, Settings.ExtendedFFToolsLogging);
+							finally {
+								ScanCrashJournal.End();
 							}
 						}
 						else {
 							string entryPath = entry.Path;
 							int totalSamples = positionList.Count;
 							string samplingLabel = T("Scan.Stage.SamplingFrames");
-							if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.MaxSamplingDurationSeconds,
-									Settings.ExtendedFFToolsLogging,
-									onSampleComplete: (done) => ReportStage(entryPath, samplingLabel, done, totalSamples),
-									embeddingSink: aiEmbeddingPipeline))
-								entry.invalid = true;
+							ScanCrashJournal.Begin(ScanCrashJournal.PhaseSampling, entryPath);
+							try {
+								if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.MaxSamplingDurationSeconds,
+										Settings.ExtendedFFToolsLogging,
+										onSampleComplete: (done) => ReportStage(entryPath, samplingLabel, done, totalSamples),
+										embeddingSink: aiEmbeddingPipeline))
+									entry.invalid = true;
+							}
+							finally {
+								ScanCrashJournal.End();
+							}
 						}
 
 						// Audio fingerprint — videos only, only when enabled,
 						// skipped if already cached or flagged as having no audio track.
-						if (Settings.EnablePartialClipDetection &&
-							!entry.IsImage &&
-							!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
-							!entry.Flags.Has(EntryFlags.AudioFingerprintError) &&
-							!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
-							entry.AudioFingerprint == null) {
+						if (NeedsAudioFingerprint(entry, Settings.EnablePartialClipDetection, Settings.AlwaysRetryFailedSampling)) {
 							string audioPath = entry.Path;
 							string audioLabel = T("Scan.Stage.AudioFingerprint");
 							ReportStage(audioPath, audioLabel);
-							ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
-								onProgress: p => ReportStage(audioPath, audioLabel, (int)(p * 100), 100));
+							ScanCrashJournal.Begin(ScanCrashJournal.PhaseAudio, audioPath);
+							try {
+								ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
+									onProgress: p => ReportStage(audioPath, audioLabel, (int)(p * 100), 100));
+							}
+							finally {
+								ScanCrashJournal.End();
+							}
 						}
 
 						CompleteEntry(entry, driveCounter);

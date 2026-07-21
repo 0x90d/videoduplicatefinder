@@ -13,6 +13,7 @@
   "Log.ExcludedFilesSuppressed": " (suppressed {0:N0} log entries)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
   "Log.DatabaseCheckpoint": "Database checkpoint ({0:N0} files saved to disk).",
+  "Log.CrashQuarantine": "A previous session crashed while processing '{0}'. The file has been flagged and will be skipped from now on; enable 'Always retry failed sampling' in the settings to re-attempt it.",
   "Log.SessionScan": "Scan",
   "Log.SessionCompare": "Compare",
   "Scan.Stage.Probing": "probing metadata",

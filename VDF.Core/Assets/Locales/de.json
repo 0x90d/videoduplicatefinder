@@ -13,6 +13,7 @@
   "Log.ExcludedFilesSuppressed": " ({0:N0} Logeinträge unterdrückt)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
   "Log.DatabaseCheckpoint": "Datenbank-Checkpoint ({0:N0} Dateien auf Festplatte gespeichert).",
+  "Log.CrashQuarantine": "Eine frühere Sitzung ist bei der Verarbeitung von '{0}' abgestürzt. Die Datei wurde markiert und wird ab jetzt übersprungen; aktivieren Sie 'Fehlgeschlagene Abtastung immer wiederholen' in den Einstellungen, um sie erneut zu verarbeiten.",
   "Log.SessionScan": "Scan",
   "Log.SessionCompare": "Vergleich",
   "Scan.Stage.Probing": "Metadaten lesen",

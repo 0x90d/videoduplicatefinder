@@ -13,6 +13,7 @@
   "Log.ExcludedFilesSuppressed": " (se suprimieron {0:N0} entradas del registro)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
   "Log.DatabaseCheckpoint": "Punto de control de base de datos ({0:N0} archivos guardados en disco).",
+  "Log.CrashQuarantine": "Una sesión anterior se bloqueó al procesar '{0}'. El archivo ha sido marcado y se omitirá a partir de ahora; active 'Reintentar siempre el muestreo fallido' en la configuración para volver a intentarlo.",
   "Log.SessionScan": "Escaneo",
   "Log.SessionCompare": "Comparación",
   "Scan.Stage.Probing": "analizando metadatos",

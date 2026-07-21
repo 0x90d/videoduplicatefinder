@@ -13,6 +13,7 @@
   "Log.ExcludedFilesSuppressed": " ({0:N0} entradas de log suprimidas)",
   "Log.ExcludedFilesSummaryItem": "- {0}: {1:N0}{2}",
   "Log.DatabaseCheckpoint": "Checkpoint do banco de dados ({0:N0} arquivos salvos no disco).",
+  "Log.CrashQuarantine": "Uma sessão anterior travou ao processar '{0}'. O arquivo foi marcado e será ignorado a partir de agora; ative 'Sempre repetir amostragem com falha' nas configurações para tentar novamente.",
   "Log.SessionScan": "Varredura",
   "Log.SessionCompare": "Comparação",
   "Scan.Stage.Probing": "analisando metadados",
