@@ -20,6 +20,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 	sealed unsafe class VideoFrameConverter : IDisposable {
 		private readonly AVFrame* _pConvertedFrame;
 		private readonly SwsContext* _pConvertContext;
+		private readonly Size _sourceSize;
+		private readonly AVPixelFormat _sourcePixelFormat;
 
 		public enum ScaleQuality {
 			FastBilinear,
@@ -49,6 +51,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 			if (bitExact) flags |= (int)SwsFlags.SWS_BITEXACT;
 
+			_sourceSize = sourceSize;
+			_sourcePixelFormat = sourcePixelFormat;
 			_pConvertContext = ffmpeg.sws_getContext(sourceSize.Width,
 				sourceSize.Height,
 				sourcePixelFormat,
@@ -81,7 +85,24 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			ffmpeg.sws_freeContext(_pConvertContext);
 		}
 
+		/// <summary>
+		/// Throws when a frame does not match the layout the SwsContext was built for.
+		/// sws_scale trusts the context's configuration when reading the source planes, so a
+		/// diverging frame (corrupt file, mid-stream format/resolution change — issue #861)
+		/// makes it read out of bounds: a native access violation that kills the process.
+		/// A managed exception here instead fails the file over to the CLI fallback.
+		/// </summary>
+		internal static void ValidateSourceFrame(in AVFrame frame, Size expectedSize, AVPixelFormat expectedFormat) {
+			if (frame.width != expectedSize.Width || frame.height != expectedSize.Height || frame.format != (int)expectedFormat)
+				throw new FFInvalidExitCodeException(
+					$"Source frame layout {frame.width}x{frame.height} (format {frame.format}) does not match " +
+					$"converter configuration {expectedSize.Width}x{expectedSize.Height} (format {(int)expectedFormat}).");
+			if (frame.data[0] == null)
+				throw new FFInvalidExitCodeException("Source frame has no pixel data (data[0] is null).");
+		}
+
 		public AVFrame Convert(AVFrame sourceFrame) {
+			ValidateSourceFrame(in sourceFrame, _sourceSize, _sourcePixelFormat);
 			ffmpeg.av_frame_make_writable(_pConvertedFrame).ThrowExceptionIfError();
 			ffmpeg.sws_scale(_pConvertContext,
 				sourceFrame.data,

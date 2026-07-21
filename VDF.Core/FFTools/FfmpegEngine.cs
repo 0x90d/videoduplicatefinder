@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using FFmpeg.AutoGen;
 using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
@@ -49,6 +50,7 @@ namespace VDF.Core.FFTools {
 				// Reset the per-scan native-health state whenever native binding is (re)configured,
 				// i.e. at the start of each scan.
 				_nativeConsecutiveFailures = 0;
+				_nativeFailureLogCount = 0;
 				_nativeDisabledForSession = false;
 				_vulkanNativeWarningLogged = false;
 			}
@@ -69,20 +71,51 @@ namespace VDF.Core.FFTools {
 
 		static void RecordNativeSuccess() => _nativeConsecutiveFailures = 0;
 
+		// Per-scan cap on native-failure log output. The consecutive-failure circuit breaker
+		// above never trips on a library where working files keep resetting the counter, so a
+		// scan with many isolated bad files logged a full stack trace per failure — one report
+		// (issue #861) reached an 820 MB log. Total-count tiers instead: full detail for the
+		// first few, a compact line for a while, then only periodic running-count summaries.
+		static int _nativeFailureLogCount;
+		const int NativeFailureFullDetailLimit = 20;
+		const int NativeFailureCompactLimit = 200;
+		const int NativeFailureSummaryEvery = 100;
+
+		internal enum NativeFailureLogMode { Full, Compact, Summary, Suppressed }
+
+		internal static NativeFailureLogMode GetNativeFailureLogMode(int totalFailures) {
+			if (totalFailures <= NativeFailureFullDetailLimit)
+				return NativeFailureLogMode.Full;
+			if (totalFailures <= NativeFailureCompactLimit)
+				return NativeFailureLogMode.Compact;
+			return totalFailures % NativeFailureSummaryEvery == 0
+				? NativeFailureLogMode.Summary
+				: NativeFailureLogMode.Suppressed;
+		}
+
 		static void RecordNativeFailure(string file, Exception e) {
 			if (_nativeDisabledForSession)
 				return;
 			int n = ++_nativeConsecutiveFailures;
-			string detail = BuildNativeFailureDetail(e);
 			if (n >= NativeFailureThreshold) {
 				_nativeDisabledForSession = true;
 				Logger.Instance.Warn(
 					$"Native FFmpeg binding failed on {n} consecutive files; using process mode for the rest of this scan. " +
-					$"Last error on '{file}': {e.GetType().Name}: {e.Message}.{detail} " +
+					$"Last error on '{file}': {e.GetType().Name}: {e.Message}.{BuildNativeFailureDetail(e)} " +
 					$"If this persists, set hardware acceleration to 'none' or disable 'Use native FFmpeg binding'.");
+				return;
 			}
-			else {
-				Logger.Instance.Warn($"Failed using native FFmpeg binding on '{file}', switching to process mode. Exception: {e}{detail}");
+			int logged = Interlocked.Increment(ref _nativeFailureLogCount);
+			switch (GetNativeFailureLogMode(logged)) {
+				case NativeFailureLogMode.Full:
+					Logger.Instance.Warn($"Failed using native FFmpeg binding on '{file}', switching to process mode. Exception: {e}{BuildNativeFailureDetail(e)}");
+					break;
+				case NativeFailureLogMode.Compact:
+					Logger.Instance.Warn($"Failed using native FFmpeg binding on '{file}', switching to process mode ({logged} native failures this scan; stack traces suppressed after the first {NativeFailureFullDetailLimit}): {e.Message}{BuildNativeFailureDetail(e)}");
+					break;
+				case NativeFailureLogMode.Summary:
+					Logger.Instance.Warn($"Native FFmpeg binding has failed on {logged} files this scan (per-file warnings suppressed after the first {NativeFailureCompactLimit}). Last: '{file}': {e.Message}");
+					break;
 			}
 		}
 
@@ -215,6 +248,17 @@ namespace VDF.Core.FFTools {
 		}
 
 		/// <summary>
+		/// Source pixel format for scaling a decoded frame. The frame's own format is
+		/// authoritative: the open-time codec-context value comes from container metadata,
+		/// which corrupt files contradict (and mid-stream format changes never update it) —
+		/// scaling with the stale value made swscale read out of bounds and crash the
+		/// process (issue #861). The open-time value only remains as a fallback for frames
+		/// that report no format.
+		/// </summary>
+		internal static AVPixelFormat ResolveSourcePixelFormat(int frameFormat, AVPixelFormat openTimeFormat) =>
+			frameFormat >= 0 ? (AVPixelFormat)frameFormat : openTimeFormat;
+
+		/// <summary>
 		/// Opens a single <see cref="VideoStreamDecoder"/> and a single <see cref="VideoFrameConverter"/>
 		/// for the file, then walks the requested positions reusing both. This avoids the per-position
 		/// avformat_open_input + sws_getContext cost of looping <see cref="GetThumbnail"/>.
@@ -250,13 +294,10 @@ namespace VDF.Core.FFTools {
 						if (!vsd.TryDecodeFrame(out var srcFrame, TimeSpan.FromSeconds(position)))
 							throw new Exception($"TryDecodeFrame failed at pos={position} for '{videoFile.Path}'");
 
-						// HW decode reports the real (downloaded) sw_format on the frame itself,
-						// not on the codec context, so we read it post-decode. SW decode keeps it
-						// stable on the codec context.
 						Size sourceSize = new(
 							srcFrame.width > 0 ? srcFrame.width : vsd.FrameSize.Width,
 							srcFrame.height > 0 ? srcFrame.height : vsd.FrameSize.Height);
-						AVPixelFormat srcPixFmt = vsd.IsHardwareDecode ? (AVPixelFormat)srcFrame.format : vsd.PixelFormat;
+						AVPixelFormat srcPixFmt = ResolveSourcePixelFormat(srcFrame.format, vsd.PixelFormat);
 						if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB)
 							throw new Exception($"Invalid source pixel format {srcPixFmt}");
 						if (sourceSize.Width <= 0 || sourceSize.Height <= 0)
@@ -264,7 +305,8 @@ namespace VDF.Core.FFTools {
 
 						// Reuse the SwsContext across positions when the source layout is unchanged.
 						// In practice this is the common case for the same file; the rebuild branch
-						// only fires if HW decode hands us a different sw_format on a later frame.
+						// fires when a later frame reports a different resolution or pixel format
+						// (mid-stream change, HW sw_format switch, corrupt file).
 						if (converter == null || sourceSize != converterSourceSize || srcPixFmt != converterSrcFmt) {
 							converter?.Dispose();
 							converter = new VideoFrameConverter(
@@ -341,7 +383,7 @@ namespace VDF.Core.FFTools {
 							Size sourceSize = new(
 								srcFrame.width > 0 ? srcFrame.width : vsd.FrameSize.Width,
 								srcFrame.height > 0 ? srcFrame.height : vsd.FrameSize.Height);
-							AVPixelFormat srcPixFmt = vsd.IsHardwareDecode ? (AVPixelFormat)srcFrame.format : vsd.PixelFormat;
+							AVPixelFormat srcPixFmt = ResolveSourcePixelFormat(srcFrame.format, vsd.PixelFormat);
 							if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB ||
 								sourceSize.Width <= 0 || sourceSize.Height <= 0)
 								continue;
@@ -402,17 +444,19 @@ namespace VDF.Core.FFTools {
 
 					using var vsd = new VideoStreamDecoder(settings.File, HWDevice);
 
-					Size sourceSize = vsd.FrameSize;
-
-					// Decode first so we know the real source pixel format. For HW decode
-					// we can't know this up front — the downloaded sw_format depends on
-					// the stream's bit depth (NV12 for 8-bit, P010LE for 10-bit HEVC, etc.).
+					// Decode first so we know the real source layout. The frame's own
+					// dimensions and pixel format are authoritative — container metadata
+					// (vsd.FrameSize / vsd.PixelFormat) can lie for corrupt files, and
+					// scaling with the stale values crashes swscale (issue #861). For HW
+					// decode the sw_format is only knowable post-decode anyway (NV12 for
+					// 8-bit, P010LE for 10-bit HEVC, etc.).
 					if (!vsd.TryDecodeFrame(out var srcFrame, settings.Position))
-						throw new Exception($"TryDecodeFrame failed at pos={settings.Position} for '{settings.File}'. size={sourceSize.Width}x{sourceSize.Height}");
+						throw new Exception($"TryDecodeFrame failed at pos={settings.Position} for '{settings.File}'. size={vsd.FrameSize.Width}x{vsd.FrameSize.Height}");
 
-					AVPixelFormat srcPixFmt = vsd.IsHardwareDecode
-						? (AVPixelFormat)srcFrame.format
-						: vsd.PixelFormat;
+					Size sourceSize = new(
+						srcFrame.width > 0 ? srcFrame.width : vsd.FrameSize.Width,
+						srcFrame.height > 0 ? srcFrame.height : vsd.FrameSize.Height);
+					AVPixelFormat srcPixFmt = ResolveSourcePixelFormat(srcFrame.format, vsd.PixelFormat);
 					if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB)
 						throw new Exception($"Invalid source pixel format {srcPixFmt}");
 
@@ -1166,7 +1210,7 @@ namespace VDF.Core.FFTools {
 				Size sourceSize = new(
 					srcFrame.width > 0 ? srcFrame.width : vsd.FrameSize.Width,
 					srcFrame.height > 0 ? srcFrame.height : vsd.FrameSize.Height);
-				AVPixelFormat srcPixFmt = vsd.IsHardwareDecode ? (AVPixelFormat)srcFrame.format : vsd.PixelFormat;
+				AVPixelFormat srcPixFmt = ResolveSourcePixelFormat(srcFrame.format, vsd.PixelFormat);
 				if (srcPixFmt < 0 || srcPixFmt >= AVPixelFormat.AV_PIX_FMT_NB)
 					throw new Exception($"Invalid source pixel format {srcPixFmt}");
 				if (sourceSize.Width <= 0 || sourceSize.Height <= 0)

@@ -165,6 +165,18 @@ public static class TestVideoGenerator {
 				width, height, outputPath));
 
 	/// <summary>
+	/// Raw AAC in an ADTS stream (no container), 44.1 kHz sine tone. ADTS is
+	/// self-syncing, so two such files can be byte-concatenated into a stream whose
+	/// channel config changes mid-stream — the corrupt-audio shape behind #861.
+	/// </summary>
+	public static bool GenerateAacAdts(string ffmpegPath, string outputPath, int channels, int durationSeconds = 2) =>
+		RunFfmpeg(ffmpegPath,
+			string.Format(CultureInfo.InvariantCulture,
+				"-y -f lavfi -i sine=frequency=440:duration={0} " +
+				"-ac {1} -ar 44100 -c:a aac -b:a 128k -f adts \"{2}\"",
+				durationSeconds, channels, outputPath));
+
+	/// <summary>
 	/// Generic VP9 generator for benchmarks.
 	/// </summary>
 	public static bool GenerateVP9(string ffmpegPath, string outputPath, int width, int height, int durationSeconds, int fps = 25) =>

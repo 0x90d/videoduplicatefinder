@@ -39,6 +39,16 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 		private const AVSampleFormat TargetFormat = AVSampleFormat.AV_SAMPLE_FMT_S16;
 
+		// Input layout the resampler is currently configured for. Corrupt streams (e.g. an
+		// AAC channel-config change mid-stream, issue #861) can emit frames whose layout
+		// diverges from these values; feeding such a frame into a stale SwrContext makes
+		// swresample read plane pointers that do not exist — a native access violation
+		// that kills the whole process. DecodeAll() compares every frame against these
+		// and rebuilds the resampler on mismatch.
+		private int _swrInFormat;
+		private int _swrInSampleRate;
+		private int _swrInChannels;
+
 		// Reusable output buffer for resampled PCM (grown as needed, avoids per-frame allocation)
 		private byte[] _outBuf = new byte[8192];
 
@@ -113,17 +123,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			ffmpeg.avcodec_open2(_pCodecContext, codec, null).ThrowExceptionIfError();
 
 			// Set up resampler: source format → mono s16 at targetSampleRate
-			SwrContext* swr = null;
-			var outLayout = new AVChannelLayout();
-			ffmpeg.av_channel_layout_default(&outLayout, 1); // mono
-			var inLayout = _pCodecContext->ch_layout;
-
-			ffmpeg.swr_alloc_set_opts2(&swr,
-				&outLayout, TargetFormat, targetSampleRate,
-				&inLayout, _pCodecContext->sample_fmt, _pCodecContext->sample_rate,
-				0, null).ThrowExceptionIfError();
-			ffmpeg.swr_init(swr).ThrowExceptionIfError();
-			_pSwrContext = swr;
+			CreateResampler(_pCodecContext->ch_layout, _pCodecContext->sample_fmt, _pCodecContext->sample_rate);
 
 			_pPacket = ffmpeg.av_packet_alloc();
 			if (_pPacket == null)
@@ -131,6 +131,74 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			_pFrame = ffmpeg.av_frame_alloc();
 			if (_pFrame == null)
 				throw new FFInvalidExitCodeException("Failed to allocate AVFrame.");
+		}
+
+		/// <summary>
+		/// (Re)creates the SwrContext for the given input layout and records the layout so
+		/// <see cref="DecodeAll"/> can detect frames that no longer match it.
+		/// </summary>
+		private void CreateResampler(AVChannelLayout inLayout, AVSampleFormat inFormat, int inSampleRate) {
+			if (_pSwrContext != null) {
+				SwrContext* old = _pSwrContext;
+				ffmpeg.swr_free(&old);
+				_pSwrContext = null;
+			}
+			SwrContext* swr = null;
+			var outLayout = new AVChannelLayout();
+			ffmpeg.av_channel_layout_default(&outLayout, 1); // mono
+			try {
+				ffmpeg.swr_alloc_set_opts2(&swr,
+					&outLayout, TargetFormat, _targetSampleRate,
+					&inLayout, inFormat, inSampleRate,
+					0, null).ThrowExceptionIfError();
+				ffmpeg.swr_init(swr).ThrowExceptionIfError();
+			}
+			catch {
+				if (swr != null)
+					ffmpeg.swr_free(&swr);
+				throw;
+			}
+			_pSwrContext = swr;
+			_swrInFormat = (int)inFormat;
+			_swrInSampleRate = inSampleRate;
+			_swrInChannels = inLayout.nb_channels;
+		}
+
+		/// <summary>
+		/// True when a decoded frame's layout still matches what the resampler was configured
+		/// for. Channel COUNT is what matters for memory safety: fewer planes than configured
+		/// makes swr_convert dereference null/garbage plane pointers (issue #861). Format and
+		/// rate mismatches additionally corrupt the fingerprint. Same-count channel-order
+		/// changes are irrelevant here — everything is downmixed to mono anyway.
+		/// </summary>
+		internal static bool ResamplerInputMatches(
+			int frameFormat, int frameSampleRate, int frameChannels,
+			int configuredFormat, int configuredSampleRate, int configuredChannels) =>
+			frameFormat == configuredFormat &&
+			frameSampleRate == configuredSampleRate &&
+			frameChannels == configuredChannels;
+
+		/// <summary>True when the frame reports a layout that cannot be resampled at all.</summary>
+		internal static bool IsUndecodableFrameLayout(int frameFormat, int frameSampleRate, int frameChannels, int nbSamples) =>
+			frameFormat < 0 || frameSampleRate <= 0 || frameChannels <= 0 || nbSamples <= 0;
+
+		/// <summary>
+		/// Ensures the resampler matches <c>_pFrame</c>'s actual layout, rebuilding it when a
+		/// (corrupt) stream changed layout mid-decode. Returns the samples flushed out of the
+		/// old resampler, or -1 when the frame is garbage and must be skipped.
+		/// </summary>
+		private int EnsureResamplerMatchesFrame(Action<ReadOnlySpan<short>> onSamples) {
+			int frameFormat = _pFrame->format;
+			int frameRate = _pFrame->sample_rate;
+			int frameChannels = _pFrame->ch_layout.nb_channels;
+			if (IsUndecodableFrameLayout(frameFormat, frameRate, frameChannels, _pFrame->nb_samples))
+				return -1;
+			if (ResamplerInputMatches(frameFormat, frameRate, frameChannels, _swrInFormat, _swrInSampleRate, _swrInChannels))
+				return 0;
+			// Flush the tail buffered in the old resampler before replacing it.
+			int flushed = ConvertAndDeliver(null, 0, onSamples);
+			CreateResampler(_pFrame->ch_layout, (AVSampleFormat)frameFormat, frameRate);
+			return flushed;
 		}
 
 		/// <summary>
@@ -170,6 +238,12 @@ namespace VDF.Core.FFTools.FFmpegNative {
 						break;
 					recvResult.ThrowExceptionIfError();
 
+					int flushed = EnsureResamplerMatchesFrame(onSamples);
+					if (flushed < 0) { // garbage frame layout — skip it
+						ffmpeg.av_frame_unref(_pFrame);
+						continue;
+					}
+					totalSamples += flushed;
 					totalSamples += ConvertAndDeliver(_pFrame->extended_data, _pFrame->nb_samples, onSamples);
 					ffmpeg.av_frame_unref(_pFrame);
 				}
@@ -196,6 +270,12 @@ namespace VDF.Core.FFTools.FFmpegNative {
 						break;
 					recvResult.ThrowExceptionIfError();
 
+					int flushed = EnsureResamplerMatchesFrame(onSamples);
+					if (flushed < 0) { // garbage frame layout — skip it
+						ffmpeg.av_frame_unref(_pFrame);
+						continue;
+					}
+					totalSamples += flushed;
 					totalSamples += ConvertAndDeliver(_pFrame->extended_data, _pFrame->nb_samples, onSamples);
 					ffmpeg.av_frame_unref(_pFrame);
 				}
