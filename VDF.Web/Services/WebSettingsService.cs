@@ -34,6 +34,7 @@ namespace VDF.Web.Services {
 			public bool IncludeSubDirectories { get; set; } = true;
 			public bool IncludeImages { get; set; } = true;
 			public bool UsePHashing { get; set; }
+			public bool CombineGrayscaleAndPHash { get; set; }
 			public bool IgnoreReadOnlyFolders { get; set; }
 			public bool IgnoreReparsePoints { get; set; }
 			public bool ExcludeHardLinks { get; set; }
@@ -123,6 +124,7 @@ namespace VDF.Web.Services {
 				s.IncludeSubDirectories = dto.IncludeSubDirectories;
 				s.IncludeImages = dto.IncludeImages;
 				s.UsePHashing = dto.UsePHashing;
+				s.CombineGrayscaleAndPHash = dto.CombineGrayscaleAndPHash;
 				s.IgnoreReadOnlyFolders = dto.IgnoreReadOnlyFolders;
 				s.IgnoreReparsePoints = dto.IgnoreReparsePoints;
 				s.ExcludeHardLinks = dto.ExcludeHardLinks;
@@ -188,6 +190,7 @@ namespace VDF.Web.Services {
 					IncludeSubDirectories = s.IncludeSubDirectories,
 					IncludeImages = s.IncludeImages,
 					UsePHashing = s.UsePHashing,
+					CombineGrayscaleAndPHash = s.CombineGrayscaleAndPHash,
 					IgnoreReadOnlyFolders = s.IgnoreReadOnlyFolders,
 					IgnoreReparsePoints = s.IgnoreReparsePoints,
 					ExcludeHardLinks = s.ExcludeHardLinks,

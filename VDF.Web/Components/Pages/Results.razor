@@ -294,6 +294,12 @@ else {
                                     @if (item.Flags.HasFlag(VDF.Core.DuplicateFlags.AiMatched)) {
                                         <span class="badge-ai-matched">AI match</span>
                                     }
+                                    @if (item.Flags.HasFlag(VDF.Core.DuplicateFlags.GrayscaleMatched)) {
+                                        <span class="badge-partial-clip">grayscale</span>
+                                    }
+                                    @if (item.Flags.HasFlag(VDF.Core.DuplicateFlags.PHashMatched)) {
+                                        <span class="badge-partial-clip">pHash</span>
+                                    }
                                 </div>
                             </div>
                         </div>

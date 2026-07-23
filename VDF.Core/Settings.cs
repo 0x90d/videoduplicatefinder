@@ -56,6 +56,15 @@ namespace VDF.Core {
 		public FolderMatchMode FolderMatchMode;
 		public int SameFolderDepth = 1;
 		public bool UsePHashing;
+		/// <summary>
+		/// #842: run BOTH classic algorithms (grayscale percent-diff and pHash) in one
+		/// comparison pass. A pair counts as duplicate when either matches; the
+		/// <see cref="DuplicateFlags.GrayscaleMatched"/>/<see cref="DuplicateFlags.PHashMatched"/>
+		/// flags record which one(s) found it. Takes precedence over <see cref="UsePHashing"/>.
+		/// Costs one extra comparison per pair, not a second scan of the files - the
+		/// pHashes derive from the same stored grayscale samples.
+		/// </summary>
+		public bool CombineGrayscaleAndPHash;
 		public bool UseExifCreationDate;
 		public string LanguageCode = "en";
 

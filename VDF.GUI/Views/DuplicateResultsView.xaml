@@ -479,6 +479,20 @@
                 <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Title}" />
                 <TextBlock Classes="meta" VerticalAlignment="Center" Text="{Binding Summary}" />
                 <TextBlock FontSize="11" Opacity="0.6" VerticalAlignment="Center" Text="{Binding SimilarityRangeDisplay}" />
+                <!-- Combined-mode badges (#842): which classic algorithm(s) matched in
+                     this group. Only ever set by the combined grayscale+pHash scan. -->
+                <Border Classes="simchip" Padding="5,0" CornerRadius="3" VerticalAlignment="Center"
+                        IsVisible="{Binding HasGrayscaleMatches}"
+                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.GrayscaleTip]}">
+                  <TextBlock FontSize="10" FontWeight="Bold"
+                             Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.Grayscale]}" />
+                </Border>
+                <Border Classes="simchip" Padding="5,0" CornerRadius="3" VerticalAlignment="Center"
+                        IsVisible="{Binding HasPHashMatches}"
+                        ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.PHashTip]}">
+                  <TextBlock FontSize="10" FontWeight="Bold"
+                             Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.PHash]}" />
+                </Border>
               </StackPanel>
             </DockPanel>
           </Border>

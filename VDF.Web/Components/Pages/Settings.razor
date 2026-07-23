@@ -87,6 +87,12 @@
     </label>
     <label>
         <input type="checkbox"
+               checked="@Scan.Settings.CombineGrayscaleAndPHash"
+               @onchange="e => Scan.Settings.CombineGrayscaleAndPHash = (bool)e.Value!" />
+        Combined matching (grayscale AND pHash in one pass; badges name the algorithm that found each group)
+    </label>
+    <label>
+        <input type="checkbox"
                checked="@Scan.Settings.UseAiMatching"
                @onchange="e => Scan.Settings.UseAiMatching = (bool)e.Value!" />
         AI matching (additional pass; downloads ONNX Runtime + model on first scan, ~100 MB)

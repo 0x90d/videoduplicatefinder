@@ -44,6 +44,10 @@ namespace VDF.GUI.ViewModels {
 		public bool HasCheckedItems { get; init; }
 		/// <summary>Member rows are omitted from the flattened list while collapsed.</summary>
 		public bool IsCollapsed { get; init; }
+		/// <summary>A member was matched by the grayscale comparison (combined mode, #842).</summary>
+		public bool HasGrayscaleMatches { get; init; }
+		/// <summary>A member was matched by the pHash comparison (combined mode, #842).</summary>
+		public bool HasPHashMatches { get; init; }
 
 		/// <summary>Localized "Group N" title, set by the builder from the active formats.</summary>
 		public string Title { get; internal set; } = string.Empty;

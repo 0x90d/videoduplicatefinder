@@ -260,16 +260,26 @@
               <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UsePHash.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UsePHash.Desc]}"
-                  SearchTags="phash perceptual hash">
+                  SearchTags="phash perceptual hash"
+                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!CombineGrayPHash}">
                 <ToggleSwitch Classes="plain"
                               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}" />
+              </views:SettingRow>
+
+              <!-- #842: run grayscale AND pHash in one pass; groups get per-algorithm badges. -->
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.CombineGrayPHash.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.CombineGrayPHash.Desc]}"
+                  SearchTags="combined both algorithms grayscale phash badges">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=CombineGrayPHash}" />
               </views:SettingRow>
 
               <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.PHashSampleRatio.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.PHashSampleRatio.Desc]}"
                   SearchTags="phash samples quorum frames false positives"
-                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=UsePHash}">
+                  IsEnabled="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PHashComparisonActive}">
                 <NumericUpDown Classes="stepper" FormatString="\{0\}%" Increment="1" Maximum="100" Minimum="1"
                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=PHashSampleRatioPercent}" />
               </views:SettingRow>

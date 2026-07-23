@@ -1690,6 +1690,7 @@ Non-Windows setup:
 			Scanner.Settings.FolderMatchMode = SettingsFile.Instance.FolderMatchMode;
 			Scanner.Settings.SameFolderDepth = SettingsFile.Instance.SameFolderDepth;
 			Scanner.Settings.UsePHashing = SettingsFile.Instance.UsePHash;
+			Scanner.Settings.CombineGrayscaleAndPHash = SettingsFile.Instance.CombineGrayPHash;
 			Scanner.Settings.PHashRequiredMatchingSampleRatio = SettingsFile.Instance.PHashSampleRatioPercent / 100f;
 			Scanner.Settings.UseAiMatching = SettingsFile.Instance.UseAiMatching;
 			Scanner.Settings.AiPercent = SettingsFile.Instance.AiPercent;

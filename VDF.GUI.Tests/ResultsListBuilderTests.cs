@@ -490,6 +490,26 @@ namespace VDF.GUI.Tests {
 				plain.Groups[0].Rows.Select(r => r.Item.ItemInfo.Path).ToArray());
 		}
 
+		// #842: combined-mode algorithm flags aggregate to group-level badges.
+		[Fact]
+		public void CombinedModeFlags_AggregateToGroupBadges() {
+			Guid combined = Guid.NewGuid(), plain = Guid.NewGuid();
+			var carrier = Item(combined, "found-by-both");
+			carrier.ItemInfo.Flags = VDF.Core.DuplicateFlags.GrayscaleMatched | VDF.Core.DuplicateFlags.PHashMatched;
+			var partner = Item(combined, "partner");
+			var p1 = Item(plain, "p1");
+			var p2 = Item(plain, "p2");
+
+			var result = ResultsListBuilder.Build(Request(carrier, partner, p1, p2));
+
+			var combinedHeader = result.Groups.Single(h => h.GroupId == combined);
+			Assert.True(combinedHeader.HasGrayscaleMatches);
+			Assert.True(combinedHeader.HasPHashMatches);
+			var plainHeader = result.Groups.Single(h => h.GroupId == plain);
+			Assert.False(plainHeader.HasGrayscaleMatches);
+			Assert.False(plainHeader.HasPHashMatches);
+		}
+
 		[Fact]
 		public void BestFirst_FlattenedRowsFollowTheReorderedGroup() {
 			Guid g = Guid.NewGuid();

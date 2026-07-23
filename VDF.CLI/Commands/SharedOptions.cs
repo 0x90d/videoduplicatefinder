@@ -97,6 +97,10 @@ namespace VDF.CLI.Commands {
 			Description = "Use perceptual hashing instead of frame sampling."
 		};
 
+		internal static readonly Option<bool> CombinedMatching = new("--combined-matching") {
+			Description = "Run BOTH classic algorithms (grayscale and pHash) in one comparison pass; a match by either counts and the output flags name the algorithm(s) that found it. Takes precedence over --use-phash."
+		};
+
 		internal static readonly Option<double> PhashSampleRatio = new("--phash-sample-ratio") {
 			Description = "Minimum fraction (0.01-1.0) of sampled frame positions that must individually pass the pHash similarity threshold for a pair to match. Only used with --use-phash. Default: 0.6.",
 			DefaultValueFactory = _ => 0.6,
@@ -215,6 +219,7 @@ namespace VDF.CLI.Commands {
 			if (r.GetResult(NoSubdirs) != null) s.IncludeSubDirectories = !r.GetValue(NoSubdirs);
 			if (r.GetResult(IncludeImages) != null) s.IncludeImages = r.GetValue(IncludeImages);
 			if (r.GetResult(UsePhash) != null) s.UsePHashing = r.GetValue(UsePhash);
+			if (r.GetResult(CombinedMatching) != null) s.CombineGrayscaleAndPHash = r.GetValue(CombinedMatching);
 			// Clamp to [0.01, 1]: an explicit 0 clamps to the 0.01 minimum instead of being
 			// mistaken for "unset" (avoids the 0-sentinel overload the #804 remap has).
 			if (r.GetResult(PhashSampleRatio) != null)
@@ -256,6 +261,7 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(Database);
 			cmd.Options.Add(IncludeNonExistingFiles);
 			cmd.Options.Add(UsePhash);
+			cmd.Options.Add(CombinedMatching);
 			cmd.Options.Add(PhashSampleRatio);
 			cmd.Options.Add(NativeFfmpeg);
 			cmd.Options.Add(HardwareAccel);
@@ -285,6 +291,7 @@ namespace VDF.CLI.Commands {
 			cmd.Options.Add(NoSubdirs);
 			cmd.Options.Add(IncludeImages);
 			cmd.Options.Add(UsePhash);
+			cmd.Options.Add(CombinedMatching);
 			cmd.Options.Add(PhashSampleRatio);
 			cmd.Options.Add(NativeFfmpeg);
 			cmd.Options.Add(HardwareAccel);

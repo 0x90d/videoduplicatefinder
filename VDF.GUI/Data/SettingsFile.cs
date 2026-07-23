@@ -350,8 +350,24 @@ namespace VDF.GUI.Data {
 		[JsonPropertyName("UsePHash")]
 		public bool UsePHash {
 			get => _UsePHash;
-			set => this.RaiseAndSetIfChanged(ref _UsePHash, value);
+			set {
+				this.RaiseAndSetIfChanged(ref _UsePHash, value);
+				this.RaisePropertyChanged(nameof(PHashComparisonActive));
+			}
 		}
+		bool _CombineGrayPHash;
+		/// <summary>#842: run grayscale AND pHash in one comparison pass and badge which algorithm found each group. Takes precedence over UsePHash.</summary>
+		[JsonPropertyName("CombineGrayPHash")]
+		public bool CombineGrayPHash {
+			get => _CombineGrayPHash;
+			set {
+				this.RaiseAndSetIfChanged(ref _CombineGrayPHash, value);
+				this.RaisePropertyChanged(nameof(PHashComparisonActive));
+			}
+		}
+		/// <summary>The pHash comparison (and its sample-quorum setting) is in play - alone or combined.</summary>
+		[JsonIgnore]
+		public bool PHashComparisonActive => UsePHash || CombineGrayPHash;
 		float _PHashSampleRatioPercent = 60f;
 		/// <summary>Percentage of sampled frame positions that must individually pass the pHash threshold — see Core's PHashRequiredMatchingSampleRatio (0..1).</summary>
 		[JsonPropertyName("PHashSampleRatioPercent")]

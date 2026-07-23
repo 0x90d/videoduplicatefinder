@@ -64,6 +64,15 @@ public class SharedOptionsApplyTests {
 		Assert.Equal(expected, Apply(ScanCommand.Build(), "--phash-sample-ratio", value).PHashRequiredMatchingSampleRatio, 3);
 	}
 
+	// ---- --combined-matching (#842) ----
+
+	[Fact]
+	public void CombinedMatching_DefaultsOff_AndHonorsTheFlag() {
+		Assert.False(Apply(ScanCommand.Build()).CombineGrayscaleAndPHash);
+		Assert.True(Apply(ScanCommand.Build(), "--combined-matching").CombineGrayscaleAndPHash);
+		Assert.True(Apply(CompareCommand.Build(), "--combined-matching").CombineGrayscaleAndPHash);
+	}
+
 	// ---- --matching-parallelism ----
 
 	[Fact]

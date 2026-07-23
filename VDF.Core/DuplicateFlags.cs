@@ -22,5 +22,10 @@ namespace VDF.Core {
 		Flipped = 1,
 		PartialClip = 2,  // This item is a partial clip (audio- or AI-matched) of another item in the same group
 		AiMatched = 4,    // Found only by the AI embedding pass, not by the classic gray-bytes/pHash check
+		// Which classic algorithm(s) matched the pair. Only set by the combined
+		// grayscale+pHash mode (#842) - single-algorithm scans would badge every
+		// group with the same flag, which carries no information.
+		GrayscaleMatched = 8,
+		PHashMatched = 16,
 	};
 }
