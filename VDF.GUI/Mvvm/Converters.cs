@@ -187,6 +187,8 @@ namespace VDF.GUI.Mvvm {
 			if (result == null) return null;
 			if (targetType == typeof(double))
 				return System.Convert.ToDouble(result, CultureInfo.InvariantCulture);
+			if (targetType == typeof(int))
+				return System.Convert.ToInt32(result, CultureInfo.InvariantCulture);
 			if (typeof(IBrush).IsAssignableFrom(targetType) && result is not IBrush)
 				return new SolidColorBrush(Color.Parse(result.ToString()!));
 			return result;

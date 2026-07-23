@@ -26,6 +26,8 @@
     <mvvm:ResultsRowSizingConverter x:Key="ResultsRowSizingConverter" />
     <mvvm:BoolToValueConverter x:Key="ChevronConverter" TrueValue="▸" FalseValue="▾" />
     <mvvm:BoolToValueConverter x:Key="SortDirectionGlyphConverter" TrueValue="↓" FalseValue="↑" />
+    <!-- #854: compact rows keep the single-line name; comfortable rows may wrap to two. -->
+    <mvvm:BoolToValueConverter x:Key="FileNameMaxLinesConverter" TrueValue="1" FalseValue="2" />
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -815,10 +817,17 @@
                           Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleItemDetailsCommand}"
                           CommandParameter="{Binding Item}" />
                   </StackPanel>
+                  <!-- The name may wrap to a second line in comfortable mode before it
+                       trims: with a wide preview or a narrow window a single line cut
+                       long names down to a few characters (#854). Capped at two lines
+                       so pathological names can't blow up the row; full name stays in
+                       the tooltip. -->
                   <TextBlock
                       FontSize="13"
                       FontWeight="SemiBold"
                       HorizontalAlignment="Left"
+                      TextWrapping="Wrap"
+                      MaxLines="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsCompactRows, Converter={StaticResource FileNameMaxLinesConverter}}"
                       TextTrimming="CharacterEllipsis"
                       Text="{Binding Item.ItemInfo.Path, Converter={StaticResource FileNameConverter}}"
                       ToolTip.Tip="{Binding Item.ItemInfo.Path, Converter={StaticResource FileNameConverter}}" />
