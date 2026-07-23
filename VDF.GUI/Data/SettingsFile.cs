@@ -516,6 +516,18 @@ namespace VDF.GUI.Data {
 			get => _ThumbnailComparerMode;
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerMode, value);
 		}
+		double _ThumbnailComparerDiffSensitivity = 0.5;
+		[JsonPropertyName("ThumbnailComparerDiffSensitivity")]
+		public double ThumbnailComparerDiffSensitivity {
+			get => _ThumbnailComparerDiffSensitivity;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerDiffSensitivity, value);
+		}
+		bool _ThumbnailComparerHighlightDifferences = false;
+		[JsonPropertyName("ThumbnailComparerHighlightDifferences")]
+		public bool ThumbnailComparerHighlightDifferences {
+			get => _ThumbnailComparerHighlightDifferences;
+			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerHighlightDifferences, value);
+		}
 		bool _ShowThumbnailColumn = true;
 		[JsonPropertyName("ShowThumbnailColumn")]
 		public bool ShowThumbnailColumn {

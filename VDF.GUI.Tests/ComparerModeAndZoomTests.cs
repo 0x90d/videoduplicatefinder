@@ -38,6 +38,20 @@ public class ComparerModeTests {
 		Assert.Equal(expectForceSingle, ThumbnailComparerVM.ShouldForceSingleView(mode, hasA, hasB));
 }
 
+// The diff overlay is only worth computing while the highlight toggle is on and both
+// frames are on screen; every other state must clear it instead of burning a
+// background task.
+public class ComparerDiffGateTests {
+	[Theory]
+	[InlineData(true, true, true, true)]
+	[InlineData(true, false, true, false)]
+	[InlineData(true, true, false, false)]
+	[InlineData(false, true, true, false)]
+	[InlineData(false, false, false, false)]
+	public void DiffComputesOnlyWhenToggledOnWithBothImages(bool highlightOn, bool hasA, bool hasB, bool expected) =>
+		Assert.Equal(expected, ThumbnailComparerVM.ShouldComputeDiff(highlightOn, hasA, hasB));
+}
+
 // Pan/zoom offsets are clamped so content can never be pushed fully out of the viewport,
 // and content smaller than the viewport is centered instead of pannable.
 public class ZoomPanClampTests {

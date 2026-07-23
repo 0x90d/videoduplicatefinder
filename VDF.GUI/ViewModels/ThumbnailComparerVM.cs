@@ -29,6 +29,7 @@ using VDF.GUI.Data;
 using VDF.GUI.Utils;
 
 namespace VDF.GUI.ViewModels {
+	// Persisted numerically in Settings.json — append new modes, never reorder.
 	public enum CompareMode { Single, Swipe, SideBySide, Stacked }
 	public sealed class ThumbnailComparerVM : ReactiveObject {
 		public ObservableCollection<LargeThumbnailDuplicateItem> Items { get; }
@@ -133,6 +134,71 @@ namespace VDF.GUI.ViewModels {
 				this.RaiseAndSetIfChanged(ref _modeSliderValue, value);
 				Recalc();
 			}
+		}
+
+		// --- Highlight differences (red boxes around regions where A and B differ) ---
+
+		private bool _highlightDifferences = SettingsFile.Instance.ThumbnailComparerHighlightDifferences;
+		public bool HighlightDifferences {
+			get => _highlightDifferences;
+			set {
+				this.RaiseAndSetIfChanged(ref _highlightDifferences, value);
+				SettingsFile.Instance.ThumbnailComparerHighlightDifferences = value;
+			}
+		}
+
+		private double _diffSensitivity = SettingsFile.Instance.ThumbnailComparerDiffSensitivity;
+		public double DiffSensitivity {
+			get => _diffSensitivity;
+			set {
+				this.RaiseAndSetIfChanged(ref _diffSensitivity, value);
+				SettingsFile.Instance.ThumbnailComparerDiffSensitivity = value;
+			}
+		}
+
+		// Transparent bitmap with the region outlines; rendered as a second
+		// Stretch=Uniform Image over each pane, so it tracks zoom/pan for free.
+		private Bitmap? _diffOverlay;
+		public Bitmap? DiffOverlay { get => _diffOverlay; private set => this.RaiseAndSetIfChanged(ref _diffOverlay, value); }
+
+		private bool _isComputingDiff;
+		public bool IsComputingDiff { get => _isComputingDiff; private set => this.RaiseAndSetIfChanged(ref _isComputingDiff, value); }
+
+		CancellationTokenSource? _diffCts;
+
+		internal static bool ShouldComputeDiff(bool highlightOn, bool hasImageA, bool hasImageB) =>
+			highlightOn && hasImageA && hasImageB;
+
+		void UpdateDiffOverlay() {
+			_diffCts?.Cancel();
+			_diffCts = null;
+			var imgA = ImageA;
+			var imgB = ImageB;
+			if (!ShouldComputeDiff(HighlightDifferences, imgA != null, imgB != null)) {
+				DiffOverlay = null;
+				IsComputingDiff = false;
+				return;
+			}
+			var sensitivity = DiffSensitivity;
+			var cts = new CancellationTokenSource();
+			_diffCts = cts;
+			IsComputingDiff = true;
+			_ = Task.Run(() => {
+				Bitmap? overlay = null;
+				try {
+					overlay = DiffOverlayRenderer.Render(imgA!, imgB!, sensitivity);
+				}
+				catch { /* unreadable pixels — reported below as unavailable */ }
+				if (cts.IsCancellationRequested) return;
+				RxSchedulers.MainThreadScheduler.Schedule(() => {
+					if (!ReferenceEquals(_diffCts, cts)) return;
+					_diffCts = null;
+					IsComputingDiff = false;
+					DiffOverlay = overlay;
+					if (overlay is null && HighlightDifferences)
+						ShowMessage(App.Lang["ThumbnailComparerDialog.DiffFailed"]);
+				});
+			});
 		}
 
 		// --- Frame stepping (works in ALL modes) ---
@@ -274,6 +340,7 @@ namespace VDF.GUI.ViewModels {
 		public void CancelBackgroundWork() {
 			_loadCts?.Cancel();
 			_frameExtractCts?.Cancel();
+			_diffCts?.Cancel();
 		}
 
 		public ThumbnailComparerVM(List<LargeThumbnailDuplicateItem> duplicateItemVMs)
@@ -290,6 +357,11 @@ namespace VDF.GUI.ViewModels {
 			_groupNavigator = groupNavigator;
 			_groupPosition = groupPosition;
 
+			// A settings file written by a build that had more modes may carry an
+			// out-of-range value; fall back instead of showing a blank canvas.
+			if ((uint)_selectedCompareMode > (uint)CompareMode.Stacked)
+				_selectedCompareMode = CompareMode.SideBySide;
+
 			var modes = new ObservableCollection<CompareMode> {
 				CompareMode.Single, CompareMode.Swipe, CompareMode.SideBySide, CompareMode.Stacked
 			};
@@ -301,6 +373,13 @@ namespace VDF.GUI.ViewModels {
 				.Throttle(TimeSpan.FromMilliseconds(16))
 				.ObserveOn(RxSchedulers.MainThreadScheduler)
 				.Subscribe(_ => Recalc());
+
+			// Sensitivity drags and frame steps land here throttled, so the pixel work
+			// (a background Task per recompute) never queues up behind a slider.
+			this.WhenAnyValue(vm => vm.HighlightDifferences, vm => vm.ImageA, vm => vm.ImageB, vm => vm.DiffSensitivity)
+				.Throttle(TimeSpan.FromMilliseconds(120))
+				.ObserveOn(RxSchedulers.MainThreadScheduler)
+				.Subscribe(_ => UpdateDiffOverlay());
 
 			FitToViewCommand = ReactiveCommand.Create(() => { Zoom = 1.0; PanOffsetX = 0; PanOffsetY = 0; });
 			ResetZoomCommand = ReactiveCommand.Create(() => { Zoom = 1.0; PanOffsetX = 0; PanOffsetY = 0; });

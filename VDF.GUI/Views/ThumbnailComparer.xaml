@@ -217,6 +217,17 @@
                         </Border>
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <ToggleButton Classes="tool-btn" FontSize="12.5"
+                                      IsChecked="{Binding HighlightDifferences}"
+                                      Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.HighlightDifferences]}"
+                                      ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.DiffHint]}" />
+                        <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="0.7"
+                                   IsVisible="{Binding HighlightDifferences}"
+                                   Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.DiffSensitivity]}" />
+                        <Slider Width="110" VerticalAlignment="Center" Minimum="0" Maximum="1"
+                                IsVisible="{Binding HighlightDifferences}"
+                                Value="{Binding DiffSensitivity}" />
+                        <Border Width="1" Height="22" Margin="4,0" Background="{DynamicResource SystemControlHighlightBaseLowBrush}" />
                         <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="0.7"
                                    Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Mode]}" />
                         <ComboBox MinWidth="120" FontSize="12.5"
@@ -249,7 +260,10 @@
                                         Zoom="{Binding Zoom, Mode=TwoWay}"
                                         OffsetX="{Binding PanOffsetX, Mode=TwoWay}"
                                         OffsetY="{Binding PanOffsetY, Mode=TwoWay}">
-                                        <Image Source="{Binding ImageA}" Stretch="Uniform" />
+                                        <Grid>
+                                            <Image Source="{Binding ImageA}" Stretch="Uniform" />
+                                            <Image Source="{Binding DiffOverlay}" Stretch="Uniform" IsVisible="{Binding HighlightDifferences}" />
+                                        </Grid>
                                     </data:ZoomPanPresenter>
                                     <Border Classes="label-overlay-bg">
                                         <TextBlock Classes="label-overlay" Text="{Binding FrameLabelA}" />
@@ -363,7 +377,10 @@
                                         Zoom="{Binding Zoom, Mode=TwoWay}"
                                         OffsetX="{Binding PanOffsetX, Mode=TwoWay}"
                                         OffsetY="{Binding PanOffsetY, Mode=TwoWay}">
-                                        <Image Source="{Binding ImageB}" Stretch="Uniform" />
+                                        <Grid>
+                                            <Image Source="{Binding ImageB}" Stretch="Uniform" />
+                                            <Image Source="{Binding DiffOverlay}" Stretch="Uniform" IsVisible="{Binding HighlightDifferences}" />
+                                        </Grid>
                                     </data:ZoomPanPresenter>
                                     <Border Classes="label-overlay-bg">
                                         <TextBlock Classes="label-overlay" Text="{Binding FrameLabelB}" />
@@ -547,6 +564,7 @@
                                             Clip="{Binding SwipeClip}"
                                             Source="{Binding ImageA}"
                                             Stretch="Uniform" />
+                                        <Image Source="{Binding DiffOverlay}" Stretch="Uniform" IsVisible="{Binding HighlightDifferences}" />
                                         <Border
                                             Height="2"
                                             Width="{Binding DisplayWidth}"
@@ -575,6 +593,7 @@
                                             Clip="{Binding SwipeClip}"
                                             Source="{Binding ImageA}"
                                             Stretch="Uniform" />
+                                        <Image Source="{Binding DiffOverlay}" Stretch="Uniform" IsVisible="{Binding HighlightDifferences}" />
                                         <Border
                                             Width="2"
                                             Height="{Binding DisplayHeight}"
@@ -597,6 +616,7 @@
                                     <!-- Single -->
                                     <Grid IsVisible="{Binding IsSingle}">
                                         <Image Source="{Binding ImageSingle}" Stretch="Uniform" />
+                                        <Image Source="{Binding DiffOverlay}" Stretch="Uniform" IsVisible="{Binding HighlightDifferences}" />
                                         <Border Classes="label-overlay-bg">
                                             <TextBlock Classes="label-overlay" Text="{Binding FrameLabelA}" />
                                         </Border>
@@ -640,6 +660,22 @@
                         Foreground="White"
                         FontSize="11"
                         Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ExtractingFrame]}" />
+                </Border>
+
+                <!-- computing differences indicator (sits above the extracting pill; both can run after a frame step) -->
+                <Border
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,38"
+                    Background="#CC000000"
+                    CornerRadius="4"
+                    Padding="12,4"
+                    IsHitTestVisible="False"
+                    IsVisible="{Binding IsComputingDiff}">
+                    <TextBlock
+                        Foreground="White"
+                        FontSize="11"
+                        Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.ComputingDiff]}" />
                 </Border>
             </Grid>
 
