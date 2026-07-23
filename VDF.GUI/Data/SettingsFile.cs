@@ -555,6 +555,13 @@ namespace VDF.GUI.Data {
 			get => _ResultsSortDescending;
 			set => this.RaiseAndSetIfChanged(ref _ResultsSortDescending, value);
 		}
+		bool _ResultsBestFirst;
+		/// <summary>Show the BEST-badged file at the top of each group, ahead of the sort order (#846).</summary>
+		[JsonPropertyName("ResultsBestFirst")]
+		public bool ResultsBestFirst {
+			get => _ResultsBestFirst;
+			set => this.RaiseAndSetIfChanged(ref _ResultsBestFirst, value);
+		}
 		double _ResultsPreviewWidth = 160;
 		/// <summary>Width of the Preview column in the results list; scales the preview frames.
 		/// The old 480 cap made thumbnails unresizable past a quarter of a 1080p screen (#834).</summary>

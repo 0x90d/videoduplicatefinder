@@ -62,6 +62,7 @@ namespace VDF.GUI.ViewModels {
 			new(App.Lang["Results.Sort.Similarity"], ResultsSortMode.Similarity),
 			new(App.Lang["Results.Sort.DateCreated"], ResultsSortMode.DateCreated),
 			new(App.Lang["Results.Sort.Duration"], ResultsSortMode.Duration),
+			new(App.Lang["Results.Sort.Resolution"], ResultsSortMode.Resolution),
 			new(App.Lang["Results.Sort.FolderPath"], ResultsSortMode.FolderPath),
 			new(App.Lang["Results.Sort.GroupsWithChecked"], ResultsSortMode.GroupsWithCheckedItems),
 		};
@@ -82,6 +83,17 @@ namespace VDF.GUI.ViewModels {
 				if (value == SettingsFile.Instance.ResultsSortDescending) return;
 				SettingsFile.Instance.ResultsSortDescending = value;
 				this.RaisePropertyChanged(nameof(ResultsSortDescending));
+				RebuildResultsList();
+			}
+		}
+
+		/// <summary>Shows the BEST-badged file at the top of each group, ahead of the sort order (#846).</summary>
+		public bool ResultsBestFirst {
+			get => SettingsFile.Instance.ResultsBestFirst;
+			set {
+				if (value == SettingsFile.Instance.ResultsBestFirst) return;
+				SettingsFile.Instance.ResultsBestFirst = value;
+				this.RaisePropertyChanged(nameof(ResultsBestFirst));
 				RebuildResultsList();
 			}
 		}
@@ -114,6 +126,7 @@ namespace VDF.GUI.ViewModels {
 				Filter = DuplicatesFilterCore,
 				SortMode = SettingsFile.Instance.ResultsSortMode,
 				SortDescending = SettingsFile.Instance.ResultsSortDescending,
+				BestFirst = SettingsFile.Instance.ResultsBestFirst,
 				CollapsedGroups = collapsedResultsGroups,
 				ExpandedDetails = expandedResultsDetails,
 				PickBest = members => {

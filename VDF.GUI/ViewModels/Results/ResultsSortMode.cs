@@ -34,6 +34,8 @@ namespace VDF.GUI.ViewModels {
 		DateCreated,
 		/// <summary>Longest member duration.</summary>
 		Duration,
+		/// <summary>Highest member resolution (width + height, like the quality criterion). Back from v4.0 (#846).</summary>
+		Resolution,
 		/// <summary>Alphabetical by the first member path.</summary>
 		FolderPath,
 		/// <summary>Groups that contain checked items first.</summary>

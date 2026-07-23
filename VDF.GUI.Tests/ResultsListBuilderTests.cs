@@ -442,5 +442,68 @@ namespace VDF.GUI.Tests {
 			Assert.Equal(items.Length, existsCalls);
 			Assert.Equal(1, driveCalls); // all paths share one volume root
 		}
+
+		// #846: resolution sort came back from v4.0. Same metric as the quality
+		// criterion: FrameSizeInt (width + height).
+		[Fact]
+		public void ResolutionMode_OrdersMembersAndGroupsByFrameSize() {
+			Guid uhd = Guid.NewGuid(), hd = Guid.NewGuid();
+			var u1 = Item(uhd, "u-720p"); u1.ItemInfo.FrameSizeInt = 1280 + 720;
+			var u2 = Item(uhd, "u-4k"); u2.ItemInfo.FrameSizeInt = 3840 + 2160;
+			var h1 = Item(hd, "h-1080p"); h1.ItemInfo.FrameSizeInt = 1920 + 1080;
+			var h2 = Item(hd, "h-720p"); h2.ItemInfo.FrameSizeInt = 1280 + 720;
+
+			var result = ResultsListBuilder.Build(Request(u1, u2, h1, h2) with {
+				SortMode = ResultsSortMode.Resolution
+			});
+
+			// Groups by highest member resolution, members descending within the group.
+			Assert.Equal(uhd, result.Groups[0].GroupId);
+			Assert.Equal(new[] { "u-4k", "u-720p" },
+				result.Groups[0].Rows.Select(r => r.Item.ItemInfo.Path).ToArray());
+			Assert.Equal(new[] { "h-1080p", "h-720p" },
+				result.Groups[1].Rows.Select(r => r.Item.ItemInfo.Path).ToArray());
+		}
+
+		// #846: "BEST first" moves the badge carrier to the top of its group; the rest
+		// keep the sort order. Off by default.
+		[Fact]
+		public void BestFirst_MovesTheBestRowToTheTop_OthersKeepSortOrder() {
+			Guid g = Guid.NewGuid();
+			var big = Item(g, "big", size: 900);
+			var mid = Item(g, "mid", size: 200);
+			var small = Item(g, "small", size: 50);
+
+			var request = Request(mid, big, small) with {
+				PickBest = members => (members.First(m => m.ItemInfo.Path == "small"), "tip"),
+				BestFirst = true,
+			};
+			var result = ResultsListBuilder.Build(request);
+
+			Assert.Equal(new[] { "small", "big", "mid" },
+				result.Groups[0].Rows.Select(r => r.Item.ItemInfo.Path).ToArray());
+			Assert.True(result.Groups[0].Rows[0].IsBest);
+
+			// Without the toggle the size sort stands untouched.
+			var plain = ResultsListBuilder.Build(request with { BestFirst = false });
+			Assert.Equal(new[] { "big", "mid", "small" },
+				plain.Groups[0].Rows.Select(r => r.Item.ItemInfo.Path).ToArray());
+		}
+
+		[Fact]
+		public void BestFirst_FlattenedRowsFollowTheReorderedGroup() {
+			Guid g = Guid.NewGuid();
+			var a = Item(g, "a", size: 900);
+			var b = Item(g, "b", size: 50);
+
+			var result = ResultsListBuilder.Build(Request(a, b) with {
+				PickBest = members => (members.First(m => m.ItemInfo.Path == "b"), null),
+				BestFirst = true,
+			});
+
+			Assert.IsType<ResultsGroupHeader>(result.Rows[0]);
+			Assert.Equal("b", Assert.IsType<ResultsItemRow>(result.Rows[1]).Item.ItemInfo.Path);
+			Assert.Equal("a", Assert.IsType<ResultsItemRow>(result.Rows[2]).Item.ItemInfo.Path);
+		}
 	}
 }

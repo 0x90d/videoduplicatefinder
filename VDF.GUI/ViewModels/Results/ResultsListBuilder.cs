@@ -35,6 +35,8 @@ namespace VDF.GUI.ViewModels {
 		/// (which criterion decided, #839). Null: no badges.
 		/// </summary>
 		public Func<IReadOnlyList<DuplicateItemVM>, (DuplicateItemVM? Best, string? Tooltip)>? PickBest { get; init; }
+		/// <summary>Shows the BEST-badged member first in its group, ahead of the sort order (#846).</summary>
+		public bool BestFirst { get; init; }
 		/// <summary>Tombstone test, replaceable for tests. Defaults to <see cref="DuplicateItemVM.IsTombstone"/>.</summary>
 		public Func<DuplicateItemVM, bool>? IsTombstone { get; init; }
 		/// <summary>Offline test, replaceable for tests. Defaults to <see cref="DuplicateItemVM.IsOffline"/>.</summary>
@@ -131,11 +133,22 @@ namespace VDF.GUI.ViewModels {
 
 				if (request.PickBest != null && members.Count >= 2) {
 					var (best, tooltip) = request.PickBest(members);
-					if (best != null)
+					if (best != null) {
 						foreach (var row in rows) {
 							row.IsBest = ReferenceEquals(row.Item, best);
 							row.BestTooltip = row.IsBest ? tooltip : null;
 						}
+						// "BEST first": the badge carrier moves to the top of its group, the
+						// remaining members keep the sort order (#846).
+						if (request.BestFirst) {
+							int bestIndex = rows.FindIndex(r => r.IsBest);
+							if (bestIndex > 0) {
+								var bestRow = rows[bestIndex];
+								rows.RemoveAt(bestIndex);
+								rows.Insert(0, bestRow);
+							}
+						}
+					}
 				}
 
 				// HDR chip highlight: green only when this member's format outranks
@@ -223,6 +236,7 @@ namespace VDF.GUI.ViewModels {
 				ResultsSortMode.Similarity => (a, b) => a.ItemInfo.Similarity.CompareTo(b.ItemInfo.Similarity),
 				ResultsSortMode.DateCreated => (a, b) => a.ItemInfo.DateCreated.CompareTo(b.ItemInfo.DateCreated),
 				ResultsSortMode.Duration => (a, b) => a.ItemInfo.Duration.CompareTo(b.ItemInfo.Duration),
+				ResultsSortMode.Resolution => (a, b) => a.ItemInfo.FrameSizeInt.CompareTo(b.ItemInfo.FrameSizeInt),
 				ResultsSortMode.FolderPath => (a, b) => string.Compare(a.ItemInfo.Path, b.ItemInfo.Path, StringComparison.OrdinalIgnoreCase),
 				// FileCount / GroupsWithCheckedItems have no meaningful member dimension.
 				_ => null,
@@ -252,6 +266,7 @@ namespace VDF.GUI.ViewModels {
 				ResultsSortMode.Similarity => (a, b) => a.SimilarityMax.CompareTo(b.SimilarityMax),
 				ResultsSortMode.DateCreated => (a, b) => MaxDate(a).CompareTo(MaxDate(b)),
 				ResultsSortMode.Duration => (a, b) => MaxDuration(a).CompareTo(MaxDuration(b)),
+				ResultsSortMode.Resolution => (a, b) => MaxFrameSize(a).CompareTo(MaxFrameSize(b)),
 				ResultsSortMode.FolderPath => (a, b) => string.Compare(FirstPath(a), FirstPath(b), StringComparison.OrdinalIgnoreCase),
 				ResultsSortMode.GroupsWithCheckedItems => (a, b) => a.HasCheckedItems.CompareTo(b.HasCheckedItems),
 				_ => (a, b) => 0,
@@ -285,6 +300,12 @@ namespace VDF.GUI.ViewModels {
 			TimeSpan max = TimeSpan.Zero;
 			foreach (var row in h.Rows)
 				if (row.Item.ItemInfo.Duration > max) max = row.Item.ItemInfo.Duration;
+			return max;
+		}
+		static int MaxFrameSize(ResultsGroupHeader h) {
+			int max = 0;
+			foreach (var row in h.Rows)
+				if (row.Item.ItemInfo.FrameSizeInt > max) max = row.Item.ItemInfo.FrameSizeInt;
 			return max;
 		}
 		static string FirstPath(ResultsGroupHeader h) => h.Rows.Count > 0 ? h.Rows[0].Item.ItemInfo.Path : string.Empty;
