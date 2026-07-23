@@ -114,6 +114,28 @@ namespace VDF.GUI.ViewModels {
 		}
 		public DuplicateItem ItemInfo { get; set; }
 
+		[JsonIgnore]
+		Utils.ThumbnailSizePrediction? _thumbnailPrediction;
+		[JsonIgnore]
+		bool thumbnailPredictionComputed;
+		/// <summary>
+		/// Final-size prediction for the not-yet-loaded composite so the row reserves its
+		/// final height up front instead of jumping when the bitmap lands (#862). Null when
+		/// the media's frame size is unknown (the flat estimate applies then).
+		/// </summary>
+		[JsonIgnore]
+		public Utils.ThumbnailSizePrediction? ThumbnailPrediction {
+			get {
+				if (!thumbnailPredictionComputed && ItemInfo != null) {
+					thumbnailPredictionComputed = true;
+					_thumbnailPrediction = Utils.ThumbnailSizePrediction.For(ItemInfo,
+						_ThumbnailFrameCount, _ThumbnailGridColumns,
+						SettingsFile.Instance.Thumbnails, SettingsFile.Instance.ThumbnailMaxWidth);
+				}
+				return _thumbnailPrediction;
+			}
+		}
+
 		// A row whose file is gone. Tombstone = intentionally deleted (drive mounted): its
 		// fingerprint is still in the database, which is how this "already deleted" content got
 		// matched again. Offline = drive unmounted (unplugged USB / reassigned letter): shown but

@@ -123,9 +123,12 @@ namespace VDF.GUI.Mvvm {
 
 	/// <summary>
 	/// Results-list sizing: [0] ResultsPreviewWidth, [1] ResultsCompactRows, then in any
-	/// order a bool (ShowThumbnailColumn), the row's composite Bitmap (Item.Thumbnail)
-	/// and/or two ints — frame count first, then storage-grid columns (the multi-frame
-	/// preview re-wraps to the column width, and the row height must match). Parameter
+	/// order a bool (ShowThumbnailColumn), the row's composite Bitmap (Item.Thumbnail),
+	/// two ints — frame count first, then storage-grid columns (the multi-frame
+	/// preview re-wraps to the column width, and the row height must match) — and/or a
+	/// ThumbnailSizePrediction (Item.ThumbnailPrediction). While the bitmap is not
+	/// loaded yet the prediction stands in for it, so the row reserves its final height
+	/// immediately and the list stops shifting when thumbnails land (#862). Parameter
 	/// "row" yields the row height, anything else the thumbnail height. Logic lives in
 	/// ResultsRowSizing.
 	/// </summary>
@@ -137,6 +140,7 @@ namespace VDF.GUI.Mvvm {
 			double thumbWidth = 0, thumbHeight = 0;
 			int frameCount = 0, gridColumns = 0;
 			bool haveFrameCount = false;
+			Utils.ThumbnailSizePrediction? prediction = null;
 			for (int i = 2; i < values.Count; i++) {
 				switch (values[i]) {
 					case bool visible:
@@ -146,6 +150,9 @@ namespace VDF.GUI.Mvvm {
 						thumbWidth = bmp.Size.Width;
 						thumbHeight = bmp.Size.Height;
 						break;
+					case Utils.ThumbnailSizePrediction p:
+						prediction = p;
+						break;
 					case int n when !haveFrameCount:
 						frameCount = n;
 						haveFrameCount = true;
@@ -154,6 +161,12 @@ namespace VDF.GUI.Mvvm {
 						gridColumns = n;
 						break;
 				}
+			}
+			if (thumbWidth <= 0 && prediction != null) {
+				thumbWidth = prediction.Width;
+				thumbHeight = prediction.Height;
+				frameCount = prediction.FrameCount;
+				gridColumns = prediction.GridColumns;
 			}
 			return string.Equals(parameter as string, "row", StringComparison.OrdinalIgnoreCase)
 				? Utils.ResultsRowSizing.RowHeight(width, compact, previewVisible, thumbWidth, thumbHeight, frameCount, gridColumns)

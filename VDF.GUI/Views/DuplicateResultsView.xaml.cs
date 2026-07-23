@@ -51,12 +51,12 @@ namespace VDF.GUI.Views {
 				ResultsListControl.SelectedItem = row;
 				ResultsListControl.ScrollIntoView(row);
 			};
-			vm.ResultsAnchorProvider = TopmostVisibleRow;
-			vm.ResultsScrollToRow = ScrollRowToTop;
+			vm.ResultsAnchorProvider = CaptureScrollAnchor;
+			vm.ResultsScrollToRow = ScrollRowToViewportOffset;
 		}
 
-		/// <summary>Row whose realized container is topmost in the viewport (partially visible counts).</summary>
-		object? TopmostVisibleRow() {
+		/// <summary>Row whose realized container is topmost in the viewport (partially visible counts), plus its viewport offset.</summary>
+		ResultsScrollAnchor.Capture? CaptureScrollAnchor() {
 			if (resultsScrollViewer == null) return null;
 			object? best = null;
 			double bestTop = double.MaxValue;
@@ -68,27 +68,28 @@ namespace VDF.GUI.Views {
 					best = container.DataContext;
 				}
 			}
-			return best;
+			return best == null ? null : new ResultsScrollAnchor.Capture(best, bestTop);
 		}
 
 		/// <summary>
-		/// Scrolls the row to the TOP of the viewport once the rebuilt list has a layout.
-		/// ScrollIntoView alone only guarantees visibility (the row lands at whichever
-		/// edge is closer), which still reads as "shuffled to a random place".
+		/// Scrolls the row back to its captured viewport offset once the rebuilt list has
+		/// a layout. ScrollIntoView alone only guarantees visibility (the row lands at
+		/// whichever edge is closer), and snapping the row flush to the top still read as
+		/// a jump whenever the anchor row had been mid-viewport (#862).
 		/// </summary>
-		void ScrollRowToTop(object row) {
+		void ScrollRowToViewportOffset(object row, double viewportOffsetY) {
 			Avalonia.Threading.Dispatcher.UIThread.Post(() => {
 				int index = ResultsListControl.Items.IndexOf(row);
 				if (index < 0) return;
 				ResultsListControl.ScrollIntoView(index);
-				// ScrollIntoView realized the container; align its top edge after layout.
+				// ScrollIntoView realized the container; align it after layout.
 				Avalonia.Threading.Dispatcher.UIThread.Post(() => {
 					if (resultsScrollViewer == null) return;
 					var container = ResultsListControl.ContainerFromIndex(index);
 					if (container?.TranslatePoint(new Point(0, 0), resultsScrollViewer) is not { } p) return;
 					resultsScrollViewer.Offset = new Vector(
 						resultsScrollViewer.Offset.X,
-						Math.Max(0, resultsScrollViewer.Offset.Y + p.Y));
+						Math.Max(0, resultsScrollViewer.Offset.Y + p.Y - viewportOffsetY));
 				}, Avalonia.Threading.DispatcherPriority.Loaded);
 			}, Avalonia.Threading.DispatcherPriority.Loaded);
 		}

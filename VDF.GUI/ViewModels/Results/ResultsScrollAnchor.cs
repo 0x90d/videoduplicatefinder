@@ -24,6 +24,14 @@ namespace VDF.GUI.ViewModels {
 	/// </summary>
 	public static class ResultsScrollAnchor {
 
+		/// <summary>
+		/// Anchor captured by the view before a rebuild: the topmost visible row plus its
+		/// Y offset relative to the viewport top (negative when partially scrolled above).
+		/// Restoring to the same offset instead of snapping the row flush to the top keeps
+		/// the viewport visually still through a rebuild (#862).
+		/// </summary>
+		public readonly record struct Capture(object Row, double ViewportOffsetY);
+
 		/// <param name="anchor">Topmost visible row before the rebuild (header, item or details row), or null.</param>
 		/// <param name="oldGroupOrder">Group ids in the PREVIOUS build's display order.</param>
 		/// <param name="newRows">The flattened rows of the new build.</param>

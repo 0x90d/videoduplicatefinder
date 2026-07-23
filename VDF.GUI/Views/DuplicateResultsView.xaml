@@ -477,7 +477,9 @@
             <!-- Row height follows the Preview column width and, once loaded, the
                  preview's real shape: single frames keep their aspect ratio (#834),
                  multi-frame previews re-wrap to the column width (WrappedFilmstrip,
-                 #847) and the row reserves exactly that wrap height. -->
+                 #847) and the row reserves exactly that wrap height. Before the
+                 composite loads, ThumbnailPrediction reserves the same final height
+                 so async thumbnail loads don't shift the scroll position (#862). -->
             <Border.Height>
               <MultiBinding Converter="{StaticResource ResultsRowSizingConverter}" ConverterParameter="row">
                 <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsPreviewWidth" />
@@ -486,6 +488,7 @@
                 <Binding Path="Item.Thumbnail" />
                 <Binding Path="Item.ThumbnailFrameCount" />
                 <Binding Path="Item.ThumbnailGridColumns" />
+                <Binding Path="Item.ThumbnailPrediction" />
               </MultiBinding>
             </Border.Height>
             <Border.ContextMenu>
@@ -553,9 +556,12 @@
                     Margin="0,4,8,4"
                     Background="#18808080">
                   <Border.Height>
+                    <!-- The shimmer placeholder reserves the same predicted final height
+                         as the row (#862), not the flat estimate. -->
                     <MultiBinding Converter="{StaticResource ResultsRowSizingConverter}" ConverterParameter="image">
                       <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsPreviewWidth" />
                       <Binding Source="{x:Static Settings:SettingsFile.Instance}" Path="ResultsCompactRows" />
+                      <Binding Path="Item.ThumbnailPrediction" />
                     </MultiBinding>
                   </Border.Height>
                   <Border.IsVisible>
