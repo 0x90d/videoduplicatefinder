@@ -552,7 +552,7 @@
 	"Shortcut.NavigatePreviousGroup": "Naviguer vers le Groupe Précédent",
 	"Shortcut.KeepHighlightedAndAdvance": "Conserver l'élément en surbrillance et groupe suivant",
 	"Shortcut.UndoSelection": "Annuler le changement de sélection",
-	"DuplicateList.Header.ClipOffset": "Décalage du clip",
+	"DuplicateList.Header.ClipOffset": "Décalage clip",
 	"MainWindow.Settings.PartialClipDetection": "Détection de clip partiel",
 	"MainWindow.Settings.EnablePartialClipDetection": "Activer la détection de clip partiel",
 	"MainWindow.Settings.EnablePartialClipDetectionTooltip": "Détecte quand une vidéo plus courte est un clip partiel d'une plus longue grâce aux empreintes audio.",

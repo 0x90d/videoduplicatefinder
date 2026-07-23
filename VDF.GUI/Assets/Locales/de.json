@@ -619,7 +619,7 @@
 	"Results.Status.RemovedSuffix": "in dieser Sitzung entfernt",
 	"Results.Header.Preview": "Vorschau",
 	"Results.Header.File": "Datei",
-	"Results.Header.DurationRes": "Dauer · Auflösung",
+	"Results.Header.DurationRes": "Dauer · Aufl.",
 	"Results.Header.SizeDate": "Größe · Datum",
 	"Results.Header.FormatAudio": "Format · Audio",
 	"Results.Header.Match": "Treffer",
