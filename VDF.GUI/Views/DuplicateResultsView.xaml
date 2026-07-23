@@ -386,16 +386,18 @@
         <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="80"
                    IsVisible="{Binding ResultsShowClipOffsetColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[DuplicateList.Header.ClipOffset]}" />
-        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="150"
+        <!-- Fixed metadata widths trimmed to their real content (#853): the reclaimed
+             space goes to the File column. Header and row cells must stay paired. -->
+        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="124"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}" />
-        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="90"
+        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="78"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowBitrateColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Bitrate]}" />
-        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="110"
+        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="100"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSizeDateColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.SizeDate]}" />
-        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="110"
+        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="92"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.DurationRes]}" />
         <TextBlock Classes="colheader" Margin="6,0,0,0"
@@ -626,7 +628,7 @@
               <!-- Format · Audio -->
               <StackPanel
                   DockPanel.Dock="Right"
-                  Width="150"
+                  Width="124"
                   VerticalAlignment="Center"
                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}">
                 <StackPanel Orientation="Horizontal" Spacing="3" IsVisible="{Binding !Item.ItemInfo.IsImage}">
@@ -658,7 +660,7 @@
                    no hover-diff at all - the VM's bitrate cases were unreachable). -->
               <Border
                   DockPanel.Dock="Right"
-                  Width="90"
+                  Width="78"
                   VerticalAlignment="Center"
                   Background="Transparent"
                   Tag="bitrate,audiobitrate"
@@ -696,7 +698,7 @@
               <!-- Size · Date -->
               <StackPanel
                   DockPanel.Dock="Right"
-                  Width="110"
+                  Width="100"
                   VerticalAlignment="Center"
                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSizeDateColumn}">
                 <Border Tag="size" Background="Transparent"
@@ -721,7 +723,7 @@
                    zones flipped the display on tiny vertical mouse moves (#849) -->
               <Border
                   DockPanel.Dock="Right"
-                  Width="110"
+                  Width="92"
                   VerticalAlignment="Center"
                   Background="Transparent"
                   Tag="duration,framesize"
