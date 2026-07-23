@@ -33,6 +33,25 @@ namespace VDF.GUI.Views {
 			AvaloniaXamlLoader.Load(this);
 			DataContextChanged += (_, _) => WireViewModel();
 			WireViewModel();
+			if (this.FindControl<Button>("AutoSelectButton")?.Flyout is MenuFlyout autoSelectFlyout)
+				autoSelectFlyout.Opening += (_, _) => RebuildSavedExpressionItems();
+		}
+
+		/// <summary>
+		/// Saved Expression Builder presets in the Auto-select menu (#850). Rebuilt each
+		/// time the flyout opens so preset adds/renames/deletes show up immediately;
+		/// the submenu hides entirely while no presets exist.
+		/// </summary>
+		void RebuildSavedExpressionItems() {
+			var menu = this.FindControl<MenuItem>("SavedExpressionsMenu");
+			if (menu == null || ViewModel is not MainWindowVM vm) return;
+			var presets = SettingsFile.Instance.ExpressionPresets;
+			menu.IsVisible = presets.Count > 0;
+			menu.ItemsSource = presets.Select(p => new MenuItem {
+				Header = p.Name,
+				Command = vm.ApplyExpressionPresetCommand,
+				CommandParameter = p,
+			}).ToList();
 		}
 
 		ListBox ResultsListControl => this.FindControl<ListBox>("ResultsList")!;

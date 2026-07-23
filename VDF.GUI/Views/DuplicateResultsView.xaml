@@ -249,7 +249,7 @@
         <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
         <!-- Auto-select ▾ (stage 7): home of the old Selection menu — grouped by what
              the action ranges over (per group vs. across all results) -->
-        <Button FontSize="12" Padding="10,3" CornerRadius="12"
+        <Button x:Name="AutoSelectButton" FontSize="12" Padding="10,3" CornerRadius="12"
                 AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Toolbar.AutoSelect]}">
           <Button.Content>
             <StackPanel Orientation="Horizontal" Spacing="5">
@@ -285,6 +285,10 @@
               <MenuItem
                   Command="{Binding CheckCustomCommand}"
                   Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.ExpressionBuilder]}" />
+              <!-- Saved Expression Builder presets, applied without the dialog (#850).
+                   Populated in code-behind on flyout opening; hidden when none exist. -->
+              <MenuItem x:Name="SavedExpressionsMenu" IsVisible="False"
+                  Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.SavedExpressions]}" />
               <MenuItem
                   Command="{Binding OpenCustomSelectionCommand}"
                   Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Selection.CustomSelection]}" />

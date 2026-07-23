@@ -70,4 +70,46 @@ namespace VDF.GUI.Tests {
 			Assert.ThrowsAny<Exception>(() => SelectionExpression.Compile("Activator.CreateInstance(null) != null"));
 		}
 	}
+
+	/// <summary>
+	/// #850: the compile-and-check pipeline behind the Expression Builder OK button is
+	/// shared with the saved-preset menu. The pure partition step decides which matches
+	/// are checked unconditionally and which whole-group matches await the ask-once
+	/// policy (checking a full group would mark the whole group for deletion).
+	/// </summary>
+	public class PartitionExpressionMatchesTests {
+
+		static ViewModels.DuplicateItemVM Vm(string path, long size) => new() {
+			ItemInfo = new DuplicateItem { Path = path, SizeLong = size }
+		};
+
+		[Fact]
+		public void PartialGroups_AreCheckedDirectly_FullGroupsAreSeparated() {
+			var partialGroup = new List<ViewModels.DuplicateItemVM> { Vm("keep", 100), Vm("big1", 900) };
+			var fullGroup = new List<ViewModels.DuplicateItemVM> { Vm("big2", 700), Vm("big3", 800) };
+			var noMatchGroup = new List<ViewModels.DuplicateItemVM> { Vm("small1", 10), Vm("small2", 20) };
+
+			var (partial, full) = ViewModels.MainWindowVM.PartitionExpressionMatches(
+				new[] { partialGroup, fullGroup, noMatchGroup },
+				item => item.SizeLong > 500);
+
+			Assert.Equal(new[] { "big1" }, partial.Select(d => d.ItemInfo.Path));
+			var fullPaths = Assert.Single(full).Select(d => d.ItemInfo.Path).ToArray();
+			Assert.Equal(new[] { "big2", "big3" }, fullPaths);
+		}
+
+		[Fact]
+		public void CompiledExpression_DrivesThePartition() {
+			// End to end through SelectionExpression.Compile, the same entry the preset
+			// menu uses (keeps the #844 AOT roots on the shared path).
+			var group = new List<ViewModels.DuplicateItemVM> { Vm(@"D:\a.mkv", 5000), Vm(@"D:\b.mkv", 100) };
+			var interpreter = SelectionExpression.Compile("item.SizeLong > 3000");
+
+			var (partial, full) = ViewModels.MainWindowVM.PartitionExpressionMatches(
+				new[] { group }, interpreter);
+
+			Assert.Equal(new[] { @"D:\a.mkv" }, partial.Select(d => d.ItemInfo.Path));
+			Assert.Empty(full);
+		}
+	}
 }

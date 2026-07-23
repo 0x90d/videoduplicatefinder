@@ -238,6 +238,7 @@
 	"MainWindow.Selection.InvertCheckedItems": "Inverser la sélection",
 	"MainWindow.Selection.CustomSelection": "Sélection personnalisée",
 	"MainWindow.Selection.ExpressionBuilder": "Constructeur d'expressions",
+	"MainWindow.Selection.SavedExpressions": "Expressions enregistrées",
 	"MainWindow.Selection.CheckIdenticalExceptSizeKeepSmallest": "Sélectionner 100 % identique sauf la taille (conserver le plus petit)",
 	"MainWindow.Selection.CheckIdenticalKeepFirst": "Sélectionner 100 % identique (conserver le premier)",
 	"MainWindow.Selection.CheckLowestQuality": "Sélectionner la qualité la plus faible",

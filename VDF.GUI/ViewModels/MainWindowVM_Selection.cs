@@ -56,14 +56,30 @@ namespace VDF.GUI.ViewModels {
 			var expression = ((ExpressionBuilderVM)dlg.DataContext).ExpressionText;
 			SettingsFile.Instance.LastCustomSelectExpression = expression;
 			UpdateExpressionHistory(expression);
+			await ApplySelectionExpression(expression);
+		});
 
-			HashSet<Guid> blackListGroupID = new();
-			bool skipIfAllMatches = false;
-			bool userAsked = false;
+		/// <summary>
+		/// Applies a saved Expression Builder preset straight from the Auto-select menu,
+		/// without opening the dialog (#850). Runs the same pipeline as the dialog's OK.
+		/// </summary>
+		public ReactiveCommand<Data.ExpressionPreset, Unit> ApplyExpressionPresetCommand =>
+			ReactiveCommand.CreateFromTask<Data.ExpressionPreset>(async preset => {
+				if (preset == null || string.IsNullOrWhiteSpace(preset.Expression)) return;
+				SettingsFile.Instance.LastCustomSelectExpression = preset.Expression;
+				UpdateExpressionHistory(preset.Expression);
+				await ApplySelectionExpression(preset.Expression);
+			});
 
+		/// <summary>
+		/// Compile-and-check pipeline shared by the Expression Builder dialog and the
+		/// saved-preset menu (#850): checks every matching item, asking once how to treat
+		/// groups where ALL members match (checking a whole group marks it for deletion).
+		/// </summary>
+		internal async Task ApplySelectionExpression(string expression) {
 			Func<DuplicateItem, bool> interpreter;
 			try {
-				interpreter = Utils.SelectionExpression.Compile(SettingsFile.Instance.LastCustomSelectExpression);
+				interpreter = Utils.SelectionExpression.Compile(expression);
 			}
 			catch (Exception ex) {
 				await MessageBoxService.Show($"Expression error: {ex.Message}");
@@ -73,40 +89,53 @@ namespace VDF.GUI.ViewModels {
 			var groups = ScopedDuplicates()
 							.Where(d => d.IsVisibleInFilter)
 							.GroupBy(d => d.ItemInfo.GroupId)
+							.Select(g => g.ToList())
 							.ToList();
 
-			var matchResults = groups
-								.AsParallel()
-								.Select(group => new {
-									GroupId = group.Key,
-									Items = group.ToList(),
-									Matches = group.Where(item => interpreter(item.ItemInfo)).ToList()
-								})
-								.ToList();
+			var (partialMatches, fullGroups) = PartitionExpressionMatches(groups, interpreter);
+
+			bool includeFullGroups = false;
+			if (fullGroups.Count > 0) {
+				var examplePath = fullGroups[0][0].ItemInfo.Path;
+				var message = $"There are groups where all items match your expression, for example '{examplePath}'.{Environment.NewLine}{Environment.NewLine}Do you want to have all items checked (Yes)? Or do you want to have NO items in these groups checked (No)?";
+
+				var dialogResult = await MessageBoxService.Show(message, MessageBoxButtons.Yes | MessageBoxButtons.No);
+				includeFullGroups = dialogResult == MessageBoxButtons.Yes;
+			}
 
 			using var undoBatch = BeginSelectionUndoBatch();
-			foreach (var result in matchResults) {
-				if (result.Matches.Count == 0)
+			foreach (var dup in partialMatches)
+				dup.Checked = true;
+			if (includeFullGroups)
+				foreach (var group in fullGroups)
+					foreach (var dup in group)
+						dup.Checked = true;
+		}
+
+		/// <summary>
+		/// Pure partition of the expression's matches: items from groups where only SOME
+		/// members match are checked unconditionally; groups where ALL members match are
+		/// returned separately so the caller can apply the ask-once policy.
+		/// </summary>
+		internal static (List<DuplicateItemVM> PartialMatches, List<List<DuplicateItemVM>> FullGroups) PartitionExpressionMatches(
+			IReadOnlyList<List<DuplicateItemVM>> groups, Func<DuplicateItem, bool> interpreter) {
+			var evaluated = groups
+							.AsParallel()
+							.AsOrdered()
+							.Select(group => (Items: group, Matches: group.Where(item => interpreter(item.ItemInfo)).ToList()))
+							.ToList();
+			var partial = new List<DuplicateItemVM>();
+			var full = new List<List<DuplicateItemVM>>();
+			foreach (var (items, matches) in evaluated) {
+				if (matches.Count == 0)
 					continue;
-
-				if (result.Matches.Count == result.Items.Count) {
-					if (!userAsked) {
-						var examplePath = result.Items.First().ItemInfo.Path;
-						var message = $"There are groups where all items match your expression, for example '{examplePath}'.{Environment.NewLine}{Environment.NewLine}Do you want to have all items checked (Yes)? Or do you want to have NO items in these groups checked (No)?";
-
-						var dialogResult = await MessageBoxService.Show(message, MessageBoxButtons.Yes | MessageBoxButtons.No);
-						skipIfAllMatches = dialogResult == MessageBoxButtons.No;
-						userAsked = true;
-					}
-
-					if (skipIfAllMatches)
-						continue;
-				}
-
-				foreach (var dup in result.Matches)
-					dup.Checked = true;
+				if (matches.Count == items.Count)
+					full.Add(matches);
+				else
+					partial.AddRange(matches);
 			}
-		});
+			return (partial, full);
+		}
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
 			using var undoBatch = BeginSelectionUndoBatch();
