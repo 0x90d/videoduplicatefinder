@@ -23,8 +23,10 @@ namespace VDF.GUI.Tests {
 	// #839 report (both screenshots reproduced the same way the BEST badge computes).
 	public class QualityCriteriaMapTests {
 
-		// Must match the SettingsFile default. Bitrate deliberately ranks above FPS.
-		static readonly string[] DefaultOrder = ["Duration", "Resolution", "Bitrate", "FPS", "Audio Bitrate", "Size"];
+		// Must match the SettingsFile default. Bitrate deliberately ranks above FPS;
+		// "Bits per pixel" (#848) defaults below them so default picks stay stable -
+		// its cross-resolution power comes from ranking it above Resolution manually.
+		static readonly string[] DefaultOrder = ["Duration", "Resolution", "Bitrate", "FPS", "Bits per pixel", "Audio Bitrate", "Size"];
 
 		static List<QualityRanker.Criterion<DuplicateItemVM>> DefaultCriteria() =>
 			DefaultOrder.Select(n => MainWindowVM.QualityCriteriaMap[n]).ToList();
@@ -108,6 +110,57 @@ namespace VDF.GUI.Tests {
 				new[] { weakAudio, strongAudio }, DefaultCriteria(), d => d.ItemInfo.IsImage);
 			Assert.Same(strongAudio, keep);
 			Assert.Equal("Audio Bitrate", decidedBy!.Name);
+		}
+
+		// #848: the criterion itself - bitrate normalized by pixel throughput.
+		[Fact]
+		public void BitsPerPixel_ComputesFromFrameSizeBitrateAndFps() {
+			var item = Item("4k", 1200, frameSizeInt: 6000, bitrate: 13900, fps: 25);
+			item.ItemInfo.FrameSize = "3840x2160";
+
+			decimal bpp = MainWindowVM.BitsPerPixel(item.ItemInfo);
+
+			// 13,900 kb/s * 1000 / (3840 * 2160 * 25) = ~0.067 bits per pixel
+			Assert.InRange(bpp, 0.066m, 0.068m);
+		}
+
+		[Theory]
+		[InlineData(null, 5000, 25)]   // no frame size
+		[InlineData("x", 5000, 25)]    // broken frame size
+		[InlineData("1920x1080", 0, 25)]  // no bitrate
+		[InlineData("1920x1080", 5000, 0)] // no fps
+		public void BitsPerPixel_UnknownComponents_YieldZero(string? frameSize, double bitrate, float fps) {
+			var item = Item("x", 1200, frameSizeInt: 3000, bitrate: (decimal)bitrate, fps: fps);
+			item.ItemInfo.FrameSize = frameSize;
+
+			Assert.Equal(0m, MainWindowVM.BitsPerPixel(item.ItemInfo));
+		}
+
+		// #848's report: a bitrate-starved 4K (13.9 Mb/s over 8.3M pixels) got BEST over
+		// a healthy 1080p (12 Mb/s over 2M pixels). With "Bits per pixel" ranked above
+		// Resolution, the 1080p wins.
+		[Fact]
+		public void BitrateStarved4K_LosesTo1080p_WhenBppRanksAboveResolution() {
+			var starved4k = Item("4k-starved", 1609, frameSizeInt: 6000, bitrate: 13900, fps: 25);
+			starved4k.ItemInfo.FrameSize = "3840x2160";
+			var healthy1080p = Item("1080p-healthy", 1597, frameSizeInt: 3000, bitrate: 12000, fps: 25);
+			healthy1080p.ItemInfo.FrameSize = "1920x1080";
+
+			var order = new[] { "Duration", "Bits per pixel", "Resolution", "Bitrate", "FPS", "Audio Bitrate", "Size" };
+			var criteria = order.Select(n => MainWindowVM.QualityCriteriaMap[n]).ToList();
+
+			var (keep, decidedBy) = QualityRanker.PickKeeperWithReason(
+				new[] { starved4k, healthy1080p }, criteria, d => d.ItemInfo.IsImage);
+
+			Assert.Same(healthy1080p, keep);
+			Assert.Equal("Bits per pixel", decidedBy!.Name);
+
+			// With the DEFAULT order the 4K still wins on Resolution - adding the
+			// criterion must not change existing default picks.
+			(keep, decidedBy) = QualityRanker.PickKeeperWithReason(
+				new[] { starved4k, healthy1080p }, DefaultCriteria(), d => d.ItemInfo.IsImage);
+			Assert.Same(starved4k, keep);
+			Assert.Equal("Resolution", decidedBy!.Name);
 		}
 
 		[Theory]

@@ -12,6 +12,7 @@
 	"QualityCriteria.Duration": "时长",
 	"QualityCriteria.Resolution": "分辨率",
 	"QualityCriteria.FPS": "帧率",
+	"QualityCriteria.Bits per pixel": "每像素位数",
 	"QualityCriteria.Bitrate": "比特率",
 	"QualityCriteria.Audio Bitrate": "音频比特率",
 	"QualityCriteria.Size": "大小（保留较小的文件）",

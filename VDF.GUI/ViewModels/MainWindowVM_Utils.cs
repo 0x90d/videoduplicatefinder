@@ -17,6 +17,7 @@
 using System.Linq;
 using ReactiveUI;
 using VDF.Core.Utils;
+using VDF.Core.ViewModels;
 
 namespace VDF.GUI.ViewModels {
 	public partial class MainWindowVM : ReactiveObject {
@@ -37,11 +38,35 @@ namespace VDF.GUI.ViewModels {
 			return Math.Abs(x - y) <= Math.Max(x, y) * 0.05m;
 		}
 
+		/// <summary>
+		/// #848: bits per pixel = bitrate / (width * height * fps) - the cross-resolution
+		/// quality signal raw bitrate cannot give (a bitrate-starved 4K beats a healthy
+		/// 1080p on bitrate alone). Returns 0 when any component is unknown, so unknowns
+		/// tie and the decision falls through to the next criterion. Its default rank is
+		/// below Bitrate/FPS; ranking it above Resolution (Quality Order dialog) makes it
+		/// the cross-resolution judge.
+		/// </summary>
+		internal static decimal BitsPerPixel(DuplicateItem item) {
+			if (item.BitRateKbs <= 0 || item.Fps <= 0)
+				return 0;
+			string? frameSize = item.FrameSize;
+			if (string.IsNullOrEmpty(frameSize))
+				return 0;
+			int split = frameSize.IndexOf('x');
+			if (split <= 0
+				|| !int.TryParse(frameSize.AsSpan(0, split), out int width)
+				|| !int.TryParse(frameSize.AsSpan(split + 1), out int height)
+				|| width <= 0 || height <= 0)
+				return 0;
+			return item.BitRateKbs * 1000m / ((decimal)width * height * (decimal)item.Fps);
+		}
+
 		internal static readonly Dictionary<string, QualityRanker.Criterion<DuplicateItemVM>> QualityCriteriaMap = new() {
 			["Duration"] = new("Duration", d => d.ItemInfo.Duration, videoOnly: true, nearTie: DurationTies),
 			["Resolution"] = new("Resolution", d => d.ItemInfo.FrameSizeInt, videoOnly: false),
 			["Bitrate"] = new("Bitrate", d => d.ItemInfo.BitRateKbs, videoOnly: true, nearTie: BitrateTies),
 			["FPS"] = new("FPS", d => d.ItemInfo.Fps, videoOnly: true, nearTie: FpsTies),
+			["Bits per pixel"] = new("Bits per pixel", d => BitsPerPixel(d.ItemInfo), videoOnly: true, nearTie: BitrateTies),
 			["Audio Bitrate"] = new("Audio Bitrate", d => d.ItemInfo.AudioBitRateKbs, videoOnly: true, nearTie: BitrateTies),
 			["Size"] = new("Size", d => d.ItemInfo.SizeLong, videoOnly: false, ascending: true),
 		};

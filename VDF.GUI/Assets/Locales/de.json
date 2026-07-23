@@ -12,6 +12,7 @@
 	"QualityCriteria.Duration": "Dauer",
 	"QualityCriteria.Resolution": "Auflösung",
 	"QualityCriteria.FPS": "FPS",
+	"QualityCriteria.Bits per pixel": "Bits pro Pixel",
 	"QualityCriteria.Bitrate": "Bitrate",
 	"QualityCriteria.Audio Bitrate": "Audio-Bitrate",
 	"QualityCriteria.Size": "Größe (kleinere Datei gewinnt)",
