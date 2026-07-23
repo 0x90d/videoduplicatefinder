@@ -96,6 +96,61 @@ public class CrashQuarantineTests {
 
 		Assert.Equal(new[] { entry }, reported);
 	}
+
+	[Fact]
+	public void PartialVerifyCrash_FlagsThumbnailError() {
+		// #863: the partial-clip visual gate decodes frames in-process; a crash there must
+		// quarantine the file like a sampling crash so the gate never decodes it again.
+		var entry = Entry(@"C:\videos\poison.mp4");
+		var suspects = new[] { new ScanCrashJournal.Suspect(ScanCrashJournal.PhasePartialVerify, entry.Path) };
+
+		Assert.Equal(1, ScanEngine.ApplyCrashQuarantine(new[] { entry }, suspects));
+		Assert.True(entry.Flags.Has(EntryFlags.ThumbnailError));
+		Assert.False(entry.Flags.Has(EntryFlags.AudioFingerprintError));
+	}
+}
+
+// #863: an access violation inside the GPU driver (nvcuda64.dll) during "verifying
+// partial clips" killed the app on the same file at every attempt. Once the crash
+// journal has quarantined a file (ThumbnailError), the visual gate must not decode it
+// again - the audio match alone decides, exactly like the no-frames case.
+public class PartialVerifyDecodeBlockTests {
+	static FileEntry Video(string name) => new() { _Path = Path.Combine(Path.GetTempPath(), name) };
+
+	[Fact]
+	public void FlaggedSourceOrClip_BlocksDecode() {
+		var flagged = Video("poison.mp4");
+		flagged.Flags.Set(EntryFlags.ThumbnailError);
+		var healthy = Video("healthy.mp4");
+
+		Assert.True(ScanEngine.PartialVerifyDecodeBlocked(flagged, healthy));
+		Assert.True(ScanEngine.PartialVerifyDecodeBlocked(healthy, flagged));
+		Assert.False(ScanEngine.PartialVerifyDecodeBlocked(healthy, Video("other.mp4")));
+	}
+
+	[Fact]
+	public void VisualGate_SkipsVerifierForQuarantinedPairs_AndKeepsTheAssignment() {
+		var engine = new ScanEngine();
+		var videos = new List<FileEntry> { Video("source.mp4"), Video("clip0.mp4"), Video("clip1.mp4") };
+		videos[1].Flags.Set(EntryFlags.ThumbnailError); // quarantined after a decoder crash
+		var assignments = new List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> {
+			(0, 1, 0.9f, 0, Guid.NewGuid()),
+			(0, 2, 0.9f, 0, Guid.NewGuid()),
+		};
+
+		var verifiedPaths = new List<string>();
+		var kept = engine.RunPartialClipVisualGate(videos, assignments, (_, clip, _) => {
+			lock (verifiedPaths)
+				verifiedPaths.Add(clip.Path);
+			return (false, 0f); // the verifier drops everything it is actually asked about
+		});
+
+		// The quarantined pair never reaches the verifier and stays in (audio decides)...
+		Assert.Single(kept);
+		Assert.Equal(1, kept[0].clipIdx);
+		// ...while the healthy pair was verified (and dropped by the stub).
+		Assert.Equal(new[] { videos[2].Path }, verifiedPaths);
+	}
 }
 
 // The audio-fingerprint eligibility gate, extracted from GatherInfos so the

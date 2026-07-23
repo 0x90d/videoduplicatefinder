@@ -371,7 +371,13 @@ namespace VDF.Core.FFTools {
 			if (ShouldUseNativeBinding) {
 				try {
 					FfmpegLogCapture.Reset();
-					using var vsd = new VideoStreamDecoder(filePath, GetConfiguredHardwareDeviceType());
+					// Always decode in software here (#863): this path serves the partial-clip
+					// visual gate, which samples 1-3 tiny frames per file - a hardware decode
+					// session costs more to set up than it saves, and an access violation
+					// inside the GPU driver (nvcuda64.dll on the reporter's machine) takes the
+					// whole process down because this decode runs in-process. The per-frame
+					// fallback below skips hardware acceleration for the same reason.
+					using var vsd = new VideoStreamDecoder(filePath, AVHWDeviceType.AV_HWDEVICE_TYPE_NONE);
 					VideoFrameConverter? converter = null;
 					Size converterSourceSize = default;
 					AVPixelFormat converterSrcFmt = AVPixelFormat.AV_PIX_FMT_NONE;
@@ -417,7 +423,8 @@ namespace VDF.Core.FFTools {
 				frames[i] ??= GetThumbnail(new FfmpegSettings {
 					File = filePath,
 					Position = TimeSpan.FromSeconds(positionsSeconds[i]),
-					GrayScale = 1
+					GrayScale = 1,
+					SoftwareDecodeOnly = true
 				}, extendedLogging);
 			}
 			return frames;

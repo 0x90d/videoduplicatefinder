@@ -606,6 +606,14 @@ namespace VDF.Core {
 				}
 			}
 
+			// #863: a compare-only run (CLI compare, quick rescan) never goes through
+			// BuildFileList, so crash breadcrumbs from a previous session stayed uncollected -
+			// a file that took the process down inside the partial-clip visual gate was
+			// decoded again on the next run and killed it again. Collect them here too;
+			// after a full scan in the same session this finds nothing.
+			ScanCrashJournal.Initialize(DatabaseUtils.GetDatabaseFolderPath());
+			QuarantineCrashSuspects();
+
 			CancelAllTasks();
 
 			Duplicates.Clear();
@@ -634,8 +642,13 @@ namespace VDF.Core {
 		/// </summary>
 		void QuarantineCrashSuspects() {
 			List<ScanCrashJournal.Suspect> suspects = ScanCrashJournal.CollectLeftovers();
-			ApplyCrashQuarantine(DatabaseUtils.Database, suspects,
+			int flagged = ApplyCrashQuarantine(DatabaseUtils.Database, suspects,
 				entry => Logger.Instance.Warn(T("Log.CrashQuarantine", entry.Path)));
+			// The breadcrumbs are deleted on collection, so the flags they produced must hit
+			// disk now: a compare-only run never saves the database on its own, and losing
+			// the flags would re-arm the crash for the following run (#863).
+			if (flagged > 0)
+				DatabaseUtils.SaveDatabase();
 		}
 
 		/// <summary>
@@ -651,6 +664,15 @@ namespace VDF.Core {
 			(!entry.Flags.Has(EntryFlags.AudioFingerprintError) || alwaysRetryFailedSampling) &&
 			!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
 			entry.AudioFingerprint == null;
+
+		/// <summary>
+		/// Whether the partial-clip visual gate must not decode this pair. ThumbnailError marks
+		/// files whose frame extraction failed - including files quarantined by the crash
+		/// journal after a native decoder crash (#863). Decoding them again would fail again at
+		/// best and take the process down at worst; the audio match alone decides for such pairs.
+		/// </summary>
+		internal static bool PartialVerifyDecodeBlocked(FileEntry source, FileEntry clip) =>
+			source.Flags.Has(EntryFlags.ThumbnailError) || clip.Flags.Has(EntryFlags.ThumbnailError);
 
 		/// <summary>Flags every database entry named by a crash suspect; returns how many were flagged.</summary>
 		internal static int ApplyCrashQuarantine(IEnumerable<FileEntry> entries,
@@ -670,6 +692,9 @@ namespace VDF.Core {
 				if (phase == ScanCrashJournal.PhaseAudio)
 					entry.Flags.Set(EntryFlags.AudioFingerprintError);
 				else
+					// Sampling, image and partial-verify crashes all poison frame decoding.
+					// ThumbnailError also blocks the partial-clip visual gate from decoding
+					// the file again (PartialVerifyDecodeBlocked, #863).
 					entry.Flags.Set(EntryFlags.ThumbnailError);
 				flagged++;
 				onQuarantined?.Invoke(entry);
@@ -2143,6 +2168,16 @@ namespace VDF.Core {
 					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
 						return; // canceled while paused — the loop's token ends the remaining iterations
 
+					// Files whose frame decoding previously failed - or took the whole process
+					// down (#863: quarantined via the crash journal) - must not be decoded
+					// again. Keep the assignment: exactly like the no-frames case inside
+					// VerifyPartialClipVisually, the audio match alone decides.
+					if (PartialVerifyDecodeBlocked(videos[a.sourceIdx], videos[a.clipIdx])) {
+						verified.Add(a);
+						IncrementProgress(System.IO.Path.GetFileName(videos[a.clipIdx].Path));
+						return;
+					}
+
 					var (pass, visualSim) = verify(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec);
 					if (pass) {
 						verified.Add(a);
@@ -2207,8 +2242,15 @@ namespace VDF.Core {
 			}
 			if (srcSampleTimes.Count == 0) return true;
 
+			// Breadcrumbs around each decode: if the decoder takes the process down (#863),
+			// the next scan quarantines the file that was in flight instead of dying on it
+			// again. Same mechanism as the sampling phase (#861).
+			ScanCrashJournal.Begin(ScanCrashJournal.PhasePartialVerify, source.Path);
 			byte[]?[] srcFrames = FfmpegEngine.GetGrayFrames(source.Path, srcSampleTimes, Settings.ExtendedFFToolsLogging);
+			ScanCrashJournal.End();
+			ScanCrashJournal.Begin(ScanCrashJournal.PhasePartialVerify, clip.Path);
 			byte[]?[] clipFrames = FfmpegEngine.GetGrayFrames(clip.Path, clipSampleTimes, Settings.ExtendedFFToolsLogging);
+			ScanCrashJournal.End();
 
 			for (int i = 0; i < srcSampleTimes.Count; i++) {
 				byte[]? srcFrame = srcFrames[i];

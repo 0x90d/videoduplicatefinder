@@ -17,10 +17,11 @@
 namespace VDF.Core.Utils {
 
 	/// <summary>
-	/// Crash breadcrumbs for the media-analysis phase. A native crash (e.g. an access
-	/// violation inside an FFmpeg library on a corrupt file, issue #861) kills the process
-	/// with no managed error path: nothing gets flagged, so the next scan re-attempts the
-	/// same file and dies at the same point, forever.
+	/// Crash breadcrumbs for the phases that decode media in-process: the media-analysis
+	/// phase and the partial-clip visual gate. A native crash (e.g. an access violation
+	/// inside an FFmpeg library on a corrupt file, issue #861, or inside a GPU driver,
+	/// issue #863) kills the process with no managed error path: nothing gets flagged, so
+	/// the next scan re-attempts the same file and dies at the same point, forever.
 	///
 	/// Each worker thread writes a tiny per-thread breadcrumb file naming the media file it
 	/// is about to process and blanks it when the file completes. After a hard crash the
@@ -36,6 +37,7 @@ namespace VDF.Core.Utils {
 		internal const string PhaseSampling = "sampling";
 		internal const string PhaseAudio = "audio";
 		internal const string PhaseImage = "image";
+		internal const string PhasePartialVerify = "partialverify";
 		const string FilePrefix = "scan-inflight-";
 
 		static string? journalFolder;
