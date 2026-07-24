@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
@@ -69,11 +70,10 @@ namespace VDF.Core.FFTools {
 					process.BeginErrorReadLine();
 				}
 				using var ms = new MemoryStream();
-				process.StandardOutput.BaseStream.CopyTo(ms);
-				if (!process.WaitForExit(TimeoutDuration))
-					throw new TimeoutException($"FFprobe timed out on file: {file}");
-				else if (extendedLogging)
-					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865):
+				// the timeout used to sit behind a synchronous CopyTo that a wedged ffprobe
+				// (dead network share, sleeping drive) never let return.
+				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFprobe", file);
 
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFprobe exited with: {process.ExitCode}");
@@ -125,15 +125,13 @@ namespace VDF.Core.FFTools {
 			using var process = new Process { StartInfo = psi };
 			try {
 				process.Start();
-				string output = process.StandardOutput.ReadToEnd();
-				if (!process.WaitForExit(TimeoutDuration)) {
-					try { if (!process.HasExited) process.Kill(); } catch { }
-					return null;
-				}
+				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
+				using var ms = new MemoryStream();
+				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFprobe", file);
 				if (process.ExitCode != 0)
 					return null;
 
-				output = output.Trim();
+				string output = Encoding.UTF8.GetString(ms.ToArray()).Trim();
 				if (output.Length == 0)
 					return null;
 

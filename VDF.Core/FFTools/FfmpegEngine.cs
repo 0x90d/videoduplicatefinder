@@ -683,13 +683,9 @@ namespace VDF.Core.FFTools {
 				});
 				process.BeginErrorReadLine();
 				using var ms = new MemoryStream();
-				process.StandardOutput.BaseStream.CopyTo(ms);
-
-				if (!process.WaitForExit(TimeoutDuration)) {
-					throw new TimeoutException($"FFmpeg timed out on file: {settings.File}");
-				}
-				else
-					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+				// Bounded read + wait: a synchronous CopyTo made the timeout below unreachable
+				// and blocked the worker forever on a wedged ffmpeg (#865).
+				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", settings.File);
 
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
@@ -823,12 +819,8 @@ namespace VDF.Core.FFTools {
 				});
 				process.BeginErrorReadLine();
 				using var ms = new MemoryStream();
-				process.StandardOutput.BaseStream.CopyTo(ms);
-
-				if (!process.WaitForExit(TimeoutDuration))
-					throw new TimeoutException($"FFmpeg timed out on file: {file}");
-				else
-					process.WaitForExit(); // Because of asynchronous event handlers, see: https://github.com/dotnet/runtime/issues/18789
+				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
+				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", file);
 
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");

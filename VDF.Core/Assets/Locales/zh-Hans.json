@@ -23,6 +23,8 @@
   "Scan.Stage.PartialCompare": "比较部分片段",
   "Scan.Stage.PartialVisualVerify": "验证部分片段",
   "Scan.Stage.AiEmbedding": "正在计算 AI 嵌入",
+  "Scan.Stage.AiPrepare": "AI 部分检测：准备中",
   "Scan.Stage.AiDenseSampling": "AI 部分检测：采样关键帧",
-  "Scan.Stage.AiPartialCompare": "AI 部分检测：匹配片段"
+  "Scan.Stage.AiPartialCompare": "AI 部分检测：匹配片段",
+  "Scan.Stage.AiPersist": "AI 部分检测：保存关键帧缓存"
 }

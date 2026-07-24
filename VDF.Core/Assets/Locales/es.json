@@ -23,6 +23,8 @@
   "Scan.Stage.PartialCompare": "comparando clips parciales",
   "Scan.Stage.PartialVisualVerify": "verificando clips parciales",
   "Scan.Stage.AiEmbedding": "calculando embeddings de IA",
+  "Scan.Stage.AiPrepare": "IA parcial: preparando",
   "Scan.Stage.AiDenseSampling": "IA parcial: muestreando fotogramas clave",
-  "Scan.Stage.AiPartialCompare": "IA parcial: comparando clips"
+  "Scan.Stage.AiPartialCompare": "IA parcial: comparando clips",
+  "Scan.Stage.AiPersist": "IA parcial: guardando caché de fotogramas clave"
 }

@@ -23,6 +23,8 @@
   "Scan.Stage.PartialCompare": "Teilclips vergleichen",
   "Scan.Stage.PartialVisualVerify": "Teilclips visuell prüfen",
   "Scan.Stage.AiEmbedding": "KI-Embeddings berechnen",
+  "Scan.Stage.AiPrepare": "KI-Teilclips: vorbereiten",
   "Scan.Stage.AiDenseSampling": "KI-Teilclips: Keyframes abtasten",
-  "Scan.Stage.AiPartialCompare": "KI-Teilclips: vergleichen"
+  "Scan.Stage.AiPartialCompare": "KI-Teilclips: vergleichen",
+  "Scan.Stage.AiPersist": "KI-Teilclips: Keyframe-Cache speichern"
 }

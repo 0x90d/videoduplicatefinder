@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using VDF.Core.Utils;
 
 namespace VDF.Core.FFTools {
@@ -27,6 +28,55 @@ namespace VDF.Core.FFTools {
 		// fast child may already have exited, which throws; ignore.
 		internal static void LowerChildPriority(Process process) {
 			try { process.PriorityClass = ProcessPriorityClass.Idle; } catch { }
+		}
+
+		/// <summary>
+		/// Copies the child's stdout into <paramref name="destination"/> and waits for it to
+		/// exit, both bounded by <paramref name="timeoutMs"/>. Kills the child and throws
+		/// <see cref="TimeoutException"/> when it overruns.
+		/// </summary>
+		/// <remarks>
+		/// The bounded read is the whole point. Reading the pipe synchronously
+		/// (<c>CopyTo</c>/<c>ReadToEnd</c>) returns only once the child closes stdout — which a
+		/// wedged ffmpeg/ffprobe never does (dead network share, sleeping USB drive, stalled
+		/// demuxer, an input seek that turns into an endless linear scan). A
+		/// <c>WaitForExit(timeout)</c> placed after such a read is unreachable code in exactly
+		/// the cases it exists for: the worker thread blocked forever, the scan's progress
+		/// counter froze, nothing was logged, and Stop had nothing it could interrupt because
+		/// the cancellation token is not observed inside a synchronous pipe read either (#865).
+		/// </remarks>
+		internal static void ReadStdoutBounded(Process process, Stream destination, int timeoutMs,
+				string toolName, string file, CancellationToken cancelToken = default) {
+			Task? readTask = null;
+			try {
+				readTask = process.StandardOutput.BaseStream.CopyToAsync(destination, cancelToken);
+				if (!readTask.Wait(timeoutMs, cancelToken))
+					throw new TimeoutException($"{toolName} timed out on file: {file}");
+				// stdout is at EOF here, so the child is finished writing; anything but a prompt
+				// exit now means it is wedged on teardown.
+				if (!process.WaitForExit(timeoutMs))
+					throw new TimeoutException($"{toolName} did not exit after closing its output: {file}");
+				process.WaitForExit(); // flush async stderr handlers, see dotnet/runtime#18789
+			}
+			catch (Exception e) {
+				KillAndDrain(process, readTask);
+				// Task.Wait wraps a failed read; callers log e.Message, so hand them the real one.
+				throw e is AggregateException ae && ae.InnerExceptions.Count == 1 ? ae.InnerExceptions[0] : e;
+			}
+		}
+
+		/// <summary>
+		/// Best-effort kill plus a short drain of a pending stdout read. Killing the child breaks
+		/// the pipe, so the read completes promptly — the bounded wait keeps a stuck kill from
+		/// re-introducing the very hang this exists to prevent.
+		/// </summary>
+		internal static void KillAndDrain(Process process, Task? readTask) {
+			try {
+				if (!process.HasExited)
+					process.Kill();
+			}
+			catch { }
+			try { readTask?.Wait(2000); } catch { }
 		}
 
 		const string FFprobeExecutableName = "ffprobe";
@@ -154,9 +204,12 @@ namespace VDF.Core.FFTools {
 					}
 				};
 				process.Start();
-				string firstLine = process.StandardOutput.ReadLine() ?? string.Empty;
-				process.StandardOutput.ReadToEnd(); // drain so the process can exit cleanly
-				process.WaitForExit(5000);
+				// Bounded, see ReadStdoutBounded: this one runs on the UI thread (diagnostics
+				// report), where a synchronous drain of a wedged tool froze the window.
+				using var ms = new MemoryStream();
+				ReadStdoutBounded(process, ms, 5000, tool.ToString(), path);
+				string firstLine = Encoding.UTF8.GetString(ms.ToArray())
+					.Split('\n', 2)[0].TrimEnd('\r');
 				return firstLine.Length > 0 ? firstLine : $"{tool}: no version output";
 			}
 			catch (Exception e) {

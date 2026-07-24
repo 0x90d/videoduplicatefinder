@@ -29,6 +29,8 @@ namespace VDF.Core.FFTools {
 	/// </summary>
 	internal static class ChromaprintEngine {
 		private const int TimeoutMs = 30_000; // 30 seconds max for process exit after stream ends
+		// Max time one read may wait for the next PCM chunk before the child counts as wedged.
+		private const int StallTimeoutMs = 120_000;
 		private const int TargetSampleRate = 11025;
 		private const int TargetChannels = 1;
 		// Read PCM in 32 KB chunks — keeps memory low while giving ChromaContext
@@ -155,7 +157,19 @@ namespace VDF.Core.FFTools {
 						return null;
 					}
 
-					int bytesRead = stream.Read(buf, 0, buf.Length);
+					// Bounded read, same trap as the other CLI paths (#865): a synchronous Read
+					// blocks forever when ffmpeg wedges mid-stream (dead share, stalled
+					// demuxer), and the cancellation check above only runs between reads. The
+					// budget is generous — a slow share may take a while to hand over the next
+					// PCM chunk — but a child that goes silent that long is not coming back.
+					var readTask = stream.ReadAsync(buf, 0, buf.Length, ct);
+					if (!readTask.Wait(StallTimeoutMs, ct)) {
+						KillProcess(process);
+						Logger.Instance.Warn($"[ChromaprintEngine] {Path.GetFileName(filePath)}: " +
+							$"FFmpeg stopped producing audio for {StallTimeoutMs / 1000}s, giving up on this file.");
+						return null;
+					}
+					int bytesRead = readTask.GetAwaiter().GetResult(); // completed; unwraps a read failure
 					if (bytesRead <= 0) break;
 
 					totalBytes += bytesRead;
@@ -213,8 +227,14 @@ namespace VDF.Core.FFTools {
 				return null;
 			}
 			catch (Exception ex) {
-				Logger.Instance.Warn($"[ChromaprintEngine] Failed on '{filePath}': {ex.Message}");
+				// The bounded read reports through a Task, so a failed (or canceled) read
+				// arrives wrapped; log the real reason rather than "One or more errors occurred".
+				Exception real = ex is AggregateException ae && ae.InnerExceptions.Count == 1
+					? ae.InnerExceptions[0] : ex;
 				KillProcess(process);
+				if (real is OperationCanceledException)
+					return null;
+				Logger.Instance.Warn($"[ChromaprintEngine] Failed on '{filePath}': {real.Message}");
 				return null;
 			}
 		}

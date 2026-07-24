@@ -23,6 +23,8 @@
   "Scan.Stage.PartialCompare": "comparing partial clips",
   "Scan.Stage.PartialVisualVerify": "verifying partial clips",
   "Scan.Stage.AiEmbedding": "computing AI embeddings",
+  "Scan.Stage.AiPrepare": "AI partial: preparing",
   "Scan.Stage.AiDenseSampling": "AI partial: sampling keyframes",
-  "Scan.Stage.AiPartialCompare": "AI partial: matching clips"
+  "Scan.Stage.AiPartialCompare": "AI partial: matching clips",
+  "Scan.Stage.AiPersist": "AI partial: saving keyframe cache"
 }
