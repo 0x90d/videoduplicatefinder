@@ -37,6 +37,8 @@ public class FfmpegFixture : IDisposable {
 	public string? VP9 { get; }
 	public string? H264_Different { get; }
 	public string? H264_Corrupted { get; }
+	/// <summary>Every packet byte corrupted — no frame recoverable at any position (#867 fast-fail).</summary>
+	public string? H264_FullyCorrupted { get; }
 
 	/// <summary>Checked-in HEIC still image (FFmpeg can decode but not mux HEIC).</summary>
 	public string? SampleHeic { get; }
@@ -117,6 +119,9 @@ public class FfmpegFixture : IDisposable {
 			string corruptPath = Path.Combine(TempDir, "h264_corrupted.mp4");
 			if (TestVideoGenerator.GenerateH264_Corrupted(ffmpegPath, H264_8bit, corruptPath))
 				H264_Corrupted = corruptPath;
+			string fullyCorruptPath = Path.Combine(TempDir, "h264_fully_corrupted.mp4");
+			if (TestVideoGenerator.GenerateH264_FullyCorrupted(ffmpegPath, H264_8bit, fullyCorruptPath))
+				H264_FullyCorrupted = fullyCorruptPath;
 		}
 
 		// HEIC support fixtures. The sample image is checked in (FFmpeg cannot mux HEIC);

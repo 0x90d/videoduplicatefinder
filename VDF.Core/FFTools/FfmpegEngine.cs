@@ -265,6 +265,8 @@ namespace VDF.Core.FFTools {
 		///
 		/// On any FFmpeg error we abort and return false; the caller falls back to the per-sample
 		/// CLI/native path so partial extraction still succeeds. Already-cached positions are skipped.
+		/// <paramref name="failureCategory"/> reports the classified cause of a failure so the
+		/// caller can decide whether that fallback is worth attempting at all (#867).
 		/// </summary>
 		static unsafe bool TryGetGrayBytesFromVideoNativeBatch(
 			FileEntry videoFile,
@@ -272,8 +274,10 @@ namespace VDF.Core.FFTools {
 			double maxSamplingDurationSeconds,
 			ref int tooDarkCounter,
 			Action<int>? onSampleComplete,
+			out FfmpegErrorCategory failureCategory,
 			AI.IEmbeddingFrameSink? embeddingSink = null) {
 			const int N = 32;
+			failureCategory = FfmpegErrorCategory.Unknown;
 			try {
 				FfmpegLogCapture.Reset();
 				using var vsd = new VideoStreamDecoder(videoFile.Path, GetConfiguredHardwareDeviceType());
@@ -349,6 +353,11 @@ namespace VDF.Core.FFTools {
 				return true;
 			}
 			catch (Exception e) {
+				// Same diagnostics combination BuildNativeFailureDetail logs, so the category
+				// always matches the Hint the user sees for this failure.
+				string diagnostics = FfmpegLogCapture.GetRecent();
+				failureCategory = FfmpegErrorClassifier.Categorize(
+					diagnostics.Length > 0 ? $"{diagnostics} {e.Message}" : e.Message);
 				// One failure recorded per video file (not per position) so the session
 				// circuit breaker reflects per-file native health (issues #793/#795). The
 				// per-sample fallback below still re-attempts native but does not record.
@@ -356,6 +365,19 @@ namespace VDF.Core.FFTools {
 				return false;
 			}
 		}
+
+		/// <summary>
+		/// Whether a failed native batch extraction must not be retried through the FFmpeg
+		/// process. True only for a failure classified as a broken file while decoding in
+		/// software: the process fallback runs the same libavcodec over the same bitstream,
+		/// so it cannot succeed either — it only grinds through the damaged stream again,
+		/// burning up to a full timeout per attempt and stalling the scan on every corrupt
+		/// file (#867). Under hardware decode a corrupt-looking error can still be a
+		/// GPU/driver quirk, and the process fallback genuinely rescues those.
+		/// </summary>
+		internal static bool ShouldSkipProcessRetryForCorruptFile(FfmpegErrorCategory failureCategory, AVHWDeviceType hardwareDeviceType) =>
+			failureCategory == FfmpegErrorCategory.CorruptOrTruncated &&
+			hardwareDeviceType == AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 
 		/// <summary>
 		/// Extracts one 32x32 grayscale frame per position, opening a single decoder and
@@ -891,13 +913,28 @@ namespace VDF.Core.FFTools {
 			// Native batch path: open file + decoder + sws context once, walk all positions.
 			// The for-loop fallback below recreates them per position, so on a 4-position scan
 			// this avoids ~3x of the per-file FFmpeg setup cost.
-			if (ShouldUseNativeBinding && TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete, embeddingSink)) {
-				if (missingPositions > 0 && tooDarkCounter == missingPositions) {
-					videoFile.Flags.Set(EntryFlags.TooDark);
-					Logger.Instance.Warn($"Graybytes too dark of: {videoFile.Path}");
+			if (ShouldUseNativeBinding) {
+				if (TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete, out FfmpegErrorCategory nativeFailureCategory, embeddingSink)) {
+					if (missingPositions > 0 && tooDarkCounter == missingPositions) {
+						videoFile.Flags.Set(EntryFlags.TooDark);
+						Logger.Instance.Warn($"Graybytes too dark of: {videoFile.Path}");
+						return false;
+					}
+					return true;
+				}
+				if (ShouldSkipProcessRetryForCorruptFile(nativeFailureCategory, GetConfiguredHardwareDeviceType())) {
+					// The gray frames may all be present (cached, or extracted before the
+					// failure) with only AI embedding frames missing — then the file stays
+					// fully comparable and the AI pass simply abstains for it.
+					if (CountMissingGrayBytePositions(videoFile, positions, maxSamplingDurationSeconds) == 0)
+						return true;
+					videoFile.Flags.Set(EntryFlags.ThumbnailError);
+					Logger.Instance.Warn(
+						$"Skipping process-mode retry for '{videoFile.Path}': the decode failure above indicates a truncated or corrupt file, " +
+						"and the FFmpeg process would fail the same way, only slower. The file is excluded from this scan " +
+						"(and future scans, unless 'Always retry failed sampling' is enabled).");
 					return false;
 				}
-				return true;
 			}
 
 			// Re-count: the batch path may have populated some positions before throwing.

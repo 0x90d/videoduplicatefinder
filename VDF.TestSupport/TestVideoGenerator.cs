@@ -118,6 +118,16 @@ public static class TestVideoGenerator {
 			$"-y -i \"{cleanInputPath}\" -c copy -bsf:v \"noise=amount=20:dropamount=8\" \"{outputPath}\"");
 
 	/// <summary>
+	/// H.264 with EVERY packet byte corrupted (noise=amount=1), so no frame can ever be
+	/// recovered at any position — unlike <see cref="GenerateH264_Corrupted"/>, whose light
+	/// noise lets the decoder recover frames at some positions. The container (and thus
+	/// ffprobe metadata) stays intact. Drives the corrupt-file fast-fail (#867) deterministically.
+	/// </summary>
+	public static bool GenerateH264_FullyCorrupted(string ffmpegPath, string cleanInputPath, string outputPath) =>
+		RunFfmpeg(ffmpegPath,
+			$"-y -i \"{cleanInputPath}\" -c copy -bsf:v \"noise=amount=1\" \"{outputPath}\"");
+
+	/// <summary>
 	/// Tiny 1s 64x48 H.264 clip stamped with an explicit container <c>creation_time</c> tag.
 	/// Used to exercise <c>FFProbeEngine.GetCreationTime</c>, the HEIC EXIF-date fallback.
 	/// </summary>

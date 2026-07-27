@@ -41,6 +41,11 @@ public class FfmpegErrorClassifierTests {
 	[InlineData("[h264 @ 0x0] Invalid NAL unit size (-1)")]
 	[InlineData("Could not find codec parameters for stream 0")]
 	[InlineData("[hevc @ 0x0] Error while decoding")]
+	// The exact combined diagnostics of the truncated file from issue #867 (captured FFmpeg
+	// log + native batch exception message), as fed to Categorize by the fast-fail decision.
+	[InlineData("Invalid NAL unit size (0 > 4182). | missing picture in access unit with size 4186 | " +
+		"Invalid NAL unit size (0 > 4182). | Error splitting the input into NAL units. " +
+		"TryDecodeFrame failed at pos=278.6666749715805 for 'E:\\redacted.mp4'")]
 	public void Categorize_CorruptOrTruncated(string text) =>
 		Assert.Equal(FfmpegErrorCategory.CorruptOrTruncated, FfmpegErrorClassifier.Categorize(text));
 
