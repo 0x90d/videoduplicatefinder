@@ -60,6 +60,16 @@ namespace VDF.Core.Utils {
 		internal static bool IsMediaExtension(string extension) => AllExtensionSet.Contains(extension);
 		/// <summary>True when the file path has a still-image extension (decoded as a single frame by FFmpeg).</summary>
 		internal static bool IsImageFile(string path) => ImageExtensionSet.Contains(Path.GetExtension(path));
+		/// <summary>
+		/// True for HEIF-family images (.heic/.heif). Apple photos store the full-resolution
+		/// picture as a tile-grid stream group that FFmpeg assembles via an internal
+		/// filtergraph, which needs different CLI plumbing than plain one-stream images (#869).
+		/// </summary>
+		internal static bool IsHeifImageFile(string path) {
+			string extension = Path.GetExtension(path);
+			return extension.Equals(".heic", StringComparison.OrdinalIgnoreCase) ||
+				extension.Equals(".heif", StringComparison.OrdinalIgnoreCase);
+		}
 		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken) {
 			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,

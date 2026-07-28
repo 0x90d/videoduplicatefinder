@@ -2997,7 +2997,11 @@ namespace VDF.Core {
 					// to FFprobe when the header reader doesn't recognise the format.
 					if (!ImageHeader.TryGetDimensions(imageFile.Path, out width, out height)) {
 						MediaInfo? info = FFProbeEngine.GetMediaInfo(imageFile.Path, extendedLogging);
-						var stream = info?.Streams?.FirstOrDefault(s => s.Width > 0 && s.Height > 0);
+						// Largest stream, not the first: tiled HEIFs expose dozens of streams
+						// (grid tiles, previews, aux maps) and the first is a single tile,
+						// whose aspect ratio has nothing to do with the photo's (#869).
+						var stream = info?.Streams?.Where(s => s.Width > 0 && s.Height > 0)
+							.OrderByDescending(s => (long)s.Width * s.Height).FirstOrDefault();
 						width = stream?.Width ?? 0;
 						height = stream?.Height ?? 0;
 					}

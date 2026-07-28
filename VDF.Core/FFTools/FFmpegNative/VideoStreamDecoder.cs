@@ -98,6 +98,13 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		public AVPixelFormat PixelFormat { get; }
 		public bool IsHardwareDecode { get; }
 		public AVRational StreamSampleAspectRatio { get; }
+		/// <summary>
+		/// True when the container carries stream groups (e.g. the HEIF tile grid of an Apple
+		/// photo). av_find_best_stream can only pick a single coded stream — for a tiled photo
+		/// that is one 512x512 tile or an auxiliary depth/gain-map stream, never the assembled
+		/// picture, so callers decoding such images must use the FFmpeg process instead (#869).
+		/// </summary>
+		public bool HasStreamGroups => _pFormatContext != null && _pFormatContext->nb_stream_groups > 0;
 
 		protected virtual void Dispose(bool disposing) {
 			ReleaseUnmanaged();

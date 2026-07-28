@@ -473,6 +473,11 @@ namespace VDF.Core.FFTools {
 
 					using var vsd = new VideoStreamDecoder(settings.File, HWDevice);
 
+					// Tiled HEIF (Apple photos): the picture only exists as an assembled tile
+					// grid; the native binding would decode one tile or an aux stream (#869).
+					if (vsd.HasStreamGroups && FileUtils.IsHeifImageFile(settings.File))
+						throw new Exception($"Tiled HEIF needs FFmpeg's grid assembly; using the process fallback for '{settings.File}'");
+
 					// Decode first so we know the real source layout. The frame's own
 					// dimensions and pixel format are authoritative — container metadata
 					// (vsd.FrameSize / vsd.PixelFormat) can lie for corrupt files, and
@@ -565,39 +570,6 @@ namespace VDF.Core.FFTools {
 				Logger.Instance.Warn($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}{BuildNativeFailureDetail(e)}");
 			}
 
-			var psi = new ProcessStartInfo {
-				FileName = FFmpegPath,
-				CreateNoWindow = true,
-				RedirectStandardInput = false,
-				RedirectStandardOutput = true,
-				WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
-				// Always capture stderr: when FFmpeg fails, its error output is the only
-				// diagnostic there is. Logged on failure regardless of the logging setting
-				// (issue #780 — 'exited with: 134' with no further detail is undebuggable).
-				RedirectStandardError = true,
-				WindowStyle = ProcessWindowStyle.Hidden
-			};
-
-			psi.ArgumentList.Add("-hide_banner");
-			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("error");
-
-			psi.ArgumentList.Add("-nostdin");
-
-			if (HardwareAccelerationMode != FFHardwareAccelerationMode.none && !settings.SoftwareDecodeOnly) {
-				psi.ArgumentList.Add("-hwaccel");
-				psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
-			}
-
-			// -ss before -i (faster seek, may be less accurate; OK for frame sampling).
-			// Skip it entirely for still images: they are a single frame with no seek position,
-			// and an input -ss (even -ss 0) makes FFmpeg discard that frame on some JPEGs —
-			// EOF before any frame reaches the filter graph, so it writes 0 bytes and exits 0
-			// with no error, surfacing as "Failed to retrieve graybytes" (#801).
-			if (!FileUtils.IsImageFile(settings.File)) {
-				psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(settings.Position.ToString(null, CultureInfo.InvariantCulture));
-			}
-			psi.ArgumentList.Add("-i"); psi.ArgumentList.Add(FFToolsUtils.LongPathFix(settings.File));
-
 			// Parse CustomFFArguments up front so we can detect a user-supplied -vf and merge it
 			// into our own filter chain rather than letting a second -vf silently override the
 			// scale filter (last -vf wins in ffmpeg). See: https://github.com/0x90d/videoduplicatefinder/issues/588
@@ -613,24 +585,24 @@ namespace VDF.Core.FFTools {
 				}
 			}
 
-			// Filter chain: scale + gray
+			// Filter chain (scale + gray/rgb) and output format, decided once — the HEIF
+			// grid-assembly retry below reuses the same chain in a complex filtergraph.
+			string? filterChain;
+			var outputFormatArgs = new List<string>();
 			if (isRgbFrame) {
 				// Deliberately NO user -vf here: the native decode path cannot apply
 				// CustomFFArguments, so embedding inputs must be uniformly unfiltered on
 				// every path — mixing filtered CLI frames with unfiltered native frames
 				// would silently sink AI similarity for exactly the files that fell back
 				// to the CLI (the dense AI sweep is equally unfiltered).
-				psi.ArgumentList.Add("-vf");
-				psi.ArgumentList.Add($"scale={AI.OnnxEmbedder.InputSide}:{AI.OnnxEmbedder.InputSide}:flags=bicubic,format=rgb24");
-				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
-				psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("rgb24");
+				filterChain = $"scale={AI.OnnxEmbedder.InputSide}:{AI.OnnxEmbedder.InputSide}:flags=bicubic,format=rgb24";
+				outputFormatArgs.AddRange(new[] { "-f", "rawvideo", "-pix_fmt", "rgb24" });
 			}
 			else if (isGrayByte) {
 				string vfChain = $"scale={N}:{N}:flags=bicubic,format=gray";
 				if (userVfFilter != null) vfChain = $"{userVfFilter},{vfChain}";
-				psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
-				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
-				psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("gray");
+				filterChain = vfChain;
+				outputFormatArgs.AddRange(new[] { "-f", "rawvideo", "-pix_fmt", "gray" });
 			}
 			else {
 				// SAR normalization first, so anamorphic videos render at display width
@@ -645,92 +617,158 @@ namespace VDF.Core.FFTools {
 					string vfChain = $"scale=min({maxW}\\,iw):min({maxW}\\,ih):force_original_aspect_ratio=decrease";
 					if (sarChain != null) vfChain = $"{sarChain},{vfChain}";
 					if (userVfFilter != null) vfChain = $"{vfChain},{userVfFilter}";
-					psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
+					filterChain = vfChain;
 				}
 				else {
 					string? vfChain = sarChain;
 					if (userVfFilter != null) vfChain = vfChain != null ? $"{vfChain},{userVfFilter}" : userVfFilter;
-					if (vfChain != null) {
-						psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(vfChain);
-					}
+					filterChain = vfChain;
 				}
-				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("mjpeg");
+				outputFormatArgs.AddRange(new[] { "-f", "mjpeg" });
 				// Map 1-100 quality onto MJPEG's 2-31 qscale (lower = better), same curve
 				// as JpegFrameEncoder so CLI and native output comparable quality.
 				int quality = settings.JpegQuality > 0 ? settings.JpegQuality : DefaultJpegQuality;
-				psi.ArgumentList.Add("-q:v"); psi.ArgumentList.Add(Math.Clamp(2 + (100 - quality) / 10, 2, 31).ToString(CultureInfo.InvariantCulture));
+				outputFormatArgs.Add("-q:v");
+				outputFormatArgs.Add(Math.Clamp(2 + (100 - quality) / 10, 2, 31).ToString(CultureInfo.InvariantCulture));
 			}
 
-			psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
+			ProcessStartInfo BuildPsi(bool gridAssembly) {
+				var psi = new ProcessStartInfo {
+					FileName = FFmpegPath,
+					CreateNoWindow = true,
+					RedirectStandardInput = false,
+					RedirectStandardOutput = true,
+					WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
+					// Always capture stderr: when FFmpeg fails, its error output is the only
+					// diagnostic there is. Logged on failure regardless of the logging setting
+					// (issue #780 — 'exited with: 134' with no further detail is undebuggable).
+					RedirectStandardError = true,
+					WindowStyle = ProcessWindowStyle.Hidden
+				};
 
-			foreach (var item in remainingCustomArgs)
-				psi.ArgumentList.Add(item);
-			psi.ArgumentList.Add("pipe:1"); // stdout
+				psi.ArgumentList.Add("-hide_banner");
+				psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("error");
 
-			////https://docs.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings#string-literals
-			//string ffmpegArguments = $" -hide_banner -loglevel {(extendedLogging ? "error" : "quiet")}" +
-			//	$" -y -hwaccel {HardwareAccelerationMode} -ss {settings.Position} -i \"{FFToolsUtils.LongPathFix(settings.File)}\"" +
-			//	$" -t 1 -f {(isGrayByte ? "rawvideo -pix_fmt gray" : "mjpeg")} -vframes 1" +
-			//	$" {(isGrayByte ? "-s 16x16" : (settings.Fullsize == 1 ? string.Empty : "-vf scale=100:-1"))} {CustomFFArguments} \"-\"";
+				psi.ArgumentList.Add("-nostdin");
 
-			using var process = new Process {
-				StartInfo = psi
-			};
-			string errOut = string.Empty;
-			// Collapse consecutive identical stderr lines: a single broken HEVC/H.264
-			// stream can emit the same decoder error tens of thousands of times per
-			// file (e.g. "[hevc] Error constructing the frame RPS"), turning the log
-			// into noise. Track the last line and a repeat count, then flush.
-			string lastErrLine = string.Empty;
-			int repeatCount = 0;
-			byte[]? bytes = null;
-			try {
-				process.EnableRaisingEvents = true;
-				process.Start();
-				FFToolsUtils.LowerChildPriority(process);
-				process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-					if (e.Data?.Length > 0) {
-						if (e.Data == lastErrLine) {
-							repeatCount++;
-						}
-						else {
-							if (repeatCount > 0) {
-								errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
-								repeatCount = 0;
-							}
-							errOut += Environment.NewLine + e.Data;
-							lastErrLine = e.Data;
-						}
+				if (HardwareAccelerationMode != FFHardwareAccelerationMode.none && !settings.SoftwareDecodeOnly) {
+					psi.ArgumentList.Add("-hwaccel");
+					psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
+				}
+
+				// -ss before -i (faster seek, may be less accurate; OK for frame sampling).
+				// Skip it entirely for still images: they are a single frame with no seek position,
+				// and an input -ss (even -ss 0) makes FFmpeg discard that frame on some JPEGs —
+				// EOF before any frame reaches the filter graph, so it writes 0 bytes and exits 0
+				// with no error, surfacing as "Failed to retrieve graybytes" (#801).
+				if (!FileUtils.IsImageFile(settings.File)) {
+					psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(settings.Position.ToString(null, CultureInfo.InvariantCulture));
+				}
+				psi.ArgumentList.Add("-i"); psi.ArgumentList.Add(FFToolsUtils.LongPathFix(settings.File));
+
+				if (filterChain != null) {
+					if (gridAssembly) {
+						// Tiled HEIF: read the tile-grid stream group directly ([0:g:0] = the
+						// primary grid of an Apple photo) so FFmpeg assembles the full picture,
+						// and run our chain in the same complex graph — a plain -vf on that
+						// stream is rejected ("Simple and complex filtering cannot be used
+						// together for the same stream") on FFmpeg 8.1+ (#869).
+						psi.ArgumentList.Add("-filter_complex");
+						psi.ArgumentList.Add($"[0:g:0]{filterChain}[vdf]");
+						psi.ArgumentList.Add("-map"); psi.ArgumentList.Add("[vdf]");
 					}
-				});
-				process.BeginErrorReadLine();
-				using var ms = new MemoryStream();
-				// Bounded read + wait: a synchronous CopyTo made the timeout below unreachable
-				// and blocked the worker forever on a wedged ffmpeg (#865).
-				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", settings.File);
+					else {
+						psi.ArgumentList.Add("-vf"); psi.ArgumentList.Add(filterChain);
+					}
+				}
+				foreach (string arg in outputFormatArgs)
+					psi.ArgumentList.Add(arg);
 
-				if (process.ExitCode != 0)
-					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
+				psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
 
-				bytes = ms.ToArray();
-				if (bytes.Length == 0)
-					bytes = null;   // Makes subsequent checks easier
-				else if (isRawOutput && bytes.Length != expectedBytes) {
-					errOut += $"{Environment.NewLine}{(isGrayByte ? "graybytes" : "AI frame")} length != {expectedBytes} (got {bytes.Length})";
+				foreach (var item in remainingCustomArgs)
+					psi.ArgumentList.Add(item);
+				psi.ArgumentList.Add("pipe:1"); // stdout
+				return psi;
+			}
+
+			byte[]? RunGrab(ProcessStartInfo psi, ref string errOut) {
+				using var process = new Process {
+					StartInfo = psi
+				};
+				string localErr = string.Empty;
+				// Collapse consecutive identical stderr lines: a single broken HEVC/H.264
+				// stream can emit the same decoder error tens of thousands of times per
+				// file (e.g. "[hevc] Error constructing the frame RPS"), turning the log
+				// into noise. Track the last line and a repeat count, then flush.
+				string lastErrLine = string.Empty;
+				int repeatCount = 0;
+				byte[]? bytes = null;
+				try {
+					process.EnableRaisingEvents = true;
+					process.Start();
+					FFToolsUtils.LowerChildPriority(process);
+					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
+						if (e.Data?.Length > 0) {
+							if (e.Data == lastErrLine) {
+								repeatCount++;
+							}
+							else {
+								if (repeatCount > 0) {
+									localErr += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+									repeatCount = 0;
+								}
+								localErr += Environment.NewLine + e.Data;
+								lastErrLine = e.Data;
+							}
+						}
+					});
+					process.BeginErrorReadLine();
+					using var ms = new MemoryStream();
+					// Bounded read + wait: a synchronous CopyTo made the timeout below unreachable
+					// and blocked the worker forever on a wedged ffmpeg (#865).
+					FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", settings.File);
+
+					if (process.ExitCode != 0)
+						throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
+
+					bytes = ms.ToArray();
+					if (bytes.Length == 0)
+						bytes = null;   // Makes subsequent checks easier
+					else if (isRawOutput && bytes.Length != expectedBytes) {
+						localErr += $"{Environment.NewLine}{(isGrayByte ? "graybytes" : "AI frame")} length != {expectedBytes} (got {bytes.Length})";
+						bytes = null;
+					}
+				}
+				catch (Exception e) {
+					localErr += $"{Environment.NewLine}{e.Message}";
+					try {
+						if (process.HasExited == false)
+							process.Kill();
+					}
+					catch { }
 					bytes = null;
 				}
+				if (repeatCount > 0)
+					localErr += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+				errOut += localErr;
+				return bytes;
 			}
-			catch (Exception e) {
-				errOut += $"{Environment.NewLine}{e.Message}";
-				try {
-					if (process.HasExited == false)
-						process.Kill();
-				}
-				catch { }
-				bytes = null;
+
+			string errOut = string.Empty;
+			ProcessStartInfo psiUsed = BuildPsi(gridAssembly: false);
+			byte[]? bytes = RunGrab(psiUsed, ref errOut);
+			// Tiled HEIF (Apple photos) on FFmpeg 8.1+: the picture FFmpeg selects is
+			// assembled from tiles by an internal complex filtergraph, and the -vf above is
+			// rejected against it, yielding no output. Retry once with the same chain as a
+			// complex graph on the tile-grid stream group (#869). HEIF images only, so every
+			// other format keeps the single-attempt behavior; single-stream HEICs succeed on
+			// the first attempt and never get here.
+			if (bytes == null && filterChain != null && FileUtils.IsHeifImageFile(settings.File)) {
+				errOut += $"{Environment.NewLine}Retrying with HEIF tile-grid assembly ([0:g:0]):";
+				psiUsed = BuildPsi(gridAssembly: true);
+				bytes = RunGrab(psiUsed, ref errOut);
 			}
-			if (repeatCount > 0)
-				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
 			// When we still extracted the frame from a still image, drop FFmpeg's benign
 			// demuxer chatter: its image2/png_pipe demuxer probes past the single frame and
 			// misreads mid-stream PNG IDAT bytes as a second image, emitting bogus
@@ -743,7 +781,7 @@ namespace VDF.Core.FFTools {
 			if (bytes == null || (extendedLogging && errOut.Length > 0)) {
 				string message = $"{((bytes == null) ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {(isGrayByte ? "graybytes" : isRgbFrame ? "AI frame" : "thumbnail")} from: {settings.File}";
 				if (extendedLogging) {
-					var args = string.Join(" ", psi.ArgumentList);
+					var args = string.Join(" ", psiUsed.ArgumentList);
 					message += $":{Environment.NewLine}{FFmpegPath} {args}";
 				}
 				// On an outright failure, classify FFmpeg's stderr into a plain-language hint so
@@ -775,106 +813,128 @@ namespace VDF.Core.FFTools {
 			int rgbExpectedBytes = AI.OnnxEmbedder.InputSide * AI.OnnxEmbedder.InputSide * 3;
 			string rgbTempPath = Path.Combine(Path.GetTempPath(), $"VDF.AiFrame.{Guid.NewGuid():N}.rgb");
 
-			var psi = new ProcessStartInfo {
-				FileName = FFmpegPath,
-				CreateNoWindow = true,
-				RedirectStandardInput = false,
-				RedirectStandardOutput = true,
-				RedirectStandardError = true,
-				WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
-				WindowStyle = ProcessWindowStyle.Hidden
-			};
-			psi.ArgumentList.Add("-hide_banner");
-			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("error");
-			psi.ArgumentList.Add("-nostdin");
-			if (HardwareAccelerationMode != FFHardwareAccelerationMode.none && !softwareDecodeOnly) {
-				psi.ArgumentList.Add("-hwaccel");
-				psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
-			}
 			bool isImage = FileUtils.IsImageFile(file);
-			// No input -ss for still images — see the matching comment in GetThumbnail (#801).
-			if (!isImage) {
-				psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(position.ToString(null, CultureInfo.InvariantCulture));
-			}
-			psi.ArgumentList.Add("-i"); psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
-			psi.ArgumentList.Add("-filter_complex");
-			psi.ArgumentList.Add(
-				$"[0:v]split=2[g][r];" +
-				$"[g]scale={N}:{N}:flags=bicubic,format=gray[gout];" +
-				$"[r]scale={AI.OnnxEmbedder.InputSide}:{AI.OnnxEmbedder.InputSide}:flags=bicubic,format=rgb24[rout]");
-			psi.ArgumentList.Add("-map"); psi.ArgumentList.Add("[gout]");
-			psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
-			psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
-			psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("gray");
-			psi.ArgumentList.Add("pipe:1");
-			psi.ArgumentList.Add("-map"); psi.ArgumentList.Add("[rout]");
-			psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
-			psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
-			psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("rgb24");
-			psi.ArgumentList.Add("-y");
-			psi.ArgumentList.Add(rgbTempPath);
+			// Tiled HEIF (Apple photos): [0:v] resolves to the first coded stream, which is a
+			// single 512x512 tile — the full picture only exists as the tile-grid stream
+			// group, read via [0:g:0] so FFmpeg assembles it (#869). Single-stream HEICs have
+			// no groups (the specifier "matches no streams"), so they fall back to the plain
+			// [0:v] attempt; every other format keeps the single [0:v] invocation.
+			string[] inputLabels = isImage && FileUtils.IsHeifImageFile(file)
+				? new[] { "0:g:0", "0:v" }
+				: new[] { "0:v" };
 
-			using var process = new Process { StartInfo = psi };
+			ProcessStartInfo BuildPsi(string inputLabel) {
+				var psi = new ProcessStartInfo {
+					FileName = FFmpegPath,
+					CreateNoWindow = true,
+					RedirectStandardInput = false,
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
+					WindowStyle = ProcessWindowStyle.Hidden
+				};
+				psi.ArgumentList.Add("-hide_banner");
+				psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("error");
+				psi.ArgumentList.Add("-nostdin");
+				if (HardwareAccelerationMode != FFHardwareAccelerationMode.none && !softwareDecodeOnly) {
+					psi.ArgumentList.Add("-hwaccel");
+					psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
+				}
+				// No input -ss for still images — see the matching comment in GetThumbnail (#801).
+				if (!isImage) {
+					psi.ArgumentList.Add("-ss"); psi.ArgumentList.Add(position.ToString(null, CultureInfo.InvariantCulture));
+				}
+				psi.ArgumentList.Add("-i"); psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
+				psi.ArgumentList.Add("-filter_complex");
+				psi.ArgumentList.Add(
+					$"[{inputLabel}]split=2[g][r];" +
+					$"[g]scale={N}:{N}:flags=bicubic,format=gray[gout];" +
+					$"[r]scale={AI.OnnxEmbedder.InputSide}:{AI.OnnxEmbedder.InputSide}:flags=bicubic,format=rgb24[rout]");
+				psi.ArgumentList.Add("-map"); psi.ArgumentList.Add("[gout]");
+				psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
+				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
+				psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("gray");
+				psi.ArgumentList.Add("pipe:1");
+				psi.ArgumentList.Add("-map"); psi.ArgumentList.Add("[rout]");
+				psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
+				psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
+				psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("rgb24");
+				psi.ArgumentList.Add("-y");
+				psi.ArgumentList.Add(rgbTempPath);
+				return psi;
+			}
+
 			string errOut = string.Empty;
-			string lastErrLine = string.Empty;
-			int repeatCount = 0;
 			byte[]? gray = null;
 			byte[]? rgb = null;
-			try {
-				process.EnableRaisingEvents = true;
-				process.Start();
-				FFToolsUtils.LowerChildPriority(process);
-				process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-					if (e.Data?.Length > 0) {
-						if (e.Data == lastErrLine) {
-							repeatCount++;
-						}
-						else {
-							if (repeatCount > 0) {
-								errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
-								repeatCount = 0;
-							}
-							errOut += Environment.NewLine + e.Data;
-							lastErrLine = e.Data;
-						}
-					}
-				});
-				process.BeginErrorReadLine();
-				using var ms = new MemoryStream();
-				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
-				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", file);
-
-				if (process.ExitCode != 0)
-					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
-
-				gray = ms.ToArray();
-				if (gray.Length != grayExpectedBytes) {
-					errOut += $"{Environment.NewLine}graybytes length != {grayExpectedBytes} (got {gray.Length})";
-					gray = null;
-				}
-				if (File.Exists(rgbTempPath)) {
-					rgb = File.ReadAllBytes(rgbTempPath);
-					if (rgb.Length != rgbExpectedBytes) {
-						errOut += $"{Environment.NewLine}AI frame length != {rgbExpectedBytes} (got {rgb.Length})";
-						rgb = null;
-					}
-				}
-			}
-			catch (Exception e) {
-				errOut += $"{Environment.NewLine}{e.Message}";
-				try {
-					if (process.HasExited == false)
-						process.Kill();
-				}
-				catch { }
+			ProcessStartInfo psiUsed = null!;
+			for (int attempt = 0; attempt < inputLabels.Length; attempt++) {
+				if (attempt > 0)
+					errOut += $"{Environment.NewLine}Retrying with input [{inputLabels[attempt]}]:";
+				psiUsed = BuildPsi(inputLabels[attempt]);
+				using var process = new Process { StartInfo = psiUsed };
+				string lastErrLine = string.Empty;
+				int repeatCount = 0;
 				gray = null;
 				rgb = null;
+				try {
+					process.EnableRaisingEvents = true;
+					process.Start();
+					FFToolsUtils.LowerChildPriority(process);
+					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
+						if (e.Data?.Length > 0) {
+							if (e.Data == lastErrLine) {
+								repeatCount++;
+							}
+							else {
+								if (repeatCount > 0) {
+									errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+									repeatCount = 0;
+								}
+								errOut += Environment.NewLine + e.Data;
+								lastErrLine = e.Data;
+							}
+						}
+					});
+					process.BeginErrorReadLine();
+					using var ms = new MemoryStream();
+					// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
+					FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", file);
+
+					if (process.ExitCode != 0)
+						throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
+
+					gray = ms.ToArray();
+					if (gray.Length != grayExpectedBytes) {
+						errOut += $"{Environment.NewLine}graybytes length != {grayExpectedBytes} (got {gray.Length})";
+						gray = null;
+					}
+					if (File.Exists(rgbTempPath)) {
+						rgb = File.ReadAllBytes(rgbTempPath);
+						if (rgb.Length != rgbExpectedBytes) {
+							errOut += $"{Environment.NewLine}AI frame length != {rgbExpectedBytes} (got {rgb.Length})";
+							rgb = null;
+						}
+					}
+				}
+				catch (Exception e) {
+					errOut += $"{Environment.NewLine}{e.Message}";
+					try {
+						if (process.HasExited == false)
+							process.Kill();
+					}
+					catch { }
+					gray = null;
+					rgb = null;
+				}
+				finally {
+					try { if (File.Exists(rgbTempPath)) File.Delete(rgbTempPath); } catch { }
+				}
+				if (repeatCount > 0)
+					errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
+				if (gray != null)
+					break;
 			}
-			finally {
-				try { if (File.Exists(rgbTempPath)) File.Delete(rgbTempPath); } catch { }
-			}
-			if (repeatCount > 0)
-				errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
 			// Same benign-demuxer-noise handling as GetThumbnail (#805/#809/#815).
 			if (gray != null && errOut.Length > 0 && isImage)
 				errOut = FilterBenignImageDemuxerNoise(errOut);
@@ -882,7 +942,7 @@ namespace VDF.Core.FFTools {
 				string what = gray == null ? "graybytes+AI frame" : "AI frame";
 				string message = $"{(gray == null || rgb == null ? "ERROR: Failed to retrieve" : "WARNING: Problems while retrieving")} {what} from: {file}";
 				if (extendedLogging) {
-					var args = string.Join(" ", psi.ArgumentList);
+					var args = string.Join(" ", psiUsed.ArgumentList);
 					message += $":{Environment.NewLine}{FFmpegPath} {args}";
 				}
 				string? hint = gray == null ? FfmpegErrorClassifier.Classify(errOut) : null;
@@ -1240,6 +1300,11 @@ namespace VDF.Core.FFTools {
 			try {
 				// Stills never benefit from HW decoders (and some HW paths reject them).
 				using var vsd = new VideoStreamDecoder(path);
+				// Tiled HEIF (Apple photos): the real picture only exists as an assembled
+				// tile grid, which the native binding cannot produce — decoding the "best"
+				// stream would silently hash a single tile or an aux depth/gain map (#869).
+				if (vsd.HasStreamGroups && FileUtils.IsHeifImageFile(path))
+					throw new Exception($"Tiled HEIF needs FFmpeg's grid assembly; using the process fallback for '{path}'");
 				if (!vsd.TryDecodeFrame(out var srcFrame, TimeSpan.Zero))
 					throw new Exception($"TryDecodeFrame failed for image '{path}'");
 
