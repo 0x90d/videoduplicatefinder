@@ -49,8 +49,7 @@ namespace VDF.Core {
 			// videos and loading the keyframe sidecar are silent minutes on a large library,
 			// and leaving the previous phase's label ("verifying partial clips") plus its
 			// finished counters on screen made that read as a hang (#865, same lesson as #831).
-			currentStageLabel = T("Scan.Stage.AiPrepare");
-			InitProgress(1);
+			InitProgress(1, T("Scan.Stage.AiPrepare"));
 
 			var alreadyGrouped = BuildAlreadyGroupedPathSet();
 
@@ -70,8 +69,7 @@ namespace VDF.Core {
 			var store = DenseEmbeddingStore.Load();
 			if (store.Count > 0)
 				Logger.Instance.Info($"AI partial detection: keyframe cache loaded ({store.Count:N0} record(s)).");
-			currentStageLabel = T("Scan.Stage.AiDenseSampling");
-			InitProgress(videos.Count);
+			InitProgress(videos.Count, T("Scan.Stage.AiDenseSampling"));
 			var dense = new DenseEmbeddingStore.DenseRecord?[videos.Count];
 			int extracted = 0, cached = 0, failed = 0;
 			using (var embedder = new OnnxEmbedder(AiComponents.ModelPath)) {
@@ -198,8 +196,7 @@ namespace VDF.Core {
 			// evicted videos the earlier passes had just grouped.
 			// Its own stage: writing a multi-gigabyte sidecar is minutes of silence that
 			// otherwise sat behind the sampling phase's completed counters (#865).
-			currentStageLabel = T("Scan.Stage.AiPersist");
-			InitProgress(1);
+			InitProgress(1, T("Scan.Stage.AiPersist"));
 			store.Save(AllDatabasePaths());
 			IncrementProgress(string.Empty);
 			if (cancelationTokenSource.IsCancellationRequested)
@@ -216,8 +213,7 @@ namespace VDF.Core {
 			for (int i = 0; i < videos.Count; i++)
 				if (dense[i] is { } record)
 					signatures[i] = ComputeDenseSignatures(record);
-			currentStageLabel = T("Scan.Stage.AiPartialCompare");
-			InitProgress(Math.Max(videos.Count - 1, 1));
+			InitProgress(Math.Max(videos.Count - 1, 1), T("Scan.Stage.AiPartialCompare"));
 			(var matches, int pairsChecked) = CollectPartialMatchCandidates(videos,
 				pairPrefilter: (i, j) => dense[i] != null && dense[j] != null,
 				tryMatchPair: (i, j) =>

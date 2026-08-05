@@ -128,7 +128,7 @@ namespace VDF.Core {
 		string T(string key, params object[] args) =>
 			LanguageService.Instance.Get(Settings.LanguageCode, key, args);
 
-		internal void InitProgress(int count) {
+		internal void InitProgress(int count, string stage) {
 			startTime = DateTime.UtcNow;
 			scanProgressMaxValue = count;
 			processedFiles = 0;
@@ -137,14 +137,14 @@ namespace VDF.Core {
 			// Publish the new phase's zeroed counters at once. A phase whose first item takes minutes
 			// (the visual gate decodes frames off disk) would otherwise leave the previous phase's
 			// finished-looking numbers on screen, and leave the heartbeat with nothing to refresh.
-			// Callers set currentStageLabel before calling, so the label switches with the counters.
+			currentStageLabel = stage;
 			PushProgress(new ScanProgressChangedEventArgs {
 				CurrentPosition = 0,
 				CurrentFile = string.Empty,
 				Elapsed = ElapsedTimer.Elapsed,
 				Remaining = TimeSpan.Zero,
 				MaxPosition = scanProgressMaxValue,
-				CurrentStage = currentStageLabel,
+				CurrentStage = stage,
 			});
 			// After the push, so the phase's first completed item reports without waiting out the throttle.
 			lastProgressUpdate = DateTime.MinValue;
@@ -387,8 +387,7 @@ namespace VDF.Core {
 					if (aiEmbeddingPipeline != null) {
 						// The bounded queue keeps this drain short, but on a slow CPU a few
 						// hundred frames can still be pending — give the wait its own stage.
-						currentStageLabel = T("Scan.Stage.AiEmbedding");
-						InitProgress(1);
+						InitProgress(1, T("Scan.Stage.AiEmbedding"));
 						await aiEmbeddingPipeline.CompleteAsync();
 						IncrementProgress(string.Empty);
 						Logger.Instance.Info($"AI embeddings computed for this scan: {aiEmbeddingPipeline.EmbeddedCount}");
@@ -1030,8 +1029,8 @@ namespace VDF.Core {
 
 		async Task GatherInfos() {
 			try {
-				currentStageLabel = string.Empty; // per-file analysis reports its own sub-stages
-				InitProgress(DatabaseUtils.Database.Count);
+				// per-file analysis reports its own sub-stages
+				InitProgress(DatabaseUtils.Database.Count, "");
 				// Only in-scope entries count toward a drive's done/total — out-of-scope ones
 				// are skipped in microseconds and would otherwise dilute the drive bars.
 				bool CountsTowardDriveProgress(FileEntry entry) =>
@@ -1682,8 +1681,7 @@ namespace VDF.Core {
 			int matchingParallelism = MatchingParallelDegree;
 			Logger.Instance.Info($"Matching concurrency: {matchingParallelism} worker(s) on {Environment.ProcessorCount} logical processor(s) (configured: matching={Settings.MatchingMaxDegreeOfParallelism}, media reads={Settings.MaxDegreeOfParallelism})");
 
-			currentStageLabel = T("Scan.Stage.ComparingDuplicates");
-			InitProgress(ScanList.Count);
+			InitProgress(ScanList.Count, T("Scan.Stage.ComparingDuplicates"));
 
 			// Duration buckets are keyed by whole seconds to keep percent-based tolerance intact.
 			const int bucketSizeSeconds = 1;
@@ -2074,8 +2072,7 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Partial clip detection: comparing {videos.Count} video(s) (fingerprint blocks: min={videos.Min(e => e.AudioFingerprint!.Length)}, max={videos.Max(e => e.AudioFingerprint!.Length)})...");
 
 			float simThreshold = (float)Settings.PartialClipSimilarityThreshold;
-			currentStageLabel = T("Scan.Stage.PartialCompare");
-			InitProgress(videos.Count - 1);
+			InitProgress(videos.Count - 1, T("Scan.Stage.PartialCompare"));
 
 			(var matches, int pairsChecked) = CollectPartialMatchCandidates(videos,
 				pairPrefilter: (i, j) => {
@@ -2207,8 +2204,7 @@ namespace VDF.Core {
 			List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> assignments,
 			Func<FileEntry, FileEntry, int, (bool pass, float visualSim)> verify) {
 
-			currentStageLabel = T("Scan.Stage.PartialVisualVerify");
-			InitProgress(assignments.Count);
+			InitProgress(assignments.Count, T("Scan.Stage.PartialVisualVerify"));
 
 			int beforeCount = assignments.Count;
 			int dropped = 0;
