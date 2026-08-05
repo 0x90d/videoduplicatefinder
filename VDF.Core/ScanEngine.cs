@@ -138,15 +138,8 @@ namespace VDF.Core {
 			// (the visual gate decodes frames off disk) would otherwise leave the previous phase's
 			// finished-looking numbers on screen, and leave the heartbeat with nothing to refresh.
 			currentStageLabel = stage;
-			PushProgress(new ScanProgressChangedEventArgs {
-				CurrentPosition = 0,
-				CurrentFile = string.Empty,
-				Elapsed = ElapsedTimer.Elapsed,
-				Remaining = TimeSpan.Zero,
-				MaxPosition = scanProgressMaxValue,
-				CurrentStage = stage,
-			});
-			// After the push, so the phase's first completed item reports without waiting out the throttle.
+			ReportProgress("", stage, remaining: TimeSpan.Zero, ignoreInterval: true);
+			// Reset after the push, so the phase's first completed item reports without waiting out the throttle.
 			lastProgressUpdate = DateTime.MinValue;
 		}
 		void ResetExcludedLogging() {
@@ -214,16 +207,6 @@ namespace VDF.Core {
 				Logger.Instance.Warn(T("Log.ExcludedFilesSummaryItem", reason.Key, reason.Value, suppressionText));
 			}
 		}
-		/// <summary>
-		/// Raises <see cref="Progress"/> and keeps the snapshot the heartbeat re-sends.
-		/// </summary>
-		void PushProgress(ScanProgressChangedEventArgs args) {
-			lock (progressSnapshotLock) {
-				lastProgressSnapshot = args;
-				hasProgressSnapshot = true;
-			}
-			Progress?.Invoke(this, args);
-		}
 
 		/// <summary>
 		/// Linear extrapolation of the current phase's remaining time from what it has spent so far.
@@ -276,43 +259,44 @@ namespace VDF.Core {
 			Progress?.Invoke(this, snapshot);
 		}
 
-		internal void IncrementProgress(string path) {
-			// Atomic: workers of all concurrent drive groups increment this counter, and a
-			// torn increment would lose the processedFiles == scanProgressMaxValue final push.
-			int processed = Interlocked.Increment(ref processedFiles);
-			var pushUpdate = processed == scanProgressMaxValue ||
-								lastProgressUpdate + progressUpdateIntervall < DateTime.UtcNow;
-			if (!pushUpdate) return;
-			lastProgressUpdate = DateTime.UtcNow;
-			PushProgress(new ScanProgressChangedEventArgs {
-				CurrentPosition = processed,
-				CurrentFile = path,
-				Elapsed = ElapsedTimer.Elapsed,
-				Remaining = EstimateRemaining(processed, scanProgressMaxValue),
-				MaxPosition = scanProgressMaxValue,
-				CurrentStage = currentStageLabel,
-				Drives = driveProgressTracker?.Snapshot(),
-			});
-			TryDatabaseCheckpoint();
-		}
-
-		// Reports what's happening to a file mid-processing without advancing the file counter.
-		// Throttled to the same cadence as IncrementProgress so a stuck file's last-reported
+		// Used by IncrementProgress and to report what's happening to a file
+		// mid-processing without advancing the file counter.
+		// Throttled to the same cadence for both so a stuck file's last-reported
 		// stage (e.g. "sampling frame 2/5") hints at where it froze.
-		void ReportStage(string path, string stage, int stageCurrent = 0, int stageMax = 0) {
-			if (lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) return;
+		private void ReportProgress(string path, string stage, int stageCurrent = 0, int stageMax = 0, TimeSpan? remaining = null, bool ignoreInterval = false) {
+			if (!ignoreInterval && lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) {
+				return;
+			}
+			
 			lastProgressUpdate = DateTime.UtcNow;
-			PushProgress(new ScanProgressChangedEventArgs {
+
+			var args = new ScanProgressChangedEventArgs {
 				CurrentPosition = processedFiles,
 				CurrentFile = path,
 				Elapsed = ElapsedTimer.Elapsed,
-				Remaining = EstimateRemaining(processedFiles, scanProgressMaxValue),
+				Remaining = remaining ?? EstimateRemaining(processedFiles, scanProgressMaxValue),
 				MaxPosition = scanProgressMaxValue,
 				CurrentStage = stage,
 				StageCurrent = stageCurrent,
 				StageMax = stageMax,
 				Drives = driveProgressTracker?.Snapshot(),
-			});
+			};
+			
+			lock (progressSnapshotLock) {
+				lastProgressSnapshot = args;
+				hasProgressSnapshot = true;
+			}
+			Progress?.Invoke(this, args);
+			
+			TryDatabaseCheckpoint();
+		}
+
+		internal void IncrementProgress(string path) {
+			// Atomic: workers of all concurrent drive groups increment this counter, and a
+			// torn increment would lose the processedFiles == scanProgressMaxValue final push.
+			int processed = Interlocked.Increment(ref processedFiles);
+			var ignoreInterval = processed == scanProgressMaxValue;
+			ReportProgress(path, currentStageLabel, ignoreInterval: ignoreInterval);
 		}
 
 		void TryDatabaseCheckpoint() {
@@ -1109,11 +1093,11 @@ namespace VDF.Core {
 								if (NeedsAudioFingerprint(entry, Settings.EnablePartialClipDetection, Settings.AlwaysRetryFailedSampling)) {
 									string cachedAudioPath = entry.Path;
 									string audioStageLabel = T("Scan.Stage.AudioFingerprint");
-									ReportStage(cachedAudioPath, audioStageLabel);
+									ReportProgress(cachedAudioPath, audioStageLabel);
 									ScanCrashJournal.Begin(ScanCrashJournal.PhaseAudio, cachedAudioPath);
 									try {
 										ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
-											onProgress: p => ReportStage(cachedAudioPath, audioStageLabel, (int)(p * 100), 100));
+											onProgress: p => ReportProgress(cachedAudioPath, audioStageLabel, (int)(p * 100), 100));
 									}
 									finally {
 										ScanCrashJournal.End();
@@ -1136,7 +1120,7 @@ namespace VDF.Core {
 						}
 
 						if (entry.mediaInfo == null && !entry.IsImage) {
-							ReportStage(entry.Path, T("Scan.Stage.Probing"));
+							ReportProgress(entry.Path, T("Scan.Stage.Probing"));
 							MediaInfo? info = FFProbeEngine.GetMediaInfo(entry.Path, Settings.ExtendedFFToolsLogging);
 							if (info == null) {
 								entry.invalid = true;
@@ -1177,7 +1161,7 @@ namespace VDF.Core {
 							try {
 								if (!FfmpegEngine.GetGrayBytesFromVideo(entry, positionList, Settings.MaxSamplingDurationSeconds,
 										Settings.ExtendedFFToolsLogging,
-										onSampleComplete: (done) => ReportStage(entryPath, samplingLabel, done, totalSamples),
+										onSampleComplete: (done) => ReportProgress(entryPath, samplingLabel, done, totalSamples),
 										embeddingSink: aiEmbeddingPipeline))
 									entry.invalid = true;
 							}
@@ -1191,11 +1175,11 @@ namespace VDF.Core {
 						if (NeedsAudioFingerprint(entry, Settings.EnablePartialClipDetection, Settings.AlwaysRetryFailedSampling)) {
 							string audioPath = entry.Path;
 							string audioLabel = T("Scan.Stage.AudioFingerprint");
-							ReportStage(audioPath, audioLabel);
+							ReportProgress(audioPath, audioLabel);
 							ScanCrashJournal.Begin(ScanCrashJournal.PhaseAudio, audioPath);
 							try {
 								ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
-									onProgress: p => ReportStage(audioPath, audioLabel, (int)(p * 100), 100));
+									onProgress: p => ReportProgress(audioPath, audioLabel, (int)(p * 100), 100));
 							}
 							finally {
 								ScanCrashJournal.End();
