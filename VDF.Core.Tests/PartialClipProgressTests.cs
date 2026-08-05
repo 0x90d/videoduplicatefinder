@@ -54,7 +54,7 @@ public class PartialClipProgressTests {
 		var engine = new ScanEngine();
 		engine.ElapsedTimer.Start();
 
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 		engine.Progress += (_, e) => events.Enqueue(e);
 
 		// Stand in for the earlier audio pass: it ends with a full bar over its own maximum.
@@ -147,7 +147,7 @@ public class PartialClipProgressTests {
 		var engine = new ScanEngine();
 		engine.ElapsedTimer.Start();
 
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 		engine.InitProgress(10, "");
 		engine.IncrementProgress("stalled.mp4");
 		engine.Progress += (_, e) => events.Enqueue(e);
@@ -191,7 +191,7 @@ public class PartialClipProgressTests {
 		engine.InitProgress(10, "");
 		engine.IncrementProgress("paused.mp4");
 
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 		engine.Progress += (_, e) => events.Enqueue(e);
 
 		engine.ElapsedTimer.Stop();
@@ -208,7 +208,7 @@ public class PartialClipProgressTests {
 	[Fact]
 	public void InitProgress_ImmediatelyPublishesTheNewPhasesEmptyBar() {
 		var engine = new ScanEngine();
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 		engine.Progress += (_, e) => events.Enqueue(e);
 
 		engine.InitProgress(42, "");

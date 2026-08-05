@@ -1,0 +1,86 @@
+// /*
+//     Copyright (C) 2026 0x90d
+//     This file is part of VideoDuplicateFinder
+//     VideoDuplicateFinder is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU Affero General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//     VideoDuplicateFinder is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
+//     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
+// */
+//
+
+namespace VDF.Core {
+	/// <param name="CurrentStage">Short label describing what's happening to CurrentFile right now (e.g. "probing", "sampling frames", "audio fingerprint"). Empty between files.</param>
+	/// <param name="StageCurrent">Progress within the current stage (e.g. sample 2 of 5). Both zero when stage progress isn't tracked.</param>
+	/// <param name="Drives">
+	/// Per-drive progress during the analysis phase; null in every other phase (and for
+	/// consumers that don't care — CLI/Web render the global numbers only). Drives whose
+	/// files are all out of scan scope are omitted.
+	/// </param>
+	public record ScanProgressSnapshot(
+		string CurrentFile,
+		int CurrentPosition,
+		int MaxPosition,
+		TimeSpan Elapsed,
+		TimeSpan Remaining,
+		string CurrentStage,
+		int StageCurrent,
+		int StageMax,
+		DriveProgress[]? Drives
+	) {
+		public static readonly ScanProgressSnapshot Default = new("", 0, 0, TimeSpan.Zero,
+		TimeSpan.Zero, "", 0, 0, null);
+	}
+
+	/// <summary>One drive's slice of the analysis phase, for per-drive progress display.</summary>
+	public struct DriveProgress {
+		public string Root;
+		public long TotalBytes;
+		public long DoneBytes;
+		public int TotalFiles;
+		public int DoneFiles;
+		/// <summary>true = fast (SSD/NVMe), false = slow (HDD/network share), null = not classified (strictly serial scan).</summary>
+		public bool? IsFastDrive;
+	}
+
+	public sealed class ScanProgress(TimeSpan updateInterval) {
+		volatile ScanProgressSnapshot _snapshot = ScanProgressSnapshot.Default;
+		DateTime _lastUpdate;
+
+		public event EventHandler<ScanProgressSnapshot>? Progress;
+
+		public void Reset(Func<ScanProgressSnapshot, ScanProgressSnapshot> transformDefault) {
+			_snapshot = transformDefault(ScanProgressSnapshot.Default);
+			// Reset so the first update reports without waiting out the throttle.
+			_lastUpdate = DateTime.MinValue;
+			Progress?.Invoke(this, _snapshot);
+		}
+
+		public void Update(Func<ScanProgressSnapshot, ScanProgressSnapshot> snapshotUpdate, bool ignoreInterval = false) {
+			if (!ignoreInterval && _lastUpdate + updateInterval > DateTime.UtcNow) {
+				return;
+			}
+
+			_lastUpdate = DateTime.UtcNow;
+
+			ScanProgressSnapshot original, updated;
+			do {
+				original = _snapshot;
+				updated = snapshotUpdate(original);
+			} while (!ReferenceEquals(Interlocked.CompareExchange(ref _snapshot, updated, original), original));
+
+			Progress?.Invoke(this, updated);
+		}
+
+		public void Heartbeat(Func<ScanProgressSnapshot, ScanProgressSnapshot> project) {
+			if (!ReferenceEquals(_snapshot, ScanProgressSnapshot.Default) && _lastUpdate + updateInterval < DateTime.UtcNow) {
+				Progress?.Invoke(this, project(_snapshot));
+			}
+		}
+	}
+}

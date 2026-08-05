@@ -56,7 +56,7 @@ public class AiPartialPhaseVisibilityTests : IDisposable {
 	public void AiPartialPass_AnnouncesItsOwnStageBeforeAnyPrepWork() {
 		var engine = new ScanEngine();
 		engine.ElapsedTimer.Start();
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 
 		// Stand in for the visual gate that ran just before: it ends full over its own maximum.
 		engine.InitProgress(12, "");
@@ -82,7 +82,7 @@ public class AiPartialPhaseVisibilityTests : IDisposable {
 	public void AiPartialPass_NeverReportsUnderThePreviousPhasesLabel() {
 		var engine = new ScanEngine();
 		engine.ElapsedTimer.Start();
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 
 		// The gate takes its videos as a list, so these stay out of the database - only the
 		// single entry added below is eligible for the AI pass, which keeps it out of ONNX.

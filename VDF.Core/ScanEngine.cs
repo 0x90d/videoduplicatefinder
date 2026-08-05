@@ -36,7 +36,10 @@ namespace VDF.Core {
 	public sealed partial class ScanEngine {
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
 		public Settings Settings { get; set; } = new Settings();
-		public event EventHandler<ScanProgressChangedEventArgs>? Progress;
+		public event EventHandler<ScanProgressSnapshot>? Progress {
+			add => _progress.Progress += value;
+			remove => _progress.Progress -= value;
+		}
 		public event EventHandler? BuildingHashesDone;
 		public event EventHandler? ScanDone;
 		public event EventHandler? ScanAborted;
@@ -77,9 +80,6 @@ namespace VDF.Core {
 				progressHeartbeat.Change(
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan,
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan);
-				if (!value)
-					lock (progressSnapshotLock)
-						hasProgressSnapshot = false; // a late tick must not repaint a finished scan
 				try {
 					using var p = Process.GetCurrentProcess();
 					p.PriorityClass = value ? ProcessPriorityClass.BelowNormal
@@ -93,8 +93,7 @@ namespace VDF.Core {
 		public Stopwatch ElapsedTimer = new();
 		int processedFiles;
 		DateTime startTime = DateTime.Now;
-		DateTime lastProgressUpdate = DateTime.MinValue;
-		static readonly TimeSpan progressUpdateIntervall = TimeSpan.FromMilliseconds(300);
+		private readonly ScanProgress _progress = new(TimeSpan.FromMilliseconds(300));
 		// Elapsed and Remaining only ever reach a frontend on a Progress event, and a phase can
 		// run for minutes without completing a single file — the partial-clip visual gate decodes
 		// frames for a handful of assignments, one slow source stalling the counter. The whole
@@ -103,11 +102,6 @@ namespace VDF.Core {
 		// clock whenever real progress has gone quiet.
 		static readonly TimeSpan progressHeartbeatIntervall = TimeSpan.FromMilliseconds(500);
 		readonly Timer progressHeartbeat;
-		// ScanProgressChangedEventArgs is a struct: the heartbeat thread reads the snapshot while
-		// worker threads write it, so both sides go through the lock to avoid a torn copy.
-		readonly object progressSnapshotLock = new();
-		ScanProgressChangedEventArgs lastProgressSnapshot;
-		bool hasProgressSnapshot;
 		const int maxExcludedLogsPerReason = 5;
 		readonly ConcurrentDictionary<string, int> excludedReasonCounts = new();
 		readonly ConcurrentDictionary<string, int> excludedReasonLoggedCounts = new();
@@ -141,9 +135,11 @@ namespace VDF.Core {
 			// Phase-transition memory line: memory reports (#878) never told us WHICH
 			// phase ballooned; now every log carries the curve.
 			Logger.Instance.Info($"Memory: {CoreUtils.DescribeProcessMemory()}");
-			ReportProgress("", stage, remaining: TimeSpan.Zero, ignoreInterval: true);
-			// Reset after the push, so the phase's first completed item reports without waiting out the throttle.
-			lastProgressUpdate = DateTime.MinValue;
+			_progress.Reset(p => p with {
+				Elapsed = ElapsedTimer.Elapsed,
+				MaxPosition = count,
+				CurrentStage = stage,
+			});
 		}
 		void ResetExcludedLogging() {
 			excludedReasonCounts.Clear();
@@ -248,48 +244,28 @@ namespace VDF.Core {
 		/// clock is meant to stand still).
 		/// </summary>
 		internal void EmitProgressHeartbeat() {
-			if (!ElapsedTimer.IsRunning) return;
-			if (lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) return;
-			ScanProgressChangedEventArgs snapshot;
-			lock (progressSnapshotLock) {
-				if (!hasProgressSnapshot) return;
-				snapshot = lastProgressSnapshot;
-			}
-			// Deliberately does not touch lastProgressUpdate: a heartbeat must never delay or
-			// suppress the next real push from a worker.
-			snapshot.Elapsed = ElapsedTimer.Elapsed;
-			snapshot.Remaining = EstimateRemaining(snapshot.CurrentPosition, snapshot.MaxPosition);
-			Progress?.Invoke(this, snapshot);
+			if (!ElapsedTimer.IsRunning) return; // a late tick must not repaint a finished scan
+			_progress.Heartbeat(p => p with {
+				Elapsed = ElapsedTimer.Elapsed,
+				Remaining = EstimateRemaining(p.CurrentPosition, p.MaxPosition),
+			});
 		}
 
 		// Used by IncrementProgress and to report what's happening to a file
 		// mid-processing without advancing the file counter.
 		// Throttled to the same cadence for both so a stuck file's last-reported
 		// stage (e.g. "sampling frame 2/5") hints at where it froze.
-		internal void ReportProgress(string path, string stage, int stageCurrent = 0, int stageMax = 0, TimeSpan? remaining = null, bool ignoreInterval = false) {
-			if (!ignoreInterval && lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) {
-				return;
-			}
-
-			lastProgressUpdate = DateTime.UtcNow;
-
-			var args = new ScanProgressChangedEventArgs {
+		internal void ReportProgress(string path, string stage, int stageCurrent = 0, int stageMax = 0, bool ignoreInterval = false) {
+			_progress.Update(p => p with {
 				CurrentPosition = processedFiles,
 				CurrentFile = path,
 				Elapsed = ElapsedTimer.Elapsed,
-				Remaining = remaining ?? EstimateRemaining(processedFiles, scanProgressMaxValue),
-				MaxPosition = scanProgressMaxValue,
+				Remaining = EstimateRemaining(processedFiles, scanProgressMaxValue),
 				CurrentStage = stage,
 				StageCurrent = stageCurrent,
 				StageMax = stageMax,
 				Drives = driveProgressTracker?.Snapshot(),
-			};
-
-			lock (progressSnapshotLock) {
-				lastProgressSnapshot = args;
-				hasProgressSnapshot = true;
-			}
-			Progress?.Invoke(this, args);
+			}, ignoreInterval);
 
 			TryDatabaseCheckpoint();
 		}

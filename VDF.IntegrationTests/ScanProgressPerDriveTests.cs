@@ -53,7 +53,7 @@ public class ScanProgressPerDriveTests {
 			engine.Settings.HardwareAccelerationMode = FFHardwareAccelerationMode.none;
 			engine.Settings.MaxDegreeOfParallelism = 4; // concurrent path: groups get classified
 
-			var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+			var events = new ConcurrentQueue<ScanProgressSnapshot>();
 			engine.Progress += (_, e) => events.Enqueue(e);
 			var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 			engine.ScanDone += (_, _) => done.TrySetResult();
