@@ -138,6 +138,9 @@ namespace VDF.Core {
 			// (the visual gate decodes frames off disk) would otherwise leave the previous phase's
 			// finished-looking numbers on screen, and leave the heartbeat with nothing to refresh.
 			currentStageLabel = stage;
+			// Phase-transition memory line: memory reports (#878) never told us WHICH
+			// phase ballooned; now every log carries the curve.
+			Logger.Instance.Info($"Memory: {CoreUtils.DescribeProcessMemory()}");
 			ReportProgress("", stage, remaining: TimeSpan.Zero, ignoreInterval: true);
 			// Reset after the push, so the phase's first completed item reports without waiting out the throttle.
 			lastProgressUpdate = DateTime.MinValue;

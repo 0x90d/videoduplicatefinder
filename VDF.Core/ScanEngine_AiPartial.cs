@@ -101,42 +101,61 @@ namespace VDF.Core {
 						}
 						double duration = entry.mediaInfo!.Duration.TotalSeconds;
 						double interval = GetAiPartialIntervalSeconds(duration);
-						byte[][]? frames = FfmpegEngine.GetDenseAiFrames(entry.Path, interval, AiPartialMaxFramesPerFile,
-							Settings.ExtendedFFToolsLogging, cancelationTokenSource.Token);
-						if (frames == null) {
+						// Frames stream straight from ffmpeg into 16-frame embedding batches of
+						// pooled buffers — at most one batch per worker is alive, instead of the
+						// whole 400-frame sweep (up to 60 MB, twice) the old code held (#878).
+						// Invalid slots (dark or duplicated frames) stay on the timeline as
+						// empty arrays — never embedded, never matched.
+						var embedded = new List<byte[]>(96);
+						var filter = new DenseFrameFilter();
+						var batch = new List<byte[]>(OnnxEmbedder.MaxBatch);
+						var batchSlots = new List<int>(OnnxEmbedder.MaxBatch);
+						void FlushBatch() {
+							if (batch.Count == 0)
+								return;
+							byte[][] vectors;
+							// Inference is serial (one session, CPU-bound) while other files
+							// decode; ffmpeg simply blocks on its full stdout pipe meanwhile.
+							lock (embedLock)
+								vectors = embedder.EmbedBatchQuantized(batch);
+							for (int k = 0; k < vectors.Length; k++)
+								embedded[batchSlots[k]] = vectors[k];
+							foreach (byte[] frame in batch)
+								FramePool.Shared.Return(frame);
+							batch.Clear();
+							batchSlots.Clear();
+						}
+						int frameCount;
+						try {
+							frameCount = FfmpegEngine.StreamDenseAiFrames(entry.Path, interval, AiPartialMaxFramesPerFile,
+								Settings.ExtendedFFToolsLogging, frame => {
+									int slot = embedded.Count;
+									embedded.Add(Array.Empty<byte>());
+									if (filter.IsUsable(frame)) {
+										batch.Add(frame);
+										batchSlots.Add(slot);
+										if (batch.Count == OnnxEmbedder.MaxBatch)
+											FlushBatch();
+									}
+									else
+										FramePool.Shared.Return(frame);
+								}, cancelationTokenSource.Token);
+							if (frameCount >= 0)
+								FlushBatch();
+						}
+						finally {
+							// A failure mid-stream leaves unflushed frames behind — recycle them.
+							foreach (byte[] frame in batch)
+								FramePool.Shared.Return(frame);
+							batch.Clear();
+						}
+						if (frameCount < 0) {
+							// Already logged by the engine; partial embeddings are discarded so
+							// the record stays all-or-nothing like before.
 							Interlocked.Increment(ref failed);
 							return;
 						}
-						bool[] usable = SelectUsableDenseFrames(frames);
-						// Invalid slots (dark or duplicated frames) stay on the timeline as
-						// empty arrays — never embedded, never matched.
-						var embedded = new byte[frames.Length][];
-						var batch = new List<byte[]>(OnnxEmbedder.MaxBatch);
-						var batchSlots = new List<int>(OnnxEmbedder.MaxBatch);
-						// Inference is serial (one session, CPU-bound) while other files decode.
-						lock (embedLock) {
-							for (int f = 0; f < frames.Length; f++) {
-								embedded[f] = Array.Empty<byte>();
-								if (!usable[f])
-									continue;
-								batch.Add(frames[f]);
-								batchSlots.Add(f);
-								if (batch.Count == OnnxEmbedder.MaxBatch)
-									FlushBatch();
-							}
-							FlushBatch();
-
-							void FlushBatch() {
-								if (batch.Count == 0)
-									return;
-								byte[][] vectors = embedder.EmbedBatchQuantized(batch);
-								for (int k = 0; k < vectors.Length; k++)
-									embedded[batchSlots[k]] = vectors[k];
-								batch.Clear();
-								batchSlots.Clear();
-							}
-						}
-						var record = new DenseEmbeddingStore.DenseRecord(info.Length, info.LastWriteTimeUtc.Ticks, (float)interval, embedded);
+						var record = new DenseEmbeddingStore.DenseRecord(info.Length, info.LastWriteTimeUtc.Ticks, (float)interval, embedded.ToArray());
 						store.Put(entry.Path, record);
 						dense[i] = record;
 						Interlocked.Increment(ref extracted);
@@ -230,25 +249,9 @@ namespace VDF.Core {
 			Logger.Instance.Info($"AI partial detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
 		}
 
-		/// <summary>
-		/// Marks the frames of a dense sweep that may participate in matching. Excluded:
-		/// dark frames (they embed near-identically regardless of content — the union
-		/// pass's black-frame guard, applied here) and frames byte-identical to their
-		/// predecessor (the fps filter's round=up duplicates the previous keyframe across
-		/// gaps, and identical frames would multiply one coincidental hit into a full
-		/// evidence quorum). Excluded slots stay on the timeline so index↔time holds.
-		/// </summary>
-		internal static bool[] SelectUsableDenseFrames(byte[][] frames) {
-			var usable = new bool[frames.Length];
-			for (int f = 0; f < frames.Length; f++) {
-				if (!GrayBytesUtils.VerifyRgbFrameValues(frames[f]))
-					continue;
-				if (f > 0 && frames[f].AsSpan().SequenceEqual(frames[f - 1]))
-					continue;
-				usable[f] = true;
-			}
-			return usable;
-		}
+		// Frame usability (dark frames, duplicated keyframes) lives in DenseFrameFilter
+		// now — decided per frame as the sweep streams, see the excluded-frame rationale
+		// there. Excluded slots stay on the timeline so index↔time holds.
 
 		/// <summary>Sign signatures aligned with the record's frames; empty for invalid slots.</summary>
 		internal static ulong[][] ComputeDenseSignatures(DenseEmbeddingStore.DenseRecord record) {

@@ -99,7 +99,7 @@ public class AiPartialMatcherTests {
 	}
 
 	[Fact]
-	public void SelectUsableDenseFrames_ExcludesDarkAndDuplicatedFrames() {
+	public void DenseFrameFilter_ExcludesDarkAndDuplicatedFrames() {
 		// Dark frames embed near-identically regardless of content, and the fps
 		// round=up filter duplicates the previous keyframe across gaps — either would
 		// multiply one coincidental hit into a full false-positive evidence quorum.
@@ -108,20 +108,38 @@ public class AiPartialMatcherTests {
 		byte[] brightDuplicate = (byte[])bright.Clone();
 		byte[] other = RgbFrame(0xC0);
 
-		bool[] usable = ScanEngine.SelectUsableDenseFrames(new[] { black, bright, brightDuplicate, other, black });
+		var filter = new DenseFrameFilter();
+		bool[] usable = new[] { black, bright, brightDuplicate, other, (byte[])black.Clone() }
+			.Select(filter.IsUsable).ToArray();
 
 		Assert.Equal(new[] { false, true, false, true, false }, usable);
 	}
 
 	[Fact]
-	public void SelectUsableDenseFrames_KeepsDistinctBrightFrames() {
+	public void DenseFrameFilter_KeepsDistinctBrightFrames() {
 		var rng = new Random(11);
-		var frames = new byte[6][];
-		for (int i = 0; i < frames.Length; i++) {
-			frames[i] = new byte[RgbFrameBytes];
-			rng.NextBytes(frames[i]);
+		var filter = new DenseFrameFilter();
+		for (int i = 0; i < 6; i++) {
+			var frame = new byte[RgbFrameBytes];
+			rng.NextBytes(frame);
+			Assert.True(filter.IsUsable(frame));
 		}
-		Assert.All(ScanEngine.SelectUsableDenseFrames(frames), Assert.True);
+	}
+
+	[Fact]
+	public void DenseFrameFilter_ComparesAgainstItsOwnCopy_SoBuffersMayBeRecycled() {
+		// The streaming pass recycles frame buffers (#878): after IsUsable returns, the
+		// caller may overwrite the array. The duplicate compare must therefore work
+		// against the filter's own copy of the previous frame, not the caller's buffer.
+		var filter = new DenseFrameFilter();
+		byte[] buffer = RgbFrame(0x80);
+		Assert.True(filter.IsUsable(buffer));
+
+		Array.Fill(buffer, (byte)0xC0); // caller recycles the same buffer for the next frame
+		Assert.True(filter.IsUsable(buffer), "a distinct bright frame in a reused buffer must stay usable");
+
+		Array.Fill(buffer, (byte)0xC0); // identical to the previous frame's CONTENT
+		Assert.False(filter.IsUsable(buffer), "a duplicate must be detected even though the caller reused the buffer");
 	}
 
 	[Fact]

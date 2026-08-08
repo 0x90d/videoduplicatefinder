@@ -187,16 +187,37 @@ public class AiFrameExtractionTests {
 	}
 
 	[SkippableFact]
-	public void GetDenseAiFrames_KeyframeSweep_ProducesFrames() {
+	public void StreamDenseAiFrames_KeyframeSweep_ProducesFrames() {
 		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
 		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
 
 		using var guard = new FfmpegStaticStateGuard();
-		byte[][]? frames = FfmpegEngine.GetDenseAiFrames(_fixture.H264_8bit!, intervalSeconds: 1, maxFrames: 100, extendedLogging: false);
+		var frames = new List<byte[]>();
+		int frameCount = FfmpegEngine.StreamDenseAiFrames(_fixture.H264_8bit!, intervalSeconds: 1, maxFrames: 100,
+			extendedLogging: false, frames.Add);
 
-		Assert.NotNull(frames);
-		Assert.True(frames!.Length >= 1);
+		Assert.True(frameCount >= 1);
+		Assert.Equal(frameCount, frames.Count);
 		Assert.All(frames, f => Assert.Equal(Rgb224Bytes, f.Length));
+		// Delivered buffers are pool-owned after the callback - hand them back.
+		foreach (byte[] f in frames)
+			VDF.Core.AI.FramePool.Shared.Return(f);
+	}
+
+	[SkippableFact]
+	public void StreamDenseAiFrames_HonorsTheFrameCap() {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		// The fixture video yields at least one frame at this interval (see the test
+		// above), so a cap of 1 must always bite exactly.
+		int delivered = 0;
+		int frameCount = FfmpegEngine.StreamDenseAiFrames(_fixture.H264_8bit!, intervalSeconds: 1, maxFrames: 1,
+			extendedLogging: false, f => { delivered++; VDF.Core.AI.FramePool.Shared.Return(f); });
+
+		Assert.Equal(1, frameCount);
+		Assert.Equal(1, delivered);
 	}
 
 	[SkippableFact]

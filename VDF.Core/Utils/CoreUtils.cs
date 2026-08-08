@@ -25,6 +25,17 @@ namespace VDF.Core.Utils {
 			CurrentFolder = Path.GetDirectoryName(Environment.ProcessPath)!;
 		}
 
+		/// <summary>
+		/// One-line process memory snapshot for phase logs and the diagnostics export,
+		/// so memory reports (#878) show which scan phase balloons and by how much.
+		/// </summary>
+		public static string DescribeProcessMemory() {
+			var gc = GC.GetGCMemoryInfo();
+			return $"working set {Environment.WorkingSet / (1024 * 1024)} MB, " +
+				$"GC heap {gc.HeapSizeBytes / (1024 * 1024)} MB, " +
+				$"GC committed {gc.TotalCommittedBytes / (1024 * 1024)} MB";
+		}
+
 		static readonly Lazy<string> _StateFolder = new(ResolveStateFolder);
 		static readonly Lazy<string> _SettingsFolder = new(ResolveSettingsFolder);
 		static readonly Lazy<bool> _CurrentFolderWritable = new(() => CanWriteToDirectory(CurrentFolder!));

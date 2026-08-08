@@ -25,7 +25,11 @@ namespace VDF.Core.AI {
 	interface IEmbeddingFrameSink {
 		/// <summary>Whether the entry still needs an embedding for this position key.</summary>
 		bool WantsEmbedding(FileEntry entry, double positionKey);
-		/// <summary>Hands a decoded frame over for embedding. Never throws for data reasons.</summary>
+		/// <summary>
+		/// Hands a decoded frame over for embedding. Never throws for data reasons.
+		/// Ownership of <paramref name="rgb224"/> transfers to the sink — it is recycled
+		/// through <see cref="FramePool"/> after use, so callers must not touch it again.
+		/// </summary>
 		void SubmitFrame(FileEntry entry, double positionKey, byte[] rgb224);
 	}
 
@@ -62,12 +66,15 @@ namespace VDF.Core.AI {
 			!faulted && !store.HasEmbedding(entry, positionKey);
 
 		public void SubmitFrame(FileEntry entry, double positionKey, byte[] rgb224) {
-			if (faulted) return;
+			if (faulted) {
+				FramePool.Shared.Return(rgb224);
+				return;
+			}
 			try {
 				queue.Add((entry, positionKey, rgb224), token);
 			}
-			catch (OperationCanceledException) { }
-			catch (InvalidOperationException) { /* completed while a decoder was mid-submit */ }
+			catch (OperationCanceledException) { FramePool.Shared.Return(rgb224); }
+			catch (InvalidOperationException) { FramePool.Shared.Return(rgb224); /* completed while a decoder was mid-submit */ }
 		}
 
 		/// <summary>No more frames will arrive; returns when everything queued is embedded.</summary>
@@ -96,13 +103,25 @@ namespace VDF.Core.AI {
 						batchFrames.Add(item.rgb);
 					}
 
-					if (faulted) continue; // keep draining, discard
+					if (faulted) {
+						ReturnBatchFrames();
+						continue; // keep draining, discard
+					}
 
 					byte[][] embeddings = embedder.EmbedBatchQuantized(batchFrames);
 					for (int i = 0; i < embeddings.Length; i++) {
 						store.Put(batchEntries[i].entry, batchEntries[i].key, embeddings[i]);
 						Interlocked.Increment(ref embeddedCount);
 					}
+					// Only the 384-byte embedding is kept - the frames recycle (#878).
+					ReturnBatchFrames();
+				}
+
+				void ReturnBatchFrames() {
+					foreach (byte[] frame in batchFrames)
+						FramePool.Shared.Return(frame);
+					batchFrames.Clear();
+					batchEntries.Clear();
 				}
 			}
 			catch (Exception e) {
@@ -111,7 +130,8 @@ namespace VDF.Core.AI {
 				faulted = true;
 				Logger.Instance.Error($"AI embedding stage failed — continuing scan without AI matching for the remaining files: {e}");
 				try {
-					while (queue.TryTake(out _, Timeout.Infinite)) { }
+					while (queue.TryTake(out var dropped, Timeout.Infinite))
+						FramePool.Shared.Return(dropped.rgb);
 				}
 				catch (InvalidOperationException) { /* completed and empty — done */ }
 			}

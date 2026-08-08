@@ -104,6 +104,24 @@ public class OnnxEmbedderTests {
 	}
 
 	[Fact]
+	public async Task EmbeddingPipeline_RecyclesSubmittedFramesIntoThePool() {
+		// Frames are pool-owned after SubmitFrame (#878): once the batch is embedded,
+		// only the 384-byte embedding survives and the 150 KB buffer must recycle.
+		var entry = new FileEntry { Folder = @"D:\media" };
+		entry.Path = @"D:\media\recycle.mp4";
+		var store = new UnionEmbeddingStore();
+
+		int before = FramePool.Shared.PooledCount;
+		using (var pipeline = new EmbeddingPipeline(TestModels.TinyEmbedderPath, store, CancellationToken.None)) {
+			pipeline.SubmitFrame(entry, 1.0, PatternFrame(41));
+			pipeline.SubmitFrame(entry, 2.0, PatternFrame(42));
+			await pipeline.CompleteAsync();
+		}
+		Assert.True(FramePool.Shared.PooledCount >= before + 2,
+			"the embedded frames were not returned to the frame pool");
+	}
+
+	[Fact]
 	public void EmbeddingPipeline_DisposeWithoutComplete_DrainsAndReturns() {
 		// Regression: Dispose must never free the native session while the worker may
 		// still be running inference — it now switches the worker to drain-discard mode

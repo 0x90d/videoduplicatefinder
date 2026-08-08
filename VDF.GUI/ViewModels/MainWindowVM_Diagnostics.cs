@@ -54,6 +54,7 @@ namespace VDF.GUI.ViewModels {
 			sb.AppendLine($"Parallelism:        {Scanner.Settings.MaxDegreeOfParallelism} (HDD cap: {Scanner.Settings.HddMaxDegreeOfParallelism}, drive overrides: {Scanner.Settings.DriveTypeOverrides.Count})");
 			sb.AppendLine($"Custom FF args:     {(string.IsNullOrWhiteSpace(Scanner.Settings.CustomFFArguments) ? "(none)" : Scanner.Settings.CustomFFArguments)}");
 			sb.AppendLine($"Database entries:   {DatabaseUtils.Database.Count}");
+			sb.AppendLine($"Process memory:     {CoreUtils.DescribeProcessMemory()}");
 			return sb.ToString();
 		}
 

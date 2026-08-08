@@ -209,7 +209,10 @@ namespace VDF.Core.FFTools {
 
 		/// <summary>
 		/// Copies a 224x224 RGB24 frame produced by <see cref="VideoFrameConverter"/> into a
-		/// freshly-allocated packed buffer, dropping swscale's per-row alignment padding.
+		/// packed <see cref="AI.FramePool"/> buffer (these 150 KB frames are large-object
+		/// allocations, and one per sampled frame churned the LOH badly — #878), dropping
+		/// swscale's per-row alignment padding. The embedding pipeline recycles the buffer
+		/// after use.
 		/// </summary>
 		static unsafe byte[] ExtractRgb224FromFrame(AVFrame convertedFrame) {
 			int width = convertedFrame.width;
@@ -223,7 +226,8 @@ namespace VDF.Core.FFTools {
 			if (srcStride < rowBytes)
 				throw new Exception($"Invalid linesize ({srcStride}) for width {width}.");
 
-			byte[] outBuf = new byte[rowBytes * height];
+			// Size is validated to exactly InputSide² * 3 above, so the pooled buffer fits.
+			byte[] outBuf = AI.FramePool.Shared.Rent();
 			fixed (byte* destPtr = outBuf) {
 				byte* sourcePtr = convertedFrame.data[0];
 				if (srcStride == rowBytes) {
@@ -1130,9 +1134,15 @@ namespace VDF.Core.FFTools {
 		/// sequential keyframe sweep maps naturally onto one process run, and this pass is
 		/// throughput-bound, not seek-bound — the same trade-off ChromaprintEngine makes
 		/// for audio (which also means partial detection already requires the ffmpeg
-		/// executable). Returns null on failure; frame k represents ≈ k·interval seconds.
+		/// executable). Frames STREAM to <paramref name="onFrame"/> as they arrive - the
+		/// old whole-file buffering held up to 60 MB per file (twice) and was the largest
+		/// memory hotspot in the app (#878). Each callback receives an exact-size
+		/// <see cref="AI.FramePool"/> buffer whose ownership transfers to the callback;
+		/// frame k represents ≈ k·interval seconds. Returns the number of frames
+		/// delivered, or -1 on failure (already logged) - the caller must then discard
+		/// whatever the callbacks produced, matching the old all-or-nothing contract.
 		/// </summary>
-		internal static byte[][]? GetDenseAiFrames(string filePath, double intervalSeconds, int maxFrames, bool extendedLogging, CancellationToken cancelToken = default) {
+		internal static int StreamDenseAiFrames(string filePath, double intervalSeconds, int maxFrames, bool extendedLogging, Action<byte[]> onFrame, CancellationToken cancelToken = default) {
 			const int frameBytes = AI.OnnxEmbedder.InputSide * AI.OnnxEmbedder.InputSide * 3;
 			var psi = new ProcessStartInfo {
 				FileName = FFmpegPath,
@@ -1162,8 +1172,8 @@ namespace VDF.Core.FFTools {
 
 			using var process = new Process { StartInfo = psi };
 			string errOut = string.Empty;
-			Task? readTask = null;
-			var ms = new MemoryStream();
+			Task<int>? pendingRead = null;
+			int frameCount = 0;
 			try {
 				process.Start();
 				FFToolsUtils.LowerChildPriority(process);
@@ -1172,58 +1182,64 @@ namespace VDF.Core.FFTools {
 						errOut += Environment.NewLine + e.Data;
 				};
 				process.BeginErrorReadLine();
-				// Async read so the wait below stays authoritative: a synchronous CopyTo
-				// only returns once ffmpeg closes stdout, which never happens when the
-				// process stalls mid-decode (dead network share, wedged demuxer) — the
-				// timeout and the user's Stop were unreachable in exactly those cases.
-				readTask = process.StandardOutput.BaseStream.CopyToAsync(ms, cancelToken);
-
-				// A keyframe-only sweep of a multi-hour file legitimately takes minutes —
-				// far beyond the seek-thumbnail timeout.
-				if (!readTask.Wait((int)TimeSpan.FromMinutes(15).TotalMilliseconds, cancelToken))
-					throw new TimeoutException($"FFmpeg timed out on file: {filePath}");
+				Stream stdout = process.StandardOutput.BaseStream;
+				// Per-read inactivity budget. Reads are async so this bounded wait stays
+				// authoritative: a synchronous read only returns once ffmpeg writes, which
+				// never happens when the process stalls mid-decode (dead network share,
+				// wedged demuxer) — timeout and Stop were unreachable in exactly those
+				// cases (#865). A keyframe sweep of a multi-hour file takes minutes in
+				// TOTAL, but a healthy ffmpeg keeps bytes flowing; only a wedged one is
+				// silent this long. The clock deliberately does not run while the caller
+				// is busy inside onFrame (embedding) and nobody is reading.
+				int readTimeoutMs = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
+				while (frameCount < maxFrames) {
+					byte[] frame = AI.FramePool.Shared.Rent();
+					int filled = 0;
+					try {
+						while (filled < frameBytes) {
+							pendingRead = stdout.ReadAsync(frame, filled, frameBytes - filled, cancelToken);
+							if (!pendingRead.Wait(readTimeoutMs, cancelToken))
+								throw new TimeoutException($"FFmpeg timed out on file: {filePath}");
+							int bytesRead = pendingRead.Result;
+							pendingRead = null;
+							if (bytesRead == 0)
+								break; // EOF — a partial trailing frame is discarded
+							filled += bytesRead;
+						}
+					}
+					catch {
+						AI.FramePool.Shared.Return(frame);
+						throw;
+					}
+					if (filled < frameBytes) {
+						AI.FramePool.Shared.Return(frame);
+						break;
+					}
+					frameCount++;
+					onFrame(frame); // ownership transfers to the callback
+				}
 				if (!process.WaitForExit(30_000))
 					throw new TimeoutException($"FFmpeg did not exit after closing its output: {filePath}");
 				process.WaitForExit(); // flush async stderr handlers
 
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
-
-				int frameCount = (int)(ms.Length / frameBytes);
 				if (frameCount == 0)
 					throw new Exception("FFmpeg produced no frames");
-				var frames = new byte[frameCount][];
-				byte[] blob = ms.GetBuffer();
-				for (int i = 0; i < frameCount; i++)
-					frames[i] = blob.AsSpan(i * frameBytes, frameBytes).ToArray();
 				if (extendedLogging && errOut.Length > 0)
 					Logger.Instance.Warn($"WARNING: Problems while dense-sampling AI frames from: {filePath}{errOut}");
-				return frames;
+				return frameCount;
 			}
 			catch (OperationCanceledException) {
-				KillAndDrain(process, readTask);
+				FFToolsUtils.KillAndDrain(process, pendingRead);
 				throw;
 			}
 			catch (Exception e) {
-				KillAndDrain(process, readTask);
+				FFToolsUtils.KillAndDrain(process, pendingRead);
 				string? hint = FfmpegErrorClassifier.Classify(errOut);
 				Logger.Instance.Warn($"ERROR: Failed dense-sampling AI frames from: {filePath}{errOut}{Environment.NewLine}{e.Message}" +
 					(hint != null ? $"{Environment.NewLine}Hint: {hint}" : string.Empty));
-				return null;
-			}
-			finally {
-				ms.Dispose();
-			}
-
-			// Killing ffmpeg breaks the pipe, so the pending read completes promptly; the
-			// bounded wait observes its exception before the MemoryStream is disposed.
-			static void KillAndDrain(Process process, Task? readTask) {
-				try {
-					if (!process.HasExited)
-						process.Kill();
-				}
-				catch { }
-				try { readTask?.Wait(2000); } catch { }
+				return -1;
 			}
 		}
 
