@@ -16,8 +16,7 @@
 
 namespace VDF.Core {
 	[Flags]
-	public enum DuplicateFlags : short
-	{
+	public enum DuplicateFlags : short {
 		None = 0,
 		Flipped = 1,
 		PartialClip = 2,  // This item is a partial clip (audio- or AI-matched) of another item in the same group

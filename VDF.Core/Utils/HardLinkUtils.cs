@@ -118,7 +118,7 @@ namespace VDF.Core.Utils {
 			if (!TryGetFileIdWindows(filepath, out var fileA)) {
 				return FallbackWindows(filepath, otherFilepath);
 			}
-			if ( !TryGetFileIdWindows(otherFilepath, out var fileB)) {
+			if (!TryGetFileIdWindows(otherFilepath, out var fileB)) {
 				return FallbackWindows(filepath, otherFilepath);
 			}
 

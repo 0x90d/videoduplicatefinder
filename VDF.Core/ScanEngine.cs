@@ -860,8 +860,7 @@ namespace VDF.Core {
 				reason = "file is marked as too dark";
 				return true;
 			}
-			if (!Settings.IncludeMissingFiles && !File.Exists(entry.Path))
-			{
+			if (!Settings.IncludeMissingFiles && !File.Exists(entry.Path)) {
 				reason = "file does not exist";
 				return true;
 			}
@@ -988,7 +987,7 @@ namespace VDF.Core {
 			}
 			// Wildcard pattern without path separators: match against each individual segment of folderPath
 			bool hasSeparator = blacklistEntry.Contains(Path.DirectorySeparatorChar) ||
-			                    blacklistEntry.Contains(Path.AltDirectorySeparatorChar);
+								blacklistEntry.Contains(Path.AltDirectorySeparatorChar);
 			if (!hasSeparator) {
 				string[] segments = folderPath.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
 					StringSplitOptions.RemoveEmptyEntries);

@@ -28,12 +28,12 @@ namespace VDF.GUI.Tests {
 
 		static DuplicateItem Item(string path = @"D:\videos\S01E02.mkv", string format = "jpg",
 				long size = 5000, int minutes = 20, bool isImage = false) => new() {
-			Path = path,
-			Format = format,
-			SizeLong = size,
-			Duration = TimeSpan.FromMinutes(minutes),
-			IsImage = isImage,
-		};
+					Path = path,
+					Format = format,
+					SizeLong = size,
+					Duration = TimeSpan.FromMinutes(minutes),
+					IsImage = isImage,
+				};
 
 		[Theory]
 		// The exact expressions from #844:

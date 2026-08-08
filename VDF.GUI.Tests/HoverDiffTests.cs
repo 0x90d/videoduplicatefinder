@@ -28,17 +28,17 @@ namespace VDF.GUI.Tests {
 
 		static DuplicateItemVM Item(TimeSpan? duration = null, int frameSizeInt = 0, long size = 0,
 				bool bestDuration = false, bool bestFrameSize = false, bool bestSize = false) => new() {
-			ItemInfo = new DuplicateItem {
-				GroupId = Guid.Empty,
-				Path = Guid.NewGuid().ToString(),
-				Duration = duration ?? TimeSpan.Zero,
-				FrameSizeInt = frameSizeInt,
-				SizeLong = size,
-				IsBestDuration = bestDuration,
-				IsBestFrameSize = bestFrameSize,
-				IsBestSize = bestSize,
-			}
-		};
+					ItemInfo = new DuplicateItem {
+						GroupId = Guid.Empty,
+						Path = Guid.NewGuid().ToString(),
+						Duration = duration ?? TimeSpan.Zero,
+						FrameSizeInt = frameSizeInt,
+						SizeLong = size,
+						IsBestDuration = bestDuration,
+						IsBestFrameSize = bestFrameSize,
+						IsBestSize = bestSize,
+					}
+				};
 
 		[Fact]
 		public void AllTied_ShowsNothing_InsteadOfBestOnEveryRow() {

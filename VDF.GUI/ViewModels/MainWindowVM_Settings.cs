@@ -200,7 +200,7 @@ namespace VDF.GUI.ViewModels {
 					SettingsFile.Instance.Blacklists.Add(item);
 			}
 		});
-		
+
 		public ReactiveCommand<Unit, Unit> AddBlacklistPatternToListCommand => ReactiveCommand.CreateFromTask(async () => {
 			var result = await Views.InputBoxService.Show(App.Lang["Dialog.AddPatternPrompt"],
 				waterMark: "*.actors", title: App.Lang["Dialog.AddPattern"]);

@@ -34,7 +34,7 @@ namespace VDF.GUI.Views {
 				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 		}
 
-		void InitializeComponent() => AvaloniaXamlLoader.Load(this);		
+		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
 	}
 }

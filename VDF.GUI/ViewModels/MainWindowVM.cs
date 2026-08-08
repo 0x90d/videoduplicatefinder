@@ -1864,19 +1864,19 @@ Non-Windows setup:
 					item.Checked = true;
 		}
 
-	public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
-		var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
-		if (items.Count == 0) return;
-		SyncCoreSettings();
-		await Scanner.RetrieveThumbnailsForItems(items);
-	});
+		public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
+			var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
+			if (items.Count == 0) return;
+			SyncCoreSettings();
+			await Scanner.RetrieveThumbnailsForItems(items);
+		});
 
-	public ReactiveCommand<Unit, Unit> LoadThumbnailsForGroupCommand => ReactiveCommand.CreateFromTask(async () => {
-		if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
-		var items = Duplicates.Where(d => d.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).Select(d => d.ItemInfo).ToList();
-		SyncCoreSettings();
-		await Scanner.RetrieveThumbnailsForItems(items);
-	});
+		public ReactiveCommand<Unit, Unit> LoadThumbnailsForGroupCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
+			var items = Duplicates.Where(d => d.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).Select(d => d.ItemInfo).ToList();
+			SyncCoreSettings();
+			await Scanner.RetrieveThumbnailsForItems(items);
+		});
 
 		List<DuplicateItemVM> CheckedItemsToDelete => ScopedDuplicates().Where(d => d.Checked && d.IsVisibleInFilter).ToList();
 

@@ -126,7 +126,7 @@ namespace VDF.GUI.Views {
 			if (File.Exists(FileUtils.SafePathCombine(
 					CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder),
 					"ScannedFiles.db")))
-					return;
+				return;
 
 			while (!this.IsVisible) {
 				await Task.Delay(200);

@@ -66,7 +66,7 @@ namespace VDF.GUI.ViewModels {
 			if (index >= 0 && index < CriteriaOrder.Count - 1) {
 				var item = CriteriaOrder[index];
 				CriteriaOrder.Move(index, index + 1);
-				SelectedItem = item; 
+				SelectedItem = item;
 			}
 		}
 	}

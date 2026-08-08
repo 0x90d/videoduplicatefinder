@@ -241,7 +241,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			ffmpeg.RootPath = path;
 			return true;
 		}
-		
+
 		public static string[] GenerateLibraryFileNames() =>
 			ffmpeg.LibraryVersionMap
 				.Select(item => {
