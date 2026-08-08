@@ -25,6 +25,15 @@ namespace VDF.Core.Utils {
 		internal const int OldSide = 16;
 		internal const int Side = 32;
 		const int GrayByteValueLength = Side * Side; //1024
+
+		// The SIMD loops below iterate over img1's vectors while indexing img2, so a shorter
+		// img2 is an IndexOutOfRangeException at some opaque offset (and a shorter img1
+		// silently compares only a prefix). Mismatches mean a bug upstream — mixed legacy
+		// 16x16 data must be resampled or dropped before comparing (#881); fail loudly here.
+		static void ThrowIfLengthMismatch(byte[] img1, byte[] img2) {
+			if (img1.Length != img2.Length)
+				throw new ArgumentException($"Gray frame length mismatch: {img1.Length} vs {img2.Length} bytes. Wrong-sized cached scan data should have been resampled or excluded before comparing.");
+		}
 		const byte BlackPixelLimit = 0x20;
 		const byte WhitePixelLimit = 0xF0;
 		const int brightnessScalePerPixel = 256; // 0-255
@@ -61,7 +70,7 @@ namespace VDF.Core.Utils {
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe float PercentageDifferenceWithoutSpecificPixels(byte[] img1, byte[] img2, bool ignoreBlackPixels, bool ignoreWhitePixels) {
-			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
+			ThrowIfLengthMismatch(img1, img2);
 
 			// When neither filter is enabled this degenerates to PercentageDifference,
 			// which is already AVX2-vectorized — go straight there.
@@ -145,7 +154,7 @@ namespace VDF.Core.Utils {
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static unsafe float PercentageDifference(byte[] img1, byte[] img2) {
-			Debug.Assert(img1.Length == img2.Length, "Images must be of the same size");
+			ThrowIfLengthMismatch(img1, img2);
 			long diff = 0;
 			if (Avx2.IsSupported) {
 				// PSADBW emits each 8-byte SAD (≤ 8*255 = 2040) into its own 64-bit lane. Accumulate

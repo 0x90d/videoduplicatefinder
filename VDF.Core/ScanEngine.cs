@@ -1066,11 +1066,11 @@ namespace VDF.Core {
 							entry.OsHash = OsHashUtils.TryCompute(entry.Path);
 
 						if (Settings.IncludeMissingFiles && entry.grayBytes?.Count > 0) {
-							bool hasAllInformation = entry.IsImage;
-							if (!hasAllInformation) {
+							bool hasAllInformation = entry.IsImage && HasUsableCachedGray(entry, 0);
+							if (!entry.IsImage) {
 								hasAllInformation = true;
 								for (int i = 0; i < positionList.Count; i++) {
-									if (entry.grayBytes.ContainsKey(GetGrayBytesIndex(entry, positionList[i])))
+									if (HasUsableCachedGray(entry, GetGrayBytesIndex(entry, positionList[i])))
 										continue;
 									hasAllInformation = false;
 									break;
@@ -1136,6 +1136,9 @@ namespace VDF.Core {
 						entry.grayBytes ??= new Dictionary<double, byte[]?>();
 						entry.PHashes ??= new Dictionary<double, ulong?>();
 
+						// Before the samplers consult their "already sampled" gates: discard
+						// legacy-sized cached frames so those positions get re-extracted (#881).
+						HealLegacyGrayBytes(entry);
 
 						if (entry.IsImage) {
 							ScanCrashJournal.Begin(ScanCrashJournal.PhaseImage, entry.Path);
@@ -1362,9 +1365,42 @@ namespace VDF.Core {
 		/// those entries are excluded from the comparison instead of failing on every
 		/// pair.
 		/// </summary>
+		/// <summary>
+		/// A cached gray frame is usable when it exists and, if it holds data, that data has
+		/// the current pipeline's 32x32 size. A stored null means "sampled and failed" and
+		/// stays usable here — the retry policy elsewhere owns that decision. Only wrong-sized
+		/// frames (legacy 16x16 data migrated from an old database, #881) disqualify the cache.
+		/// </summary>
+		internal static bool HasUsableCachedGray(FileEntry entry, double idx) =>
+			entry.grayBytes.TryGetValue(idx, out byte[]? cached) &&
+			(cached == null || cached.Length == GrayBytesUtils.Side * GrayBytesUtils.Side);
+
+		/// <summary>
+		/// #881: databases migrated from the 16x16 era carry 256-byte gray frames verbatim,
+		/// and every "already sampled" gate keys on position presence — so they were reused
+		/// forever, and with pHash disabled nothing checked their size until
+		/// <see cref="GrayBytesUtils.PercentageDifference"/> read past the end of the shorter
+		/// buffer and aborted the scan. Removing them (with their stale pHashes) makes the
+		/// affected positions resample like missing ones, healing the database in place.
+		/// </summary>
+		internal static void HealLegacyGrayBytes(FileEntry entry) {
+			if (!(entry.grayBytes?.Count > 0)) return;
+			List<double>? stale = null;
+			foreach (var frame in entry.grayBytes)
+				if (frame.Value != null && frame.Value.Length != GrayBytesUtils.Side * GrayBytesUtils.Side)
+					(stale ??= new()).Add(frame.Key);
+			if (stale == null) return;
+			foreach (double key in stale) {
+				entry.grayBytes.Remove(key);
+				entry.PHashes?.Remove(key);
+			}
+			Logger.Instance.Info($"Resampling '{entry.Path}': {stale.Count} cached frame(s) had a legacy size and were discarded.");
+		}
+
 		internal bool TryBuildCompareSnapshot(FileEntry entry, bool usePHashing) {
 			if (entry.IsImage) {
-				if (!entry.grayBytes.TryGetValue(0, out byte[]? imageGray) || imageGray == null)
+				if (!entry.grayBytes.TryGetValue(0, out byte[]? imageGray) || imageGray == null
+					|| imageGray.Length != GrayBytesUtils.Side * GrayBytesUtils.Side)
 					return false;
 				entry.compareGray = new[] { imageGray };
 				if (Settings.UseAiMatching)
@@ -1380,6 +1416,12 @@ namespace VDF.Core {
 					positionKeys[j] = idx;
 				if (!entry.grayBytes.TryGetValue(idx, out byte[]? data) || data == null)
 					return false;
+				// Legacy 16x16 data from a migrated database: comparing it against a modern
+				// 32x32 frame crashed the whole scan inside PercentageDifference (#881).
+				// GatherInfos heals these by resampling; anything still wrong-sized here
+				// (e.g. a missing file that cannot be resampled) is excluded instead.
+				if (data.Length != GrayBytesUtils.Side * GrayBytesUtils.Side)
+					return false;
 				gray[j] = data;
 			}
 
@@ -1391,15 +1433,7 @@ namespace VDF.Core {
 						phashes[j] = cached.Value;
 						continue;
 					}
-					if (gray[j]!.Length != GrayBytesUtils.Side * GrayBytesUtils.Side) {
-						// Legacy 16x16 data slipped past the DbVersion gate (mixed database).
-						// Return before assigning compareGray so a dropped entry leaves no
-						// dangling snapshot behind (the end-of-phase cleanup only visits the
-						// validated ScanList).
-						LogMissingPHash(entry.Path);
-						return false;
-					}
-					phashes[j] = pHash.PerceptualHash.ComputePHashFromGray32x32(gray[j]);
+					phashes[j] = pHash.PerceptualHash.ComputePHashFromGray32x32(gray[j]!);
 					entry.PHashes[idx] = phashes[j]; // cache for future quick rescans; also heals stored nulls
 				}
 				entry.comparePHashes = phashes;
@@ -1655,7 +1689,7 @@ namespace VDF.Core {
 				unionEmbeddingStore = null;
 			}
 			if (droppedSnapshots > 0)
-				Logger.Instance.Warn($"Excluded {droppedSnapshots} file(s) with incomplete cached scan data (missing gray bytes for the current thumbnail positions). Rescan to repopulate.");
+				Logger.Instance.Warn($"Excluded {droppedSnapshots} file(s) with incomplete cached scan data (missing or wrong-sized gray bytes for the current thumbnail positions). Rescan to repopulate.");
 
 			Logger.Instance.Info($"Scanning for duplicates in {ScanList.Count:N0} files");
 			// Precompute the pHash quorum threshold once for the whole phase (see field note).
