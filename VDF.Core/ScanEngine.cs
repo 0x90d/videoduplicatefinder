@@ -1350,6 +1350,18 @@ namespace VDF.Core {
 		return true;
 	}
 
+		/// <summary>
+		/// Whether a pair of files is allowed to match under the configured folder match
+		/// mode. Every comparison pass must apply this - the partial clip passes (audio
+		/// and AI) used to skip it and grouped same-folder clips under DifferentFolderOnly (#870).
+		/// </summary>
+		internal bool PassesFolderMatchGate(FileEntry a, FileEntry b) =>
+			Settings.FolderMatchMode switch {
+				FolderMatchMode.SameFolderOnly => SameFolderAtDepth(a.Folder, b.Folder, Settings.SameFolderDepth),
+				FolderMatchMode.DifferentFolderOnly => !SameFolderAtDepth(a.Folder, b.Folder, Settings.SameFolderDepth),
+				_ => true,
+			};
+
 	void LogMissingPHash(string path) {
 			if (missingPHashFiles.TryAdd(path, 0))
 				Logger.Instance.Warn($"Missing pHash data for '{path}' — file will be skipped in pHash comparisons. Re-scan to repopulate.");
@@ -1851,11 +1863,7 @@ namespace VDF.Core {
 								continue;
 						}
 
-						if (Settings.FolderMatchMode == FolderMatchMode.SameFolderOnly &&
-							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
-							continue;
-						if (Settings.FolderMatchMode == FolderMatchMode.DifferentFolderOnly &&
-							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+						if (!PassesFolderMatchGate(entry, compItem))
 							continue;
 
 						isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHashes, out difference, out flags);
@@ -1886,11 +1894,7 @@ namespace VDF.Core {
 						var compItem = imageEntries[n];
 						float difference = 0;
 						DuplicateFlags flags;
-						if (Settings.FolderMatchMode == FolderMatchMode.SameFolderOnly &&
-							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
-							continue;
-						if (Settings.FolderMatchMode == FolderMatchMode.DifferentFolderOnly &&
-							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+						if (!PassesFolderMatchGate(entry, compItem))
 							continue;
 						// Images never take the pHash branch, so no flipped pHash is needed.
 						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, null, out difference, out flags);
@@ -1949,11 +1953,7 @@ namespace VDF.Core {
 						if (diffSeconds > allowedSeconds)
 							continue;
 
-						if (Settings.FolderMatchMode == FolderMatchMode.SameFolderOnly &&
-							!SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
-							continue;
-						if (Settings.FolderMatchMode == FolderMatchMode.DifferentFolderOnly &&
-							SameFolderAtDepth(entry.Folder, compItem.Folder, Settings.SameFolderDepth))
+						if (!PassesFolderMatchGate(entry, compItem))
 							continue;
 
 						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHashes, out difference, out flags);
@@ -2170,6 +2170,8 @@ namespace VDF.Core {
 								double ratio = clipSec / sourceSec;
 								if (ratio >= 0.95) continue;
 								if (ratio < Settings.PartialClipMinRatio) break;
+								// Centrally, so the audio AND the AI partial pass honor it (#870).
+								if (!PassesFolderMatchGate(videos[i], videos[j])) continue;
 								if (pairPrefilter != null && !pairPrefilter(i, j)) continue;
 								Interlocked.Increment(ref pairsChecked);
 								if (tryMatchPair(i, j) is { } match)
