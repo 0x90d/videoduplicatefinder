@@ -24,15 +24,15 @@ namespace VDF.Core.Chromaprint.Pipeline {
 	/// triangular-shaped response that smooths transient noise while preserving pitch.
 	/// </summary>
 	internal sealed class ChromaFilter {
-		private const int FilterSize = 5;
-		private const double FilterNorm = 2.50; // sum of coefficients
+		const int FilterSize = 5;
+		const double FilterNorm = 2.50; // sum of coefficients
 
-		private static readonly double[] s_coeff = { 0.25, 0.50, 1.00, 0.50, 0.25 };
+		static readonly double[] s_coeff = { 0.25, 0.50, 1.00, 0.50, 0.25 };
 
 		// Ring buffer: stores 12 doubles per slot rather than array references.
-		private readonly double[,] _ring = new double[FilterSize, 12];
-		private int _head;
-		private int _count;
+		readonly double[,] _ring = new double[FilterSize, 12];
+		int _head;
+		int _count;
 
 		internal void Reset() {
 			Array.Clear(_ring);

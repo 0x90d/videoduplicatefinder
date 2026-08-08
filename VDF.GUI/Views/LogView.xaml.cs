@@ -25,7 +25,7 @@ namespace VDF.GUI.Views {
 
 		// Only offer "Open In Folder" when the right-clicked log line actually
 		// resolves to a file/folder that exists; otherwise suppress the menu.
-		private void LogContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
+		void LogContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
 			if (DataContext is MainWindowVM vm &&
 				MainWindowVM.TryExtractExistingPath((vm.SelectedLogItem as LogMessageRow)?.Message) == null)
 				e.Cancel = true;

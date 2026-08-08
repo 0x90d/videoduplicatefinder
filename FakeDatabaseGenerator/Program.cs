@@ -19,14 +19,14 @@ using VDF.Core;
 
 namespace FakeDatabaseGenerator {
 	internal static class Program {
-		private const int DefaultEntries = 50_000;
-		private const int DefaultSeed = 42;
-		private const int DefaultThumbnailCount = 1;
-		private const double DefaultMinDurationSeconds = 5;
-		private const double DefaultMaxDurationSeconds = 3600;
-		private const int DefaultDuplicateGroups = 0;
-		private const int DefaultDuplicateGroupSize = 2;
-		private const int GrayBytesSize = 32 * 32;
+		const int DefaultEntries = 50_000;
+		const int DefaultSeed = 42;
+		const int DefaultThumbnailCount = 1;
+		const double DefaultMinDurationSeconds = 5;
+		const double DefaultMaxDurationSeconds = 3600;
+		const int DefaultDuplicateGroups = 0;
+		const int DefaultDuplicateGroupSize = 2;
+		const int GrayBytesSize = 32 * 32;
 
 		public static int Main(string[] args) {
 			var options = ParseArgs(args);
@@ -67,7 +67,7 @@ namespace FakeDatabaseGenerator {
 			return 0;
 		}
 
-		private static FileEntry CreateEntry(Random random, Options options, List<double> positions, int index) {
+		static FileEntry CreateEntry(Random random, Options options, List<double> positions, int index) {
 			double durationSeconds = options.MinDurationSeconds +
 				random.NextDouble() * (options.MaxDurationSeconds - options.MinDurationSeconds);
 			var entry = new FileEntry {
@@ -86,7 +86,7 @@ namespace FakeDatabaseGenerator {
 			return entry;
 		}
 
-		private static FileEntry CloneEntry(FileEntry reference, int index) {
+		static FileEntry CloneEntry(FileEntry reference, int index) {
 			var clone = new FileEntry {
 				Path = Path.Combine(Path.GetDirectoryName(reference.Path) ?? string.Empty, $"fake_dup_{index:D6}.mp4"),
 				FileSize = reference.FileSize,
@@ -109,7 +109,7 @@ namespace FakeDatabaseGenerator {
 			return clone;
 		}
 
-		private static MediaInfo BuildMediaInfo(double durationSeconds, Random random) {
+		static MediaInfo BuildMediaInfo(double durationSeconds, Random random) {
 			return new MediaInfo {
 				Duration = TimeSpan.FromSeconds(durationSeconds),
 				Streams = new[] {
@@ -131,13 +131,13 @@ namespace FakeDatabaseGenerator {
 			};
 		}
 
-		private static byte[] RandomGrayBytes(Random random) {
+		static byte[] RandomGrayBytes(Random random) {
 			var bytes = new byte[GrayBytesSize];
 			random.NextBytes(bytes);
 			return bytes;
 		}
 
-		private static List<double> BuildPositions(int thumbnailCount) {
+		static List<double> BuildPositions(int thumbnailCount) {
 			var positions = new List<double>(thumbnailCount);
 			double positionCounter = 0;
 			for (int i = 0; i < thumbnailCount; i++) {
@@ -147,7 +147,7 @@ namespace FakeDatabaseGenerator {
 			return positions;
 		}
 
-		private static Options ParseArgs(string[] args) {
+		static Options ParseArgs(string[] args) {
 			var options = new Options {
 				Entries = DefaultEntries,
 				Seed = DefaultSeed,
@@ -206,28 +206,28 @@ namespace FakeDatabaseGenerator {
 			return options;
 		}
 
-		private static int ParseInt(string[] args, ref int index, string name) {
+		static int ParseInt(string[] args, ref int index, string name) {
 			if (index + 1 >= args.Length)
 				throw new ArgumentException($"Missing value for {name}");
 			index++;
 			return int.Parse(args[index], CultureInfo.InvariantCulture);
 		}
 
-		private static double ParseDouble(string[] args, ref int index, string name) {
+		static double ParseDouble(string[] args, ref int index, string name) {
 			if (index + 1 >= args.Length)
 				throw new ArgumentException($"Missing value for {name}");
 			index++;
 			return double.Parse(args[index], CultureInfo.InvariantCulture);
 		}
 
-		private static string ParseString(string[] args, ref int index, string name) {
+		static string ParseString(string[] args, ref int index, string name) {
 			if (index + 1 >= args.Length)
 				throw new ArgumentException($"Missing value for {name}");
 			index++;
 			return args[index];
 		}
 
-		private static void PrintHelp() {
+		static void PrintHelp() {
 			Console.WriteLine("FakeDatabaseGenerator");
 			Console.WriteLine("Usage:");
 			Console.WriteLine("  dotnet run --project tools/FakeDatabaseGenerator/FakeDatabaseGenerator.csproj -- [options]");
@@ -245,7 +245,7 @@ namespace FakeDatabaseGenerator {
 			Console.WriteLine("  --help, -h                  Show this help");
 		}
 
-		private sealed class Options {
+		sealed class Options {
 			public int Entries { get; set; }
 			public int Seed { get; set; }
 			public int ThumbnailCount { get; set; }

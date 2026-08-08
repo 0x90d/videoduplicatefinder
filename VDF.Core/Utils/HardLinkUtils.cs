@@ -77,7 +77,7 @@ namespace VDF.Core.Utils {
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
-		private struct BY_HANDLE_FILE_INFORMATION {
+		struct BY_HANDLE_FILE_INFORMATION {
 			public uint FileAttributes;
 			public FILETIME CreationTime;
 			public FILETIME LastAccessTime;
@@ -90,7 +90,7 @@ namespace VDF.Core.Utils {
 			public uint FileIndexLow;
 		}
 		[StructLayout(LayoutKind.Sequential)]
-		private struct FILETIME {
+		struct FILETIME {
 			public uint dwLowDateTime;
 			public uint dwHighDateTime;
 		}

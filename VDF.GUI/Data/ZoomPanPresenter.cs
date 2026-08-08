@@ -56,14 +56,14 @@ namespace VDF.GUI.Data {
 
 		public double MinZoom { get; set; } = 0.1;
 		public double MaxZoom { get; set; } = 8.0;
-		private readonly ScaleTransform _scale = new() { ScaleX = 1, ScaleY = 1 };
-		private readonly TranslateTransform _translate = new();
-		private TransformGroup? _group;
+		readonly ScaleTransform _scale = new() { ScaleX = 1, ScaleY = 1 };
+		readonly TranslateTransform _translate = new();
+		TransformGroup? _group;
 
-		private bool _panning;
-		private bool _swiping;
-		private Point _pointerStart;
-		private double _startX, _startY;
+		bool _panning;
+		bool _swiping;
+		Point _pointerStart;
+		double _startX, _startY;
 
 		const double SwipeGrabDistance = 20;
 
@@ -84,7 +84,7 @@ namespace VDF.GUI.Data {
 			this.GetPropertyChangedObservable(OffsetYProperty).Subscribe(_ => ApplyTransform());
 		}
 
-		private void OnZoomChanged() {
+		void OnZoomChanged() {
 			// A programmatic zoom (the Zoom-In/Out/Fit toolbar commands set Zoom directly) must
 			// re-clamp the pan offsets too: an offset that was valid at the previous zoom can
 			// push the now-differently-scaled content out of the viewport, leaving blank space.
@@ -96,7 +96,7 @@ namespace VDF.GUI.Data {
 			ApplyTransform();
 		}
 
-		private void AttachTransform() {
+		void AttachTransform() {
 			if (Content is Visual v) {
 				_group ??= new TransformGroup { Children = { _scale, _translate } };
 				// Avalonia defaults RenderTransformOrigin to the center. All offset math
@@ -109,7 +109,7 @@ namespace VDF.GUI.Data {
 			}
 		}
 
-		private void ApplyTransform() {
+		void ApplyTransform() {
 			_scale.ScaleX = _scale.ScaleY = Math.Clamp(Zoom, MinZoom, MaxZoom);
 			_translate.X = OffsetX;
 			_translate.Y = OffsetY;
@@ -118,7 +118,7 @@ namespace VDF.GUI.Data {
 
 		// Avalonia converts the pointer position through the content's inverse render
 		// transform, giving the exact content pixel under the cursor at any zoom/offset.
-		private Point GetContentPosition(PointerEventArgs e) =>
+		Point GetContentPosition(PointerEventArgs e) =>
 			Content is Visual contentVisual ? e.GetPosition(contentVisual) : e.GetPosition(this);
 
 		internal static double ClampOffsetToViewport(double offset, double viewportLength, double contentLength, double zoom) {
@@ -133,7 +133,7 @@ namespace VDF.GUI.Data {
 			return Math.Clamp(offset, viewportLength - scaledLength, 0d);
 		}
 
-		private Point ClampOffsetsToViewport(double offsetX, double offsetY, double zoom) {
+		Point ClampOffsetsToViewport(double offsetX, double offsetY, double zoom) {
 			if (Content is not Visual contentVisual)
 				return new Point(offsetX, offsetY);
 			return new Point(
@@ -141,7 +141,7 @@ namespace VDF.GUI.Data {
 				ClampOffsetToViewport(offsetY, Bounds.Height, contentVisual.Bounds.Height, zoom));
 		}
 
-		private bool IsNearDivider(PointerEventArgs e) {
+		bool IsNearDivider(PointerEventArgs e) {
 			Point contentPoint = GetContentPosition(e);
 			// The grab margin is a screen-space distance; translate it into content
 			// space so the divider stays equally grabbable at any zoom level.
@@ -156,7 +156,7 @@ namespace VDF.GUI.Data {
 			}
 		}
 
-		private void OnWheel(object? s, PointerWheelEventArgs e) {
+		void OnWheel(object? s, PointerWheelEventArgs e) {
 			var oldZoom = Math.Clamp(Zoom, MinZoom, MaxZoom);
 			var factor = e.Delta.Y > 0 ? 1.1 : (1.0 / 1.1);
 			var newZoom = Math.Clamp(oldZoom * factor, MinZoom, MaxZoom);
@@ -179,7 +179,7 @@ namespace VDF.GUI.Data {
 			e.Handled = true;
 		}
 
-		private void OnPressed(object? s, PointerPressedEventArgs e) {
+		void OnPressed(object? s, PointerPressedEventArgs e) {
 			var props = e.GetCurrentPoint(this).Properties;
 
 			if (IsAnySwipe && props.IsLeftButtonPressed && IsNearDivider(e)) {
@@ -200,7 +200,7 @@ namespace VDF.GUI.Data {
 			}
 		}
 
-		private void OnReleased(object? s, PointerReleasedEventArgs e) {
+		void OnReleased(object? s, PointerReleasedEventArgs e) {
 			if (_swiping) {
 				_swiping = false;
 				e.Pointer.Capture(null);
@@ -214,7 +214,7 @@ namespace VDF.GUI.Data {
 			}
 		}
 
-		private void OnMoved(object? s, PointerEventArgs e) {
+		void OnMoved(object? s, PointerEventArgs e) {
 			if (_swiping) {
 				UpdateSwipeFromPointer(e);
 				e.Handled = true;
@@ -238,7 +238,7 @@ namespace VDF.GUI.Data {
 			}
 		}
 
-		private void UpdateSwipeFromPointer(PointerEventArgs e) {
+		void UpdateSwipeFromPointer(PointerEventArgs e) {
 			Point contentPoint = GetContentPosition(e);
 			if (SwipeVertical) {
 				var displayH = SwipeDisplayHeight;

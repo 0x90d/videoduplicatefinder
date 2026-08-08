@@ -239,7 +239,7 @@ namespace VDF.GUI.Mvvm {
 			=> Avalonia.Data.BindingOperations.DoNothing;
 
 		// --- helpers ---
-		private static string RemoveFormatControls(string s) {
+		static string RemoveFormatControls(string s) {
 			// Fast path: no control char present
 			bool hasCf = false;
 			foreach (var ch in s) {
@@ -255,7 +255,7 @@ namespace VDF.GUI.Mvvm {
 			return sb.ToString();
 		}
 
-		private static string RemoveIsolatedSurrogates(string s) {
+		static string RemoveIsolatedSurrogates(string s) {
 			var sb = new System.Text.StringBuilder(s.Length);
 			for (int i = 0; i < s.Length; i++) {
 				char c = s[i];

@@ -68,7 +68,8 @@ namespace VDF.GUI.Views {
 				};
 			}
 		}
-		private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
+
+		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}
 
 }

@@ -23,13 +23,13 @@ using System.Threading.Tasks;
 
 namespace VDF.GUI.Utils {
 	internal static class ConsoleAttach {
-		private const uint ATTACH_PARENT_PROCESS = 0xFFFFFFFF;
+		const uint ATTACH_PARENT_PROCESS = 0xFFFFFFFF;
 
 		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern bool AttachConsole(uint dwProcessId);
+		static extern bool AttachConsole(uint dwProcessId);
 
 		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern bool AllocConsole();
+		static extern bool AllocConsole();
 
 		public static void EnsureConsole() {
 			if (!OperatingSystem.IsWindows())

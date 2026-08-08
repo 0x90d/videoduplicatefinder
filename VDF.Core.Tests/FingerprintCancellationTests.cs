@@ -22,7 +22,7 @@
 namespace VDF.Core.Tests;
 
 public class FingerprintCancellationTests {
-	private static string CreateTempVideo() {
+	static string CreateTempVideo() {
 		string path = Path.Combine(Path.GetTempPath(), $"vdf-cancel-test-{Guid.NewGuid():N}.mp4");
 		File.WriteAllBytes(path, Array.Empty<byte>());
 		return path;

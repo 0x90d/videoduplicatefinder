@@ -19,7 +19,7 @@ namespace VDF.Core.Chromaprint.Pipeline {
 
 	/// <summary>L2-normalises a 12-element chroma vector in-place.</summary>
 	internal static class ChromaNormalizer {
-		private const double Epsilon = 1e-10;
+		const double Epsilon = 1e-10;
 
 		internal static void Normalize(double[] chroma) {
 			double sumSq = 0.0;

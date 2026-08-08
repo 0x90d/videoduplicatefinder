@@ -34,7 +34,7 @@ namespace VDF.GUI.ViewModels {
 	public sealed class ThumbnailComparerVM : ReactiveObject {
 		public ObservableCollection<LargeThumbnailDuplicateItem> Items { get; }
 
-		private LargeThumbnailDuplicateItem? _selectedItemA;
+		LargeThumbnailDuplicateItem? _selectedItemA;
 		public LargeThumbnailDuplicateItem? SelectedItemA {
 			get => _selectedItemA;
 			set {
@@ -46,7 +46,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		private LargeThumbnailDuplicateItem? _selectedItemB;
+		LargeThumbnailDuplicateItem? _selectedItemB;
 		public LargeThumbnailDuplicateItem? SelectedItemB {
 			get => _selectedItemB;
 			set {
@@ -58,16 +58,16 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		private Bitmap? _imageA;
+		Bitmap? _imageA;
 		public Bitmap? ImageA { get => _imageA; set => this.RaiseAndSetIfChanged(ref _imageA, value); }
 
-		private Bitmap? _imageB;
+		Bitmap? _imageB;
 		public Bitmap? ImageB { get => _imageB; set => this.RaiseAndSetIfChanged(ref _imageB, value); }
 		public Bitmap? ImageSingle => ImageA ?? ImageB;
 
 		public ReadOnlyObservableCollection<CompareMode> CompareModes { get; }
 		readonly ObservableCollection<CompareMode> compareModes = new();
-		private CompareMode _selectedCompareMode = SettingsFile.Instance.ThumbnailComparerMode;
+		CompareMode _selectedCompareMode = SettingsFile.Instance.ThumbnailComparerMode;
 		public CompareMode SelectedCompareMode {
 			get => _selectedCompareMode;
 			set {
@@ -90,17 +90,17 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		private bool _isLoadingThumbnails;
+		bool _isLoadingThumbnails;
 		public bool IsLoadingThumbnails { get => _isLoadingThumbnails; set => this.RaiseAndSetIfChanged(ref _isLoadingThumbnails, value); }
 
-		private double _loadProgress;
+		double _loadProgress;
 		public double LoadProgress { get => _loadProgress; set => this.RaiseAndSetIfChanged(ref _loadProgress, value); }
 		public string LoadProgressText => $"{Math.Round(LoadProgress * 100)}%";
 
-		private string? _userMessage;
+		string? _userMessage;
 		public string? UserMessage { get => _userMessage; set => this.RaiseAndSetIfChanged(ref _userMessage, value); }
 
-		private bool _isMessageVisible;
+		bool _isMessageVisible;
 		public bool IsMessageVisible { get => _isMessageVisible; set => this.RaiseAndSetIfChanged(ref _isMessageVisible, value); }
 
 		CancellationTokenSource? _messageCts;
@@ -127,7 +127,7 @@ namespace VDF.GUI.ViewModels {
 		public bool IsDualView => IsSideBySide || IsStacked;
 		public bool SwipeHintVisible => IsSwipe;
 
-		private double _modeSliderValue = 0.5;
+		double _modeSliderValue = 0.5;
 		public double ModeSliderValue {
 			get => _modeSliderValue;
 			set {
@@ -138,7 +138,7 @@ namespace VDF.GUI.ViewModels {
 
 		// --- Highlight differences (red boxes around regions where A and B differ) ---
 
-		private bool _highlightDifferences = SettingsFile.Instance.ThumbnailComparerHighlightDifferences;
+		bool _highlightDifferences = SettingsFile.Instance.ThumbnailComparerHighlightDifferences;
 		public bool HighlightDifferences {
 			get => _highlightDifferences;
 			set {
@@ -147,7 +147,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		private double _diffSensitivity = SettingsFile.Instance.ThumbnailComparerDiffSensitivity;
+		double _diffSensitivity = SettingsFile.Instance.ThumbnailComparerDiffSensitivity;
 		public double DiffSensitivity {
 			get => _diffSensitivity;
 			set {
@@ -158,10 +158,10 @@ namespace VDF.GUI.ViewModels {
 
 		// Transparent bitmap with the region outlines; rendered as a second
 		// Stretch=Uniform Image over each pane, so it tracks zoom/pan for free.
-		private Bitmap? _diffOverlay;
+		Bitmap? _diffOverlay;
 		public Bitmap? DiffOverlay { get => _diffOverlay; private set => this.RaiseAndSetIfChanged(ref _diffOverlay, value); }
 
-		private bool _isComputingDiff;
+		bool _isComputingDiff;
 		public bool IsComputingDiff { get => _isComputingDiff; private set => this.RaiseAndSetIfChanged(ref _isComputingDiff, value); }
 
 		CancellationTokenSource? _diffCts;
@@ -203,21 +203,21 @@ namespace VDF.GUI.ViewModels {
 
 		// --- Frame stepping (works in ALL modes) ---
 
-		private bool _showFrameControls;
+		bool _showFrameControls;
 		public bool ShowFrameControls {
 			get => _showFrameControls;
 			private set => this.RaiseAndSetIfChanged(ref _showFrameControls, value);
 		}
 
 		// Only show position slider when there are multiple base positions to choose from
-		private bool _showPositionControls;
+		bool _showPositionControls;
 		public bool ShowPositionControls {
 			get => _showPositionControls;
 			private set => this.RaiseAndSetIfChanged(ref _showPositionControls, value);
 		}
 
 		// Selects which pre-extracted thumbnail position to start from
-		private int _baseThumbnailIndex;
+		int _baseThumbnailIndex;
 		public int BaseThumbnailIndex {
 			get => _baseThumbnailIndex;
 			set {
@@ -227,14 +227,15 @@ namespace VDF.GUI.ViewModels {
 				UpdateStripCurrent();
 			}
 		}
-		private int _baseThumbnailIndexMax;
+
+		int _baseThumbnailIndexMax;
 		public int BaseThumbnailIndexMax {
 			get => _baseThumbnailIndexMax;
 			private set => this.RaiseAndSetIfChanged(ref _baseThumbnailIndexMax, value);
 		}
 
 		// Independent frame step for A
-		private int _stepA;
+		int _stepA;
 		public int StepA {
 			get => _stepA;
 			set {
@@ -244,7 +245,7 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		// Independent frame step for B
-		private int _stepB;
+		int _stepB;
 		public int StepB {
 			get => _stepB;
 			set {
@@ -254,22 +255,22 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		// Display labels (visible in ALL modes)
-		private string _frameLabelA = string.Empty;
+		string _frameLabelA = string.Empty;
 		public string FrameLabelA { get => _frameLabelA; set => this.RaiseAndSetIfChanged(ref _frameLabelA, value); }
 
-		private string _frameLabelB = string.Empty;
+		string _frameLabelB = string.Empty;
 		public string FrameLabelB { get => _frameLabelB; set => this.RaiseAndSetIfChanged(ref _frameLabelB, value); }
 
-		private bool _isExtractingFrame;
+		bool _isExtractingFrame;
 		public bool IsExtractingFrame { get => _isExtractingFrame; set => this.RaiseAndSetIfChanged(ref _isExtractingFrame, value); }
 
-		private double _zoom = 1.0;
+		double _zoom = 1.0;
 		public double Zoom { get => _zoom; set => this.RaiseAndSetIfChanged(ref _zoom, value); }
 
-		private double _panOffsetX;
+		double _panOffsetX;
 		public double PanOffsetX { get => _panOffsetX; set => this.RaiseAndSetIfChanged(ref _panOffsetX, value); }
 
-		private double _panOffsetY;
+		double _panOffsetY;
 		public double PanOffsetY { get => _panOffsetY; set => this.RaiseAndSetIfChanged(ref _panOffsetY, value); }
 
 		public ReactiveCommand<Unit, Unit> FitToViewCommand { get; }
@@ -291,29 +292,29 @@ namespace VDF.GUI.ViewModels {
 		public double TopOffset { get => _top; private set => this.RaiseAndSetIfChanged(ref _top, value); }
 		double _dispW, _dispH, _left, _top;
 
-		private Geometry? _swipeClip;
+		Geometry? _swipeClip;
 		public Geometry? SwipeClip { get => _swipeClip; private set => this.RaiseAndSetIfChanged(ref _swipeClip, value); }
 
 		public Thickness SeparatorMargin => new(SeparatorX, TopOffset, 0, 0);
-		private double _separatorX;
+		double _separatorX;
 		public double SeparatorX {
 			get => _separatorX;
 			private set { this.RaiseAndSetIfChanged(ref _separatorX, value); this.RaisePropertyChanged(nameof(SeparatorMargin)); }
 		}
 
-		private double _separatorY;
+		double _separatorY;
 		public double SeparatorY {
 			get => _separatorY;
 			private set => this.RaiseAndSetIfChanged(ref _separatorY, value);
 		}
 
-		private double _viewportWidth;
+		double _viewportWidth;
 		public double ViewportWidth {
 			get => _viewportWidth;
 			set { this.RaiseAndSetIfChanged(ref _viewportWidth, value); Recalc(); }
 		}
 
-		private double _viewportHeight;
+		double _viewportHeight;
 		public double ViewportHeight {
 			get => _viewportHeight;
 			set { this.RaiseAndSetIfChanged(ref _viewportHeight, value); Recalc(); }

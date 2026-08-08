@@ -164,8 +164,7 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailGridColumns, value);
 		}
 
-		[JsonIgnore]
-		private Bitmap? _thumbnail;
+		[JsonIgnore] Bitmap? _thumbnail;
 
 		[JsonIgnore]
 		public Bitmap? Thumbnail {

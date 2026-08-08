@@ -18,10 +18,10 @@ using FFmpeg.AutoGen;
 
 namespace VDF.Core.FFTools.FFmpegNative {
 	sealed unsafe class VideoFrameConverter : IDisposable {
-		private readonly AVFrame* _pConvertedFrame;
-		private readonly SwsContext* _pConvertContext;
-		private readonly Size _sourceSize;
-		private readonly AVPixelFormat _sourcePixelFormat;
+		readonly AVFrame* _pConvertedFrame;
+		readonly SwsContext* _pConvertContext;
+		readonly Size _sourceSize;
+		readonly AVPixelFormat _sourcePixelFormat;
 
 		public enum ScaleQuality {
 			FastBilinear,

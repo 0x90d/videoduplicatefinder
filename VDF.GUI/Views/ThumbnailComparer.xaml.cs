@@ -70,9 +70,9 @@ namespace VDF.GUI.Views {
 		}
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-		private void ThumbnailComparer_Opened(object? sender, EventArgs e) => ApplySavedWindowPlacement();
+		void ThumbnailComparer_Opened(object? sender, EventArgs e) => ApplySavedWindowPlacement();
 
-		private void ThumbnailComparer_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+		void ThumbnailComparer_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 			if (DataContext is ThumbnailComparerVM vm) {
 				_ = vm.LoadThumbnailsAsync();
 
@@ -99,7 +99,7 @@ namespace VDF.GUI.Views {
 			}
 		}
 
-		private void ThumbnailComparer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
+		void ThumbnailComparer_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
 			// A close mid-load must stop the thumbnail/frame extraction work — the
 			// window is gone, nothing should keep FFmpeg grinding in the background.
 			if (DataContext is ThumbnailComparerVM vm)
@@ -153,7 +153,7 @@ namespace VDF.GUI.Views {
 			}
 		}
 
-		private void ApplySavedWindowPlacement() {
+		void ApplySavedWindowPlacement() {
 			var settings = SettingsFile.Instance;
 			var screens = Screens;
 			var targetScreen = ResolveScreen(screens, settings.ThumbnailComparerWindowScreenIndex);
@@ -199,7 +199,7 @@ namespace VDF.GUI.Views {
 			WindowStartupLocation = WindowStartupLocation.CenterScreen;
 		}
 
-		private void SaveWindowPlacement() {
+		void SaveWindowPlacement() {
 			var settings = SettingsFile.Instance;
 			settings.ThumbnailComparerWindowWidth = Width;
 			settings.ThumbnailComparerWindowHeight = Height;
@@ -230,7 +230,7 @@ namespace VDF.GUI.Views {
 			SettingsFile.SaveSettings();
 		}
 
-		private static Screen? ResolveScreen(Screens? screens, int? screenIndex) {
+		static Screen? ResolveScreen(Screens? screens, int? screenIndex) {
 			if (screens == null) {
 				return null;
 			}

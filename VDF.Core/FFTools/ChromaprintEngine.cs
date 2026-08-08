@@ -28,14 +28,15 @@ namespace VDF.Core.FFTools {
 	/// audio fingerprint stored as an array of aggregated 1-second <c>uint</c> blocks.
 	/// </summary>
 	internal static class ChromaprintEngine {
-		private const int TimeoutMs = 30_000; // 30 seconds max for process exit after stream ends
+		const int TimeoutMs = 30_000; // 30 seconds max for process exit after stream ends
 		// Max time one read may wait for the next PCM chunk before the child counts as wedged.
-		private const int StallTimeoutMs = 120_000;
-		private const int TargetSampleRate = 11025;
-		private const int TargetChannels = 1;
+		const int StallTimeoutMs = 120_000;
+		const int TargetSampleRate = 11025;
+
+		const int TargetChannels = 1;
 		// Read PCM in 32 KB chunks — keeps memory low while giving ChromaContext
 		// enough samples to process multiple frames per iteration.
-		private const int ReadBufferSize = 32_768;
+		const int ReadBufferSize = 32_768;
 
 		/// <summary>
 		/// Extracts the audio fingerprint for <paramref name="filePath"/>.
@@ -57,7 +58,7 @@ namespace VDF.Core.FFTools {
 		}
 
 		/// <summary>Native path: uses FFmpeg.AutoGen bindings — no process spawning.</summary>
-		private static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, CancellationToken ct, Action<double>? onProgress) {
+		static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, CancellationToken ct, Action<double>? onProgress) {
 			var sw = extendedLogging ? Stopwatch.StartNew() : null;
 
 			// Suppress noisy FFmpeg warnings (e.g. AAC "Could not update timestamps
@@ -99,7 +100,7 @@ namespace VDF.Core.FFTools {
 		}
 
 		/// <summary>CLI fallback: spawns an FFmpeg process and streams PCM from stdout.</summary>
-		private static uint[]? ExtractFingerprintProcess(string filePath, bool extendedLogging, CancellationToken ct) {
+		static uint[]? ExtractFingerprintProcess(string filePath, bool extendedLogging, CancellationToken ct) {
 			var psi = new ProcessStartInfo {
 				FileName = FfmpegEngine.FFmpegPath,
 				CreateNoWindow = true,
@@ -239,7 +240,7 @@ namespace VDF.Core.FFTools {
 			}
 		}
 
-		private static void KillProcess(Process process) {
+		static void KillProcess(Process process) {
 			try {
 				if (!process.HasExited)
 					process.Kill();

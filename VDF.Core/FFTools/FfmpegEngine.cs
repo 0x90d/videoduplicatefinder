@@ -1103,7 +1103,7 @@ namespace VDF.Core.FFTools {
 			return kept.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, kept);
 		}
 
-		private static List<string> TokenizeArgs(string args) {
+		static List<string> TokenizeArgs(string args) {
 			var tokens = new List<string>();
 			var current = new System.Text.StringBuilder();
 			bool inQuotes = false;

@@ -26,18 +26,18 @@ namespace VDF.Core.FFTools.FFmpegNative {
 	/// they become available.  Modelled after <see cref="VideoStreamDecoder"/>.
 	/// </summary>
 	unsafe sealed class AudioStreamDecoder : IDisposable {
-		private AVFormatContext* _pFormatContext;
-		private AVCodecContext* _pCodecContext;
-		private SwrContext* _pSwrContext;
-		private AVFrame* _pFrame;
-		private AVPacket* _pPacket;
-		private readonly int _streamIndex;
-		private readonly AVIOInterruptCB_callback _interruptCbDelegate;
-		private readonly long _timeoutTicks;
-		private long _deadlineTicks;
-		private CancellationToken _ct;
+		AVFormatContext* _pFormatContext;
+		AVCodecContext* _pCodecContext;
+		SwrContext* _pSwrContext;
+		AVFrame* _pFrame;
+		AVPacket* _pPacket;
+		readonly int _streamIndex;
+		readonly AVIOInterruptCB_callback _interruptCbDelegate;
+		readonly long _timeoutTicks;
+		long _deadlineTicks;
+		CancellationToken _ct;
 
-		private const AVSampleFormat TargetFormat = AVSampleFormat.AV_SAMPLE_FMT_S16;
+		const AVSampleFormat TargetFormat = AVSampleFormat.AV_SAMPLE_FMT_S16;
 
 		// Input layout the resampler is currently configured for. Corrupt streams (e.g. an
 		// AAC channel-config change mid-stream, issue #861) can emit frames whose layout
@@ -45,12 +45,12 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		// swresample read plane pointers that do not exist — a native access violation
 		// that kills the whole process. DecodeAll() compares every frame against these
 		// and rebuilds the resampler on mismatch.
-		private int _swrInFormat;
-		private int _swrInSampleRate;
-		private int _swrInChannels;
+		int _swrInFormat;
+		int _swrInSampleRate;
+		int _swrInChannels;
 
 		// Reusable output buffer for resampled PCM (grown as needed, avoids per-frame allocation)
-		private byte[] _outBuf = new byte[8192];
+		byte[] _outBuf = new byte[8192];
 
 		/// <summary>True if the file contained a usable audio stream.</summary>
 		public bool HasAudioStream { get; }
@@ -58,7 +58,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// <summary>Total stream duration in seconds, or 0 when unknown.</summary>
 		public double DurationSeconds { get; private set; }
 
-		private readonly int _targetSampleRate;
+		readonly int _targetSampleRate;
 
 		public AudioStreamDecoder(string url, int targetSampleRate, CancellationToken ct = default, int timeoutMs = 120_000) {
 			_targetSampleRate = targetSampleRate;
@@ -137,7 +137,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// (Re)creates the SwrContext for the given input layout and records the layout so
 		/// <see cref="DecodeAll"/> can detect frames that no longer match it.
 		/// </summary>
-		private void CreateResampler(AVChannelLayout inLayout, AVSampleFormat inFormat, int inSampleRate) {
+		void CreateResampler(AVChannelLayout inLayout, AVSampleFormat inFormat, int inSampleRate) {
 			if (_pSwrContext != null) {
 				SwrContext* old = _pSwrContext;
 				ffmpeg.swr_free(&old);
@@ -187,7 +187,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// (corrupt) stream changed layout mid-decode. Returns the samples flushed out of the
 		/// old resampler, or -1 when the frame is garbage and must be skipped.
 		/// </summary>
-		private int EnsureResamplerMatchesFrame(Action<ReadOnlySpan<short>> onSamples) {
+		int EnsureResamplerMatchesFrame(Action<ReadOnlySpan<short>> onSamples) {
 			int frameFormat = _pFrame->format;
 			int frameRate = _pFrame->sample_rate;
 			int frameChannels = _pFrame->ch_layout.nb_channels;
@@ -293,7 +293,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// Resamples audio from <paramref name="inputData"/> (or flushes the resampler
 		/// when <paramref name="inputData"/> is null) and delivers the result via callback.
 		/// </summary>
-		private int ConvertAndDeliver(byte** inputData, int inputSamples, Action<ReadOnlySpan<short>> onSamples) {
+		int ConvertAndDeliver(byte** inputData, int inputSamples, Action<ReadOnlySpan<short>> onSamples) {
 			int outSamples = ffmpeg.swr_get_out_samples(_pSwrContext, inputSamples);
 			if (outSamples <= 0) return 0;
 

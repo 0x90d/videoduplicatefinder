@@ -25,14 +25,14 @@ using System.Threading.Tasks;
 namespace VDF.Core.pHash {
 	internal static class PerceptualHash {
 
-		private const int N = 32;      // working size
-		private const int K = 8;       // low-frequency block size (1..8,1..8)
+		const int N = 32;      // working size
+		const int K = 8;       // low-frequency block size (1..8,1..8)
 
 		// Cosine table flattened to 1D: Cos[k, i] is now Cos[k * N + i]. Faster than
 		// float[,] (one bounds check instead of two) and lets dot-product loops index
 		// linearly. Precomputed once at static init.
-		private static readonly float[] Cos = BuildCos(N);
-		private static readonly float[] Alpha = BuildAlpha(N);
+		static readonly float[] Cos = BuildCos(N);
+		static readonly float[] Alpha = BuildAlpha(N);
 
 		public static ulong ComputePHashFromGray32x32(ReadOnlySpan<byte> gray) {
 			if (gray.Length != N * N) throw new ArgumentException("expected 32x32=1024 bytes");
@@ -92,7 +92,7 @@ namespace VDF.Core.pHash {
 		}
 
 
-		private static float[] BuildCos(int n) {
+		static float[] BuildCos(int n) {
 			var t = new float[n * n];
 			for (int k = 0; k < n; k++)
 				for (int i = 0; i < n; i++)
@@ -100,7 +100,7 @@ namespace VDF.Core.pHash {
 			return t;
 		}
 
-		private static float[] BuildAlpha(int n) {
+		static float[] BuildAlpha(int n) {
 			var a = new float[n];
 			double invN = 1.0 / n;
 			a[0] = (float)Math.Sqrt(invN);
@@ -108,7 +108,7 @@ namespace VDF.Core.pHash {
 			return a;
 		}
 
-		private static float Median64(Span<float> values) {
+		static float Median64(Span<float> values) {
 			// Copy to the stack and sort; faster than fancy selection for 64 elems
 			Span<float> buf = stackalloc float[K * K];
 			values.CopyTo(buf);

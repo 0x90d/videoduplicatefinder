@@ -51,9 +51,9 @@ namespace VDF.GUI {
 
 			base.OnFrameworkInitializationCompleted();
 		}
-		private void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e) => SafeCleanup();
-		private void OnExitCleanup(object? sender, ControlledApplicationLifetimeExitEventArgs e) => SafeCleanup();
-		private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e) {
+		void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e) => SafeCleanup();
+		void OnExitCleanup(object? sender, ControlledApplicationLifetimeExitEventArgs e) => SafeCleanup();
+		static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e) {
 			try {
 				string detail = e.ExceptionObject is Exception ex ? ex.ToString() : e.ExceptionObject?.ToString() ?? "<null>";
 				VDF.Core.Utils.Logger.Instance.Error($"FATAL: Unhandled exception (terminating={e.IsTerminating}): {detail}");
@@ -61,7 +61,7 @@ namespace VDF.GUI {
 			catch { /* never let logging failure mask the original crash */ }
 			SafeCleanup();
 		}
-		private static void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e) {
+		static void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e) {
 			try {
 				VDF.Core.Utils.Logger.Instance.Error($"Unhandled dispatcher exception: {e.Exception}");
 			}
@@ -69,14 +69,14 @@ namespace VDF.GUI {
 			// Keep the app alive so the user can save state and the log contains a stack trace.
 			e.Handled = true;
 		}
-		private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) {
+		static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) {
 			try {
 				VDF.Core.Utils.Logger.Instance.Error($"Unobserved task exception: {e.Exception}");
 			}
 			catch { /* never let logging failure mask the original error */ }
 			e.SetObserved();
 		}
-		private static void SafeCleanup() {
+		static void SafeCleanup() {
 			try {
 				try { VDF.GUI.Utils.ThumbCacheHelpers.Provider?.Dispose(); }
 				catch { /* ignore */ }
