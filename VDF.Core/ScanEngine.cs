@@ -116,7 +116,7 @@ namespace VDF.Core {
 		// candidate it's compared against (thousands of lines from a handful of files).
 		readonly ConcurrentDictionary<string, byte> missingPHashFiles = new(
 			CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-		DateTime lastCheckpointTime = DateTime.MinValue;
+		internal DateTime lastCheckpointTime = DateTime.MinValue;
 		readonly object checkpointLock = new();
 		// Per-drive done/total accounting; non-null only while GatherInfos runs, so progress
 		// events of every other phase carry Drives = null and the UI hides the drive rows.
@@ -263,11 +263,11 @@ namespace VDF.Core {
 		// mid-processing without advancing the file counter.
 		// Throttled to the same cadence for both so a stuck file's last-reported
 		// stage (e.g. "sampling frame 2/5") hints at where it froze.
-		private void ReportProgress(string path, string stage, int stageCurrent = 0, int stageMax = 0, TimeSpan? remaining = null, bool ignoreInterval = false) {
+		internal void ReportProgress(string path, string stage, int stageCurrent = 0, int stageMax = 0, TimeSpan? remaining = null, bool ignoreInterval = false) {
 			if (!ignoreInterval && lastProgressUpdate + progressUpdateIntervall > DateTime.UtcNow) {
 				return;
 			}
-			
+
 			lastProgressUpdate = DateTime.UtcNow;
 
 			var args = new ScanProgressChangedEventArgs {
@@ -281,13 +281,13 @@ namespace VDF.Core {
 				StageMax = stageMax,
 				Drives = driveProgressTracker?.Snapshot(),
 			};
-			
+
 			lock (progressSnapshotLock) {
 				lastProgressSnapshot = args;
 				hasProgressSnapshot = true;
 			}
 			Progress?.Invoke(this, args);
-			
+
 			TryDatabaseCheckpoint();
 		}
 
@@ -1247,7 +1247,7 @@ namespace VDF.Core {
 			}
 		}
 
-	
+
 	internal static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default, Action<double>? onProgress = null) {
 		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, ct, onProgress);
 		if (fp == null && ct.IsCancellationRequested) {
