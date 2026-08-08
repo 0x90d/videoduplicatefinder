@@ -100,6 +100,7 @@ csharp_style_expression_bodied_methods = true:suggestion
 csharp_style_expression_bodied_operators = true:suggestion
 csharp_style_expression_bodied_properties = true:suggestion
 csharp_style_inlined_variable_declaration = true:suggestion
+csharp_style_namespace_declarations = block_scoped:suggestion
 csharp_style_pattern_local_over_anonymous_function = true:suggestion
 csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
 csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
