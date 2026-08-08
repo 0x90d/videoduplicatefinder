@@ -59,7 +59,7 @@ public class AiPartialPhaseVisibilityTests : IDisposable {
 		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
 
 		// Stand in for the visual gate that ran just before: it ends full over its own maximum.
-		engine.InitProgress(12);
+		engine.InitProgress(12, "");
 		for (int i = 0; i < 12; i++)
 			engine.IncrementProgress("clip.mp4");
 		engine.Progress += (_, e) => events.Enqueue(e);

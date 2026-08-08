@@ -58,7 +58,7 @@ public class PartialClipProgressTests {
 		engine.Progress += (_, e) => events.Enqueue(e);
 
 		// Stand in for the earlier audio pass: it ends with a full bar over its own maximum.
-		engine.InitProgress(6722);
+		engine.InitProgress(6722, "");
 		for (int i = 0; i < 6722; i++)
 			engine.IncrementProgress("audio.mp4");
 		Assert.Equal(6722, events.Last().CurrentPosition);
@@ -148,7 +148,7 @@ public class PartialClipProgressTests {
 		engine.ElapsedTimer.Start();
 
 		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
-		engine.InitProgress(10);
+		engine.InitProgress(10, "");
 		engine.IncrementProgress("stalled.mp4");
 		engine.Progress += (_, e) => events.Enqueue(e);
 
@@ -173,7 +173,7 @@ public class PartialClipProgressTests {
 	public async Task Heartbeat_SurvivesAThrowingProgressSubscriber() {
 		var engine = new ScanEngine();
 		engine.ElapsedTimer.Start();
-		engine.InitProgress(10);
+		engine.InitProgress(10, "");
 		engine.IncrementProgress("stalled.mp4");
 		engine.Progress += (_, _) => throw new InvalidOperationException("a frontend blew up");
 
@@ -188,7 +188,7 @@ public class PartialClipProgressTests {
 	public async Task Heartbeat_IsSilentWhileTheClockIsStopped() {
 		var engine = new ScanEngine();
 		engine.ElapsedTimer.Start();
-		engine.InitProgress(10);
+		engine.InitProgress(10, "");
 		engine.IncrementProgress("paused.mp4");
 
 		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
@@ -211,7 +211,7 @@ public class PartialClipProgressTests {
 		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
 		engine.Progress += (_, e) => events.Enqueue(e);
 
-		engine.InitProgress(42);
+		engine.InitProgress(42, "");
 
 		var opening = Assert.Single(events);
 		Assert.Equal(0, opening.CurrentPosition);
