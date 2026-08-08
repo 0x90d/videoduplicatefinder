@@ -214,7 +214,7 @@ namespace VDF.Core {
 				if (dense[i] is { } record)
 					signatures[i] = ComputeDenseSignatures(record);
 			InitProgress(Math.Max(videos.Count - 1, 1), T("Scan.Stage.AiPartialCompare"));
-			(var matches, int pairsChecked) = CollectPartialMatchCandidates(videos,
+			(var matches, long pairsChecked) = CollectPartialMatchCandidates(videos,
 				pairPrefilter: (i, j) => dense[i] != null && dense[j] != null,
 				tryMatchPair: (i, j) =>
 					TryMatchDenseFrames(dense[i]!, dense[j]!, signatures[i]!, signatures[j]!, hitThreshold, hammingBound, out float sim, out int offsetSec)

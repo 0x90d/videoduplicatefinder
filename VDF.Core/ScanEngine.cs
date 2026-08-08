@@ -2092,7 +2092,7 @@ namespace VDF.Core {
 			float simThreshold = (float)Settings.PartialClipSimilarityThreshold;
 			InitProgress(videos.Count - 1, T("Scan.Stage.PartialCompare"));
 
-			(var matches, int pairsChecked) = CollectPartialMatchCandidates(videos,
+			(var matches, long pairsChecked) = CollectPartialMatchCandidates(videos,
 				pairPrefilter: (i, j) => {
 					if ((videos[j].mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds < 1.0)
 						return false;
@@ -2145,13 +2145,13 @@ namespace VDF.Core {
 		/// <paramref name="pairPrefilter"/> runs before a pair counts as checked;
 		/// <paramref name="tryMatchPair"/> returns similarity+offset for a match, null otherwise.
 		/// </summary>
-		(ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)> Matches, int PairsChecked)
+		(ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)> Matches, long PairsChecked)
 			CollectPartialMatchCandidates(
 				List<FileEntry> videos,
 				Func<int, int, bool>? pairPrefilter,
 				Func<int, int, (float sim, int offsetSec)?> tryMatchPair) {
 			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
-			int pairsChecked = 0;
+			long pairsChecked = 0; // long: 162k videos are ~13 billion pairs - an int wrapped negative in the summary log (#865)
 			try {
 				Parallel.For(0, videos.Count - 1,
 					new ParallelOptions {

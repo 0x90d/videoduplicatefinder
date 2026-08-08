@@ -76,8 +76,25 @@ namespace VDF.Core.FFTools {
 					process.Kill();
 			}
 			catch { }
+			// A fault inside the drain window is observed by the Wait (it throws into the
+			// empty catch); only a copy that outlives the window escapes it.
 			try { readTask?.Wait(2000); } catch { }
+			if (readTask is { IsCompleted: false })
+				ObserveAbandonedRead(readTask);
 		}
+
+		/// <summary>
+		/// Detaches an abandoned stdout copy. It will usually still fault - broken pipe
+		/// after the kill, or ObjectDisposedException once the caller's destination stream
+		/// is disposed under it - and an unawaited fault resurfaces on the finalizer thread
+		/// as an UnobservedTaskException (#865: 105k identical log entries in one scan of a
+		/// resource-starved machine). Attaching an exception observer keeps it silent.
+		/// </summary>
+		internal static void ObserveAbandonedRead(Task readTask) =>
+			readTask.ContinueWith(static t => _ = t.Exception,
+				CancellationToken.None,
+				TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+				TaskScheduler.Default);
 
 		const string FFprobeExecutableName = "ffprobe";
 		const string FFmpegExecutableName = "ffmpeg";

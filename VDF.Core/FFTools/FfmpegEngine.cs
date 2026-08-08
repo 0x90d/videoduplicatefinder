@@ -1400,18 +1400,20 @@ namespace VDF.Core.FFTools {
 			psi.ArgumentList.Add("pipe:1");
 
 			using var process = new Process { StartInfo = psi };
+			Task? readTask = null;
 			try {
 				process.Start();
 				FFToolsUtils.LowerChildPriority(process);
 				using var ms = new MemoryStream();
 				// Write input and read output concurrently to avoid pipe-buffer deadlocks.
-				var readTask = process.StandardOutput.BaseStream.CopyToAsync(ms);
+				readTask = process.StandardOutput.BaseStream.CopyToAsync(ms);
 				process.StandardInput.BaseStream.Write(bgra, 0, width * height * 4);
 				process.StandardInput.BaseStream.Flush();
 				process.StandardInput.Close();
-				readTask.Wait(TimeoutDuration);
-				if (!process.WaitForExit(TimeoutDuration))
+				if (!readTask.Wait(TimeoutDuration))
 					throw new TimeoutException("FFmpeg timed out encoding JPEG from raw pixels.");
+				if (!process.WaitForExit(TimeoutDuration))
+					throw new TimeoutException("FFmpeg did not exit after encoding JPEG from raw pixels.");
 				if (process.ExitCode != 0)
 					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
 				byte[] jpeg = ms.ToArray();
@@ -1419,7 +1421,9 @@ namespace VDF.Core.FFTools {
 			}
 			catch (Exception e) {
 				Logger.Instance.Warn($"BGRA->JPEG encode via FFmpeg process failed: {e.Message}");
-				try { if (!process.HasExited) process.Kill(); } catch { }
+				// Also drains/observes the pending stdout copy — the disposed MemoryStream
+				// would otherwise fault it after the fact as an unobserved task exception.
+				FFToolsUtils.KillAndDrain(process, readTask);
 				return null;
 			}
 		}
