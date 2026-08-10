@@ -109,7 +109,7 @@
 	"CustomSelection.PathNotContains": "La ruta NO contiene:",
 	"CustomSelection.NewEntry": "Nueva entrada",
 	"CustomSelection.WildcardRequired": "Añade un comodín (*) al final de la ruta para que funcionen las coincidencias parciales.",
-	"CustomSelection.WildcardNote": "Nota: se admiten los comodines '*' y '?'. El carácter de barra invertida '\\' sirve de escape.",
+	"CustomSelection.WildcardNote": "Nota: se admiten los comodines '*' (cualquier secuencia de caracteres) y '?' (un carácter). Las barras invertidas se interpretan literalmente, así que las rutas de Windows funcionan tal cual.",
 	"CustomSelection.Select": "Seleccionar",
 	"DatabaseViewer.Title": "Editor de base de datos",
 	"DatabaseViewer.FilterAll": "Todos",

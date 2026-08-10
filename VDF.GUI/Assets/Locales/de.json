@@ -109,7 +109,7 @@
 	"CustomSelection.PathNotContains": "Pfad enthält NICHT:",
 	"CustomSelection.NewEntry": "Neuer Eintrag",
 	"CustomSelection.WildcardRequired": "Bitte fügen Sie am Ende des Pfads einen Platzhalter (*) hinzu, damit Teiltreffer funktionieren.",
-	"CustomSelection.WildcardNote": "Hinweis: Unterstützte Platzhalter: '*' und '?'. Der Backslash '\\' maskiert.",
+	"CustomSelection.WildcardNote": "Hinweis: Unterstützt die Platzhalter '*' (beliebige Zeichen) und '?' (ein Zeichen). Backslashes werden wörtlich behandelt, Windows-Pfade funktionieren wie eingegeben.",
 	"CustomSelection.Select": "Auswählen",
 	"DatabaseViewer.Title": "Datenbank-Editor",
 	"DatabaseViewer.FilterAll": "Alle",

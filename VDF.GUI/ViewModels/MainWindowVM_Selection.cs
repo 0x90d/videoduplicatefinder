@@ -139,84 +139,44 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalCommand => ReactiveCommand.Create(() => {
 			using var undoBatch = BeginSelectionUndoBatch();
-			HashSet<Guid> blackListGroupID = new();
-			var scoped = ScopedDuplicates();
-
-			foreach (var first in scoped) {
-				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-
-				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsFull(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
-
-				var dupMods = l as DuplicateItemVM[] ?? l.ToArray();
-				if (!dupMods.Any()) continue;
-				foreach (var dup in dupMods)
+			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsFull(first), (first, cluster) => {
+				foreach (var dup in cluster)
 					dup.Checked = true;
 				first.Checked = false;
-				blackListGroupID.Add(first.ItemInfo.GroupId);
-			}
+			});
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckWhenIdenticalButSizeCommand => ReactiveCommand.Create(() => {
 			using var undoBatch = BeginSelectionUndoBatch();
-			HashSet<Guid> blackListGroupID = new();
-			var scoped = ScopedDuplicates();
-
-			foreach (var first in scoped) {
-				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
-				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
-				if (!dupMods.Any()) continue;
-				dupMods.Add(first);
-				dupMods = dupMods.OrderBy(s => s.ItemInfo.SizeLong).ToList();
-				dupMods[0].Checked = false;
-				for (int i = 1; i < dupMods.Count; i++) {
-					dupMods[i].Checked = true;
-				}
-
-				blackListGroupID.Add(first.ItemInfo.GroupId);
-			}
+			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsButQuality(first), (first, cluster) => {
+				cluster.Add(first);
+				cluster = cluster.OrderBy(s => s.ItemInfo.SizeLong).ToList();
+				cluster[0].Checked = false;
+				for (int i = 1; i < cluster.Count; i++)
+					cluster[i].Checked = true;
+			});
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckOldestCommand => ReactiveCommand.Create(() => {
 			using var undoBatch = BeginSelectionUndoBatch();
-			HashSet<Guid> blackListGroupID = new();
-			var scoped = ScopedDuplicates();
-
-			foreach (var first in scoped) {
-				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
-				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
-				if (!dupMods.Any()) continue;
-				dupMods.Add(first);
-				dupMods = dupMods.OrderByDescending(s => s.ItemInfo.DateCreated).ToList();
-				dupMods[0].Checked = false;
-				for (int i = 1; i < dupMods.Count; i++) {
-					dupMods[i].Checked = true;
-				}
-
-				blackListGroupID.Add(first.ItemInfo.GroupId);
-			}
+			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsButQuality(first), (first, cluster) => {
+				cluster.Add(first);
+				cluster = cluster.OrderByDescending(s => s.ItemInfo.DateCreated).ToList();
+				cluster[0].Checked = false;
+				for (int i = 1; i < cluster.Count; i++)
+					cluster[i].Checked = true;
+			});
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckNewestCommand => ReactiveCommand.Create(() => {
 			using var undoBatch = BeginSelectionUndoBatch();
-			HashSet<Guid> blackListGroupID = new();
-			var scoped = ScopedDuplicates();
-
-			foreach (var first in scoped) {
-				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-				var l = scoped.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path));
-				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
-				if (!dupMods.Any()) continue;
-				dupMods.Add(first);
-				dupMods = dupMods.OrderBy(s => s.ItemInfo.DateCreated).ToList();
-				dupMods[0].Checked = false;
-				for (int i = 1; i < dupMods.Count; i++) {
-					dupMods[i].Checked = true;
-				}
-
-				blackListGroupID.Add(first.ItemInfo.GroupId);
-			}
+			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsButQuality(first), (first, cluster) => {
+				cluster.Add(first);
+				cluster = cluster.OrderBy(s => s.ItemInfo.DateCreated).ToList();
+				cluster[0].Checked = false;
+				for (int i = 1; i < cluster.Count; i++)
+					cluster[i].Checked = true;
+			});
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckLowestQualityCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -226,31 +186,20 @@ namespace VDF.GUI.ViewModels {
 			QualityCriteriaOrder = result;
 
 			using var undoBatch = BeginSelectionUndoBatch();
-			HashSet<Guid> blackListGroupID = new();
-			var scoped = ScopedDuplicates();
-
-			foreach (var first in scoped) {
-				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-
-				var dupMods = scoped
-					.Where(d => d.IsVisibleInFilter && d.EqualsButQuality(first) && d.ItemInfo.Path != first.ItemInfo.Path)
-					.ToList();
-				if (dupMods.Count == 0) continue;
-
-				dupMods.Insert(0, first);
+			var criteria = ResolveCriteria(QualityCriteriaOrder);
+			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsButQuality(first), (first, cluster) => {
+				cluster.Insert(0, first);
 
 				var keep = VDF.Core.Utils.QualityRanker.PickKeeper(
-					dupMods,
-					ResolveCriteria(QualityCriteriaOrder),
+					cluster,
+					criteria,
 					d => d.ItemInfo.IsImage);
 
 				keep.Checked = false;
-				for (int i = 0; i < dupMods.Count; i++)
-					if (dupMods[i].ItemInfo.Path != keep.ItemInfo.Path)
-						dupMods[i].Checked = true;
-
-				blackListGroupID.Add(first.ItemInfo.GroupId);
-			}
+				for (int i = 0; i < cluster.Count; i++)
+					if (cluster[i].ItemInfo.Path != keep.ItemInfo.Path)
+						cluster[i].Checked = true;
+			});
 		});
 
 		public ReactiveCommand<Unit, Unit> CheckMissingFilesCommand => ReactiveCommand.Create(() => {
@@ -464,79 +413,150 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		internal void RunCustomSelection(CustomSelectionData data) {
-			using var undoBatch = BeginSelectionUndoBatch();
+			var visibleItems = ScopedDuplicates().Where(x => x.IsVisibleInFilter).ToList();
+			var plan = ComputeCustomSelection(visibleItems, data);
 
-			IEnumerable<DuplicateItemVM> dups = ScopedDuplicates().Where(x => x.IsVisibleInFilter);
+			using var undoBatch = BeginSelectionUndoBatch();
+			foreach (var keeper in plan.Keepers)
+				keeper.Checked = false;
+			foreach (var item in plan.ToCheck)
+				item.Checked = true;
+		}
+
+		/// <summary>
+		/// Pure selection planner for the Custom Selection dialog. One pass over the
+		/// visible items, then a per-group decision - replaces a shape that re-ran the
+		/// whole filter chain (wildcard match on every path included) once per group,
+		/// which froze the UI for hours on six-digit result lists (#864).
+		/// Keeper semantics: with a date rule, the oldest/newest of each matched cluster
+		/// is kept unchecked. Without one, identity modes keep the reference item of the
+		/// cluster, and "Any" keeps the first matched item when the whole visible group
+		/// matched - when the criteria matched only a subset, all matched items are
+		/// checked and the unmatched members are the survivors. (The reference item used
+		/// to be inserted twice and re-checked by the i&gt;=1 loop, so the intended
+		/// keeper was checked along with everything else.)
+		/// </summary>
+		internal static CustomSelectionPlan ComputeCustomSelection(IReadOnlyList<DuplicateItemVM> visibleItems, CustomSelectionData data) {
+			HashSet<Guid>? groupsWithChecked = null;
 			if (data.IgnoreGroupsWithCheckedItems) {
-				HashSet<Guid> blackList = new();
-				foreach (var first in dups.Where(x => x.Checked)) {
-					if (blackList.Contains(first.ItemInfo.GroupId)) continue;
-					blackList.Add(first.ItemInfo.GroupId);
-				}
-				dups = dups.Where(x => !blackList.Contains(x.ItemInfo.GroupId));
+				groupsWithChecked = new();
+				foreach (var item in visibleItems)
+					if (item.Checked)
+						groupsWithChecked.Add(item.ItemInfo.GroupId);
 			}
 
-			dups = dups.Where(x => {
-				if (data.FileTypeSelection == 1 && x.ItemInfo.IsImage)
-					return false;
-				if (data.FileTypeSelection == 2 && !x.ItemInfo.IsImage)
-					return false;
-				long megaBytes = x.ItemInfo.SizeLong.BytesToMegaBytes();
-				if (megaBytes < data.MinimumFileSize)
-					return false;
-				if (megaBytes > data.MaximumFileSize)
-					return false;
-				foreach (var item in data.PathContains) {
-					if (!System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(item, x.ItemInfo.Path))
-						return false;
+			// Escaped once per pattern, not once per item; see MatchesPathPattern.
+			string[] pathContains = data.PathContains.Select(EscapeWildcardBackslashes).ToArray();
+			string[] pathNotContains = data.PathNotContains.Select(EscapeWildcardBackslashes).ToArray();
+
+			Dictionary<Guid, int> visibleGroupSize = new();
+			foreach (var item in visibleItems) {
+				visibleGroupSize.TryGetValue(item.ItemInfo.GroupId, out int size);
+				visibleGroupSize[item.ItemInfo.GroupId] = size + 1;
+			}
+
+			Dictionary<Guid, List<DuplicateItemVM>> matchedByGroup = new();
+			List<Guid> groupOrder = new();
+			foreach (var item in visibleItems) {
+				if (groupsWithChecked != null && groupsWithChecked.Contains(item.ItemInfo.GroupId))
+					continue;
+				if (!MatchesCriteria(item, data, pathContains, pathNotContains))
+					continue;
+				if (!matchedByGroup.TryGetValue(item.ItemInfo.GroupId, out var groupItems)) {
+					matchedByGroup[item.ItemInfo.GroupId] = groupItems = new();
+					groupOrder.Add(item.ItemInfo.GroupId);
 				}
-				foreach (var item in data.PathNotContains) {
-					if (System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(item, x.ItemInfo.Path))
-						return false;
-				}
-				if (x.ItemInfo.Similarity < data.SimilarityFrom)
-					return false;
-				if (x.ItemInfo.Similarity > data.SimilarityTo)
-					return false;
+				groupItems.Add(item);
+			}
 
-				return true;
-			});
+			var plan = new CustomSelectionPlan(new(), new());
+			foreach (var groupId in groupOrder) {
+				var members = matchedByGroup[groupId];
+				var first = members[0];
+				List<DuplicateItemVM> cluster = data.IdenticalSelection switch {
+					1 => members.Where(m => ReferenceEquals(m, first) || m.EqualsFull(first)).ToList(),
+					2 => members.Where(m => ReferenceEquals(m, first) || m.EqualsButSize(first)).ToList(),
+					// "Not identical": group members that aren't a 100% clone of the
+					// reference item. This used to leak across groups, because every
+					// item of every OTHER group also isn't identical to the reference.
+					3 => members.Where(m => ReferenceEquals(m, first) || !m.EqualsFull(first)).ToList(),
+					_ => members,
+				};
 
-			HashSet<Guid> blackListGroupID = new();
-			foreach (var first in dups) {
-				if (blackListGroupID.Contains(first.ItemInfo.GroupId)) continue;
-
-				var l = dups.Where(d => {
-					if (d.ItemInfo.Path.Equals(first.ItemInfo.Path))
-						return true;
-					switch (data.IdenticalSelection) {
-					case 1:
-						return d.EqualsFull(first);
-					case 2:
-						return d.EqualsButSize(first);
-					case 3:
-						return !d.EqualsFull(first) || !d.EqualsButSize(first);
-					default:
-						return d.ItemInfo.GroupId == first.ItemInfo.GroupId;
-					}
-				});
-
-				var dupMods = l as List<DuplicateItemVM> ?? l.ToList();
-				if (dupMods.Count == 0) continue;
-				dupMods.Insert(0, first);
 				switch (data.DateTimeSelection) {
-				case 1:
-					dupMods = dupMods.OrderBy(s => s.ItemInfo.DateCreated).ToList();
+				case 1: // check the newest copies, keep the oldest
+					cluster = cluster.OrderBy(s => s.ItemInfo.DateCreated).ToList();
 					break;
-				case 2:
-					dupMods = dupMods.OrderByDescending(s => s.ItemInfo.DateCreated).ToList();
+				case 2: // check the oldest copies, keep the newest
+					cluster = cluster.OrderByDescending(s => s.ItemInfo.DateCreated).ToList();
+					break;
+				default:
+					if (data.IdenticalSelection == 0 && cluster.Count < visibleGroupSize[groupId]) {
+						// Partial match: the unmatched members are the keepers. A group
+						// whose only matching member was the filter target used to
+						// select nothing here, which was the 2024 single-match report.
+						// Only for "Any" - with an identity criterion the cluster is
+						// narrowed by design and one of it must survive.
+						plan.ToCheck.AddRange(cluster);
+						continue;
+					}
 					break;
 				}
-				dupMods[0].Checked = false;
-				for (int i = 1; i < dupMods.Count; i++) {
-					dupMods[i].Checked = true;
+
+				plan.Keepers.Add(cluster[0]);
+				for (int i = 1; i < cluster.Count; i++)
+					plan.ToCheck.Add(cluster[i]);
+			}
+			return plan;
+		}
+
+		static bool MatchesCriteria(DuplicateItemVM item, CustomSelectionData data, string[] pathContains, string[] pathNotContains) {
+			if (data.FileTypeSelection == 1 && item.ItemInfo.IsImage)
+				return false;
+			if (data.FileTypeSelection == 2 && !item.ItemInfo.IsImage)
+				return false;
+			long megaBytes = item.ItemInfo.SizeLong.BytesToMegaBytes();
+			if (megaBytes < data.MinimumFileSize)
+				return false;
+			if (megaBytes > data.MaximumFileSize)
+				return false;
+			foreach (var pattern in pathContains)
+				if (!System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(pattern, item.ItemInfo.Path))
+					return false;
+			foreach (var pattern in pathNotContains)
+				if (System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(pattern, item.ItemInfo.Path))
+					return false;
+			if (item.ItemInfo.Similarity < data.SimilarityFrom)
+				return false;
+			if (item.ItemInfo.Similarity > data.SimilarityTo)
+				return false;
+			return true;
+		}
+
+		/// <summary>
+		/// Shared engine of the classic per-group selection commands, grouped by GroupId
+		/// so the cluster search stays inside one group (every Equals* variant requires an
+		/// equal GroupId anyway). The previous shape re-scanned the entire results list
+		/// per item, freezing the UI for hours on six-digit result lists (#864).
+		/// Per group, the first member (list order) with a non-empty cluster wins and the
+		/// rest of the group is skipped - the same one-cluster-per-group behavior the old
+		/// group blacklist produced. Cluster candidates must be visible in the current
+		/// filter; the reference item itself is excluded by path, as before.
+		/// </summary>
+		internal static void ForEachGroupCluster(IEnumerable<DuplicateItemVM> scoped,
+				Func<DuplicateItemVM, DuplicateItemVM, bool> belongsToCluster,
+				Action<DuplicateItemVM, List<DuplicateItemVM>> apply) {
+			foreach (var group in scoped.GroupBy(d => d.ItemInfo.GroupId)) {
+				var members = group.ToList();
+				foreach (var first in members) {
+					var cluster = new List<DuplicateItemVM>();
+					foreach (var d in members)
+						if (d.IsVisibleInFilter && belongsToCluster(d, first) && !d.ItemInfo.Path.Equals(first.ItemInfo.Path))
+							cluster.Add(d);
+					if (cluster.Count == 0) continue;
+					apply(first, cluster);
+					break;
 				}
-				blackListGroupID.Add(first.ItemInfo.GroupId);
 			}
 		}
 
@@ -584,6 +604,9 @@ namespace VDF.GUI.ViewModels {
 		}
 
 	}
+
+	/// <summary>Planned Custom Selection changes: keepers get unchecked, the rest checked.</summary>
+	internal sealed record CustomSelectionPlan(List<DuplicateItemVM> Keepers, List<DuplicateItemVM> ToCheck);
 
 	// Top-level (not nested in MainWindowVM) so the source-generated JSON context
 	// can reference them.

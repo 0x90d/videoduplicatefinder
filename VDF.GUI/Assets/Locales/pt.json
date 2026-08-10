@@ -109,7 +109,7 @@
 	"CustomSelection.PathNotContains": "O caminho NÃO contém:",
 	"CustomSelection.NewEntry": "Nova entrada",
 	"CustomSelection.WildcardRequired": "Adicione um curinga (*) ao final do caminho para que as correspondências parciais funcionem.",
-	"CustomSelection.WildcardNote": "Nota: suporta os curingas '*' e '?'. O caractere de barra invertida '\\' faz escape.",
+	"CustomSelection.WildcardNote": "Nota: suporta os curingas '*' (quaisquer caracteres) e '?' (um caractere). Barras invertidas são tratadas literalmente, então caminhos do Windows funcionam como digitados.",
 	"CustomSelection.Select": "Selecionar",
 	"DatabaseViewer.Title": "Editor de banco de dados",
 	"DatabaseViewer.FilterAll": "Todos",

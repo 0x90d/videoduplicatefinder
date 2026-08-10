@@ -109,7 +109,7 @@
 	"CustomSelection.PathNotContains": "路径不包含：",
 	"CustomSelection.NewEntry": "新条目",
 	"CustomSelection.WildcardRequired": "请在路径末尾添加通配符 (*)，以便部分匹配生效。",
-	"CustomSelection.WildcardNote": "注意：支持通配符 '*' 和 '?'。反斜杠 '\\' 用于转义。",
+	"CustomSelection.WildcardNote": "注意：支持通配符 '*'（任意字符）和 '?'（单个字符）。反斜杠按字面处理，Windows 路径可直接输入。",
 	"CustomSelection.Select": "选择",
 	"DatabaseViewer.Title": "数据库编辑器",
 	"DatabaseViewer.FilterAll": "全部",

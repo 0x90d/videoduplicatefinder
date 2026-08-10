@@ -109,7 +109,7 @@
 	"CustomSelection.PathNotContains": "Le chemin ne contient PAS :",
 	"CustomSelection.NewEntry": "Nouvelle entrée",
 	"CustomSelection.WildcardRequired": "Veuillez ajouter un joker (*) à la fin du chemin pour que les correspondances partielles fonctionnent.",
-	"CustomSelection.WildcardNote": "Note : prend en charge les jokers '*' et '?'. La barre oblique inverse '\\' sert d'échappement.",
+	"CustomSelection.WildcardNote": "Note : prend en charge les jokers '*' (toute suite de caractères) et '?' (un caractère). Les barres obliques inverses sont interprétées littéralement, les chemins Windows fonctionnent tels quels.",
 	"CustomSelection.Select": "Sélectionner",
 	"DatabaseViewer.Title": "Éditeur de base de données",
 	"DatabaseViewer.FilterAll": "Tous",

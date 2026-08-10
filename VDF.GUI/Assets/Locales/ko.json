@@ -109,7 +109,7 @@
 	"CustomSelection.PathNotContains": "경로 미포함:",
 	"CustomSelection.NewEntry": "새 항목",
 	"CustomSelection.WildcardRequired": "부분 일치가 작동하도록 경로 끝에 와일드카드(*)를 추가하세요.",
-	"CustomSelection.WildcardNote": "참고: 와일드카드 '*'와 '?'를 지원합니다. 역슬래시 '\\'는 이스케이프 문자입니다.",
+	"CustomSelection.WildcardNote": "참고: 와일드카드 '*'(임의의 문자)와 '?'(한 문자)를 지원합니다. 역슬래시는 문자 그대로 처리되므로 Windows 경로를 그대로 입력하면 됩니다.",
 	"CustomSelection.Select": "선택",
 	"DatabaseViewer.Title": "데이터베이스 편집기",
 	"DatabaseViewer.FilterAll": "전체",

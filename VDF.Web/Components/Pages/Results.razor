@@ -753,10 +753,12 @@ else {
             .ToList();
 
     // Substring match by default; * and ? switch to wildcard matching (same rules as the GUI filter).
+    // Backslashes are escaped because MatchesSimpleExpression treats '\' in the pattern as an
+    // escape character - raw Windows paths would never match (#864).
     static bool PathMatchesFilter(string path, string needle) {
         if (needle.IndexOfAny(['*', '?']) < 0)
             return path.Contains(needle, StringComparison.OrdinalIgnoreCase);
-        string pattern = needle;
+        string pattern = needle.Replace("\\", "\\\\");
         if (!pattern.StartsWith('*')) pattern = "*" + pattern;
         if (!pattern.EndsWith('*')) pattern += "*";
         return System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(pattern, path);

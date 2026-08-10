@@ -63,17 +63,25 @@ namespace VDF.GUI.ViewModels {
 
 		/// <summary>
 		/// Substring match by default; when the needle contains * or ? it is treated
-		/// as a wildcard pattern instead (unanchored, so "*season?\ep*" works without
+		/// as a wildcard pattern instead (unanchored, so "season?\ep*" works without
 		/// the user having to wrap it in stars themselves).
 		/// </summary>
 		internal static bool PathMatchesFilter(string path, string needle) {
 			if (needle.IndexOfAny(['*', '?']) < 0)
 				return path.Contains(needle, StringComparison.OrdinalIgnoreCase);
-			string pattern = needle;
+			string pattern = EscapeWildcardBackslashes(needle);
 			if (!pattern.StartsWith('*')) pattern = "*" + pattern;
 			if (!pattern.EndsWith('*')) pattern += "*";
 			return System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(pattern, path);
 		}
+
+		/// <summary>
+		/// MatchesSimpleExpression treats '\' in the pattern as an escape character, so a
+		/// raw Windows path fragment ("*D:\Videos*") would never match anything (#864).
+		/// VDF's path patterns treat backslashes literally instead - '*' and '?' are
+		/// illegal in Windows file names, so escape syntax has nothing to express here.
+		/// </summary>
+		internal static string EscapeWildcardBackslashes(string pattern) => pattern.Replace("\\", "\\\\");
 
 		string _FilterByPath = string.Empty;
 		public string FilterByPath {

@@ -109,7 +109,7 @@
 	"CustomSelection.PathNotContains": "Path does NOT contain:",
 	"CustomSelection.NewEntry": "New Entry",
 	"CustomSelection.WildcardRequired": "Please add a wildcard (*) at the end of the path so partial matches work.",
-	"CustomSelection.WildcardNote": "Note: Supports the following wildcards: '*' and '?'. The backslash character '\\' escapes.",
+	"CustomSelection.WildcardNote": "Note: Supports the wildcards '*' (any characters) and '?' (one character). Backslashes match literally, so Windows paths work as typed.",
 	"CustomSelection.Select": "Select",
 	"DatabaseViewer.Title": "Database Editor",
 	"DatabaseViewer.FilterAll": "All",

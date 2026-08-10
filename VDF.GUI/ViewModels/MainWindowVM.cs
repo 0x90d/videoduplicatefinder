@@ -481,6 +481,41 @@ namespace VDF.GUI.ViewModels {
 			RaiseScannerStateChanged();
 		}
 
+		/// <summary>
+		/// Appends items without the per-add bookkeeping cascade: adding six-digit result
+		/// counts one at a time fired CollectionChanged plus a scanner-state raise (four
+		/// property changes into live bindings) for every single item (#864). This detaches
+		/// the handler, replays its per-item work inline with the counter updates batched,
+		/// and raises the state change once at the end.
+		/// </summary>
+		internal void AddDuplicatesInBulk(IEnumerable<DuplicateItemVM> items) {
+			Duplicates.CollectionChanged -= Duplicates_CollectionChanged;
+			int addedChecked = 0;
+			long addedCheckedSize = 0;
+			try {
+				foreach (var item in items) {
+					item.PropertyChanged += DuplicateItemVM_PropertyChanged;
+					Duplicates.Add(item);
+					// Items can arrive already checked (restored backups); count them
+					// so the counters and the per-group index stay accurate.
+					if (item.Checked) {
+						addedChecked++;
+						addedCheckedSize += CheckedSizeOf(item);
+						checkedCountByGroup.TryGetValue(item.ItemInfo.GroupId, out int count);
+						checkedCountByGroup[item.ItemInfo.GroupId] = count + 1;
+					}
+				}
+			}
+			finally {
+				Duplicates.CollectionChanged += Duplicates_CollectionChanged;
+			}
+			if (addedChecked > 0) {
+				DuplicatesCheckedCounter += addedChecked;
+				DuplicatesCheckedSizeInternal += addedCheckedSize;
+			}
+			RaiseScannerStateChanged();
+		}
+
 		void DuplicateItemVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName != nameof(DuplicateItemVM.Checked) || sender == null) return;
 			RecordCheckedChangeForUndo((DuplicateItemVM)sender);
@@ -706,8 +741,7 @@ namespace VDF.GUI.ViewModels {
 				if (blacklistedGids.Count > 0)
 					Scanner.Duplicates.RemoveWhere(d => blacklistedGids.Contains(d.GroupId));
 
-				foreach (var item in Scanner.Duplicates)
-					Duplicates.Add(new DuplicateItemVM(item));
+				AddDuplicatesInBulk(Scanner.Duplicates.Select(item => new DuplicateItemVM(item)));
 
 				// A completed scan that matched nothing drops back to the Setup screen; flag
 				// it so the screen shows a "no duplicates found" notice instead of looking
@@ -1100,8 +1134,7 @@ namespace VDF.GUI.ViewModels {
 				Utils.ThumbCacheHelpers.SetActiveProvider(Utils.ThumbPack.Open(TempDirectory.Path));
 
 				Duplicates.Clear();
-				foreach (var item in items)
-					Duplicates.Add(item);
+				AddDuplicatesInBulk(items);
 
 				BuildActiveResultsView();
 				RefreshGroupStats();
