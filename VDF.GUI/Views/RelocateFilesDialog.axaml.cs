@@ -9,8 +9,7 @@ using VDF.GUI.ViewModels;
 
 namespace VDF.GUI;
 
-public partial class RelocateFilesDialog : Window
-{
+public partial class RelocateFilesDialog : Window {
 	public RelocateFilesDialog() {
 		AvaloniaXamlLoader.Load(this);
 		DataContext = new RelocateFilesDialogVM(this);

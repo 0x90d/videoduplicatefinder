@@ -18,11 +18,11 @@ public partial class ChooseAlgoView : Window {
 		set => SetValue(StepIndexProperty, value);
 	}
 
-	private Button? backButton;
-	private Button? skipButton;
-	private Button? nextButton;
-	private Button? finishButton;
-	private ListBox? includesListBox;
+	Button? backButton;
+	Button? skipButton;
+	Button? nextButton;
+	Button? finishButton;
+	ListBox? includesListBox;
 
 	public ChooseAlgoView() {
 		InitializeComponent();
@@ -45,12 +45,13 @@ public partial class ChooseAlgoView : Window {
 		PropertyChanged += ChooseAlgoView_PropertyChanged;
 		UpdateStepControls();
 	}
-	private void ChooseAlgoView_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e) {
+
+	void ChooseAlgoView_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e) {
 		if (e.Property == StepIndexProperty)
 			UpdateStepControls();
 	}
 
-	private void UpdateStepControls() {
+	void UpdateStepControls() {
 		if (backButton == null || skipButton == null || nextButton == null || finishButton == null)
 			return;
 
@@ -60,13 +61,13 @@ public partial class ChooseAlgoView : Window {
 		finishButton.IsVisible = StepIndex >= 2;
 	}
 
-	private void DragOver(object? sender, DragEventArgs e) {
+	void DragOver(object? sender, DragEventArgs e) {
 		e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 		if (!e.DataTransfer.Contains(DataFormat.File))
 			e.DragEffects = DragDropEffects.None;
 	}
 
-	private void DropInclude(object? sender, DragEventArgs e) {
+	void DropInclude(object? sender, DragEventArgs e) {
 		if (!e.DataTransfer.Contains(DataFormat.File))
 			return;
 
@@ -81,7 +82,7 @@ public partial class ChooseAlgoView : Window {
 		}
 	}
 
-	private async void AddFolder_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+	async void AddFolder_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 		var options = new FolderPickerOpenOptions {
 			AllowMultiple = true,
 			Title = App.Lang["Dialog.SelectFolder"]
@@ -97,7 +98,7 @@ public partial class ChooseAlgoView : Window {
 		}
 	}
 
-	private void RemoveFolder_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+	void RemoveFolder_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 		if (includesListBox?.SelectedItems == null || includesListBox.SelectedItems.Count == 0)
 			return;
 
@@ -106,19 +107,19 @@ public partial class ChooseAlgoView : Window {
 			SettingsFile.Instance.Includes.Remove(item);
 	}
 
-	private void Back_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+	void Back_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 		StepIndex = Math.Max(0, StepIndex - 1);
 	}
 
-	private void Next_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+	void Next_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 		StepIndex = Math.Min(2, StepIndex + 1);
 	}
 
-	private void Skip_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+	void Skip_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 		Close();
 	}
 
-	private void Finish_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+	void Finish_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 		Close();
 	}
 }

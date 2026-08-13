@@ -81,7 +81,7 @@ namespace VDF.GUI.ViewModels {
 
 		public AvaloniaList<DuplicateItemVM> Duplicates { get; } = new();
 
-		private TempDir? TempDirectory;
+		TempDir? TempDirectory;
 
 		static readonly string[] BusyMessages =
 		{
@@ -106,7 +106,8 @@ namespace VDF.GUI.ViewModels {
 			App.Lang["BusyMessages19"],
 			App.Lang["BusyMessages20"]
 		};
-		private void ChangeIsBusyMessage() => IsBusyOverlayText = BusyMessages[Random.Shared.Next(BusyMessages.Length)];
+
+		void ChangeIsBusyMessage() => IsBusyOverlayText = BusyMessages[Random.Shared.Next(BusyMessages.Length)];
 
 		readonly DispatcherTimer scheduledScanTimer = new();
 		DateTime lastScheduledScanDate = DateTime.MinValue;
@@ -519,7 +520,7 @@ namespace VDF.GUI.ViewModels {
 			return (ready, !ready && wasReadyToCompare);
 		}
 
-		private void Scanner_ThumbnailProgress(int arg1, int arg2) => Dispatcher.UIThread.Post(() => {
+		void Scanner_ThumbnailProgress(int arg1, int arg2) => Dispatcher.UIThread.Post(() => {
 			ThumbnailRetrievalProgressText = $"Retrieving thumbnails for preview: {arg1}/{arg2}";
 			ThumbnailProgressCurrent = arg1;
 			ThumbnailProgressMax = arg2;
@@ -795,10 +796,10 @@ namespace VDF.GUI.ViewModels {
 			PotentialSavings = savings.BytesToString();
 		}
 
-		private DuplicateItemVM? GetSelectedDuplicateItem() =>
+		DuplicateItemVM? GetSelectedDuplicateItem() =>
 			NewResultsSelectionProvider?.Invoke().FirstOrDefault();
 
-		private List<DuplicateItemVM> GetSelectedDuplicates() =>
+		List<DuplicateItemVM> GetSelectedDuplicates() =>
 			NewResultsSelectionProvider?.Invoke() ?? new();
 
 		public static ReactiveCommand<Unit, Unit> AboutCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -954,7 +955,7 @@ namespace VDF.GUI.ViewModels {
 
 		// Accepts both the v1 envelope ({version, items}) and the legacy raw array
 		// shape produced by older builds. Returns the items list.
-		private static List<DuplicateItemVM> ReadScanResultsItems(JsonElement root) {
+		static List<DuplicateItemVM> ReadScanResultsItems(JsonElement root) {
 			if (root.ValueKind == JsonValueKind.Array)
 				return root.Deserialize(GuiJsonFieldsContext.Default.ListDuplicateItemVM) ?? new();
 
@@ -1327,7 +1328,7 @@ namespace VDF.GUI.ViewModels {
 			return null;
 		}
 
-		private bool AlternativeOpen(string cmdSingle, string cmdMulti, List<DuplicateItemVM>? items = null) {
+		bool AlternativeOpen(string cmdSingle, string cmdMulti, List<DuplicateItemVM>? items = null) {
 			if (string.IsNullOrEmpty(cmdSingle) && string.IsNullOrEmpty(cmdMulti))
 				return false;
 
@@ -1793,7 +1794,7 @@ Non-Windows setup:
 			}
 		}
 
-		private HashSet<Guid> ComputeBlacklistedGroupIds(IEnumerable<(Guid GroupId, string Path)> items) =>
+		HashSet<Guid> ComputeBlacklistedGroupIds(IEnumerable<(Guid GroupId, string Path)> items) =>
 			GroupBlacklistFilter.ComputeBlacklistedGroupIds(items, GroupBlacklist);
 
 		public ReactiveCommand<Unit, Unit> OpenBlacklistManagerCommand => ReactiveCommand.Create(() => {
@@ -1863,19 +1864,19 @@ Non-Windows setup:
 					item.Checked = true;
 		}
 
-	public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
-		var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
-		if (items.Count == 0) return;
-		SyncCoreSettings();
-		await Scanner.RetrieveThumbnailsForItems(items);
-	});
+		public ReactiveCommand<Unit, Unit> LoadThumbnailsForCheckedItemsCommand => ReactiveCommand.CreateFromTask(async () => {
+			var items = Duplicates.Where(d => d.Checked).Select(vm => vm.ItemInfo).ToList();
+			if (items.Count == 0) return;
+			SyncCoreSettings();
+			await Scanner.RetrieveThumbnailsForItems(items);
+		});
 
-	public ReactiveCommand<Unit, Unit> LoadThumbnailsForGroupCommand => ReactiveCommand.CreateFromTask(async () => {
-		if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
-		var items = Duplicates.Where(d => d.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).Select(d => d.ItemInfo).ToList();
-		SyncCoreSettings();
-		await Scanner.RetrieveThumbnailsForItems(items);
-	});
+		public ReactiveCommand<Unit, Unit> LoadThumbnailsForGroupCommand => ReactiveCommand.CreateFromTask(async () => {
+			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
+			var items = Duplicates.Where(d => d.ItemInfo.GroupId == currentItem.ItemInfo.GroupId).Select(d => d.ItemInfo).ToList();
+			SyncCoreSettings();
+			await Scanner.RetrieveThumbnailsForItems(items);
+		});
 
 		List<DuplicateItemVM> CheckedItemsToDelete => ScopedDuplicates().Where(d => d.Checked && d.IsVisibleInFilter).ToList();
 
@@ -2090,7 +2091,7 @@ Non-Windows setup:
 				await ExportScanResults(BackupScanResultsFile);
 		}
 
-		private void DropSingletonGroups() {
+		void DropSingletonGroups() {
 			var singletonGroups = Duplicates
 				.GroupBy(d => d.ItemInfo.GroupId)
 				.Where(g => g.Count() <= 1)
@@ -2109,7 +2110,7 @@ Non-Windows setup:
 		/// of each other. Within each group, keep only one representative per set
 		/// of hardlinked files.
 		/// </summary>
-		private void DropHardLinkDuplicates() {
+		void DropHardLinkDuplicates() {
 			var toRemove = new List<DuplicateItemVM>();
 			foreach (var group in Duplicates.GroupBy(d => d.ItemInfo.GroupId)) {
 				var items = group.ToList();

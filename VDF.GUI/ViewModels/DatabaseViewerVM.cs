@@ -119,7 +119,7 @@ namespace VDF.GUI.ViewModels {
 
 	internal class DatabaseViewerVM : ReactiveObject {
 		readonly List<DatabaseEntryVM> allEntries;
-		private DatabaseWrapper DbWrapper;
+		DatabaseWrapper DbWrapper;
 		readonly string TempDatabaseFile;
 		// Only forwarded to ScanEngine.ExportDataBaseToJson (which serializes through
 		// its own typed metadata); local (de)serialization uses CoreJsonContext directly.

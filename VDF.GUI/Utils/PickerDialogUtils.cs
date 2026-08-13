@@ -18,8 +18,7 @@ using Avalonia.Platform.Storage;
 
 namespace VDF.GUI.Utils {
 	internal static class PickerDialogUtils {
-
-		private static string GetLocalPath(Uri uriPath) {
+		static string GetLocalPath(Uri uriPath) {
 			if (uriPath.IsFile) {
 				// The `LocalPath` member of the `Uri` object we got
 				// from `TryGetUri()` might be wrong if the original

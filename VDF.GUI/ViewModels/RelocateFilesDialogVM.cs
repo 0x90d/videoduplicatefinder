@@ -45,26 +45,26 @@ namespace VDF.GUI.ViewModels {
 		public FileEntry Entry { get; }
 		public string OldPath => Entry.Path;
 
-		private string? _newPath;
+		string? _newPath;
 		public string? NewPath {
 			get => _newPath;
 			set => this.RaiseAndSetIfChanged(ref _newPath, value);
 		}
 
-		private bool _selected;
+		bool _selected;
 		public bool Selected {
 			get => _selected;
 			set => this.RaiseAndSetIfChanged(ref _selected, value);
 		}
 
-		private RelocateConfidence _confidence;
+		RelocateConfidence _confidence;
 		public RelocateConfidence Confidence {
 			get => _confidence;
 			set => this.RaiseAndSetIfChanged(ref _confidence, value);
 		}
 		public string ConfidenceString => Confidence.ToString();
 
-		private string _note = string.Empty;
+		string _note = string.Empty;
 		public string Note {
 			get => _note;
 			set => this.RaiseAndSetIfChanged(ref _note, value);
@@ -75,10 +75,11 @@ namespace VDF.GUI.ViewModels {
 		}
 	}
 	internal class RelocateFilesDialogVM : ReactiveObject {
-		private readonly Window _owner;
-		private readonly HashSet<FileEntry> _entries;
-		private readonly string TempDatabaseFile;
-		private readonly DatabaseWrapper DbWrapper;
+		readonly Window _owner;
+		readonly HashSet<FileEntry> _entries;
+		readonly string TempDatabaseFile;
+
+		readonly DatabaseWrapper DbWrapper;
 		// Only forwarded to ScanEngine.ExportDataBaseToJson (which serializes through
 		// its own typed metadata); local (de)serialization uses CoreJsonContext directly.
 		static readonly JsonSerializerOptions serializerOptions = new() {

@@ -40,8 +40,7 @@ namespace VDF.GUI {
 			rootCommand.Options.Add(settingsOption);
 
 			// This runs ONLY when parsing succeeded and no built-in action (like --help) took over
-			rootCommand.SetAction(parseResult =>
-			{
+			rootCommand.SetAction(parseResult => {
 				if (parseResult.GetValue(settingsOption) is FileInfo parsedFile) {
 					if (parsedFile.Exists) {
 						Data.SettingsFile.SetSettingsPath(parsedFile.FullName);
@@ -67,7 +66,7 @@ namespace VDF.GUI {
 		public static AppBuilder BuildAvaloniaApp()
 			=> AppBuilder.Configure<App>()
 				.UsePlatformDetect()
-				.With(new X11PlatformOptions {  UseDBusFilePicker = false })
+				.With(new X11PlatformOptions { UseDBusFilePicker = false })
 				.With(new FontManagerOptions {
 					// Without explicit fallbacks, Avalonia's default font on macOS does not
 					// resolve CJK glyphs through CoreText, producing U+FFFD replacement chars.

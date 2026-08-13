@@ -50,7 +50,7 @@ namespace VDF.GUI.ViewModels {
 			return new(key, display == lookupKey ? key : display);
 		}
 
-		private QualityCriterionOption _selectedItem;
+		QualityCriterionOption _selectedItem;
 		public QualityCriterionOption SelectedItem {
 			get => _selectedItem;
 			set => this.RaiseAndSetIfChanged(ref _selectedItem, value);
@@ -66,7 +66,7 @@ namespace VDF.GUI.ViewModels {
 			if (index >= 0 && index < CriteriaOrder.Count - 1) {
 				var item = CriteriaOrder[index];
 				CriteriaOrder.Move(index, index + 1);
-				SelectedItem = item; 
+				SelectedItem = item;
 			}
 		}
 	}

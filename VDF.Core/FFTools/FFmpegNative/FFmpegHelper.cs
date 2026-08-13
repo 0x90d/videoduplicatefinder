@@ -25,7 +25,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		static readonly WindowsFunctionResolver windowsFunctionResolver = new();
 		static readonly MacFunctionResolver macFunctionResolver = new();
 
-		private static bool ffmpegLibraryFound;
+		static bool ffmpegLibraryFound;
 		public static unsafe string? Av_strerror(int error) {
 			const int bufferSize = 1024;
 			byte* buffer = stackalloc byte[bufferSize];
@@ -40,7 +40,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			return error;
 		}
 
-		private static bool FindFFmpegLibraryFiles() {
+		static bool FindFFmpegLibraryFiles() {
 			try {
 
 				string? path = FFToolsUtils.GetPath(FFToolsUtils.FFTool.FFmpeg);
@@ -241,7 +241,7 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			ffmpeg.RootPath = path;
 			return true;
 		}
-		
+
 		public static string[] GenerateLibraryFileNames() =>
 			ffmpeg.LibraryVersionMap
 				.Select(item => {

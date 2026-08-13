@@ -50,7 +50,7 @@ namespace VDF.GUI.Views {
 			list.AddHandler(KeyDownEvent, OnListKeyDown, RoutingStrategies.Tunnel);
 		}
 
-		private void DatabaseViewer_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+		void DatabaseViewer_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
 			=> VM.Save();
 
 		void InitializeComponent() => AvaloniaXamlLoader.Load(this);

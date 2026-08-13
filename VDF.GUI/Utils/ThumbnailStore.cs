@@ -93,7 +93,7 @@ namespace VDF.GUI.Utils {
 		readonly object _gate = new();
 		public readonly string Folder;
 
-		private ThumbPack(FileStream fs, string idxPath, Dictionary<string, (long, int)> idx, string packPath, string folder) {
+		ThumbPack(FileStream fs, string idxPath, Dictionary<string, (long, int)> idx, string packPath, string folder) {
 			_fs = fs; _idxPath = idxPath; _idx = idx; Folder = folder; _packPath = packPath;
 		}
 

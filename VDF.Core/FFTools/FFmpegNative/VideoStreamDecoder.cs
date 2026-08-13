@@ -19,15 +19,15 @@ using FFmpeg.AutoGen;
 
 namespace VDF.Core.FFTools.FFmpegNative {
 	unsafe class VideoStreamDecoder : IDisposable {
-		private AVCodecContext* _pCodecContext;
-		private AVFormatContext* _pFormatContext;
-		private AVFrame* _pFrame;
-		private AVPacket* _pPacket;
-		private AVFrame* _pReceivedFrame;
-		private readonly int _streamIndex;
-		private readonly AVIOInterruptCB_callback _interruptCbDelegate;
-		private readonly long _timeoutTicks;
-		private long _deadlineTicks;
+		AVCodecContext* _pCodecContext;
+		AVFormatContext* _pFormatContext;
+		AVFrame* _pFrame;
+		AVPacket* _pPacket;
+		AVFrame* _pReceivedFrame;
+		readonly int _streamIndex;
+		readonly AVIOInterruptCB_callback _interruptCbDelegate;
+		readonly long _timeoutTicks;
+		long _deadlineTicks;
 
 		public VideoStreamDecoder(string url, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE, int timeoutMs = 15_000) {
 			_pFormatContext = ffmpeg.avformat_alloc_context();

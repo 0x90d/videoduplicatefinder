@@ -28,8 +28,8 @@ namespace VDF.GUI.Data {
 	public enum ThumbnailDoubleClickAction { OpenFile, OpenThumbnailComparer }
 
 	public class SettingsFile : ReactiveObject {
-		private static SettingsFile? instance;
-		private static string? settingsPath;
+		static SettingsFile? instance;
+		static string? settingsPath;
 
 		[JsonIgnore]
 		public static SettingsFile Instance => instance ??= new SettingsFile();

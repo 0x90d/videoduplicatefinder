@@ -28,18 +28,18 @@ namespace VDF.Core.Chromaprint.Pipeline {
 		internal const int SampleRate = 11025;
 
 		// Frequency range matching the standard Chromaprint algorithm
-		private const double MinFreq = 27.5;   // A0
-		private const double MaxFreq = 3520.0; // A7
+		const double MinFreq = 27.5;   // A0
+		const double MaxFreq = 3520.0; // A7
 
-		private static readonly double[] s_hannWindow = BuildHannWindow(FrameSize);
+		static readonly double[] s_hannWindow = BuildHannWindow(FrameSize);
 
 		// Maps each FFT bin index to a chroma class (0–11), or -1 to skip.
-		private static readonly int[] s_chromaMap = BuildChromaMap();
+		static readonly int[] s_chromaMap = BuildChromaMap();
 
-		private readonly double[] _re = new double[FrameSize];
-		private readonly double[] _im = new double[FrameSize];
+		readonly double[] _re = new double[FrameSize];
+		readonly double[] _im = new double[FrameSize];
 
-		private static double[] BuildHannWindow(int n) {
+		static double[] BuildHannWindow(int n) {
 			var w = new double[n];
 			double factor = 2.0 * Math.PI / (n - 1);
 			for (int i = 0; i < n; i++)
@@ -47,7 +47,7 @@ namespace VDF.Core.Chromaprint.Pipeline {
 			return w;
 		}
 
-		private static int[] BuildChromaMap() {
+		static int[] BuildChromaMap() {
 			int bins = FrameSize / 2 + 1;
 			var map = new int[bins];
 			Array.Fill(map, -1);

@@ -83,6 +83,6 @@ namespace VDF.GUI.Views {
 
 		void OnOk(object? sender, RoutedEventArgs e) => Close();
 
-		private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
+		void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 	}
 }

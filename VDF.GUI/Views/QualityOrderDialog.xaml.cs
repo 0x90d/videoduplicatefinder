@@ -17,10 +17,11 @@ namespace VDF.GUI.Views {
 
 		public QualityOrderVM ViewModel => (QualityOrderVM)DataContext!;
 
-		private void Ok_Click(object? sender, RoutedEventArgs e) {
+		void Ok_Click(object? sender, RoutedEventArgs e) {
 			Close(ViewModel.CriteriaOrder.Select(o => o.Key).ToList());
 		}
-		private void Cancel_Click(object? sender, RoutedEventArgs e) {
+
+		void Cancel_Click(object? sender, RoutedEventArgs e) {
 			Close();
 		}
 	}

@@ -126,7 +126,7 @@ namespace VDF.GUI.Views {
 			if (File.Exists(FileUtils.SafePathCombine(
 					CoreUtils.ResolveDatabaseFolder(SettingsFile.Instance.CustomDatabaseFolder),
 					"ScannedFiles.db")))
-					return;
+				return;
 
 			while (!this.IsVisible) {
 				await Task.Delay(200);
@@ -137,7 +137,7 @@ namespace VDF.GUI.Views {
 				VDF.Core.Utils.DatabaseUtils.Create16x16Database();
 		}
 
-		private void MainWindow_Opened(object? sender, EventArgs e) {
+		void MainWindow_Opened(object? sender, EventArgs e) {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 				/*
 				 * Due to Avalonia bug, window is bigger than screen size.

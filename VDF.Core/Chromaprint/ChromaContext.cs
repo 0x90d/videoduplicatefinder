@@ -40,26 +40,26 @@ namespace VDF.Core.Chromaprint {
 		// ──────────────────────────────────────────────────────────────────────
 		// Frame / hop parameters  (standard Chromaprint / AcoustID values)
 		// ──────────────────────────────────────────────────────────────────────
-		private const int FrameHop = 1365; // samples between consecutive frames
+		const int FrameHop = 1365; // samples between consecutive frames
 		// Frames per second = 11025 / 1365 ≈ 8.07
 
 		// ──────────────────────────────────────────────────────────────────────
 		// Pipeline objects  (allocated once, reused across Start/Finish cycles)
 		// ──────────────────────────────────────────────────────────────────────
-		private readonly Chroma _chroma = new();
-		private readonly ChromaFilter _filter = new();
-		private readonly double[] _chromaBuf = new double[12];
-		private readonly double[] _filteredBuf = new double[12];
+		readonly Chroma _chroma = new();
+		readonly ChromaFilter _filter = new();
+		readonly double[] _chromaBuf = new double[12];
+		readonly double[] _filteredBuf = new double[12];
 
 		// ──────────────────────────────────────────────────────────────────────
 		// Per-scan state
 		// ──────────────────────────────────────────────────────────────────────
-		private short[] _samples = Array.Empty<short>();
-		private int _sampleCount;
+		short[] _samples = Array.Empty<short>();
+		int _sampleCount;
 
-		private readonly List<uint> _secondFrames = new(16);
-		private readonly List<uint> _aggregated = new();
-		private int _frameIndex;
+		readonly List<uint> _secondFrames = new(16);
+		readonly List<uint> _aggregated = new();
+		int _frameIndex;
 
 		/// <summary>Reset state and prepare for a new file.</summary>
 		public void Start() {
@@ -111,7 +111,7 @@ namespace VDF.Core.Chromaprint {
 		// Private helpers
 		// ──────────────────────────────────────────────────────────────────────
 
-		private void ProcessFrames() {
+		void ProcessFrames() {
 			Span<double> frameBuf = stackalloc double[Chroma.FrameSize];
 			int pos = 0;
 

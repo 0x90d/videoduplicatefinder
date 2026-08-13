@@ -22,5 +22,5 @@ using System.Threading.Tasks;
 using VDF.GUI.ViewModels;
 
 namespace VDF.GUI.Data {
-	
+
 }

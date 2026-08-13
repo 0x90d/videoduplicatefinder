@@ -50,7 +50,7 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		private HashSet<Guid> _groupsWithPathHit = new();
+		HashSet<Guid> _groupsWithPathHit = new();
 		void RebuildSearchPathIndex() {
 			var needle = FilterByPath;
 			if (string.IsNullOrEmpty(needle)) { _groupsWithPathHit.Clear(); return; }

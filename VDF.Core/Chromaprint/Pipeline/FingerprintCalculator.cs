@@ -30,9 +30,9 @@ namespace VDF.Core.Chromaprint.Pipeline {
 	/// Same audio → same bits; similar audio → low Hamming distance.
 	/// </summary>
 	internal static class FingerprintCalculator {
-		private static readonly (int A, int B)[] s_pairs = BuildPairs();
+		static readonly (int A, int B)[] s_pairs = BuildPairs();
 
-		private static (int, int)[] BuildPairs() {
+		static (int, int)[] BuildPairs() {
 			var pairs = new List<(int, int)>(32);
 			for (int i = 0; i < 12; i++) pairs.Add((i, (i + 1) % 12));  // adjacent
 			for (int i = 0; i < 12; i++) pairs.Add((i, (i + 3) % 12));  // minor third
