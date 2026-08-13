@@ -111,4 +111,108 @@ public class FileUtilsTests {
 			Directory.Delete(dir, recursive: true);
 		}
 	}
+
+	// ---- Subfolder attribute policy (#876): skips must stay policy-equivalent to the ----
+	// ---- old AttributesToSkip behavior now that they are counted and logged instead. ----
+
+	static string NewTempTree() {
+		string dir = Path.Combine(Path.GetTempPath(), $"VDF.Test.{Guid.NewGuid():N}");
+		Directory.CreateDirectory(dir);
+		return dir;
+	}
+
+	static void DeleteTempTree(string dir) {
+		// Clear ReadOnly/System attributes so cleanup never fails.
+		foreach (string sub in Directory.EnumerateDirectories(dir, "*", SearchOption.AllDirectories))
+			File.SetAttributes(sub, FileAttributes.Directory);
+		Directory.Delete(dir, recursive: true);
+	}
+
+	static List<FileInfo> Scan(string dir, bool ignoreReadonly = false, bool ignoreReparsePoints = false) =>
+		FileUtils.GetFilesRecursive(dir, ignoreReadonly, ignoreReparsePoints,
+			recursive: true, includeImages: false, new List<string>(), CancellationToken.None);
+
+	[Fact]
+	public void GetFilesRecursive_RecursesIntoNestedSubfolders() {
+		string dir = NewTempTree();
+		try {
+			Directory.CreateDirectory(Path.Combine(dir, "a", "b"));
+			File.WriteAllBytes(Path.Combine(dir, "root.mp4"), new byte[] { 1 });
+			File.WriteAllBytes(Path.Combine(dir, "a", "mid.mp4"), new byte[] { 1 });
+			File.WriteAllBytes(Path.Combine(dir, "a", "b", "deep.mp4"), new byte[] { 1 });
+			Assert.Equal(3, Scan(dir).Count);
+		}
+		finally {
+			DeleteTempTree(dir);
+		}
+	}
+
+	[Fact]
+	public void GetFilesRecursive_SystemSubfolderIsSkipped_ButScannedWhenIncludedDirectly() {
+		if (!OperatingSystem.IsWindows()) return; // Windows attribute semantics
+		string dir = NewTempTree();
+		try {
+			string sysFolder = Path.Combine(dir, "sys");
+			Directory.CreateDirectory(sysFolder);
+			File.WriteAllBytes(Path.Combine(sysFolder, "inside.mp4"), new byte[] { 1 });
+			File.SetAttributes(sysFolder, FileAttributes.Directory | FileAttributes.System);
+
+			Assert.Empty(Scan(dir));
+			// The starting folder's own attributes are deliberately never checked —
+			// explicitly included folders are always scanned (matches issue #876 reports:
+			// adding the folders individually works).
+			Assert.Single(Scan(sysFolder));
+		}
+		finally {
+			DeleteTempTree(dir);
+		}
+	}
+
+	[Fact]
+	public void GetFilesRecursive_ReadOnlySubfolder_SkippedOnlyWhenIgnoreReadonly() {
+		if (!OperatingSystem.IsWindows()) return; // ReadOnly on directories is a Windows concept
+		string dir = NewTempTree();
+		try {
+			string roFolder = Path.Combine(dir, "ro");
+			Directory.CreateDirectory(roFolder);
+			File.WriteAllBytes(Path.Combine(roFolder, "inside.mp4"), new byte[] { 1 });
+			File.SetAttributes(roFolder, FileAttributes.Directory | FileAttributes.ReadOnly);
+
+			Assert.Single(Scan(dir, ignoreReadonly: false));
+			Assert.Empty(Scan(dir, ignoreReadonly: true));
+		}
+		finally {
+			DeleteTempTree(dir);
+		}
+	}
+
+	[Fact]
+	public void GetFilesRecursive_JunctionSubfolder_SkippedOnlyWhenIgnoreReparsePoints() {
+		if (!OperatingSystem.IsWindows()) return; // junction creation
+		string dir = NewTempTree();
+		string target = NewTempTree();
+		try {
+			File.WriteAllBytes(Path.Combine(target, "inside.mp4"), new byte[] { 1 });
+			string junction = Path.Combine(dir, "link");
+			// Junctions need no admin rights, unlike symlinks.
+			var psi = new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{junction}\" \"{target}\"") {
+				CreateNoWindow = true,
+				UseShellExecute = false,
+			};
+			using (var proc = System.Diagnostics.Process.Start(psi)!)
+				proc.WaitForExit();
+			if (!Directory.Exists(junction)) return; // couldn't create a junction here — nothing to assert
+
+			Assert.Single(Scan(dir, ignoreReparsePoints: false));
+			Assert.Empty(Scan(dir, ignoreReparsePoints: true));
+		}
+		finally {
+			// Remove the junction itself first — recursive delete refuses to traverse it.
+			string junction = Path.Combine(dir, "link");
+			if (Directory.Exists(junction))
+				Directory.Delete(junction, recursive: false);
+			Directory.Delete(dir, recursive: true);
+			DeleteTempTree(target);
+		}
+	}
 }

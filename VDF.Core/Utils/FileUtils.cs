@@ -81,6 +81,14 @@ namespace VDF.Core.Utils {
 			if (ignoreReparsePoints)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
+			// Subfolders are filtered by the same attribute policy, but explicitly (below)
+			// instead of via AttributesToSkip, so skipped folders can be counted and logged —
+			// an attribute-skipped folder silently hides its entire subtree otherwise (#876).
+			EnumerationOptions directoryEnumerationOptions = new() {
+				IgnoreInaccessible = true,
+				AttributesToSkip = FileAttributes.None
+			};
+
 			// Span-based extension probe: non-matching files are rejected before any
 			// FileInfo (or even file-name string) is allocated.
 			var extensionLookup = (includeImages ? AllExtensionSet : VideoExtensionSet)
@@ -89,23 +97,39 @@ namespace VDF.Core.Utils {
 			List<FileInfo> files = new();
 			Queue<DirectoryInfo> subFolders = new();
 			subFolders.Enqueue(new(initial));
+			int skippedSystem = 0, skippedReadonly = 0, skippedReparse = 0;
 
 			while (subFolders.Count > 0) {
 				if (cancellationToken.IsCancellationRequested)
 					break;
 				DirectoryInfo currentFolder = subFolders.Dequeue();
+				// File listing and subfolder discovery fail independently: a single
+				// unreadable entry aborting the file enumeration (e.g. filesystem
+				// corruption on an external drive) must not cost the whole subtree —
+				// that turned "Include subfolders" into a no-op with only the root
+				// folder's files partially found and no per-subfolder hint (#876).
 				try {
-
 					files.AddRange(new FileSystemEnumerable<FileInfo>(currentFolder.FullName,
 						(ref FileSystemEntry entry) => (FileInfo)entry.ToFileSystemInfo(),
 						enumerationOptions) {
 						ShouldIncludePredicate = (ref FileSystemEntry entry) =>
 							!entry.IsDirectory && extensionLookup.Contains(Path.GetExtension(entry.FileName))
 					});
+				}
+				catch (DirectoryNotFoundException) {
+					// Deleted between discovery and enumeration — subfolder discovery
+					// below would fail the same way, and the initial folder's existence
+					// is checked by the caller.
+					continue;
+				}
+				catch (Exception e) {
+					Logger.Instance.Warn($"Failed to list the files of '{currentFolder.FullName}' (files found before the error are kept, subfolders are still scanned): {e}");
+				}
 
-					if (!recursive)
-						break;
-					foreach (DirectoryInfo subFolder in currentFolder.EnumerateDirectories("*", enumerationOptions)
+				if (!recursive)
+					break;
+				try {
+					foreach (DirectoryInfo subFolder in currentFolder.EnumerateDirectories("*", directoryEnumerationOptions)
 						.Where(d => !excludeFolders.Any(x => {
 							if (x.IndexOfAny(['*', '?']) < 0)
 								return d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase);
@@ -116,13 +140,38 @@ namespace VDF.Core.Utils {
 						}))) {
 						if (cancellationToken.IsCancellationRequested)
 							break;
+						// Attributes come prepopulated from the enumeration — no extra syscall.
+						FileAttributes attributes = subFolder.Attributes;
+						if ((attributes & FileAttributes.System) != 0) {
+							skippedSystem++;
+							continue;
+						}
+						if (ignoreReadonly && (attributes & FileAttributes.ReadOnly) != 0) {
+							skippedReadonly++;
+							continue;
+						}
+						if (ignoreReparsePoints && (attributes & FileAttributes.ReparsePoint) != 0) {
+							skippedReparse++;
+							continue;
+						}
 						subFolders.Enqueue(subFolder);
 					}
 				}
 				catch (DirectoryNotFoundException) { }
 				catch (Exception e) {
-					Logger.Instance.Warn($"Failed to enumerate '{currentFolder.FullName}' because of: {e}");
+					Logger.Instance.Warn($"Failed to list the subfolders of '{currentFolder.FullName}': {e}");
 				}
+			}
+
+			if (skippedSystem + skippedReadonly + skippedReparse > 0) {
+				var reasons = new List<string>(3);
+				if (skippedSystem > 0)
+					reasons.Add($"{skippedSystem} with the system attribute");
+				if (skippedReadonly > 0)
+					reasons.Add($"{skippedReadonly} read-only ('Ignore read-only folders' is enabled)");
+				if (skippedReparse > 0)
+					reasons.Add($"{skippedReparse} reparse points/links ('Exclude reparse points' is enabled)");
+				Logger.Instance.Info($"Skipped {skippedSystem + skippedReadonly + skippedReparse} subfolder(s) of '{initial}' including everything inside them: {string.Join(", ", reasons)}.");
 			}
 
 			return files;
