@@ -192,7 +192,8 @@ namespace VDF.Core {
 					else {
 						DriveScanPlanner.ClassifyGroups(driveGroups, Settings.DriveTypeOverrides,
 							DriveScanPlanner.IsNetworkRoot,
-							group => DriveScanPlanner.ProbeSeekLatencyMs(group.Entries));
+							group => DriveScanPlanner.ProbeSeekLatencyMs(group.Entries),
+							DriveScanPlanner.QueryHasSeekPenalty);
 						DriveScanPlanner.AssignParallelism(driveGroups, Settings.MaxDegreeOfParallelism, Settings.HddMaxDegreeOfParallelism, Environment.ProcessorCount);
 						var driveTasks = new List<Task>(driveGroups.Count);
 						for (int g = 0; g < driveGroups.Count; g++) {

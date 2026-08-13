@@ -257,6 +257,68 @@ public class DriveScanPlannerTests {
 		Assert.Equal("no probe candidate", groups[0].ClassSource);
 	}
 
+	// ── OS seek-penalty query (#890) ────────────────────────────────────────
+
+	[Fact]
+	public void OsSeekPenalty_Answer_WinsOverTheProbe() {
+		// The probe reads a file the previous scan may have pulled into the OS page
+		// cache — a spinning drive then probes at RAM speed and flips to SSD on every
+		// scan after the first (#890). The OS answer must preempt the probe entirely.
+		var groups = new List<DriveScanGroup> { Group(@"E:\", DriveSpeedClass.Fast) };
+		bool probed = false;
+		DriveScanPlanner.ClassifyGroups(groups, NoOverrides, NoNetwork,
+			_ => { probed = true; return 0.2; }, // warm cache would say SSD
+			_ => true); // the device itself reports a seek penalty
+		Assert.Equal(DriveSpeedClass.Slow, groups[0].SpeedClass);
+		Assert.False(probed);
+	}
+
+	[Fact]
+	public void OsSeekPenalty_NoPenalty_IsFastWithoutProbing() {
+		var groups = new List<DriveScanGroup> { Group(@"C:\", DriveSpeedClass.Slow) };
+		bool probed = false;
+		DriveScanPlanner.ClassifyGroups(groups, NoOverrides, NoNetwork,
+			_ => { probed = true; return 20.0; },
+			_ => false);
+		Assert.Equal(DriveSpeedClass.Fast, groups[0].SpeedClass);
+		Assert.False(probed);
+	}
+
+	[Fact]
+	public void OsSeekPenalty_Unavailable_FallsBackToTheProbe() {
+		var groups = new List<DriveScanGroup> { Group(@"D:\", DriveSpeedClass.Fast) };
+		DriveScanPlanner.ClassifyGroups(groups, NoOverrides, NoNetwork, _ => 20.0, _ => null);
+		Assert.Equal(DriveSpeedClass.Slow, groups[0].SpeedClass);
+		Assert.StartsWith("seek probe", groups[0].ClassSource);
+	}
+
+	[Fact]
+	public void Override_StillWinsOverTheOsAnswer() {
+		var groups = new List<DriveScanGroup> { Group(@"D:\", DriveSpeedClass.Slow) };
+		bool osQueried = false;
+		DriveScanPlanner.ClassifyGroups(groups,
+			new Dictionary<string, string> { [@"D:\"] = "SSD" },
+			NoNetwork, _ => null,
+			_ => { osQueried = true; return true; });
+		Assert.Equal(DriveSpeedClass.Fast, groups[0].SpeedClass);
+		Assert.False(osQueried);
+	}
+
+	[Fact]
+	public void QueryHasSeekPenalty_NonDriveLetterRoots_ReturnNull() {
+		Assert.Null(DriveScanPlanner.QueryHasSeekPenalty(@"\\nas\media"));
+		Assert.Null(DriveScanPlanner.QueryHasSeekPenalty("/"));
+		Assert.Null(DriveScanPlanner.QueryHasSeekPenalty("?"));
+	}
+
+	[Fact]
+	public void QueryHasSeekPenalty_RealSystemDrive_DoesNotThrow() {
+		if (!OperatingSystem.IsWindows()) return;
+		// The answer depends on hardware (VMs/USB controllers may not implement the
+		// property, which must surface as null, never as an exception).
+		_ = DriveScanPlanner.QueryHasSeekPenalty(@"C:\");
+	}
+
 	// ── DriveProgressTracker ────────────────────────────────────────────────
 
 	static DriveScanGroup GroupWithEntries(string root, DriveSpeedClass speedClass, params FileEntry[] entries) {

@@ -1231,7 +1231,8 @@ namespace VDF.Core {
 					DriveScanPlanner.ClassifyGroups(driveGroups, Settings.DriveTypeOverrides,
 						DriveScanPlanner.IsNetworkRoot,
 						group => DriveScanPlanner.ProbeSeekLatencyMs(
-							group.Entries.Where(CountsTowardDriveProgress)));
+							group.Entries.Where(CountsTowardDriveProgress)),
+						DriveScanPlanner.QueryHasSeekPenalty);
 					DriveScanPlanner.AssignParallelism(driveGroups, Settings.MaxDegreeOfParallelism, Settings.HddMaxDegreeOfParallelism, Environment.ProcessorCount);
 					driveProgressTracker = new DriveProgressTracker(driveGroups, CountsTowardDriveProgress, classified: true);
 					var driveTasks = new List<Task>(driveGroups.Count);

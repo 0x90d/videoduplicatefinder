@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace VDF.Core.Utils {
 
@@ -212,13 +213,15 @@ namespace VDF.Core.Utils {
 
 		/// <summary>
 		/// Decides each group's <see cref="DriveSpeedClass"/>. Precedence: user override map
-		/// (drive root → "SSD"/"HDD") → network shares are Slow → seek-latency probe. A group
-		/// that cannot be probed (no readable candidate file) is conservatively Slow.
+		/// (drive root → "SSD"/"HDD") → network shares are Slow → OS seek-penalty query →
+		/// seek-latency probe. A group that cannot be probed (no readable candidate file)
+		/// is conservatively Slow.
 		/// </summary>
 		internal static void ClassifyGroups(IReadOnlyList<DriveScanGroup> groups,
 											IReadOnlyDictionary<string, string> overrides,
 											Func<string, bool> isNetworkRoot,
-											Func<DriveScanGroup, double?> probeSeekLatencyMs) {
+											Func<DriveScanGroup, double?> probeSeekLatencyMs,
+											Func<string, bool?>? osSeekPenaltyQuery = null) {
 			foreach (DriveScanGroup group in groups) {
 				if (TryGetOverride(overrides, group.Root, out DriveSpeedClass overridden)) {
 					group.SpeedClass = overridden;
@@ -228,6 +231,12 @@ namespace VDF.Core.Utils {
 				if (isNetworkRoot(group.Root)) {
 					group.SpeedClass = DriveSpeedClass.Slow;
 					group.ClassSource = "network share";
+					continue;
+				}
+				bool? seekPenalty = osSeekPenaltyQuery?.Invoke(group.Root);
+				if (seekPenalty != null) {
+					group.SpeedClass = seekPenalty.Value ? DriveSpeedClass.Slow : DriveSpeedClass.Fast;
+					group.ClassSource = seekPenalty.Value ? "OS reports a seek penalty" : "OS reports no seek penalty";
 					continue;
 				}
 				double? latency = probeSeekLatencyMs(group);
@@ -240,6 +249,84 @@ namespace VDF.Core.Utils {
 					group.ClassSource = $"seek probe {latency.Value:0.0} ms";
 				}
 			}
+		}
+
+		/// <summary>
+		/// Asks the OS whether the volume behind a drive-letter root incurs a mechanical seek
+		/// penalty (IOCTL_STORAGE_QUERY_PROPERTY / StorageDeviceSeekPenaltyProperty — needs no
+		/// elevation). Authoritative where available: unlike the latency probe it cannot be
+		/// fooled by the OS page cache serving a warmed-up probe file at RAM speed, which
+		/// re-classified spinning drives as SSD on every scan after the first (#890). Returns
+		/// null when there is no answer (non-Windows, UNC/mount-folder roots, controllers that
+		/// do not implement the property) — callers then fall back to the probe.
+		/// </summary>
+		internal static bool? QueryHasSeekPenalty(string root) {
+			if (!OperatingSystem.IsWindows())
+				return null;
+			// Only plain drive-letter roots ("E:\") map 1:1 onto a \\.\E: volume handle.
+			if (root.Length < 2 || root.Length > 3 || !char.IsAsciiLetter(root[0]) || root[1] != ':')
+				return null;
+			nint handle = NativeMethods.CreateFileW($@"\\.\{root[0]}:", 0 /* query metadata only — no read access, no elevation */,
+				NativeMethods.FILE_SHARE_READ | NativeMethods.FILE_SHARE_WRITE, 0, NativeMethods.OPEN_EXISTING, 0, 0);
+			if (handle == NativeMethods.INVALID_HANDLE_VALUE)
+				return null;
+			try {
+				var query = new NativeMethods.STORAGE_PROPERTY_QUERY {
+					PropertyId = NativeMethods.StorageDeviceSeekPenaltyProperty,
+					QueryType = 0, // PropertyStandardQuery
+				};
+				if (!NativeMethods.DeviceIoControl(handle, NativeMethods.IOCTL_STORAGE_QUERY_PROPERTY,
+						ref query, (uint)Marshal.SizeOf<NativeMethods.STORAGE_PROPERTY_QUERY>(),
+						out NativeMethods.DEVICE_SEEK_PENALTY_DESCRIPTOR descriptor,
+						(uint)Marshal.SizeOf<NativeMethods.DEVICE_SEEK_PENALTY_DESCRIPTOR>(),
+						out _, 0))
+					return null;
+				return descriptor.IncursSeekPenalty != 0;
+			}
+			catch {
+				return null;
+			}
+			finally {
+				NativeMethods.CloseHandle(handle);
+			}
+		}
+
+		static class NativeMethods {
+			internal const uint FILE_SHARE_READ = 0x1;
+			internal const uint FILE_SHARE_WRITE = 0x2;
+			internal const uint OPEN_EXISTING = 3;
+			internal const uint IOCTL_STORAGE_QUERY_PROPERTY = 0x2D1400;
+			internal const uint StorageDeviceSeekPenaltyProperty = 7;
+			internal static readonly nint INVALID_HANDLE_VALUE = -1;
+
+			[StructLayout(LayoutKind.Sequential)]
+			internal struct STORAGE_PROPERTY_QUERY {
+				internal uint PropertyId;
+				internal uint QueryType;
+				internal byte AdditionalParameters;
+			}
+
+			[StructLayout(LayoutKind.Sequential)]
+			internal struct DEVICE_SEEK_PENALTY_DESCRIPTOR {
+				internal uint Version;
+				internal uint Size;
+				internal byte IncursSeekPenalty;
+			}
+
+			[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+			internal static extern nint CreateFileW(string lpFileName, uint dwDesiredAccess, uint dwShareMode,
+				nint lpSecurityAttributes, uint dwCreationDisposition, uint dwFlagsAndAttributes, nint hTemplateFile);
+
+			[DllImport("kernel32.dll", SetLastError = true)]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			internal static extern bool DeviceIoControl(nint hDevice, uint dwIoControlCode,
+				ref STORAGE_PROPERTY_QUERY lpInBuffer, uint nInBufferSize,
+				out DEVICE_SEEK_PENALTY_DESCRIPTOR lpOutBuffer, uint nOutBufferSize,
+				out uint lpBytesReturned, nint lpOverlapped);
+
+			[DllImport("kernel32.dll")]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			internal static extern bool CloseHandle(nint hObject);
 		}
 
 		static bool TryGetOverride(IReadOnlyDictionary<string, string> overrides, string root, out DriveSpeedClass speedClass) {
