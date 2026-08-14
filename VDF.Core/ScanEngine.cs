@@ -80,6 +80,9 @@ namespace VDF.Core {
 				progressHeartbeat.Change(
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan,
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan);
+				if (!value) {
+					progress.Reset(x => x);
+				}
 				try {
 					using var p = Process.GetCurrentProcess();
 					p.PriorityClass = value ? ProcessPriorityClass.BelowNormal
