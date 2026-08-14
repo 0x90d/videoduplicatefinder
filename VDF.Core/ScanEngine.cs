@@ -37,8 +37,8 @@ namespace VDF.Core {
 		public HashSet<DuplicateItem> Duplicates { get; set; } = new HashSet<DuplicateItem>();
 		public Settings Settings { get; set; } = new Settings();
 		public event EventHandler<ScanProgressSnapshot>? Progress {
-			add => _progress.Progress += value;
-			remove => _progress.Progress -= value;
+			add => progress.Progress += value;
+			remove => progress.Progress -= value;
 		}
 		public event EventHandler? BuildingHashesDone;
 		public event EventHandler? ScanDone;
@@ -93,7 +93,7 @@ namespace VDF.Core {
 		public Stopwatch ElapsedTimer = new();
 		int processedFiles;
 		DateTime startTime = DateTime.Now;
-		private readonly ScanProgress _progress = new(TimeSpan.FromMilliseconds(300));
+		readonly ScanProgress progress = new(TimeSpan.FromMilliseconds(300));
 		// Elapsed and Remaining only ever reach a frontend on a Progress event, and a phase can
 		// run for minutes without completing a single file — the partial-clip visual gate decodes
 		// frames for a handful of assignments, one slow source stalling the counter. The whole
@@ -135,7 +135,7 @@ namespace VDF.Core {
 			// Phase-transition memory line: memory reports (#878) never told us WHICH
 			// phase ballooned; now every log carries the curve.
 			Logger.Instance.Info($"Memory: {CoreUtils.DescribeProcessMemory()}");
-			_progress.Reset(p => p with {
+			progress.Reset(p => p with {
 				Elapsed = ElapsedTimer.Elapsed,
 				MaxPosition = count,
 				CurrentStage = stage,
@@ -245,7 +245,7 @@ namespace VDF.Core {
 		/// </summary>
 		internal void EmitProgressHeartbeat() {
 			if (!ElapsedTimer.IsRunning) return; // a late tick must not repaint a finished scan
-			_progress.Heartbeat(p => p with {
+			progress.Heartbeat(p => p with {
 				Elapsed = ElapsedTimer.Elapsed,
 				Remaining = EstimateRemaining(p.CurrentPosition, p.MaxPosition),
 			});
@@ -256,7 +256,7 @@ namespace VDF.Core {
 		// Throttled to the same cadence for both so a stuck file's last-reported
 		// stage (e.g. "sampling frame 2/5") hints at where it froze.
 		internal void ReportProgress(string path, string stage, int stageCurrent = 0, int stageMax = 0, bool ignoreInterval = false) {
-			_progress.Update(p => p with {
+			progress.Update(p => p with {
 				CurrentPosition = processedFiles,
 				CurrentFile = path,
 				Elapsed = ElapsedTimer.Elapsed,

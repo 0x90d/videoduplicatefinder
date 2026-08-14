@@ -49,37 +49,37 @@ namespace VDF.Core {
 	}
 
 	public sealed class ScanProgress(TimeSpan updateInterval) {
-		volatile ScanProgressSnapshot _snapshot = ScanProgressSnapshot.Default;
-		DateTime _lastUpdate;
+		volatile ScanProgressSnapshot snapshot = ScanProgressSnapshot.Default;
+		DateTime lastUpdate;
 
 		public event EventHandler<ScanProgressSnapshot>? Progress;
 
 		public void Reset(Func<ScanProgressSnapshot, ScanProgressSnapshot> transformDefault) {
-			_snapshot = transformDefault(ScanProgressSnapshot.Default);
+			snapshot = transformDefault(ScanProgressSnapshot.Default);
 			// Reset so the first update reports without waiting out the throttle.
-			_lastUpdate = DateTime.MinValue;
-			Progress?.Invoke(this, _snapshot);
+			lastUpdate = DateTime.MinValue;
+			Progress?.Invoke(this, snapshot);
 		}
 
 		public void Update(Func<ScanProgressSnapshot, ScanProgressSnapshot> snapshotUpdate, bool ignoreInterval = false) {
-			if (!ignoreInterval && _lastUpdate + updateInterval > DateTime.UtcNow) {
+			if (!ignoreInterval && lastUpdate + updateInterval > DateTime.UtcNow) {
 				return;
 			}
 
-			_lastUpdate = DateTime.UtcNow;
+			lastUpdate = DateTime.UtcNow;
 
 			ScanProgressSnapshot original, updated;
 			do {
-				original = _snapshot;
+				original = snapshot;
 				updated = snapshotUpdate(original);
-			} while (!ReferenceEquals(Interlocked.CompareExchange(ref _snapshot, updated, original), original));
+			} while (!ReferenceEquals(Interlocked.CompareExchange(ref snapshot, updated, original), original));
 
 			Progress?.Invoke(this, updated);
 		}
 
 		public void Heartbeat(Func<ScanProgressSnapshot, ScanProgressSnapshot> project) {
-			if (!ReferenceEquals(_snapshot, ScanProgressSnapshot.Default) && _lastUpdate + updateInterval < DateTime.UtcNow) {
-				Progress?.Invoke(this, project(_snapshot));
+			if (!ReferenceEquals(snapshot, ScanProgressSnapshot.Default) && lastUpdate + updateInterval < DateTime.UtcNow) {
+				Progress?.Invoke(this, project(snapshot));
 			}
 		}
 	}
