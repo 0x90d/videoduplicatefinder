@@ -94,7 +94,7 @@ public class PeriodicCheckpointTests {
 		using var inSave = new ManualResetEventSlim();
 		using var release = new ManualResetEventSlim();
 		int runs = 0, skipped = 0;
-		Thread.Sleep(5); // let the interval elapse
+		await Task.Delay(5); // let the interval elapse
 
 		var saver = Task.Run(() => checkpoint.TryRun(() => {
 			Interlocked.Increment(ref runs);

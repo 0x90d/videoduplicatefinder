@@ -103,7 +103,7 @@ public class VideoStreamDecoderTests {
 	/// two calls; the second must still decode because its budget starts fresh.
 	/// </summary>
 	[SkippableFact]
-	public void TryDecodeFrame_TimeoutBudgetIsPerPosition_NotPerDecoderLifetime() {
+	public async Task TryDecodeFrame_TimeoutBudgetIsPerPosition_NotPerDecoderLifetime() {
 		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
 		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
 
@@ -113,7 +113,7 @@ public class VideoStreamDecoderTests {
 
 		// Outlive the construction-time deadline. With the old lifetime deadline the
 		// interrupt callback now reports "expired" for every subsequent blocking call.
-		Thread.Sleep(800);
+		await Task.Delay(800);
 
 		Assert.True(vsd.TryDecodeFrame(out _, TimeSpan.FromSeconds(1)),
 			"second position failed after idling past the timeout — the deadline was not re-armed per call");
