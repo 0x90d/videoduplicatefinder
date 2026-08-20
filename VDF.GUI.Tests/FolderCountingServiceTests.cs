@@ -71,17 +71,26 @@ namespace VDF.GUI.Tests {
 
 		[Fact]
 		public void DuplicateRequests_AreDeduplicated() {
-			// Enough files that the first walk is still running when the second starts.
-			for (int i = 0; i < 200; i++)
-				WriteFile($@"many\file{i}.mp4");
+			// Provide one file to ensure progress reporting happens before completion.
+			WriteFile(@"many\file.mp4");
 
-			var service = new FolderCountingService();
+			var service = new FolderCountingService(TimeSpan.Zero);
 			using var done = new System.Threading.ManualResetEventSlim();
-			bool first = service.StartCounting(root, p => { if (p.Completed) done.Set(); });
+			using var continueFirst = new System.Threading.ManualResetEventSlim();
+			bool first = service.StartCounting(root, p => {
+				if (!p.Completed) {
+					continueFirst.Wait();
+				}
+				else {
+					done.Set();
+				}
+			});
 			bool second = service.StartCounting(root, _ => { });
 
 			Assert.True(first);
 			Assert.False(second);
+
+			continueFirst.Set();
 			Assert.True(done.Wait(TimeSpan.FromSeconds(15)));
 
 			// After completion the folder can be counted again.
