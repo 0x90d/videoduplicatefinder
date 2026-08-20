@@ -52,10 +52,10 @@ namespace VDF.Core.pHash {
 				int yBase = y * N;
 				int tBase = y * K;
 				for (int u = 1; u <= K; u++) {
-					int cosBase = u * N;
+					var cos = Cos.AsSpan(u * N);
 					float sum = 0f;
 					for (int x = 0; x < N; x++)
-						sum += gray[yBase + x] * Cos[cosBase + x];
+						sum += gray[yBase + x] * cos[x];
 					temp[tBase + (u - 1)] = Alpha[u] * sum;
 				}
 			}
@@ -66,13 +66,13 @@ namespace VDF.Core.pHash {
 			Span<float> ac = stackalloc float[K * K];
 			int k = 0;
 			for (int v = 1; v <= K; v++) {
-				int cosBase = v * N;
+				var cos = Cos.AsSpan(v * N);
 				float alphaV = Alpha[v];
 				for (int u = 1; u <= K; u++) {
 					int tu = u - 1;
 					float sum = 0f;
 					for (int y = 0; y < N; y++)
-						sum += temp[y * K + tu] * Cos[cosBase + y];
+						sum += temp[y * K + tu] * cos[y];
 					ac[k++] = alphaV * sum;
 				}
 			}
