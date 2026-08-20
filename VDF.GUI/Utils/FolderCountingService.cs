@@ -71,6 +71,8 @@ namespace VDF.GUI.Utils {
 				int count = 0;
 				long bytes = 0;
 				var lastReport = System.Diagnostics.Stopwatch.StartNew();
+				var cancelled = false;
+				var faulted = false;
 				try {
 					var options = new EnumerationOptions {
 						IgnoreInaccessible = true,
@@ -88,19 +90,22 @@ namespace VDF.GUI.Utils {
 							onProgress(new FolderCountProgress(count, bytes, Completed: false));
 						}
 					}
-					onProgress(new FolderCountProgress(count, bytes, Completed: true));
 				}
 				catch (OperationCanceledException) {
 					// canceled walks report nothing further
+					cancelled = true;
 				}
 				catch (Exception) {
-					onProgress(new FolderCountProgress(count, bytes, Completed: true, Failed: true));
+					faulted = true;
 				}
 				finally {
 					lock (gate) {
 						active.Remove(folderPath);
 					}
 					cts.Dispose();
+					if (!cancelled) {
+						onProgress(new FolderCountProgress(count, bytes, Completed: true, Failed: faulted));
+					}
 				}
 			}, CancellationToken.None);
 			return true;
