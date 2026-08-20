@@ -19,6 +19,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Numerics.Tensors;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -45,35 +46,24 @@ namespace VDF.Core.pHash {
 			// accumulation order as before. Floats are bit-identical to the previous
 			// implementation so cached PHashes from older scans remain valid.
 
-			// Row DCT: for each row y, produce K outputs (u in 1..K). Compact layout
-			// temp[y * K + (u - 1)] avoids carrying the unused 24/32 columns.
-			Span<float> temp = stackalloc float[N * K];
+			Span<float> temp = stackalloc float[K * N];
+			Span<float> rowF = stackalloc float[N];
+
 			for (int y = 0; y < N; y++) {
-				int yBase = y * N;
-				int tBase = y * K;
+				TensorPrimitives.ConvertChecked(gray.Slice(y * N, N), rowF);
 				for (int u = 0; u < K; u++) {
-					var cos = Cos.AsSpan(u * N);
-					float sum = 0f;
-					for (int x = 0; x < N; x++)
-						sum += gray[yBase + x] * cos[x];
-					temp[tBase + u] = Alpha[u] * sum;
+					var cos = Cos.AsSpan(u * N, N);
+					temp[u * N + y] = Alpha[u] * TensorPrimitives.Dot(rowF, cos);
 				}
 			}
 
-			// Column DCT: K×K outputs, written directly into the AC buffer.
-			// Sweep order matches the original (v outer, u inner) so the resulting
-			// bit positions in `hash` are unchanged.
 			Span<float> ac = stackalloc float[K * K];
 			int k = 0;
 			for (int v = 0; v < K; v++) {
-				var cos = Cos.AsSpan(v * N);
+				var cos = Cos.AsSpan(v * N, N);
 				float alphaV = Alpha[v];
-				for (int u = 0; u < K; u++) {
-					float sum = 0f;
-					for (int y = 0; y < N; y++)
-						sum += temp[y * K + u] * cos[y];
-					ac[k++] = alphaV * sum;
-				}
+				for (int u = 0; u < K; u++)
+					ac[k++] = alphaV * TensorPrimitives.Dot(temp.Slice(u * N, N), cos);
 			}
 
 			float median = Median64(ac);
