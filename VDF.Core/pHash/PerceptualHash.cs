@@ -31,8 +31,8 @@ namespace VDF.Core.pHash {
 		// Cosine table flattened to 1D: Cos[k, i] is now Cos[k * N + i]. Faster than
 		// float[,] (one bounds check instead of two) and lets dot-product loops index
 		// linearly. Precomputed once at static init.
-		static readonly float[] Cos = BuildCos(N);
-		static readonly float[] Alpha = BuildAlpha(N);
+		static readonly float[] Cos = BuildCos();
+		static readonly float[] Alpha = BuildAlpha();
 
 		public static ulong ComputePHashFromGray32x32(ReadOnlySpan<byte> gray) {
 			if (gray.Length != N * N) throw new ArgumentException("expected 32x32=1024 bytes");
@@ -84,19 +84,19 @@ namespace VDF.Core.pHash {
 			return hash;
 		}
 
-		static float[] BuildCos(int n) {
-			var t = new float[n * n];
-			for (int k = 0; k < n; k++)
-				for (int i = 0; i < n; i++)
-					t[k * n + i] = MathF.Cos(((2 * i + 1) * k * MathF.PI) / (2.0f * n));
+		static float[] BuildCos() {
+			var t = new float[(K + 1) * N];
+			for (int k = 1; k <= K; k++)
+				for (int i = 0; i < N; i++)
+					t[k * N + i] = MathF.Cos(((2 * i + 1) * k * MathF.PI) / (2.0f * N));
 			return t;
 		}
 
-		static float[] BuildAlpha(int n) {
-			var a = new float[n];
-			var invN = 1.0f / n;
+		static float[] BuildAlpha() {
+			var a = new float[K + 1];
+			var invN = 1.0f / N;
 			a[0] = MathF.Sqrt(invN);
-			for (int k = 1; k < n; k++) a[k] = MathF.Sqrt(2.0f * invN);
+			for (int k = 1; k <= K; k++) a[k] = MathF.Sqrt(2.0f * invN);
 			return a;
 		}
 
