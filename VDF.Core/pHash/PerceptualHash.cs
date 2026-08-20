@@ -88,15 +88,15 @@ namespace VDF.Core.pHash {
 			var t = new float[n * n];
 			for (int k = 0; k < n; k++)
 				for (int i = 0; i < n; i++)
-					t[k * n + i] = (float)Math.Cos(((2 * i + 1) * k * Math.PI) / (2.0 * n));
+					t[k * n + i] = MathF.Cos(((2 * i + 1) * k * MathF.PI) / (2.0f * n));
 			return t;
 		}
 
 		static float[] BuildAlpha(int n) {
 			var a = new float[n];
-			double invN = 1.0 / n;
-			a[0] = (float)Math.Sqrt(invN);
-			for (int k = 1; k < n; k++) a[k] = (float)Math.Sqrt(2.0 * invN);
+			var invN = 1.0f / n;
+			a[0] = MathF.Sqrt(invN);
+			for (int k = 1; k < n; k++) a[k] = MathF.Sqrt(2.0f * invN);
 			return a;
 		}
 
