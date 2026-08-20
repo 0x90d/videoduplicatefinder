@@ -57,5 +57,14 @@ namespace VDF.Core.Utils {
 			return string.Create(CultureInfo.InvariantCulture, $"{value:0.0}{SizeSuffixes[place]}");
 		}
 		public static long BytesToMegaBytes(this long byteCount) => (long)((byteCount / 1024f) / 1024f);
+
+		public static async Task<bool> TryWaitAsync(this Task t, TimeSpan timeout) {
+			try {
+				await t.WaitAsync(timeout);
+				return true;
+			} catch (TimeoutException) {
+				return false;
+			}
+		}
 	}
 }
