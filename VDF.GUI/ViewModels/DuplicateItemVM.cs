@@ -30,11 +30,18 @@ namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
 	public sealed class DuplicateItemVM : ReactiveObject, IJsonOnDeserialized {
+		[JsonIgnore]
+		readonly TimeProvider timeProvider;
+
 		//For JSON deserialization only
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		public DuplicateItemVM() { }
+		public DuplicateItemVM() : this(TimeProvider.System) { }
 
-		public DuplicateItemVM(DuplicateItem item) {
+		public DuplicateItemVM(TimeProvider? timeProvider = null) {
+			this.timeProvider = timeProvider ?? TimeProvider.System;
+		}
+
+		public DuplicateItemVM(DuplicateItem item) : this() {
 			ItemInfo = item;
 			WireThumbnailUpdates();
 		}
@@ -213,7 +220,7 @@ namespace VDF.GUI.ViewModels {
 		internal async Task FlashPathCopiedAsync(int durationMs = 1500) {
 			int version = Interlocked.Increment(ref pathCopiedFlashVersion);
 			PathCopiedFlash = true;
-			await Task.Delay(durationMs);
+			await Task.Delay(TimeSpan.FromMilliseconds(durationMs), timeProvider);
 			if (version == Volatile.Read(ref pathCopiedFlashVersion))
 				PathCopiedFlash = false;
 		}
