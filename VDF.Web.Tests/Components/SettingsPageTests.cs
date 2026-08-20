@@ -26,7 +26,7 @@ namespace VDF.Web.Tests.Components;
 /// executed.
 /// </summary>
 [Collection("WebSettingsOverride")]
-public sealed class SettingsPageTests : TestContext {
+public sealed class SettingsPageTests : BunitContext {
 	readonly ScanService scan;
 
 	public SettingsPageTests() {
@@ -46,7 +46,7 @@ public sealed class SettingsPageTests : TestContext {
 	}
 
 	IRenderedComponent<VDF.Web.Components.Pages.Settings> RenderPage() =>
-		RenderComponent<VDF.Web.Components.Pages.Settings>();
+		Render<VDF.Web.Components.Pages.Settings>();
 
 	[Theory]
 	[InlineData("120", 100f)] // above range

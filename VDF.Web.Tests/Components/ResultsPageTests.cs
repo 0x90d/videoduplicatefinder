@@ -25,7 +25,7 @@ namespace VDF.Web.Tests.Components;
 
 /// <summary>Renders the real Results page over seeded duplicates.</summary>
 [Collection("WebSettingsOverride")]
-public sealed class ResultsPageTests : TestContext {
+public sealed class ResultsPageTests : BunitContext {
 	readonly ScanService scan;
 
 	public ResultsPageTests() {
@@ -53,7 +53,7 @@ public sealed class ResultsPageTests : TestContext {
 	}
 
 	IRenderedComponent<VDF.Web.Components.Pages.Results> RenderPage() =>
-		RenderComponent<VDF.Web.Components.Pages.Results>();
+		Render<VDF.Web.Components.Pages.Results>();
 
 	[Fact]
 	public void NoDuplicates_ShowsTheEmptyStateInsteadOfTheToolbar() {
