@@ -51,12 +51,12 @@ namespace VDF.Core.pHash {
 			for (int y = 0; y < N; y++) {
 				int yBase = y * N;
 				int tBase = y * K;
-				for (int u = 1; u <= K; u++) {
+				for (int u = 0; u < K; u++) {
 					var cos = Cos.AsSpan(u * N);
 					float sum = 0f;
 					for (int x = 0; x < N; x++)
 						sum += gray[yBase + x] * cos[x];
-					temp[tBase + (u - 1)] = Alpha[u] * sum;
+					temp[tBase + u] = Alpha[u] * sum;
 				}
 			}
 
@@ -65,14 +65,13 @@ namespace VDF.Core.pHash {
 			// bit positions in `hash` are unchanged.
 			Span<float> ac = stackalloc float[K * K];
 			int k = 0;
-			for (int v = 1; v <= K; v++) {
+			for (int v = 0; v < K; v++) {
 				var cos = Cos.AsSpan(v * N);
 				float alphaV = Alpha[v];
-				for (int u = 1; u <= K; u++) {
-					int tu = u - 1;
+				for (int u = 0; u < K; u++) {
 					float sum = 0f;
 					for (int y = 0; y < N; y++)
-						sum += temp[y * K + tu] * cos[y];
+						sum += temp[y * K + u] * cos[y];
 					ac[k++] = alphaV * sum;
 				}
 			}
@@ -85,18 +84,17 @@ namespace VDF.Core.pHash {
 		}
 
 		static float[] BuildCos() {
-			var t = new float[(K + 1) * N];
-			for (int k = 1; k <= K; k++)
+			var t = new float[K * N];
+			for (int k = 0; k < K; k++)
 				for (int i = 0; i < N; i++)
-					t[k * N + i] = MathF.Cos(((2 * i + 1) * k * MathF.PI) / (2.0f * N));
+					t[k * N + i] = MathF.Cos(((2 * i + 1) * (k + 1) * MathF.PI) / (2.0f * N));
 			return t;
 		}
 
 		static float[] BuildAlpha() {
-			var a = new float[K + 1];
+			var a = new float[K];
 			var invN = 1.0f / N;
-			a[0] = MathF.Sqrt(invN);
-			for (int k = 1; k <= K; k++) a[k] = MathF.Sqrt(2.0f * invN);
+			for (int k = 0; k < K; k++) a[k] = MathF.Sqrt(2.0f * invN);
 			return a;
 		}
 
