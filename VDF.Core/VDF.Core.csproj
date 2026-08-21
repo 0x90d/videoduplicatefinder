@@ -23,6 +23,7 @@
          and routes the DllImport to it. Version must equal AiComponents.RuntimeVersion. -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.23.2" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
+    <PackageReference Include="System.Numerics.Tensors" Version="10.0.11" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\Locales\en.json" />
