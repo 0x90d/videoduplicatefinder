@@ -54,6 +54,15 @@ namespace VDF.Core {
 
 		public event EventHandler<ScanProgressSnapshot>? Progress;
 
+		/// <summary>
+		/// Resets the progress state to default, which will stop heartbeats being emitted.
+		/// </summary>
+		public void ResetWithoutPublish() {
+			snapshot = ScanProgressSnapshot.Default;
+			// Reset so the first update reports without waiting out the throttle.
+			lastUpdate = DateTime.MinValue;
+		}
+
 		public void Reset(Func<ScanProgressSnapshot, ScanProgressSnapshot> transformDefault) {
 			snapshot = transformDefault(ScanProgressSnapshot.Default);
 			// Reset so the first update reports without waiting out the throttle.

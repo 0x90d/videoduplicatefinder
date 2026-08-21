@@ -81,7 +81,7 @@ namespace VDF.Core {
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan,
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan);
 				if (!value) {
-					progress.Reset(x => x);
+					progress.ResetWithoutPublish();
 				}
 				try {
 					using var p = Process.GetCurrentProcess();
