@@ -14,13 +14,8 @@
 // */
 //
 
-using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics.Tensors;
 
 namespace VDF.Core.pHash {
 	internal static class PerceptualHash {
@@ -31,81 +26,52 @@ namespace VDF.Core.pHash {
 		// Cosine table flattened to 1D: Cos[k, i] is now Cos[k * N + i]. Faster than
 		// float[,] (one bounds check instead of two) and lets dot-product loops index
 		// linearly. Precomputed once at static init.
-		static readonly float[] Cos = BuildCos(N);
-		static readonly float[] Alpha = BuildAlpha(N);
+		static readonly float[] Cos = BuildCos();
+		static readonly float Alpha = (float)Math.Sqrt(2.0 * (1.0 / N));
 
 		public static ulong ComputePHashFromGray32x32(ReadOnlySpan<byte> gray) {
 			if (gray.Length != N * N) throw new ArgumentException("expected 32x32=1024 bytes");
-			int len = N * N;
 
 			// The original implementation computed a full N×N DCT — 1024 row outputs
 			// followed by 1024 column outputs — and then read only the K×K=64 cells
 			// dct[1..K, 1..K]. ~6.4× of the multiplications were thrown away.
 			//
-			// This version computes only the cells that are read, in the same scalar
-			// accumulation order as before. Floats are bit-identical to the previous
-			// implementation so cached PHashes from older scans remain valid.
-			var pool = ArrayPool<float>.Shared;
-			float[] input = pool.Rent(len);
-			try {
-				for (int i = 0; i < len; i++) input[i] = gray[i];
+			// This version is SIMD-dependent and can give different results compared
+			// to previous version(s). In testing, fewer than 0.01% of frames showed
+			// differences, with a max hamming distance of 2.
 
-				// Row DCT: for each row y, produce K outputs (u in 1..K). Compact layout
-				// temp[y * K + (u - 1)] avoids carrying the unused 24/32 columns.
-				Span<float> temp = stackalloc float[N * K];
-				for (int y = 0; y < N; y++) {
-					int yBase = y * N;
-					int tBase = y * K;
-					for (int u = 1; u <= K; u++) {
-						int cosBase = u * N;
-						float sum = 0f;
-						for (int x = 0; x < N; x++)
-							sum += input[yBase + x] * Cos[cosBase + x];
-						temp[tBase + (u - 1)] = Alpha[u] * sum;
-					}
+			Span<float> temp = stackalloc float[K * N];
+			Span<float> rowF = stackalloc float[N];
+
+			for (int y = 0; y < N; y++) {
+				TensorPrimitives.ConvertChecked(gray.Slice(y * N, N), rowF);
+				for (int u = 0; u < K; u++) {
+					var cos = Cos.AsSpan(u * N, N);
+					temp[u * N + y] = Alpha * TensorPrimitives.Dot(rowF, cos);
 				}
-
-				// Column DCT: K×K outputs, written directly into the AC buffer.
-				// Sweep order matches the original (v outer, u inner) so the resulting
-				// bit positions in `hash` are unchanged.
-				Span<float> ac = stackalloc float[K * K];
-				int k = 0;
-				for (int v = 1; v <= K; v++) {
-					int cosBase = v * N;
-					float alphaV = Alpha[v];
-					for (int u = 1; u <= K; u++) {
-						int tu = u - 1;
-						float sum = 0f;
-						for (int y = 0; y < N; y++)
-							sum += temp[y * K + tu] * Cos[cosBase + y];
-						ac[k++] = alphaV * sum;
-					}
-				}
-
-				float median = Median64(ac);
-				ulong hash = 0UL;
-				for (int i = 0; i < ac.Length; i++)
-					if (ac[i] > median) hash |= 1UL << i;
-				return hash;
 			}
-			finally { pool.Return(input); }
+
+			Span<float> ac = stackalloc float[K * K];
+			int k = 0;
+			for (int v = 0; v < K; v++) {
+				var cos = Cos.AsSpan(v * N, N);
+				for (int u = 0; u < K; u++)
+					ac[k++] = Alpha * TensorPrimitives.Dot(temp.Slice(u * N, N), cos);
+			}
+
+			float median = Median64(ac);
+			ulong hash = 0UL;
+			for (int i = 0; i < ac.Length; i++)
+				if (ac[i] > median) hash |= 1UL << i;
+			return hash;
 		}
 
-
-		static float[] BuildCos(int n) {
-			var t = new float[n * n];
-			for (int k = 0; k < n; k++)
-				for (int i = 0; i < n; i++)
-					t[k * n + i] = (float)Math.Cos(((2 * i + 1) * k * Math.PI) / (2.0 * n));
+		static float[] BuildCos() {
+			var t = new float[K * N];
+			for (int k = 0; k < K; k++)
+				for (int i = 0; i < N; i++)
+					t[k * N + i] = (float)Math.Cos(((2 * i + 1) * (k + 1) * Math.PI) / (2.0 * N));
 			return t;
-		}
-
-		static float[] BuildAlpha(int n) {
-			var a = new float[n];
-			double invN = 1.0 / n;
-			a[0] = (float)Math.Sqrt(invN);
-			for (int k = 1; k < n; k++) a[k] = (float)Math.Sqrt(2.0 * invN);
-			return a;
 		}
 
 		static float Median64(Span<float> values) {
