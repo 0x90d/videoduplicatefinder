@@ -30,27 +30,27 @@ public class PauseTokenSourceTests {
 	// WITHOUT an exception when the scan is canceled (the old throwing wait broke into
 	// the debugger as "user-unhandled" on every Stop pressed during a pause).
 	[Fact]
-	public void TryWait_CanceledWhilePaused_ReturnsFalseInsteadOfThrowing() {
+	public async Task TryWait_CanceledWhilePaused_ReturnsFalseInsteadOfThrowing() {
 		var pts = new PauseTokenSource { IsPaused = true };
 		using var cts = new CancellationTokenSource();
 
 		var worker = Task.Run(() => pts.TryWaitWhilePaused(cts.Token));
-		Assert.False(worker.Wait(150)); // parked at the gate
+		Assert.False(await worker.TryWaitAsync(TimeSpan.FromMilliseconds(150))); // parked at the gate
 
 		cts.Cancel();
-		Assert.True(worker.Wait(TimeSpan.FromSeconds(10)), "worker did not unwind after cancel");
-		Assert.False(worker.Result);
+		Assert.True(await worker.TryWaitAsync(TimeSpan.FromSeconds(10)), "worker did not unwind after cancel");
+		Assert.False(await worker);
 	}
 
 	[Fact]
-	public void TryWait_ResumedWhilePaused_ReturnsTrue() {
+	public async Task TryWait_ResumedWhilePaused_ReturnsTrue() {
 		var pts = new PauseTokenSource { IsPaused = true };
 		var worker = Task.Run(() => pts.TryWaitWhilePaused(CancellationToken.None));
-		Assert.False(worker.Wait(150));
+		Assert.False(await worker.TryWaitAsync(TimeSpan.FromMilliseconds(150)));
 
 		pts.IsPaused = false;
-		Assert.True(worker.Wait(TimeSpan.FromSeconds(10)));
-		Assert.True(worker.Result);
+		Assert.True(await worker.TryWaitAsync(TimeSpan.FromSeconds(10)));
+		Assert.True(await worker);
 	}
 
 	[Fact]

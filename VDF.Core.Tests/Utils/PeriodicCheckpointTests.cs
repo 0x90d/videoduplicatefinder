@@ -89,12 +89,12 @@ public class PeriodicCheckpointTests {
 	/// on a multi-gigabyte write instead of costing one worker.
 	/// </summary>
 	[Fact]
-	public void ConcurrentWorkersSkipInsteadOfQueueing() {
+	public async Task ConcurrentWorkersSkipInsteadOfQueueing() {
 		var checkpoint = new PeriodicCheckpoint(TimeSpan.FromMilliseconds(1));
 		using var inSave = new ManualResetEventSlim();
 		using var release = new ManualResetEventSlim();
 		int runs = 0, skipped = 0;
-		Thread.Sleep(5); // let the interval elapse
+		await Task.Delay(5); // let the interval elapse
 
 		var saver = Task.Run(() => checkpoint.TryRun(() => {
 			Interlocked.Increment(ref runs);
@@ -107,10 +107,10 @@ public class PeriodicCheckpointTests {
 			if (!checkpoint.TryRun(() => Interlocked.Increment(ref runs)))
 				Interlocked.Increment(ref skipped);
 		})).ToArray();
-		Assert.True(Task.WaitAll(others, 5_000), "a worker blocked behind the save in flight");
+		Assert.True(await Task.WhenAll(others).TryWaitAsync(TimeSpan.FromSeconds(5)), "a worker blocked behind the save in flight");
 
 		release.Set();
-		saver.Wait(5_000);
+		await saver.TryWaitAsync(TimeSpan.FromSeconds(5));
 		Assert.Equal(1, runs);
 		Assert.Equal(4, skipped);
 	}
