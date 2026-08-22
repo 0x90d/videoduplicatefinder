@@ -49,6 +49,13 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.5" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.19.3" />
     <PackageReference Include="ReactiveUI.Avalonia" Version="12.0.3" />
+    <!-- SkiaSharp is pinned ABOVE Avalonia.Skia's transitive 3.119.4 on purpose. 3.x SKStream.Read has no
+         GC.KeepAlive, so while Avalonia reads a whole font file for a synthetic bold/oblique face the
+         finalizer can destroy the native stream mid-copy (AV in libSkiaSharp, #902 / #830). 4.x keeps the
+         wrapper alive for the duration of every native call. Avalonia.Skia 12.0.5 is binary-compatible
+         with 4.151.1 (all 434 member/type references verified). Keep both lines on the same version. -->
+    <PackageReference Include="SkiaSharp" Version="4.151.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.151.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.9" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.9" />
     <PackageReference Include="Xaml.Behaviors.Avalonia" Version="12.0.5" />
