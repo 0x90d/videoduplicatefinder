@@ -1814,14 +1814,38 @@ namespace VDF.Core {
 			double GetDurationToleranceSeconds(double durationSeconds) =>
 				Settings.GetDurationToleranceSeconds(durationSeconds);
 
+			void ComparePair(FileEntry entry, FileEntry compItem, byte[]?[]? flippedGrayBytes, ulong[]? flippedPHashes, double entryDurationSeconds, double entryToleranceSeconds) {
+				if (!entry.IsImage) {
+					double compDurationSeconds = compItem.mediaInfo!.Duration.TotalSeconds;
+					double compToleranceSeconds = GetDurationToleranceSeconds(compDurationSeconds);
+					double allowedSeconds = Math.Min(entryToleranceSeconds, compToleranceSeconds);
+					double diffSeconds = Math.Abs(entryDurationSeconds - compDurationSeconds);
+					if (diffSeconds > allowedSeconds)
+						return;
+				}
+
+				if (!PassesFolderMatchGate(entry, compItem))
+					return;
+
+				var isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHashes, out var difference, out var flags);
+
+				if (isDuplicate &&
+				    entry.FileSize == compItem.FileSize &&
+				    entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
+				    Settings.ExcludeHardLinks &&
+				    HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
+					isDuplicate = false;
+				}
+
+				if (isDuplicate)
+					MergeDuplicate(entry, compItem, difference, flags);
+			}
+
 			// Compare one entry against candidate buckets (bucketed path).
 			void CompareEntry(FileEntry entry, int entryIndex, IEnumerable<int> candidateBucketKeys) {
 				if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
 					return; // canceled while paused — the parallel loop's token ends the iteration
 
-				float difference = 0;
-				bool isDuplicate;
-				DuplicateFlags flags;
 				byte[]?[]? flippedGrayBytes = null;
 				ulong[]? flippedPHashes = null;
 				double entryDurationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
@@ -1841,30 +1865,7 @@ namespace VDF.Core {
 						if (compIndex <= entryIndex)
 							continue;
 
-						if (!entry.IsImage) {
-							double compDurationSeconds = compItem.mediaInfo!.Duration.TotalSeconds;
-							double compToleranceSeconds = GetDurationToleranceSeconds(compDurationSeconds);
-							double allowedSeconds = Math.Min(entryToleranceSeconds, compToleranceSeconds);
-							double diffSeconds = Math.Abs(entryDurationSeconds - compDurationSeconds);
-							if (diffSeconds > allowedSeconds)
-								continue;
-						}
-
-						if (!PassesFolderMatchGate(entry, compItem))
-							continue;
-
-						isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHashes, out difference, out flags);
-
-						if (isDuplicate &&
-							entry.FileSize == compItem.FileSize &&
-							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
-							Settings.ExcludeHardLinks &&
-							HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
-							isDuplicate = false;
-						}
-
-						if (isDuplicate)
-							MergeDuplicate(entry, compItem, difference, flags);
+						ComparePair(entry, compItem, flippedGrayBytes, flippedPHashes, entryDurationSeconds, entryToleranceSeconds);
 					}
 				}
 				IncrementProgress(entry.Path);
