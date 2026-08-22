@@ -690,7 +690,7 @@ namespace VDF.GUI.ViewModels {
 			Dispatcher.UIThread.Post(() => StartScanCommand.Execute("FullScan").Subscribe());
 		}
 
-		void Scanner_Progress(object? sender, ScanProgressChangedEventArgs e) =>
+		void Scanner_Progress(object? sender, ScanProgressSnapshot e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
 				// Stage goes at the END — the status bar's TextBlock uses PrefixCharacterEllipsis,
 				// so trimming happens at the start (leading directory path) and the filename + stage stay visible.

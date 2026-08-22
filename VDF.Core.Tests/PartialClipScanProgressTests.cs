@@ -69,7 +69,7 @@ public class PartialClipScanProgressTests : IDisposable {
 	[Fact]
 	public void AudioPass_ReportsItsOwnStageFromEmptyToFull_AndFindsThePartialClip() {
 		var engine = NewEngine();
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 		engine.Progress += (_, e) => events.Enqueue(e);
 
 		Add("source.mp4", 100, SourceFingerprint);
@@ -103,7 +103,7 @@ public class PartialClipScanProgressTests : IDisposable {
 	[Fact]
 	public void AudioPass_FinalEventIsAFullBar() {
 		var engine = NewEngine();
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 		engine.Progress += (_, e) => events.Enqueue(e);
 
 		Add("source.mp4", 100, SourceFingerprint);
@@ -121,7 +121,7 @@ public class PartialClipScanProgressTests : IDisposable {
 	[Fact]
 	public void AudioPass_WithNothingToCompare_ReportsNoProgressAndFindsNothing() {
 		var engine = NewEngine();
-		var events = new ConcurrentQueue<ScanProgressChangedEventArgs>();
+		var events = new ConcurrentQueue<ScanProgressSnapshot>();
 		engine.Progress += (_, e) => events.Enqueue(e);
 
 		Add("lonely.mp4", 100, SourceFingerprint);
