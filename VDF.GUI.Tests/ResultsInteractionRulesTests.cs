@@ -14,6 +14,7 @@
 // */
 //
 
+using Microsoft.Extensions.Time.Testing;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 
@@ -52,13 +53,18 @@ namespace VDF.GUI.Tests {
 
 		[Fact]
 		public async Task PathCopiedFlash_RapidReCopy_ExtendsInsteadOfCuttingShort() {
-			var vm = new DuplicateItemVM();
+			var timeProvider = new FakeTimeProvider();
+			var vm = new DuplicateItemVM(timeProvider);
 			var first = vm.FlashPathCopiedAsync(durationMs: 30);
 			var second = vm.FlashPathCopiedAsync(durationMs: 200);
+
+			timeProvider.Advance(TimeSpan.FromMilliseconds(30));
 			await first;
 			// The first flash's timer has expired, but the second copy is still fresh -
 			// its badge must not be hidden by the stale timer.
 			Assert.True(vm.PathCopiedFlash);
+
+			timeProvider.Advance(TimeSpan.FromMilliseconds(170));
 			await second;
 			Assert.False(vm.PathCopiedFlash);
 		}

@@ -70,19 +70,27 @@ namespace VDF.GUI.Tests {
 		}
 
 		[Fact]
-		public void DuplicateRequests_AreDeduplicated() {
-			// Enough files that the first walk is still running when the second starts.
-			for (int i = 0; i < 200; i++)
-				WriteFile($@"many\file{i}.mp4");
+		public async Task DuplicateRequests_AreDeduplicated() {
+			// Provide one file to ensure progress reporting happens before completion.
+			WriteFile(@"many\file.mp4");
 
-			var service = new FolderCountingService();
-			using var done = new System.Threading.ManualResetEventSlim();
-			bool first = service.StartCounting(root, p => { if (p.Completed) done.Set(); });
+			var service = new FolderCountingService(TimeSpan.Zero);
+			var done = new TaskCompletionSource();
+			using var continueFirst = new System.Threading.ManualResetEventSlim();
+			bool first = service.StartCounting(root, p => {
+				if (!p.Completed) {
+					continueFirst.Wait();
+				} else {
+					done.SetResult();
+				}
+			});
 			bool second = service.StartCounting(root, _ => { });
 
 			Assert.True(first);
 			Assert.False(second);
-			Assert.True(done.Wait(TimeSpan.FromSeconds(15)));
+
+			continueFirst.Set();
+			Assert.Equal(done.Task, await Task.WhenAny(done.Task, Task.Delay(TimeSpan.FromSeconds(15))));
 
 			// After completion the folder can be counted again.
 			Assert.True(service.StartCounting(root, _ => { }));
@@ -90,24 +98,25 @@ namespace VDF.GUI.Tests {
 		}
 
 		[Fact]
-		public void Cancel_StopsWithoutCompletionReport() {
+		public async Task Cancel_StopsWithoutCompletionReport() {
 			for (int i = 0; i < 500; i++)
 				WriteFile($@"big\file{i}.mp4");
 
 			var service = new FolderCountingService(TimeSpan.Zero);
-			using var progressed = new System.Threading.ManualResetEventSlim();
+			var progressed = new TaskCompletionSource();
 			bool completed = false;
 			service.StartCounting(root, p => {
 				if (p.Completed) completed = true;
-				else progressed.Set();
+				else progressed.TrySetResult();
 			});
-			Assert.True(progressed.Wait(TimeSpan.FromSeconds(15)), "no progress before cancel");
+			var progressedOrTimedOut = await Task.WhenAny(progressed.Task, Task.Delay(TimeSpan.FromSeconds(15)));
+			Assert.True(progressedOrTimedOut == progressed.Task, "no progress before cancel");
 			service.Cancel(root);
 
 			// Give the walk time to notice the cancellation and unwind.
 			var sw = System.Diagnostics.Stopwatch.StartNew();
 			while (service.IsCounting(root) && sw.Elapsed < TimeSpan.FromSeconds(10))
-				Thread.Sleep(20);
+				await Task.Delay(20);
 			Assert.False(service.IsCounting(root));
 			Assert.False(completed);
 		}
