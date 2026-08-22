@@ -2457,13 +2457,24 @@ namespace VDF.Core {
 		}
 
 		/// <summary>
+		/// Ceiling for one group's pairwise similarity matrix in <see cref="SplitDaisyChainGroups"/>;
+		/// groups whose matrix would exceed it are kept as found. Tests lower it to
+		/// exercise the skip path without building a six-figure group.
+		/// </summary>
+		internal long daisyChainMatrixBudgetBytes = DaisyChainSplitter.DefaultMatrixBudgetBytes;
+
+		/// <summary>
 		/// Post-processes duplicate groups to break apart "daisy chains" where transitive
 		/// merging created groups containing items that aren't actually similar to each other.
 		/// For each group with 3+ members, builds a pairwise similarity graph, then
 		/// iteratively prunes members that are similar to fewer than half the group.
 		/// Pruned items are re-clustered into their own groups if they still have matches.
+		/// The graph work lives in <see cref="DaisyChainSplitter"/>: a bit-packed triangle
+		/// filled in parallel, so a group of tens of thousands of members (a loose threshold
+		/// on a homogeneous image library, #901) is validated in seconds instead of
+		/// aborting the scan on a <c>bool[n, n]</c> that could not be allocated at all.
 		/// </summary>
-		void SplitDaisyChainGroups() {
+		internal void SplitDaisyChainGroups() {
 			// Build a fast lookup from path -> FileEntry for re-comparing pairs.
 			var dbLookup = new Dictionary<string, FileEntry>(
 				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
@@ -2473,168 +2484,85 @@ namespace VDF.Core {
 			// Group duplicates by GroupId; only process groups with 3+ members.
 			var groups = Duplicates
 				.GroupBy(d => d.GroupId)
-				.Where(g => g.Count() >= 3)
+				.Select(g => g.ToList())
+				.Where(g => g.Count >= 3)
 				.ToList();
 
 			if (groups.Count == 0) return;
 
+			// Progress: one step per filled matrix row. A single huge group would
+			// otherwise sit at "100% comparing duplicates" for minutes with no sign of
+			// life, which is how #901 looked to its reporter right before the abort.
+			int rowTotal = 0;
+			foreach (var g in groups)
+				rowTotal += g.Count - 1;
+			InitProgress(rowTotal, T("Scan.Stage.ValidatingGroups"));
+
 			int groupsSplit = 0;
 			int itemsRemoved = 0;
+			int groupsSkipped = 0;
+			int parallelism = MatchingParallelDegree;
+			CancellationToken cancellationToken = cancelationTokenSource.Token;
 
-			foreach (var group in groups) {
-				var members = group.ToList();
-				int n = members.Count;
+			try {
+				foreach (var members in groups) {
+					int n = members.Count;
 
-				// Resolve FileEntry for each member; skip group if any entry is missing
-				// or lacks a compare snapshot (defensive — all visual duplicates stem
-				// from the snapshot-validated scan list).
-				var entries = new FileEntry[n];
-				bool allFound = true;
-				for (int i = 0; i < n; i++) {
-					if (!dbLookup.TryGetValue(members[i].Path, out var fe) || fe.compareGray == null) {
-						allFound = false;
-						break;
-					}
-					entries[i] = fe;
-				}
-				if (!allFound) continue;
-
-				// Build pairwise similarity matrix.
-				var similar = new bool[n, n];
-				for (int i = 0; i < n; i++) {
-					similar[i, i] = true;
-					for (int j = i + 1; j < n; j++) {
-						bool isSimilar = CheckIfDuplicate(entries[i], null, null, entries[j], out _);
-						similar[i, j] = isSimilar;
-						similar[j, i] = isSimilar;
-					}
-				}
-
-				// Iterative pruning: remove the least-connected member until every
-				// remaining member is similar to at least half of the other members.
-				var active = new List<int>(Enumerable.Range(0, n));
-				var pruned = new List<int>();
-
-				bool changed = true;
-				while (changed && active.Count >= 2) {
-					changed = false;
-					int worstIdx = -1;
-					int worstConnections = int.MaxValue;
-
-					for (int ai = 0; ai < active.Count; ai++) {
-						int idx = active[ai];
-						int connections = 0;
-						for (int aj = 0; aj < active.Count; aj++) {
-							if (ai != aj && similar[idx, active[aj]])
-								connections++;
+					// Resolve FileEntry for each member; skip group if any entry is missing
+					// or lacks a compare snapshot (defensive — all visual duplicates stem
+					// from the snapshot-validated scan list).
+					var entries = new FileEntry[n];
+					bool allFound = true;
+					for (int i = 0; i < n; i++) {
+						if (!dbLookup.TryGetValue(members[i].Path, out var fe) || fe.compareGray == null) {
+							allFound = false;
+							break;
 						}
-						if (connections < worstConnections) {
-							worstConnections = connections;
-							worstIdx = ai;
-						}
+						entries[i] = fe;
 					}
+					if (!allFound) continue;
 
-					// Prune if the least-connected member is similar to fewer than half.
-					int requiredConnections = (active.Count - 1 + 1) / 2; // ceiling of (count-1)/2
-					if (worstConnections < requiredConnections) {
-						pruned.Add(active[worstIdx]);
-						active.RemoveAt(worstIdx);
-						changed = true;
+					string progressPath = members[0].Path;
+					if (n >= 1000)
+						Logger.Instance.Info($"Daisy-chain validation: checking a group of {n:N0} items ({(long)n * (n - 1) / 2:N0} pairs, {PairBitMatrix.EstimateBytes(n) / (1024 * 1024):N0} MB pair matrix)");
+
+					var result = DaisyChainSplitter.Split(
+						n,
+						(i, j) => CheckIfDuplicate(entries[i], null, null, entries[j], out _),
+						parallelism,
+						daisyChainMatrixBudgetBytes,
+						cancellationToken,
+						onRowDone: () => IncrementProgress(progressPath));
+
+					if (result.Skipped) {
+						groupsSkipped++;
+						Logger.Instance.Warn($"Daisy-chain validation: a group of {n:N0} items was kept as found because its pair matrix ({result.MatrixBytes / (1024 * 1024):N0} MB) exceeds the {daisyChainMatrixBudgetBytes / (1024 * 1024):N0} MB budget. A group this large usually means the similarity threshold ({Settings.Percent}%) admits most of the library; raise it and compare again.");
+						for (int i = 0; i < n - 1; i++)
+							IncrementProgress(progressPath);
+						continue;
 					}
-				}
+					if (!result.Changed) continue;
 
-				if (pruned.Count == 0) continue;
-
-				groupsSplit++;
-
-				// Assign a new GroupId to the surviving core group (if 2+ members remain).
-				if (active.Count >= 2) {
-					var coreGroupId = Guid.NewGuid();
-					foreach (int idx in active)
-						members[idx].GroupId = coreGroupId;
-				}
-				else {
-					// Core collapsed to a single item — remove it too.
-					foreach (int idx in active) {
+					groupsSplit++;
+					foreach (int[] group in result.Groups) {
+						var groupId = Guid.NewGuid();
+						foreach (int idx in group)
+							members[idx].GroupId = groupId;
+					}
+					foreach (int idx in result.Removed) {
 						Duplicates.Remove(members[idx]);
-						itemsRemoved++;
-					}
-					active.Clear();
-				}
-
-				// Re-cluster pruned items among themselves: form groups from connected
-				// components using the same similarity matrix.
-				var visited = new HashSet<int>();
-				foreach (int seed in pruned) {
-					if (visited.Contains(seed)) continue;
-					var component = new List<int>();
-					var queue = new Queue<int>();
-					queue.Enqueue(seed);
-					visited.Add(seed);
-					while (queue.Count > 0) {
-						int cur = queue.Dequeue();
-						component.Add(cur);
-						foreach (int other in pruned) {
-							if (!visited.Contains(other) && similar[cur, other]) {
-								visited.Add(other);
-								queue.Enqueue(other);
-							}
-						}
-					}
-
-					if (component.Count >= 2) {
-						// Recursively validate this sub-group too: apply the same
-						// majority-pruning before accepting it.
-						var subActive = new List<int>(component);
-						bool subChanged = true;
-						while (subChanged && subActive.Count >= 2) {
-							subChanged = false;
-							int subWorstIdx = -1;
-							int subWorstConn = int.MaxValue;
-							for (int ai = 0; ai < subActive.Count; ai++) {
-								int idx = subActive[ai];
-								int conn = 0;
-								for (int aj = 0; aj < subActive.Count; aj++) {
-									if (ai != aj && similar[idx, subActive[aj]])
-										conn++;
-								}
-								if (conn < subWorstConn) {
-									subWorstConn = conn;
-									subWorstIdx = ai;
-								}
-							}
-							int subRequired = (subActive.Count - 1 + 1) / 2;
-							if (subWorstConn < subRequired) {
-								// Remove this item entirely — it doesn't fit anywhere.
-								Duplicates.Remove(members[subActive[subWorstIdx]]);
-								itemsRemoved++;
-								subActive.RemoveAt(subWorstIdx);
-								subChanged = true;
-							}
-						}
-
-						if (subActive.Count >= 2) {
-							var subGroupId = Guid.NewGuid();
-							foreach (int idx in subActive)
-								members[idx].GroupId = subGroupId;
-						}
-						else {
-							foreach (int idx in subActive) {
-								Duplicates.Remove(members[idx]);
-								itemsRemoved++;
-							}
-						}
-					}
-					else {
-						// Single pruned item with no matches among other pruned items.
-						Duplicates.Remove(members[component[0]]);
 						itemsRemoved++;
 					}
 				}
 			}
+			catch (OperationCanceledException) {
+				// Stop pressed mid-validation: StartCompare sees the cancelled token and
+				// aborts, so the partially validated groups never reach the user.
+				return;
+			}
 
-			if (groupsSplit > 0)
-				Logger.Instance.Info($"Daisy-chain validation: split {groupsSplit} group(s), removed {itemsRemoved} singleton item(s)");
+			if (groupsSplit > 0 || groupsSkipped > 0)
+				Logger.Instance.Info($"Daisy-chain validation: split {groupsSplit} group(s), removed {itemsRemoved} singleton item(s){(groupsSkipped > 0 ? $", skipped {groupsSkipped} oversized group(s)" : string.Empty)}");
 		}
 
 		void LogGroupStatistics() {

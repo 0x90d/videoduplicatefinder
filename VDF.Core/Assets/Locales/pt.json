@@ -20,6 +20,7 @@
   "Scan.Stage.SamplingFrames": "amostrando quadros",
   "Scan.Stage.AudioFingerprint": "impressão digital de áudio",
   "Scan.Stage.ComparingDuplicates": "comparando duplicados",
+  "Scan.Stage.ValidatingGroups": "validando grupos de duplicados",
   "Scan.Stage.PartialCompare": "comparando clipes parciais",
   "Scan.Stage.PartialVisualVerify": "verificando clipes parciais",
   "Scan.Stage.AiEmbedding": "calculando embeddings de IA",
