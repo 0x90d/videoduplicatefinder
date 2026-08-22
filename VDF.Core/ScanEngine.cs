@@ -1831,7 +1831,7 @@ namespace VDF.Core {
 
 				if (isDuplicate &&
 				    entry.FileSize == compItem.FileSize &&
-				    entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
+				    entry.mediaInfo?.Duration == compItem.mediaInfo?.Duration &&
 				    Settings.ExcludeHardLinks &&
 				    HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
 					isDuplicate = false;
@@ -1880,22 +1880,9 @@ namespace VDF.Core {
 						flippedGrayBytes = CreateFlippedGrayBytes(entry);
 					for (int n = i + 1; n < imageEntries.Count; n++) {
 						var compItem = imageEntries[n];
-						float difference = 0;
-						DuplicateFlags flags;
-						if (!PassesFolderMatchGate(entry, compItem))
-							continue;
+
 						// Images never take the pHash branch, so no flipped pHash is needed.
-						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, null, out difference, out flags);
-
-						if (isDuplicate &&
-							entry.FileSize == compItem.FileSize &&
-							Settings.ExcludeHardLinks &&
-							HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
-							isDuplicate = false;
-						}
-
-						if (isDuplicate)
-							MergeDuplicate(entry, compItem, difference, flags);
+						ComparePair(entry, compItem, flippedGrayBytes, null, 0d, 0d);
 					}
 					IncrementProgress(entry.Path);
 				};
