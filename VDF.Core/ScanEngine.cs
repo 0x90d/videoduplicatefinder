@@ -1906,8 +1906,6 @@ namespace VDF.Core {
 						return; // canceled while paused — the loop guards below end the iteration
 
 					var entry = videoEntries[i];
-					float difference = 0;
-					DuplicateFlags flags;
 					byte[]?[]? flippedGrayBytes = null;
 					ulong[]? flippedPHashes = null;
 					double entryDurationSeconds = entry.mediaInfo!.Duration.TotalSeconds;
@@ -1921,27 +1919,8 @@ namespace VDF.Core {
 
 					for (int n = i + 1; n < videoEntries.Count; n++) {
 						var compItem = videoEntries[n];
-						double compDurationSeconds = compItem.mediaInfo!.Duration.TotalSeconds;
-						double compToleranceSeconds = GetDurationToleranceSeconds(compDurationSeconds);
-						double allowedSeconds = Math.Min(entryToleranceSeconds, compToleranceSeconds);
-						double diffSeconds = Math.Abs(entryDurationSeconds - compDurationSeconds);
-						if (diffSeconds > allowedSeconds)
-							continue;
 
-						if (!PassesFolderMatchGate(entry, compItem))
-							continue;
-
-						bool isDuplicate = TryCheckDuplicate(entry, compItem, flippedGrayBytes, flippedPHashes, out difference, out flags);
-						if (isDuplicate &&
-							entry.FileSize == compItem.FileSize &&
-							entry.mediaInfo!.Duration == compItem.mediaInfo!.Duration &&
-							Settings.ExcludeHardLinks &&
-							HardLinkUtils.AreSameFile(entry.Path, compItem.Path)) {
-							isDuplicate = false;
-						}
-
-						if (isDuplicate)
-							MergeDuplicate(entry, compItem, difference, flags);
+						ComparePair(entry, compItem, flippedGrayBytes, flippedPHashes, entryDurationSeconds, entryToleranceSeconds);
 					}
 
 					IncrementProgress(entry.Path);
