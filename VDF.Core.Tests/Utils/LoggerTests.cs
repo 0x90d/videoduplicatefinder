@@ -18,10 +18,12 @@ using VDF.Core.Utils;
 
 namespace VDF.Core.Tests.Utils;
 
-public class LoggerTests {
+[CollectionDefinition(nameof(LoggerTests), DisableParallelization = true)]
+[Collection(nameof(LoggerTests))]
+public class LoggerTests : IDisposable {
+	public LoggerTests() => File.Delete(Logger.LogFilePath);
+	public void Dispose() => File.Delete(Logger.LogFilePath);
 
-	// The Logger is a process-wide singleton whose event other parallel tests could
-	// also raise; tag messages with a unique marker and filter on it.
 	static List<LogEntry> Capture(Action<Logger> act, string marker) {
 		var captured = new List<LogEntry>();
 		void Handler(LogEntry entry) {
@@ -73,12 +75,7 @@ public class LoggerTests {
 		Logger.Instance.Error($"file error {marker}");
 		Logger.Instance.BeginSession($"Scan {marker}");
 
-		// Permissive sharing: parallel tests log through the same singleton and their
-		// appends must not be locked out (nor fail this read) while we look.
-		string content;
-		using (var stream = new FileStream(Logger.LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-		using (var reader = new StreamReader(stream))
-			content = reader.ReadToEnd();
+		var content = File.ReadAllText(Logger.LogFilePath);
 		Assert.Contains($"=> file info {marker}", content);
 		Assert.Contains($"=> [WARNING] file warn {marker}", content);
 		Assert.Contains($"=> [ERROR] file error {marker}", content);
