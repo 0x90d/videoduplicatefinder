@@ -30,7 +30,6 @@ namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
 	public sealed class DuplicateItemVM : ReactiveObject, IJsonOnDeserialized {
-		[JsonIgnore]
 		readonly TimeProvider timeProvider;
 
 		//For JSON deserialization only
@@ -121,9 +120,7 @@ namespace VDF.GUI.ViewModels {
 		}
 		public DuplicateItem ItemInfo { get; set; }
 
-		[JsonIgnore]
 		Utils.ThumbnailSizePrediction? _thumbnailPrediction;
-		[JsonIgnore]
 		bool thumbnailPredictionComputed;
 		/// <summary>
 		/// Final-size prediction for the not-yet-loaded composite so the row reserves its
@@ -171,8 +168,7 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailGridColumns, value);
 		}
 
-		[JsonIgnore] Bitmap? _thumbnail;
-
+		Bitmap? _thumbnail;
 		[JsonIgnore]
 		public Bitmap? Thumbnail {
 			get {
@@ -278,7 +274,6 @@ namespace VDF.GUI.ViewModels {
 		/// <summary>
 		///   Returns if item matches the filter conditions
 		/// </summary>
-		[JsonIgnore]
 		internal bool IsVisibleInFilter = true;
 
 		public bool EqualsFull(DuplicateItemVM other) {
