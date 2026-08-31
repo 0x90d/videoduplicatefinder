@@ -27,19 +27,17 @@ using ReactiveUI;
 namespace VDF.GUI {
 	public class LanguageService : ReactiveObject {
 		Dictionary<string, string> _translations = new();
-		string _currentLanguage = "en";
 
-		IReadOnlyList<string>? _availableLanguages;
-		public IReadOnlyList<string> AvailableLanguages => _availableLanguages ??= LoadAvailableLanguages();
+		public IReadOnlyList<string> AvailableLanguages => field ??= LoadAvailableLanguages();
 		public string CurrentLanguage {
-			get => _currentLanguage;
+			get;
 			set {
-				if (EqualityComparer<string>.Default.Equals(_currentLanguage, value))
+				if (EqualityComparer<string>.Default.Equals(field, value))
 					return;
-				this.RaiseAndSetIfChanged(ref _currentLanguage, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				LoadLanguage(value);
 			}
-		}
+		} = "en";
 
 		public void LoadLanguage(string langCode) {
 			try {

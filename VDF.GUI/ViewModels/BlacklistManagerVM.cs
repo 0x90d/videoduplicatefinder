@@ -54,11 +54,10 @@ namespace VDF.GUI.ViewModels {
 			ClearAllCommand = ReactiveCommand.CreateFromTask(ClearAllAsync);
 		}
 
-		string _statusMessage = string.Empty;
 		public string StatusMessage {
-			get => _statusMessage;
-			private set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
-		}
+			get;
+			private set => this.RaiseAndSetIfChanged(ref field, value);
+		} = string.Empty;
 
 		void RebuildEntries() {
 			Entries.Clear();

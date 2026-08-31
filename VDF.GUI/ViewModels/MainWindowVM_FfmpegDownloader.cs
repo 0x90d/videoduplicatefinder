@@ -29,10 +29,9 @@ namespace VDF.GUI.ViewModels {
 	// localized install/troubleshooting messages. The download/verify/extract/install
 	// logic lives in VDF.Core.FFTools.FfmpegDownloader, shared with the Web UI.
 	public partial class MainWindowVM : ReactiveObject {
-		bool _isFfmpegDownloadInProgress;
 		public bool IsFfmpegDownloadInProgress {
-			get => _isFfmpegDownloadInProgress;
-			set => this.RaiseAndSetIfChanged(ref _isFfmpegDownloadInProgress, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		public ReactiveCommand<Unit, Unit> DownloadSharedFfmpegCommand => ReactiveCommand.CreateFromTask(async () => {

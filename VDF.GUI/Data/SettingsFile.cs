@@ -60,671 +60,573 @@ namespace VDF.GUI.Data {
 		public ObservableCollection<string> Includes { get; set; } = new();
 		[JsonPropertyName("Blacklists")]
 		public ObservableCollection<string> Blacklists { get; set; } = new();
-		string _LastCustomSelectExpression = string.Empty;
 		[JsonPropertyName("LastCustomSelectExpression")]
 		public string LastCustomSelectExpression {
-			get => _LastCustomSelectExpression;
-			set => this.RaiseAndSetIfChanged(ref _LastCustomSelectExpression, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = string.Empty;
 
-		ObservableCollection<string> _ExpressionHistory = new();
 		[JsonPropertyName("ExpressionHistory")]
 		public ObservableCollection<string> ExpressionHistory {
-			get => _ExpressionHistory;
-			set => this.RaiseAndSetIfChanged(ref _ExpressionHistory, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = new();
 
-		ObservableCollection<ExpressionPreset> _ExpressionPresets = new();
 		[JsonPropertyName("ExpressionPresets")]
 		public ObservableCollection<ExpressionPreset> ExpressionPresets {
-			get => _ExpressionPresets;
-			set => this.RaiseAndSetIfChanged(ref _ExpressionPresets, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = new();
 
-		ObservableCollection<CustomSelectionPreset> _CustomSelectionPresets = new();
 		[JsonPropertyName("CustomSelectionPresets")]
 		public ObservableCollection<CustomSelectionPreset> CustomSelectionPresets {
-			get => _CustomSelectionPresets;
-			set => this.RaiseAndSetIfChanged(ref _CustomSelectionPresets, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = new();
 
-		bool _AutoApplySelectionPresetEnabled;
 		[JsonPropertyName("AutoApplySelectionPresetEnabled")]
 		public bool AutoApplySelectionPresetEnabled {
-			get => _AutoApplySelectionPresetEnabled;
-			set => this.RaiseAndSetIfChanged(ref _AutoApplySelectionPresetEnabled, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		string _AutoApplySelectionPreset = string.Empty;
 		/// <summary>Name of the custom-selection preset applied automatically after every scan.</summary>
 		[JsonPropertyName("AutoApplySelectionPreset")]
 		public string AutoApplySelectionPreset {
-			get => _AutoApplySelectionPreset;
-			set => this.RaiseAndSetIfChanged(ref _AutoApplySelectionPreset, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = string.Empty;
 
-		double? _MainWindowWidth;
 		[JsonPropertyName("MainWindowWidth")]
 		public double? MainWindowWidth {
-			get => _MainWindowWidth;
-			set => this.RaiseAndSetIfChanged(ref _MainWindowWidth, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		double? _MainWindowHeight;
 		[JsonPropertyName("MainWindowHeight")]
 		public double? MainWindowHeight {
-			get => _MainWindowHeight;
-			set => this.RaiseAndSetIfChanged(ref _MainWindowHeight, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int? _MainWindowPositionX;
 		[JsonPropertyName("MainWindowPositionX")]
 		public int? MainWindowPositionX {
-			get => _MainWindowPositionX;
-			set => this.RaiseAndSetIfChanged(ref _MainWindowPositionX, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int? _MainWindowPositionY;
 		[JsonPropertyName("MainWindowPositionY")]
 		public int? MainWindowPositionY {
-			get => _MainWindowPositionY;
-			set => this.RaiseAndSetIfChanged(ref _MainWindowPositionY, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _MainWindowMaximized;
 		[JsonPropertyName("MainWindowMaximized")]
 		public bool MainWindowMaximized {
-			get => _MainWindowMaximized;
-			set => this.RaiseAndSetIfChanged(ref _MainWindowMaximized, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		string _LanguageCode = ResolveDefaultLanguageCode();
 		[JsonPropertyName("LanguageCode")]
 		public string LanguageCode {
-			get => _LanguageCode;
-			set => this.RaiseAndSetIfChanged(ref _LanguageCode, ResolveLanguageCode(value));
-		}
-		bool _IgnoreReadOnlyFolders;
+			get => field;
+			set => this.RaiseAndSetIfChanged(ref field, ResolveLanguageCode(value));
+		} = ResolveDefaultLanguageCode();
 		[JsonPropertyName("IgnoreReadOnlyFolders")]
 		public bool IgnoreReadOnlyFolders {
-			get => _IgnoreReadOnlyFolders;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreReadOnlyFolders, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _ExcludeHardLinks;
 		[JsonPropertyName("ExcludeHardLinks")]
 		public bool ExcludeHardLinks {
-			get => _ExcludeHardLinks;
-			set => this.RaiseAndSetIfChanged(ref _ExcludeHardLinks, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _IgnoreReparsePoints;
 		[JsonPropertyName("IgnoreReparsePoints")]
 		public bool IgnoreReparsePoints {
-			get => _IgnoreReparsePoints;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreReparsePoints, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 		// IgnoreBlackPixels/IgnoreWhitePixels/CompareHorizontallyFlipped/Percent defaults
 		// form the "Edited & altered copies" scan profile — the recommended default for
 		// fresh installs (redesign stage 2). Existing settings files carry explicit
 		// values for every key, so nobody's configuration changes.
-		bool _IgnoreBlackPixels = true;
 		[JsonPropertyName("IgnoreBlackPixels")]
 		public bool IgnoreBlackPixels {
-			get => _IgnoreBlackPixels;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreBlackPixels, value);
-		}
-		bool _IgnoreWhitePixels = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("IgnoreWhitePixels")]
 		public bool IgnoreWhitePixels {
-			get => _IgnoreWhitePixels;
-			set => this.RaiseAndSetIfChanged(ref _IgnoreWhitePixels, value);
-		}
-		int _MaxDegreeOfParallelism = -1;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("MaxDegreeOfParallelism")]
 		public int MaxDegreeOfParallelism {
-			get => _MaxDegreeOfParallelism;
-			set => this.RaiseAndSetIfChanged(ref _MaxDegreeOfParallelism, value);
-		}
-		int _MatchingMaxDegreeOfParallelism;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = -1;
 		/// <summary>Worker cap for the CPU-bound matching phases; 0 or less = automatic CPU-headroom cap — see Core setting.</summary>
 		[JsonPropertyName("MatchingMaxDegreeOfParallelism")]
 		public int MatchingMaxDegreeOfParallelism {
-			get => _MatchingMaxDegreeOfParallelism;
-			set => this.RaiseAndSetIfChanged(ref _MatchingMaxDegreeOfParallelism, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int _HddMaxDegreeOfParallelism = 2;
 		/// <summary>Per-drive cap for slow drives (spindle HDDs / network shares) — see Core setting.</summary>
 		[JsonPropertyName("HddMaxDegreeOfParallelism")]
 		public int HddMaxDegreeOfParallelism {
-			get => _HddMaxDegreeOfParallelism;
-			set => this.RaiseAndSetIfChanged(ref _HddMaxDegreeOfParallelism, value);
-		}
-		Dictionary<string, string> _DriveTypeOverrides = new(StringComparer.OrdinalIgnoreCase);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 2;
 		/// <summary>Drive root → "SSD"/"HDD" scan-concurrency overrides. No editor UI yet
 		/// (planned with the per-drive scan rows); power users can edit Settings.json.</summary>
 		[JsonPropertyName("DriveTypeOverrides")]
 		public Dictionary<string, string> DriveTypeOverrides {
-			get => _DriveTypeOverrides;
+			get;
 			// STJ drops the comparer on deserialization — re-wrap so drive letters stay case-insensitive.
-			set => _DriveTypeOverrides = value == null
+			set => field = value == null
 				? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 				: new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase);
-		}
-		bool _WelcomeStripDismissed;
+		} = new(StringComparer.OrdinalIgnoreCase);
 		/// <summary>The Setup screen's "New here?" hint strip, dismissible once.</summary>
 		[JsonPropertyName("WelcomeStripDismissed")]
 		public bool WelcomeStripDismissed {
-			get => _WelcomeStripDismissed;
-			set => this.RaiseAndSetIfChanged(ref _WelcomeStripDismissed, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		ScanKnobs? _CustomScanKnobs;
 		/// <summary>Snapshot of the profile-managed knobs from when the user last left a
 		/// custom configuration; selecting the Custom profile restores it.</summary>
 		[JsonPropertyName("CustomScanKnobs")]
 		public ScanKnobs? CustomScanKnobs {
-			get => _CustomScanKnobs;
-			set => this.RaiseAndSetIfChanged(ref _CustomScanKnobs, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		Core.FFTools.FFHardwareAccelerationMode _HardwareAccelerationMode = Core.FFTools.FFHardwareAccelerationMode.auto;
 		[JsonPropertyName("HardwareAccelerationMode")]
 		public Core.FFTools.FFHardwareAccelerationMode HardwareAccelerationMode {
-			get => _HardwareAccelerationMode;
-			set => this.RaiseAndSetIfChanged(ref _HardwareAccelerationMode, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = Core.FFTools.FFHardwareAccelerationMode.auto;
 		// Part of the "Edited & altered copies" default profile (see IgnoreBlackPixels note).
-		bool _CompareHorizontallyFlipped = true;
 		[JsonPropertyName("CompareHorizontallyFlipped")]
 		public bool CompareHorizontallyFlipped {
-			get => _CompareHorizontallyFlipped;
-			set => this.RaiseAndSetIfChanged(ref _CompareHorizontallyFlipped, value);
-		}
-		bool _IncludeSubDirectories = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("IncludeSubDirectories")]
 		public bool IncludeSubDirectories {
-			get => _IncludeSubDirectories;
-			set => this.RaiseAndSetIfChanged(ref _IncludeSubDirectories, value);
-		}
-		bool _IncludeImages = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("IncludeImages")]
 		public bool IncludeImages {
-			get => _IncludeImages;
-			set => this.RaiseAndSetIfChanged(ref _IncludeImages, value);
-		}
-		bool _GeneratePreviewThumbnails = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("GeneratePreviewThumbnails")]
 		public bool GeneratePreviewThumbnails {
-			get => _GeneratePreviewThumbnails;
-			set => this.RaiseAndSetIfChanged(ref _GeneratePreviewThumbnails, value);
-		}
-		int _ThumbnailMaxWidth = 100;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("ThumbnailMaxWidth")]
 		public int ThumbnailMaxWidth {
-			get => _ThumbnailMaxWidth;
+			get;
 			set {
 				int clamped = Math.Clamp(value, 48, 960);
-				if (clamped == _ThumbnailMaxWidth) return;
-				this.RaiseAndSetIfChanged(ref _ThumbnailMaxWidth, clamped);
+				if (clamped == field) return;
+				this.RaiseAndSetIfChanged(ref field, clamped);
 				// The old view sized its layout from this extraction width; keep that
 				// behavior by moving the results Preview column along. The drag grip can
 				// still diverge afterwards (a persisted ResultsPreviewWidth is loaded
 				// after this property and wins on startup).
 				ResultsPreviewWidth = clamped;
 			}
-		}
-		bool _ExtendedFFToolsLogging;
+		} = 100;
 		[JsonPropertyName("ExtendedFFToolsLogging")]
 		public bool ExtendedFFToolsLogging {
-			get => _ExtendedFFToolsLogging;
-			set => this.RaiseAndSetIfChanged(ref _ExtendedFFToolsLogging, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _LogExcludedFiles;
 		[JsonPropertyName("LogExcludedFiles")]
 		public bool LogExcludedFiles {
-			get => _LogExcludedFiles;
-			set => this.RaiseAndSetIfChanged(ref _LogExcludedFiles, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _AlwaysRetryFailedSampling = false;
 		[JsonPropertyName("AlwaysRetryFailedSampling")]
 		public bool AlwaysRetryFailedSampling {
-			get => _AlwaysRetryFailedSampling;
-			set => this.RaiseAndSetIfChanged(ref _AlwaysRetryFailedSampling, value);
-		}
-		bool _UseNativeFfmpegBinding;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = false;
 		[JsonPropertyName("UseNativeFfmpegBinding")]
 		public bool UseNativeFfmpegBinding {
-			get => _UseNativeFfmpegBinding;
-			set => this.RaiseAndSetIfChanged(ref _UseNativeFfmpegBinding, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		string _CustomFFArguments = string.Empty;
 		[JsonPropertyName("CustomFFArguments")]
 		public string CustomFFArguments {
-			get => _CustomFFArguments;
-			set => this.RaiseAndSetIfChanged(ref _CustomFFArguments, value);
-		}
-		bool _BackupAfterListChanged = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = string.Empty;
+
 		[JsonPropertyName("BackupAfterListChanged")]
 		public bool BackupAfterListChanged {
-			get => _BackupAfterListChanged;
-			set => this.RaiseAndSetIfChanged(ref _BackupAfterListChanged, value);
-		}
-		bool _AskToSaveResultsOnExit = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("AskToSaveResultsOnExit")]
 		public bool AskToSaveResultsOnExit {
-			get => _AskToSaveResultsOnExit;
-			set => this.RaiseAndSetIfChanged(ref _AskToSaveResultsOnExit, value);
-		}
-		bool _IncludeNonExistingFiles;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("IncludeNonExistingFiles")]
 		public bool IncludeNonExistingFiles {
-			get => _IncludeNonExistingFiles;
-			set => this.RaiseAndSetIfChanged(ref _IncludeNonExistingFiles, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _RememberDeletedContent;
 		[JsonPropertyName("RememberDeletedContent")]
 		public bool RememberDeletedContent {
-			get => _RememberDeletedContent;
-			set => this.RaiseAndSetIfChanged(ref _RememberDeletedContent, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _AutoCheckDeletedContentMatches;
 		[JsonPropertyName("AutoCheckDeletedContentMatches")]
 		public bool AutoCheckDeletedContentMatches {
-			get => _AutoCheckDeletedContentMatches;
-			set => this.RaiseAndSetIfChanged(ref _AutoCheckDeletedContentMatches, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _ScanAgainstEntireDatabase;
 		[JsonPropertyName("ScanAgainstEntireDatabase")]
 		public bool ScanAgainstEntireDatabase {
-			get => _ScanAgainstEntireDatabase;
-			set => this.RaiseAndSetIfChanged(ref _ScanAgainstEntireDatabase, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		Core.FolderMatchMode _FolderMatchMode;
 		[JsonPropertyName("FolderMatchMode")]
 		public Core.FolderMatchMode FolderMatchMode {
-			get => _FolderMatchMode;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _FolderMatchMode, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				this.RaisePropertyChanged(nameof(IsFolderMatchModeActive));
 			}
 		}
 		public bool IsFolderMatchModeActive => FolderMatchMode != Core.FolderMatchMode.None;
-		int _SameFolderDepth = 1;
 		[JsonPropertyName("SameFolderDepth")]
 		public int SameFolderDepth {
-			get => _SameFolderDepth;
-			set => this.RaiseAndSetIfChanged(ref _SameFolderDepth, value);
-		}
-		bool _UsePHash;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 1;
 		[JsonPropertyName("UsePHash")]
 		public bool UsePHash {
-			get => _UsePHash;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _UsePHash, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				this.RaisePropertyChanged(nameof(PHashComparisonActive));
 			}
 		}
-		bool _CombineGrayPHash;
 		/// <summary>#842: run grayscale AND pHash in one comparison pass and badge which algorithm found each group. Takes precedence over UsePHash.</summary>
 		[JsonPropertyName("CombineGrayPHash")]
 		public bool CombineGrayPHash {
-			get => _CombineGrayPHash;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _CombineGrayPHash, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				this.RaisePropertyChanged(nameof(PHashComparisonActive));
 			}
 		}
 		/// <summary>The pHash comparison (and its sample-quorum setting) is in play - alone or combined.</summary>
 		[JsonIgnore]
 		public bool PHashComparisonActive => UsePHash || CombineGrayPHash;
-		float _PHashSampleRatioPercent = 60f;
 		/// <summary>Percentage of sampled frame positions that must individually pass the pHash threshold — see Core's PHashRequiredMatchingSampleRatio (0..1).</summary>
 		[JsonPropertyName("PHashSampleRatioPercent")]
 		public float PHashSampleRatioPercent {
-			get => _PHashSampleRatioPercent;
-			set => this.RaiseAndSetIfChanged(ref _PHashSampleRatioPercent, Math.Clamp(value, 1f, 100f));
-		}
-		bool _UseAiMatching;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, Math.Clamp(value, 1f, 100f));
+		} = 60f;
 		[JsonPropertyName("UseAiMatching")]
 		public bool UseAiMatching {
-			get => _UseAiMatching;
-			set => this.RaiseAndSetIfChanged(ref _UseAiMatching, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		float _AiPercent = 94f;
 		/// <summary>Similarity threshold (percent = cosine·100) for the AI matching pass.</summary>
 		[JsonPropertyName("AiPercent")]
 		public float AiPercent {
-			get => _AiPercent;
-			set => this.RaiseAndSetIfChanged(ref _AiPercent, Math.Clamp(value, 50f, 100f));
-		}
-		bool _EnableAiPartialDetection;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, Math.Clamp(value, 50f, 100f));
+		} = 94f;
 		[JsonPropertyName("EnableAiPartialDetection")]
 		public bool EnableAiPartialDetection {
-			get => _EnableAiPartialDetection;
-			set => this.RaiseAndSetIfChanged(ref _EnableAiPartialDetection, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		float _AiPartialHitPercent = 89f;
 		/// <summary>Per-frame hit threshold (percent) for the visual partial-duplicate pass.</summary>
 		[JsonPropertyName("AiPartialHitPercent")]
 		public float AiPartialHitPercent {
-			get => _AiPartialHitPercent;
-			set => this.RaiseAndSetIfChanged(ref _AiPartialHitPercent, Math.Clamp(value, 70f, 99f));
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, Math.Clamp(value, 70f, 99f));
+		} = 89f;
 		/// <summary>GUI mirror of Core Settings.NeedsAiComponents — keep the two in sync.</summary>
 		[JsonIgnore]
 		public bool NeedsAiComponents => UseAiMatching || EnableAiPartialDetection;
-		bool _UseExifCreationDate;
 		[JsonPropertyName("UseExifCreationDate")]
 		public bool UseExifCreationDate {
-			get => _UseExifCreationDate;
-			set => this.RaiseAndSetIfChanged(ref _UseExifCreationDate, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 		// Part of the "Edited & altered copies" default profile (see IgnoreBlackPixels note).
-		float _Percent = 92f;
 		[JsonPropertyName("Percent")]
 		public float Percent {
-			get => _Percent;
-			set => this.RaiseAndSetIfChanged(ref _Percent, value);
-		}
-		double _PercentDurationDifference = 20d;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 92f;
 		[JsonPropertyName("PercentDurationDifference")]
 		public double PercentDurationDifference {
-			get => _PercentDurationDifference;
-			set => this.RaiseAndSetIfChanged(ref _PercentDurationDifference, value);
-		}
-		int _DurationDifferenceMinSeconds = 0;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 20d;
 		[JsonPropertyName("DurationDifferenceMinSeconds")]
 		public int DurationDifferenceMinSeconds {
-			get => _DurationDifferenceMinSeconds;
-			set => this.RaiseAndSetIfChanged(ref _DurationDifferenceMinSeconds, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int _DurationDifferenceMaxSeconds = 0;
 		[JsonPropertyName("DurationDifferenceMaxSeconds")]
 		public int DurationDifferenceMaxSeconds {
-			get => _DurationDifferenceMaxSeconds;
-			set => this.RaiseAndSetIfChanged(ref _DurationDifferenceMaxSeconds, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int _MaxSamplingDurationSeconds = 0;
 		[JsonPropertyName("MaxSamplingDurationSeconds")]
 		public int MaxSamplingDurationSeconds {
-			get => _MaxSamplingDurationSeconds;
-			set => this.RaiseAndSetIfChanged(ref _MaxSamplingDurationSeconds, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int _Thumbnails = 1;
 		[JsonPropertyName("Thumbnails")]
 		public int Thumbnails {
-			get => _Thumbnails;
-			set => this.RaiseAndSetIfChanged(ref _Thumbnails, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 1;
 		[JsonPropertyName("CustomCommands")]
 		public CustomActionCommands CustomCommands { get; set; } = new();
-		string _CustomDatabaseFolder = string.Empty;
 		[JsonPropertyName("CustomDatabaseFolder")]
 		public string CustomDatabaseFolder {
-			get => _CustomDatabaseFolder;
-			set => this.RaiseAndSetIfChanged(ref _CustomDatabaseFolder, value);
-		}
-		int _DatabaseCheckpointIntervalMinutes = 5;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = string.Empty;
 		[JsonPropertyName("DatabaseCheckpointIntervalMinutes")]
 		public int DatabaseCheckpointIntervalMinutes {
-			get => _DatabaseCheckpointIntervalMinutes;
-			set => this.RaiseAndSetIfChanged(ref _DatabaseCheckpointIntervalMinutes, Math.Max(0, value));
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, Math.Max(0, value));
+		} = 5;
 
 		public static void SaveSettings(string? path = null) {
 			path = ResolveSettingsPath(path);
 			File.WriteAllText(path, JsonSerializer.Serialize(instance, GuiJsonContext.Default.SettingsFile));
 		}
 
-		bool _UseMica = false;
 		[JsonPropertyName("UseMica")]
 		public bool UseMica {
-			get => _UseMica;
-			set => this.RaiseAndSetIfChanged(ref _UseMica, value);
-		}
-		bool _DarkMode = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = false;
 		[JsonPropertyName("DarkMode")]
 		public bool DarkMode {
-			get => _DarkMode;
-			set => this.RaiseAndSetIfChanged(ref _DarkMode, value);
-		}
-		double? _ThumbnailComparerWindowWidth;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("ThumbnailComparerWindowWidth")]
 		public double? ThumbnailComparerWindowWidth {
-			get => _ThumbnailComparerWindowWidth;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowWidth, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		double? _ThumbnailComparerWindowHeight;
 		[JsonPropertyName("ThumbnailComparerWindowHeight")]
 		public double? ThumbnailComparerWindowHeight {
-			get => _ThumbnailComparerWindowHeight;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowHeight, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		double? _ThumbnailComparerWindowPositionX;
 		[JsonPropertyName("ThumbnailComparerWindowPositionX")]
 		public double? ThumbnailComparerWindowPositionX {
-			get => _ThumbnailComparerWindowPositionX;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowPositionX, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		double? _ThumbnailComparerWindowPositionY;
 		[JsonPropertyName("ThumbnailComparerWindowPositionY")]
 		public double? ThumbnailComparerWindowPositionY {
-			get => _ThumbnailComparerWindowPositionY;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowPositionY, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int? _ThumbnailComparerWindowScreenIndex;
 		[JsonPropertyName("ThumbnailComparerWindowScreenIndex")]
 		public int? ThumbnailComparerWindowScreenIndex {
-			get => _ThumbnailComparerWindowScreenIndex;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerWindowScreenIndex, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		// Side-by-side first (redesign stage 4, maintainer directive on comparer view modes).
-		CompareMode _ThumbnailComparerMode = CompareMode.SideBySide;
 		[JsonPropertyName("ThumbnailComparerMode")]
 		public CompareMode ThumbnailComparerMode {
-			get => _ThumbnailComparerMode;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerMode, value);
-		}
-		double _ThumbnailComparerDiffSensitivity = 0.5;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+			// Side-by-side first (redesign stage 4, maintainer directive on comparer view modes).
+		} = CompareMode.SideBySide;
 		[JsonPropertyName("ThumbnailComparerDiffSensitivity")]
 		public double ThumbnailComparerDiffSensitivity {
-			get => _ThumbnailComparerDiffSensitivity;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerDiffSensitivity, value);
-		}
-		bool _ThumbnailComparerHighlightDifferences = false;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 0.5;
 		[JsonPropertyName("ThumbnailComparerHighlightDifferences")]
 		public bool ThumbnailComparerHighlightDifferences {
-			get => _ThumbnailComparerHighlightDifferences;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailComparerHighlightDifferences, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _ShowThumbnailColumn = true;
 		[JsonPropertyName("ShowThumbnailColumn")]
 		public bool ShowThumbnailColumn {
-			get => _ShowThumbnailColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowThumbnailColumn, value);
-		}
-		bool _ShowDurationColumn = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("ShowDurationColumn")]
 		public bool ShowDurationColumn {
-			get => _ShowDurationColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowDurationColumn, value);
-		}
-		bool _ShowFormatColumn = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("ShowFormatColumn")]
 		public bool ShowFormatColumn {
-			get => _ShowFormatColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowFormatColumn, value);
-		}
-		bool _ShowBitrateColumn = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("ShowBitrateColumn")]
 		public bool ShowBitrateColumn {
-			get => _ShowBitrateColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowBitrateColumn, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		// First-results hint: "drag the Preview handle / raise the thumbnail width" (one-shot)
-		bool _ResultsHintDismissed;
 		[JsonPropertyName("ResultsHintDismissed")]
 		public bool ResultsHintDismissed {
-			get => _ResultsHintDismissed;
-			set => this.RaiseAndSetIfChanged(ref _ResultsHintDismissed, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		bool _ShowSimilarityColumn = true;
 		[JsonPropertyName("ShowSimilarityColumn")]
 		public bool ShowSimilarityColumn {
-			get => _ShowSimilarityColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowSimilarityColumn, value);
-		}
-		bool _ShowSizeDateColumn = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("ShowSizeDateColumn")]
 		public bool ShowSizeDateColumn {
-			get => _ShowSizeDateColumn;
-			set => this.RaiseAndSetIfChanged(ref _ShowSizeDateColumn, value);
-		}
-		ViewModels.ResultsSortMode _ResultsSortMode = ViewModels.ResultsSortMode.WastedSpace;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("ResultsSortMode")]
 		public ViewModels.ResultsSortMode ResultsSortMode {
-			get => _ResultsSortMode;
-			set => this.RaiseAndSetIfChanged(ref _ResultsSortMode, value);
-		}
-		bool _ResultsSortDescending = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = ViewModels.ResultsSortMode.WastedSpace;
 		[JsonPropertyName("ResultsSortDescending")]
 		public bool ResultsSortDescending {
-			get => _ResultsSortDescending;
-			set => this.RaiseAndSetIfChanged(ref _ResultsSortDescending, value);
-		}
-		bool _ResultsBestFirst;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		/// <summary>Show the BEST-badged file at the top of each group, ahead of the sort order (#846).</summary>
 		[JsonPropertyName("ResultsBestFirst")]
 		public bool ResultsBestFirst {
-			get => _ResultsBestFirst;
-			set => this.RaiseAndSetIfChanged(ref _ResultsBestFirst, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		double _ResultsPreviewWidth = 160;
 		/// <summary>Width of the Preview column in the results list; scales the preview frames.
 		/// The old 480 cap made thumbnails unresizable past a quarter of a 1080p screen (#834).</summary>
 		[JsonPropertyName("ResultsPreviewWidth")]
 		public double ResultsPreviewWidth {
-			get => _ResultsPreviewWidth;
-			set => this.RaiseAndSetIfChanged(ref _ResultsPreviewWidth, Math.Clamp(value, 56, 1600));
-		}
-		bool _ResultsCompactRows;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, Math.Clamp(value, 56, 1600));
+		} = 160;
 		[JsonPropertyName("ResultsCompactRows")]
 		public bool ResultsCompactRows {
-			get => _ResultsCompactRows;
-			set => this.RaiseAndSetIfChanged(ref _ResultsCompactRows, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		ThumbnailDoubleClickAction _ThumbnailDoubleClickAction = ThumbnailDoubleClickAction.OpenFile;
 		[JsonPropertyName("ThumbnailDoubleClickAction")]
 		public ThumbnailDoubleClickAction ThumbnailDoubleClickAction {
-			get => _ThumbnailDoubleClickAction;
-			set => this.RaiseAndSetIfChanged(ref _ThumbnailDoubleClickAction, value);
-		}
-		bool _FilterByFilePathContains;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = ThumbnailDoubleClickAction.OpenFile;
 		[JsonPropertyName("FilterByFilePathContains")]
 		public bool FilterByFilePathContains {
-			get => _FilterByFilePathContains;
-			set => this.RaiseAndSetIfChanged(ref _FilterByFilePathContains, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		ObservableCollection<string> _FilePathContainsTexts = new();
 		[JsonPropertyName("FilePathContainsTexts")]
 		public ObservableCollection<string> FilePathContainsTexts {
-			get => _FilePathContainsTexts;
-			set => this.RaiseAndSetIfChanged(ref _FilePathContainsTexts, value);
-		}
-		bool _FilterByFilePathNotContains;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = new();
 		[JsonPropertyName("FilterByFilePathNotContains")]
 		public bool FilterByFilePathNotContains {
-			get => _FilterByFilePathNotContains;
-			set => this.RaiseAndSetIfChanged(ref _FilterByFilePathNotContains, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		ObservableCollection<string> _FilePathNotContainsTexts = new();
 		[JsonPropertyName("FilePathNotContainsTexts")]
 		public ObservableCollection<string> FilePathNotContainsTexts {
-			get => _FilePathNotContainsTexts;
-			set => this.RaiseAndSetIfChanged(ref _FilePathNotContainsTexts, value);
-		}
-		bool _FilterByFileSize;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = new();
 		[JsonPropertyName("FilterByFileSize")]
 		public bool FilterByFileSize {
-			get => _FilterByFileSize;
-			set => this.RaiseAndSetIfChanged(ref _FilterByFileSize, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		int _MaximumFileSize = 999999999;
 		[JsonPropertyName("MaximumFileSize")]
 		public int MaximumFileSize {
-			get => _MaximumFileSize;
-			set => this.RaiseAndSetIfChanged(ref _MaximumFileSize, value);
-		}
-		int _MinimumFileSize = 0;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 999999999;
 		[JsonPropertyName("MinimumFileSize")]
 		public int MinimumFileSize {
-			get => _MinimumFileSize;
-			set => this.RaiseAndSetIfChanged(ref _MinimumFileSize, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 0;
 
-		bool _EnablePartialClipDetection;
 		[JsonPropertyName("EnablePartialClipDetection")]
 		public bool EnablePartialClipDetection {
-			get => _EnablePartialClipDetection;
-			set => this.RaiseAndSetIfChanged(ref _EnablePartialClipDetection, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		double _PartialClipMinRatioPercent = 10d;
 		[JsonPropertyName("PartialClipMinRatioPercent")]
 		public double PartialClipMinRatioPercent {
-			get => _PartialClipMinRatioPercent;
-			set => this.RaiseAndSetIfChanged(ref _PartialClipMinRatioPercent, value);
-		}
-		double _PartialClipSimilarityThresholdPercent = 80d;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 10d;
 		[JsonPropertyName("PartialClipSimilarityThresholdPercent")]
 		public double PartialClipSimilarityThresholdPercent {
-			get => _PartialClipSimilarityThresholdPercent;
-			set => this.RaiseAndSetIfChanged(ref _PartialClipSimilarityThresholdPercent, value);
-		}
-		bool _PartialClipRequireVisualMatch = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 80d;
 		[JsonPropertyName("PartialClipRequireVisualMatch")]
 		public bool PartialClipRequireVisualMatch {
-			get => _PartialClipRequireVisualMatch;
-			set => this.RaiseAndSetIfChanged(ref _PartialClipRequireVisualMatch, value);
-		}
-		double _PartialClipVisualThresholdPercent = 85d;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("PartialClipVisualThresholdPercent")]
 		public double PartialClipVisualThresholdPercent {
-			get => _PartialClipVisualThresholdPercent;
-			set => this.RaiseAndSetIfChanged(ref _PartialClipVisualThresholdPercent, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = 85d;
 
 		// Video bitrate ranks above FPS: among equal-resolution re-encodes bitrate is the
 		// stronger quality signal, and a marginally higher framerate must not outrank a
 		// much better encode (#839). Saved user orders are untouched.
-		List<string> _QualityCriteriaOrder = ["Duration", "Resolution", "Bitrate", "FPS", "Bits per pixel", "Audio Bitrate", "Size"];
 		[JsonPropertyName("QualityCriteriaOrder")]
 		public List<string> QualityCriteriaOrder {
-			get => _QualityCriteriaOrder;
-			set => this.RaiseAndSetIfChanged(ref _QualityCriteriaOrder, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = ["Duration", "Resolution", "Bitrate", "FPS", "Bits per pixel", "Audio Bitrate", "Size"];
 
-		bool _EnableScheduledScan;
 		[JsonPropertyName("EnableScheduledScan")]
 		public bool EnableScheduledScan {
-			get => _EnableScheduledScan;
-			set => this.RaiseAndSetIfChanged(ref _EnableScheduledScan, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
-		string _ScheduledScanTime = "02:00";
 		[JsonPropertyName("ScheduledScanTime")]
 		public string ScheduledScanTime {
-			get => _ScheduledScanTime;
-			set => this.RaiseAndSetIfChanged(ref _ScheduledScanTime, value);
-		}
-		bool _NotifyOnScheduledScanComplete = true;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = "02:00";
 		[JsonPropertyName("NotifyOnScheduledScanComplete")]
 		public bool NotifyOnScheduledScanComplete {
-			get => _NotifyOnScheduledScanComplete;
-			set => this.RaiseAndSetIfChanged(ref _NotifyOnScheduledScanComplete, value);
-		}
-		bool _NotifyOnScanComplete;
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 		[JsonPropertyName("NotifyOnScanComplete")]
 		public bool NotifyOnScanComplete {
-			get => _NotifyOnScanComplete;
-			set => this.RaiseAndSetIfChanged(ref _NotifyOnScanComplete, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		Dictionary<string, string> _KeyboardShortcuts = new();
 		[JsonPropertyName("KeyboardShortcuts")]
 		public Dictionary<string, string> KeyboardShortcuts {
-			get => _KeyboardShortcuts;
-			set => this.RaiseAndSetIfChanged(ref _KeyboardShortcuts, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = new();
 
 		public static void LoadSettings(string? path = null) {
 			path ??= settingsPath;

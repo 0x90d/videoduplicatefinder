@@ -45,30 +45,26 @@ namespace VDF.GUI.ViewModels {
 		public FileEntry Entry { get; }
 		public string OldPath => Entry.Path;
 
-		string? _newPath;
 		public string? NewPath {
-			get => _newPath;
-			set => this.RaiseAndSetIfChanged(ref _newPath, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		bool _selected;
 		public bool Selected {
-			get => _selected;
-			set => this.RaiseAndSetIfChanged(ref _selected, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		RelocateConfidence _confidence;
 		public RelocateConfidence Confidence {
-			get => _confidence;
-			set => this.RaiseAndSetIfChanged(ref _confidence, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 		public string ConfidenceString => Confidence.ToString();
 
-		string _note = string.Empty;
 		public string Note {
-			get => _note;
-			set => this.RaiseAndSetIfChanged(ref _note, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = string.Empty;
 
 		public RelocateCandidate(FileEntry e) {
 			Entry = e;
@@ -94,40 +90,33 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		// Mode toggles
-		bool _isModePrefix = true;
 		public bool IsModePrefix {
-			get => _isModePrefix;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _isModePrefix, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				if (value) IsModeRescan = false;
 			}
-		}
+		} = true;
 
-		bool _isModeRescan;
 		public bool IsModeRescan {
-			get => _isModeRescan;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _isModeRescan, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				if (value) IsModePrefix = false;
 			}
 		}
 
 		// Inputs for A
-		string _oldPrefix = string.Empty;
-		public string OldPrefix { get => _oldPrefix; set => this.RaiseAndSetIfChanged(ref _oldPrefix, value); }
+		public string OldPrefix { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
 
-		string _newPrefix = string.Empty;
-		public string NewPrefix { get => _newPrefix; set => this.RaiseAndSetIfChanged(ref _newPrefix, value); }
+		public string NewPrefix { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
 
 		// Inputs for B
 		public ObservableCollection<string> ScanRoots { get; } = new();
-		bool _useModifiedTime = true;
-		public bool UseModifiedTime { get => _useModifiedTime; set => this.RaiseAndSetIfChanged(ref _useModifiedTime, value); }
+		public bool UseModifiedTime { get; set => this.RaiseAndSetIfChanged(ref field, value); } = true;
 
-		bool _useDuration = false;
-		public bool UseDuration { get => _useDuration; set => this.RaiseAndSetIfChanged(ref _useDuration, value); }
-		bool _IsLoading = false;
-		public bool IsLoading { get => _IsLoading; set => this.RaiseAndSetIfChanged(ref _IsLoading, value); }
+		public bool UseDuration { get; set => this.RaiseAndSetIfChanged(ref field, value); } = false;
+		public bool IsLoading { get; set => this.RaiseAndSetIfChanged(ref field, value); } = false;
 
 		// Preview
 		public AvaloniaList<RelocateCandidate> Preview { get; } = new();
@@ -181,10 +170,9 @@ namespace VDF.GUI.ViewModels {
 			}
 		});
 
-		bool _canApply;
 		public bool CanApply {
-			get => _canApply;
-			set => this.RaiseAndSetIfChanged(ref _canApply, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		// --- Core preview builders ---
