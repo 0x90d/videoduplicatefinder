@@ -61,7 +61,8 @@ namespace VDF.CLI.Commands {
 				ScanRunner.WireProgress(engine);
 
 				await ScanRunner.EnsureAiComponentsAsync(engine.Settings, ct);
-				var duplicates = await ScanRunner.RunScanAndCompareAsync(engine, ct);
+				var duplicates = (await ScanRunner.RunScanAndCompareAsync(engine, ct))
+					.GroupBy(d => d.GroupId).ToDictionary(g => g.Key, g => g.ToList());
 
 				var format = Enum.TryParse<OutputFormat>(parseResult.GetValue(SharedOptions.Format), true, out var fmt) ? fmt : OutputFormat.Text;
 				var outFile = parseResult.GetValue(SharedOptions.Output);
@@ -69,8 +70,7 @@ namespace VDF.CLI.Commands {
 				int failed = 0;
 				var strategy = parseResult.GetValue(actionOpt);
 				if (strategy.HasValue) {
-					var groups = duplicates.GroupBy(d => d.GroupId).ToDictionary(g => g.Key, g => g.ToList());
-					var marked = DeletionStrategy.SelectForDeletion(groups, strategy.Value);
+					var marked = DeletionStrategy.SelectForDeletion(duplicates, strategy.Value);
 					bool doPermanent = parseResult.GetValue(deletePermanentOpt);
 					bool doDelete = parseResult.GetValue(deleteOpt) || doPermanent;
 					bool dryRun = !doDelete || parseResult.GetValue(dryRunOpt);

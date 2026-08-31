@@ -24,11 +24,10 @@ namespace VDF.CLI.Output {
 	public enum OutputFormat { Text, Json, Csv }
 
 	public static class ResultFormatter {
-		public static string Format(IEnumerable<DuplicateItem> duplicates, OutputFormat format) {
-			var orderedGroups = duplicates
-				.GroupBy(d => d.GroupId)
+		public static string Format(IReadOnlyDictionary<Guid, List<DuplicateItem>> groupDict, OutputFormat format) {
+			var orderedGroups = groupDict
 				.Select(g => new DuplicateGroup {
-					GroupId = g.Key, Items = g.OrderByDescending(d => d.Similarity).ToList(),
+					GroupId = g.Key, Items = g.Value.OrderByDescending(d => d.Similarity).ToList(),
 				}).OrderBy(g => g.GroupId);
 
 			return format switch {

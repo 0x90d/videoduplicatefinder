@@ -21,6 +21,9 @@ using VDF.Core.ViewModels;
 namespace VDF.CLI.Tests.Output;
 
 public class ResultFormatterTests {
+	static Dictionary<Guid, List<DuplicateItem>> MakeGroups(params (Guid GroupId, List<DuplicateItem> Items)[] groups) =>
+		groups.ToDictionary(group => group.GroupId, group => group.Items);
+
 	static DuplicateItem MakeItem(Guid groupId, float similarity = 95f, string path = "/test/video.mp4",
 		long size = 1024, VDF.Core.DuplicateFlags flags = VDF.Core.DuplicateFlags.None) {
 		var json = JsonSerializer.Serialize(new {
@@ -51,10 +54,10 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Text_ContainsGroupCount() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, path: "/test/a.mp4"),
 			MakeItem(Group1, path: "/test/b.mp4"),
-		};
+		]));
 
 		string result = ResultFormatter.Format(items, OutputFormat.Text);
 
@@ -64,10 +67,10 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Json_ValidJson() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, path: "/test/a.mp4"),
 			MakeItem(Group1, path: "/test/b.mp4"),
-		};
+		]));
 
 		string result = ResultFormatter.Format(items, OutputFormat.Json);
 
@@ -78,9 +81,9 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Csv_HasHeader() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1),
-		};
+		]));
 
 		string result = ResultFormatter.Format(items, OutputFormat.Csv);
 
@@ -93,9 +96,9 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Csv_EscapesCommasInPath() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, path: "/test/my,video.mp4"),
-		};
+		]));
 
 		string result = ResultFormatter.Format(items, OutputFormat.Csv);
 
@@ -108,9 +111,9 @@ public class ResultFormatterTests {
 		// Regression: [Flags] ToString() of a multi-bit value is "PartialClip, AiMatched" —
 		// unescaped, the embedded comma injected an extra CSV column and shifted every
 		// AI-partial row's PartialClipOffset into the wrong field.
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, flags: VDF.Core.DuplicateFlags.PartialClip | VDF.Core.DuplicateFlags.AiMatched),
-		};
+		]));
 
 		string result = ResultFormatter.Format(items, OutputFormat.Csv);
 
@@ -140,7 +143,7 @@ public class ResultFormatterTests {
 		var prev = System.Globalization.CultureInfo.CurrentCulture;
 		System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
 		try {
-			var items = new List<DuplicateItem> { MakeItem(Group1, similarity: 95.5f) };
+			var items = MakeGroups((Group1, [MakeItem(Group1, similarity: 95.5f)]));
 			string result = ResultFormatter.Format(items, OutputFormat.Csv);
 			var lines = result.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 			Assert.Equal(lines[0].Split(',').Length, CountCsvColumns(lines[1].Trim()));
@@ -153,10 +156,10 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Text_MarksAiMatchedItems() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, path: "/test/ai.mp4", flags: VDF.Core.DuplicateFlags.AiMatched),
 			MakeItem(Group1, path: "/test/classic.mp4"),
-		};
+		]));
 
 		string result = ResultFormatter.Format(items, OutputFormat.Text);
 
@@ -166,7 +169,7 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Text_EmptyInput_NoGroups() {
-		var items = new List<DuplicateItem>();
+		var items = new Dictionary<Guid, List<DuplicateItem>>();
 
 		string result = ResultFormatter.Format(items, OutputFormat.Text);
 
@@ -175,7 +178,7 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Csv_EmptyInput_HeaderOnly() {
-		var items = new List<DuplicateItem>();
+		var items = new Dictionary<Guid, List<DuplicateItem>>();
 
 		string result = ResultFormatter.Format(items, OutputFormat.Csv);
 
@@ -185,7 +188,7 @@ public class ResultFormatterTests {
 
 	[Fact]
 	public void Format_Json_EmptyInput_EmptyArray() {
-		var items = new List<DuplicateItem>();
+		var items = new Dictionary<Guid, List<DuplicateItem>>();
 
 		string result = ResultFormatter.Format(items, OutputFormat.Json);
 

@@ -41,7 +41,8 @@ namespace VDF.CLI.Commands {
 				if (engine.Settings.EnableAiPartialDetection)
 					await ScanRunner.EnsureAiComponentsAsync(engine.Settings, ct);
 
-				var duplicates = await ScanRunner.RunCompareAsync(engine, ct);
+				var duplicates = (await ScanRunner.RunCompareAsync(engine, ct))
+					.GroupBy(d => d.GroupId).ToDictionary(g => g.Key, g => g.ToList());
 
 				var format = Enum.TryParse<OutputFormat>(parseResult.GetValue(SharedOptions.Format), true, out var fmt) ? fmt : OutputFormat.Text;
 				var outFile = parseResult.GetValue(SharedOptions.Output);
