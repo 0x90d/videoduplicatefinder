@@ -22,7 +22,7 @@ namespace VDF.CLI.Commands {
 	/// <summary>Drives ScanEngine operations and bridges the async-void/event API to awaitable Tasks.</summary>
 	internal static class ScanRunner {
 		/// <summary>Runs StartSearch() then StartCompare() (the full pipeline).</summary>
-		internal static async Task<HashSet<DuplicateItem>> RunScanAndCompareAsync(ScanEngine engine, CancellationToken ct) {
+		internal static async Task<Dictionary<Guid, List<DuplicateItem>>> RunScanAndCompareAsync(ScanEngine engine, CancellationToken ct) {
 			await RunSearchAsync(engine, ct);
 			return await RunCompareAsync(engine, ct);
 		}
@@ -75,7 +75,7 @@ namespace VDF.CLI.Commands {
 		}
 
 		/// <summary>Runs StartCompare() only (assumes database already populated by a prior scan).</summary>
-		internal static async Task<HashSet<DuplicateItem>> RunCompareAsync(ScanEngine engine, CancellationToken ct) {
+		internal static async Task<Dictionary<Guid, List<DuplicateItem>>> RunCompareAsync(ScanEngine engine, CancellationToken ct) {
 			var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			engine.ScanDone += OnDone;
@@ -88,7 +88,9 @@ namespace VDF.CLI.Commands {
 			engine.ScanDone -= OnDone;
 			engine.ScanAborted -= OnAborted;
 
-			return engine.Duplicates;
+			return engine.Duplicates
+				.GroupBy(d => d.GroupId)
+				.ToDictionary(g => g.Key, g => g.ToList());
 
 			void OnDone(object? s, EventArgs e) => tcs.TrySetResult();
 			void OnAborted(object? s, EventArgs e) => tcs.TrySetCanceled();
