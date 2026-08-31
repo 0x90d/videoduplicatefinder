@@ -69,7 +69,8 @@ namespace VDF.CLI.Commands {
 				int failed = 0;
 				var strategy = parseResult.GetValue(actionOpt);
 				if (strategy.HasValue) {
-					var marked = DeletionStrategy.SelectForDeletion(duplicates, strategy.Value);
+					var groups = duplicates.GroupBy(d => d.GroupId).ToDictionary(g => g.Key, g => g.ToList());
+					var marked = DeletionStrategy.SelectForDeletion(groups, strategy.Value);
 					bool doPermanent = parseResult.GetValue(deletePermanentOpt);
 					bool doDelete = parseResult.GetValue(deleteOpt) || doPermanent;
 					bool dryRun = !doDelete || parseResult.GetValue(dryRunOpt);
