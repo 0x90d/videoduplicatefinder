@@ -968,10 +968,10 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		bool _isSourceA;
-		public bool IsSourceA { get => _isSourceA; set => this.RaiseAndSetIfChanged(ref _isSourceA, value); }
+		public bool IsSourceA { set => this.RaiseAndSetIfChanged(ref _isSourceA, value); }
 
 		bool _isSourceB;
-		public bool IsSourceB { get => _isSourceB; set => this.RaiseAndSetIfChanged(ref _isSourceB, value); }
+		public bool IsSourceB { set => this.RaiseAndSetIfChanged(ref _isSourceB, value); }
 
 		public LargeThumbnailDuplicateItem(DuplicateItemVM duplicateItem) {
 			Item = duplicateItem;

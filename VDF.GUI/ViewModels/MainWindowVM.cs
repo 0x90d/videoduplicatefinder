@@ -175,7 +175,6 @@ namespace VDF.GUI.ViewModels {
 		}
 		string _ScanProgressText = string.Empty;
 		public string ScanProgressText {
-			get => _ScanProgressText;
 			set => this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
 		}
 		string _RemainingTime = string.Empty;

@@ -168,7 +168,6 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailGridColumns, value);
 		}
 
-		Bitmap? _thumbnail;
 		[JsonIgnore]
 		public Bitmap? Thumbnail {
 			get {
@@ -190,7 +189,6 @@ namespace VDF.GUI.ViewModels {
 					return null;
 				}
 			}
-			set => this.RaiseAndSetIfChanged(ref _thumbnail, value);
 		}
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -260,7 +258,6 @@ namespace VDF.GUI.ViewModels {
 		string? _AudioSampleRateDiff;
 		[JsonIgnore]
 		public string? AudioSampleRateDiff {
-			get => _AudioSampleRateDiff;
 			set => this.RaiseAndSetIfChanged(ref _AudioSampleRateDiff, value);
 		}
 

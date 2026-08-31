@@ -45,18 +45,12 @@ namespace VDF.GUI.Controls {
 			get => GetValue(TextProperty);
 			set => SetValue(TextProperty, value);
 		}
-		public IBrush? Foreground {
-			get => GetValue(ForegroundProperty);
-			set => SetValue(ForegroundProperty, value);
-		}
+		public IBrush? Foreground => GetValue(ForegroundProperty);
 		public double FontSize {
 			get => GetValue(FontSizeProperty);
 			set => SetValue(FontSizeProperty, value);
 		}
-		public FontFamily FontFamily {
-			get => GetValue(FontFamilyProperty);
-			set => SetValue(FontFamilyProperty, value);
-		}
+		public FontFamily FontFamily => GetValue(FontFamilyProperty);
 
 		TextLayout CreateLayout(string text) =>
 			new(text, new Typeface(FontFamily), FontSize, Foreground);
