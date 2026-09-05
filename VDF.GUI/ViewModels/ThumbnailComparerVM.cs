@@ -58,11 +58,9 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		Bitmap? _imageA;
-		public Bitmap? ImageA { get => _imageA; set => this.RaiseAndSetIfChanged(ref _imageA, value); }
+		public Bitmap? ImageA { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		Bitmap? _imageB;
-		public Bitmap? ImageB { get => _imageB; set => this.RaiseAndSetIfChanged(ref _imageB, value); }
+		public Bitmap? ImageB { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 		public Bitmap? ImageSingle => ImageA ?? ImageB;
 
 		public ReadOnlyObservableCollection<CompareMode> CompareModes { get; }
@@ -90,18 +88,14 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		bool _isLoadingThumbnails;
-		public bool IsLoadingThumbnails { get => _isLoadingThumbnails; set => this.RaiseAndSetIfChanged(ref _isLoadingThumbnails, value); }
+		public bool IsLoadingThumbnails { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		double _loadProgress;
-		public double LoadProgress { get => _loadProgress; set => this.RaiseAndSetIfChanged(ref _loadProgress, value); }
+		public double LoadProgress { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 		public string LoadProgressText => $"{Math.Round(LoadProgress * 100)}%";
 
-		string? _userMessage;
-		public string? UserMessage { get => _userMessage; set => this.RaiseAndSetIfChanged(ref _userMessage, value); }
+		public string? UserMessage { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		bool _isMessageVisible;
-		public bool IsMessageVisible { get => _isMessageVisible; set => this.RaiseAndSetIfChanged(ref _isMessageVisible, value); }
+		public bool IsMessageVisible { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
 		CancellationTokenSource? _messageCts;
 		public void ShowMessage(string msg, int millis = 3000) {
@@ -127,42 +121,37 @@ namespace VDF.GUI.ViewModels {
 		public bool IsDualView => IsSideBySide || IsStacked;
 		public bool SwipeHintVisible => IsSwipe;
 
-		double _modeSliderValue = 0.5;
 		public double ModeSliderValue {
-			get => _modeSliderValue;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _modeSliderValue, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				Recalc();
 			}
-		}
+		} = 0.5;
 
 		// --- Highlight differences (red boxes around regions where A and B differ) ---
 
-		bool _highlightDifferences = SettingsFile.Instance.ThumbnailComparerHighlightDifferences;
 		public bool HighlightDifferences {
-			get => _highlightDifferences;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _highlightDifferences, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				SettingsFile.Instance.ThumbnailComparerHighlightDifferences = value;
 			}
-		}
+		} = SettingsFile.Instance.ThumbnailComparerHighlightDifferences;
 
-		double _diffSensitivity = SettingsFile.Instance.ThumbnailComparerDiffSensitivity;
 		public double DiffSensitivity {
-			get => _diffSensitivity;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _diffSensitivity, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				SettingsFile.Instance.ThumbnailComparerDiffSensitivity = value;
 			}
-		}
+		} = SettingsFile.Instance.ThumbnailComparerDiffSensitivity;
 
 		// Transparent bitmap with the region outlines; rendered as a second
 		// Stretch=Uniform Image over each pane, so it tracks zoom/pan for free.
-		Bitmap? _diffOverlay;
-		public Bitmap? DiffOverlay { get => _diffOverlay; private set => this.RaiseAndSetIfChanged(ref _diffOverlay, value); }
+		public Bitmap? DiffOverlay { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		bool _isComputingDiff;
-		public bool IsComputingDiff { get => _isComputingDiff; private set => this.RaiseAndSetIfChanged(ref _isComputingDiff, value); }
+		public bool IsComputingDiff { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
 
 		CancellationTokenSource? _diffCts;
 
@@ -203,75 +192,63 @@ namespace VDF.GUI.ViewModels {
 
 		// --- Frame stepping (works in ALL modes) ---
 
-		bool _showFrameControls;
 		public bool ShowFrameControls {
-			get => _showFrameControls;
-			private set => this.RaiseAndSetIfChanged(ref _showFrameControls, value);
+			get;
+			private set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		// Only show position slider when there are multiple base positions to choose from
-		bool _showPositionControls;
 		public bool ShowPositionControls {
-			get => _showPositionControls;
-			private set => this.RaiseAndSetIfChanged(ref _showPositionControls, value);
+			get;
+			private set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		// Selects which pre-extracted thumbnail position to start from
-		int _baseThumbnailIndex;
 		public int BaseThumbnailIndex {
-			get => _baseThumbnailIndex;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _baseThumbnailIndex, Math.Clamp(value, 0, Math.Max(BaseThumbnailIndexMax, 0)));
+				this.RaiseAndSetIfChanged(ref field, Math.Clamp(value, 0, Math.Max(BaseThumbnailIndexMax, 0)));
 				StepA = 0;
 				StepB = 0;
 				UpdateStripCurrent();
 			}
 		}
 
-		int _baseThumbnailIndexMax;
 		public int BaseThumbnailIndexMax {
-			get => _baseThumbnailIndexMax;
-			private set => this.RaiseAndSetIfChanged(ref _baseThumbnailIndexMax, value);
+			get;
+			private set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		// Independent frame step for A
-		int _stepA;
 		public int StepA {
-			get => _stepA;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _stepA, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				UpdateFrameImages();
 			}
 		}
 
 		// Independent frame step for B
-		int _stepB;
 		public int StepB {
-			get => _stepB;
+			get;
 			set {
-				this.RaiseAndSetIfChanged(ref _stepB, value);
+				this.RaiseAndSetIfChanged(ref field, value);
 				UpdateFrameImages();
 			}
 		}
 
 		// Display labels (visible in ALL modes)
-		string _frameLabelA = string.Empty;
-		public string FrameLabelA { get => _frameLabelA; set => this.RaiseAndSetIfChanged(ref _frameLabelA, value); }
+		public string FrameLabelA { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
 
-		string _frameLabelB = string.Empty;
-		public string FrameLabelB { get => _frameLabelB; set => this.RaiseAndSetIfChanged(ref _frameLabelB, value); }
+		public string FrameLabelB { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
 
-		bool _isExtractingFrame;
-		public bool IsExtractingFrame { get => _isExtractingFrame; set => this.RaiseAndSetIfChanged(ref _isExtractingFrame, value); }
+		public bool IsExtractingFrame { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		double _zoom = 1.0;
-		public double Zoom { get => _zoom; set => this.RaiseAndSetIfChanged(ref _zoom, value); }
+		public double Zoom { get; set => this.RaiseAndSetIfChanged(ref field, value); } = 1.0;
 
-		double _panOffsetX;
-		public double PanOffsetX { get => _panOffsetX; set => this.RaiseAndSetIfChanged(ref _panOffsetX, value); }
+		public double PanOffsetX { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		double _panOffsetY;
-		public double PanOffsetY { get => _panOffsetY; set => this.RaiseAndSetIfChanged(ref _panOffsetY, value); }
+		public double PanOffsetY { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
 		public ReactiveCommand<Unit, Unit> FitToViewCommand { get; }
 		public ReactiveCommand<Unit, Unit> ResetZoomCommand { get; }
@@ -286,38 +263,32 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> StepBPlusCommand { get; }
 		public ReactiveCommand<Unit, Unit> ResetStepsCommand { get; }
 
-		public double DisplayWidth { get => _dispW; private set => this.RaiseAndSetIfChanged(ref _dispW, value); }
-		public double DisplayHeight { get => _dispH; private set => this.RaiseAndSetIfChanged(ref _dispH, value); }
-		public double LeftOffset { get => _left; private set => this.RaiseAndSetIfChanged(ref _left, value); }
-		public double TopOffset { get => _top; private set => this.RaiseAndSetIfChanged(ref _top, value); }
-		double _dispW, _dispH, _left, _top;
+		public double DisplayWidth { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
+		public double DisplayHeight { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
+		public double LeftOffset { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
+		public double TopOffset { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		Geometry? _swipeClip;
-		public Geometry? SwipeClip { get => _swipeClip; private set => this.RaiseAndSetIfChanged(ref _swipeClip, value); }
+		public Geometry? SwipeClip { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
 
 		public Thickness SeparatorMargin => new(SeparatorX, TopOffset, 0, 0);
-		double _separatorX;
 		public double SeparatorX {
-			get => _separatorX;
-			private set { this.RaiseAndSetIfChanged(ref _separatorX, value); this.RaisePropertyChanged(nameof(SeparatorMargin)); }
+			get;
+			private set { this.RaiseAndSetIfChanged(ref field, value); this.RaisePropertyChanged(nameof(SeparatorMargin)); }
 		}
 
-		double _separatorY;
 		public double SeparatorY {
-			get => _separatorY;
-			private set => this.RaiseAndSetIfChanged(ref _separatorY, value);
+			get;
+			private set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		double _viewportWidth;
 		public double ViewportWidth {
-			get => _viewportWidth;
-			set { this.RaiseAndSetIfChanged(ref _viewportWidth, value); Recalc(); }
+			get;
+			set { this.RaiseAndSetIfChanged(ref field, value); Recalc(); }
 		}
 
-		double _viewportHeight;
 		public double ViewportHeight {
-			get => _viewportHeight;
-			set { this.RaiseAndSetIfChanged(ref _viewportHeight, value); Recalc(); }
+			get;
+			set { this.RaiseAndSetIfChanged(ref field, value); Recalc(); }
 		}
 
 		CancellationTokenSource? _frameExtractCts;
@@ -475,12 +446,9 @@ namespace VDF.GUI.ViewModels {
 
 		CullingPairFlow? _pairFlow;
 
-		string _groupInfoText = string.Empty;
-		public string GroupInfoText { get => _groupInfoText; private set => this.RaiseAndSetIfChanged(ref _groupInfoText, value); }
-		string _pairInfoText = string.Empty;
-		public string PairInfoText { get => _pairInfoText; private set => this.RaiseAndSetIfChanged(ref _pairInfoText, value); }
-		string _similarityText = string.Empty;
-		public string SimilarityText { get => _similarityText; private set => this.RaiseAndSetIfChanged(ref _similarityText, value); }
+		public string GroupInfoText { get; private set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
+		public string PairInfoText { get; private set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
+		public string SimilarityText { get; private set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
 		public bool HasSimilarity => !string.IsNullOrEmpty(SimilarityText);
 
 		public ObservableCollection<MetaChip> LeftChips { get; } = new();
@@ -488,10 +456,8 @@ namespace VDF.GUI.ViewModels {
 		public ObservableCollection<FrameStripEntry> StripA { get; } = new();
 		public ObservableCollection<FrameStripEntry> StripB { get; } = new();
 
-		bool _isLeftBest;
-		public bool IsLeftBest { get => _isLeftBest; private set => this.RaiseAndSetIfChanged(ref _isLeftBest, value); }
-		bool _isRightBest;
-		public bool IsRightBest { get => _isRightBest; private set => this.RaiseAndSetIfChanged(ref _isRightBest, value); }
+		public bool IsLeftBest { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
+		public bool IsRightBest { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
 
 		void ApplyDecision(CullingPairFlow.Decision decision) {
 			if (_pairFlow is null || Items.Count < 2) return;
@@ -944,8 +910,7 @@ namespace VDF.GUI.ViewModels {
 		}
 		public Bitmap Frame { get; }
 		public int Index { get; }
-		bool _isCurrent;
-		public bool IsCurrent { get => _isCurrent; set => this.RaiseAndSetIfChanged(ref _isCurrent, value); }
+		public bool IsCurrent { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 	}
 
 	// Unsealed so tests can stub LoadThumbnail (stuck-grab cancellation regression).
@@ -961,17 +926,14 @@ namespace VDF.GUI.ViewModels {
 
 		public string FileName => System.IO.Path.GetFileName(Item.ItemInfo.Path);
 
-		bool _IsLoadingThumbnail = true;
 		public bool IsLoadingThumbnail {
-			get => _IsLoadingThumbnail;
-			set => this.RaiseAndSetIfChanged(ref _IsLoadingThumbnail, value);
-		}
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = true;
 
-		bool _isSourceA;
-		public bool IsSourceA { get => _isSourceA; set => this.RaiseAndSetIfChanged(ref _isSourceA, value); }
+		public bool IsSourceA { set => this.RaiseAndSetIfChanged(ref field, value); }
 
-		bool _isSourceB;
-		public bool IsSourceB { get => _isSourceB; set => this.RaiseAndSetIfChanged(ref _isSourceB, value); }
+		public bool IsSourceB { set => this.RaiseAndSetIfChanged(ref field, value); }
 
 		public LargeThumbnailDuplicateItem(DuplicateItemVM duplicateItem) {
 			Item = duplicateItem;

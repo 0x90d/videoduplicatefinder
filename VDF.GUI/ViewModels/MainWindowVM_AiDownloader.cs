@@ -31,21 +31,19 @@ namespace VDF.GUI.ViewModels {
 	// extraction and integrity checks live in Core (AiComponents) so the CLI can
 	// download headlessly with the identical logic.
 	public partial class MainWindowVM : ReactiveObject {
-		bool _isAiDownloadInProgress;
 		public bool IsAiDownloadInProgress {
-			get => _isAiDownloadInProgress;
-			set => this.RaiseAndSetIfChanged(ref _isAiDownloadInProgress, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		string _AiComponentsStatusText = string.Empty;
 		public string AiComponentsStatusText {
 			get {
-				if (string.IsNullOrEmpty(_AiComponentsStatusText))
-					_AiComponentsStatusText = BuildAiComponentsStatusText();
-				return _AiComponentsStatusText;
+				if (string.IsNullOrEmpty(field))
+					field = BuildAiComponentsStatusText();
+				return field;
 			}
-			set => this.RaiseAndSetIfChanged(ref _AiComponentsStatusText, value);
-		}
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = string.Empty;
 
 		static string BuildAiComponentsStatusText() => AiComponents.GetState() switch {
 			AiComponentsState.Ready => string.Format(CultureInfo.InvariantCulture, App.Lang["Settings.AiComponents.Ready"], AiComponents.RuntimeVersion),

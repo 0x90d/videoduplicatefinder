@@ -67,16 +67,15 @@ namespace VDF.Core {
 			progressHeartbeat = new Timer(_ => HeartbeatTick(), null,
 											Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
 
-		bool _isScanning;
 		// The main process yields CPU to foreground apps while a scan runs, restored the
 		// instant scanning ends — hooked on the setter so EVERY exit path (done/abort/stop
 		// via CancelAllTasks) restores. BelowNormal only cedes under contention, so an
 		// unattended scan still runs at full speed. Best-effort.
 		bool isScanning {
-			get => _isScanning;
+			get;
 			set {
-				if (_isScanning == value) return;
-				_isScanning = value;
+				if (field == value) return;
+				field = value;
 				progressHeartbeat.Change(
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan,
 					value ? progressHeartbeatIntervall : Timeout.InfiniteTimeSpan);

@@ -38,10 +38,9 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
-		string? _conflictText;
 		public string? ConflictText {
-			get => _conflictText;
-			set => this.RaiseAndSetIfChanged(ref _conflictText, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		public bool IsModified => CurrentGesture != DefaultGesture;

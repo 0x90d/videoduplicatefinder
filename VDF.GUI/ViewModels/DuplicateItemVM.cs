@@ -30,7 +30,6 @@ namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
 	public sealed class DuplicateItemVM : ReactiveObject, IJsonOnDeserialized {
-		[JsonIgnore]
 		readonly TimeProvider timeProvider;
 
 		//For JSON deserialization only
@@ -121,9 +120,6 @@ namespace VDF.GUI.ViewModels {
 		}
 		public DuplicateItem ItemInfo { get; set; }
 
-		[JsonIgnore]
-		Utils.ThumbnailSizePrediction? _thumbnailPrediction;
-		[JsonIgnore]
 		bool thumbnailPredictionComputed;
 		/// <summary>
 		/// Final-size prediction for the not-yet-loaded composite so the row reserves its
@@ -135,11 +131,11 @@ namespace VDF.GUI.ViewModels {
 			get {
 				if (!thumbnailPredictionComputed && ItemInfo != null) {
 					thumbnailPredictionComputed = true;
-					_thumbnailPrediction = Utils.ThumbnailSizePrediction.For(ItemInfo,
+					field = Utils.ThumbnailSizePrediction.For(ItemInfo,
 						_ThumbnailFrameCount, _ThumbnailGridColumns,
 						SettingsFile.Instance.Thumbnails, SettingsFile.Instance.ThumbnailMaxWidth);
 				}
-				return _thumbnailPrediction;
+				return field;
 			}
 		}
 
@@ -171,8 +167,6 @@ namespace VDF.GUI.ViewModels {
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailGridColumns, value);
 		}
 
-		[JsonIgnore] Bitmap? _thumbnail;
-
 		[JsonIgnore]
 		public Bitmap? Thumbnail {
 			get {
@@ -194,22 +188,19 @@ namespace VDF.GUI.ViewModels {
 					return null;
 				}
 			}
-			set => this.RaiseAndSetIfChanged(ref _thumbnail, value);
 		}
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-		bool _Checked;
 		public bool Checked {
-			get => _Checked;
-			set => this.RaiseAndSetIfChanged(ref _Checked, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		bool _PathCopiedFlash;
 		/// <summary>Transient "Copied" badge next to the path after a deliberate copy click (#849).</summary>
 		[JsonIgnore]
 		public bool PathCopiedFlash {
-			get => _PathCopiedFlash;
-			set => this.RaiseAndSetIfChanged(ref _PathCopiedFlash, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		int pathCopiedFlashVersion;
@@ -226,59 +217,50 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		// Hover-diff display: when non-null, shown instead of the normal value
-		string? _DurationDiff;
 		[JsonIgnore]
 		public string? DurationDiff {
-			get => _DurationDiff;
-			set => this.RaiseAndSetIfChanged(ref _DurationDiff, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		string? _FrameSizeDiff;
 		[JsonIgnore]
 		public string? FrameSizeDiff {
-			get => _FrameSizeDiff;
-			set => this.RaiseAndSetIfChanged(ref _FrameSizeDiff, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		string? _SizeDiff;
 		[JsonIgnore]
 		public string? SizeDiff {
-			get => _SizeDiff;
-			set => this.RaiseAndSetIfChanged(ref _SizeDiff, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		string? _FpsDiff;
 		[JsonIgnore]
 		public string? FpsDiff {
-			get => _FpsDiff;
-			set => this.RaiseAndSetIfChanged(ref _FpsDiff, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		string? _BitRateDiff;
 		[JsonIgnore]
 		public string? BitRateDiff {
-			get => _BitRateDiff;
-			set => this.RaiseAndSetIfChanged(ref _BitRateDiff, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		string? _AudioSampleRateDiff;
 		[JsonIgnore]
 		public string? AudioSampleRateDiff {
-			get => _AudioSampleRateDiff;
-			set => this.RaiseAndSetIfChanged(ref _AudioSampleRateDiff, value);
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
-		string? _AudioBitRateDiff;
 		[JsonIgnore]
 		public string? AudioBitRateDiff {
-			get => _AudioBitRateDiff;
-			set => this.RaiseAndSetIfChanged(ref _AudioBitRateDiff, value);
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
 
 		/// <summary>
 		///   Returns if item matches the filter conditions
 		/// </summary>
-		[JsonIgnore]
 		internal bool IsVisibleInFilter = true;
 
 		public bool EqualsFull(DuplicateItemVM other) {
