@@ -123,7 +123,7 @@ namespace VDF.GUI.Data {
 		}
 		[JsonPropertyName("LanguageCode")]
 		public string LanguageCode {
-			get => field;
+			get;
 			set => this.RaiseAndSetIfChanged(ref field, ResolveLanguageCode(value));
 		} = ResolveDefaultLanguageCode();
 		[JsonPropertyName("IgnoreReadOnlyFolders")]
@@ -445,11 +445,11 @@ namespace VDF.GUI.Data {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);
 		}
+		// Side-by-side first (redesign stage 4, maintainer directive on comparer view modes).
 		[JsonPropertyName("ThumbnailComparerMode")]
 		public CompareMode ThumbnailComparerMode {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);
-			// Side-by-side first (redesign stage 4, maintainer directive on comparer view modes).
 		} = CompareMode.SideBySide;
 		[JsonPropertyName("ThumbnailComparerDiffSensitivity")]
 		public double ThumbnailComparerDiffSensitivity {

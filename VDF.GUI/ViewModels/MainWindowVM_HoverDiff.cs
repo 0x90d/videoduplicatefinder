@@ -42,7 +42,6 @@ namespace VDF.GUI.ViewModels {
 			"size" => items.Select(i => i.ItemInfo.SizeLong).Distinct().Count() <= 1,
 			"fps" => items.Select(i => i.ItemInfo.Fps).Distinct().Count() <= 1,
 			"bitrate" => items.Select(i => i.ItemInfo.BitRateKbs).Distinct().Count() <= 1,
-			"audiosamplerate" => items.Select(i => i.ItemInfo.AudioSampleRate).Distinct().Count() <= 1,
 			"audiobitrate" => items.Select(i => i.ItemInfo.AudioBitRateKbs).Distinct().Count() <= 1,
 			_ => false,
 		};
@@ -116,19 +115,6 @@ namespace VDF.GUI.ViewModels {
 						}
 						break;
 
-					case "audiosamplerate":
-						if (gi.ItemInfo.IsBestAudioSampleRate)
-							gi.AudioSampleRateDiff = bestLabel;
-						else {
-							int bestRate = groupItems.FirstOrDefault(i => i.ItemInfo.IsBestAudioSampleRate)?.ItemInfo.AudioSampleRate
-								?? groupItems.Max(i => i.ItemInfo.AudioSampleRate);
-							if (bestRate > 0) {
-								double pct = (double)(gi.ItemInfo.AudioSampleRate - bestRate) / bestRate * 100;
-								gi.AudioSampleRateDiff = FormatPercentDiff(pct);
-							}
-						}
-						break;
-
 					case "audiobitrate":
 						if (gi.ItemInfo.IsBestAudioBitRateKbs)
 							gi.AudioBitRateDiff = bestLabel;
@@ -153,7 +139,6 @@ namespace VDF.GUI.ViewModels {
 				gi.SizeDiff = null;
 				gi.FpsDiff = null;
 				gi.BitRateDiff = null;
-				gi.AudioSampleRateDiff = null;
 				gi.AudioBitRateDiff = null;
 			}
 		}

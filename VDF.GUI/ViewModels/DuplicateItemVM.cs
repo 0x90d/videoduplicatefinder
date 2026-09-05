@@ -248,11 +248,6 @@ namespace VDF.GUI.ViewModels {
 		}
 
 		[JsonIgnore]
-		public string? AudioSampleRateDiff {
-			set => this.RaiseAndSetIfChanged(ref field, value);
-		}
-
-		[JsonIgnore]
 		public string? AudioBitRateDiff {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);

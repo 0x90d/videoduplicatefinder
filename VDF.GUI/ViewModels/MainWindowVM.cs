@@ -173,10 +173,6 @@ namespace VDF.GUI.ViewModels {
 			get => _ThumbnailProgressMax;
 			set => this.RaiseAndSetIfChanged(ref _ThumbnailProgressMax, value);
 		}
-		string _ScanProgressText = string.Empty;
-		public string ScanProgressText {
-			set => this.RaiseAndSetIfChanged(ref _ScanProgressText, value);
-		}
 		string _RemainingTime = string.Empty;
 		public string RemainingTime {
 			get => _RemainingTime;
@@ -562,7 +558,6 @@ namespace VDF.GUI.ViewModels {
 
 		void Scanner_ThumbnailsRetrieved(object? sender, EventArgs e) {
 			//Reset properties
-			ScanProgressText = string.Empty;
 			RemainingTime = new TimeSpan().Format();
 			ScanProgressValue = 0;
 			ScanProgressMaxValue = 100;
@@ -691,15 +686,7 @@ namespace VDF.GUI.ViewModels {
 
 		void Scanner_Progress(object? sender, ScanProgressSnapshot e) =>
 			Dispatcher.UIThread.InvokeAsync(() => {
-				// Stage goes at the END — the status bar's TextBlock uses PrefixCharacterEllipsis,
-				// so trimming happens at the start (leading directory path) and the filename + stage stay visible.
-				string stageSuffix = string.IsNullOrEmpty(e.CurrentStage)
-					? string.Empty
-					: e.StageMax > 0 ? $"  [{e.CurrentStage} {e.StageCurrent}/{e.StageMax}]" : $"  [{e.CurrentStage}]";
-				// A phase's opening event carries no file yet (see ScanEngine.InitProgress) — don't
-				// leave the separator's leading spaces dangling in front of the stage label.
-				ScanProgressText = string.IsNullOrEmpty(e.CurrentFile) ? stageSuffix.TrimStart() : e.CurrentFile + stageSuffix;
-				// Separate stage/file properties for the Scanning state's center panel.
+				// Stage/file properties for the Scanning state's center panel.
 				ScanStageText = string.IsNullOrEmpty(e.CurrentStage)
 					? string.Empty
 					: e.StageMax > 0 ? $"{e.CurrentStage} {e.StageCurrent}/{e.StageMax}" : e.CurrentStage;
@@ -728,7 +715,6 @@ namespace VDF.GUI.ViewModels {
 				IsBusy = false;
 				IsReadyToCompare = true;
 				IsGathered = true;
-				ScanProgressText = string.Empty;
 				RemainingTime = TimeSpan.Zero.Format();
 				ScanProgressValue = 0;
 				ScanDrives.Clear();

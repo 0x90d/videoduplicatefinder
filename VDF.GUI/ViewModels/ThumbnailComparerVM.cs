@@ -39,9 +39,7 @@ namespace VDF.GUI.ViewModels {
 			get => _selectedItemA;
 			set {
 				if (_selectedItemA == value) return;
-				if (_selectedItemA != null) _selectedItemA.IsSourceA = false;
 				this.RaiseAndSetIfChanged(ref _selectedItemA, value);
-				if (_selectedItemA != null) _selectedItemA.IsSourceA = true;
 				OnSelectionChanged();
 			}
 		}
@@ -51,9 +49,7 @@ namespace VDF.GUI.ViewModels {
 			get => _selectedItemB;
 			set {
 				if (_selectedItemB == value) return;
-				if (_selectedItemB != null) _selectedItemB.IsSourceB = false;
 				this.RaiseAndSetIfChanged(ref _selectedItemB, value);
-				if (_selectedItemB != null) _selectedItemB.IsSourceB = true;
 				OnSelectionChanged();
 			}
 		}
@@ -409,8 +405,6 @@ namespace VDF.GUI.ViewModels {
 
 			_suppressSelectionUpdates = true;
 			try {
-				if (_selectedItemA != null) _selectedItemA.IsSourceA = false;
-				if (_selectedItemB != null) _selectedItemB.IsSourceB = false;
 				_selectedItemA = null;
 				_selectedItemB = null;
 				this.RaisePropertyChanged(nameof(SelectedItemA));
@@ -930,10 +924,6 @@ namespace VDF.GUI.ViewModels {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);
 		} = true;
-
-		public bool IsSourceA { set => this.RaiseAndSetIfChanged(ref field, value); }
-
-		public bool IsSourceB { set => this.RaiseAndSetIfChanged(ref field, value); }
 
 		public LargeThumbnailDuplicateItem(DuplicateItemVM duplicateItem) {
 			Item = duplicateItem;

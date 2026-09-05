@@ -101,7 +101,7 @@ namespace VDF.GUI.Tests {
 			var b = Item(duration: TimeSpan.FromMinutes(1), frameSizeInt: 100, size: 5);
 			var items = new[] { a, b };
 
-			foreach (string metric in new[] { "duration", "framesize", "size", "fps", "bitrate", "audiosamplerate", "audiobitrate" })
+			foreach (string metric in new[] { "duration", "framesize", "size", "fps", "bitrate", "audiobitrate" })
 				Assert.True(MainWindowVM.AllTiedOn(items, metric), metric);
 
 			b.ItemInfo.Fps = 30f;
