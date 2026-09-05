@@ -70,10 +70,17 @@ namespace VDF.Core.Utils {
 			return extension.Equals(".heic", StringComparison.OrdinalIgnoreCase) ||
 				extension.Equals(".heif", StringComparison.OrdinalIgnoreCase);
 		}
+		// Folders the OS owns ($RECYCLE.BIN, System Volume Information, Config.Msi, Recovery)
+		// carry Hidden AND System. System alone is user content: Explorer honours a folder's
+		// desktop.ini icon only when the folder has the read-only or system attribute, so people
+		// mark whole libraries +S, and an unconditional System skip hid every one of them (#876).
+		// Hidden alone has been scanned since 2021 (a1c4806).
+		const FileAttributes HiddenSystemFolder = FileAttributes.Hidden | FileAttributes.System;
 		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken) {
 			EnumerationOptions enumerationOptions = new() {
 				IgnoreInaccessible = true,
-				AttributesToSkip = FileAttributes.System
+				// No attribute skip for files: a video marked +S or +H is still a video.
+				AttributesToSkip = FileAttributes.None
 			};
 
 			if (ignoreReadonly)
@@ -81,9 +88,9 @@ namespace VDF.Core.Utils {
 			if (ignoreReparsePoints)
 				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
 
-			// Subfolders are filtered by the same attribute policy, but explicitly (below)
-			// instead of via AttributesToSkip, so skipped folders can be counted and logged —
-			// an attribute-skipped folder silently hides its entire subtree otherwise (#876).
+			// Subfolders are filtered explicitly (below) instead of via AttributesToSkip, so
+			// skipped folders can be counted and logged; an attribute-skipped folder silently
+			// hides its entire subtree otherwise (#876).
 			EnumerationOptions directoryEnumerationOptions = new() {
 				IgnoreInaccessible = true,
 				AttributesToSkip = FileAttributes.None
@@ -97,7 +104,7 @@ namespace VDF.Core.Utils {
 			List<FileInfo> files = new();
 			Queue<DirectoryInfo> subFolders = new();
 			subFolders.Enqueue(new(initial));
-			int skippedSystem = 0, skippedReadonly = 0, skippedReparse = 0;
+			int skippedHiddenSystem = 0, skippedReadonly = 0, skippedReparse = 0;
 
 			while (subFolders.Count > 0) {
 				if (cancellationToken.IsCancellationRequested)
@@ -142,8 +149,9 @@ namespace VDF.Core.Utils {
 							break;
 						// Attributes come prepopulated from the enumeration — no extra syscall.
 						FileAttributes attributes = subFolder.Attributes;
-						if ((attributes & FileAttributes.System) != 0) {
-							skippedSystem++;
+						// Hidden AND System only (see HiddenSystemFolder); System alone is scanned.
+						if ((attributes & HiddenSystemFolder) == HiddenSystemFolder) {
+							skippedHiddenSystem++;
 							continue;
 						}
 						if (ignoreReadonly && (attributes & FileAttributes.ReadOnly) != 0) {
@@ -163,15 +171,15 @@ namespace VDF.Core.Utils {
 				}
 			}
 
-			if (skippedSystem + skippedReadonly + skippedReparse > 0) {
+			if (skippedHiddenSystem + skippedReadonly + skippedReparse > 0) {
 				var reasons = new List<string>(3);
-				if (skippedSystem > 0)
-					reasons.Add($"{skippedSystem} with the system attribute");
+				if (skippedHiddenSystem > 0)
+					reasons.Add($"{skippedHiddenSystem} hidden system folder(s), the signature of folders the OS owns such as the recycle bin");
 				if (skippedReadonly > 0)
 					reasons.Add($"{skippedReadonly} read-only ('Ignore read-only folders' is enabled)");
 				if (skippedReparse > 0)
 					reasons.Add($"{skippedReparse} reparse points/links ('Exclude reparse points' is enabled)");
-				Logger.Instance.Info($"Skipped {skippedSystem + skippedReadonly + skippedReparse} subfolder(s) of '{initial}' including everything inside them: {string.Join(", ", reasons)}.");
+				Logger.Instance.Info($"Skipped {skippedHiddenSystem + skippedReadonly + skippedReparse} subfolder(s) of '{initial}' including everything inside them: {string.Join(", ", reasons)}.");
 			}
 
 			return files;

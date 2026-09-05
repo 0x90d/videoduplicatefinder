@@ -147,23 +147,91 @@ public class FileUtilsTests {
 		}
 	}
 
+	// Attribute rule for subfolders (#876): only Hidden AND System together marks a folder the
+	// OS owns ($RECYCLE.BIN, System Volume Information). System alone is user content: Explorer
+	// honours a folder's desktop.ini icon only with the read-only or system attribute, so whole
+	// libraries get marked +S. Hidden alone has been scanned since 2021.
+
 	[Fact]
-	public void GetFilesRecursive_SystemSubfolderIsSkipped_ButScannedWhenIncludedDirectly() {
+	public void GetFilesRecursive_SystemOnlySubfolder_IsScanned() {
 		if (!OperatingSystem.IsWindows()) return; // Windows attribute semantics
 		string dir = NewTempTree();
 		try {
-			string sysFolder = Path.Combine(dir, "sys");
-			Directory.CreateDirectory(sysFolder);
-			File.WriteAllBytes(Path.Combine(sysFolder, "inside.mp4"), new byte[] { 1 });
-			File.SetAttributes(sysFolder, FileAttributes.Directory | FileAttributes.System);
+			string showFolder = Path.Combine(dir, "show");
+			Directory.CreateDirectory(showFolder);
+			File.WriteAllBytes(Path.Combine(showFolder, "inside.mp4"), new byte[] { 1 });
+			File.SetAttributes(showFolder, FileAttributes.Directory | FileAttributes.System);
 
-			Assert.Empty(Scan(dir));
-			// The starting folder's own attributes are deliberately never checked —
-			// explicitly included folders are always scanned (matches issue #876 reports:
-			// adding the folders individually works).
-			Assert.Single(Scan(sysFolder));
+			Assert.Equal("inside.mp4", Assert.Single(Scan(dir)).Name);
 		}
 		finally {
+			DeleteTempTree(dir);
+		}
+	}
+
+	[Fact]
+	public void GetFilesRecursive_HiddenOnlySubfolder_IsScanned() {
+		if (!OperatingSystem.IsWindows()) return;
+		string dir = NewTempTree();
+		try {
+			string hiddenFolder = Path.Combine(dir, "hidden");
+			Directory.CreateDirectory(hiddenFolder);
+			File.WriteAllBytes(Path.Combine(hiddenFolder, "inside.mp4"), new byte[] { 1 });
+			File.SetAttributes(hiddenFolder, FileAttributes.Directory | FileAttributes.Hidden);
+
+			Assert.Single(Scan(dir));
+		}
+		finally {
+			DeleteTempTree(dir);
+		}
+	}
+
+	[Fact]
+	public void GetFilesRecursive_HiddenSystemSubfolder_IsSkippedAndLogged_ButScannedWhenIncludedDirectly() {
+		if (!OperatingSystem.IsWindows()) return;
+		string dir = NewTempTree();
+		var messages = new List<string>();
+		void Handler(LogEntry entry) {
+			lock (messages)
+				if (entry.Message.Contains(dir)) messages.Add(entry.Message);
+		}
+		Logger.Instance.LogEntryAdded += Handler;
+		try {
+			string osFolder = Path.Combine(dir, "System Volume Information");
+			Directory.CreateDirectory(osFolder);
+			File.WriteAllBytes(Path.Combine(osFolder, "inside.mp4"), new byte[] { 1 });
+			File.SetAttributes(osFolder, FileAttributes.Directory | FileAttributes.Hidden | FileAttributes.System);
+
+			Assert.Empty(Scan(dir));
+			string skipped;
+			lock (messages)
+				skipped = Assert.Single(messages);
+			Assert.Contains("Skipped 1 subfolder(s)", skipped);
+			Assert.Contains("1 hidden system folder(s)", skipped);
+			// The starting folder's own attributes are never checked: explicitly included
+			// folders are always scanned (adding a folder individually always works).
+			Assert.Single(Scan(osFolder));
+		}
+		finally {
+			Logger.Instance.LogEntryAdded -= Handler;
+			DeleteTempTree(dir);
+		}
+	}
+
+	[Fact]
+	public void GetFilesRecursive_SystemAttributedFile_IsFound() {
+		if (!OperatingSystem.IsWindows()) return;
+		string dir = NewTempTree();
+		string file = Path.Combine(dir, "marked.mp4");
+		try {
+			File.WriteAllBytes(file, new byte[] { 1 });
+			File.SetAttributes(file, FileAttributes.System);
+
+			Assert.Equal("marked.mp4", Assert.Single(Scan(dir)).Name);
+		}
+		finally {
+			if (File.Exists(file))
+				File.SetAttributes(file, FileAttributes.Normal);
 			DeleteTempTree(dir);
 		}
 	}
