@@ -74,13 +74,10 @@ namespace VDF.CLI.Actions {
 		/// For each duplicate group, returns the files to DELETE (i.e., all but the keeper).
 		/// When HundredPercentOnly is used, groups where not all members are 100% similar are skipped entirely.
 		/// </summary>
-		public static IReadOnlyList<DuplicateItem> SelectForDeletion(IEnumerable<DuplicateItem> duplicates, Strategy strategy) {
+		public static IReadOnlyList<DuplicateItem> SelectForDeletion(IReadOnlyDictionary<Guid, List<DuplicateItem>> groups, Strategy strategy) {
 			var toDelete = new List<DuplicateItem>();
 
-			var groups = duplicates.GroupBy(d => d.GroupId);
-
-			foreach (var group in groups) {
-				var items = group.ToList();
+			foreach (var items in groups.Values) {
 				if (items.Count < 2) continue;
 
 				if (strategy == Strategy.HundredPercentOnly) {

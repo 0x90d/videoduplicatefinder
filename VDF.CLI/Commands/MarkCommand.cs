@@ -59,12 +59,12 @@ namespace VDF.CLI.Commands {
 					return 1;
 				}
 
-				List<DuplicateItem>? duplicates;
+				Dictionary<Guid, List<DuplicateItem>>? duplicates;
 				try {
 					await using var stream = inputFile.OpenRead();
 					// The JSON is an array of groups, each with an Items array
-					var groups = await JsonSerializer.DeserializeAsync(stream, Output.CliJsonContext.Default.ListDuplicateGroup, ct);
-					duplicates = groups?.SelectMany(g => g.Items).ToList();
+					duplicates = (await JsonSerializer.DeserializeAsync(stream, Output.CliJsonContext.Default.ListDuplicateGroup, ct))?
+						.ToDictionary(g => g.GroupId, g => g.Items);
 				}
 				catch (Exception ex) {
 					Console.Error.WriteLine($"Error reading results file: {ex.Message}");

@@ -24,31 +24,29 @@ namespace VDF.CLI.Output {
 	public enum OutputFormat { Text, Json, Csv }
 
 	public static class ResultFormatter {
-		public static string Format(IEnumerable<DuplicateItem> duplicates, OutputFormat format) =>
-			format switch {
-				OutputFormat.Json => FormatJson(duplicates),
-				OutputFormat.Csv => FormatCsv(duplicates),
-				_ => FormatText(duplicates)
-			};
-
-		static string FormatJson(IEnumerable<DuplicateItem> duplicates) {
-			var groups = duplicates
-				.GroupBy(d => d.GroupId)
+		public static string Format(IReadOnlyDictionary<Guid, List<DuplicateItem>> groupDict, OutputFormat format) {
+			var orderedGroups = groupDict
 				.Select(g => new DuplicateGroup {
-					GroupId = g.Key,
-					Items = g.OrderByDescending(d => d.Similarity).ToList()
-				})
-				.ToList();
-			return JsonSerializer.Serialize(groups, CliJsonContext.Default.ListDuplicateGroup);
+					GroupId = g.Key, Items = g.Value.OrderByDescending(d => d.Similarity).ToList(),
+				}).OrderBy(g => g.GroupId);
+
+			return format switch {
+				OutputFormat.Json => FormatJson(orderedGroups),
+				OutputFormat.Csv => FormatCsv(orderedGroups),
+				_ => FormatText(orderedGroups)
+			};
 		}
 
-		static string FormatCsv(IEnumerable<DuplicateItem> duplicates) {
+		static string FormatJson(IOrderedEnumerable<DuplicateGroup> groups) =>
+			JsonSerializer.Serialize(groups.ToList(), CliJsonContext.Default.ListDuplicateGroup);
+
+		static string FormatCsv(IOrderedEnumerable<DuplicateGroup> groups) {
 			// All numbers invariant: on a comma-decimal locale (de-DE) culture-formatted
 			// values like "60,000" inject extra CSV columns and shift every field after them.
 			var inv = CultureInfo.InvariantCulture;
 			var sb = new StringBuilder();
 			sb.AppendLine("GroupId,Similarity,Path,Size,Duration,FrameSize,Format,Fps,BitRateKbs,AudioFormat,DateCreated,IsImage,Flags,PartialClipOffset");
-			foreach (var d in duplicates.OrderBy(d => d.GroupId).ThenByDescending(d => d.Similarity)) {
+			foreach (var d in groups.SelectMany(g => g.Items)) {
 				sb.AppendLine(string.Join(",",
 					d.GroupId,
 					d.Similarity.ToString("F1", inv),
@@ -71,20 +69,17 @@ namespace VDF.CLI.Output {
 			return sb.ToString();
 		}
 
-		static string FormatText(IEnumerable<DuplicateItem> duplicates) {
+		static string FormatText(IOrderedEnumerable<DuplicateGroup> groups) {
 			var sb = new StringBuilder();
-			var groups = duplicates
-				.GroupBy(d => d.GroupId)
-				.OrderBy(g => g.Key)
-				.ToList();
+			var groupList = groups.ToList();
 
-			sb.AppendLine($"Found {groups.Count} duplicate group(s), {duplicates.Count()} total file(s).");
+			sb.AppendLine($"Found {groupList.Count} duplicate group(s), {groupList.Sum(g => g.Items.Count)} total file(s).");
 			sb.AppendLine();
 
 			int groupNum = 1;
-			foreach (var group in groups) {
-				sb.AppendLine($"Group {groupNum++} ({group.Count()} files):");
-				foreach (var item in group.OrderByDescending(d => d.Similarity)) {
+			foreach (var group in groupList) {
+				sb.AppendLine($"Group {groupNum++} ({group.Items.Count} files):");
+				foreach (var item in group.Items) {
 					string best = item.IsBestBitRateKbs || item.IsBestFrameSize ? " [best]" : string.Empty;
 					string partial = item.PartialClipOffsetDisplay.Length > 0 ? $" [partial clip {item.PartialClipOffsetDisplay}]" : string.Empty;
 					// AI-union pairs are the lower-confidence matches — users need to see

@@ -21,6 +21,9 @@ using VDF.Core.ViewModels;
 namespace VDF.CLI.Tests.Actions;
 
 public class DeletionStrategyTests {
+	static Dictionary<Guid, List<DuplicateItem>> MakeGroups(params (Guid GroupId, List<DuplicateItem> Items)[] groups) =>
+		groups.ToDictionary(group => group.GroupId, group => group.Items);
+
 	static DuplicateItem MakeItem(Guid groupId, long size, float similarity = 100f,
 		double durationSeconds = 60, int frameSizeInt = 1920, decimal bitRateKbs = 5000,
 		bool isBestBitRate = false, bool isBestFrameSize = false) {
@@ -52,11 +55,11 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_SmallestFile_KeepsLargestFile() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000),
 			MakeItem(Group1, size: 5000),
 			MakeItem(Group1, size: 3000),
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.SmallestFile);
 
@@ -68,11 +71,11 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_ShortestDuration_KeepsLongestDuration() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000, durationSeconds: 30),
 			MakeItem(Group1, size: 1000, durationSeconds: 120),
 			MakeItem(Group1, size: 1000, durationSeconds: 60),
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.ShortestDuration);
 
@@ -82,11 +85,11 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_WorstResolution_KeepsHighestResolution() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000, frameSizeInt: 1280),
 			MakeItem(Group1, size: 1000, frameSizeInt: 3840),
 			MakeItem(Group1, size: 1000, frameSizeInt: 1920),
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.WorstResolution);
 
@@ -96,9 +99,9 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_SingleItemGroup_NothingToDelete() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000),
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.SmallestFile);
 
@@ -107,10 +110,10 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_HundredPercentOnly_SkipsMixedSimilarity() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000, similarity: 100f),
 			MakeItem(Group1, size: 5000, similarity: 95f), // not 100%
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.HundredPercentOnly);
 
@@ -119,10 +122,10 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_HundredPercentOnly_IncludesAllHundredPercent() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000, similarity: 100f),
 			MakeItem(Group1, size: 5000, similarity: 100f),
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.HundredPercentOnly);
 
@@ -132,10 +135,10 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_LowestQuality_KeepsBestBitRate() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000, isBestBitRate: true),
 			MakeItem(Group1, size: 5000, isBestBitRate: false),
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.LowestQuality);
 
@@ -145,12 +148,13 @@ public class DeletionStrategyTests {
 
 	[Fact]
 	public void SelectForDeletion_MultipleGroups_ProcessesSeparately() {
-		var items = new List<DuplicateItem> {
+		var items = MakeGroups((Group1, [
 			MakeItem(Group1, size: 1000),
 			MakeItem(Group1, size: 5000),
+		]), (Group2, [
 			MakeItem(Group2, size: 2000),
 			MakeItem(Group2, size: 8000),
-		};
+		]));
 
 		var toDelete = DeletionStrategy.SelectForDeletion(items, Strategy.SmallestFile);
 
