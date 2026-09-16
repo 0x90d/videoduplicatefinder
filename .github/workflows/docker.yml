@@ -2,14 +2,18 @@ name: Docker (Web UI)
 
 # Builds and pushes the VDF Web Docker image to GHCR.
 #
-# Triggered by tag pushes only, mirroring nightly.yml and release.yml:
-#   1. nightly tag moved by nightly.yml → :nightly (movable) + :sha (immutable)
-#   2. v*.*.* tag pushed manually        → :4.1.1 (immutable, Docker convention: no v prefix) + :sha
+# Two trigger paths:
+#   1. Push to master (nightly)   → :nightly (movable) + :sha (immutable)
+#   2. Push of v*.*.* tag (release) → :4.1.1 (immutable, no v prefix) + :sha
+#
+# Note: We cannot rely on the `nightly` tag push to trigger this workflow,
+# because GITHUB_TOKEN pushes don't trigger other workflows. So we listen
+# on push to master directly for nightly builds.
 
 on:
   push:
+    branches: [master]
     tags:
-      - 'nightly'
       - 'v*.*.*'
   workflow_dispatch:
 
@@ -51,7 +55,7 @@ jobs:
             VERSION_TAG="${IMAGE}:${VERSION}"
             echo "tags=${SHA_TAG},${VERSION_TAG}" >> $GITHUB_OUTPUT
           else
-            # nightly tag → movable nightly + sha
+            # Nightly (push to master) → movable nightly + sha
             NIGHTLY_TAG="${IMAGE}:nightly"
             echo "tags=${SHA_TAG},${NIGHTLY_TAG}" >> $GITHUB_OUTPUT
           fi
