@@ -1,33 +1,26 @@
-name: Build releases
+name: Release
 
+# Triggered when a version tag like v4.1.1 is pushed.
+# Builds all platforms and creates an immutable GitHub Release
+# (NOT a pre-release) with the build artifacts attached.
 
 on:
   push:
-    branches: [master]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name (e.g. v4.1.1)'
+        required: true
+
+permissions:
+  contents: write
 
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Delete old release assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Delete all existing assets from the 4.1.x release so they get replaced with fresh
-          # builds. '|| true' covers the very first run, before the release exists.
-          # 4.0.x is FROZEN at v4.0-final (last old-UI build) and must never be touched again.
-          gh release view 4.1.x --json assets --jq '.assets[].name' 2>/dev/null | while read -r asset; do
-            gh release delete-asset 4.1.x "$asset" --yes
-          done || true
 
   build:
-    needs: cleanup
-
     strategy:
-      # One platform failing (e.g. a runner-image hiccup) must not cancel the
-      # siblings: the cleanup job already emptied the release, so a cancelled
-      # matrix would leave it with missing assets until the next push.
       fail-fast: false
       matrix:
         kind: ['linux', 'windows', 'windowsarm64', 'macOS', 'macOSarm64', 'linuxarm64']
@@ -41,10 +34,6 @@ jobs:
             target: win-x64
             name: win-x64
           - kind: windowsarm64
-            # Native ARM64 runner (same reasoning as linux-arm64): Native AOT
-            # builds on its own architecture instead of relying on the x64
-            # image's cross toolchain. The FFmpeg auto-downloader already picks
-            # the BtbN winarm64 shared build on ARM64 Windows.
             os: windows-11-arm
             target: win-arm64
             name: win-arm64
@@ -57,29 +46,44 @@ jobs:
             target: osx-arm64
             name: osx-arm64
           - kind: linuxarm64
-            # Native ARM64 runner: Native AOT cannot cross-compile from x64 to
-            # linux-arm64 without a cross toolchain, so build it on its own arch.
             os: ubuntu-24.04-arm
             target: linux-arm64
             name: linux-arm64
-            
+
     runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v5
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
-    - name: Declare some variables
-      id: vars
+
+    - name: Determine tag name and release name
+      id: tag
+      shell: bash
+      run: |
+        if [[ -n "${{ github.event.inputs.tag }}" ]]; then
+          TAG_NAME="${{ github.event.inputs.tag }}"
+        else
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+        fi
+        # Git tag includes the 'v' prefix (e.g. v4.1.1)
+        # Release title strips it for cleaner display (e.g. 4.1.1)
+        REL_NAME="${TAG_NAME#v}"
+        echo "name=${TAG_NAME}" >> $GITHUB_OUTPUT
+        echo "release_name=${REL_NAME}" >> $GITHUB_OUTPUT
+
+    - name: Record short SHA
+      id: sha
       shell: bash
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
     - name: Build
       shell: bash
       run: |
-          # Build GUI (Native AOT — verified AOT-safe for 4.0: compiled bindings,
-          # source-generated JSON, statically-registered MemoryPack formatters)
+          # Build GUI (Native AOT)
           dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputGUI"
           # Build CLI (Native AOT)
           dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputCLI"
@@ -98,9 +102,7 @@ jobs:
             cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
             cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
             chmod +x "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
-            # Ad-hoc sign every binary in the bundle. macOS 14+ (and especially Tahoe 26)
-            # rejects unsigned dylibs under Library Validation, which previously caused
-            # "library load disallowed by system policy" on launch.
+            # Ad-hoc sign every binary in the bundle
             codesign --force --deep --sign - \
               --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
               "Video Duplicate Finder.app"
@@ -126,20 +128,32 @@ jobs:
           fi
           # Clean up
           rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
-          
-    - name: Publish
+
+    - name: Generate release notes
+      id: notes
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Auto-generate release notes from commits since the last tag
+        NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
+          -f tag_name="${{ steps.tag.outputs.name }}" 2>/dev/null | jq -r '.body' 2>/dev/null || echo "")
+        if [[ -z "$NOTES" ]]; then
+          NOTES="Release ${{ steps.tag.outputs.release_name }} based on commit ${{ steps.sha.outputs.sha_short }}"
+        fi
+        # Write to file to preserve multi-line content
+        echo "$NOTES" > release_notes.md
+
+    - name: Publish release
       uses: softprops/action-gh-release@v3
       with:
-          tag_name: 4.1.x
+          tag_name: ${{ steps.tag.outputs.name }}
+          prerelease: false
+          name: ${{ steps.tag.outputs.release_name }}
+          body_path: release_notes.md
           files: |
             GUI-*
             CLI-*
             Web-*
-          body: |
-            Note: These are daily builds. Attachments are automatically created and replaced on every new commit. Regardless of what the message above says. If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in VDF folder.
-            4.1 highlights: redesigned interface (guided Set up / Scan / Review flow, scan profiles, reworked results list and settings) on top of all 4.0.x features. Databases and settings carry over. Prefer the old interface? The final classic build stays available in the 4.0.x release.
-            Last build based on ${{ steps.vars.outputs.sha_short }}
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-

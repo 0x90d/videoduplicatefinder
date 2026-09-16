@@ -1,0 +1,168 @@
+name: Nightly build
+
+# Mirrors the Neovim nightly model:
+#   1. Every push to master moves the mutable `nightly` tag to the new HEAD.
+#   2. CI builds all platforms and uploads artifacts to the `nightly` Release,
+#      marked as a pre-release.  Old assets are replaced in-place.
+#   3. A versioned tag (e.g. v4.1.1) is NOT a nightly — it is handled by
+#      release.yml instead.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+
+  # ── Move the `nightly` tag to the commit that triggered this run ──────────
+  retag:
+    runs-on: ubuntu-latest
+    outputs:
+      sha_short: ${{ steps.sha.outputs.sha_short }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0          # need history to move tags
+
+      - name: Record short SHA
+        id: sha
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Move nightly tag
+        run: |
+          git tag -f nightly HEAD
+          git push origin refs/tags/nightly --force
+
+  # ── Remove old assets so they get cleanly replaced ────────────────────────
+  cleanup:
+    needs: retag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view nightly --json assets --jq '.assets[].name' 2>/dev/null \
+            | while read -r asset; do
+                gh release delete-asset nightly "$asset" --yes
+              done || true
+
+  # ── Build matrix ──────────────────────────────────────────────────────────
+  build:
+    needs: cleanup
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: ['linux', 'windows', 'windowsarm64', 'macOS', 'macOSarm64', 'linuxarm64']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+            name: linux-x64
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+            name: win-x64
+          - kind: windowsarm64
+            os: windows-11-arm
+            target: win-arm64
+            name: win-arm64
+          - kind: macOS
+            os: macos-latest
+            target: osx-x64
+            name: osx-x64
+          - kind: macOSarm64
+            os: macos-latest
+            target: osx-arm64
+            name: osx-arm64
+          - kind: linuxarm64
+            os: ubuntu-24.04-arm
+            target: linux-arm64
+            name: linux-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Build
+      shell: bash
+      run: |
+          # Build GUI (Native AOT)
+          dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputGUI"
+          # Build CLI (Native AOT)
+          dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputCLI"
+          # Build Web (JIT, self-contained — Blazor Server is not supported under Native AOT)
+          dotnet publish ./VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputWeb"
+          # Pack files
+          if [[ "${{ matrix.target }}" == win-* ]]; then
+            7z a -tzip "GUI-${{ matrix.target }}.zip" "./outputGUI/*"
+            7z a -tzip "CLI-${{ matrix.target }}.zip" "./outputCLI/*"
+            7z a -tzip "Web-${{ matrix.target }}.zip" "./outputWeb/*"
+          elif [[ "${{ matrix.target }}" == osx-* ]]; then
+            # Wrap the GUI in a proper macOS .app bundle
+            mkdir -p "Video Duplicate Finder.app/Contents/MacOS"
+            mkdir -p "Video Duplicate Finder.app/Contents/Resources"
+            cp -r outputGUI/. "Video Duplicate Finder.app/Contents/MacOS/"
+            cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
+            cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
+            chmod +x "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
+            # Ad-hoc sign every binary in the bundle
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              "Video Duplicate Finder.app"
+            codesign --verify --deep --strict --verbose=2 "Video Duplicate Finder.app"
+            tar czvf "GUI-${{ matrix.target }}.tar.gz" "Video Duplicate Finder.app"
+            chmod +x outputCLI/vdf-cli
+            chmod +x outputWeb/VDF.Web
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              outputCLI/vdf-cli
+            codesign --force --deep --sign - \
+              --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
+              outputWeb/VDF.Web
+            tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
+            tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
+          else
+            # Bundle .desktop file and icon for Linux desktop integration
+            cp "VDF.GUI/Assets/Linux/icon.png" "outputGUI/icon.png"
+            cp "VDF.GUI/Assets/Linux/videoduplicatefinder.desktop" "outputGUI/videoduplicatefinder.desktop"
+            tar czvf "GUI-${{ matrix.target }}.tar.gz" "outputGUI"
+            tar czvf "CLI-${{ matrix.target }}.tar.gz" "outputCLI"
+            tar czvf "Web-${{ matrix.target }}.tar.gz" "outputWeb"
+          fi
+          # Clean up
+          rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
+
+    - name: Upload to nightly pre-release
+      uses: softprops/action-gh-release@v3
+      with:
+          tag_name: nightly
+          prerelease: true
+          name: Nightly
+          files: |
+            GUI-*
+            CLI-*
+            Web-*
+          body: |
+            ⚠️ **Nightly build — artifacts are replaced on every push to master.**
+
+            These are automatically generated development builds. They may contain bugs or unfinished features. Use at your own risk.
+
+            **Last build based on commit `${{ needs.retag.outputs.sha_short }}`**
+
+            ---
+
+            4.1 highlights: redesigned interface (guided Set up / Scan / Review flow, scan profiles, reworked results list and settings) on top of all 4.0.x features. Databases and settings carry over. Prefer the old interface? The final classic build stays available in the 4.0.x release.
+
+            If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in the VDF folder.
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

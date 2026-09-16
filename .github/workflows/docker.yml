@@ -1,13 +1,25 @@
 name: Docker (Web UI)
 
-on: [push]
+# Builds and pushes the VDF Web Docker image to GHCR.
+#
+# Triggered by tag pushes only, mirroring nightly.yml and release.yml:
+#   1. nightly tag moved by nightly.yml → :nightly (movable) + :sha (immutable)
+#   2. v*.*.* tag pushed manually        → :4.1.1 (immutable, Docker convention: no v prefix) + :sha
+
+on:
+  push:
+    tags:
+      - 'nightly'
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@v5
@@ -25,6 +37,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine Docker tags
+        id: tags
+        shell: bash
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          IMAGE="ghcr.io/${OWNER,,}/vdf-web"   # lowercase owner for GHCR
+          SHA_TAG="${IMAGE}:${{ github.sha }}"
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            # Versioned release tag → strip 'v' prefix for Docker tag (Docker convention: no v)
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            VERSION_TAG="${IMAGE}:${VERSION}"
+            echo "tags=${SHA_TAG},${VERSION_TAG}" >> $GITHUB_OUTPUT
+          else
+            # nightly tag → movable nightly + sha
+            NIGHTLY_TAG="${IMAGE}:nightly"
+            echo "tags=${SHA_TAG},${NIGHTLY_TAG}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push vdf-web
         uses: docker/build-push-action@v7
         with:
@@ -32,8 +63,6 @@ jobs:
           file: VDF.Web/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/vdf-web:latest
-            ghcr.io/${{ github.repository_owner }}/vdf-web:${{ github.sha }}
+          tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
