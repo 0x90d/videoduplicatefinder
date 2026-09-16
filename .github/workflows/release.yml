@@ -140,16 +140,16 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
 
-    - name: Build
-      shell: bash
-      run: |
+      - name: Build
+        shell: bash
+        run: |
           # Build GUI (Native AOT)
           dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputGUI"
           # Build CLI (Native AOT)
@@ -196,11 +196,11 @@ jobs:
           # Clean up
           rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
 
-    # ── Upload artifacts only (no body) ──────────────────────────────────────
-    - name: Upload nightly artifacts
-      if: needs.setup.outputs.is_nightly == 'true'
-      uses: softprops/action-gh-release@v3
-      with:
+      # ── Upload artifacts only (no body) ──────────────────────────────────────
+      - name: Upload nightly artifacts
+        if: needs.setup.outputs.is_nightly == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
           tag_name: nightly
           prerelease: true
           name: Nightly
@@ -208,13 +208,13 @@ jobs:
             GUI-*
             CLI-*
             Web-*
-      env:
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload release artifacts
-      if: needs.setup.outputs.is_nightly == 'false'
-      uses: softprops/action-gh-release@v3
-      with:
+      - name: Upload release artifacts
+        if: needs.setup.outputs.is_nightly == 'false'
+        uses: softprops/action-gh-release@v3
+        with:
           tag_name: ${{ needs.setup.outputs.tag_name }}
           prerelease: false
           name: ${{ needs.setup.outputs.release_name }}
@@ -222,7 +222,7 @@ jobs:
             GUI-*
             CLI-*
             Web-*
-      env:
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ── Set release body (only once, after all builds finish) ──────────────────
@@ -239,17 +239,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release edit nightly --notes "⚠️ **Nightly build — artifacts are replaced on every push to master.**
+          cat > release_notes.md << 'EOF'
+          ⚠️ **Nightly build — artifacts are replaced on every push to master.**
 
           These are automatically generated development builds. They may contain bugs or unfinished features. Use at your own risk.
 
-          **Last build based on commit \`${{ needs.setup.outputs.sha_short }}\`**
+          **Last build based on commit `${{ needs.setup.outputs.sha_short }}`**
 
           ---
 
           4.1 highlights: redesigned interface (guided Set up / Scan / Review flow, scan profiles, reworked results list and settings) on top of all 4.0.x features. Databases and settings carry over. Prefer the old interface? The final classic build stays available in the 4.0.x release.
 
-          If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in the VDF folder."
+          If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in the VDF folder.
+          EOF
+          gh release edit nightly --notes-file release_notes.md
 
       # ── Release: auto-generate changelog via GitHub API ─────────────────────
       - name: Generate and attach release notes
@@ -257,9 +260,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
-            -f tag_name="${{ needs.setup.outputs.tag_name }}" 2>/dev/null | jq -r '.body' 2>/dev/null || echo "")
-          if [[ -z "$NOTES" ]]; then
-            NOTES="Release ${{ needs.setup.outputs.release_name }} based on commit ${{ needs.setup.outputs.sha_short }}"
+          # Fetch auto-generated release notes from GitHub API
+          gh api repos/${{ github.repository }}/releases/generate-notes \
+            -f tag_name="${{ needs.setup.outputs.tag_name }}" 2>/dev/null \
+            | jq -r '.body' 2>/dev/null > release_notes.md
+
+          # Fallback if API returned nothing
+          if [[ ! -s release_notes.md ]]; then
+            echo "Release ${{ needs.setup.outputs.release_name }} based on commit ${{ needs.setup.outputs.sha_short }}" > release_notes.md
           fi
-          gh release edit ${{ needs.setup.outputs.tag_name }} --notes "$NOTES"
+
+          # Append static highlights section
+          cat >> release_notes.md << 'EOF'
+
+          ---
+
+          4.1 highlights: redesigned interface (guided Set up / Scan / Review flow, scan profiles, reworked results list and settings) on top of all 4.0.x features. Databases and settings carry over. Prefer the old interface? The final classic build stays available in the 4.0.x release.
+
+          If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in the VDF folder.
+          EOF
+
+          gh release edit ${{ needs.setup.outputs.tag_name }} --notes-file release_notes.md
