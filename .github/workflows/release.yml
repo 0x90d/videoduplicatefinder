@@ -1,25 +1,99 @@
-name: Release
+name: Build & Release
 
-# Triggered when a version tag like v4.1.1 is pushed.
-# Builds all platforms and creates an immutable GitHub Release
-# (NOT a pre-release) with the build artifacts attached.
+# Unified workflow for both nightly and versioned releases, following the
+# Neovim model: a single file with three trigger paths.
+#
+#   1. Push to master → nightly build (prerelease, overwrites previous nightly)
+#   2. Push of v*.*.* tag → versioned release (immutable, not a prerelease)
+#   3. Manual dispatch → can do either, depending on the tag_name input
 
 on:
   push:
+    branches: [master]
     tags:
       - 'v*.*.*'
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Tag name (e.g. v4.1.1)'
+      tag_name:
+        description: 'Tag name (use "nightly" for a nightly build, or e.g. "v4.1.1" for a release)'
         required: true
+        default: nightly
 
 permissions:
   contents: write
 
 jobs:
 
+  # ── Determine build type and parameters ────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      is_nightly: ${{ steps.vars.outputs.is_nightly }}
+      tag_name: ${{ steps.vars.outputs.tag_name }}
+      release_name: ${{ steps.vars.outputs.release_name }}
+      sha_short: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - name: Determine build parameters
+        id: vars
+        shell: bash
+        run: |
+          # Determine TAG_NAME based on trigger source
+          if [[ -n "${{ github.event.inputs.tag_name }}" ]]; then
+            # Manual dispatch
+            TAG_NAME="${{ github.event.inputs.tag_name }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            # Version tag push (e.g. v4.1.1)
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          else
+            # Push to master → nightly
+            TAG_NAME="nightly"
+          fi
+
+          if [[ "$TAG_NAME" == "nightly" ]]; then
+            echo "is_nightly=true" >> $GITHUB_OUTPUT
+            echo "release_name=Nightly" >> $GITHUB_OUTPUT
+          else
+            echo "is_nightly=false" >> $GITHUB_OUTPUT
+            # Strip 'v' prefix for release title (e.g. v4.1.1 → 4.1.1)
+            echo "release_name=${TAG_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "sha_short=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+
+  # ── Move nightly tag to current HEAD (only for nightly builds) ─────────────
+  retag:
+    needs: setup
+    if: needs.setup.outputs.is_nightly == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Move nightly tag
+        run: |
+          git tag -f nightly HEAD
+          git push origin refs/tags/nightly --force
+
+  # ── Clean up old nightly assets (only for nightly builds) ──────────────────
+  cleanup:
+    needs: retag
+    if: always() && needs.setup.outputs.is_nightly == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view nightly --json assets --jq '.assets[].name' 2>/dev/null \
+            | while read -r asset; do
+                gh release delete-asset nightly "$asset" --yes
+              done || true
+
+  # ── Build matrix (shared by both nightly and release) ──────────────────────
   build:
+    needs: [setup, cleanup]
+    if: always()
     strategy:
       fail-fast: false
       matrix:
@@ -59,26 +133,6 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
-
-    - name: Determine tag name and release name
-      id: tag
-      shell: bash
-      run: |
-        if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-          TAG_NAME="${{ github.event.inputs.tag }}"
-        else
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-        fi
-        # Git tag includes the 'v' prefix (e.g. v4.1.1)
-        # Release title strips it for cleaner display (e.g. 4.1.1)
-        REL_NAME="${TAG_NAME#v}"
-        echo "name=${TAG_NAME}" >> $GITHUB_OUTPUT
-        echo "release_name=${REL_NAME}" >> $GITHUB_OUTPUT
-
-    - name: Record short SHA
-      id: sha
-      shell: bash
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Build
       shell: bash
@@ -129,27 +183,54 @@ jobs:
           # Clean up
           rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
 
+    # ── Publish as nightly pre-release ───────────────────────────────────────
+    - name: Publish nightly
+      if: needs.setup.outputs.is_nightly == 'true'
+      uses: softprops/action-gh-release@v3
+      with:
+          tag_name: nightly
+          prerelease: true
+          name: Nightly
+          files: |
+            GUI-*
+            CLI-*
+            Web-*
+          body: |
+            ⚠️ **Nightly build — artifacts are replaced on every push to master.**
+
+            These are automatically generated development builds. They may contain bugs or unfinished features. Use at your own risk.
+
+            **Last build based on commit `${{ needs.setup.outputs.sha_short }}`**
+
+            ---
+
+            4.1 highlights: redesigned interface (guided Set up / Scan / Review flow, scan profiles, reworked results list and settings) on top of all 4.0.x features. Databases and settings carry over. Prefer the old interface? The final classic build stays available in the 4.0.x release.
+
+            If you experience upgrade issues you may need to delete your 'ScannedFiles.db' file in the VDF folder.
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # ── Publish as versioned release ─────────────────────────────────────────
     - name: Generate release notes
-      id: notes
+      if: needs.setup.outputs.is_nightly == 'false'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Auto-generate release notes from commits since the last tag
         NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
-          -f tag_name="${{ steps.tag.outputs.name }}" 2>/dev/null | jq -r '.body' 2>/dev/null || echo "")
+          -f tag_name="${{ needs.setup.outputs.tag_name }}" 2>/dev/null | jq -r '.body' 2>/dev/null || echo "")
         if [[ -z "$NOTES" ]]; then
-          NOTES="Release ${{ steps.tag.outputs.release_name }} based on commit ${{ steps.sha.outputs.sha_short }}"
+          NOTES="Release ${{ needs.setup.outputs.release_name }} based on commit ${{ needs.setup.outputs.sha_short }}"
         fi
-        # Write to file to preserve multi-line content
         echo "$NOTES" > release_notes.md
 
     - name: Publish release
+      if: needs.setup.outputs.is_nightly == 'false'
       uses: softprops/action-gh-release@v3
       with:
-          tag_name: ${{ steps.tag.outputs.name }}
+          tag_name: ${{ needs.setup.outputs.tag_name }}
           prerelease: false
-          name: ${{ steps.tag.outputs.release_name }}
+          name: ${{ needs.setup.outputs.release_name }}
           body_path: release_notes.md
           files: |
             GUI-*
