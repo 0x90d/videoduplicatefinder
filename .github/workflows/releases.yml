@@ -98,6 +98,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Delete all existing assets from the nightly release so they get replaced with fresh
+          # builds. '|| true' covers the very first run, before the release exists.
+          # Versioned releases (v*.*.*) are immutable and are never touched here.
           gh release view nightly --json assets --jq '.assets[].name' 2>/dev/null \
             | while read -r asset; do
                 gh release delete-asset nightly "$asset" --yes
@@ -108,6 +111,9 @@ jobs:
     needs: [setup, cleanup]
     if: always()
     strategy:
+      # One platform failing (e.g. a runner-image hiccup) must not cancel the
+      # siblings: the cleanup job already emptied the release, so a cancelled
+      # matrix would leave it with missing assets until the next push.
       fail-fast: false
       matrix:
         kind: ['linux', 'windows', 'windowsarm64', 'macOS', 'macOSarm64', 'linuxarm64']
@@ -121,6 +127,10 @@ jobs:
             target: win-x64
             name: win-x64
           - kind: windowsarm64
+            # Native ARM64 runner (same reasoning as linux-arm64): Native AOT
+            # builds on its own architecture instead of relying on the x64
+            # image's cross toolchain. The FFmpeg auto-downloader already picks
+            # the BtbN winarm64 shared build on ARM64 Windows.
             os: windows-11-arm
             target: win-arm64
             name: win-arm64
@@ -133,6 +143,8 @@ jobs:
             target: osx-arm64
             name: osx-arm64
           - kind: linuxarm64
+            # Native ARM64 runner: Native AOT cannot cross-compile from x64 to
+            # linux-arm64 without a cross toolchain, so build it on its own arch.
             os: ubuntu-24.04-arm
             target: linux-arm64
             name: linux-arm64
@@ -150,7 +162,8 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          # Build GUI (Native AOT)
+          # Build GUI (Native AOT — verified AOT-safe for 4.0: compiled bindings,
+          # source-generated JSON, statically-registered MemoryPack formatters)
           dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputGUI"
           # Build CLI (Native AOT)
           dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputCLI"
@@ -169,7 +182,9 @@ jobs:
             cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
             cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
             chmod +x "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
-            # Ad-hoc sign every binary in the bundle
+            # Ad-hoc sign every binary in the bundle. macOS 14+ (and especially Tahoe 26)
+            # rejects unsigned dylibs under Library Validation, which previously caused
+            # "library load disallowed by system policy" on launch.
             codesign --force --deep --sign - \
               --entitlements "VDF.GUI/Assets/macOS/entitlements.plist" \
               "Video Duplicate Finder.app"
