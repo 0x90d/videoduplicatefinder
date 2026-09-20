@@ -33,8 +33,7 @@ namespace VDF.GUI.Views {
 		public AboutWindow() {
 			InitializeComponent();
 
-			if (!SettingsFile.Instance.DarkMode)
-				RequestedThemeVariant = ThemeVariant.Light;
+			VDF.GUI.Utils.Appearance.Attach(this);
 			if (ApplicationHelpers.MainWindow != null)
 				Icon = ApplicationHelpers.MainWindow.Icon;
 

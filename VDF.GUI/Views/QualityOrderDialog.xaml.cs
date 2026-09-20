@@ -11,8 +11,7 @@ namespace VDF.GUI.Views {
 			DataContext = new QualityOrderVM();
 
 			Owner = ApplicationHelpers.MainWindow;
-			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
-				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+			VDF.GUI.Utils.Appearance.Attach(this);
 		}
 
 		public QualityOrderVM ViewModel => (QualityOrderVM)DataContext!;

@@ -76,10 +76,15 @@ namespace VDF.GUI.Views {
 				TransparencyLevelHint = new List<WindowTransparencyLevel> { WindowTransparencyLevel.Mica };
 				// Avalonia 12: ExtendClientAreaChromeHints was removed; WindowDecorations.Full
 				// (system chrome) is the default, matching the old PreferSystemChrome behavior.
-				if (SettingsFile.Instance.DarkMode)
-					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundBlack")!.IsVisible = true;
-				else
-					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundWhite")!.IsVisible = true;
+				// The tint under the Mica follows the theme, which can change while the window
+				// is open (the setting, or the system switching between light and dark).
+				void UpdateMicaTint() {
+					bool dark = Utils.Appearance.IsDarkNow;
+					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundBlack")!.IsVisible = dark;
+					this.FindControl<ExperimentalAcrylicBorder>("ExperimentalAcrylicBorderBackgroundWhite")!.IsVisible = !dark;
+				}
+				ActualThemeVariantChanged += (_, _) => UpdateMicaTint();
+				UpdateMicaTint();
 			}
 
 			// GNOME (and other Linux compositors) keep their server-side title bar even when
@@ -94,17 +99,8 @@ namespace VDF.GUI.Views {
 				this.FindControl<StackPanel>("TitlebarNav")!.Margin = new Thickness(0, 0, 8, 0);
 			}
 
-			// Application-level, not window-level: the managed window chrome (caption bar,
-			// titlebar buttons) resolves its brushes against the application's variant, so a
-			// window-only override leaves a dark titlebar band on an otherwise light window.
-			if (!SettingsFile.Instance.DarkMode && Application.Current != null)
-				Application.Current.RequestedThemeVariant = ThemeVariant.Light;
-
-			// Switch theme at runtime when the user toggles the DarkMode setting
-			SettingsFile.Instance.PropertyChanged += (_, e) => {
-				if (e.PropertyName == nameof(SettingsFile.DarkMode) && Application.Current != null)
-					Application.Current.RequestedThemeVariant = SettingsFile.Instance.DarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
-			};
+			// Theme, and everything else that follows the system, for the whole application.
+			Utils.Appearance.Attach(this);
 
 			// The settings page has no Save button anymore ("Settings save instantly"):
 			// persist any settings change debounced, plus the folder/filter lists.

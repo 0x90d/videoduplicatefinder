@@ -40,8 +40,7 @@ namespace VDF.GUI.Views {
 			DataContext = vm;
 			Owner = ApplicationHelpers.MainWindow;
 			Closing += DatabaseViewer_Closing;
-			if (!SettingsFile.Instance.DarkMode)
-				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+			VDF.GUI.Utils.Appearance.Attach(this);
 
 			var commandMap = new Dictionary<string, ICommand> {
 				["DB_DeleteSelectedEntries"] = vm.DeleteSelectedEntries,

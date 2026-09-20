@@ -26,6 +26,8 @@ using VDF.GUI.ViewModels;
 
 namespace VDF.GUI.Data {
 	public enum ThumbnailDoubleClickAction { OpenFile, OpenThumbnailComparer }
+	/// <summary>Which theme the app uses. System follows what the operating system is set to, live.</summary>
+	public enum ThemeMode { System, Light, Dark }
 
 	public class SettingsFile : ReactiveObject {
 		static SettingsFile? instance;
@@ -415,11 +417,25 @@ namespace VDF.GUI.Data {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);
 		} = false;
-		[JsonPropertyName("DarkMode")]
-		public bool DarkMode {
+		[JsonPropertyName("ThemeMode")]
+		public ThemeMode ThemeMode {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);
-		} = true;
+		} = ThemeMode.System;
+		/// <summary>
+		/// The on/off switch <see cref="ThemeMode"/> replaced, read once from an older settings
+		/// file and never written again. It defaulted to on, so "on" says nothing about what
+		/// the user wanted and becomes System; "off" was a choice and stays Light.
+		/// </summary>
+		[JsonPropertyName("DarkMode")]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+		public bool? LegacyDarkMode { get; set; }
+
+		internal void MigrateLegacyValues() {
+			if (LegacyDarkMode == false && ThemeMode == ThemeMode.System)
+				ThemeMode = ThemeMode.Light;
+			LegacyDarkMode = null;
+		}
 		[JsonPropertyName("ThumbnailComparerWindowWidth")]
 		public double? ThumbnailComparerWindowWidth {
 			get;
@@ -637,6 +653,7 @@ namespace VDF.GUI.Data {
 			if (!File.Exists(path)) return;
 			instance = JsonSerializer.Deserialize(File.ReadAllBytes(path), GuiJsonContext.Default.SettingsFile)
 				?? throw new JsonException($"'{path}' does not contain a settings object.");
+			instance.MigrateLegacyValues();
 		}
 
 		/// <summary>

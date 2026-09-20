@@ -14,8 +14,7 @@ public partial class RelocateFilesDialog : Window {
 		AvaloniaXamlLoader.Load(this);
 		DataContext = new RelocateFilesDialogVM(this);
 		Owner = ApplicationHelpers.MainWindow;
-		if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
-			RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+		VDF.GUI.Utils.Appearance.Attach(this);
 
 		// Drag-and-drop folders onto the From/To boxes and the scan-roots list, mirroring the
 		// include/blacklist lists in the main window (same DataFormat.File handling).

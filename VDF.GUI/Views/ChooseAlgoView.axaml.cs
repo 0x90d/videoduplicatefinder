@@ -35,8 +35,7 @@ public partial class ChooseAlgoView : Window {
 		Owner = ApplicationHelpers.MainWindow;
 
 
-		if (!SettingsFile.Instance.DarkMode)
-			RequestedThemeVariant = ThemeVariant.Light;
+		VDF.GUI.Utils.Appearance.Attach(this);
 		if (includesListBox != null) {
 			includesListBox.AddHandler(DragDrop.DropEvent, DropInclude);
 			includesListBox.AddHandler(DragDrop.DragOverEvent, DragOver);

@@ -24,8 +24,7 @@ namespace VDF.GUI.Views {
 		public BlacklistManagerView() {
 			AvaloniaXamlLoader.Load(this);
 			Owner = ApplicationHelpers.MainWindow;
-			if (!VDF.GUI.Data.SettingsFile.Instance.DarkMode)
-				RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+			VDF.GUI.Utils.Appearance.Attach(this);
 		}
 
 		public BlacklistManagerView(BlacklistManagerVM vm) : this() {

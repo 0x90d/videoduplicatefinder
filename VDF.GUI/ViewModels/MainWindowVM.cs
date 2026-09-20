@@ -1198,6 +1198,22 @@ namespace VDF.GUI.ViewModels {
 				OpenItems();
 		});
 
+		public Data.ThemeModeOption[] ThemeModeOptions { get; } = {
+			new(App.Lang["Settings.Theme.System"], Data.ThemeMode.System),
+			new(App.Lang["Settings.Theme.Light"], Data.ThemeMode.Light),
+			new(App.Lang["Settings.Theme.Dark"], Data.ThemeMode.Dark),
+		};
+
+		// SelectedItem plus a property, like the other settings combos (#829).
+		public Data.ThemeModeOption? SelectedThemeModeOption {
+			get => ThemeModeOptions.FirstOrDefault(o => o.Value == SettingsFile.Instance.ThemeMode);
+			set {
+				if (value == null || value.Value == SettingsFile.Instance.ThemeMode) return;
+				SettingsFile.Instance.ThemeMode = value.Value;
+				this.RaisePropertyChanged();
+			}
+		}
+
 		public Data.ThumbnailDoubleClickOption[] ThumbnailDoubleClickOptions { get; } = {
 			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenFile"], Data.ThumbnailDoubleClickAction.OpenFile),
 			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenThumbnailComparer"], Data.ThumbnailDoubleClickAction.OpenThumbnailComparer),

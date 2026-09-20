@@ -29,6 +29,17 @@ namespace VDF.GUI.Data {
 		}
 	}
 
+	/// <summary>One entry of the theme combo: the translated name and the mode it stands for.</summary>
+	public sealed class ThemeModeOption {
+		public string Name { get; }
+		public ThemeMode Value { get; }
+		public ThemeModeOption(string name, ThemeMode value) {
+			Name = name;
+			Value = value;
+		}
+		public override string ToString() => Name;
+	}
+
 	public sealed class ThumbnailDoubleClickOption {
 		public string Name { get; }
 		public ThumbnailDoubleClickAction Value { get; }

@@ -110,4 +110,32 @@ public class SettingsLoadRecoveryTests : IDisposable {
 		string path = WriteSettingsFile("import.json", "null");
 		Assert.ThrowsAny<JsonException>(() => SettingsFile.LoadSettings(path));
 	}
+
+	// The theme used to be a dark mode switch that defaulted to on. It is a choice of
+	// System / Light / Dark now, and an older settings file has to land somewhere sensible.
+	[Theory]
+	[InlineData("{ \"DarkMode\": false }", ThemeMode.Light)]  // switched off: a choice, kept
+	[InlineData("{ \"DarkMode\": true }", ThemeMode.System)]  // the old default says nothing: follow the system
+	[InlineData("{ }", ThemeMode.System)]
+	[InlineData("{ \"DarkMode\": false, \"ThemeMode\": 2 }", ThemeMode.Dark)] // an explicit mode always wins
+	[InlineData("{ \"ThemeMode\": 1 }", ThemeMode.Light)]
+	public void OlderSettings_DarkModeSwitch_BecomesAThemeMode(string json, ThemeMode expected) {
+		string path = WriteSettingsFile("Settings.json", json);
+
+		SettingsFile.LoadSettings(path);
+
+		Assert.Equal(expected, SettingsFile.Instance.ThemeMode);
+	}
+
+	[Fact]
+	public void OlderSettings_DarkModeSwitch_IsNotWrittenBack() {
+		string path = WriteSettingsFile("Settings.json", "{ \"DarkMode\": false }");
+		SettingsFile.LoadSettings(path);
+
+		SettingsFile.SaveSettings(path);
+
+		using var saved = JsonDocument.Parse(File.ReadAllText(path));
+		Assert.False(saved.RootElement.TryGetProperty("DarkMode", out _));
+		Assert.Equal((int)ThemeMode.Light, saved.RootElement.GetProperty("ThemeMode").GetInt32());
+	}
 }
