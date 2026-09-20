@@ -23,6 +23,7 @@ using Avalonia.Layout;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Avalonia.VisualTree;
 using DynamicData;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
@@ -120,6 +121,12 @@ namespace VDF.GUI.Views {
 			if (combo?.IsDropDownOpen == true) return;
 
 			bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+			// A focused slider keeps its plain arrow keys: taken away, it could be reached with
+			// Tab and then not moved, which left "difference sensitivity" to mouse users only.
+			// On the position slider the arrows do what they do anyway. Shift+arrows (one frame
+			// on both panes) and every other culling key stay with the comparer; a slider
+			// ignores modified arrows by itself.
+			if (!shift && e.Key is Key.Left or Key.Right && IsInsideSlider(focused)) return;
 			switch (e.Key) {
 				case Key.A:
 					vm.KeepLeftCommand.Execute().Subscribe();
@@ -152,6 +159,9 @@ namespace VDF.GUI.Views {
 					break;
 			}
 		}
+
+		static bool IsInsideSlider(Control? focused) =>
+			focused is Slider || focused?.FindAncestorOfType<Slider>() != null;
 
 		void ApplySavedWindowPlacement() {
 			var settings = SettingsFile.Instance;

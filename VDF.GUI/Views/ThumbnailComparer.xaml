@@ -226,6 +226,7 @@
                                    IsVisible="{Binding HighlightDifferences}"
                                    Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.DiffSensitivity]}" />
                         <Slider AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.DiffSensitivity]}" Width="110" VerticalAlignment="Center" Minimum="0" Maximum="1"
+                                SmallChange="0.05" LargeChange="0.2"
                                 IsVisible="{Binding HighlightDifferences}"
                                 Value="{Binding DiffSensitivity}" />
                         <Border Width="1" Height="22" Margin="4,0" Background="{DynamicResource SystemControlHighlightBaseLowBrush}" />
