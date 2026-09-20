@@ -69,9 +69,13 @@ public class DialogContrastTests {
 		dialog.Show();
 		HeadlessUi.Pump();
 		try {
-			var failures = ContrastTests.Measure(dialog, variant);
-			Assert.True(failures.Count == 0,
-				$"{failures.Count} kind(s) of text below the required contrast in the {theme} theme:\n  " + string.Join("\n  ", failures));
+			// At rest, then with every control under the pointer, then pressed.
+			foreach (string state in new[] { "at rest", ":pointerover", ":pressed" }) {
+				if (state != "at rest") ContrastTests.PutInState(dialog, state);
+				var failures = ContrastTests.Measure(dialog, variant);
+				Assert.True(failures.Count == 0,
+					$"{failures.Count} kind(s) of text below the required contrast in the {theme} theme, controls {state}:\n  " + string.Join("\n  ", failures));
+			}
 		}
 		finally {
 			// Hidden, not closed: several of these save or shut down in their Closing handler.

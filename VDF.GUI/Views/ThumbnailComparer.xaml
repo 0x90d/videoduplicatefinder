@@ -734,6 +734,7 @@
                             <Border Classes="kbd"><TextBlock Text="Space" /></Border>
                         </StackPanel>
                         <Button AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.NextGroup]}" Padding="18,8" FontSize="13.5" FontWeight="SemiBold"
+                                Classes="solid"
                                 Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}"
                                 Foreground="{DynamicResource VdfOnAccentBrush}"
                                 Command="{Binding NextGroupCommand}"

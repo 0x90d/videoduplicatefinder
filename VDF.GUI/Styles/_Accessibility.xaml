@@ -28,6 +28,9 @@
     <!-- Contrast. The theme's accent button writes in the accent color itself, 3.6:1 on
          the light theme's white. VdfAccentTextBrush (App.xaml) is the accent tone that
          reaches 4.5:1 in both themes. -->
+    <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource VdfSelectedHoverTextBrush}" />
+    </Style>
     <Style Selector="Button.accent:not(.theme-solid)">
         <Setter Property="Foreground" Value="{DynamicResource VdfAccentTextBrush}" />
     </Style>

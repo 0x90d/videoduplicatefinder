@@ -14,4 +14,18 @@
             </Transitions>
         </Setter>
     </Style>
+
+    <!-- Buttons with a fill of their own (Scan, Next group, Delete checked). The theme paints
+         hover and pressed onto the template's presenter, over whatever Background the button
+         was given: under the pointer the fill was gone, and the text chosen for that fill
+         stood on the theme's neutral hover color. Dark text on dark grey for Scan in the dark
+         theme, white on white for Delete checked in the light one: the app's main actions
+         disappeared the moment the mouse reached them. The fill stays; the border the theme
+         changes and the 1px press are the feedback. -->
+    <Style Selector="Button.solid:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}" />
+    </Style>
+    <Style Selector="Button.solid:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}" />
+    </Style>
 </Styles>

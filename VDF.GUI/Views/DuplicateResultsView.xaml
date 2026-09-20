@@ -103,6 +103,11 @@
       <Setter Property="Background" Value="{DynamicResource VdfRowSelectedBrush}" />
       <Setter Property="Foreground" Value="{Binding $parent[ListBoxItem].Foreground}" />
     </Style>
+    <!-- While the mouse button is down the theme paints a grey of its own (metric values
+         at 4.2:1): the row takes the tint it is about to get anyway. -->
+    <Style Selector="ListBox.results ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource VdfRowSelectedBrush}" />
+    </Style>
     <Style Selector="Border.selframe">
       <Setter Property="BorderThickness" Value="1.5" />
       <Setter Property="BorderBrush" Value="Transparent" />
@@ -1011,6 +1016,7 @@
         </TextBlock>
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="16,0,0,0">
           <Button
+              Classes="solid"
               Background="{DynamicResource VdfDangerSolidBrush}"
               Foreground="White"
               FontSize="12.5"

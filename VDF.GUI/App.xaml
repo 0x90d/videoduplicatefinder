@@ -43,6 +43,9 @@
                          the dimmed secondary text at 3.4:1. -->
                     <SolidColorBrush x:Key="VdfRowSelectedBrush" Color="#E0EFEC" />
                     <SolidColorBrush x:Key="VdfRowSelectedFrameBrush" Color="#0E7C6B" />
+                    <!-- Text of a selected list item under the pointer. Light: the theme's own
+                         tone, which is fine there. -->
+                    <SolidColorBrush x:Key="VdfSelectedHoverTextBrush" Color="#255B55" />
                     <SolidColorBrush x:Key="VdfTombBrush" Color="#A93B31" />
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#8A9793" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#F7FAF9" />
@@ -89,6 +92,9 @@
                          green metric values at 2.2:1, on the row the user is working on. -->
                     <SolidColorBrush x:Key="VdfRowSelectedBrush" Color="#1F3631" />
                     <SolidColorBrush x:Key="VdfRowSelectedFrameBrush" Color="#34B39C" />
+                    <!-- Text of a selected list item under the pointer: the theme's #D7F9EE is
+                         4.25:1 on its hover fill #2B7F74, white is 4.9:1. -->
+                    <SolidColorBrush x:Key="VdfSelectedHoverTextBrush" Color="#FFFFFF" />
                     <SolidColorBrush x:Key="VdfTombBrush" Color="#C05248" />
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#6D7B76" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#1C2422" />

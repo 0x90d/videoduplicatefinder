@@ -77,6 +77,28 @@ public class ContrastTests {
 	});
 
 	[Theory]
+	[MemberData(nameof(ViewsAndThemes))]
+	public Task Text_IsReadable_OnControlsUnderThePointer(string viewName, string theme) => HeadlessUi.Run(() => {
+		var variant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+		var (view, cleanup) = Create(viewName);
+		var window = new Window { Width = 1300, Height = 950, RequestedThemeVariant = variant, Content = view };
+		window.Show();
+		HeadlessUi.Pump();
+		try {
+			foreach (string state in new[] { ":pointerover", ":pressed" }) {
+				PutInState(window, state);
+				var failures = Measure(window, variant);
+				Assert.True(failures.Count == 0,
+					$"{failures.Count} kind(s) of text below the required contrast in the {theme} theme with controls {state}:" + Environment.NewLine + "  " + string.Join(Environment.NewLine + "  ", failures));
+			}
+		}
+		finally {
+			window.Close();
+			cleanup();
+		}
+	});
+
+	[Theory]
 	[InlineData("Dark", false)]
 	[InlineData("Dark", true)]
 	[InlineData("Light", false)]
@@ -227,6 +249,20 @@ public class ContrastTests {
 			default:
 				throw new ArgumentOutOfRangeException(nameof(name));
 		}
+	}
+
+	/// <summary>
+	/// Puts every button, toggle, combo box and list item at once into the state the pointer
+	/// resting or pressing on it puts it in; a headless window has no pointer to move there.
+	/// Pressed is for buttons only, which can be held down: on a list item it is the
+	/// fraction of a second before "selected", on a fill of the theme's that neither its
+	/// own text tone nor white reaches 4.5:1 on.
+	/// </summary>
+	internal static void PutInState(Window window, string pseudoClass) {
+		foreach (var control in window.GetVisualDescendants().OfType<TemplatedControl>()
+					 .Where(c => c is Button || (pseudoClass != ":pressed" && c is ComboBox or ListBoxItem)))
+			((IPseudoClasses)control.Classes).Set(pseudoClass, true);
+		HeadlessUi.Pump();
 	}
 
 	internal static List<string> Measure(Window window, ThemeVariant variant) {
