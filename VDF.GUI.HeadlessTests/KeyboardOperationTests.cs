@@ -15,6 +15,7 @@
 //
 
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.VisualTree;
@@ -53,6 +54,105 @@ public class KeyboardOperationTests {
 		finally {
 			vm.SelectScanProfileCommand.Execute(original).Subscribe(); // profiles write the shared settings
 			window.Close();
+		}
+	});
+
+	[Theory]
+	[InlineData(1)] // a file row
+	[InlineData(0)] // a group header
+	public Task Results_ContextMenuKeyOnAFocusedRow_OpensThatRowsMenu(int rowIndex) => HeadlessUi.Run(() => {
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		var window = HeadlessUi.Show(new DuplicateResultsView { DataContext = vm });
+		var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "ResultsList");
+		var row = (ListBoxItem)list.ContainerFromIndex(rowIndex)!;
+		var menu = row.GetVisualDescendants().OfType<Border>().First(b => b.ContextMenu != null).ContextMenu!;
+		row.Focus(NavigationMethod.Directional);
+		HeadlessUi.Pump();
+
+		// What Shift+F10 / the Menu key boil down to: Avalonia raises ContextRequested on
+		// the FOCUSED element and it bubbles up. The menus hang on a Border inside the row,
+		// below the focus, so the keyboard could never open them.
+		row.RaiseEvent(new ContextRequestedEventArgs());
+		HeadlessUi.Pump();
+
+		try {
+			Assert.True(menu.IsOpen);
+		}
+		finally {
+			menu.Close();
+			window.Close();
+		}
+	});
+
+	static Button FocusScanButton(Window window) {
+		var setup = window.GetVisualDescendants().OfType<SetupView>().First();
+		var button = setup.GetVisualDescendants().OfType<Button>().Last(b => b.IsEffectivelyVisible && b.IsEffectivelyEnabled);
+		button.Focus(NavigationMethod.Tab);
+		HeadlessUi.Pump();
+		Assert.Same(button, window.FocusManager!.GetFocusedElement());
+		return button;
+	}
+
+	[Fact]
+	public Task Shell_BusyCurtain_KeepsTheKeyboardOutOfTheViewBelow() => HeadlessUi.Run(() => {
+		var (window, vm) = HeadlessUi.Shell();
+		FocusScanButton(window);
+		try {
+			vm.IsBusy = true;
+			HeadlessUi.Pump();
+
+			// The curtain only ever stopped the mouse: focus stayed where it was, Tab walked
+			// on through the view below, and Space / Delete there acted in the middle of a
+			// running operation.
+			var under = new List<string>();
+			if ((window.FocusManager!.GetFocusedElement() as Control)?.FindAncestorOfType<SetupView>() != null)
+				under.Add("focus stayed on " + window.FocusManager!.GetFocusedElement()!.GetType().Name);
+			for (int i = 0; i < 40; i++) {
+				Press(window, PhysicalKey.Tab);
+				if (window.FocusManager!.GetFocusedElement() is Control c && c.FindAncestorOfType<SetupView>() != null)
+					under.Add(c.GetType().Name);
+			}
+			Assert.True(under.Count == 0, "keyboard reached controls under the busy curtain: " + string.Join(", ", under.Distinct()));
+		}
+		finally {
+			vm.IsBusy = false;
+			HeadlessUi.Pump();
+		}
+	});
+
+	[Fact]
+	public Task Shell_BusyCurtain_GivesFocusBackWhenItLifts() => HeadlessUi.Run(() => {
+		var (window, vm) = HeadlessUi.Shell();
+		var scanButton = FocusScanButton(window);
+		try {
+			vm.IsBusy = true;
+			HeadlessUi.Pump();
+			Assert.NotSame(scanButton, window.FocusManager!.GetFocusedElement());
+		}
+		finally {
+			vm.IsBusy = false;
+			HeadlessUi.Pump();
+		}
+
+		// Otherwise every delete would throw a keyboard user out of the results list.
+		Assert.Same(scanButton, window.FocusManager!.GetFocusedElement());
+	});
+
+	[Fact]
+	public Task Shell_CancelableBusyCurtain_PutsFocusOnCancel() => HeadlessUi.Run(() => {
+		var (window, vm) = HeadlessUi.Shell();
+		FocusScanButton(window);
+		try {
+			vm.IsBusyCancelable = true;
+			vm.IsBusy = true;
+			HeadlessUi.Pump();
+
+			Assert.True(window.FocusManager!.GetFocusedElement() is Button { Name: "BusyCancelButton" });
+		}
+		finally {
+			vm.IsBusy = false;
+			vm.IsBusyCancelable = false;
+			HeadlessUi.Pump();
 		}
 	});
 

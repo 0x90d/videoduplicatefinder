@@ -236,7 +236,17 @@
             <Grid x:Name="MainContentGrid" Margin="2,30,2,2">
                 <Grid IsVisible="{Binding IsShellMainVisible}">
                         <Grid>
-                            <Grid>
+                            <!-- Disabled while the busy curtain covers it: the curtain alone only
+                                 stops the mouse, Tab walked straight into the views below and
+                                 Space / Delete there acted in the middle of a running operation.
+                                 Same condition as the curtain's IsVisible, inverted. -->
+                            <Grid x:Name="BusyCoveredViews">
+                                <Grid.IsEnabled>
+                                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                                        <Binding Path="!IsBusy" />
+                                        <Binding Path="IsScanning" />
+                                    </MultiBinding>
+                                </Grid.IsEnabled>
                                 <!-- One window, three states: Setup → Scanning → Review (stage 2).
                                      The legacy menu bar and stats row are gone (stage 7): stateless
                                      commands live in the titlebar ⋯ menu, selection tools in the
@@ -280,6 +290,7 @@
                                         FontSize="14"
                                         Text="{Binding IsBusyOverlayText}" />
                                     <Button
+                                        x:Name="BusyCancelButton"
                                         Margin="0,15,0,0"
                                         HorizontalAlignment="Center"
                                         Command="{Binding CancelBusyCommand}"

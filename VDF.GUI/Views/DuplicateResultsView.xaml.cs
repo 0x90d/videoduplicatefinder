@@ -35,6 +35,32 @@ namespace VDF.GUI.Views {
 			WireViewModel();
 			if (this.FindControl<Button>("AutoSelectButton")?.Flyout is MenuFlyout autoSelectFlyout)
 				autoSelectFlyout.Opening += (_, _) => RebuildSavedExpressionItems();
+			AddHandler(ContextRequestedEvent, OnRowContextRequestedByKeyboard);
+		}
+
+		/// <summary>
+		/// Shift+F10 / the Menu key: Avalonia raises ContextRequested on the FOCUSED element,
+		/// which in the list is the row container, and the event bubbles up from there. The
+		/// row and group menus are declared on a Border inside the row template, below the
+		/// focus, so they never saw it and the keyboard could not open them. Pointer requests
+		/// start at the element under the cursor and keep reaching that Border by themselves.
+		/// </summary>
+		void OnRowContextRequestedByKeyboard(object? sender, ContextRequestedEventArgs e) {
+			if (e.Handled || e.Source is not ListBoxItem container) return;
+			if (e.TryGetPosition(container, out _)) return;
+			var host = container.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.ContextMenu != null);
+			if (host?.ContextMenu is not { } menu) return;
+
+			// Opened from code the menu would appear wherever the mouse happens to be.
+			var placement = menu.Placement;
+			void RestorePlacement(object? s, RoutedEventArgs a) {
+				menu.Closed -= RestorePlacement;
+				menu.Placement = placement;
+			}
+			menu.Closed += RestorePlacement;
+			menu.Placement = PlacementMode.Bottom;
+			menu.Open(host);
+			e.Handled = true;
 		}
 
 		/// <summary>

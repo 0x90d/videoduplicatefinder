@@ -56,6 +56,7 @@ namespace VDF.GUI.Views {
 			InitializeComponent();
 			Closing += MainWindow_Closing;
 			Opened += MainWindow_Opened;
+			KeepFocusAcrossBusyCurtain();
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
@@ -257,6 +258,34 @@ namespace VDF.GUI.Views {
 			var newResultsView = this.FindControl<DuplicateResultsView>("NewResultsView");
 			if (newResultsView != null)
 				KeyboardShortcutManager.Instance.ApplyBindings(newResultsView.ShortcutTarget, commandMap);
+		}
+
+		/// <summary>
+		/// The views under the busy curtain are disabled while it shows, which drops keyboard
+		/// focus. Without handing it back, every delete would throw a keyboard user out of the
+		/// results list and back to the start of the window. While the curtain is up, focus
+		/// goes to its Cancel button when there is one.
+		/// </summary>
+		void KeepFocusAcrossBusyCurtain() {
+			var covered = this.FindControl<Grid>("BusyCoveredViews")!;
+			var cancel = this.FindControl<Button>("BusyCancelButton")!;
+			Control? lastFocused = null;
+			// Tracked continuously: by the time IsEnabled flips, focus is already gone.
+			covered.AddHandler(GotFocusEvent, (_, e) => lastFocused = e.Source as Control, handledEventsToo: true);
+			covered.PropertyChanged += (_, e) => {
+				if (e.Property != IsEnabledProperty) return;
+				bool enabled = e.GetNewValue<bool>();
+				Dispatcher.UIThread.Post(() => {
+					if (!enabled) {
+						if (cancel.IsEffectivelyVisible) cancel.Focus(NavigationMethod.Unspecified);
+						return;
+					}
+					var current = FocusManager?.GetFocusedElement();
+					if (current != null && !ReferenceEquals(current, cancel)) return; // the user moved on
+					if (lastFocused is { IsEffectivelyEnabled: true, IsEffectivelyVisible: true } target && target.IsAttachedToVisualTree())
+						target.Focus(NavigationMethod.Unspecified);
+				}, DispatcherPriority.Loaded);
+			};
 		}
 
 		void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
