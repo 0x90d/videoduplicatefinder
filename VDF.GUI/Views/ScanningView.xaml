@@ -49,11 +49,11 @@
 
       <!-- elapsed + current file (mockup .scanmeta) -->
       <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,6,0,0">
-        <TextBlock FontSize="12" Opacity="0.55">
+        <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}">
           <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.ElapsedTime]}" />
           <Run Text="{Binding TimeElapsed, Mode=OneWay}" />
         </TextBlock>
-        <TextBlock FontSize="12" Opacity="0.55" MaxWidth="520"
+        <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" MaxWidth="520"
                    FontFamily="Cascadia Mono,Consolas,monospace"
                    TextTrimming="PrefixCharacterEllipsis"
                    Text="{Binding ScanCurrentFile}" />
@@ -81,7 +81,7 @@
                         BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
                         BorderThickness="1"
                         IsVisible="{Binding HasType}">
-                  <TextBlock FontSize="10.5" FontWeight="Bold" LetterSpacing="0.6" Opacity="0.55"
+                  <TextBlock FontSize="10.5" FontWeight="Bold" LetterSpacing="0.6" Opacity="{DynamicResource VdfTextFaintOpacity}"
                              Text="{Binding TypeLabel}" />
                 </Border>
               </StackPanel>
@@ -132,7 +132,7 @@
         <Border CornerRadius="8" Padding="14,7"
                 BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
                 BorderThickness="1">
-          <TextBlock FontSize="12.5" Opacity="0.6" VerticalAlignment="Center"
+          <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextMutedOpacity}" VerticalAlignment="Center"
                      Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.PauseNote]}" />
         </Border>
       </StackPanel>
@@ -149,7 +149,7 @@
                     AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Log]}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="data:LogTailRow">
-            <TextBlock FontSize="11.5" Opacity="0.55" Margin="0,1.5"
+            <TextBlock FontSize="11.5" Opacity="{DynamicResource VdfTextFaintOpacity}" Margin="0,1.5"
                        TextTrimming="CharacterEllipsis" Text="{Binding Display}">
               <ToolTip.Tip>
                 <TextBlock MaxWidth="800" TextWrapping="Wrap" Text="{Binding Tooltip}" />

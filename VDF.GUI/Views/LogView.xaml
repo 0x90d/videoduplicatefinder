@@ -153,7 +153,7 @@
                 Grid.Column="0"
                 FontSize="11.5"
                 FontWeight="SemiBold"
-                Opacity="0.6"
+                Opacity="{DynamicResource VdfTextMutedOpacity}"
                 Text="{Binding Header}" />
             <Border
                 Grid.Column="1"
@@ -172,7 +172,7 @@
             <TextBlock
                 Grid.Column="0"
                 FontSize="12"
-                Opacity="0.55"
+                Opacity="{DynamicResource VdfTextFaintOpacity}"
                 VerticalAlignment="Center"
                 Text="{Binding TimeText}" />
             <Ellipse
@@ -217,7 +217,7 @@
         BorderThickness="0,1,0,0">
       <TextBlock
           FontSize="12"
-          Opacity="0.55"
+          Opacity="{DynamicResource VdfTextFaintOpacity}"
           Text="{Binding LogFileStatusText}" />
     </Border>
   </Grid>

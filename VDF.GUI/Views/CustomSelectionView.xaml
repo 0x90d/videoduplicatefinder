@@ -30,7 +30,7 @@
         <Style Selector="TextBlock.cardtitle">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Opacity" Value="0.6" />
+            <Setter Property="Opacity" Value="{DynamicResource VdfTextMutedOpacity}" />
         </Style>
         <Style Selector="TextBlock.fieldlabel">
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -38,7 +38,7 @@
         <Style Selector="TextBlock.note">
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontStyle" Value="Italic" />
-            <Setter Property="Opacity" Value="0.6" />
+            <Setter Property="Opacity" Value="{DynamicResource VdfTextMutedOpacity}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
         <Style Selector="Button.mini">

@@ -85,7 +85,7 @@
     <Style Selector="ListBox.settingsnav ListBoxItem:selected">
       <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushEmphasizedAccent}" />
+      <Setter Property="Foreground" Value="{DynamicResource VdfAccentTextBrush}" />
     </Style>
     <Style Selector="ListBox.settingsnav ListBoxItem:selected /template/ ContentPresenter#NavContent">
       <Setter Property="Opacity" Value="1" />
@@ -95,14 +95,26 @@
     <Style Selector="TextBlock.sectioncaption">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextMutedOpacity}" />
       <Setter Property="Margin" Value="0,18,0,4" />
     </Style>
     <Style Selector="TextBlock.subcaption">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextMutedOpacity}" />
       <Setter Property="Margin" Value="0,22,0,2" />
+    </Style>
+
+    <!-- shortcut capture box: themed here, its colors used to be hard-coded for dark in code
+         (light gray text, white border: 1.7:1 on the light theme) -->
+    <Style Selector="views|HotKeyBox">
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container4BorderBrush}" />
+    </Style>
+    <Style Selector="views|HotKeyBox:focus">
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushEmphasizedAccent}" />
+    </Style>
+    <Style Selector="views|HotKeyBox TextBlock.placeholder">
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextFaintOpacity}" />
     </Style>
 
     <Style Selector="ToggleSwitch.plain">
@@ -160,7 +172,7 @@
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
           <StackPanel x:Name="SectionsHost" Margin="0,0,12,30">
 
-            <TextBlock x:Name="NoResultsText" Margin="0,24,0,0" FontSize="13" Opacity="0.6" IsVisible="False"
+            <TextBlock x:Name="NoResultsText" Margin="0,24,0,0" FontSize="13" Opacity="{DynamicResource VdfTextMutedOpacity}" IsVisible="False"
                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.NoResults]}" />
 
             <!-- ═══════════════ SCANNING (scan behavior) ═══════════════ -->
@@ -333,7 +345,7 @@
                                   AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreBlackPixels]}"
                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreBlackPixels]}"
                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreBlackPixels}" />
-                    <TextBlock FontSize="11" Opacity="0.6" HorizontalAlignment="Center"
+                    <TextBlock FontSize="11" Opacity="{DynamicResource VdfTextMutedOpacity}" HorizontalAlignment="Center"
                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IgnoreBW.Black]}" />
                   </StackPanel>
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
@@ -341,7 +353,7 @@
                                   AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreWhitePixels]}"
                                   ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.IgnoreWhitePixels]}"
                                   IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=IgnoreWhitePixels}" />
-                    <TextBlock FontSize="11" Opacity="0.6" HorizontalAlignment="Center"
+                    <TextBlock FontSize="11" Opacity="{DynamicResource VdfTextMutedOpacity}" HorizontalAlignment="Center"
                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.IgnoreBW.White]}" />
                   </StackPanel>
                 </StackPanel>
@@ -408,7 +420,7 @@
               </views:SettingRow>
 
               <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,16,0,0">
-                <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center"
+                <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" VerticalAlignment="Center"
                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHint]}" />
                 <Button Classes="hyperlink" FontSize="12" VerticalAlignment="Center" Command="{Binding OpenWikiLinkCommand}"
                         Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.MiscWikiHyperlink]}" />
@@ -528,9 +540,9 @@
                            ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=Blacklists}" />
                 </StackPanel>
               </Grid>
-              <TextBlock Margin="0,10,0,0" FontSize="12" Opacity="0.55" TextWrapping="Wrap"
+              <TextBlock Margin="0,10,0,0" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" TextWrapping="Wrap"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.DragDropHint]}" />
-              <TextBlock Margin="0,4,0,0" FontSize="12" Opacity="0.55" TextWrapping="Wrap"
+              <TextBlock Margin="0,4,0,0" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" TextWrapping="Wrap"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
             </StackPanel>
 
@@ -611,7 +623,7 @@
                          AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilePathNotContains]}"
                          IsEnabled="{Binding #ToggleFilterByPathNotContains.IsChecked}"
                          ItemsSource="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=FilePathNotContainsTexts}" />
-                <TextBlock FontSize="12" Opacity="0.55" TextWrapping="Wrap"
+                <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" TextWrapping="Wrap"
                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.WildcardNote]}" />
               </StackPanel>
             </StackPanel>
@@ -991,6 +1003,7 @@
                 </Grid>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Button Classes="accent" Command="{Binding RunFilePairTestCommand}"
+                          Foreground="{DynamicResource VdfAccentTextBrush}"
                           Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Test.Run]}" />
                   <Button Command="{Binding CopyFilePairTestResultCommand}"
                           Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Test.CopyResult]}" />
@@ -1027,7 +1040,7 @@
             BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
             BorderThickness="0,1,0,0">
       <DockPanel LastChildFill="False">
-        <TextBlock DockPanel.Dock="Left" FontSize="12" Opacity="0.55" VerticalAlignment="Center"
+        <TextBlock DockPanel.Dock="Left" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" VerticalAlignment="Center"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.StatusSaved]}" />
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="14">
           <Button Classes="hyperlink" FontSize="12"

@@ -11,14 +11,16 @@
 
   <UserControl.Resources>
     <!-- local instances: StaticResource inside templates resolves against THIS scope -->
-    <mvvm:BoolToValueConverter x:Key="ExcludedOpacityConverter" TrueValue="0.55" FalseValue="1.0" />
+    <!-- 0.9, not the mockup's 0.55: dimming the whole card took its text down to 2.2:1.
+         The red drive chip and the "Excluded" line still mark it. -->
+    <mvvm:BoolToValueConverter x:Key="ExcludedOpacityConverter" TrueValue="0.9" FalseValue="1.0" />
   </UserControl.Resources>
 
   <UserControl.Styles>
     <Style Selector="TextBlock.paneltitle">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextMutedOpacity}" />
       <Setter Property="Margin" Value="0,0,0,14" />
     </Style>
     <Style Selector="Border.foldercard">
@@ -44,7 +46,7 @@
       <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
     </Style>
     <Style Selector="Border.drivechip TextBlock">
-      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftAccent}" />
+      <Setter Property="Foreground" Value="{DynamicResource VdfAccentTextBrush}" />
     </Style>
     <Style Selector="Border.drivechip.excluded">
       <Setter Property="Background" Value="{DynamicResource VdfDangerSoftBrush}" />
@@ -77,7 +79,7 @@
               Background="Transparent"
               BorderThickness="0"
               FontSize="12"
-              Opacity="0.7"
+              Opacity="0.85"
               VerticalAlignment="Center"
               Command="{Binding DismissNoDuplicatesNoticeCommand}"
               AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Close]}"
@@ -110,7 +112,7 @@
               Background="Transparent"
               BorderThickness="0"
               FontSize="12"
-              Opacity="0.7"
+              Opacity="0.85"
               VerticalAlignment="Center"
               Command="{Binding DismissWelcomeStripCommand}"
               Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
@@ -162,7 +164,7 @@
                           <Binding Path="Path" />
                         </MultiBinding>
                       </AutomationProperties.Name>
-                      <TextBlock Text="✕" FontSize="13" Opacity="0.5" />
+                      <TextBlock Text="✕" FontSize="13" Opacity="0.7" />
                     </Button>
                     <Button DockPanel.Dock="Right"
                             Classes="hyperlink"
@@ -179,7 +181,7 @@
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <ProgressBar Width="40" Height="4" IsIndeterminate="True"
                                      IsVisible="{Binding IsCounting}" VerticalAlignment="Center" />
-                        <TextBlock FontSize="12" Opacity="0.7" Text="{Binding MetaText}" />
+                        <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextSecondaryOpacity}" Text="{Binding MetaText}" />
                       </StackPanel>
                     </StackPanel>
                   </DockPanel>
@@ -201,7 +203,7 @@
                         Margin="14,10">
               <TextBlock FontSize="13" Opacity="0.85" FontWeight="SemiBold"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Drop.Bold]}" />
-              <TextBlock FontSize="13" Opacity="0.55"
+              <TextBlock FontSize="13" Opacity="{DynamicResource VdfTextFaintOpacity}"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Drop.Text]}" />
               <Button Classes="hyperlink" FontSize="13" VerticalAlignment="Center"
                       Command="{Binding AddIncludesToListCommand}"
@@ -243,7 +245,7 @@
                           Classes.active="{Binding IsActive}"
                           PointerPressed="OnProfileCardPressed">
                     <DockPanel LastChildFill="True">
-                      <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.55"
+                      <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="{DynamicResource VdfTextFaintOpacity}"
                                  VerticalAlignment="Top" Text="{Binding TimeHint}" />
                       <StackPanel Spacing="2">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -276,6 +278,7 @@
                   Padding="26,9"
                   VerticalAlignment="Center"
                   Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}"
+                  Foreground="{DynamicResource VdfOnAccentBrush}"
                   AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Scan]}"
                   Command="{Binding StartScanCommand}"
                   CommandParameter="FullScan">
@@ -292,7 +295,7 @@
                   Click="OnAdvancedSettingsClick"
                   Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.AdvancedSettings]}" />
             </StackPanel>
-            <TextBlock FontSize="12" Opacity="0.55" Margin="0,12,0,0" TextWrapping="Wrap"
+            <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" Margin="0,12,0,0" TextWrapping="Wrap"
                        Text="{Binding SetupFootnote}" />
           </StackPanel>
         </ScrollViewer>
@@ -305,11 +308,11 @@
             BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
             BorderThickness="0,1,0,0">
       <StackPanel Orientation="Horizontal" Spacing="24">
-        <TextBlock FontSize="12" Opacity="0.55" Text="{Binding DatabaseInfoText}" />
-        <TextBlock FontSize="12" Opacity="0.55"
+        <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding DatabaseInfoText}" />
+        <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=RememberDeletedContent}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.RememberingDeletedOn]}" />
-        <TextBlock FontSize="12" Opacity="0.55"
+        <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!RememberDeletedContent}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.RememberingDeletedOff]}" />
       </StackPanel>

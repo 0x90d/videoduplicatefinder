@@ -55,7 +55,7 @@
     <Style Selector="TextBlock.colheader">
       <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextSoftOpacity}" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <!-- Column widths are fixed (#853) but header text is localized: a translation
            that outgrows its column must degrade to an ellipsis, not clip glyphs. -->
@@ -122,9 +122,11 @@
       <Setter Property="Foreground" Value="{DynamicResource VdfGoodBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
+    <!-- Only the best value is set in semibold. Both used to be, which left red against
+         green as the ONLY difference between a group's best and its other values, the
+         pair that color-blind users cannot tell apart. -->
     <Style Selector="TextBlock.metric-diff.lo">
       <Setter Property="Foreground" Value="{DynamicResource VdfDangerBrush}" />
-      <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="TextBlock.metric-diff.eq">
       <Setter Property="Foreground" Value="{DynamicResource VdfMutedBrush}" />
@@ -393,7 +395,7 @@
             <Thumb.Template>
               <ControlTemplate>
                 <Border Background="Transparent">
-                  <TextBlock Text="⋮" FontSize="13" Opacity="0.55" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Text="⋮" FontSize="13" Opacity="{DynamicResource VdfTextFaintOpacity}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
               </ControlTemplate>
             </Thumb.Template>
@@ -494,7 +496,7 @@
               <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="8,0,0,0">
                 <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Title}" />
                 <TextBlock Classes="meta" VerticalAlignment="Center" Text="{Binding Summary}" />
-                <TextBlock FontSize="11" Opacity="0.6" VerticalAlignment="Center" Text="{Binding SimilarityRangeDisplay}" />
+                <TextBlock FontSize="11" Opacity="{DynamicResource VdfTextMutedOpacity}" VerticalAlignment="Center" Text="{Binding SimilarityRangeDisplay}" />
                 <!-- Combined-mode badges (#842): which classic algorithm(s) matched in
                      this group. Only ever set by the combined grayscale+pHash scan. -->
                 <Border Classes="simchip" Padding="5,0" CornerRadius="3" VerticalAlignment="Center"
@@ -898,7 +900,7 @@
                         Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.PathCopied]}" />
                     <ctl:MiddleEllipsisTextBlock
                         FontSize="11.5"
-                        Opacity="0.65"
+                        Opacity="{DynamicResource VdfTextSoftOpacity}"
                         Text="{Binding Item.ItemInfo.Path, Converter={StaticResource DirectoryPathConverter}}" />
                   </DockPanel>
                 </Border>
@@ -963,7 +965,7 @@
         </TextBlock>
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="16,0,0,0">
           <Button
-              Background="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
+              Background="{DynamicResource VdfDangerSolidBrush}"
               Foreground="White"
               FontSize="12.5"
               FontWeight="SemiBold"
@@ -1037,7 +1039,7 @@
               Command="{Binding ClearCheckedItemsCommand}"
               Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.ClearSelection]}" />
         </StackPanel>
-        <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12" Opacity="0.55"
+        <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.Hint]}" />
       </DockPanel>
     </Border>
@@ -1052,17 +1054,17 @@
         BorderThickness="0,1,0,0">
       <DockPanel LastChildFill="False">
         <StackPanel Orientation="Horizontal" Spacing="16">
-          <TextBlock FontSize="12" Opacity="0.55">
+          <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}">
             <Run Text="{Binding TotalDuplicateGroups, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.Groups]}" />
             <Run Text="· " /><Run Text="{Binding TotalDuplicates, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.Duplicates]}" />
             <Run Text="· " /><Run Text="{Binding TotalDuplicatesSize, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.TotalSize]}" />
           </TextBlock>
-          <TextBlock FontSize="12" Opacity="0.55"
+          <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}"
                      ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.PotentialSavingsTooltip]}">
             <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Stats.PotentialSavings]}" />
             <Run Text="{Binding PotentialSavings, Mode=OneWay}" />
           </TextBlock>
-          <TextBlock FontSize="12" Opacity="0.55">
+          <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}">
             <Run Text="{Binding TotalSizeRemoved, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Status.RemovedSuffix]}" />
           </TextBlock>
         </StackPanel>
@@ -1070,7 +1072,7 @@
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
                     VerticalAlignment="Center"
                     IsVisible="{Binding ShowThumbnailRetrievalProgress}">
-          <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center"
+          <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" VerticalAlignment="Center"
                      Text="{Binding ThumbnailRetrievalProgressText}" />
           <ProgressBar Width="90" Height="5"
                        AutomationProperties.Name="{Binding ThumbnailRetrievalProgressText}"

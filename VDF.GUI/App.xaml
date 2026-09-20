@@ -16,13 +16,17 @@
                      the VdfTeal ramp below. Border brushes carry the mockup's 45% alpha so
                      badges/chips survive selected-row backgrounds (locked decision 12). -->
                 <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="VdfGoodBrush" Color="#1C8A52" />
+                    <!-- Text tones are darker than the mockup's (#1C8A52 / #A06A10 / #BB4237):
+                         those reached only 3.4 to 4.4:1 on white, on their own soft chips and
+                         on the checked-row tint. WCAG AA wants 4.5:1. Borders keep the
+                         mockup tone, they are not text. -->
+                    <SolidColorBrush x:Key="VdfGoodBrush" Color="#16703F" />
                     <SolidColorBrush x:Key="VdfGoodSoftBrush" Color="#E2F2E9" />
                     <SolidColorBrush x:Key="VdfGoodBorderBrush" Color="#731C8A52" />
-                    <SolidColorBrush x:Key="VdfWarnBrush" Color="#A06A10" />
+                    <SolidColorBrush x:Key="VdfWarnBrush" Color="#855709" />
                     <SolidColorBrush x:Key="VdfWarnSoftBrush" Color="#F6ECD9" />
                     <SolidColorBrush x:Key="VdfWarnBorderBrush" Color="#73A06A10" />
-                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#BB4237" />
+                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#A5332A" />
                     <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#F7E5E3" />
                     <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#73BB4237" />
                     <!-- Checked-row tint: red family because checked means "will be
@@ -36,6 +40,21 @@
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#8A9793" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#F7FAF9" />
                     <SolidColorBrush x:Key="VdfMutedBorderBrush" Color="#DBE3E0" />
+                    <!-- Accent-colored text on a soft accent surface (selected settings section,
+                         drive chip, outline accent buttons). The theme's own pairing is 1.7 to
+                         3.6:1 here. -->
+                    <SolidColorBrush x:Key="VdfAccentTextBrush" Color="#0F6B5C" />
+                    <!-- Text on the solid accent (Scan, Next group). -->
+                    <SolidColorBrush x:Key="VdfOnAccentBrush" Color="#16201E" />
+                    <!-- Solid red behind white text (Delete checked): the theme's #EE4343 is 3.8:1. -->
+                    <SolidColorBrush x:Key="VdfDangerSolidBrush" Color="#D32F2F" />
+                    <!-- Dimmed secondary text. Dark keeps the mockup's 0.55 / 0.6 / 0.65, which
+                         read 5:1 and better as light-on-dark. The same values as dark-on-white
+                         are 3.3 to 4.4:1, so the light theme dims less. -->
+                    <x:Double x:Key="VdfTextFaintOpacity">0.72</x:Double>
+                    <x:Double x:Key="VdfTextMutedOpacity">0.72</x:Double>
+                    <x:Double x:Key="VdfTextSoftOpacity">0.72</x:Double>
+                    <x:Double x:Key="VdfTextSecondaryOpacity">0.9</x:Double>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="VdfGoodBrush" Color="#45B878" />
@@ -44,7 +63,8 @@
                     <SolidColorBrush x:Key="VdfWarnBrush" Color="#D29A3A" />
                     <SolidColorBrush x:Key="VdfWarnSoftBrush" Color="#33260E" />
                     <SolidColorBrush x:Key="VdfWarnBorderBrush" Color="#73D29A3A" />
-                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#E06A5E" />
+                    <!-- lighter than the mockup's #E06A5E, which is 4.3:1 on the checked-row tint -->
+                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#EB8378" />
                     <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#391914" />
                     <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#73E06A5E" />
                     <!-- Checked-row tint: red family because checked means "will be
@@ -59,6 +79,14 @@
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#6D7B76" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#1C2422" />
                     <SolidColorBrush x:Key="VdfMutedBorderBrush" Color="#2A3330" />
+                    <SolidColorBrush x:Key="VdfAccentTextBrush" Color="#8ADBC9" />
+                    <!-- The theme puts its light default text on the accent: 2.3:1. -->
+                    <SolidColorBrush x:Key="VdfOnAccentBrush" Color="#0B2B26" />
+                    <SolidColorBrush x:Key="VdfDangerSolidBrush" Color="#D32F2F" />
+                    <x:Double x:Key="VdfTextFaintOpacity">0.55</x:Double>
+                    <x:Double x:Key="VdfTextMutedOpacity">0.6</x:Double>
+                    <x:Double x:Key="VdfTextSoftOpacity">0.65</x:Double>
+                    <x:Double x:Key="VdfTextSecondaryOpacity">0.7</x:Double>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

@@ -40,18 +40,16 @@ namespace VDF.GUI.Views {
 
 		public HotKeyBox() {
 			Focusable = true;
-			Background = new SolidColorBrush(Colors.Transparent);
-			BorderBrush = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255));
+			// A Border without a background takes no clicks, so this one is not left to a style.
+			Background = Brushes.Transparent;
 			BorderThickness = new Thickness(1);
 			CornerRadius = new CornerRadius(3);
 			Padding = new Thickness(6, 3);
 			MinHeight = 28;
 			Cursor = new Cursor(StandardCursorType.Hand);
-
-			_textBlock = new TextBlock {
-				VerticalAlignment = VerticalAlignment.Center,
-				Foreground = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
-			};
+			// The COLORS (border, focus border, text) come from the style next to the box in
+			// SettingsView.xaml so they follow the theme; they used to be hard-coded for dark.
+			_textBlock = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
 			Child = _textBlock;
 
 			GestureTextProperty.Changed.AddClassHandler<HotKeyBox>((box, _) => box.UpdateDisplay());
@@ -65,7 +63,7 @@ namespace VDF.GUI.Views {
 				: string.IsNullOrEmpty(GestureText)
 					? App.Lang["MainWindow.Settings.KeyboardShortcuts.ClickToSet"]
 					: GestureText;
-			_textBlock.Opacity = string.IsNullOrEmpty(GestureText) && !_isCapturing ? 0.5 : 1.0;
+			_textBlock.Classes.Set("placeholder", string.IsNullOrEmpty(GestureText) && !_isCapturing);
 		}
 
 		// The key that started listening, until it is released: holding Enter down must not
@@ -91,14 +89,11 @@ namespace VDF.GUI.Views {
 		}
 
 		protected override void OnGotFocus(FocusChangedEventArgs e) {
-			base.OnGotFocus(e);
-			// A Border has no focus adorner of its own: this border is the focus indicator.
-			BorderBrush = new SolidColorBrush(Color.FromRgb(100, 150, 255));
+			base.OnGotFocus(e); // the :focus style draws the accent border, a Border has no focus adorner
 		}
 
 		protected override void OnLostFocus(FocusChangedEventArgs e) {
 			base.OnLostFocus(e);
-			BorderBrush = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255));
 			StopListening();
 		}
 

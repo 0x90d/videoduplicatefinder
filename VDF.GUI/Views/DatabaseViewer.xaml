@@ -28,7 +28,7 @@
     <Style Selector="TextBlock.colheader">
       <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextSoftOpacity}" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Button.mini">
@@ -113,7 +113,7 @@
                 <MenuItem.Header>
                   <DockPanel MinWidth="230" LastChildFill="False">
                     <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flag.ThumbnailError]}" />
-                    <TextBlock DockPanel.Dock="Right" Opacity="0.55" Text="{Binding CountThumbError}" />
+                    <TextBlock DockPanel.Dock="Right" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding CountThumbError}" />
                   </DockPanel>
                 </MenuItem.Header>
               </MenuItem>
@@ -121,7 +121,7 @@
                 <MenuItem.Header>
                   <DockPanel MinWidth="230" LastChildFill="False">
                     <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flag.MetadataError]}" />
-                    <TextBlock DockPanel.Dock="Right" Opacity="0.55" Text="{Binding CountMetadataError}" />
+                    <TextBlock DockPanel.Dock="Right" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding CountMetadataError}" />
                   </DockPanel>
                 </MenuItem.Header>
               </MenuItem>
@@ -129,7 +129,7 @@
                 <MenuItem.Header>
                   <DockPanel MinWidth="230" LastChildFill="False">
                     <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flag.TooDark]}" />
-                    <TextBlock DockPanel.Dock="Right" Opacity="0.55" Text="{Binding CountTooDark}" />
+                    <TextBlock DockPanel.Dock="Right" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding CountTooDark}" />
                   </DockPanel>
                 </MenuItem.Header>
               </MenuItem>
@@ -137,7 +137,7 @@
                 <MenuItem.Header>
                   <DockPanel MinWidth="230" LastChildFill="False">
                     <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flag.ManuallyExcluded]}" />
-                    <TextBlock DockPanel.Dock="Right" Opacity="0.55" Text="{Binding CountExcluded}" />
+                    <TextBlock DockPanel.Dock="Right" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding CountExcluded}" />
                   </DockPanel>
                 </MenuItem.Header>
               </MenuItem>
@@ -145,7 +145,7 @@
                 <MenuItem.Header>
                   <DockPanel MinWidth="230" LastChildFill="False">
                     <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flag.NoAudioTrack]}" />
-                    <TextBlock DockPanel.Dock="Right" Opacity="0.55" Text="{Binding CountNoAudio}" />
+                    <TextBlock DockPanel.Dock="Right" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding CountNoAudio}" />
                   </DockPanel>
                 </MenuItem.Header>
               </MenuItem>
@@ -153,7 +153,7 @@
                 <MenuItem.Header>
                   <DockPanel MinWidth="230" LastChildFill="False">
                     <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flag.SilentAudioTrack]}" />
-                    <TextBlock DockPanel.Dock="Right" Opacity="0.55" Text="{Binding CountSilent}" />
+                    <TextBlock DockPanel.Dock="Right" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding CountSilent}" />
                   </DockPanel>
                 </MenuItem.Header>
               </MenuItem>
@@ -161,7 +161,7 @@
                 <MenuItem.Header>
                   <DockPanel MinWidth="230" LastChildFill="False">
                     <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Flag.ReparsePoint]}" />
-                    <TextBlock DockPanel.Dock="Right" Opacity="0.55" Text="{Binding CountReparse}" />
+                    <TextBlock DockPanel.Dock="Right" Opacity="{DynamicResource VdfTextFaintOpacity}" Text="{Binding CountReparse}" />
                   </DockPanel>
                 </MenuItem.Header>
               </MenuItem>
@@ -361,7 +361,7 @@
                         Command="{Binding $parent[Window].((vm:DatabaseViewerVM)DataContext).BeginPathEditCommand}"
                         CommandParameter="{Binding}" />
               </StackPanel>
-              <ctl:MiddleEllipsisTextBlock FontSize="11" Opacity="0.6"
+              <ctl:MiddleEllipsisTextBlock FontSize="11" Opacity="{DynamicResource VdfTextMutedOpacity}"
                          IsVisible="{Binding !IsEditingPath}"
                          Text="{Binding FolderText}" />
               <!-- commit on Enter/focus-loss, Escape restores (handled in code-behind) -->
@@ -402,7 +402,7 @@
                   Command="{Binding DeleteSelectedEntries}"
                   Content="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.RemoveEntries]}" />
         </StackPanel>
-        <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12" Opacity="0.55"
+        <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}"
                    Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.RemoveNote]}" />
       </DockPanel>
     </Border>
@@ -415,11 +415,11 @@
         BorderThickness="0,1,0,0">
       <DockPanel LastChildFill="False">
         <StackPanel Orientation="Horizontal" Spacing="16">
-          <TextBlock FontSize="12" Opacity="0.55">
+          <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}">
             <Run Text="{Binding EntryCountText, Mode=OneWay}" />
             <Run Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.StatusEntries]}" />
           </TextBlock>
-          <TextBlock FontSize="12" Opacity="0.55" IsVisible="{Binding IsFiltered}">
+          <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" IsVisible="{Binding IsFiltered}">
             <Run Text="{Binding ShownCountText, Mode=OneWay}" />
             <Run Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.StatusShown]}" />
           </TextBlock>
@@ -429,7 +429,7 @@
                   Command="{Binding RemoveShownEntriesCommand}"
                   Content="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.RemoveShown]}" />
         </StackPanel>
-        <TextBlock DockPanel.Dock="Right" FontSize="12" Opacity="0.55" VerticalAlignment="Center"
+        <TextBlock DockPanel.Dock="Right" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}" VerticalAlignment="Center"
                    Text="{Binding DatabaseLocationText}" />
       </DockPanel>
     </Border>

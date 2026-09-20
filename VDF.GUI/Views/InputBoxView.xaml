@@ -18,7 +18,7 @@
         <StackPanel IsVisible="{Binding HasReadOnlyInfo}">
             <TextBlock
                 FontSize="11"
-                Opacity="0.6"
+                Opacity="{DynamicResource VdfTextMutedOpacity}"
                 Text="Current file:" />
             <SelectableTextBlock
                 Margin="0,2,0,0"

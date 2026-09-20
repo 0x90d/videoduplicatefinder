@@ -27,7 +27,7 @@
         <TextBlock DockPanel.Dock="Top"
                    Text="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.Empty]}"
                    IsVisible="{Binding IsEmpty}"
-                   Opacity="0.6"
+                   Opacity="{DynamicResource VdfTextMutedOpacity}"
                    FontStyle="Italic"
                    Margin="0,0,0,8" />
 
@@ -35,7 +35,7 @@
         <TextBlock DockPanel.Dock="Bottom"
                    Text="{Binding StatusMessage}"
                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                   Opacity="0.6"
+                   Opacity="{DynamicResource VdfTextMutedOpacity}"
                    Margin="0,8,0,0" />
 
         <!-- Action buttons -->

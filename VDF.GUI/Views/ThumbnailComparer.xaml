@@ -331,7 +331,7 @@
                             </StackPanel>
 
                             <!-- path (mockup .cmp-path) -->
-                            <TextBlock Grid.Row="3" Margin="0,3,0,10" FontSize="12" Opacity="0.55"
+                            <TextBlock Grid.Row="3" Margin="0,3,0,10" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}"
                                        TextTrimming="CharacterEllipsis"
                                        Text="{Binding SelectedItemA.Item.ItemInfo.Folder, FallbackValue=''}"
                                        ToolTip.Tip="{Binding SelectedItemA.Item.ItemInfo.Path, FallbackValue=''}" />
@@ -446,7 +446,7 @@
                                 </Border>
                             </StackPanel>
 
-                            <TextBlock Grid.Row="3" Margin="0,3,0,10" FontSize="12" Opacity="0.55"
+                            <TextBlock Grid.Row="3" Margin="0,3,0,10" FontSize="12" Opacity="{DynamicResource VdfTextFaintOpacity}"
                                        TextTrimming="CharacterEllipsis"
                                        Text="{Binding SelectedItemB.Item.ItemInfo.Folder, FallbackValue=''}"
                                        ToolTip.Tip="{Binding SelectedItemB.Item.ItemInfo.Path, FallbackValue=''}" />
@@ -716,21 +716,22 @@
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                            <TextBlock FontSize="12.5" Opacity="0.6" VerticalAlignment="Center"
+                            <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextMutedOpacity}" VerticalAlignment="Center"
                                        Text="{Binding Source={x:Static app:App.Lang}, Path=[Comparer.HintFrame]}" />
                             <Border Classes="kbd"><TextBlock Text="&#8592;" /></Border>
                             <Border Classes="kbd"><TextBlock Text="&#8594;" /></Border>
-                            <TextBlock FontSize="12.5" Opacity="0.6" VerticalAlignment="Center" Text="·" />
-                            <TextBlock FontSize="12.5" Opacity="0.6" VerticalAlignment="Center"
+                            <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextMutedOpacity}" VerticalAlignment="Center" Text="·" />
+                            <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextMutedOpacity}" VerticalAlignment="Center"
                                        Text="{Binding Source={x:Static app:App.Lang}, Path=[Comparer.HintZoom]}" />
                             <Border Classes="kbd"><TextBlock Text="Z" /></Border>
-                            <TextBlock FontSize="12.5" Opacity="0.6" VerticalAlignment="Center" Text="·" />
-                            <TextBlock FontSize="12.5" Opacity="0.6" VerticalAlignment="Center"
+                            <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextMutedOpacity}" VerticalAlignment="Center" Text="·" />
+                            <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextMutedOpacity}" VerticalAlignment="Center"
                                        Text="{Binding Source={x:Static app:App.Lang}, Path=[Comparer.HintNextPair]}" />
                             <Border Classes="kbd"><TextBlock Text="Space" /></Border>
                         </StackPanel>
                         <Button AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.NextGroup]}" Padding="18,8" FontSize="13.5" FontWeight="SemiBold"
                                 Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}"
+                                Foreground="{DynamicResource VdfOnAccentBrush}"
                                 Command="{Binding NextGroupCommand}"
                                 IsVisible="{Binding CanNavigateGroups}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
