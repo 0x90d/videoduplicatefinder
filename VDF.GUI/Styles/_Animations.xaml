@@ -10,10 +10,18 @@
         </Setter>
     </Style>
 
-    <!-- Skeleton shimmer loading animation for thumbnails -->
+    <!-- Skeleton shimmer loading animation for thumbnails. It runs for as long as
+         thumbnails load, on every placeholder on screen at once, so it stands still for
+         users who asked their system for less motion: the window carries the
+         reduce-motion class then (MotionPreference). -->
     <Style Selector="Border.skeleton-shimmer">
         <Setter Property="CornerRadius" Value="4" />
         <Setter Property="MinHeight" Value="40" />
+    </Style>
+    <Style Selector="Window.reduce-motion Border.skeleton-shimmer">
+        <Setter Property="Opacity" Value="0.5" />
+    </Style>
+    <Style Selector="Window:not(.reduce-motion) Border.skeleton-shimmer">
         <Style.Animations>
             <Animation Duration="0:0:1.5" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="CubicEaseInOut">
                 <KeyFrame Cue="0%">

@@ -58,6 +58,10 @@ namespace VDF.GUI.Views {
 			Opened += MainWindow_Opened;
 			KeepFocusAcrossBusyCurtain();
 			FollowViewModel();
+			// Asked again whenever the window comes to the front: the setting can change
+			// while the app runs, and nothing tells us when it does.
+			Classes.Set("reduce-motion", Utils.MotionPreference.ReduceMotion);
+			Activated += (_, _) => Classes.Set("reduce-motion", Utils.MotionPreference.ReduceMotion);
 			//Don't use this Window.OnClosing event,
 			//datacontext might not be the same due to Avalonia internal handling data differently
 
