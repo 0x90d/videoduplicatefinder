@@ -121,7 +121,11 @@ namespace VDF.GUI.Data {
 
 		static readonly HashSet<Key> ReservedKeys = [Key.Tab, Key.Escape];
 
+		/// <summary>
+		/// Keys that can never be a shortcut. Tab is refused with ANY modifier: Tab, Shift+Tab
+		/// and Ctrl+Tab all move keyboard focus, and a shortcut on them would take that away.
+		/// </summary>
 		public static bool IsReservedKey(Key key, KeyModifiers modifiers) =>
-			modifiers == KeyModifiers.None && ReservedKeys.Contains(key);
+			key == Key.Tab || (modifiers == KeyModifiers.None && ReservedKeys.Contains(key));
 	}
 }

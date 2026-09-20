@@ -824,5 +824,8 @@
 	"A11y.Comparer.PrevPosition": "Position précédente, les deux fichiers",
 	"A11y.Comparer.NextPosition": "Position suivante, les deux fichiers",
 	"A11y.Row.AiMatched": "correspondance IA",
-	"A11y.Row.MarkForDeletion": "Marquer pour suppression"
+	"A11y.Row.MarkForDeletion": "Marquer pour suppression",
+	"A11y.Shortcuts.BoxHelp": "Appuyez sur Entrée, puis sur la nouvelle combinaison de touches. Échap annule.",
+	"Settings.Row.Columns.Title": "Colonnes de la liste des résultats",
+	"Settings.Row.Columns.Desc": "Les colonnes affichées par la liste des résultats. Également accessible par un clic droit sur les en-têtes de colonnes."
 }

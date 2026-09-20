@@ -15,12 +15,14 @@
 //
 
 using System.Collections.ObjectModel;
+using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using VDF.GUI.ViewModels;
 using VDF.GUI.Views;
 
@@ -86,5 +88,108 @@ public class HotKeyBoxTests {
 		var value = Assert.IsAssignableFrom<IValueProvider>(peer);
 		Assert.Equal(binding.CurrentGesture, value.Value);
 		window.Close();
+	});
+
+	static void Press(Window window, PhysicalKey key, RawInputModifiers modifiers = RawInputModifiers.None) {
+		window.KeyPressQwerty(key, modifiers);
+		window.KeyReleaseQwerty(key, modifiers);
+		HeadlessUi.Pump();
+	}
+
+	/// <summary>Runs against a box that has keyboard focus and puts the stored shortcut back afterwards.</summary>
+	static void WithFocusedBox(Action<Window, HotKeyBox, ShortcutBindingVM> body) {
+		var (window, box, _, binding) = ShowBoxBetweenButtons();
+		string original = binding.CurrentGesture;
+		try {
+			box.Focus(NavigationMethod.Tab);
+			HeadlessUi.Pump();
+			body(window, box, binding);
+		}
+		finally {
+			binding.ApplyGesture(original); // shortcuts live in a process-wide manager
+			window.Close();
+		}
+	}
+
+	[Fact]
+	public Task TabbingIntoABox_AndPressingAKey_DoesNotOverwriteTheShortcut() => HeadlessUi.Run(() => WithFocusedBox((window, _, binding) => {
+		string before = binding.CurrentGesture;
+
+		// The box used to listen from the moment it had focus: walking through the list with
+		// Tab and touching any other key reassigned whichever shortcut happened to have focus.
+		Press(window, PhysicalKey.F6);
+		Press(window, PhysicalKey.ArrowDown);
+		Press(window, PhysicalKey.K);
+
+		Assert.Equal(before, binding.CurrentGesture);
+	}));
+
+	[Fact]
+	public Task Escape_OnAFocusedBox_DoesNotWipeTheShortcut() => HeadlessUi.Run(() => WithFocusedBox((window, _, binding) => {
+		string before = binding.CurrentGesture;
+		Assert.False(string.IsNullOrEmpty(before));
+
+		Press(window, PhysicalKey.Escape);
+
+		Assert.Equal(before, binding.CurrentGesture);
+	}));
+
+	[Fact]
+	public Task Enter_StartsListening_TheNextCombinationIsAssigned_ThenItStopsListening() => HeadlessUi.Run(() => WithFocusedBox((window, _, binding) => {
+		Press(window, PhysicalKey.Enter);
+		Press(window, PhysicalKey.F6, RawInputModifiers.Control);
+		Assert.Equal("Ctrl+F6", binding.CurrentGesture);
+
+		Press(window, PhysicalKey.F7);
+		Assert.Equal("Ctrl+F6", binding.CurrentGesture);
+	}));
+
+	[Fact]
+	public Task EnterAndSpace_CanStillBeAssigned_OnceListening() => HeadlessUi.Run(() => WithFocusedBox((window, _, binding) => {
+		Press(window, PhysicalKey.Space);  // starts listening
+		Press(window, PhysicalKey.Space);  // is the shortcut
+		Assert.Equal("Space", binding.CurrentGesture);
+	}));
+
+	[Fact]
+	public Task Escape_WhileListening_CancelsAndKeepsTheShortcut() => HeadlessUi.Run(() => WithFocusedBox((window, _, binding) => {
+		string before = binding.CurrentGesture;
+
+		Press(window, PhysicalKey.Enter);
+		Press(window, PhysicalKey.Escape);
+		Press(window, PhysicalKey.F6); // no longer listening
+
+		Assert.Equal(before, binding.CurrentGesture);
+	}));
+
+	[Fact]
+	public Task Tab_WhileListening_LeavesTheBoxAndAssignsNothing() => HeadlessUi.Run(() => WithFocusedBox((window, box, binding) => {
+		string before = binding.CurrentGesture;
+
+		Press(window, PhysicalKey.Enter);
+		Press(window, PhysicalKey.Tab);
+
+		Assert.NotSame(box, window.FocusManager!.GetFocusedElement());
+		Assert.Equal(before, binding.CurrentGesture);
+	}));
+
+	[Fact]
+	public Task Click_StartsListening_LikeBefore() => HeadlessUi.Run(() => {
+		var (window, box, _, binding) = ShowBoxBetweenButtons();
+		string original = binding.CurrentGesture;
+		try {
+			var center = box.TranslatePoint(new Avalonia.Point(box.Bounds.Width / 2, box.Bounds.Height / 2), window)!.Value;
+			window.MouseDown(center, MouseButton.Left);
+			window.MouseUp(center, MouseButton.Left);
+			HeadlessUi.Pump();
+
+			Press(window, PhysicalKey.F6);
+
+			Assert.Equal("F6", binding.CurrentGesture);
+		}
+		finally {
+			binding.ApplyGesture(original);
+			window.Close();
+		}
 	});
 }

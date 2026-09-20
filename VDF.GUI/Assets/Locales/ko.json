@@ -824,5 +824,8 @@
 	"A11y.Comparer.PrevPosition": "이전 위치, 두 파일 모두",
 	"A11y.Comparer.NextPosition": "다음 위치, 두 파일 모두",
 	"A11y.Row.AiMatched": "AI 일치",
-	"A11y.Row.MarkForDeletion": "삭제 대상으로 표시"
+	"A11y.Row.MarkForDeletion": "삭제 대상으로 표시",
+	"A11y.Shortcuts.BoxHelp": "Enter를 누른 다음 새 키 조합을 누르세요. Esc로 취소합니다.",
+	"Settings.Row.Columns.Title": "결과 목록의 열",
+	"Settings.Row.Columns.Desc": "결과 목록에 표시할 열입니다. 열 머리글을 마우스 오른쪽 버튼으로 클릭해도 됩니다."
 }

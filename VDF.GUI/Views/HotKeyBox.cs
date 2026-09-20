@@ -58,35 +58,55 @@ namespace VDF.GUI.Views {
 		}
 
 		void UpdateDisplay() {
-			if (_isCapturing) {
-				_textBlock.Text = string.IsNullOrEmpty(GestureText)
-					? App.Lang["MainWindow.Settings.KeyboardShortcuts.PressKeys"]
-					: GestureText;
-			}
-			else {
-				_textBlock.Text = string.IsNullOrEmpty(GestureText)
+			// While listening the box always shows the prompt, so it is obvious that the next
+			// key press is going to be taken.
+			_textBlock.Text = _isCapturing
+				? App.Lang["MainWindow.Settings.KeyboardShortcuts.PressKeys"]
+				: string.IsNullOrEmpty(GestureText)
 					? App.Lang["MainWindow.Settings.KeyboardShortcuts.ClickToSet"]
 					: GestureText;
-			}
+			_textBlock.Opacity = string.IsNullOrEmpty(GestureText) && !_isCapturing ? 0.5 : 1.0;
+		}
 
-			if (string.IsNullOrEmpty(GestureText) && !_isCapturing)
-				_textBlock.Opacity = 0.5;
-			else
-				_textBlock.Opacity = 1.0;
+		// The key that started listening, until it is released: holding Enter down must not
+		// go on to assign "Enter" through key repeat.
+		Key? activationKeyHeld;
+
+		/// <summary>
+		/// The box listens only after it was asked to: Enter, Space or a click. It used to
+		/// listen from the moment it had focus, so walking through the shortcut list with Tab
+		/// and touching any other key (an arrow, a letter, Space) reassigned whichever shortcut
+		/// happened to have focus, and Escape wiped it.
+		/// </summary>
+		void StartListening(Key? activationKey = null) {
+			_isCapturing = true;
+			activationKeyHeld = activationKey;
+			UpdateDisplay();
+		}
+
+		void StopListening() {
+			_isCapturing = false;
+			activationKeyHeld = null;
+			UpdateDisplay();
 		}
 
 		protected override void OnGotFocus(FocusChangedEventArgs e) {
 			base.OnGotFocus(e);
-			_isCapturing = true;
+			// A Border has no focus adorner of its own: this border is the focus indicator.
 			BorderBrush = new SolidColorBrush(Color.FromRgb(100, 150, 255));
-			UpdateDisplay();
 		}
 
 		protected override void OnLostFocus(FocusChangedEventArgs e) {
 			base.OnLostFocus(e);
-			_isCapturing = false;
 			BorderBrush = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255));
-			UpdateDisplay();
+			StopListening();
+		}
+
+		protected override void OnPointerPressed(PointerPressedEventArgs e) {
+			base.OnPointerPressed(e);
+			Focus();
+			StartListening();
+			e.Handled = true;
 		}
 
 		protected override void OnKeyDown(KeyEventArgs e) {
@@ -97,13 +117,23 @@ namespace VDF.GUI.Views {
 				base.OnKeyDown(e);
 				return;
 			}
-			e.Handled = true;
-
-			if (!_isCapturing)
-				return;
 
 			var key = e.Key;
 			var modifiers = e.KeyModifiers;
+
+			if (!_isCapturing) {
+				if (key is Key.Enter or Key.Space && modifiers == KeyModifiers.None) {
+					StartListening(key);
+					e.Handled = true;
+				}
+				else
+					base.OnKeyDown(e); // not ours: Escape closes, arrows scroll, shortcuts work
+				return;
+			}
+
+			e.Handled = true;
+			if (key == activationKeyHeld)
+				return;
 
 			// Ignore modifier-only presses
 			if (key is Key.LeftShift or Key.RightShift or
@@ -112,10 +142,9 @@ namespace VDF.GUI.Views {
 				Key.LWin or Key.RWin)
 				return;
 
-			// Escape clears the shortcut
+			// Escape backs out and keeps the shortcut; the clear button next to the box removes it.
 			if (key == Key.Escape && modifiers == KeyModifiers.None) {
-				if (DataContext is ShortcutBindingVM vm)
-					vm.ApplyGesture(string.Empty);
+				StopListening();
 				return;
 			}
 
@@ -129,9 +158,12 @@ namespace VDF.GUI.Views {
 				binding.CheckConflict(gestureString);
 				binding.ApplyGesture(gestureString);
 			}
+			StopListening();
 		}
 
 		protected override void OnKeyUp(KeyEventArgs e) {
+			if (e.Key == activationKeyHeld)
+				activationKeyHeld = null;
 			if (_isCapturing)
 				e.Handled = true;
 			else
@@ -172,6 +204,6 @@ namespace VDF.GUI.Views {
 		protected override bool IsContentElementCore() => true;
 		protected override bool IsControlElementCore() => true;
 		protected override string? GetHelpTextCore() =>
-			base.GetHelpTextCore() ?? App.Lang["MainWindow.Settings.KeyboardShortcuts.PressKeys"];
+			base.GetHelpTextCore() ?? App.Lang["A11y.Shortcuts.BoxHelp"];
 	}
 }

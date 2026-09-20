@@ -638,6 +638,35 @@
                                Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ThumbnailMaxWidth}" />
               </views:SettingRow>
 
+              <!-- The same switches as the column header's right-click menu, which has no
+                   keyboard access: a header strip cannot take focus. Each box carries its own
+                   name, or the row would hand its title to the first one. -->
+              <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Columns.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Columns.Desc]}"
+                  SearchTags="columns preview duration resolution size date bitrate format audio match similarity">
+                <UniformGrid Columns="2" ColumnSpacing="14" RowSpacing="2">
+                  <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Preview]}"
+                            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Preview]}"
+                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowThumbnailColumn}" />
+                  <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.DurationRes]}"
+                            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.DurationRes]}"
+                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowDurationColumn}" />
+                  <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.SizeDate]}"
+                            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.SizeDate]}"
+                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSizeDateColumn}" />
+                  <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Bitrate]}"
+                            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Bitrate]}"
+                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowBitrateColumn}" />
+                  <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}"
+                            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}"
+                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}" />
+                  <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Match]}"
+                            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Match]}"
+                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
+                </UniformGrid>
+              </views:SettingRow>
+
               <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPreset]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetTooltip]}"

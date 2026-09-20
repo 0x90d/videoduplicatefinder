@@ -222,6 +222,30 @@ public class KeyboardOperationTests {
 	});
 
 	[Fact]
+	public Task Settings_ResultColumns_CanBeSwitchedWithoutAMouse() => HeadlessUi.Run(() => {
+		var view = new SettingsView { DataContext = new MainWindowVM() };
+		var window = HeadlessUi.Show(view);
+		view.FindControl<ListBox>("NavList")!.SelectedIndex = 5; // Results & database
+		HeadlessUi.Pump();
+		bool before = Data.SettingsFile.Instance.ShowBitrateColumn;
+		try {
+			// Column visibility used to live only in the column header's right-click menu,
+			// and a header strip cannot take keyboard focus.
+			var bitrate = view.GetVisualDescendants().OfType<CheckBox>()
+				.Single(c => c.IsEffectivelyVisible && Avalonia.Automation.AutomationProperties.GetName(c) == "Bitrate");
+			bitrate.Focus(NavigationMethod.Tab);
+			HeadlessUi.Pump();
+			Press(window, PhysicalKey.Space);
+
+			Assert.Equal(!before, Data.SettingsFile.Instance.ShowBitrateColumn);
+		}
+		finally {
+			Data.SettingsFile.Instance.ShowBitrateColumn = before;
+			window.Close();
+		}
+	});
+
+	[Fact]
 	public Task Setup_EveryScanProfile_IsATabStop() => HeadlessUi.Run(() => {
 		var vm = new MainWindowVM();
 		var window = HeadlessUi.Show(new SetupView { DataContext = vm });
