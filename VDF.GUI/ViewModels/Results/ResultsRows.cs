@@ -54,6 +54,9 @@ namespace VDF.GUI.ViewModels {
 		/// <summary>Localized "3 files · 1.9 GB · save up to 1.2 GB" line, set by the builder.</summary>
 		public string Summary { get; internal set; } = string.Empty;
 
+		/// <summary>What a screen reader says for this row ("Group 1, 2 files · 2.4 GB, 98.4–100 %").</summary>
+		public string AccessibleName => ResultsAccessibleText.DescribeGroup(this);
+
 		public string SimilarityRangeDisplay {
 			get {
 				string min = SimilarityMin.ToString("0.#", CultureInfo.CurrentCulture);
@@ -79,6 +82,11 @@ namespace VDF.GUI.ViewModels {
 		/// the chip stays neutral: there is nothing to win.
 		/// </summary>
 		public bool HdrIsUpgrade { get; internal set; }
+		/// <summary>
+		/// What a screen reader says for this row, set by the builder. The checked state is
+		/// not part of it: it changes while the row lives, the view adds it.
+		/// </summary>
+		public string AccessibleName { get; internal set; } = string.Empty;
 	}
 
 	/// <summary>
@@ -100,6 +108,7 @@ namespace VDF.GUI.ViewModels {
 		public string AudioText { get; }
 		public string FileText { get; }
 		public bool HasAudio => AudioText.Length > 0;
+		public string AccessibleName => ResultsAccessibleText.DescribeDetails(this);
 		public bool IsImage => Item.ItemInfo.IsImage;
 	}
 

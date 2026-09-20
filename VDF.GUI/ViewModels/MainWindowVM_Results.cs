@@ -117,6 +117,14 @@ namespace VDF.GUI.ViewModels {
 			PreviouslyDeleted = App.Lang["Results.Summary.PreviouslyDeleted"],
 		};
 
+		static RowSpeechWords BuildRowSpeechWords() => new() {
+			Best = App.Lang["Results.Row.Best"],
+			AlreadyDeleted = App.Lang["DupList.AlreadyDeleted"],
+			Offline = App.Lang["DupList.Offline"],
+			AiMatched = App.Lang["A11y.Row.AiMatched"],
+			Checked = App.Lang["Comparer.CheckedTag"],
+		};
+
 		/// <summary>Rebuilds the flattened list from the current duplicates, filter and sort.</summary>
 		internal void RebuildResultsList() {
 			ResultsScrollAnchor.Capture? anchor = ResultsAnchorProvider?.Invoke();
@@ -135,6 +143,7 @@ namespace VDF.GUI.ViewModels {
 					return (keep, BestBadgeTooltip(decidedBy));
 				},
 				Formats = BuildGroupSummaryFormats(),
+				SpeechWords = BuildRowSpeechWords(),
 			});
 			resultsGroups = result.Groups;
 			resultsHavePartialClips = result.HasPartialClips;

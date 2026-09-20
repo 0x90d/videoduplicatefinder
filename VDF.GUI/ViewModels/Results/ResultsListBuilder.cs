@@ -42,6 +42,8 @@ namespace VDF.GUI.ViewModels {
 		/// <summary>Offline test, replaceable for tests. Defaults to <see cref="DuplicateItemVM.IsOffline"/>.</summary>
 		public Func<DuplicateItemVM, bool>? IsOffline { get; init; }
 		public GroupSummaryFormats Formats { get; init; } = GroupSummaryFormats.Default;
+		/// <summary>Words for the rows' screen reader text; the VM passes translations, tests use the defaults.</summary>
+		public RowSpeechWords SpeechWords { get; init; } = RowSpeechWords.Default;
 	}
 
 	public sealed class ResultsBuildResult {
@@ -178,6 +180,8 @@ namespace VDF.GUI.ViewModels {
 				header.Summary = BuildSummary(header, request.Formats);
 				flat.Add(header);
 				foreach (var row in header.Rows) {
+					row.AccessibleName = ResultsAccessibleText.DescribeItem(row.Item.ItemInfo, row.IsBest,
+						isTombstone(row.Item), isOffline(row.Item), request.SpeechWords, System.Globalization.CultureInfo.CurrentCulture);
 					hasPartialClips |= row.Item.ItemInfo.Flags.HasFlag(Core.DuplicateFlags.PartialClip);
 					if (!header.IsCollapsed) {
 						flat.Add(row);

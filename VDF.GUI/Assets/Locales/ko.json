@@ -822,5 +822,7 @@
 	"A11y.Comparer.PrevFrameRight": "이전 프레임, 오른쪽 파일",
 	"A11y.Comparer.NextFrameRight": "다음 프레임, 오른쪽 파일",
 	"A11y.Comparer.PrevPosition": "이전 위치, 두 파일 모두",
-	"A11y.Comparer.NextPosition": "다음 위치, 두 파일 모두"
+	"A11y.Comparer.NextPosition": "다음 위치, 두 파일 모두",
+	"A11y.Row.AiMatched": "AI 일치",
+	"A11y.Row.MarkForDeletion": "삭제 대상으로 표시"
 }

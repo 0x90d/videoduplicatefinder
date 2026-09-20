@@ -17,6 +17,7 @@
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using VDF.GUI.ViewModels;
 using VDF.GUI.Views;
 
@@ -132,11 +133,53 @@ public class AccessibleNameTests {
 		vm.ToggleItemDetailsCommand.Execute(vm.Duplicates[0]).Subscribe(); // and one details panel
 		var window = HeadlessUi.Show(new DuplicateResultsView { DataContext = vm });
 
-		AssertEverythingIsNamed(window,
-			new KnownGap("plan item 4: result rows announce their view model type",
-				n => n.Type == AutomationControlType.ListItem),
-			new KnownGap("plan item 4: row checkbox has no name",
-				n => n.Type == AutomationControlType.CheckBox && n.Owner?.DataContext is ResultsItemRow));
+		AssertEverythingIsNamed(window);
+		window.Close();
+	});
+
+	static List<PeerNode> ResultRows(Window window) => PeerTree.Walk(window)
+		.Where(n => n.Type == AutomationControlType.ListItem && n.Owner?.FindAncestorOfType<ListBox>()?.Name == "ResultsList").ToList();
+
+	[Fact]
+	public Task ResultsView_RowsAnnounceTheFile_NotTheViewModelType() => HeadlessUi.Run(() => {
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		var window = HeadlessUi.Show(new DuplicateResultsView { DataContext = vm });
+
+		var rows = ResultRows(window);
+
+		Assert.StartsWith("Group 1, 2 files", rows[0].Name);
+		Assert.StartsWith("beach_2019_final.mp4, ", rows[1].Name);
+		Assert.Contains("1920x1080", rows[1].Name);
+		Assert.Contains(@"D:\Videos\Holiday", rows[1].Name);
+		window.Close();
+	});
+
+	[Fact]
+	public Task ResultsView_CheckingARow_IsHeardOnTheRowThatHasFocus() => HeadlessUi.Run(() => {
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		var window = HeadlessUi.Show(new DuplicateResultsView { DataContext = vm });
+		Assert.StartsWith("beach_2019_final (1).mp4", ResultRows(window)[2].Name);
+
+		// Space on a focused row toggles its checkbox: focus stays on the row, so the row
+		// itself has to say that it is now marked for deletion.
+		vm.Duplicates[1].Checked = true;
+		Assert.StartsWith("checked, beach_2019_final (1).mp4", ResultRows(window)[2].Name);
+
+		vm.Duplicates[1].Checked = false;
+		Assert.StartsWith("beach_2019_final (1).mp4", ResultRows(window)[2].Name);
+		window.Close();
+	});
+
+	[Fact]
+	public Task ResultsView_FolderLine_IsInTheTree_InFull() => HeadlessUi.Run(() => {
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		var window = HeadlessUi.Show(new DuplicateResultsView { DataContext = vm }, width: 700);
+
+		// Drawn by a custom control that trims in the middle; a screen reader needs the
+		// whole path, and used to get none of it.
+		var folders = PeerTree.Walk(window).Where(n => n.Owner is Controls.MiddleEllipsisTextBlock).Select(n => n.Name).ToList();
+
+		Assert.Contains(@"D:\Videos\Holiday\copy", folders);
 		window.Close();
 	});
 }

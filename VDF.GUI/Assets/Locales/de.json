@@ -822,5 +822,7 @@
 	"A11y.Comparer.PrevFrameRight": "Vorheriger Frame, rechte Datei",
 	"A11y.Comparer.NextFrameRight": "Nächster Frame, rechte Datei",
 	"A11y.Comparer.PrevPosition": "Vorherige Position, beide Dateien",
-	"A11y.Comparer.NextPosition": "Nächste Position, beide Dateien"
+	"A11y.Comparer.NextPosition": "Nächste Position, beide Dateien",
+	"A11y.Row.AiMatched": "KI-Treffer",
+	"A11y.Row.MarkForDeletion": "Zum Löschen markieren"
 }

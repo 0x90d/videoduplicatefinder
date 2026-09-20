@@ -822,5 +822,7 @@
 	"A11y.Comparer.PrevFrameRight": "Quadro anterior, arquivo da direita",
 	"A11y.Comparer.NextFrameRight": "Próximo quadro, arquivo da direita",
 	"A11y.Comparer.PrevPosition": "Posição anterior, ambos os arquivos",
-	"A11y.Comparer.NextPosition": "Próxima posição, ambos os arquivos"
+	"A11y.Comparer.NextPosition": "Próxima posição, ambos os arquivos",
+	"A11y.Row.AiMatched": "correspondência por IA",
+	"A11y.Row.MarkForDeletion": "Marcar para exclusão"
 }

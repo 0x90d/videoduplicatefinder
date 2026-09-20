@@ -822,5 +822,7 @@
 	"A11y.Comparer.PrevFrameRight": "Image précédente, fichier de droite",
 	"A11y.Comparer.NextFrameRight": "Image suivante, fichier de droite",
 	"A11y.Comparer.PrevPosition": "Position précédente, les deux fichiers",
-	"A11y.Comparer.NextPosition": "Position suivante, les deux fichiers"
+	"A11y.Comparer.NextPosition": "Position suivante, les deux fichiers",
+	"A11y.Row.AiMatched": "correspondance IA",
+	"A11y.Row.MarkForDeletion": "Marquer pour suppression"
 }

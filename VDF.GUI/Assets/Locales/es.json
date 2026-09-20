@@ -822,5 +822,7 @@
 	"A11y.Comparer.PrevFrameRight": "Fotograma anterior, archivo derecho",
 	"A11y.Comparer.NextFrameRight": "Fotograma siguiente, archivo derecho",
 	"A11y.Comparer.PrevPosition": "Posición anterior, ambos archivos",
-	"A11y.Comparer.NextPosition": "Posición siguiente, ambos archivos"
+	"A11y.Comparer.NextPosition": "Posición siguiente, ambos archivos",
+	"A11y.Row.AiMatched": "coincidencia por IA",
+	"A11y.Row.MarkForDeletion": "Marcar para eliminar"
 }

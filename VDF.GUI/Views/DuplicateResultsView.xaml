@@ -433,6 +433,8 @@
         Background="Transparent"
         Padding="0"
         TemplateApplied="OnResultsListTemplateApplied"
+        ContainerPrepared="OnResultsContainerPrepared"
+        ContainerClearing="OnResultsContainerClearing"
         ItemsSource="{Binding ResultsRows}"
         SelectionMode="Multiple"
         SelectionChanged="OnResultsSelectionChanged"
@@ -592,7 +594,15 @@
                   DockPanel.Dock="Left"
                   Width="30"
                   VerticalAlignment="Center"
-                  IsChecked="{Binding Item.Checked}" />
+                  IsChecked="{Binding Item.Checked}">
+                <!-- "Mark for deletion: clip.mp4": a bare checkbox says nothing about what it marks -->
+                <AutomationProperties.Name>
+                  <MultiBinding StringFormat="{}{0}: {1}">
+                    <Binding Source="{x:Static local:App.Lang}" Path="[A11y.Row.MarkForDeletion]" />
+                    <Binding Path="Item.ItemInfo.Path" Converter="{StaticResource FileNameConverter}" />
+                  </MultiBinding>
+                </AutomationProperties.Name>
+              </CheckBox>
               <!-- preview filmstrip -->
               <Grid DockPanel.Dock="Left"
                     Width="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsPreviewWidth}"

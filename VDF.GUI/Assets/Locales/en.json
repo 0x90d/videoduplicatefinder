@@ -822,5 +822,7 @@
 	"A11y.Comparer.PrevFrameRight": "Previous frame, right file",
 	"A11y.Comparer.NextFrameRight": "Next frame, right file",
 	"A11y.Comparer.PrevPosition": "Previous position, both files",
-	"A11y.Comparer.NextPosition": "Next position, both files"
+	"A11y.Comparer.NextPosition": "Next position, both files",
+	"A11y.Row.AiMatched": "AI match",
+	"A11y.Row.MarkForDeletion": "Mark for deletion"
 }

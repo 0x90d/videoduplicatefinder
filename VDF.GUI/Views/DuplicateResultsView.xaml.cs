@@ -38,6 +38,42 @@ namespace VDF.GUI.Views {
 			AddHandler(ContextRequestedEvent, OnRowContextRequestedByKeyboard);
 		}
 
+		// A list item is announced by ONE name; by default that is its content's ToString(),
+		// here the view model's type name. Set in code, not by a binding in a style: the three
+		// row types share no base, and the checked state changes while the row is on screen.
+		// Containers are recycled, so the subscription lives exactly as long as the pairing.
+		readonly Dictionary<Control, (DuplicateItemVM Item, System.ComponentModel.PropertyChangedEventHandler Handler)> rowNameSubscriptions = new();
+
+		void OnResultsContainerPrepared(object? sender, ContainerPreparedEventArgs e) {
+			ReleaseRowName(e.Container);
+			switch (e.Container.DataContext ?? ResultsListControl.Items[e.Index]) {
+				case ResultsItemRow row:
+					var container = e.Container;
+					void Update() => Avalonia.Automation.AutomationProperties.SetName(container,
+						ResultsAccessibleText.WithCheckedState(row.AccessibleName, row.Item.Checked, App.Lang["Comparer.CheckedTag"]));
+					void OnItemChanged(object? s, System.ComponentModel.PropertyChangedEventArgs a) {
+						if (a.PropertyName == nameof(DuplicateItemVM.Checked)) Update();
+					}
+					row.Item.PropertyChanged += OnItemChanged;
+					rowNameSubscriptions[container] = (row.Item, OnItemChanged);
+					Update();
+					break;
+				case ResultsGroupHeader header:
+					Avalonia.Automation.AutomationProperties.SetName(e.Container, header.AccessibleName);
+					break;
+				case ResultsDetailsRow details:
+					Avalonia.Automation.AutomationProperties.SetName(e.Container, details.AccessibleName);
+					break;
+			}
+		}
+
+		void OnResultsContainerClearing(object? sender, ContainerClearingEventArgs e) => ReleaseRowName(e.Container);
+
+		void ReleaseRowName(Control container) {
+			if (!rowNameSubscriptions.Remove(container, out var subscription)) return;
+			subscription.Item.PropertyChanged -= subscription.Handler;
+		}
+
 		/// <summary>
 		/// Shift+F10 / the Menu key: Avalonia raises ContextRequested on the FOCUSED element,
 		/// which in the list is the row container, and the event bubbles up from there. The

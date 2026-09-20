@@ -15,6 +15,7 @@
 //
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
@@ -62,6 +63,9 @@ namespace VDF.GUI.Controls {
 			set => SetValue(FontFamilyProperty, value);
 		}
 
+		// Custom-drawn, so without a peer this text exists for the eye only.
+		protected override AutomationPeer OnCreateAutomationPeer() => new MiddleEllipsisTextBlockAutomationPeer(this);
+
 		TextLayout CreateLayout(string text) =>
 			new(text, new Typeface(FontFamily), FontSize, Foreground);
 
@@ -84,5 +88,14 @@ namespace VDF.GUI.Controls {
 			using var layout = CreateLayout(display);
 			layout.Draw(context, new Point(0, (Bounds.Height - layout.Height) / 2));
 		}
+	}
+
+	/// <summary>Presents the control as static text holding the FULL string, not the trimmed one on screen.</summary>
+	public class MiddleEllipsisTextBlockAutomationPeer : ControlAutomationPeer {
+		public MiddleEllipsisTextBlockAutomationPeer(MiddleEllipsisTextBlock owner) : base(owner) { }
+		protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Text;
+		protected override string? GetNameCore() => ((MiddleEllipsisTextBlock)Owner).Text;
+		protected override bool IsContentElementCore() => true;
+		protected override bool IsControlElementCore() => true;
 	}
 }
