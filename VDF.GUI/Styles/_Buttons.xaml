@@ -1,13 +1,14 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Tactile press feedback: button depresses 1px on click -->
+    <!-- Tactile press feedback: button depresses 1px on click. The press itself stays for
+         users who asked for less motion, only the glide into it goes. -->
     <Style Selector="Button:pressed">
         <Setter Property="RenderTransform">
             <TranslateTransform Y="1" />
         </Setter>
     </Style>
-    <Style Selector="Button">
+    <Style Selector="Window:not(.reduce-motion) Button">
         <Setter Property="Transitions">
             <Transitions>
                 <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.08" />

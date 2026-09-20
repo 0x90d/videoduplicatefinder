@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
 
@@ -27,7 +28,67 @@ namespace VDF.GUI.Utils;
 /// query answers null where the system has no such setting or cannot be asked, and null
 /// always means "leave things as they are".
 /// </summary>
-static class SystemPreferences {
+static partial class SystemPreferences {
+
+	/// <summary>
+	/// False when the user switched animations off in their system. Windows: Settings,
+	/// Accessibility, Visual effects, Animation effects. macOS: Accessibility, Display,
+	/// Reduce motion. GNOME and the desktops built on its settings: enable-animations.
+	/// People turn them off because movement on screen makes them dizzy or keeps pulling
+	/// their attention away.
+	/// </summary>
+	public static bool? AnimationsEnabled() {
+		try {
+			if (OperatingSystem.IsWindows()) return WindowsClientAreaAnimation();
+			if (OperatingSystem.IsMacOS()) return MacReduceMotion() is { } reduce ? !reduce : null;
+			if (OperatingSystem.IsLinux()) return ParseBool(GSettings("org.gnome.desktop.interface", "enable-animations"));
+		}
+		catch { /* a preference that cannot be read is no preference */ }
+		return null;
+	}
+
+	const uint SPI_GETCLIENTAREAANIMATION = 0x1042;
+
+	[SupportedOSPlatform("windows")]
+	static bool? WindowsClientAreaAnimation() =>
+		SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, out int enabled, 0) ? enabled != 0 : null;
+
+	[LibraryImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static partial bool SystemParametersInfoW(uint uiAction, uint uiParam, out int pvParam, uint fWinIni);
+
+	// [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldReduceMotion]. The selector is
+	// asked for first: sending one an object does not know raises an Objective-C exception,
+	// which managed code cannot catch.
+	[SupportedOSPlatform("macos")]
+	static bool? MacReduceMotion() {
+		IntPtr workspaceClass = objc_getClass("NSWorkspace");
+		if (workspaceClass == IntPtr.Zero) return null;
+		IntPtr workspace = SendPointer(workspaceClass, sel_registerName("sharedWorkspace"));
+		if (workspace == IntPtr.Zero) return null;
+		IntPtr selector = sel_registerName("accessibilityDisplayShouldReduceMotion");
+		if (!SendBoolWithSelector(workspace, sel_registerName("respondsToSelector:"), selector)) return null;
+		return SendBool(workspace, selector);
+	}
+
+	const string ObjC = "/usr/lib/libobjc.dylib";
+
+	[LibraryImport(ObjC, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial IntPtr objc_getClass(string name);
+
+	[LibraryImport(ObjC, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial IntPtr sel_registerName(string name);
+
+	[LibraryImport(ObjC, EntryPoint = "objc_msgSend")]
+	private static partial IntPtr SendPointer(IntPtr receiver, IntPtr selector);
+
+	[LibraryImport(ObjC, EntryPoint = "objc_msgSend")]
+	[return: MarshalAs(UnmanagedType.I1)]
+	private static partial bool SendBool(IntPtr receiver, IntPtr selector);
+
+	[LibraryImport(ObjC, EntryPoint = "objc_msgSend")]
+	[return: MarshalAs(UnmanagedType.I1)]
+	private static partial bool SendBoolWithSelector(IntPtr receiver, IntPtr selector, IntPtr argument);
 
 	/// <summary>
 	/// The system's text size as a factor, 1.0 = normal. Windows: Settings, Accessibility,

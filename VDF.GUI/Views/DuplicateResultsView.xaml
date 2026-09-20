@@ -163,7 +163,7 @@
     <!-- Hover-diff swap fades in instead of snapping (#849 report: values flipping
          "suddenly forth and back"). Only activation animates; clearing restores the
          familiar values immediately. -->
-    <Style Selector="TextBlock.metric-diff.diffing">
+    <Style Selector="Window:not(.reduce-motion) TextBlock.metric-diff.diffing">
       <Style.Animations>
         <Animation Duration="0:0:0.18" FillMode="Forward">
           <KeyFrame Cue="0%">

@@ -34,6 +34,7 @@ namespace VDF.GUI.Utils;
 static class Appearance {
 	static bool started;
 	static double? systemTextScale;
+	static bool? systemAnimations;
 	static double appliedScale = 1.0;
 	static readonly List<Window> windows = new();
 
@@ -54,6 +55,12 @@ static class Appearance {
 	internal static double ResolveScale(int percent, double? systemTextScale) =>
 		Math.Clamp(percent > 0 ? percent / 100.0 : systemTextScale ?? 1.0, 0.5, 3.0);
 
+	/// <summary>True when animations that run by themselves should stand still.</summary>
+	public static bool ReduceMotionNow => ResolveReduceMotion(SettingsFile.Instance.AlwaysReduceMotion, systemAnimations);
+
+	/// <param name="animationsEnabled">The system's answer, null where there is none to ask.</param>
+	internal static bool ResolveReduceMotion(bool always, bool? animationsEnabled) => always || animationsEnabled == false;
+
 	static PlatformColorValues SystemColors() =>
 		Application.Current?.PlatformSettings?.GetColorValues() ?? new PlatformColorValues();
 
@@ -67,18 +74,21 @@ static class Appearance {
 		window.Activated += (_, _) => RefreshSystemPreferences();
 		window.Opened += (_, _) => FitToScreen(window);
 		ScaleWindow(window, 1.0, appliedScale);
+		window.Classes.Set("reduce-motion", ReduceMotionNow);
 	}
 
 	static void Start() {
 		if (started || Application.Current is not { } app) return;
 		started = true;
 		systemTextScale = SystemPreferences.TextScale();
+		systemAnimations = SystemPreferences.AnimationsEnabled();
 		appliedScale = ScaleNow;
 		if (app.PlatformSettings is { } platform)
 			platform.ColorValuesChanged += (_, _) => Apply(); // the user switched the system while the app runs
 		SettingsFile.Instance.PropertyChanged += (_, e) => {
 			if (e.PropertyName == nameof(SettingsFile.ThemeMode)) Apply();
 			if (e.PropertyName == nameof(SettingsFile.UiScalePercent)) Rescale();
+			if (e.PropertyName == nameof(SettingsFile.AlwaysReduceMotion)) ApplyMotion();
 		};
 		Apply();
 	}
@@ -94,20 +104,40 @@ static class Appearance {
 	static bool refreshing;
 
 	static void RefreshSystemPreferences() {
+		if (!OperatingSystem.IsLinux()) {
+			// In-process calls; macOS wants its AppKit objects asked on the main thread.
+			SetSystemAnswers(SystemPreferences.TextScale(), SystemPreferences.AnimationsEnabled());
+			return;
+		}
 		if (refreshing) return;
 		refreshing = true;
-		// Off the UI thread: on Linux the answer comes from a child process.
-		Task.Run(SystemPreferences.TextScale).ContinueWith(query => Dispatcher.UIThread.Post(() => {
-			refreshing = false;
-			systemTextScale = query.IsCompletedSuccessfully ? query.Result : null;
-			Rescale();
-		}));
+		// Off the UI thread: on Linux the answers come from child processes.
+		Task.Run(() => (Scale: SystemPreferences.TextScale(), Animations: SystemPreferences.AnimationsEnabled()))
+			.ContinueWith(query => Dispatcher.UIThread.Post(() => {
+				refreshing = false;
+				if (query.IsCompletedSuccessfully)
+					SetSystemAnswers(query.Result.Scale, query.Result.Animations);
+			}));
+	}
+
+	static void SetSystemAnswers(double? textScale, bool? animations) {
+		systemTextScale = textScale;
+		systemAnimations = animations;
+		Rescale();
+		ApplyMotion();
 	}
 
 	/// <summary>For tests: what the system is taken to have answered.</summary>
-	internal static void SetSystemTextScale(double? factor) {
-		systemTextScale = factor;
-		Rescale();
+	internal static void SetSystemTextScale(double? factor) => SetSystemAnswers(factor, systemAnimations);
+
+	/// <summary>For tests: what the system is taken to have answered.</summary>
+	internal static void SetSystemAnimations(bool? enabled) => SetSystemAnswers(systemTextScale, enabled);
+
+	// Styles that move something only apply outside this class (_Animations.xaml, _Buttons.xaml).
+	static void ApplyMotion() {
+		bool reduce = ReduceMotionNow;
+		foreach (var window in windows)
+			window.Classes.Set("reduce-motion", reduce);
 	}
 
 	/// <summary>Brings every open window to the scale that applies now.</summary>

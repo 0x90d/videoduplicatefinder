@@ -1,8 +1,12 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- Everything in this file moves, so everything in it applies only while the window does
+         not carry the reduce-motion class, which Appearance sets for users who asked their
+         system (or VDF) for less motion. -->
+
     <!-- Metric hover diff: smooth color transition (matches web's transition: color 0.15s) -->
-    <Style Selector="TextBlock.metric-diff">
+    <Style Selector="Window:not(.reduce-motion) TextBlock.metric-diff">
         <Setter Property="Transitions">
             <Transitions>
                 <BrushTransition Property="Foreground" Duration="0:0:0.15" />

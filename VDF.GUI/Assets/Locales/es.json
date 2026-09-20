@@ -775,6 +775,8 @@
 	"Settings.Row.UiScale.Title": "Tamaño del texto y los controles",
 	"Settings.Row.UiScale.Desc": "Sigue el tamaño de texto configurado en el sistema. Elija un porcentaje para agrandar todo en VDF de todos modos. Se aplica al instante.",
 	"Settings.UiScale.System": "Seguir al sistema",
+	"Settings.Row.ReduceMotion.Title": "Reducir el movimiento",
+	"Settings.Row.ReduceMotion.Desc": "Las animaciones se detienen. Siempre activo si el sistema tiene las animaciones desactivadas; actívelo aquí para tenerlo en VDF de todos modos.",
 	"Settings.Row.UseMica.Title": "Usar Mica",
 	"Settings.Row.UseMica.Desc": "Fondo de ventana translúcido en Windows 11. Requiere reiniciar.",
 	"Settings.Row.ThumbnailDoubleClick.Desc": "Qué hace el doble clic en una miniatura de los resultados.",

@@ -66,16 +66,43 @@ public class ReducedMotionTests {
 	});
 
 	[Fact]
-	public Task MainWindow_FollowsTheSystemSetting() => HeadlessUi.Run(() => {
+	public Task EveryWindow_FollowsTheSystem_AndTheSetting_Live() => HeadlessUi.Run(() => {
 		var (window, _) = HeadlessUi.Shell();
+		bool settingBefore = Data.SettingsFile.Instance.AlwaysReduceMotion;
+		var dialog = new Views.AboutWindow();
+		dialog.Show();
+		HeadlessUi.Pump();
+		try {
+			Data.SettingsFile.Instance.AlwaysReduceMotion = false;
+			Appearance.SetSystemAnimations(true);
+			Assert.False(window.Classes.Contains("reduce-motion"));
+			Assert.False(dialog.Classes.Contains("reduce-motion"));
 
-		Assert.Equal(MotionPreference.ReduceMotion, window.Classes.Contains("reduce-motion"));
+			// The user switches animations off in the system while VDF runs.
+			Appearance.SetSystemAnimations(false);
+			Assert.True(window.Classes.Contains("reduce-motion"));
+			Assert.True(dialog.Classes.Contains("reduce-motion"));
+
+			// The system allows them, VDF is told not to move anyway.
+			Appearance.SetSystemAnimations(true);
+			Data.SettingsFile.Instance.AlwaysReduceMotion = true;
+			Assert.True(window.Classes.Contains("reduce-motion"));
+			Assert.True(dialog.Classes.Contains("reduce-motion"));
+		}
+		finally {
+			dialog.Hide();
+			Data.SettingsFile.Instance.AlwaysReduceMotion = settingBefore;
+			Appearance.SetSystemAnimations(null);
+			HeadlessUi.Pump();
+		}
 	});
 
 	[Theory]
-	[InlineData(true, false)]
-	[InlineData(false, true)]
-	[InlineData(null, false)] // no answer from the system: animate as before
-	public void OnlyAnExplicitNoToAnimations_ReducesMotion(bool? animationsEnabled, bool expected) =>
-		Assert.Equal(expected, MotionPreference.FromSystem(animationsEnabled));
+	[InlineData(false, true, false)]
+	[InlineData(false, false, true)]  // the system says no animations: followed
+	[InlineData(false, null, false)]  // no answer from the system: animate as before
+	[InlineData(true, true, true)]    // the setting only ever asks for less motion
+	[InlineData(true, null, true)]
+	public void Motion_IsReduced_WhenTheSystemOrTheUserSaysSo(bool always, bool? animationsEnabled, bool expected) =>
+		Assert.Equal(expected, Appearance.ResolveReduceMotion(always, animationsEnabled));
 }

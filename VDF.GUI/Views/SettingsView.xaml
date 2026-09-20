@@ -920,6 +920,14 @@
               </views:SettingRow>
 
               <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.ReduceMotion.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.ReduceMotion.Desc]}"
+                  SearchTags="animation motion movement shimmer pulse accessibility vestibular">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysReduceMotion}" />
+              </views:SettingRow>
+
+              <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UseMica.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UseMica.Desc]}"
                   SearchTags="mica translucent windows 11">

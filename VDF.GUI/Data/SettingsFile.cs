@@ -433,6 +433,16 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref field, value <= 0 ? 0 : Math.Clamp(value, 50, 300));
 		}
 		/// <summary>
+		/// Animations stand still even when the operating system does not say so: for systems
+		/// without such a setting, and for users who want it in VDF only. The system's own
+		/// "off" is always followed.
+		/// </summary>
+		[JsonPropertyName("AlwaysReduceMotion")]
+		public bool AlwaysReduceMotion {
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		}
+		/// <summary>
 		/// The on/off switch <see cref="ThemeMode"/> replaced, read once from an older settings
 		/// file and never written again. It defaulted to on, so "on" says nothing about what
 		/// the user wanted and becomes System; "off" was a choice and stays Light.
