@@ -44,28 +44,51 @@
       <Setter Property="Opacity" Value="0.55" />
     </Style>
 
-    <!-- left nav items -->
-    <Style Selector="Border.navitem">
+    <!-- left nav items: a ListBox, so the sections can be reached and switched from the
+         keyboard (Tab into the list, arrow keys between sections) and a screen reader
+         announces "Matching, 2 of 11, selected". The item template is our own, so the look
+         is exactly the mockup's .navitem and nothing of the theme's list styling shows. -->
+    <Style Selector="ListBox.settingsnav">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBox.settingsnav ListBoxItem">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="CornerRadius" Value="7" />
       <Setter Property="Padding" Value="14,8" />
       <Setter Property="Margin" Value="0,0,0,2" />
+      <Setter Property="MinHeight" Value="0" />
       <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="FontWeight" Value="Normal" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}"
+                  CornerRadius="{TemplateBinding CornerRadius}"
+                  Padding="{TemplateBinding Padding}">
+            <!-- Deliberately NOT named PART_ContentPresenter: the theme's selection and
+                 hover styles address that part by name (as style triggers, which outrank
+                 anything set in a template) and painted their own highlight and text
+                 color into the item. -->
+            <ContentPresenter x:Name="NavContent"
+                              Opacity="0.75"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
     </Style>
-    <Style Selector="Border.navitem:pointerover">
+    <Style Selector="ListBox.settingsnav ListBoxItem:pointerover">
       <Setter Property="Background" Value="{actipro:ThemeResource Container3BackgroundBrush}" />
     </Style>
-    <Style Selector="Border.navitem TextBlock">
-      <Setter Property="FontSize" Value="13.5" />
-      <Setter Property="Opacity" Value="0.75" />
-    </Style>
-    <Style Selector="Border.navitem.on">
+    <Style Selector="ListBox.settingsnav ListBoxItem:selected">
       <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
-    </Style>
-    <Style Selector="Border.navitem.on TextBlock">
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Opacity" Value="1" />
       <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushEmphasizedAccent}" />
+    </Style>
+    <Style Selector="ListBox.settingsnav ListBoxItem:selected /template/ ContentPresenter#NavContent">
+      <Setter Property="Opacity" Value="1" />
     </Style>
 
     <!-- captions: section names in search mode, subsection groups in normal mode -->
@@ -102,43 +125,22 @@
               BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
               BorderThickness="0,0,1,0"
               Padding="10,14">
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <StackPanel x:Name="NavPanel">
-            <Border Classes="navitem on" Tag="Scanning" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Scanning]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Matching" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.Matching]}" />
-            </Border>
-            <Border Classes="navitem" Tag="PartialClips" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.PartialClips]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Directories" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Directories]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Files" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.FilesFilters]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Database" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.Results]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Processing" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Processing]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Schedule" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Appearance" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Appearance]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Shortcuts" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts]}" />
-            </Border>
-            <Border Classes="navitem" Tag="Test" PointerPressed="OnNavItemPressed">
-              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics]}" />
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
+        <ListBox x:Name="NavList" Classes="settingsnav"
+                 AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Settings]}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 SelectionChanged="OnNavSelectionChanged">
+          <ListBoxItem Tag="Scanning" Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Scanning]}" />
+          <ListBoxItem Tag="Matching" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.Matching]}" />
+          <ListBoxItem Tag="PartialClips" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.PartialClips]}" />
+          <ListBoxItem Tag="Directories" Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Directories]}" />
+          <ListBoxItem Tag="Files" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.FilesFilters]}" />
+          <ListBoxItem Tag="Database" Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Sub.Results]}" />
+          <ListBoxItem Tag="Processing" Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Processing]}" />
+          <ListBoxItem Tag="Schedule" Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ScanScheduler]}" />
+          <ListBoxItem Tag="Appearance" Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Appearance]}" />
+          <ListBoxItem Tag="Shortcuts" Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts]}" />
+          <ListBoxItem Tag="Test" Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics]}" />
+        </ListBox>
       </Border>
 
       <!-- ===== main column (mockup .set-main) ===== -->

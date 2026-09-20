@@ -247,9 +247,16 @@
                                  VerticalAlignment="Top" Text="{Binding TimeHint}" />
                       <StackPanel Spacing="2">
                         <StackPanel Orientation="Horizontal" Spacing="8">
+                          <!-- The mouse picks a profile by clicking anywhere on the card (the
+                               radio is not hit-testable, so the click reaches the card). The
+                               keyboard and screen readers operate the radio itself, so it runs
+                               the same command: without it, Space checked the radio on screen
+                               while the scan kept the previous profile. -->
                           <RadioButton GroupName="ScanProfiles" IsHitTestVisible="False"
                                        AutomationProperties.Name="{Binding Name}"
                                        AutomationProperties.HelpText="{Binding Description}"
+                                       Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).SelectScanProfileCommand}"
+                                       CommandParameter="{Binding}"
                                        IsChecked="{Binding IsActive, Mode=OneWay}" />
                           <TextBlock FontSize="13.5" FontWeight="SemiBold" VerticalAlignment="Center"
                                      Text="{Binding Name}" />

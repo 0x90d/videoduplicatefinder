@@ -36,7 +36,10 @@ namespace VDF.GUI.Views {
 
 		sealed record SectionInfo(Control Panel, TextBlock? Caption, string Id, string Label);
 
-		readonly List<Border> navItems = new();
+		readonly List<ListBoxItem> navItems = new();
+		ListBox navList = null!;
+		// Selection is also set from code (search mode clears it); only the user's own picks switch sections.
+		bool syncingNavSelection;
 		readonly List<SectionInfo> sections = new();
 		readonly List<TextBlock> subCaptions = new();
 		readonly List<SettingsSearchSection> searchSections = new();
@@ -82,8 +85,8 @@ namespace VDF.GUI.Views {
 			if (indexBuilt) return;
 			indexBuilt = true;
 
-			foreach (var item in this.FindControl<StackPanel>("NavPanel")!.Children.OfType<Border>())
-				navItems.Add(item);
+			navList = this.FindControl<ListBox>("NavList")!;
+			navItems.AddRange(navList.Items.OfType<ListBoxItem>());
 
 			collapsedExtraRows.Add(this.FindControl<SettingRow>("RowDurationMin")!);
 			collapsedExtraRows.Add(this.FindControl<SettingRow>("RowDurationMax")!);
@@ -91,8 +94,7 @@ namespace VDF.GUI.Views {
 			foreach (var panel in this.FindControl<StackPanel>("SectionsHost")!.Children.OfType<StackPanel>()) {
 				if (panel.Tag is not string id) continue;
 				var caption = panel.Children.OfType<TextBlock>().FirstOrDefault(t => t.Classes.Contains("sectioncaption"));
-				string label = navItems.FirstOrDefault(n => (string?)n.Tag == id)?.Child is TextBlock navText
-					? navText.Text ?? id : id;
+				string label = navItems.FirstOrDefault(n => (string?)n.Tag == id)?.Content as string ?? id;
 				sections.Add(new SectionInfo(panel, caption, id, label));
 				// The section itself is found by its nav label only; rows and tagged
 				// blocks carry their own text.
@@ -159,12 +161,15 @@ namespace VDF.GUI.Views {
 				? App.Lang["Settings.SearchResults"]
 				: sections.FirstOrDefault(s => s.Id == selectedSectionId)?.Label;
 
-			foreach (var item in navItems)
-				item.Classes.Set("on", !searching && (string?)item.Tag == selectedSectionId);
+			// A search spans all sections, so none is the selected one while it runs.
+			syncingNavSelection = true;
+			navList.SelectedItem = searching ? null : navItems.FirstOrDefault(n => (string?)n.Tag == selectedSectionId);
+			syncingNavSelection = false;
 		}
 
-		void OnNavItemPressed(object? sender, PointerPressedEventArgs e) {
-			if ((sender as Border)?.Tag is not string id) return;
+		void OnNavSelectionChanged(object? sender, SelectionChangedEventArgs e) {
+			if (syncingNavSelection || !indexBuilt) return;
+			if ((navList.SelectedItem as ListBoxItem)?.Tag is not string id) return;
 			selectedSectionId = id;
 			if (vm != null && SettingsSearch.IsSearching(vm.SettingsSearchQuery))
 				vm.SettingsSearchQuery = string.Empty; // triggers UpdateVisibility
