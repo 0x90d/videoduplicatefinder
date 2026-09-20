@@ -25,6 +25,13 @@
         <Setter Property="AutomationProperties.HelpText" Value="{Binding $parent[AutoCompleteBox].(AutomationProperties.HelpText)}" />
     </Style>
 
+    <!-- UI scale. Windows scale their content with a layout transform (UiScale). Menus,
+         flyouts, dropdowns and tooltips are windows of their own and stay at 100 percent
+         unless their popup is told to take over the transform of what it belongs to. -->
+    <Style Selector="Popup">
+        <Setter Property="InheritsTransform" Value="True" />
+    </Style>
+
     <!-- Contrast. The theme's accent button writes in the accent color itself, 3.6:1 on
          the light theme's white. VdfAccentTextBrush (App.xaml) is the accent tone that
          reaches 4.5:1 in both themes. -->

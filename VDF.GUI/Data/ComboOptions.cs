@@ -40,6 +40,17 @@ namespace VDF.GUI.Data {
 		public override string ToString() => Name;
 	}
 
+	/// <summary>One entry of the interface size combo. Percent 0 follows the system.</summary>
+	public sealed class UiScaleOption {
+		public string Name { get; }
+		public int Percent { get; }
+		public UiScaleOption(string name, int percent) {
+			Name = name;
+			Percent = percent;
+		}
+		public override string ToString() => Name;
+	}
+
 	public sealed class ThumbnailDoubleClickOption {
 		public string Name { get; }
 		public ThumbnailDoubleClickAction Value { get; }

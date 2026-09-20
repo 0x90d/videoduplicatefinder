@@ -1214,6 +1214,19 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
+		public Data.UiScaleOption[] UiScaleOptions { get; } = new[] { 0, 100, 110, 125, 150, 175, 200 }
+			.Select(percent => new Data.UiScaleOption(percent == 0 ? App.Lang["Settings.UiScale.System"] : $"{percent} %", percent))
+			.ToArray();
+
+		public Data.UiScaleOption? SelectedUiScaleOption {
+			get => UiScaleOptions.FirstOrDefault(o => o.Percent == SettingsFile.Instance.UiScalePercent);
+			set {
+				if (value == null || value.Percent == SettingsFile.Instance.UiScalePercent) return;
+				SettingsFile.Instance.UiScalePercent = value.Percent;
+				this.RaisePropertyChanged();
+			}
+		}
+
 		public Data.ThumbnailDoubleClickOption[] ThumbnailDoubleClickOptions { get; } = {
 			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenFile"], Data.ThumbnailDoubleClickAction.OpenFile),
 			new(App.Lang["MainWindow.Settings.ThumbnailDoubleClick.OpenThumbnailComparer"], Data.ThumbnailDoubleClickAction.OpenThumbnailComparer),

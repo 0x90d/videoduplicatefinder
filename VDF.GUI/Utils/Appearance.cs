@@ -16,21 +16,26 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using VDF.GUI.Data;
 
 namespace VDF.GUI.Utils;
 
 /// <summary>
-/// How the app looks follows what the user told their operating system: light or dark, and
-/// (further down) contrast, text size and motion. People set these once, for their eyes, in
-/// one place, and an app that ignores them makes them do it again in every app, if the app
-/// lets them at all. The settings only ever override towards what a user asks for.
+/// How the app looks follows what the user told their operating system: light or dark, the
+/// size of text, and (further down) contrast and motion. People set these once, for their
+/// eyes, in one place, and an app that ignores them makes them do it again in every app, if
+/// the app lets them at all. The settings only ever override towards what a user asks for.
 /// Every window calls <see cref="Attach"/> from its constructor.
 /// </summary>
 static class Appearance {
 	static bool started;
+	static double? systemTextScale;
+	static double appliedScale = 1.0;
+	static readonly List<Window> windows = new();
 
 	/// <summary>True when the app is dark right now, whether by choice or because the system is.</summary>
 	public static bool IsDarkNow => IsDark(SettingsFile.Instance.ThemeMode, SystemColors().ThemeVariant);
@@ -41,18 +46,39 @@ static class Appearance {
 		_ => system == PlatformThemeVariant.Dark,
 	};
 
+	/// <summary>The factor everything in a window is scaled by right now.</summary>
+	public static double ScaleNow => ResolveScale(SettingsFile.Instance.UiScalePercent, systemTextScale);
+
+	/// <param name="percent">The setting: 0 follows the system, anything else is that percentage.</param>
+	/// <param name="systemTextScale">The system's text size factor, null where there is none to follow.</param>
+	internal static double ResolveScale(int percent, double? systemTextScale) =>
+		Math.Clamp(percent > 0 ? percent / 100.0 : systemTextScale ?? 1.0, 0.5, 3.0);
+
 	static PlatformColorValues SystemColors() =>
 		Application.Current?.PlatformSettings?.GetColorValues() ?? new PlatformColorValues();
 
-	public static void Attach(Window window) => Start();
+	public static void Attach(Window window) {
+		Start();
+		if (windows.Contains(window)) return;
+		windows.Add(window);
+		window.Closed += (_, _) => windows.Remove(window);
+		// Nothing reports a change of the system's text size: asked again whenever a window
+		// comes to the front, which is when the user returns from the system settings.
+		window.Activated += (_, _) => RefreshSystemPreferences();
+		window.Opened += (_, _) => FitToScreen(window);
+		ScaleWindow(window, 1.0, appliedScale);
+	}
 
 	static void Start() {
 		if (started || Application.Current is not { } app) return;
 		started = true;
+		systemTextScale = SystemPreferences.TextScale();
+		appliedScale = ScaleNow;
 		if (app.PlatformSettings is { } platform)
 			platform.ColorValuesChanged += (_, _) => Apply(); // the user switched the system while the app runs
 		SettingsFile.Instance.PropertyChanged += (_, e) => {
 			if (e.PropertyName == nameof(SettingsFile.ThemeMode)) Apply();
+			if (e.PropertyName == nameof(SettingsFile.UiScalePercent)) Rescale();
 		};
 		Apply();
 	}
@@ -63,5 +89,90 @@ static class Appearance {
 	internal static void Apply() {
 		if (Application.Current is { } app)
 			app.RequestedThemeVariant = IsDarkNow ? ThemeVariant.Dark : ThemeVariant.Light;
+	}
+
+	static bool refreshing;
+
+	static void RefreshSystemPreferences() {
+		if (refreshing) return;
+		refreshing = true;
+		// Off the UI thread: on Linux the answer comes from a child process.
+		Task.Run(SystemPreferences.TextScale).ContinueWith(query => Dispatcher.UIThread.Post(() => {
+			refreshing = false;
+			systemTextScale = query.IsCompletedSuccessfully ? query.Result : null;
+			Rescale();
+		}));
+	}
+
+	/// <summary>For tests: what the system is taken to have answered.</summary>
+	internal static void SetSystemTextScale(double? factor) {
+		systemTextScale = factor;
+		Rescale();
+	}
+
+	/// <summary>Brings every open window to the scale that applies now.</summary>
+	static void Rescale() {
+		double now = ScaleNow;
+		if (now == appliedScale) return;
+		foreach (var window in windows.ToArray()) {
+			ScaleWindow(window, appliedScale, now);
+			if (window.IsVisible) FitToScreen(window);
+		}
+		appliedScale = now;
+	}
+
+	/// <summary>A window designed for 100 percent can outgrow a small screen at 200: never larger than the work area.</summary>
+	static void FitToScreen(Window window) {
+		var screen = window.Screens.ScreenFromWindow(window) ?? window.Screens.Primary;
+		if (screen == null || screen.Scaling <= 0) return;
+		double width = screen.WorkingArea.Width / screen.Scaling, height = screen.WorkingArea.Height / screen.Scaling;
+		if (width <= 0 || height <= 0) return;
+		if (window.MinWidth > width) window.MinWidth = width;
+		if (window.MinHeight > height) window.MinHeight = height;
+		if (!double.IsNaN(window.Width) && window.Width > width) window.Width = width;
+		if (!double.IsNaN(window.Height) && window.Height > height) window.Height = height;
+	}
+
+	/// <summary>
+	/// Scales everything in the window: its content through a layout transform, and the sizes
+	/// the window was designed with along with it, or a dialog laid out for 100 percent
+	/// would cut off its own content. Scaling the whole interface rather than the fonts is
+	/// deliberate: the results list has fixed column widths, and text alone growing would be
+	/// clipped by them. Menus, dropdowns and tooltips follow through the Popup style in
+	/// _Accessibility.xaml.
+	/// </summary>
+	static void ScaleWindow(Window window, double from, double to) {
+		if (window.Content is LayoutTransformControl existing)
+			existing.LayoutTransform = to == 1.0 ? null : new ScaleTransform(to, to);
+		else if (to != 1.0 && window.Content is Control content) {
+			window.Content = null;
+			window.Content = new LayoutTransformControl { Child = content, LayoutTransform = new ScaleTransform(to, to) };
+		}
+		else if (to != 1.0) {
+			// Attached before the XAML was loaded: wait for the content to arrive.
+			void OnContent(object? s, AvaloniaPropertyChangedEventArgs e) {
+				if (e.Property != ContentControl.ContentProperty || window.Content is not Control || window.Content is LayoutTransformControl) return;
+				window.PropertyChanged -= OnContent;
+				ScaleWindow(window, 1.0, appliedScale);
+			}
+			window.PropertyChanged += OnContent;
+			return;
+		}
+
+		double ratio = to / from;
+		if (ratio == 1.0) return;
+		// The maximum first when growing and last when shrinking, so that the size never exceeds it.
+		if (ratio > 1) {
+			if (window.MaxWidth is > 0 and < double.PositiveInfinity) window.MaxWidth *= ratio;
+			if (window.MaxHeight is > 0 and < double.PositiveInfinity) window.MaxHeight *= ratio;
+		}
+		if (!double.IsNaN(window.Width)) window.Width *= ratio;
+		if (!double.IsNaN(window.Height)) window.Height *= ratio;
+		if (window.MinWidth > 0) window.MinWidth *= ratio;
+		if (window.MinHeight > 0) window.MinHeight *= ratio;
+		if (ratio < 1) {
+			if (window.MaxWidth is > 0 and < double.PositiveInfinity) window.MaxWidth *= ratio;
+			if (window.MaxHeight is > 0 and < double.PositiveInfinity) window.MaxHeight *= ratio;
+		}
 	}
 }

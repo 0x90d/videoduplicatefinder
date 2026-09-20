@@ -905,6 +905,21 @@
               </views:SettingRow>
 
               <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UiScale.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UiScale.Desc]}"
+                  SearchTags="size scale zoom font text large small dpi magnify accessibility">
+                <ComboBox MinWidth="180"
+                          ItemsSource="{Binding UiScaleOptions}"
+                          SelectedItem="{Binding SelectedUiScaleOption, Mode=TwoWay}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="Settings:UiScaleOption">
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </views:SettingRow>
+
+              <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UseMica.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.UseMica.Desc]}"
                   SearchTags="mica translucent windows 11">

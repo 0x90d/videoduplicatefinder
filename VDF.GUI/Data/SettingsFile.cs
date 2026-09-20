@@ -423,6 +423,16 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref field, value);
 		} = ThemeMode.System;
 		/// <summary>
+		/// Size of everything in the app in percent. 0 follows the text size set in the
+		/// operating system; a percentage is for systems that have no such setting, or for
+		/// wanting VDF larger than the rest (#923).
+		/// </summary>
+		[JsonPropertyName("UiScalePercent")]
+		public int UiScalePercent {
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value <= 0 ? 0 : Math.Clamp(value, 50, 300));
+		}
+		/// <summary>
 		/// The on/off switch <see cref="ThemeMode"/> replaced, read once from an older settings
 		/// file and never written again. It defaulted to on, so "on" says nothing about what
 		/// the user wanted and becomes System; "off" was a choice and stays Light.

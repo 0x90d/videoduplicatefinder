@@ -16,6 +16,7 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Platform;
 using Avalonia.Styling;
@@ -105,6 +106,122 @@ public class AppearanceTests {
 			combo.SelectedItem = vm.ThemeModeOptions.Single(o => o.Value == ThemeMode.System);
 			HeadlessUi.Pump();
 			Assert.Equal(ThemeMode.System, SettingsFile.Instance.ThemeMode);
+		}
+		finally {
+			window.Close();
+		}
+	}));
+
+	static void WithScale(Action body) {
+		int before = SettingsFile.Instance.UiScalePercent;
+		try {
+			body();
+		}
+		finally {
+			SettingsFile.Instance.UiScalePercent = before;
+			Appearance.SetSystemTextScale(null);
+			HeadlessUi.Pump();
+		}
+	}
+
+	static double ScaleOf(Control control) => control.TransformToVisual(TopLevel.GetTopLevel(control)!)!.Value.M11;
+
+	[Fact]
+	public Task Scale_TheSystemsTextSize_EnlargesEverythingInTheWindow() => HeadlessUi.Run(() => WithScale(() => {
+		var (window, _) = HeadlessUi.Shell();
+		SettingsFile.Instance.UiScalePercent = 0;
+		Appearance.SetSystemTextScale(null);
+		HeadlessUi.Pump();
+		var scanButton = window.GetVisualDescendants().OfType<Button>().First(b => b.Name == "ScanButton");
+		double minWidth = window.MinWidth;
+		Assert.Equal(1.0, ScaleOf(scanButton), 3);
+
+		// Windows: Settings, Accessibility, Text size at 150 percent.
+		Appearance.SetSystemTextScale(1.5);
+		HeadlessUi.Pump();
+		Assert.Equal(1.5, ScaleOf(scanButton), 3);
+		Assert.True(window.MinWidth > minWidth, "the minimum size has to grow along, or the scaled content is cut off");
+
+		// A percentage chosen in the settings wins over the system, in both directions.
+		SettingsFile.Instance.UiScalePercent = 125;
+		HeadlessUi.Pump();
+		Assert.Equal(1.25, ScaleOf(scanButton), 3);
+
+		// Still where a screen reader is sure to hear announcements from.
+		Assert.Contains(scanButton.GetVisualAncestors(), a => a is Controls.AnnouncerHost);
+
+		SettingsFile.Instance.UiScalePercent = 0;
+		Appearance.SetSystemTextScale(null);
+		HeadlessUi.Pump();
+		Assert.Equal(1.0, ScaleOf(scanButton), 3);
+		Assert.Equal(minWidth, window.MinWidth, 3);
+	}));
+
+	[Fact]
+	public Task Scale_ADialogOpenedLater_IsScaledAndSizedToMatch() => HeadlessUi.Run(() => WithScale(() => {
+		HeadlessUi.Shell();
+		SettingsFile.Instance.UiScalePercent = 100;
+		HeadlessUi.Pump();
+		var normal = new QualityOrderDialog();
+		double width = normal.Width, height = normal.Height;
+
+		SettingsFile.Instance.UiScalePercent = 150;
+		HeadlessUi.Pump();
+		var dialog = new QualityOrderDialog();
+		dialog.Show();
+		HeadlessUi.Pump();
+		try {
+			var button = dialog.GetVisualDescendants().OfType<Button>().First();
+			Assert.Equal(1.5, ScaleOf(button), 3);
+			// Laid out for 100 percent, the window would cut off its own content.
+			if (!double.IsNaN(width)) Assert.Equal(width * 1.5, dialog.Width, 1);
+			if (!double.IsNaN(height)) Assert.Equal(height * 1.5, dialog.Height, 1);
+		}
+		finally {
+			dialog.Hide();
+		}
+	}));
+
+	[Fact]
+	public Task Scale_MenusFollow_ThoughTheyAreWindowsOfTheirOwn() => HeadlessUi.Run(() => WithScale(() => {
+		HeadlessUi.Shell();
+		SettingsFile.Instance.UiScalePercent = 150;
+		HeadlessUi.Pump();
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		var window = new Window { Width = 1500, Height = 900, Content = new DuplicateResultsView { DataContext = vm } };
+		Appearance.Attach(window);
+		window.Show();
+		HeadlessUi.Pump();
+		var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "ResultsList");
+		var row = (ListBoxItem)list.ContainerFromIndex(1)!;
+		var menu = row.GetVisualDescendants().OfType<Border>().First(b => b.ContextMenu != null).ContextMenu!;
+		try {
+			row.Focus();
+			row.RaiseEvent(new ContextRequestedEventArgs());
+			HeadlessUi.Pump();
+			Assert.True(menu.IsOpen);
+
+			// A popup takes the transform of what it belongs to only when told so; without
+			// the Popup style the window is large and every menu in it stays small.
+			Assert.Equal(1.5, ScaleOf(menu.ContainerFromIndex(0)!), 3);
+		}
+		finally {
+			menu.Close();
+			window.Close();
+		}
+	}));
+
+	[Fact]
+	public Task Scale_IsChosenInSettings() => HeadlessUi.Run(() => WithScale(() => {
+		var vm = new MainWindowVM();
+		var window = HeadlessUi.Show(new SettingsView { DataContext = vm });
+		try {
+			var combo = window.GetLogicalDescendants().OfType<ComboBox>().Single(c => ReferenceEquals(c.ItemsSource, vm.UiScaleOptions));
+			Assert.Equal(["Follow system", "100 %", "110 %", "125 %", "150 %", "175 %", "200 %"], vm.UiScaleOptions.Select(o => o.Name));
+
+			combo.SelectedItem = vm.UiScaleOptions.Single(o => o.Percent == 150);
+			HeadlessUi.Pump();
+			Assert.Equal(150, SettingsFile.Instance.UiScalePercent);
 		}
 		finally {
 			window.Close();
