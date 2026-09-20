@@ -93,12 +93,20 @@ namespace VDF.GUI.ViewModels {
 
 		public bool IsMessageVisible { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
+		/// <summary>
+		/// Every message shown, for the window to say to a screen reader: the toast never takes
+		/// focus and is gone after a moment, so "Checked: file" and "No more groups" were
+		/// for the eye only.
+		/// </summary>
+		public event Action<string>? MessageShown;
+
 		CancellationTokenSource? _messageCts;
 		public void ShowMessage(string msg, int millis = 3000) {
 			_messageCts?.Cancel();
 			_messageCts = new CancellationTokenSource();
 			UserMessage = msg;
 			IsMessageVisible = true;
+			MessageShown?.Invoke(msg);
 			var token = _messageCts.Token;
 			_ = Task.Run(async () => {
 				try {

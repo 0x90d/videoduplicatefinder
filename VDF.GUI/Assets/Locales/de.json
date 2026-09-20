@@ -826,6 +826,8 @@
 	"A11y.Row.AiMatched": "KI-Treffer",
 	"A11y.Row.MarkForDeletion": "Zum Löschen markieren",
 	"A11y.Shortcuts.BoxHelp": "Enter drücken, dann die neue Tastenkombination. Escape bricht ab.",
+	"A11y.Scan.Progress": "{0} Prozent, noch etwa {1}",
+	"A11y.Row.Unchecked": "nicht markiert",
 	"Settings.Row.Columns.Title": "Spalten der Ergebnisliste",
 	"Settings.Row.Columns.Desc": "Welche Spalten die Ergebnisliste zeigt. Auch per Rechtsklick auf die Spaltenköpfe erreichbar."
 }

@@ -413,6 +413,7 @@ namespace VDF.GUI.ViewModels {
 			Logger.Instance.LogEntryAdded += Instance_LogEntryAdded;
 
 			Duplicates.CollectionChanged += Duplicates_CollectionChanged;
+			InitAnnouncements();
 
 			scheduledScanTimer.Interval = TimeSpan.FromMinutes(1);
 			scheduledScanTimer.Tick += (_, __) => CheckScheduledScan();
@@ -697,6 +698,7 @@ namespace VDF.GUI.ViewModels {
 				TimeElapsed = e.Elapsed.Format();
 				ScanProgressMaxValue = e.MaxPosition;
 				ScanDrives.Update(e.Drives, DateTime.UtcNow);
+				AnnounceScanProgress(e, DateTime.UtcNow);
 			});
 
 		void Scanner_ScanAborted(object? sender, EventArgs e) =>
@@ -758,6 +760,8 @@ namespace VDF.GUI.ViewModels {
 
 				if (SettingsFile.Instance.RememberDeletedContent && SettingsFile.Instance.AutoCheckDeletedContentMatches)
 					AutoCheckTombstoneMatches();
+
+				AnnounceScanDone();
 
 				if (completedScheduledScan && SettingsFile.Instance.NotifyOnScheduledScanComplete) {
 					_ = MessageBoxService.Show(App.Lang["Message.ScheduledScanCompleted"]);
@@ -2206,8 +2210,10 @@ Non-Windows setup:
 				if (item is not DuplicateItemVM currentItem) return;
 				sb.AppendLine($"\"{currentItem.ItemInfo.Path}\"");
 			}
-			if (ApplicationHelpers.MainWindow.Clipboard is { } clipboard)
+			if (ApplicationHelpers.MainWindow.Clipboard is { } clipboard) {
 				await clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
+				Announce(App.Lang["Results.Row.PathCopied"]); // a menu command with nothing to see afterwards
+			}
 		});
 
 		public ReactiveCommand<Unit, Unit> CopyFilenamesToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
@@ -2216,8 +2222,10 @@ Non-Windows setup:
 				if (item is not DuplicateItemVM currentItem) return;
 				sb.AppendLine(Path.GetFileName(currentItem.ItemInfo.Path));
 			}
-			if (ApplicationHelpers.MainWindow.Clipboard is { } clipboard)
+			if (ApplicationHelpers.MainWindow.Clipboard is { } clipboard) {
 				await clipboard.SetTextAsync(sb.ToString().TrimEnd(new char[2] { '\r', '\n' }));
+				Announce(App.Lang["Results.Row.PathCopied"]);
+			}
 		});
 
 		public ReactiveCommand<Unit, Unit> RelocateDatabaseFilesCommand => ReactiveCommand.Create(() => {

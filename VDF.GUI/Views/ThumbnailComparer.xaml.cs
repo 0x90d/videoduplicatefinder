@@ -23,6 +23,7 @@ using Avalonia.Layout;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using DynamicData;
 using VDF.GUI.Data;
@@ -48,6 +49,11 @@ namespace VDF.GUI.Views {
 			// Culling keys are tunnel-handled so buttons/sliders never swallow them
 			// (locked decision 10: A/D keep a side, Space next pair, arrows step frames, Z zoom).
 			AddHandler(KeyDownEvent, OnCullingKeyDown, RoutingStrategies.Tunnel);
+			var announcer = this.FindControl<Controls.AnnouncerHost>("Announcer")!;
+			((ThumbnailComparerVM)DataContext).MessageShown += message => {
+				if (Dispatcher.UIThread.CheckAccess()) announcer.Announce(message);
+				else Dispatcher.UIThread.Post(() => announcer.Announce(message));
+			};
 
 			if (SettingsFile.Instance.UseMica &&
 				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&

@@ -826,6 +826,8 @@
 	"A11y.Row.AiMatched": "correspondance IA",
 	"A11y.Row.MarkForDeletion": "Marquer pour suppression",
 	"A11y.Shortcuts.BoxHelp": "Appuyez sur Entrée, puis sur la nouvelle combinaison de touches. Échap annule.",
+	"A11y.Scan.Progress": "{0} pour cent, environ {1} restant",
+	"A11y.Row.Unchecked": "décoché",
 	"Settings.Row.Columns.Title": "Colonnes de la liste des résultats",
 	"Settings.Row.Columns.Desc": "Les colonnes affichées par la liste des résultats. Également accessible par un clic droit sur les en-têtes de colonnes."
 }

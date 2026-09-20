@@ -101,6 +101,7 @@
       <!-- actions + bordered trust note -->
       <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,26,0,0">
         <Button
+            x:Name="PauseButton"
             FontSize="13" Padding="16,7" VerticalAlignment="Center"
             AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Pause]}"
             Command="{Binding PauseScanCommand}"
@@ -111,6 +112,7 @@
           </StackPanel>
         </Button>
         <Button
+            x:Name="ResumeButton"
             FontSize="13" Padding="16,7" VerticalAlignment="Center"
             AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Resume]}"
             Command="{Binding ResumeScanCommand}"

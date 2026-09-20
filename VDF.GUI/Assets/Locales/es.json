@@ -826,6 +826,8 @@
 	"A11y.Row.AiMatched": "coincidencia por IA",
 	"A11y.Row.MarkForDeletion": "Marcar para eliminar",
 	"A11y.Shortcuts.BoxHelp": "Pulse Intro y luego la nueva combinación de teclas. Escape cancela.",
+	"A11y.Scan.Progress": "{0} por ciento, quedan unos {1}",
+	"A11y.Row.Unchecked": "sin marcar",
 	"Settings.Row.Columns.Title": "Columnas de la lista de resultados",
 	"Settings.Row.Columns.Desc": "Qué columnas muestra la lista de resultados. También disponible con clic derecho en los encabezados de columna."
 }

@@ -273,6 +273,7 @@
 
             <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,18,0,0">
               <Button
+                  x:Name="ScanButton"
                   FontSize="14"
                   FontWeight="SemiBold"
                   Padding="26,9"

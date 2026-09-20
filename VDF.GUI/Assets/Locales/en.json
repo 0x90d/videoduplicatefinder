@@ -826,6 +826,8 @@
 	"A11y.Row.AiMatched": "AI match",
 	"A11y.Row.MarkForDeletion": "Mark for deletion",
 	"A11y.Shortcuts.BoxHelp": "Press Enter, then the new key combination. Escape cancels.",
+	"A11y.Scan.Progress": "{0} percent, about {1} left",
+	"A11y.Row.Unchecked": "not checked",
 	"Settings.Row.Columns.Title": "Columns in the results list",
 	"Settings.Row.Columns.Desc": "Which columns the results list shows. Also available by right-clicking the column headers."
 }

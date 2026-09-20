@@ -826,6 +826,8 @@
 	"A11y.Row.AiMatched": "correspondência por IA",
 	"A11y.Row.MarkForDeletion": "Marcar para exclusão",
 	"A11y.Shortcuts.BoxHelp": "Pressione Enter e depois a nova combinação de teclas. Esc cancela.",
+	"A11y.Scan.Progress": "{0} por cento, faltam cerca de {1}",
+	"A11y.Row.Unchecked": "desmarcado",
 	"Settings.Row.Columns.Title": "Colunas da lista de resultados",
 	"Settings.Row.Columns.Desc": "Quais colunas a lista de resultados mostra. Também disponível com o botão direito nos cabeçalhos das colunas."
 }

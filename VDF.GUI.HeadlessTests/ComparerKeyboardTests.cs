@@ -14,11 +14,14 @@
 // */
 //
 
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using VDF.Core.ViewModels;
+using VDF.GUI.Controls;
 using VDF.GUI.Data;
 using VDF.GUI.ViewModels;
 using VDF.GUI.Views;
@@ -39,7 +42,14 @@ public class ComparerKeyboardTests {
 	}
 
 	/// <summary>Comparer on a two-file group with "Highlight differences" on, its sensitivity slider focused.</summary>
-	static void WithFocusedSensitivitySlider(Action<ThumbnailComparer, ThumbnailComparerVM, Slider, List<LargeThumbnailDuplicateItem>> body) {
+	static void WithFocusedSensitivitySlider(Action<ThumbnailComparer, ThumbnailComparerVM, Slider, List<LargeThumbnailDuplicateItem>> body) =>
+		// Completes synchronously: nothing in here awaits unless the body does.
+		WithFocusedSensitivitySlider((comparer, vm, slider, items) => {
+			body(comparer, vm, slider, items);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+	static async Task WithFocusedSensitivitySlider(Func<ThumbnailComparer, ThumbnailComparerVM, Slider, List<LargeThumbnailDuplicateItem>, Task> body) {
 		HeadlessUi.Shell(); // the comparer takes the main window as its owner
 		bool highlightBefore = SettingsFile.Instance.ThumbnailComparerHighlightDifferences;
 		double sensitivityBefore = SettingsFile.Instance.ThumbnailComparerDiffSensitivity;
@@ -62,7 +72,7 @@ public class ComparerKeyboardTests {
 			slider.Focus(NavigationMethod.Tab);
 			HeadlessUi.Pump();
 			Assert.Same(slider, comparer.FocusManager!.GetFocusedElement());
-			body(comparer, vm, slider, items);
+			await body(comparer, vm, slider, items);
 		}
 		finally {
 			vm.HighlightDifferences = highlightBefore;      // both are stored in the shared settings
@@ -103,5 +113,34 @@ public class ComparerKeyboardTests {
 			Assert.True(items[1].Item.Checked);
 			Assert.False(items[0].Item.Checked);
 			Assert.Equal(0.5, vm.DiffSensitivity);
+		}));
+
+	[Fact]
+	public Task KeepingASide_IsSaid_NotOnlyShown() => HeadlessUi.Run(() =>
+		WithFocusedSensitivitySlider(async (comparer, _, _, _) => {
+			var announcer = comparer.GetVisualDescendants().OfType<AnnouncerHost>().Single();
+			announcer.Spacing = TimeSpan.FromMilliseconds(100);
+			await Task.Delay(300); // whatever the window said while it opened has had its turn
+			var peer = ControlAutomationPeer.CreatePeerForElement(announcer);
+			var spoken = new List<(string Name, AutomationLiveSetting Live)>();
+			peer.PropertyChanged += (_, e) => {
+				if (e.Property == AutomationElementIdentifiers.NameProperty && peer.GetLiveSetting() != AutomationLiveSetting.Off)
+					spoken.Add((peer.GetName(), peer.GetLiveSetting()));
+			};
+
+			// The toast that confirms the key never takes focus and is gone after a moment.
+			Press(comparer, PhysicalKey.A); // keep left, check right
+
+			// This was the last pair, so "No more groups" follows in the same instant. Shown,
+			// it simply replaces the first message; a screen reader asks for the text after
+			// the fact and would never hear "Checked". So the second one waits its turn.
+			Assert.Equal([("Checked: right.mp4", AutomationLiveSetting.Polite)], spoken);
+			Assert.Equal("Checked: right.mp4", peer.GetName());
+
+			var deadline = DateTime.UtcNow.AddSeconds(5);
+			while (spoken.Count < 2 && DateTime.UtcNow < deadline)
+				await Task.Delay(10);
+			Assert.Equal(2, spoken.Count);
+			Assert.StartsWith("No more groups", spoken[1].Name);
 		}));
 }

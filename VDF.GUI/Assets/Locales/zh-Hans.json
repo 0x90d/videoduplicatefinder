@@ -826,6 +826,8 @@
 	"A11y.Row.AiMatched": "AI 匹配",
 	"A11y.Row.MarkForDeletion": "标记为删除",
 	"A11y.Shortcuts.BoxHelp": "按 Enter，然后按新的组合键。按 Esc 取消。",
+	"A11y.Scan.Progress": "{0}%，大约还剩 {1}",
+	"A11y.Row.Unchecked": "未勾选",
 	"Settings.Row.Columns.Title": "结果列表中的列",
 	"Settings.Row.Columns.Desc": "结果列表显示哪些列。也可右键单击列标题进行设置。"
 }

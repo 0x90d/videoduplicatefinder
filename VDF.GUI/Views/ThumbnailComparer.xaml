@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+    xmlns:ctl="clr-namespace:VDF.GUI.Controls;assembly=VDF.GUI"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:data="using:VDF.GUI.Data"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -148,6 +149,8 @@
             <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushEmphasizedAccent}" />
         </Style>
     </Window.Styles>
+    <!-- Speaks the transient messages to a screen reader (see AnnouncerHost). -->
+    <ctl:AnnouncerHost x:Name="Announcer">
     <Border BorderBrush="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderThickness="2">
         <Grid RowDefinitions="Auto,Auto,*,Auto">
             <controls:ExperimentalAcrylicBorder
@@ -777,4 +780,5 @@
             </Border>
         </Grid>
     </Border>
+    </ctl:AnnouncerHost>
 </Window>

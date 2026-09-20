@@ -52,7 +52,14 @@ namespace VDF.GUI.Views {
 					void Update() => Avalonia.Automation.AutomationProperties.SetName(container,
 						ResultsAccessibleText.WithCheckedState(row.AccessibleName, row.Item.Checked, App.Lang["Comparer.CheckedTag"]));
 					void OnItemChanged(object? s, System.ComponentModel.PropertyChangedEventArgs a) {
-						if (a.PropertyName == nameof(DuplicateItemVM.Checked)) Update();
+						if (a.PropertyName != nameof(DuplicateItemVM.Checked)) return;
+						Update();
+						// Space toggles the row that has focus, and focus stays on it. A name that
+						// changes under the focus raises no event a screen reader would speak, so
+						// the new state is said. Only for the row itself: its checkbox reports its
+						// own toggle, and "select all" must not talk once per row on screen.
+						if (container.IsFocused)
+							ViewModel?.Announce(App.Lang[row.Item.Checked ? "Comparer.CheckedTag" : "A11y.Row.Unchecked"]);
 					}
 					row.Item.PropertyChanged += OnItemChanged;
 					rowNameSubscriptions[container] = (row.Item, OnItemChanged);
@@ -120,6 +127,10 @@ namespace VDF.GUI.Views {
 
 		/// <summary>The control keyboard shortcuts are attached to (see ApplyKeyboardShortcuts).</summary>
 		internal ListBox ShortcutTarget => ResultsListControl;
+
+		/// <summary>Where keyboard focus belongs when the view comes up: the selected row, else the first one.</summary>
+		internal Control FocusTarget =>
+			ResultsListControl.ContainerFromIndex(Math.Max(ResultsListControl.SelectedIndex, 0)) ?? ResultsListControl;
 
 		MainWindowVM? ViewModel => DataContext as MainWindowVM;
 
@@ -211,6 +222,7 @@ namespace VDF.GUI.Views {
 				return;
 			if (TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard) {
 				await clipboard.SetTextAsync(row.Item.ItemInfo.Path);
+				ViewModel?.Announce(App.Lang["Results.Row.PathCopied"]);
 				await row.Item.FlashPathCopiedAsync();
 			}
 		}

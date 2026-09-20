@@ -5,6 +5,7 @@
     xmlns:Settings="clr-namespace:VDF.GUI.Data;assembly=VDF.GUI"
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+    xmlns:ctl="clr-namespace:VDF.GUI.Controls;assembly=VDF.GUI"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Xaml.Behaviors.Interactivity"
     xmlns:ic="clr-namespace:Avalonia.Xaml.Interactions.Custom;assembly=Xaml.Behaviors.Interactions.Custom"
@@ -83,6 +84,9 @@
             <Setter Property="Opacity" Value="1" />
         </Style>
     </Window.Styles>
+    <!-- Wraps everything, so that it is an ancestor of whatever has keyboard focus: the one
+         place a screen reader is sure to hear an announcement from (see AnnouncerHost). -->
+    <ctl:AnnouncerHost x:Name="Announcer">
     <Border BorderBrush="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderThickness="2">
         <Grid>
             <controls:ExperimentalAcrylicBorder
@@ -305,6 +309,6 @@
             </Grid>
         </Grid>
     </Border>
-
+    </ctl:AnnouncerHost>
 
 </Window>
