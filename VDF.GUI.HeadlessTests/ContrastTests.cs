@@ -77,6 +77,106 @@ public class ContrastTests {
 	});
 
 	[Theory]
+	[InlineData("Dark", false)]
+	[InlineData("Dark", true)]
+	[InlineData("Light", false)]
+	[InlineData("Light", true)]
+	public Task Results_TheSelectedRow_IsReadable(string theme, bool isChecked) => HeadlessUi.Run(() => {
+		var variant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		vm.Duplicates[1].Checked = isChecked;
+		var window = new Window { Width = 1300, Height = 950, RequestedThemeVariant = variant, Content = new DuplicateResultsView { DataContext = vm } };
+		window.Show();
+		HeadlessUi.Pump();
+		try {
+			// The row a user works on (arrow onto it, Space) is the one with the least
+			// contrast: selection changes the text color and the background, and on a
+			// checked row the two tints add up under the colored metric values.
+			var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "ResultsList");
+			list.SelectedIndex = 2; // group header, first file, then the second one
+			HeadlessUi.Pump();
+			Assert.Equal(isChecked, ((ResultsItemRow)list.SelectedItem!).Item.Checked);
+
+			var failures = Measure(window, variant);
+			Assert.True(failures.Count == 0,
+				$"{failures.Count} kind(s) of text below the required contrast in the {theme} theme:\n  " + string.Join("\n  ", failures));
+		}
+		finally {
+			window.Close();
+		}
+	});
+
+	[Theory]
+	[InlineData("Dark", false, false)]
+	[InlineData("Dark", false, true)]
+	[InlineData("Dark", true, false)]
+	[InlineData("Dark", true, true)]
+	[InlineData("Light", false, false)]
+	[InlineData("Light", false, true)]
+	[InlineData("Light", true, false)]
+	[InlineData("Light", true, true)]
+	public Task Results_TheRowUnderThePointer_IsReadable(string theme, bool isChecked, bool isSelected) => HeadlessUi.Run(() => {
+		var variant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		vm.Duplicates[1].Checked = isChecked;
+		var window = new Window { Width = 1300, Height = 950, RequestedThemeVariant = variant, Content = new DuplicateResultsView { DataContext = vm } };
+		window.Show();
+		HeadlessUi.Pump();
+		try {
+			var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "ResultsList");
+			if (isSelected) list.SelectedIndex = 2;
+			// What the pointer resting on the row does to its styles; a headless window has
+			// no pointer to move there.
+			((IPseudoClasses)list.ContainerFromIndex(2)!.Classes).Set(":pointerover", true);
+			HeadlessUi.Pump();
+
+			var failures = Measure(window, variant);
+			Assert.True(failures.Count == 0,
+				$"{failures.Count} kind(s) of text below the required contrast in the {theme} theme:\n  " + string.Join("\n  ", failures));
+		}
+		finally {
+			window.Close();
+		}
+	});
+
+	[Theory]
+	[InlineData("Dark")]
+	[InlineData("Light")]
+	public Task Results_TheSelectedRow_IsMarkedByAFrame_NotByItsTintAlone(string theme) => HeadlessUi.Run(() => {
+		var vm = ResultsFixture.CreatePopulatedViewModel();
+		var window = new Window {
+			Width = 1300, Height = 950, Content = new DuplicateResultsView { DataContext = vm },
+			RequestedThemeVariant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light,
+		};
+		window.Show();
+		HeadlessUi.Pump();
+		try {
+			var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Name == "ResultsList");
+			var row = (ListBoxItem)list.ContainerFromIndex(1)!;
+			var other = (ListBoxItem)list.ContainerFromIndex(2)!;
+			static Border Frame(ListBoxItem item) => item.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("selframe"));
+			double heightBefore = row.Bounds.Height;
+
+			list.SelectedIndex = 1;
+			HeadlessUi.Pump();
+
+			// A tint that leaves every text on the row readable is too quiet to carry the
+			// selection by itself (WCAG 1.4.11 wants 3:1 for the state of a component), and
+			// telling it from the red of a checked row would be a matter of hue alone.
+			var frame = Assert.IsAssignableFrom<ISolidColorBrush>(Frame(row).BorderBrush);
+			var tint = Assert.IsAssignableFrom<ISolidColorBrush>(row.GetVisualDescendants().OfType<ContentPresenter>().First().Background);
+			Assert.True(Ratio(frame.Color, tint.Color) >= 3, $"frame {frame.Color} on {tint.Color} is {Ratio(frame.Color, tint.Color):0.00}:1");
+			Assert.True(Frame(row).BorderThickness.Left >= 1);
+			Assert.Equal(Colors.Transparent, Assert.IsAssignableFrom<ISolidColorBrush>(Frame(other).BorderBrush).Color);
+			Assert.False(Frame(row).IsHitTestVisible); // it lies over the row and must not take its clicks
+			Assert.Equal(heightBefore, row.Bounds.Height); // rows are sized ahead of their thumbnails (#862)
+		}
+		finally {
+			window.Close();
+		}
+	});
+
+	[Theory]
 	[InlineData("Dark")]
 	[InlineData("Light")]
 	public Task ResultsMetrics_BestAndTheRest_DifferByMoreThanColor(string theme) => HeadlessUi.Run(() => {
@@ -129,7 +229,7 @@ public class ContrastTests {
 		}
 	}
 
-	static List<string> Measure(Window window, ThemeVariant variant) {
+	internal static List<string> Measure(Window window, ThemeVariant variant) {
 		var worst = new Dictionary<string, (double Ratio, double Needed, string Sample, int Count)>();
 		foreach (var element in window.GetVisualDescendants().OfType<Control>()) {
 			if (!TryGetText(element, out string text, out IBrush? foreground, out double fontSize, out FontWeight weight))

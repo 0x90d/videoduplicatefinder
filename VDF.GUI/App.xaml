@@ -35,7 +35,14 @@
                          checked tint covers the ListBoxItem highlight, so selection
                          needs its own clearly stronger step. -->
                     <SolidColorBrush x:Key="VdfSelBrush" Color="#F9DFDA" />
-                    <SolidColorBrush x:Key="VdfSelActiveBrush" Color="#F0BDB1" />
+                    <!-- The step is small on purpose: #F0BDB1 took the green and red metric
+                         values to 3.7 and 4.1:1. What marks the selected row is its frame. -->
+                    <SolidColorBrush x:Key="VdfSelActiveBrush" Color="#F8DCD6" />
+                    <!-- The list-selected row: a quiet tint under text that keeps its colors,
+                         and a frame. The theme's own highlight (#BEF3E4 with teal text) left
+                         the dimmed secondary text at 3.4:1. -->
+                    <SolidColorBrush x:Key="VdfRowSelectedBrush" Color="#E0EFEC" />
+                    <SolidColorBrush x:Key="VdfRowSelectedFrameBrush" Color="#0E7C6B" />
                     <SolidColorBrush x:Key="VdfTombBrush" Color="#A93B31" />
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#8A9793" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#F7FAF9" />
@@ -74,7 +81,14 @@
                          ListBoxItem highlight, so selection needs its own clearly
                          stronger step. -->
                     <SolidColorBrush x:Key="VdfSelBrush" Color="#43221B" />
-                    <SolidColorBrush x:Key="VdfSelActiveBrush" Color="#6E392B" />
+                    <!-- The step is small on purpose: #6E392B took the red and green metric
+                         values to 3.5 and 3.7:1. What marks the selected row is its frame. -->
+                    <SolidColorBrush x:Key="VdfSelActiveBrush" Color="#4C271E" />
+                    <!-- The list-selected row: a quiet tint under text that keeps its colors,
+                         and a frame. The theme's own highlight (#297168) left the red and
+                         green metric values at 2.2:1, on the row the user is working on. -->
+                    <SolidColorBrush x:Key="VdfRowSelectedBrush" Color="#1F3631" />
+                    <SolidColorBrush x:Key="VdfRowSelectedFrameBrush" Color="#34B39C" />
                     <SolidColorBrush x:Key="VdfTombBrush" Color="#C05248" />
                     <SolidColorBrush x:Key="VdfMutedBrush" Color="#6D7B76" />
                     <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#1C2422" />

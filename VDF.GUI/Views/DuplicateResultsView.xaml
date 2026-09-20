@@ -90,6 +90,30 @@
     <Style Selector="ListBox.results ListBoxItem:selected Border.resultrow.checked">
       <Setter Property="Background" Value="{DynamicResource VdfSelActiveBrush}" />
     </Style>
+    <!-- The list-selected row. The theme fills it with a saturated accent and switches its
+         text to an accent tone; on that, the red and green metric values came out at
+         2.2:1 in dark and the dimmed secondary text at 3.4:1 in light, on the very row a
+         keyboard user is working on. A tint strong enough to be seen cannot stay under
+         4.5:1 for all of that text, so the tint is quiet, the text keeps its colors, and
+         selection is shown by a frame: a shape, which also works without telling teal
+         from red. The frame is a border of its own laid over the row, so that no row
+         changes size (a box shadow is not drawn on a Border with uneven thickness, which
+         the rows have for their edge bar). -->
+    <Style Selector="ListBox.results ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource VdfRowSelectedBrush}" />
+      <Setter Property="Foreground" Value="{Binding $parent[ListBoxItem].Foreground}" />
+    </Style>
+    <Style Selector="Border.selframe">
+      <Setter Property="BorderThickness" Value="1.5" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="ListBox.results ListBoxItem:selected Border.selframe">
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfRowSelectedFrameBrush}" />
+    </Style>
+    <Style Selector="ListBox.results ListBoxItem:selected Border.detailsrow">
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfRowSelectedFrameBrush}" />
+    </Style>
     <!-- similarity chip: mockup .simchip — soft surface, colored text, 45%-alpha
          border; tier classes (mid/low) are bound from the similarity value -->
     <Style Selector="Border.simchip">
@@ -446,6 +470,7 @@
 
         <!-- ~~~~ Group header row ~~~~ -->
         <DataTemplate DataType="vm:ResultsGroupHeader">
+          <Panel>
           <Border
               Padding="6,5"
               Background="{actipro:ThemeResource Container2BackgroundBrush}"
@@ -514,10 +539,13 @@
               </StackPanel>
             </DockPanel>
           </Border>
+          <Border Classes="selframe" />
+          </Panel>
         </DataTemplate>
 
         <!-- ~~~~ File row ~~~~ -->
         <DataTemplate DataType="vm:ResultsItemRow">
+          <Panel>
           <!-- Left padding is 3 because the resultrow style reserves a 3px edge-bar
                border slot; 3+3 keeps the content aligned with the header row. -->
           <Border
@@ -907,11 +935,13 @@
               </StackPanel>
             </DockPanel>
           </Border>
+          <Border Classes="selframe" />
+          </Panel>
         </DataTemplate>
 
         <!-- ~~~~ Details panel (Tier 2 metadata, expanded via ⓘ) ~~~~ -->
         <DataTemplate DataType="vm:ResultsDetailsRow">
-          <Border Margin="36,2,16,6" Padding="14,8" CornerRadius="8"
+          <Border Classes="detailsrow" Margin="36,2,16,6" Padding="14,8" CornerRadius="8"
                   Background="{actipro:ThemeResource Container2BackgroundBrush}"
                   BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
                   BorderThickness="1">

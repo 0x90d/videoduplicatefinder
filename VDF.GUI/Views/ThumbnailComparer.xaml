@@ -757,10 +757,18 @@
                 VerticalAlignment="Stretch"
                 Background="#80000000"
                 IsVisible="{Binding IsLoadingThumbnails}">
-                <StackPanel
+                <!-- On a surface of its own: written straight onto the dim layer, the light
+                     theme's dark text stood on mid grey at 3.3:1, and white would not have
+                     reached 4.5:1 there either. -->
+                <Border
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="8">
+                    Padding="28,20"
+                    Background="{actipro:ThemeResource Container1BackgroundBrush}"
+                    BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                <StackPanel Spacing="8">
                     <TextBlock HorizontalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.LoadingThumbnails]}" />
                     <ProgressBar
                         AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.LoadingThumbnails]}"
@@ -777,6 +785,7 @@
                         Command="{Binding CancelThumbnailLoadingCommand}"
                         Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Cancel]}" />
                 </StackPanel>
+                </Border>
             </Border>
         </Grid>
     </Border>
