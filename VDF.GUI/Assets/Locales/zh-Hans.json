@@ -828,6 +828,8 @@
 	"A11y.Shortcuts.BoxHelp": "按 Enter，然后按新的组合键。按 Esc 取消。",
 	"A11y.Scan.Progress": "{0}%，大约还剩 {1}",
 	"A11y.Row.Unchecked": "未勾选",
+	"A11y.Row.DiffsToBest": "与最佳项相比：时长 {0}，分辨率 {1}，大小 {2}，帧率 {3}，码率 {4}，音频码率 {5}",
+	"Results.Row.CompareWithBest": "与最佳项比较数值",
 	"Settings.Row.Columns.Title": "结果列表中的列",
 	"Settings.Row.Columns.Desc": "结果列表显示哪些列。也可右键单击列标题进行设置。"
 }

@@ -828,6 +828,8 @@
 	"A11y.Shortcuts.BoxHelp": "Press Enter, then the new key combination. Escape cancels.",
 	"A11y.Scan.Progress": "{0} percent, about {1} left",
 	"A11y.Row.Unchecked": "not checked",
+	"A11y.Row.DiffsToBest": "Compared with the best: duration {0}, resolution {1}, size {2}, frame rate {3}, bitrate {4}, audio bitrate {5}",
+	"Results.Row.CompareWithBest": "Compare values with the best",
 	"Settings.Row.Columns.Title": "Columns in the results list",
 	"Settings.Row.Columns.Desc": "Which columns the results list shows. Also available by right-clicking the column headers."
 }

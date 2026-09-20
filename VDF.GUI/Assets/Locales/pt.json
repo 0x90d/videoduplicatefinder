@@ -828,6 +828,8 @@
 	"A11y.Shortcuts.BoxHelp": "Pressione Enter e depois a nova combinação de teclas. Esc cancela.",
 	"A11y.Scan.Progress": "{0} por cento, faltam cerca de {1}",
 	"A11y.Row.Unchecked": "desmarcado",
+	"A11y.Row.DiffsToBest": "Comparado com o melhor: duração {0}, resolução {1}, tamanho {2}, taxa de quadros {3}, taxa de bits {4}, taxa de bits de áudio {5}",
+	"Results.Row.CompareWithBest": "Comparar valores com o melhor",
 	"Settings.Row.Columns.Title": "Colunas da lista de resultados",
 	"Settings.Row.Columns.Desc": "Quais colunas a lista de resultados mostra. Também disponível com o botão direito nos cabeçalhos das colunas."
 }

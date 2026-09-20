@@ -601,6 +601,16 @@
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleCheckboxCommand}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.ToggleCheck]}"
                     InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[ToggleCheckbox]}" />
+                <!-- Both are mouse-only on the row itself: the details button cannot be
+                     tabbed to inside a list, and the differences show on hover. -->
+                <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleItemDetailsCommand}"
+                    CommandParameter="{Binding Item}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.DetailsTip]}" />
+                <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleGroupDiffsCommand}"
+                    CommandParameter="{Binding Item}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.CompareWithBest]}" />
                 <MenuItem
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).CopyPathsToClipboardCommand}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CopyPaths]}" />

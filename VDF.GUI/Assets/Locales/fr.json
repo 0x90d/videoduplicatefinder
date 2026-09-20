@@ -828,6 +828,8 @@
 	"A11y.Shortcuts.BoxHelp": "Appuyez sur Entrée, puis sur la nouvelle combinaison de touches. Échap annule.",
 	"A11y.Scan.Progress": "{0} pour cent, environ {1} restant",
 	"A11y.Row.Unchecked": "décoché",
+	"A11y.Row.DiffsToBest": "Comparé au meilleur : durée {0}, résolution {1}, taille {2}, images par seconde {3}, débit {4}, débit audio {5}",
+	"Results.Row.CompareWithBest": "Comparer les valeurs au meilleur",
 	"Settings.Row.Columns.Title": "Colonnes de la liste des résultats",
 	"Settings.Row.Columns.Desc": "Les colonnes affichées par la liste des résultats. Également accessible par un clic droit sur les en-têtes de colonnes."
 }

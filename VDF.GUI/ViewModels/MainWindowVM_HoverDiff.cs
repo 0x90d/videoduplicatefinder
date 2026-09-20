@@ -131,8 +131,39 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
+		static readonly string[] DiffMetrics = ["duration", "framesize", "size", "fps", "bitrate", "audiobitrate"];
+		Guid? pinnedDiffGroup;
+
+		/// <summary>
+		/// The keyboard's way to what resting the pointer on a metric shows: every value of
+		/// the row's group as its difference to the best one. Stays until toggled off, since
+		/// there is no pointer leaving to end it, and says the row's own differences to a
+		/// screen reader, which does not notice text changing in place.
+		/// </summary>
+		public ReactiveCommand<DuplicateItemVM, System.Reactive.Unit> ToggleGroupDiffsCommand =>
+			ReactiveCommand.Create<DuplicateItemVM>(ToggleGroupDiffs);
+
+		internal void ToggleGroupDiffs(DuplicateItemVM item) {
+			var groupId = item.ItemInfo.GroupId;
+			bool wasShown = pinnedDiffGroup == groupId;
+			var previous = pinnedDiffGroup;
+			pinnedDiffGroup = null;
+			if (previous != null && Duplicates.FirstOrDefault(d => d.ItemInfo.GroupId == previous) is { } shown)
+				ClearHoveredMetric(shown);
+			if (wasShown) return;
+
+			foreach (string metric in DiffMetrics)
+				SetHoveredMetric(item, metric);
+			pinnedDiffGroup = groupId;
+			// A metric the whole group agrees on shows no difference at all.
+			Announce(string.Format(App.Lang["A11y.Row.DiffsToBest"],
+				item.DurationDiff ?? "=", item.FrameSizeDiff ?? "=", item.SizeDiff ?? "=",
+				item.FpsDiff ?? "=", item.BitRateDiff ?? "=", item.AudioBitRateDiff ?? "="));
+		}
+
 		public void ClearHoveredMetric(DuplicateItemVM item) {
 			var groupId = item.ItemInfo.GroupId;
+			if (groupId == pinnedDiffGroup) return; // shown on request: the pointer passing by does not end it
 			foreach (var gi in Duplicates.Where(d => d.ItemInfo.GroupId == groupId)) {
 				gi.DurationDiff = null;
 				gi.FrameSizeDiff = null;
