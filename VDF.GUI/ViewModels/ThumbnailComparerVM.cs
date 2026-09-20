@@ -987,6 +987,12 @@ namespace VDF.GUI.ViewModels {
 			}
 		}
 
+		/// <summary>For <see cref="LoadThumbnail"/> overrides whose frames do not come from FFmpeg.</summary>
+		protected void SetFrames(IEnumerable<Bitmap> frames) {
+			_frames.Clear();
+			_frames.AddRange(frames);
+		}
+
 		public Bitmap? GetFrame(int index) {
 			if (index < 0 || index >= _frames.Count)
 				return null;
