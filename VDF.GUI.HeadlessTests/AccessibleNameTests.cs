@@ -182,4 +182,13 @@ public class AccessibleNameTests {
 		Assert.Contains(@"D:\Videos\Holiday\copy", folders);
 		window.Close();
 	});
+
+	[Theory]
+	[InlineData("Don't show again ✕", false)] // the close glyph used to be part of the translated text
+	[InlineData("▶ Scan", false)]
+	[InlineData("Don't show again", true)]
+	[InlineData("Compare 32×32 frames", true)] // a multiplication sign between numbers is text
+	[InlineData("Holiday – 2019.mp4", true)]
+	public void NameRule_KeepsIconGlyphsOutOfWhatIsReadAloud(string name, bool acceptable) =>
+		Assert.Equal(acceptable, PeerTree.NameProblem(name) == null);
 }

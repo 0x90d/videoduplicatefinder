@@ -206,8 +206,14 @@
         IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=!ResultsHintDismissed}">
       <DockPanel LastChildFill="True">
         <Button DockPanel.Dock="Right" Classes="group-action" FontSize="12"
-                Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}"
-                Command="{Binding DismissResultsHintCommand}" />
+                AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}"
+                Command="{Binding DismissResultsHintCommand}">
+          <!-- The glyph is decoration and stays out of the translated text. -->
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
+            <TextBlock Text="✕" />
+          </StackPanel>
+        </Button>
         <Button DockPanel.Dock="Right" Classes="group-action" FontSize="12" Margin="0,0,6,0"
                 Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Hint.OpenSettings]}"
                 Command="{Binding ShowShellViewCommand}"

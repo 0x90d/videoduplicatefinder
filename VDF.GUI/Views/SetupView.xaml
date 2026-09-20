@@ -115,7 +115,14 @@
               Opacity="0.85"
               VerticalAlignment="Center"
               Command="{Binding DismissWelcomeStripCommand}"
-              Content="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
+              AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}">
+            <!-- The glyph is decoration and stays out of the translated text, where a
+                 screen reader read it out as part of the sentence. -->
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}" />
+              <TextBlock Text="✕" />
+            </StackPanel>
+          </Button>
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <TextBlock FontSize="13" FontWeight="SemiBold"
                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Title]}" />

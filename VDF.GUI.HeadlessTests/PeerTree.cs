@@ -97,8 +97,19 @@ public static class PeerTree {
 			return "type name as name";
 		if (!name.Any(char.IsLetterOrDigit))
 			return "glyph-only name";
+		// "Don't show again ✕" is read out as "don't show again multiplication x", or
+		// whatever the speech engine makes of the symbol: icons belong next to the
+		// translated text, not into it.
+		if (name.Any(IsIconGlyph))
+			return "icon glyph inside the name";
 		return null;
 	}
+
+	// Dingbats, arrows, geometric shapes, technical symbols and enclosed alphanumerics: what
+	// the views use as icons. Math operators stay out of it, "32×32" is text.
+	static bool IsIconGlyph(char c) =>
+		c is (>= '←' and <= '⇿') or (>= '⌀' and <= '⏿') or (>= '①' and <= '⓿')
+			or (>= '■' and <= '◿') or (>= '☀' and <= '➿') or (>= '⬀' and <= '⯿');
 
 	/// <summary>
 	/// Mouse affordances inside another control's template (spinner arrows, scrollbar and

@@ -648,7 +648,7 @@
 	"Results.Action.Hint": "A exclusão pede confirmação e mostra o espaço liberado.",
 	"Setup.Welcome.Title": "Novo por aqui?",
 	"Setup.Welcome.Text": "Adicione as pastas a verificar, escolha o que procurar e pressione Escanear. Esse é todo o fluxo.",
-	"Setup.Welcome.Dismiss": "Não mostrar novamente ✕",
+	"Setup.Welcome.Dismiss": "Não mostrar novamente",
 	"Setup.NoDuplicates.Title": "Nenhum duplicado encontrado",
 	"Setup.NoDuplicates.Text": "Sua última varredura foi concluída sem encontrar arquivos duplicados.",
 	"Setup.WhereToLook": "ONDE PROCURAR",

@@ -648,7 +648,7 @@
 	"Results.Action.Hint": "Löschen fragt nach Bestätigung und zeigt den freiwerdenden Speicher.",
 	"Setup.Welcome.Title": "Neu hier?",
 	"Setup.Welcome.Text": "Ordner hinzufügen, auswählen wonach gesucht wird, Scannen drücken. Das ist der ganze Ablauf.",
-	"Setup.Welcome.Dismiss": "Nicht mehr anzeigen ✕",
+	"Setup.Welcome.Dismiss": "Nicht mehr anzeigen",
 	"Setup.NoDuplicates.Title": "Keine Duplikate gefunden",
 	"Setup.NoDuplicates.Text": "Ihr letzter Scan wurde abgeschlossen und hat keine doppelten Dateien gefunden.",
 	"Setup.WhereToLook": "WO GESUCHT WIRD",
