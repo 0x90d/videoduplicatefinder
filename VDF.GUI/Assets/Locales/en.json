@@ -775,6 +775,8 @@
 	"Settings.Row.UiScale.Title": "Size of text and controls",
 	"Settings.Row.UiScale.Desc": "Follows the text size set in your system. Pick a percentage to make everything in VDF larger regardless. Takes effect immediately.",
 	"Settings.UiScale.System": "Follow system",
+	"Settings.Row.HighContrast.Title": "High contrast",
+	"Settings.Row.HighContrast.Desc": "No dimmed text, stronger colors and clearly visible outlines. Always on when your system asks for high contrast; switch it on here to have it in VDF regardless.",
 	"Settings.Row.ReduceMotion.Title": "Reduce motion",
 	"Settings.Row.ReduceMotion.Desc": "Animations stand still. Always on when your system has animations switched off; switch it on here to have it in VDF regardless.",
 	"Settings.Row.UseMica.Title": "Use Mica",

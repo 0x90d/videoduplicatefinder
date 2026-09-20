@@ -227,4 +227,55 @@ public class AppearanceTests {
 			window.Close();
 		}
 	}));
+
+	[Theory]
+	[InlineData(true, false, "Dark")]
+	[InlineData(false, false, "Light")]
+	[InlineData(true, true, "VdfHighContrastDark")]   // a version of dark and of light,
+	[InlineData(false, true, "VdfHighContrastLight")] // not a third theme next to them
+	public void HighContrast_IsAVersionOfTheThemeInUse(bool dark, bool highContrast, string expected) =>
+		Assert.Equal(expected, Appearance.ResolveVariant(dark, highContrast).Key);
+
+	[Theory]
+	[InlineData(false, false, false)]
+	[InlineData(false, true, true)]  // the system asks for it: followed
+	[InlineData(true, false, true)]  // the setting only ever adds
+	[InlineData(true, true, true)]
+	public void HighContrast_WhenTheSystemOrTheUserAsksForIt(bool always, bool system, bool expected) =>
+		Assert.Equal(expected, Appearance.ResolveHighContrast(always, system));
+
+	[Fact]
+	public Task HighContrast_FollowsTheSystemAndTheSetting_Live() => HeadlessUi.Run(() => WithThemeMode(() => {
+		var (window, _) = HeadlessUi.Shell();
+		bool settingBefore = SettingsFile.Instance.AlwaysHighContrast;
+		try {
+			SettingsFile.Instance.AlwaysHighContrast = false;
+			SettingsFile.Instance.ThemeMode = ThemeMode.Dark;
+			Appearance.SetSystemHighContrast(false);
+			HeadlessUi.Pump();
+			Assert.Equal(ThemeVariant.Dark, window.ActualThemeVariant);
+
+			// Windows: a contrast theme is switched on while VDF runs.
+			Appearance.SetSystemHighContrast(true);
+			HeadlessUi.Pump();
+			Assert.Equal(VdfThemes.HighContrastDark, window.ActualThemeVariant);
+
+			SettingsFile.Instance.ThemeMode = ThemeMode.Light;
+			HeadlessUi.Pump();
+			Assert.Equal(VdfThemes.HighContrastLight, window.ActualThemeVariant);
+
+			// The system does not ask, the user does.
+			Appearance.SetSystemHighContrast(false);
+			HeadlessUi.Pump();
+			Assert.Equal(ThemeVariant.Light, window.ActualThemeVariant);
+			SettingsFile.Instance.AlwaysHighContrast = true;
+			HeadlessUi.Pump();
+			Assert.Equal(VdfThemes.HighContrastLight, window.ActualThemeVariant);
+		}
+		finally {
+			SettingsFile.Instance.AlwaysHighContrast = settingBefore;
+			Appearance.SetSystemHighContrast(null);
+			HeadlessUi.Pump();
+		}
+	}));
 }

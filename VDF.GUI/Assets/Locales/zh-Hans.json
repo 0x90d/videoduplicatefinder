@@ -775,6 +775,8 @@
 	"Settings.Row.UiScale.Title": "文字和控件大小",
 	"Settings.Row.UiScale.Desc": "跟随系统中设置的文字大小。选择一个百分比可让 VDF 中的所有内容变大。立即生效。",
 	"Settings.UiScale.System": "跟随系统",
+	"Settings.Row.HighContrast.Title": "高对比度",
+	"Settings.Row.HighContrast.Desc": "不使用变淡的文字，颜色更鲜明，轮廓清晰可见。系统要求高对比度时始终生效；在此开启后，无论系统如何设置，VDF 中都会生效。",
 	"Settings.Row.ReduceMotion.Title": "减少动态效果",
 	"Settings.Row.ReduceMotion.Desc": "动画保持静止。系统关闭动画时始终生效；在此开启后，无论系统如何设置，VDF 中都会生效。",
 	"Settings.Row.UseMica.Title": "使用 Mica",

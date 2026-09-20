@@ -775,6 +775,8 @@
 	"Settings.Row.UiScale.Title": "Größe von Text und Bedienelementen",
 	"Settings.Row.UiScale.Desc": "Folgt der im System eingestellten Textgröße. Mit einem Prozentwert wird alles in VDF unabhängig davon größer. Wirkt sofort.",
 	"Settings.UiScale.System": "Wie das System",
+	"Settings.Row.HighContrast.Title": "Hoher Kontrast",
+	"Settings.Row.HighContrast.Desc": "Kein abgeschwächter Text, kräftigere Farben und deutlich sichtbare Umrisse. Immer aktiv, wenn das System hohen Kontrast verlangt; hier einschalten, um es in VDF unabhängig davon zu haben.",
 	"Settings.Row.ReduceMotion.Title": "Bewegung reduzieren",
 	"Settings.Row.ReduceMotion.Desc": "Animationen stehen still. Immer aktiv, wenn im System Animationen ausgeschaltet sind; hier einschalten, um es in VDF unabhängig davon zu haben.",
 	"Settings.Row.UseMica.Title": "Mica verwenden",

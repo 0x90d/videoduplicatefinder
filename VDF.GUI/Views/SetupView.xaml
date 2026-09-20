@@ -38,8 +38,10 @@
       <Setter Property="Background" Value="{actipro:ThemeResource Container1BackgroundBrush}" />
       <Setter Property="Cursor" Value="Hand" />
     </Style>
+    <!-- The mockup's accent (.profile.on), from the token that the high contrast themes turn
+         into black or white: the chosen card must not be the one with the faintest outline. -->
     <Style Selector="Border.profilecard.active">
-      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushEmphasizedAccent}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfRowSelectedFrameBrush}" />
     </Style>
     <!-- mockup .folder .drive: accent-soft chip with accent label; excluded flips to danger -->
     <Style Selector="Border.drivechip">
@@ -79,7 +81,7 @@
               Background="Transparent"
               BorderThickness="0"
               FontSize="12"
-              Opacity="0.85"
+              Opacity="{DynamicResource VdfTextDim85Opacity}"
               VerticalAlignment="Center"
               Command="{Binding DismissNoDuplicatesNoticeCommand}"
               AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Close]}"
@@ -91,7 +93,7 @@
                        Text="✓" />
             <TextBlock FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.NoDuplicates.Title]}" />
-            <TextBlock FontSize="13" Opacity="0.8" TextWrapping="Wrap" VerticalAlignment="Center"
+            <TextBlock FontSize="13" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap" VerticalAlignment="Center"
                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.NoDuplicates.Text]}" />
           </StackPanel>
         </DockPanel>
@@ -112,7 +114,7 @@
               Background="Transparent"
               BorderThickness="0"
               FontSize="12"
-              Opacity="0.85"
+              Opacity="{DynamicResource VdfTextDim85Opacity}"
               VerticalAlignment="Center"
               Command="{Binding DismissWelcomeStripCommand}"
               AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Dismiss]}">
@@ -126,7 +128,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <TextBlock FontSize="13" FontWeight="SemiBold"
                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Title]}" />
-            <TextBlock FontSize="13" Opacity="0.8" TextWrapping="Wrap"
+            <TextBlock FontSize="13" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap"
                        Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Welcome.Text]}" />
           </StackPanel>
         </DockPanel>
@@ -171,7 +173,7 @@
                           <Binding Path="Path" />
                         </MultiBinding>
                       </AutomationProperties.Name>
-                      <TextBlock Text="✕" FontSize="13" Opacity="0.7" />
+                      <TextBlock Text="✕" FontSize="13" Opacity="{DynamicResource VdfTextDim70Opacity}" />
                     </Button>
                     <Button DockPanel.Dock="Right"
                             Classes="hyperlink"
@@ -208,7 +210,7 @@
             <StackPanel Orientation="Horizontal" Spacing="4"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Margin="14,10">
-              <TextBlock FontSize="13" Opacity="0.85" FontWeight="SemiBold"
+              <TextBlock FontSize="13" Opacity="{DynamicResource VdfTextDim85Opacity}" FontWeight="SemiBold"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Drop.Bold]}" />
               <TextBlock FontSize="13" Opacity="{DynamicResource VdfTextFaintOpacity}"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Drop.Text]}" />
@@ -270,7 +272,7 @@
                           <TextBlock FontSize="13.5" FontWeight="SemiBold" VerticalAlignment="Center"
                                      Text="{Binding Name}" />
                         </StackPanel>
-                        <TextBlock FontSize="12" Opacity="0.7" TextWrapping="Wrap" Text="{Binding Description}" />
+                        <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextDim70Opacity}" TextWrapping="Wrap" Text="{Binding Description}" />
                       </StackPanel>
                     </DockPanel>
                   </Border>

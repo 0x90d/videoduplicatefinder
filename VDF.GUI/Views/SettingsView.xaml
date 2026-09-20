@@ -21,7 +21,7 @@
               <StackPanel Grid.Column="0" Margin="0,0,18,0" Spacing="2" VerticalAlignment="Center">
                 <TextBlock FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"
                            Text="{TemplateBinding Title}" />
-                <TextBlock FontSize="12.5" Opacity="0.7" TextWrapping="Wrap" MaxWidth="470"
+                <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}" TextWrapping="Wrap" MaxWidth="470"
                            HorizontalAlignment="Left"
                            Text="{TemplateBinding Description}"
                            IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -72,7 +72,7 @@
                  anything set in a template) and painted their own highlight and text
                  color into the item. -->
             <ContentPresenter x:Name="NavContent"
-                              Opacity="0.75"
+                              Opacity="{DynamicResource VdfTextDim75Opacity}"
                               Content="{TemplateBinding Content}"
                               ContentTemplate="{TemplateBinding ContentTemplate}" />
           </Border>
@@ -320,7 +320,7 @@
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiComponents.Desc]}"
                   SearchTags="ai download onnx runtime model components">
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                  <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="0.8" MaxWidth="260" TextWrapping="Wrap"
+                  <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="{DynamicResource VdfTextDim80Opacity}" MaxWidth="260" TextWrapping="Wrap"
                              Text="{Binding AiComponentsStatusText}" />
                   <Button FontSize="12.5" VerticalAlignment="Center" Command="{Binding DownloadAiComponentsCommand}"
                           Content="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.AiComponents.Download]}" />
@@ -502,7 +502,7 @@
                 <StackPanel Grid.Column="0" Spacing="6">
                   <TextBlock FontSize="14" FontWeight="SemiBold"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SearchDirectories]}" />
-                  <TextBlock FontSize="12.5" Opacity="0.7" TextWrapping="Wrap"
+                  <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}" TextWrapping="Wrap"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.SearchDirectoriesHint]}" />
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <Button FontSize="12.5" Command="{Binding AddIncludesToListCommand}"
@@ -521,7 +521,7 @@
                 <StackPanel Grid.Column="1" Spacing="6">
                   <TextBlock FontSize="14" FontWeight="SemiBold"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeDirectories]}" />
-                  <TextBlock FontSize="12.5" Opacity="0.7" TextWrapping="Wrap"
+                  <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}" TextWrapping="Wrap"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.ExcludeDirectoriesHint]}" />
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <Button FontSize="12.5" Command="{Binding AddBlacklistToListCommand}"
@@ -550,7 +550,7 @@
             <StackPanel Tag="Files" IsVisible="False">
               <TextBlock Classes="sectioncaption" IsVisible="False"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Nav.FilesFilters]}" />
-              <TextBlock Margin="0,12,0,0" FontSize="12.5" TextWrapping="Wrap" Opacity="0.8"
+              <TextBlock Margin="0,12,0,0" FontSize="12.5" TextWrapping="Wrap" Opacity="{DynamicResource VdfTextDim80Opacity}"
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilesNote]}" />
 
               <views:SettingRow
@@ -564,7 +564,7 @@
                                  AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Settings.MinFileSize]}"
                                  IsEnabled="{Binding #ToggleFilterByFileSize.IsChecked}"
                                  Value="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=MinimumFileSize}" />
-                  <TextBlock VerticalAlignment="Center" Opacity="0.7"
+                  <TextBlock VerticalAlignment="Center" Opacity="{DynamicResource VdfTextDim70Opacity}"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.To]}" />
                   <NumericUpDown Width="130" VerticalAlignment="Center" Minimum="0"
                                  AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Settings.MaxFileSize]}"
@@ -582,7 +582,7 @@
                   <StackPanel VerticalAlignment="Center">
                     <TextBlock FontSize="14" FontWeight="SemiBold"
                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilePathContains]}" />
-                    <TextBlock FontSize="12.5" Opacity="0.7" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                    <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.PathContains.Desc]}" />
                   </StackPanel>
                 </StackPanel>
@@ -608,7 +608,7 @@
                   <StackPanel VerticalAlignment="Center">
                     <TextBlock FontSize="14" FontWeight="SemiBold"
                                Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.FilePathNotContains]}" />
-                    <TextBlock FontSize="12.5" Opacity="0.7" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                    <TextBlock FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.PathNotContains.Desc]}" />
                   </StackPanel>
                 </StackPanel>
@@ -920,6 +920,14 @@
               </views:SettingRow>
 
               <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.HighContrast.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.HighContrast.Desc]}"
+                  SearchTags="contrast visibility low vision accessibility bold borders">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=AlwaysHighContrast}" />
+              </views:SettingRow>
+
+              <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.ReduceMotion.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.ReduceMotion.Desc]}"
                   SearchTags="animation motion movement shimmer pulse accessibility vestibular">
@@ -962,9 +970,9 @@
                         Command="{Binding ResetAllShortcutsCommand}"
                         Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.ResetAll]}" />
                 <Grid ColumnDefinitions="250,200,*">
-                  <TextBlock Grid.Column="0" FontWeight="SemiBold" FontSize="12.5" Opacity="0.7"
+                  <TextBlock Grid.Column="0" FontWeight="SemiBold" FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Action]}" />
-                  <TextBlock Grid.Column="1" FontWeight="SemiBold" FontSize="12.5" Opacity="0.7"
+                  <TextBlock Grid.Column="1" FontWeight="SemiBold" FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.KeyboardShortcuts.Shortcut]}" />
                 </Grid>
                 <ItemsControl ItemsSource="{Binding ShortcutBindings}"
@@ -1013,7 +1021,7 @@
                          Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics]}" />
               <StackPanel Margin="0,12,0,0" Spacing="10"
                           views:SettingsSearchMeta.Text="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Tags.Test]}">
-                <TextBlock TextWrapping="Wrap" FontSize="12.5" Opacity="0.8"
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Opacity="{DynamicResource VdfTextDim80Opacity}"
                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Test.Description]}" />
                 <Grid ColumnDefinitions="60,*,Auto">
                   <TextBlock x:Name="TestFileALabel" Grid.Column="0" VerticalAlignment="Center"
@@ -1048,7 +1056,7 @@
                 <Border Height="1" Background="{actipro:ThemeResource Container3BorderBrush}" Margin="0,6" />
                 <TextBlock FontSize="14" FontWeight="SemiBold"
                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics]}" />
-                <TextBlock TextWrapping="Wrap" FontSize="12.5" Opacity="0.7"
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}"
                            Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.Diagnostics.Description]}" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Button Command="{Binding CopyDiagnosticsCommand}"

@@ -46,7 +46,7 @@
     <Style Selector="Button.fchip TextBlock">
       <Setter Property="FontSize" Value="9.5" />
       <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextDim75Opacity}" />
     </Style>
     <Style Selector="Button.fchip.warn">
       <Setter Property="Background" Value="{DynamicResource VdfWarnSoftBrush}" />
@@ -68,7 +68,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Padding" Value="4,0" />
       <Setter Property="FontSize" Value="11" />
-      <Setter Property="Opacity" Value="0.55" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextDim55Opacity}" />
     </Style>
     <Style Selector="Button.pencil:pointerover">
       <Setter Property="Opacity" Value="1" />

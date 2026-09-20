@@ -433,6 +433,15 @@ namespace VDF.GUI.Data {
 			set => this.RaiseAndSetIfChanged(ref field, value <= 0 ? 0 : Math.Clamp(value, 50, 300));
 		}
 		/// <summary>
+		/// The high contrast version of the theme even when the operating system does not ask
+		/// for it. The system's own request is always followed.
+		/// </summary>
+		[JsonPropertyName("AlwaysHighContrast")]
+		public bool AlwaysHighContrast {
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		}
+		/// <summary>
 		/// Animations stand still even when the operating system does not say so: for systems
 		/// without such a setting, and for users who want it in VDF only. The system's own
 		/// "off" is always followed.

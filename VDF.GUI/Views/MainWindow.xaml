@@ -75,7 +75,7 @@
             <Setter Property="Padding" Value="10,3" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Opacity" Value="0.8" />
+            <Setter Property="Opacity" Value="{DynamicResource VdfTextDim80Opacity}" />
         </Style>
         <Style Selector="Button.navlink:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
@@ -272,7 +272,7 @@
                                 </Grid.IsVisible>
                                 <!-- Curtain: fades the view underneath and swallows its input;
                                      kept as a sibling so the panel itself stays fully opaque. -->
-                                <Border Background="{actipro:ThemeResource Container1BackgroundBrush}" Opacity="0.85" />
+                                <Border Background="{actipro:ThemeResource Container1BackgroundBrush}" Opacity="{DynamicResource VdfTextDim85Opacity}" />
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <ProgressBar
                                         Height="10"

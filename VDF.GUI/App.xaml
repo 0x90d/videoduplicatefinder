@@ -65,6 +65,17 @@
                     <x:Double x:Key="VdfTextMutedOpacity">0.72</x:Double>
                     <x:Double x:Key="VdfTextSoftOpacity">0.72</x:Double>
                     <x:Double x:Key="VdfTextSecondaryOpacity">0.9</x:Double>
+                    <!-- Dimmed text by its value. The same in light and dark, so nothing changes
+                         there; what matters is that the high contrast themes set all of them
+                         to 1: dimming is contrast taken away on purpose. -->
+                    <x:Double x:Key="VdfTextDim90Opacity">0.9</x:Double>
+                    <x:Double x:Key="VdfTextDim85Opacity">0.85</x:Double>
+                    <x:Double x:Key="VdfTextDim80Opacity">0.8</x:Double>
+                    <x:Double x:Key="VdfTextDim75Opacity">0.75</x:Double>
+                    <x:Double x:Key="VdfTextDim70Opacity">0.7</x:Double>
+                    <x:Double x:Key="VdfTextDim55Opacity">0.55</x:Double>
+                    <!-- Placeholder text in an empty field: the theme's own look. -->
+                    <x:Double x:Key="VdfPlaceholderOpacity">0.67</x:Double>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="VdfGoodBrush" Color="#45B878" />
@@ -107,6 +118,145 @@
                     <x:Double x:Key="VdfTextMutedOpacity">0.6</x:Double>
                     <x:Double x:Key="VdfTextSoftOpacity">0.65</x:Double>
                     <x:Double x:Key="VdfTextSecondaryOpacity">0.7</x:Double>
+                    <!-- Dimmed text by its value. The same in light and dark, so nothing changes
+                         there; what matters is that the high contrast themes set all of them
+                         to 1: dimming is contrast taken away on purpose. -->
+                    <x:Double x:Key="VdfTextDim90Opacity">0.9</x:Double>
+                    <x:Double x:Key="VdfTextDim85Opacity">0.85</x:Double>
+                    <x:Double x:Key="VdfTextDim80Opacity">0.8</x:Double>
+                    <x:Double x:Key="VdfTextDim75Opacity">0.75</x:Double>
+                    <x:Double x:Key="VdfTextDim70Opacity">0.7</x:Double>
+                    <x:Double x:Key="VdfTextDim55Opacity">0.55</x:Double>
+                    <!-- Placeholder text in an empty field: the theme's own look. -->
+                    <x:Double x:Key="VdfPlaceholderOpacity">0.67</x:Double>
+                </ResourceDictionary>
+                <!-- High contrast on dark. Held to 7:1 for text (4.5:1 large text and icons) by the contrast guard: no dimmed text at all, tones light enough for the darkest and the tinted surfaces alike, and outlines one can see. -->
+                <ResourceDictionary x:Key="{x:Static utils:VdfThemes.HighContrastDark}">
+                    <SolidColorBrush x:Key="VdfGoodBrush" Color="#8CE6B0" />
+                    <SolidColorBrush x:Key="VdfGoodSoftBrush" Color="#0F2418" />
+                    <SolidColorBrush x:Key="VdfGoodBorderBrush" Color="#8CE6B0" />
+                    <SolidColorBrush x:Key="VdfWarnBrush" Color="#F5C76E" />
+                    <SolidColorBrush x:Key="VdfWarnSoftBrush" Color="#2A1F08" />
+                    <SolidColorBrush x:Key="VdfWarnBorderBrush" Color="#F5C76E" />
+                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#FFB3A8" />
+                    <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#2E1210" />
+                    <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#FFB3A8" />
+                    <SolidColorBrush x:Key="VdfSelBrush" Color="#3A1712" />
+                    <SolidColorBrush x:Key="VdfSelActiveBrush" Color="#4A1D16" />
+                    <SolidColorBrush x:Key="VdfRowSelectedBrush" Color="#14302B" />
+                    <SolidColorBrush x:Key="VdfRowSelectedFrameBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="VdfSelectedHoverTextBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="VdfTombBrush" Color="#8A2A22" />
+                    <SolidColorBrush x:Key="VdfMutedBrush" Color="#C8CDD4" />
+                    <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#1C2422" />
+                    <SolidColorBrush x:Key="VdfMutedBorderBrush" Color="#C8CDD4" />
+                    <SolidColorBrush x:Key="VdfAccentTextBrush" Color="#A8F0E0" />
+                    <SolidColorBrush x:Key="VdfOnAccentBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="VdfDangerSolidBrush" Color="#9E1B1B" />
+                    <x:Double x:Key="VdfTextFaintOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextMutedOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextSoftOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextSecondaryOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim90Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim85Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim80Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim75Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim70Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim55Opacity">1</x:Double>
+                    <!-- At full strength; the theme's italic still tells it from typed text. -->
+                    <x:Double x:Key="VdfPlaceholderOpacity">1</x:Double>
+                    <!-- The theme's own surfaces and outlines, where they fall short of the
+                         enhanced level: the soft accent surface under text, and the hairline
+                         borders that tell a field, a button or a panel from what is around it. -->
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushSoftAccent}" Color="#12332E" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushSoftAccentPointerOver}" Color="#12332E" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushSoftAccentPressed}" Color="#12332E" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushOutlineAccentPointerOver}" Color="#12332E" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushOutlineAccentPressed}" Color="#12332E" />
+                    <!-- A selected item in a plain list: the inversion high contrast users know as
+                         highlight and highlight text. Seen at a glance, and far above 7:1. -->
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemBackgroundBrushSelected}" Color="#A8F0E0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemBackgroundBrushSelectedPointerOver}" Color="#A8F0E0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemBackgroundBrushSelectedPressed}" Color="#A8F0E0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemForegroundBrushSelected}" Color="#000000" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container1BorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container2BorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container3BorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container4BorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container5BorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ButtonBorderBrushOutline}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBorderBrushOutline}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey EditBorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey SwitchBorderBrushOutline}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListBorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey MenuPopupBorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey PopupBorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ToolTipBorderBrush}" Color="#B4B8C0" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ProgressBarBorderBrush}" Color="#B4B8C0" />
+                </ResourceDictionary>
+                <!-- High contrast on light, the counterpart of the above. -->
+                <ResourceDictionary x:Key="{x:Static utils:VdfThemes.HighContrastLight}">
+                    <SolidColorBrush x:Key="VdfGoodBrush" Color="#0A4A27" />
+                    <SolidColorBrush x:Key="VdfGoodSoftBrush" Color="#EAF6EF" />
+                    <SolidColorBrush x:Key="VdfGoodBorderBrush" Color="#0A4A27" />
+                    <SolidColorBrush x:Key="VdfWarnBrush" Color="#553600" />
+                    <SolidColorBrush x:Key="VdfWarnSoftBrush" Color="#FAF2E2" />
+                    <SolidColorBrush x:Key="VdfWarnBorderBrush" Color="#553600" />
+                    <SolidColorBrush x:Key="VdfDangerBrush" Color="#7A1710" />
+                    <SolidColorBrush x:Key="VdfDangerSoftBrush" Color="#FBECEA" />
+                    <SolidColorBrush x:Key="VdfDangerBorderBrush" Color="#7A1710" />
+                    <SolidColorBrush x:Key="VdfSelBrush" Color="#FBE9E6" />
+                    <SolidColorBrush x:Key="VdfSelActiveBrush" Color="#F8DCD6" />
+                    <SolidColorBrush x:Key="VdfRowSelectedBrush" Color="#E6F3F0" />
+                    <SolidColorBrush x:Key="VdfRowSelectedFrameBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="VdfSelectedHoverTextBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="VdfTombBrush" Color="#8A2A22" />
+                    <SolidColorBrush x:Key="VdfMutedBrush" Color="#3F4650" />
+                    <SolidColorBrush x:Key="VdfMutedSoftBrush" Color="#F7FAF9" />
+                    <SolidColorBrush x:Key="VdfMutedBorderBrush" Color="#3F4650" />
+                    <SolidColorBrush x:Key="VdfAccentTextBrush" Color="#06433A" />
+                    <SolidColorBrush x:Key="VdfOnAccentBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="VdfDangerSolidBrush" Color="#9E1B1B" />
+                    <x:Double x:Key="VdfTextFaintOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextMutedOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextSoftOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextSecondaryOpacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim90Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim85Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim80Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim75Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim70Opacity">1</x:Double>
+                    <x:Double x:Key="VdfTextDim55Opacity">1</x:Double>
+                    <!-- At full strength; the theme's italic still tells it from typed text. -->
+                    <x:Double x:Key="VdfPlaceholderOpacity">1</x:Double>
+                    <!-- The theme's own surfaces and outlines, where they fall short of the
+                         enhanced level: the soft accent surface under text, and the hairline
+                         borders that tell a field, a button or a panel from what is around it. -->
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushSoftAccent}" Color="#E6F5F1" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushSoftAccentPointerOver}" Color="#E6F5F1" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushSoftAccentPressed}" Color="#E6F5F1" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushOutlineAccentPointerOver}" Color="#E6F5F1" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBackgroundBrushOutlineAccentPressed}" Color="#E6F5F1" />
+                    <!-- A selected item in a plain list: the inversion high contrast users know as
+                         highlight and highlight text. Seen at a glance, and far above 7:1. -->
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemBackgroundBrushSelected}" Color="#06433A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemBackgroundBrushSelectedPointerOver}" Color="#06433A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemBackgroundBrushSelectedPressed}" Color="#06433A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListItemForegroundBrushSelected}" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container1BorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container2BorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container3BorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container4BorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey Container5BorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ButtonBorderBrushOutline}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ControlBorderBrushOutline}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey EditBorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey SwitchBorderBrushOutline}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ListBorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey MenuPopupBorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey PopupBorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ToolTipBorderBrush}" Color="#4A4F5A" />
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey ProgressBarBorderBrush}" Color="#4A4F5A" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

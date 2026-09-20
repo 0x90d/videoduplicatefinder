@@ -54,7 +54,7 @@ public class DialogContrastTests {
 	public static TheoryData<string, string> DialogsAndThemes() {
 		var data = new TheoryData<string, string>();
 		foreach (string dialog in Dialogs.Keys)
-			foreach (string theme in new[] { "Dark", "Light" })
+			foreach (string theme in new[] { "Dark", "Light", "HighContrastDark", "HighContrastLight" })
 				data.Add(dialog, theme);
 		return data;
 	}
@@ -63,7 +63,8 @@ public class DialogContrastTests {
 	[MemberData(nameof(DialogsAndThemes))]
 	public Task Text_IsReadable(string dialogName, string theme) => HeadlessUi.Run(() => {
 		HeadlessUi.Shell(); // dialogs take their owner and icon from the main window
-		var variant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+		bool highContrast = theme.StartsWith("HighContrast");
+		var variant = highContrast ? ContrastTests.HighContrastVariant(theme) : theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
 		var dialog = Dialogs[dialogName]();
 		dialog.RequestedThemeVariant = variant;
 		dialog.Show();
@@ -72,7 +73,8 @@ public class DialogContrastTests {
 			// At rest, then with every control under the pointer, then pressed.
 			foreach (string state in new[] { "at rest", ":pointerover", ":pressed" }) {
 				if (state != "at rest") ContrastTests.PutInState(dialog, state);
-				var failures = ContrastTests.Measure(dialog, variant);
+				// The high contrast themes are held to the enhanced level (7:1).
+				var failures = ContrastTests.Measure(dialog, variant, highContrast ? ContrastTests.Enhanced : null);
 				Assert.True(failures.Count == 0,
 					$"{failures.Count} kind(s) of text below the required contrast in the {theme} theme, controls {state}:\n  " + string.Join("\n  ", failures));
 			}

@@ -775,6 +775,8 @@
 	"Settings.Row.UiScale.Title": "Tamaño del texto y los controles",
 	"Settings.Row.UiScale.Desc": "Sigue el tamaño de texto configurado en el sistema. Elija un porcentaje para agrandar todo en VDF de todos modos. Se aplica al instante.",
 	"Settings.UiScale.System": "Seguir al sistema",
+	"Settings.Row.HighContrast.Title": "Alto contraste",
+	"Settings.Row.HighContrast.Desc": "Sin texto atenuado, con colores más intensos y contornos claramente visibles. Siempre activo si el sistema pide alto contraste; actívelo aquí para tenerlo en VDF de todos modos.",
 	"Settings.Row.ReduceMotion.Title": "Reducir el movimiento",
 	"Settings.Row.ReduceMotion.Desc": "Las animaciones se detienen. Siempre activo si el sistema tiene las animaciones desactivadas; actívelo aquí para tenerlo en VDF de todos modos.",
 	"Settings.Row.UseMica.Title": "Usar Mica",

@@ -15,6 +15,7 @@
 //
 
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
@@ -23,6 +24,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using VDF.GUI.Controls;
+using VDF.GUI.Utils;
 using VDF.GUI.ViewModels;
 using VDF.GUI.Views;
 
@@ -76,6 +78,108 @@ public class ContrastTests {
 		}
 	});
 
+	public static TheoryData<string, string> ViewsAndHighContrastThemes() {
+		var data = new TheoryData<string, string>();
+		foreach (string view in new[] { "Setup", "Scanning", "Settings", "Results", "Log" })
+			foreach (string theme in new[] { "HighContrastDark", "HighContrastLight" })
+				data.Add(view, theme);
+		return data;
+	}
+
+	internal static ThemeVariant HighContrastVariant(string name) =>
+		name == "HighContrastDark" ? VdfThemes.HighContrastDark : VdfThemes.HighContrastLight;
+
+	/// <summary>
+	/// High contrast is asked for by people for whom 4.5:1 is not enough. The two high
+	/// contrast themes are held to the enhanced level, at rest and under the pointer.
+	/// </summary>
+	[Theory]
+	[MemberData(nameof(ViewsAndHighContrastThemes))]
+	public Task HighContrast_TextMeetsTheEnhancedLevel(string viewName, string theme) => HeadlessUi.Run(() => {
+		var variant = HighContrastVariant(theme);
+		var (view, cleanup) = Create(viewName);
+		var window = new Window { Width = 1300, Height = 950, RequestedThemeVariant = variant, Content = view };
+		window.Show();
+		HeadlessUi.Pump();
+		if (view is SettingsView settings) {
+			foreach (var panel in settings.FindControl<StackPanel>("SectionsHost")!.Children.OfType<StackPanel>())
+				panel.IsVisible = true;
+			foreach (var row in settings.GetLogicalDescendants().OfType<SettingRow>())
+				row.IsVisible = true;
+			HeadlessUi.Pump();
+		}
+		try {
+			foreach (string state in new[] { "at rest", ":pointerover" }) {
+				if (state != "at rest") PutInState(window, state);
+				var failures = Measure(window, variant, Enhanced);
+				Assert.True(failures.Count == 0,
+					$"{failures.Count} kind(s) of text below 7:1 in the {theme} theme, controls {state}:" + Environment.NewLine + "  " + string.Join(Environment.NewLine + "  ", failures));
+			}
+		}
+		finally {
+			window.Close();
+			cleanup();
+		}
+	});
+
+	/// <summary>
+	/// WCAG 1.4.11: what tells a field or a button from its surroundings needs 3:1. The
+	/// ordinary themes draw hairlines of about 1.5:1 there, a look the high contrast themes
+	/// give up: their outlines are what one navigates by when fills and tints do not register.
+	/// </summary>
+	[Theory]
+	[InlineData("HighContrastDark")]
+	[InlineData("HighContrastLight")]
+	public Task HighContrast_FieldsAndButtons_HaveOutlinesOneCanSee(string theme) => HeadlessUi.Run(() => {
+		var variant = HighContrastVariant(theme);
+		var settings = new SettingsView { DataContext = new MainWindowVM() };
+		var window = new Window { Width = 1300, Height = 950, RequestedThemeVariant = variant, Content = settings };
+		window.Show();
+		HeadlessUi.Pump();
+		foreach (var panel in settings.FindControl<StackPanel>("SectionsHost")!.Children.OfType<StackPanel>())
+			panel.IsVisible = true;
+		foreach (var row in settings.GetLogicalDescendants().OfType<SettingRow>())
+			row.IsVisible = true;
+		HeadlessUi.Pump();
+		try {
+			var weak = new List<string>();
+			int measured = 0;
+			foreach (var control in window.GetVisualDescendants().OfType<TemplatedControl>()
+						 .Where(c => c is Button or TextBox or ComboBox && c.IsEffectivelyVisible && c.IsEffectivelyEnabled)) {
+				var outline = control.GetVisualDescendants().OfType<Visual>().Prepend(control)
+					.Select(v => v switch {
+						Border b when b.BorderThickness != default => b.BorderBrush,
+						ContentPresenter p when p.BorderThickness != default => p.BorderBrush,
+						_ => null,
+					})
+					.OfType<ISolidColorBrush>().FirstOrDefault(b => b.Color.A > 0);
+				if (outline == null) continue; // borderless by design (link-like buttons, the nav)
+				measured++;
+				Color behind = BackgroundBehind(control, variant);
+				double ratio = Ratio(Blend(outline.Color, outline.Opacity, behind), behind);
+				if (ratio < 3)
+					weak.Add($"{control.GetType().Name} '{AutomationProperties.GetName(control)}' {ratio:0.00}:1 ({outline.Color} on {behind})");
+			}
+			Assert.True(measured > 10, $"only {measured} outlined controls found, the check is not looking at the view");
+			Assert.True(weak.Count == 0, $"{weak.Count} outlines below 3:1 in {theme}:" + Environment.NewLine + "  " + string.Join(Environment.NewLine + "  ", weak.Distinct().Take(15)));
+		}
+		finally {
+			window.Close();
+		}
+	});
+
+	/// <summary>The solid color behind an element: every background up the tree, composited with the opacities on the way.</summary>
+	internal static Color BackgroundBehind(Visual element, ThemeVariant variant) {
+		Color background = variant == ThemeVariant.Dark || variant == VdfThemes.HighContrastDark ? Colors.Black : Colors.White;
+		double opacity = 1;
+		foreach (var ancestor in element.GetVisualAncestors().Reverse()) {
+			opacity *= ancestor.Opacity;
+			if (BackgroundOf(ancestor) is ISolidColorBrush fill && fill.Color.A > 0)
+				background = Blend(fill.Color, fill.Opacity * opacity, background);
+		}
+		return background;
+	}
+
 	[Theory]
 	[MemberData(nameof(ViewsAndThemes))]
 	public Task Text_IsReadable_OnControlsUnderThePointer(string viewName, string theme) => HeadlessUi.Run(() => {
@@ -103,8 +207,13 @@ public class ContrastTests {
 	[InlineData("Dark", true)]
 	[InlineData("Light", false)]
 	[InlineData("Light", true)]
+	[InlineData("HighContrastDark", false)]
+	[InlineData("HighContrastDark", true)]
+	[InlineData("HighContrastLight", false)]
+	[InlineData("HighContrastLight", true)]
 	public Task Results_TheSelectedRow_IsReadable(string theme, bool isChecked) => HeadlessUi.Run(() => {
-		var variant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+		bool highContrast = theme.StartsWith("HighContrast");
+		var variant = highContrast ? HighContrastVariant(theme) : theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
 		var vm = ResultsFixture.CreatePopulatedViewModel();
 		vm.Duplicates[1].Checked = isChecked;
 		var window = new Window { Width = 1300, Height = 950, RequestedThemeVariant = variant, Content = new DuplicateResultsView { DataContext = vm } };
@@ -119,7 +228,7 @@ public class ContrastTests {
 			HeadlessUi.Pump();
 			Assert.Equal(isChecked, ((ResultsItemRow)list.SelectedItem!).Item.Checked);
 
-			var failures = Measure(window, variant);
+			var failures = Measure(window, variant, highContrast ? Enhanced : null);
 			Assert.True(failures.Count == 0,
 				$"{failures.Count} kind(s) of text below the required contrast in the {theme} theme:\n  " + string.Join("\n  ", failures));
 		}
@@ -265,7 +374,11 @@ public class ContrastTests {
 		HeadlessUi.Pump();
 	}
 
-	internal static List<string> Measure(Window window, ThemeVariant variant) {
+	/// <summary>WCAG 1.4.6 (AAA), what the high contrast themes are held to: 7:1, and 4.5:1 for large text and icons.</summary>
+	internal static readonly (double Normal, double Large) Enhanced = (7.0, 4.5);
+
+	internal static List<string> Measure(Window window, ThemeVariant variant, (double Normal, double Large)? thresholds = null) {
+		var (normalText, largeTextOrIcon) = thresholds ?? (NormalText, LargeTextOrIcon);
 		var worst = new Dictionary<string, (double Ratio, double Needed, string Sample, int Count)>();
 		foreach (var element in window.GetVisualDescendants().OfType<Control>()) {
 			if (!TryGetText(element, out string text, out IBrush? foreground, out double fontSize, out FontWeight weight))
@@ -280,18 +393,12 @@ public class ContrastTests {
 			if (!hasWords && !isIconOfAControl)
 				continue; // separators and ornaments carry no information
 
-			Color background = variant == ThemeVariant.Dark ? Colors.Black : Colors.White;
-			double opacity = 1;
-			foreach (var ancestor in element.GetVisualAncestors().Reverse()) {
-				opacity *= ancestor.Opacity;
-				if (BackgroundOf(ancestor) is ISolidColorBrush fill && fill.Color.A > 0)
-					background = Blend(fill.Color, fill.Opacity * opacity, background);
-			}
-			opacity *= element.Opacity;
+			Color background = BackgroundBehind(element, variant);
+			double opacity = element.GetVisualAncestors().Aggregate(element.Opacity, (o, ancestor) => o * ancestor.Opacity);
 			Color shown = Blend(brush.Color, brush.Opacity * opacity, background);
 
 			bool large = fontSize >= 24 || (fontSize >= 18.66 && weight >= FontWeight.Bold);
-			double needed = large || isIconOfAControl ? LargeTextOrIcon : NormalText;
+			double needed = large || isIconOfAControl ? largeTextOrIcon : normalText;
 			double ratio = Ratio(shown, background);
 			if (ratio >= needed)
 				continue;

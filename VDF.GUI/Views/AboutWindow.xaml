@@ -24,7 +24,7 @@
                 <TextBlock
                     x:Name="VersionText"
                     FontSize="13"
-                    Opacity="0.8" />
+                    Opacity="{DynamicResource VdfTextDim80Opacity}" />
             </StackPanel>
         </StackPanel>
 
@@ -35,13 +35,13 @@
         <TextBlock
             x:Name="EnvText"
             FontSize="12"
-            Opacity="0.8"
+            Opacity="{DynamicResource VdfTextDim80Opacity}"
             TextWrapping="Wrap" />
 
         <TextBlock
             x:Name="LicenseText"
             FontSize="12"
-            Opacity="0.8"
+            Opacity="{DynamicResource VdfTextDim80Opacity}"
             TextWrapping="Wrap" />
 
         <WrapPanel HorizontalAlignment="Center">

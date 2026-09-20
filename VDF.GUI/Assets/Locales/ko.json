@@ -775,6 +775,8 @@
 	"Settings.Row.UiScale.Title": "텍스트 및 컨트롤 크기",
 	"Settings.Row.UiScale.Desc": "시스템에 설정된 텍스트 크기를 따릅니다. 백분율을 선택하면 그와 관계없이 VDF의 모든 것이 커집니다. 즉시 적용됩니다.",
 	"Settings.UiScale.System": "시스템 설정 따르기",
+	"Settings.Row.HighContrast.Title": "고대비",
+	"Settings.Row.HighContrast.Desc": "흐리게 표시된 텍스트가 없고 색상이 더 진하며 윤곽선이 뚜렷합니다. 시스템에서 고대비를 요청하면 항상 적용되며, 여기서 켜면 그와 관계없이 VDF에 적용됩니다.",
 	"Settings.Row.ReduceMotion.Title": "동작 줄이기",
 	"Settings.Row.ReduceMotion.Desc": "애니메이션이 멈춥니다. 시스템에서 애니메이션을 끈 경우 항상 적용되며, 여기서 켜면 그와 관계없이 VDF에 적용됩니다.",
 	"Settings.Row.UseMica.Title": "Mica 사용",

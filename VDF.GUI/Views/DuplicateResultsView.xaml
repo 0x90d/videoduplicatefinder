@@ -63,7 +63,7 @@
     </Style>
     <Style Selector="TextBlock.meta">
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="Opacity" Value="0.85" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextDim85Opacity}" />
     </Style>
     <Style Selector="ToggleButton.chip">
       <Setter Property="Padding" Value="10,3" />
@@ -186,7 +186,7 @@
     <Style Selector="Border.hdrchip TextBlock">
       <Setter Property="FontSize" Value="9.5" />
       <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextDim75Opacity}" />
     </Style>
     <Style Selector="Border.hdrchip.best">
       <Setter Property="Background" Value="{DynamicResource VdfGoodSoftBrush}" />
@@ -747,8 +747,8 @@
                            Text="{Binding Item.ItemInfo.Format, TargetNullValue=''}" />
                 <StackPanel Orientation="Horizontal" Spacing="3"
                             IsVisible="{Binding !Item.ItemInfo.IsImage}">
-                  <TextBlock FontSize="11.5" Opacity="0.8" Text="{Binding Item.ItemInfo.AudioFormat, TargetNullValue=''}" />
-                  <TextBlock FontSize="11.5" Opacity="0.8" Text="{Binding Item.ItemInfo.AudioChannel, TargetNullValue=''}" />
+                  <TextBlock FontSize="11.5" Opacity="{DynamicResource VdfTextDim80Opacity}" Text="{Binding Item.ItemInfo.AudioFormat, TargetNullValue=''}" />
+                  <TextBlock FontSize="11.5" Opacity="{DynamicResource VdfTextDim80Opacity}" Text="{Binding Item.ItemInfo.AudioChannel, TargetNullValue=''}" />
                 </StackPanel>
               </StackPanel>
               <!-- Bitrate: video over audio, same two-line convention as the other
@@ -812,7 +812,7 @@
                     </TextBlock.Text>
                   </TextBlock>
                 </Border>
-                <TextBlock FontSize="11.5" Opacity="0.8"
+                <TextBlock FontSize="11.5" Opacity="{DynamicResource VdfTextDim80Opacity}"
                            Text="{Binding Item.ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}" />
               </StackPanel>
               <!-- Duration · Resolution: ONE hover zone for both metrics — two stacked
@@ -981,17 +981,17 @@
                     <TextBlock Classes="colheader" IsVisible="{Binding IsImage}"
                                Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Image]}" />
                   </StackPanel>
-                  <TextBlock FontSize="12" Opacity="0.8" TextWrapping="Wrap" Text="{Binding VideoText}" />
+                  <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap" Text="{Binding VideoText}" />
                 </StackPanel>
                 <StackPanel Margin="0,0,26,2" MinWidth="180" IsVisible="{Binding HasAudio}">
                   <TextBlock Classes="colheader"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Audio]}" />
-                  <TextBlock FontSize="12" Opacity="0.8" TextWrapping="Wrap" Text="{Binding AudioText}" />
+                  <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap" Text="{Binding AudioText}" />
                 </StackPanel>
                 <StackPanel Margin="0,0,26,2" MinWidth="160">
                   <TextBlock Classes="colheader"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.File]}" />
-                  <TextBlock FontSize="12" Opacity="0.8" TextWrapping="Wrap" Text="{Binding FileText}" />
+                  <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap" Text="{Binding FileText}" />
                 </StackPanel>
               </WrapPanel>
             </DockPanel>

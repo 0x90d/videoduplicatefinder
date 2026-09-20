@@ -15,7 +15,7 @@
         WindowStartupLocation="CenterOwner"
         Title="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Title]}">
     <StackPanel Margin="16" Spacing="12">
-        <TextBlock Opacity="0.8"
+        <TextBlock Opacity="{DynamicResource VdfTextDim80Opacity}"
                    Text="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Description]}"
                    TextWrapping="Wrap" />
         <Border Padding="6"

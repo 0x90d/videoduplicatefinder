@@ -35,6 +35,7 @@ static class Appearance {
 	static bool started;
 	static double? systemTextScale;
 	static bool? systemAnimations;
+	static bool? systemHighContrastOverride;
 	static double appliedScale = 1.0;
 	static readonly List<Window> windows = new();
 
@@ -46,6 +47,21 @@ static class Appearance {
 		ThemeMode.Light => false,
 		_ => system == PlatformThemeVariant.Dark,
 	};
+
+	/// <summary>True when the app shows one of its high contrast themes right now.</summary>
+	public static bool HighContrastNow => ResolveHighContrast(SettingsFile.Instance.AlwaysHighContrast,
+		systemHighContrastOverride ?? SystemColors().ContrastPreference == ColorContrastPreference.High);
+
+	internal static bool ResolveHighContrast(bool always, bool systemAsksForIt) => always || systemAsksForIt;
+
+	/// <summary>
+	/// High contrast is not a third theme next to dark and light but a version of each: a
+	/// user with a light high contrast scheme gets the light one. The variants inherit from
+	/// Dark and Light, so whatever they do not redefine stays what it was.
+	/// </summary>
+	internal static ThemeVariant ResolveVariant(bool dark, bool highContrast) =>
+		highContrast ? dark ? VdfThemes.HighContrastDark : VdfThemes.HighContrastLight
+		: dark ? ThemeVariant.Dark : ThemeVariant.Light;
 
 	/// <summary>The factor everything in a window is scaled by right now.</summary>
 	public static double ScaleNow => ResolveScale(SettingsFile.Instance.UiScalePercent, systemTextScale);
@@ -86,7 +102,7 @@ static class Appearance {
 		if (app.PlatformSettings is { } platform)
 			platform.ColorValuesChanged += (_, _) => Apply(); // the user switched the system while the app runs
 		SettingsFile.Instance.PropertyChanged += (_, e) => {
-			if (e.PropertyName == nameof(SettingsFile.ThemeMode)) Apply();
+			if (e.PropertyName is nameof(SettingsFile.ThemeMode) or nameof(SettingsFile.AlwaysHighContrast)) Apply();
 			if (e.PropertyName == nameof(SettingsFile.UiScalePercent)) Rescale();
 			if (e.PropertyName == nameof(SettingsFile.AlwaysReduceMotion)) ApplyMotion();
 		};
@@ -98,7 +114,13 @@ static class Appearance {
 	// dialog follows along without code of its own.
 	internal static void Apply() {
 		if (Application.Current is { } app)
-			app.RequestedThemeVariant = IsDarkNow ? ThemeVariant.Dark : ThemeVariant.Light;
+			app.RequestedThemeVariant = ResolveVariant(IsDarkNow, HighContrastNow);
+	}
+
+	/// <summary>For tests: what the system is taken to ask for, null to ask the system again.</summary>
+	internal static void SetSystemHighContrast(bool? highContrast) {
+		systemHighContrastOverride = highContrast;
+		Apply();
 	}
 
 	static bool refreshing;

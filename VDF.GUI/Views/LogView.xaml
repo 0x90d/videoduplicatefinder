@@ -50,7 +50,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container3BorderBrush}" />
-      <Setter Property="Opacity" Value="0.8" />
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextDim80Opacity}" />
     </Style>
     <Style Selector="Button.lrep:pointerover">
       <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />

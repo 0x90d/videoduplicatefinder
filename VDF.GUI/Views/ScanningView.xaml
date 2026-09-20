@@ -32,7 +32,7 @@
             <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding ScanStageText}" />
           </Border>
         </StackPanel>
-        <TextBlock DockPanel.Dock="Right" FontSize="13.5" Opacity="0.8" VerticalAlignment="Center">
+        <TextBlock DockPanel.Dock="Right" FontSize="13.5" Opacity="{DynamicResource VdfTextDim80Opacity}" VerticalAlignment="Center">
           <Run Text="{Binding ScanProgressCount, Mode=OneWay}" />
           <Run Text="{Binding Source={x:Static local:App.Lang}, Path=[Scan.FilesUnit]}" />
           <Run Text="· ~" /><Run Text="{Binding RemainingTime, Mode=OneWay}" />
@@ -90,7 +90,7 @@
                            VerticalAlignment="Center"
                            Maximum="1"
                            Value="{Binding Fraction, Mode=OneWay}" />
-              <TextBlock Grid.Column="2" FontSize="12" Opacity="0.8"
+              <TextBlock Grid.Column="2" FontSize="12" Opacity="{DynamicResource VdfTextDim80Opacity}"
                          VerticalAlignment="Center" TextAlignment="Right"
                          Text="{Binding Stat}" />
             </Grid>

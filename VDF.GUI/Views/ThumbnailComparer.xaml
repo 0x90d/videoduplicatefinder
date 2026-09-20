@@ -61,7 +61,7 @@
             <Setter Property="FontFamily" Value="Cascadia Mono,Consolas,Menlo,monospace" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Opacity" Value="0.75" />
+            <Setter Property="Opacity" Value="{DynamicResource VdfTextDim75Opacity}" />
         </Style>
         <!-- metadata chips (mockup .mchip) -->
         <Style Selector="Border.mchip">
@@ -74,7 +74,7 @@
         <Style Selector="Border.mchip TextBlock">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Opacity" Value="0.8" />
+            <Setter Property="Opacity" Value="{DynamicResource VdfTextDim80Opacity}" />
         </Style>
         <Style Selector="Border.mchip.hi">
             <Setter Property="BorderBrush" Value="{DynamicResource VdfGoodBorderBrush}" />
@@ -133,7 +133,7 @@
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Bottom" />
             <Setter Property="Margin" Value="0,0,0,8" />
-            <Setter Property="Opacity" Value="0.85" />
+            <Setter Property="Opacity" Value="{DynamicResource VdfTextDim85Opacity}" />
         </Style>
         <Style Selector="Button.stripframe">
             <Setter Property="Padding" Value="0" />
@@ -211,7 +211,7 @@
                         <TextBlock FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"
                                    IsVisible="{Binding GroupInfoText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                    Text="{Binding GroupInfoText}" />
-                        <TextBlock FontSize="13.5" Opacity="0.7" VerticalAlignment="Center"
+                        <TextBlock FontSize="13.5" Opacity="{DynamicResource VdfTextDim70Opacity}" VerticalAlignment="Center"
                                    IsVisible="{Binding PairInfoText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                    Text="{Binding PairInfoText}" />
                         <Border CornerRadius="6" Padding="9,2" VerticalAlignment="Center"
@@ -225,7 +225,7 @@
                                       IsChecked="{Binding HighlightDifferences}"
                                       Content="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.HighlightDifferences]}"
                                       ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.DiffHint]}" />
-                        <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="0.7"
+                        <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}"
                                    IsVisible="{Binding HighlightDifferences}"
                                    Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.DiffSensitivity]}" />
                         <Slider AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.DiffSensitivity]}" Width="110" VerticalAlignment="Center" Minimum="0" Maximum="1"
@@ -233,7 +233,7 @@
                                 IsVisible="{Binding HighlightDifferences}"
                                 Value="{Binding DiffSensitivity}" />
                         <Border Width="1" Height="22" Margin="4,0" Background="{DynamicResource SystemControlHighlightBaseLowBrush}" />
-                        <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="0.7"
+                        <TextBlock VerticalAlignment="Center" FontSize="12.5" Opacity="{DynamicResource VdfTextDim70Opacity}"
                                    Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Mode]}" />
                         <ComboBox AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.Mode]}" MinWidth="120" FontSize="12.5"
                                   ItemsSource="{Binding CompareModes}"
@@ -579,7 +579,7 @@
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Top"
                                             Background="Red"
-                                            Opacity="0.8"
+                                            Opacity="{DynamicResource VdfTextDim80Opacity}"
                                             IsHitTestVisible="False">
                                             <Border.RenderTransform>
                                                 <TranslateTransform X="{Binding LeftOffset}" Y="{Binding SeparatorY}" />
@@ -608,7 +608,7 @@
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Top"
                                             Background="Red"
-                                            Opacity="0.8"
+                                            Opacity="{DynamicResource VdfTextDim80Opacity}"
                                             IsHitTestVisible="False">
                                             <Border.RenderTransform>
                                                 <TranslateTransform X="{Binding SeparatorX}" Y="{Binding TopOffset}" />
@@ -632,7 +632,7 @@
                                 </Grid>
                             </data:ZoomPanPresenter>
                             <Border Classes="hint-bar" IsHitTestVisible="False" IsVisible="{Binding SwipeHintVisible}">
-                                <TextBlock FontSize="11" Opacity="0.8"
+                                <TextBlock FontSize="11" Opacity="{DynamicResource VdfTextDim80Opacity}"
                                            Text="{Binding Source={x:Static app:App.Lang}, Path=[ThumbnailComparerDialog.SwipeHint]}" />
                             </Border>
                         </Grid>
