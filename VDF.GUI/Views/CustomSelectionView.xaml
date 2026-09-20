@@ -65,6 +65,7 @@
                 VerticalAlignment="Center"
                 Text="{Binding Source={x:Static app:App.Lang}, Path=[Preset.Label]}" />
             <ComboBox
+                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[Preset.Label]}"
                 Grid.Column="1"
                 HorizontalAlignment="Stretch"
                 ItemsSource="{Binding CustomSelectionPresets}"
@@ -105,6 +106,7 @@
                             RowSpacing="8">
                             <TextBlock Classes="fieldlabel" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType]}" />
                             <ComboBox
+                                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.FileType]}"
                                 Grid.Column="1"
                                 MinWidth="220"
                                 HorizontalAlignment="Left"
@@ -118,6 +120,7 @@
                                 Classes="fieldlabel"
                                 Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Identical]}" />
                             <ComboBox
+                                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.Identical]}"
                                 Grid.Row="1"
                                 Grid.Column="1"
                                 MinWidth="220"
@@ -133,6 +136,7 @@
                                 Classes="fieldlabel"
                                 Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.DateTime]}" />
                             <ComboBox
+                                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.DateTime]}"
                                 Grid.Row="2"
                                 Grid.Column="1"
                                 MinWidth="220"
@@ -157,6 +161,7 @@
                             RowSpacing="8">
                             <TextBlock Classes="fieldlabel" Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.MinimumFileSize]}" />
                             <NumericUpDown
+                                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.MinimumFileSize]}"
                                 x:Name="NumericUpDownMinimumFileSize"
                                 Grid.Column="1"
                                 MinWidth="140"
@@ -168,6 +173,7 @@
                                 Classes="fieldlabel"
                                 Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.MaximumFileSize]}" />
                             <NumericUpDown
+                                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.MaximumFileSize]}"
                                 Grid.Column="3"
                                 MinWidth="140"
                                 HorizontalAlignment="Stretch"
@@ -179,6 +185,7 @@
                                 Classes="fieldlabel"
                                 Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.SimilarityFrom]}" />
                             <NumericUpDown
+                                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.SimilarityFrom]}"
                                 Grid.Row="1"
                                 Grid.Column="1"
                                 MinWidth="140"
@@ -192,6 +199,7 @@
                                 Classes="fieldlabel"
                                 Text="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.SimilarityTo]}" />
                             <NumericUpDown
+                                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.SimilarityTo]}"
                                 Grid.Row="1"
                                 Grid.Column="3"
                                 MinWidth="140"
@@ -226,6 +234,7 @@
                                 Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Remove]}" />
                         </Grid>
                         <ListBox
+                            AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.PathContains]}"
                             Name="ListboxFilePathContainsText"
                             Classes="pathlist"
                             ItemsSource="{Binding Data.PathContains}"
@@ -252,6 +261,7 @@
                                 Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Remove]}" />
                         </Grid>
                         <ListBox
+                            AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[CustomSelection.PathNotContains]}"
                             Name="ListboxFilePathNotContainsText"
                             Classes="pathlist"
                             ItemsSource="{Binding Data.PathNotContains}"

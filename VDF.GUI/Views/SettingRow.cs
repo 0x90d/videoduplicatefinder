@@ -16,7 +16,11 @@
 
 using System.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Data;
+using Avalonia.LogicalTree;
 
 namespace VDF.GUI.Views {
 	/// <summary>
@@ -62,6 +66,46 @@ namespace VDF.GUI.Views {
 			get => GetValue(ShowSeparatorProperty);
 			set => SetValue(ShowSeparatorProperty, value);
 		}
+
+		static SettingRow() {
+			ContentProperty.Changed.AddClassHandler<SettingRow>((row, _) => row.ApplyAccessibleName());
+			TitleProperty.Changed.AddClassHandler<SettingRow>((row, _) => row.ApplyAccessibleName());
+			DescriptionProperty.Changed.AddClassHandler<SettingRow>((row, _) => row.ApplyAccessibleName());
+			WarningProperty.Changed.AddClassHandler<SettingRow>((row, _) => row.ApplyAccessibleName());
+		}
+
+		// The XAML loader assigns Content before it fills a content panel, so at that moment a
+		// row holding several controls has no input to name yet.
+		protected override void OnLoaded(Avalonia.Interactivity.RoutedEventArgs e) {
+			base.OnLoaded(e);
+			ApplyAccessibleName();
+		}
+
+		/// <summary>
+		/// The title and description are plain text next to the control, which a screen reader
+		/// does not connect to it: every switch on the page announced as just "button". The row's
+		/// control therefore takes the title as its accessible name and the description (plus
+		/// warning) as its help text. Set at template priority: above the app-wide defaults in
+		/// _Accessibility.xaml, below a name given in XAML, which rows holding several controls
+		/// use for the ones after the first.
+		/// </summary>
+		void ApplyAccessibleName() {
+			if (FindLabelTarget() is not { } target) return;
+			target.SetValue(AutomationProperties.NameProperty, Title, BindingPriority.Template);
+			string help = string.Join(' ', new[] { Description, Warning }.Where(s => !string.IsNullOrWhiteSpace(s)));
+			target.SetValue(AutomationProperties.HelpTextProperty, help.Length > 0 ? help : null, BindingPriority.Template);
+		}
+
+		/// <summary>The row's input control, or the first one when the content is a panel of several.</summary>
+		internal Control? FindLabelTarget() => Content switch {
+			Control control when IsInput(control) => control,
+			Control control => control.GetLogicalDescendants().OfType<Control>().FirstOrDefault(IsInput),
+			_ => null
+		};
+
+		// Plain buttons and links are left out: their own content already names them.
+		static bool IsInput(Control control) =>
+			control is ToggleButton or NumericUpDown or SelectingItemsControl or TextBox or RangeBase or AutoCompleteBox;
 
 		internal string BuildSearchText() =>
 			string.Join(' ', new[] { Title, Description, Warning, SearchTags }

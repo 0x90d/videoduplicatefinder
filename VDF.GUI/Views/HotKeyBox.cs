@@ -15,6 +15,8 @@
 //
 
 using Avalonia;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -88,6 +90,13 @@ namespace VDF.GUI.Views {
 		}
 
 		protected override void OnKeyDown(KeyEventArgs e) {
+			// Tab belongs to keyboard navigation, which skips handled events: marking it
+			// handled like every other key made the box a focus trap, there was no way
+			// out of the shortcut list without a mouse.
+			if (e.Key == Key.Tab) {
+				base.OnKeyDown(e);
+				return;
+			}
 			e.Handled = true;
 
 			if (!_isCapturing)
@@ -128,5 +137,41 @@ namespace VDF.GUI.Views {
 			else
 				base.OnKeyUp(e);
 		}
+
+		// A Border has no automation peer, which left the whole shortcut editor missing from
+		// the tree screen readers are given.
+		protected override AutomationPeer OnCreateAutomationPeer() => new HotKeyBoxAutomationPeer(this);
+	}
+
+	/// <summary>
+	/// Presents a <see cref="HotKeyBox"/> as an edit field whose value is the assigned gesture.
+	/// The name comes from AutomationProperties.Name (the action the shortcut belongs to).
+	/// </summary>
+	public class HotKeyBoxAutomationPeer : ControlAutomationPeer, IValueProvider {
+		public HotKeyBoxAutomationPeer(HotKeyBox owner) : base(owner) { }
+
+		new HotKeyBox Owner => (HotKeyBox)base.Owner;
+
+		public bool IsReadOnly => false;
+		public string? Value => Owner.GestureText;
+		// Same path as a captured key press, so conflicts are resolved and the gesture is
+		// stored; text that is not a gesture is ignored.
+		public void SetValue(string? value) {
+			if (Owner.DataContext is not ShortcutBindingVM binding) return;
+			if (string.IsNullOrWhiteSpace(value)) {
+				binding.ApplyGesture(string.Empty);
+				return;
+			}
+			try {
+				binding.ApplyGesture(KeyGesture.Parse(value).ToString());
+			}
+			catch (ArgumentException) { }
+		}
+
+		protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Edit;
+		protected override bool IsContentElementCore() => true;
+		protected override bool IsControlElementCore() => true;
+		protected override string? GetHelpTextCore() =>
+			base.GetHelpTextCore() ?? App.Lang["MainWindow.Settings.KeyboardShortcuts.PressKeys"];
 	}
 }

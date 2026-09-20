@@ -150,6 +150,7 @@
                     Classes="navlink"
                     FontWeight="Bold"
                     Content="⋯"
+                    AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Shell.MoreMenu]}"
                     ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Shell.MoreMenu]}">
                     <Button.Flyout>
                         <MenuFlyout Placement="BottomEdgeAlignedRight">
@@ -264,6 +265,7 @@
                                         MaxWidth="200"
                                         BorderBrush="LimeGreen"
                                         BorderThickness="1"
+                                        AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Busy.PleaseWait]}"
                                         IsIndeterminate="{Binding IsBusy}" />
                                     <TextBlock
                                         Margin="0,10,0,0"

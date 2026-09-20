@@ -16,7 +16,7 @@
 		Title="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Title]}">
 	<Grid RowDefinitions="*,Auto" RowSpacing="12">
 		<TabControl SelectedIndex="{Binding StepIndex, Mode=TwoWay}">
-			<TabItem>
+			<TabItem AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Step.DatabaseSize]}">
 				<TabItem.Header>
 					<StackPanel Orientation="Horizontal" Spacing="6">
 						<TextBlock FontWeight="SemiBold" Text="1" />
@@ -50,7 +50,7 @@
 					</StackPanel>
 				</Border>
 			</TabItem>
-			<TabItem>
+			<TabItem AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Step.Folders]}">
 				<TabItem.Header>
 					<StackPanel Orientation="Horizontal" Spacing="6">
 						<TextBlock FontWeight="SemiBold" Text="2" />
@@ -92,7 +92,7 @@
 					</StackPanel>
 				</Border>
 			</TabItem>
-			<TabItem>
+			<TabItem AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[ChooseAlgo.Step.BasicSettings]}">
 				<TabItem.Header>
 					<StackPanel Orientation="Horizontal" Spacing="6">
 						<TextBlock FontWeight="SemiBold" Text="3" />

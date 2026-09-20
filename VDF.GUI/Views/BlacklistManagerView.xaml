@@ -60,7 +60,7 @@
                 BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8">
-            <ListBox x:Name="EntriesListBox"
+            <ListBox AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[BlacklistManager.Title]}" x:Name="EntriesListBox"
                      Background="Transparent"
                      ItemsSource="{Binding Entries}"
                      SelectionMode="Multiple">

@@ -36,6 +36,7 @@
             <Grid Margin="0,0,0,8" ColumnDefinitions="Auto,*,Auto">
                 <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.From]}" />
                 <TextBox
+                    AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.From]}"
                     Name="TxtOldPrefix"
                     Grid.Column="1"
                     Margin="8,0"
@@ -49,6 +50,7 @@
             <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
                 <TextBlock VerticalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.To]}" />
                 <TextBox
+                    AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.To]}"
                     Name="TxtNewPrefix"
                     Grid.Column="1"
                     Margin="8,0"
@@ -72,7 +74,7 @@
                 Grid.Row="1"
                 Margin="0,6,0,12"
                 RowDefinitions="*,Auto,Auto">
-                <ListBox Name="ListScanRoots" Height="100" DragDrop.AllowDrop="True" ItemsSource="{Binding ScanRoots}" />
+                <ListBox AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.ScanFolders]}" Name="ListScanRoots" Height="100" DragDrop.AllowDrop="True" ItemsSource="{Binding ScanRoots}" />
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <Button
                         Margin="8,0"
@@ -111,6 +113,7 @@
                 </Grid>
             </Border>
             <ListBox
+                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[A11y.Relocate.Preview]}"
                 Grid.Row="1"
                 Background="Transparent"
                 ItemsSource="{Binding Preview}"
@@ -168,6 +171,7 @@
                 Spacing="8">
                 <TextBlock HorizontalAlignment="Center" Text="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.EnumeratingFiles]}" />
                 <ProgressBar
+                    AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[RelocateFilesDialog.EnumeratingFiles]}"
                     Width="300"
                     Height="12"
                     IsIndeterminate="{Binding IsLoading}"

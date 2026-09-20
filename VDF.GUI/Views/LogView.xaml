@@ -128,6 +128,7 @@
 
     <!-- ======== Log list: session separators + rows (mockup .log-list) ======== -->
     <ListBox
+        AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Log]}"
         x:Name="LogListBox"
         Grid.Row="1"
         Classes="log"

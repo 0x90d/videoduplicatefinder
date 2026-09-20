@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="VDF.GUI.Tests" />
+    <InternalsVisibleTo Include="VDF.GUI.HeadlessTests" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="26.1.1" />

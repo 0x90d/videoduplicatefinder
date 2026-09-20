@@ -43,6 +43,7 @@
       <ProgressBar
           Height="10"
           CornerRadius="5"
+          AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Title]}"
           Maximum="{Binding ScanProgressMaxValue, Mode=OneWay}"
           Value="{Binding ScanProgressValue, Mode=OneWay}" />
 
@@ -62,6 +63,7 @@
            Present only while the analysis phase reports drive data; compare phases carry none. -->
       <ItemsControl
           Margin="0,26,0,0"
+          AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Scan.Drives]}"
           IsVisible="{Binding ScanDrives.HasRows}"
           ItemsSource="{Binding ScanDrives.Rows}">
         <ItemsControl.ItemsPanel>
@@ -84,6 +86,7 @@
                 </Border>
               </StackPanel>
               <ProgressBar Grid.Column="1" Height="7" CornerRadius="3.5" Margin="14,0"
+                           AutomationProperties.Name="{Binding Root}"
                            VerticalAlignment="Center"
                            Maximum="1"
                            Value="{Binding Fraction, Mode=OneWay}" />
@@ -99,6 +102,7 @@
       <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,26,0,0">
         <Button
             FontSize="13" Padding="16,7" VerticalAlignment="Center"
+            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Pause]}"
             Command="{Binding PauseScanCommand}"
             IsVisible="{Binding !IsPaused}">
           <StackPanel Orientation="Horizontal" Spacing="6">
@@ -108,6 +112,7 @@
         </Button>
         <Button
             FontSize="13" Padding="16,7" VerticalAlignment="Center"
+            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Resume]}"
             Command="{Binding ResumeScanCommand}"
             IsVisible="{Binding IsPaused}">
           <StackPanel Orientation="Horizontal" Spacing="6">
@@ -117,6 +122,7 @@
         </Button>
         <Button
             FontSize="13" Padding="16,7" VerticalAlignment="Center"
+            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Scan.Stop]}"
             Command="{Binding StopScanCommand}">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <TextBlock Text="⏹" FontSize="12" VerticalAlignment="Center" />
@@ -139,7 +145,8 @@
             VerticalAlignment="Top"
             BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
             BorderThickness="0,1,0,0">
-      <ItemsControl ItemsSource="{Binding LogTail}">
+      <ItemsControl ItemsSource="{Binding LogTail}"
+                    AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Tab.Log]}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="data:LogTailRow">
             <TextBlock FontSize="11.5" Opacity="0.55" Margin="0,1.5"

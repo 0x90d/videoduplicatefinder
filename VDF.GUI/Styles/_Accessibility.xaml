@@ -1,0 +1,27 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Screen reader defaults. A control's accessible name is what Narrator/NVDA,
+         VoiceOver and Orca announce for it; these rules cover the cases where the name a
+         sighted user sees never reaches the control that takes keyboard focus. Anything
+         set on a control directly (AutomationProperties.Name="...") wins over them. -->
+
+    <!-- A text box that has only a placeholder for a label announces that placeholder. -->
+    <Style Selector="TextBox">
+        <Setter Property="AutomationProperties.Name" Value="{Binding $self.PlaceholderText}" />
+    </Style>
+
+    <!-- Focus goes to the text box INSIDE a NumericUpDown, so that is what gets announced:
+         hand it the name and help text of the control it belongs to. Must stay below the
+         TextBox rule, later styles take precedence. -->
+    <Style Selector="NumericUpDown /template/ TextBox#PART_TextBox">
+        <Setter Property="AutomationProperties.Name" Value="{Binding $parent[NumericUpDown].(AutomationProperties.Name)}" />
+        <Setter Property="AutomationProperties.HelpText" Value="{Binding $parent[NumericUpDown].(AutomationProperties.HelpText)}" />
+    </Style>
+
+    <!-- Same for the text box inside an AutoCompleteBox. -->
+    <Style Selector="AutoCompleteBox /template/ TextBox#PART_TextBox">
+        <Setter Property="AutomationProperties.Name" Value="{Binding $parent[AutoCompleteBox].(AutomationProperties.Name)}" />
+        <Setter Property="AutomationProperties.HelpText" Value="{Binding $parent[AutoCompleteBox].(AutomationProperties.HelpText)}" />
+    </Style>
+</Styles>

@@ -97,7 +97,8 @@
         <ToggleButton Classes="chip" Margin="8,0,0,0" IsChecked="{Binding IsErrorsOnly, Mode=OneWay}"
                       Command="{Binding ToggleErrorsOnlyCommand}"
                       Content="{Binding ErrorsChipText}" />
-        <Button Classes="chip" Margin="4,0,0,0">
+        <Button Classes="chip" Margin="4,0,0,0"
+                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.FilterFlags]}">
           <Button.Content>
             <StackPanel Orientation="Horizontal" Spacing="5">
               <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.FilterFlags]}" />
@@ -171,7 +172,8 @@
           </Button.Flyout>
         </Button>
         <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
-        <Button Classes="chip">
+        <Button Classes="chip"
+                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.SortLabel]}">
           <Button.Content>
             <StackPanel Orientation="Horizontal" Spacing="5">
               <TextBlock Text="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.SortLabel]}" />
@@ -271,6 +273,7 @@
 
     <!-- ======== Entries (virtualized) ======== -->
     <ListBox
+        AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.Title]}"
         x:Name="dbList"
         Grid.Row="2"
         Background="Transparent"
@@ -353,6 +356,7 @@
                 <TextBlock FontSize="12.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
                            Text="{Binding FileName}" />
                 <Button Classes="pencil" Content="✎"
+                        AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.EditPath]}"
                         ToolTip.Tip="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.EditPath]}"
                         Command="{Binding $parent[Window].((vm:DatabaseViewerVM)DataContext).BeginPathEditCommand}"
                         CommandParameter="{Binding}" />
@@ -361,7 +365,7 @@
                          IsVisible="{Binding !IsEditingPath}"
                          Text="{Binding FolderText}" />
               <!-- commit on Enter/focus-loss, Escape restores (handled in code-behind) -->
-              <TextBox FontSize="12" Padding="4,2" MinHeight="0"
+              <TextBox AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[DatabaseViewer.EditPath]}" FontSize="12" Padding="4,2" MinHeight="0"
                        IsVisible="{Binding IsEditingPath}"
                        AttachedToVisualTree="OnPathEditorAttached"
                        KeyDown="OnPathEditorKeyDown"

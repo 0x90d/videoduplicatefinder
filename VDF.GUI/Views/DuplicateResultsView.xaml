@@ -37,6 +37,13 @@
       <Setter Property="FontSize" Value="12" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
+    <!-- The chevron shows a glyph only; its accessible name says what pressing it does. -->
+    <Style Selector="Button.chevron">
+      <Setter Property="AutomationProperties.Name" Value="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Results.CollapseGroup]}" />
+    </Style>
+    <Style Selector="Button.chevron.collapsed">
+      <Setter Property="AutomationProperties.Name" Value="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Results.ExpandGroup]}" />
+    </Style>
     <Style Selector="Button.group-action:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="{actipro:ThemeResource Container3BackgroundBrush}" />
     </Style>
@@ -192,11 +199,12 @@
         BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
         BorderThickness="0,0,0,1">
       <WrapPanel VerticalAlignment="Center">
-        <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12"
+        <TextBlock x:Name="SortLabel" Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Sort]}" />
         <ComboBox
             MinWidth="170"
             FontSize="12"
+            AutomationProperties.LabeledBy="{Binding #SortLabel}"
             ItemsSource="{Binding ResultsSortOptions}"
             SelectedItem="{Binding SelectedResultsSort}">
           <ComboBox.ItemTemplate>
@@ -209,6 +217,7 @@
             Classes="chip"
             Margin="4,0,0,0"
             IsChecked="{Binding ResultsSortDescending}"
+            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Results.SortDescending]}"
             Content="{Binding ResultsSortDescending, Converter={StaticResource SortDirectionGlyphConverter}}"
             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.Toolbar.DescendingTip]}" />
         <ToggleButton
@@ -219,11 +228,12 @@
             Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Toolbar.BestFirst]}"
             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.Toolbar.BestFirstTip]}" />
         <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
-        <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12"
+        <TextBlock x:Name="TypeLabel" Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Type]}" />
         <ComboBox
             MinWidth="100"
             FontSize="12"
+            AutomationProperties.LabeledBy="{Binding #TypeLabel}"
             ItemsSource="{Binding TypeFilters}"
             SelectedItem="{Binding FileType}">
           <ComboBox.ItemTemplate>
@@ -236,12 +246,14 @@
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.Similarity]}" />
         <NumericUpDown
             Width="110" FontSize="12"
+            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Results.SimilarityFrom]}"
             FormatString="\{0\}%" Maximum="100" Minimum="0"
             Value="{Binding FilterSimilarityFrom}" />
         <TextBlock Margin="4,0" VerticalAlignment="Center" FontSize="12"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.To]}" />
         <NumericUpDown
             Width="110" FontSize="12"
+            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Results.SimilarityTo]}"
             FormatString="\{0\}%" Maximum="100" Minimum="0"
             Value="{Binding FilterSimilarityTo}" />
         <ToggleButton
@@ -416,6 +428,7 @@
     <ListBox
         x:Name="ResultsList"
         Grid.Row="3"
+        AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[A11y.Results.List]}"
         Classes="results"
         Background="Transparent"
         Padding="0"
@@ -457,7 +470,8 @@
             <DockPanel LastChildFill="True">
               <Button
                   DockPanel.Dock="Left"
-                  Classes="group-action"
+                  Classes="group-action chevron"
+                  Classes.collapsed="{Binding IsCollapsed}"
                   Width="24"
                   Padding="0"
                   Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleGroupCollapsedCommand}"
@@ -836,6 +850,7 @@
                   </Border>
                   <!-- Tier-2 metadata: toggles the details panel under this row -->
                   <Button Classes="group-action" Padding="4,0" FontSize="12" Content="ⓘ"
+                          AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.DetailsTip]}"
                           ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.DetailsTip]}"
                           Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleItemDetailsCommand}"
                           CommandParameter="{Binding Item}" />
@@ -942,7 +957,8 @@
               Foreground="White"
               FontSize="12.5"
               FontWeight="SemiBold"
-              Padding="14,5">
+              Padding="14,5"
+              AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.Delete]}">
             <Button.Content>
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.Delete]}" />
@@ -971,7 +987,8 @@
               </MenuFlyout>
             </Button.Flyout>
           </Button>
-          <Button FontSize="12.5" Padding="14,5">
+          <Button FontSize="12.5" Padding="14,5"
+                  AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.Remove]}">
             <Button.Content>
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Action.Remove]}" />
@@ -1046,6 +1063,7 @@
           <TextBlock FontSize="12" Opacity="0.55" VerticalAlignment="Center"
                      Text="{Binding ThumbnailRetrievalProgressText}" />
           <ProgressBar Width="90" Height="5"
+                       AutomationProperties.Name="{Binding ThumbnailRetrievalProgressText}"
                        IsIndeterminate="{Binding !ThumbnailProgressMax}"
                        Maximum="{Binding ThumbnailProgressMax, Mode=OneWay}"
                        Value="{Binding ThumbnailProgressCurrent, Mode=OneWay}" />

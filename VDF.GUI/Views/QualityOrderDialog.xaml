@@ -23,7 +23,7 @@
                 BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8">
-            <ListBox x:Name="CriteriaListBox"
+            <ListBox AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[QualityOrderDialog.Title]}" x:Name="CriteriaListBox"
                      Height="200"
                      Background="Transparent"
                      ItemsSource="{Binding CriteriaOrder}"

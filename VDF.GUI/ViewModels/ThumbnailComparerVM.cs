@@ -904,6 +904,8 @@ namespace VDF.GUI.ViewModels {
 		}
 		public Bitmap Frame { get; }
 		public int Index { get; }
+		/// <summary>The strip button shows only the picture; this is what a screen reader announces for it.</summary>
+		public string AccessibleName => string.Format(App.Lang["A11y.Comparer.Frame"], Index + 1);
 		public bool IsCurrent { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 	}
 

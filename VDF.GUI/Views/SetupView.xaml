@@ -80,6 +80,7 @@
               Opacity="0.7"
               VerticalAlignment="Center"
               Command="{Binding DismissNoDuplicatesNoticeCommand}"
+              AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Close]}"
               ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Dialog.Close]}"
               Content="✕" />
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -131,7 +132,8 @@
       <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="28,14,28,20">
           <TextBlock Classes="paneltitle" Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.WhereToLook]}" />
-          <ItemsControl ItemsSource="{Binding SetupFolders}">
+          <ItemsControl ItemsSource="{Binding SetupFolders}"
+                        AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Setup.WhereToLook]}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
                 <StackPanel Spacing="8" />
@@ -153,6 +155,13 @@
                             Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).RemoveSetupFolderCommand}"
                             CommandParameter="{Binding}"
                             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[Setup.RemoveFolder]}">
+                      <!-- says which folder it removes, the glyph alone says nothing -->
+                      <AutomationProperties.Name>
+                        <MultiBinding StringFormat="{}{0}: {1}">
+                          <Binding Source="{x:Static local:App.Lang}" Path="[Setup.RemoveFolder]" />
+                          <Binding Path="Path" />
+                        </MultiBinding>
+                      </AutomationProperties.Name>
                       <TextBlock Text="✕" FontSize="13" Opacity="0.5" />
                     </Button>
                     <Button DockPanel.Dock="Right"
@@ -221,7 +230,8 @@
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
           <StackPanel Margin="28,14,28,20">
             <TextBlock Classes="paneltitle" Text="{Binding Source={x:Static local:App.Lang}, Path=[Setup.WhatToLookFor]}" />
-            <ItemsControl ItemsSource="{Binding ScanProfileOptions}">
+            <ItemsControl ItemsSource="{Binding ScanProfileOptions}"
+                          AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Setup.WhatToLookFor]}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <StackPanel Spacing="8" />
@@ -238,6 +248,8 @@
                       <StackPanel Spacing="2">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                           <RadioButton GroupName="ScanProfiles" IsHitTestVisible="False"
+                                       AutomationProperties.Name="{Binding Name}"
+                                       AutomationProperties.HelpText="{Binding Description}"
                                        IsChecked="{Binding IsActive, Mode=OneWay}" />
                           <TextBlock FontSize="13.5" FontWeight="SemiBold" VerticalAlignment="Center"
                                      Text="{Binding Name}" />
@@ -257,6 +269,7 @@
                   Padding="26,9"
                   VerticalAlignment="Center"
                   Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}"
+                  AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Setup.Scan]}"
                   Command="{Binding StartScanCommand}"
                   CommandParameter="FullScan">
                 <StackPanel Orientation="Horizontal" Spacing="8">

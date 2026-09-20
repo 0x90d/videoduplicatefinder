@@ -50,6 +50,7 @@
                 VerticalAlignment="Center"
                 Text="{Binding Source={x:Static local:App.Lang}, Path=[ExpressionBuilder.ExpressionLabel]}" />
             <AutoCompleteBox
+                AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[ExpressionBuilder.ExpressionLabel]}"
                 x:Name="ExpressionHistoryInput"
                 Grid.Column="1"
                 FontFamily="Consolas, Menlo, monospace"
@@ -66,6 +67,7 @@
                 VerticalAlignment="Center"
                 Text="{Binding Source={x:Static local:App.Lang}, Path=[Preset.Label]}" />
             <ComboBox
+                AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Preset.Label]}"
                 Grid.Column="1"
                 HorizontalAlignment="Stretch"
                 ItemsSource="{Binding ExpressionPresets}"
