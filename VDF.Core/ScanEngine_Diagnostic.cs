@@ -159,12 +159,7 @@ namespace VDF.Core {
 
 			// ── Media info & frame sampling ─────────────────────────────────
 			sb.AppendLine("--- Media info & frame sampling ---");
-			List<float> positions = new();
-			float positionCounter = 0f;
-			for (int i = 0; i < Settings.ThumbnailCount; i++) {
-				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
-				positions.Add(positionCounter);
-			}
+			List<float> positions = BuildSamplePositions(Settings.ThumbnailCount);
 			if (!a.IsImage)
 				sb.AppendLine($"Sampling {Settings.ThumbnailCount} frame(s) per video (settings: thumbnail count){(Settings.MaxSamplingDurationSeconds > 0 ? $", limited to the first {FormatSeconds(Settings.MaxSamplingDurationSeconds)}" : "")}.");
 

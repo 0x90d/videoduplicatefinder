@@ -196,7 +196,7 @@ else {
                             <div class="card-thumb" @onclick:stopPropagation>
                                 @if (WebSettings.AutoLoadThumbnails) {
                                     <div class="thumb-skeleton"></div>
-                                    <img data-src="/thumbnail/hq?path=@Uri.EscapeDataString(item.Path)&amp;w=@WebSettings.ThumbnailWidth&amp;q=@WebSettings.ThumbnailJpegQuality"
+                                    <img data-src="@CardThumbUrl(item)"
                                          alt="thumbnail"
                                          onerror="this.style.display='none'" />
                                 }
@@ -320,14 +320,30 @@ else {
 @if (_compareVisible && _compareItems != null && _compareItems.Count >= 2) {
     var itemA = _compareItems[_compareA];
     var itemB = _compareItems[_compareB];
-    <div class="compare-overlay active" id="compare-modal">
+    int frameCount = FramePositions.FrameCount(itemA, itemB, Scan.Settings);
+    int frame = Math.Clamp(_compareFrame, 0, frameCount - 1);
+    var frames = FramePositions.AlignedPair(itemA, itemB, frame, Scan.Settings);
+    <div class="compare-overlay active" id="compare-modal" tabindex="0"
+         @ref="_compareOverlay" @onkeydown="OnCompareKeyDown">
         <div class="compare-header">
             <h3>Compare</h3>
-            <button class="compare-close" @onclick="CloseCompare">&#x2715;</button>
+            <button class="compare-close" @onclick="CloseCompare" title="Close (Esc)" aria-label="Close">&#x2715;</button>
         </div>
         <div class="compare-mode-tabs">
             <button class="@(_compareMode == CompareMode.SideBySide ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.SideBySide)">Side by Side</button>
             <button class="@(_compareMode == CompareMode.Swipe ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.Swipe)">Swipe</button>
+            @if (frameCount > 1) {
+                @* The frames the scan sampled; a partial clip is lined up with its place in the source. *@
+                <div class="compare-frames">
+                    <button class="compare-frame-prev" disabled="@(frame == 0)"
+                            @onclick="() => StepCompareFrame(-1)"
+                            title="Previous frame (Left arrow)" aria-label="Previous frame">&#x25C0;</button>
+                    <span class="compare-frame-count">Frame @(frame + 1) / @frameCount</span>
+                    <button class="compare-frame-next" disabled="@(frame == frameCount - 1)"
+                            @onclick="() => StepCompareFrame(1)"
+                            title="Next frame (Right arrow)" aria-label="Next frame">&#x25B6;</button>
+                </div>
+            }
         </div>
         <div class="compare-selector">
             @for (int i = 0; i < _compareItems.Count; i++) {
@@ -336,7 +352,7 @@ else {
                 string cls = idx == _compareA ? "active-a" : idx == _compareB ? "active-b" : "";
                 <div class="compare-selector-item @cls"
                      @onclick="() => SelectCompareItem(idx)">
-                    <img src="/thumbnail/hq?path=@Uri.EscapeDataString(ci.Path)" alt="" />
+                    <img src="@CardThumbUrl(ci)" alt="" />
                     <div class="sel-label">@System.IO.Path.GetFileName(ci.Path)</div>
                 </div>
             }
@@ -346,21 +362,21 @@ else {
                 <div class="compare-side-by-side">
                     <div class="compare-pane">
                         <div class="compare-pane-img">
-                            <img src="/thumbnail/full?path=@Uri.EscapeDataString(itemA.Path)" alt="A" />
+                            <img src="@FullFrameUrl(itemA, frames.A)" alt="A" />
                         </div>
                         <div class="compare-pane-info">
                             <div class="compare-pane-label">@System.IO.Path.GetFileName(itemA.Path)</div>
-                            <div class="compare-pane-meta">@(itemA.FrameSize) | @FormatSize(itemA.SizeLong) | @itemA.BitRateKbs kbps</div>
+                            <div class="compare-pane-meta">@if (!itemA.IsImage) {<span class="compare-frame-time">@FormatPosition(frames.A)</span><text> | </text>}@(itemA.FrameSize) | @FormatSize(itemA.SizeLong) | @itemA.BitRateKbs kbps</div>
                         </div>
                     </div>
                     <div class="compare-pane-divider"></div>
                     <div class="compare-pane">
                         <div class="compare-pane-img">
-                            <img src="/thumbnail/full?path=@Uri.EscapeDataString(itemB.Path)" alt="B" />
+                            <img src="@FullFrameUrl(itemB, frames.B)" alt="B" />
                         </div>
                         <div class="compare-pane-info">
                             <div class="compare-pane-label">@System.IO.Path.GetFileName(itemB.Path)</div>
-                            <div class="compare-pane-meta">@(itemB.FrameSize) | @FormatSize(itemB.SizeLong) | @itemB.BitRateKbs kbps</div>
+                            <div class="compare-pane-meta">@if (!itemB.IsImage) {<span class="compare-frame-time">@FormatPosition(frames.B)</span><text> | </text>}@(itemB.FrameSize) | @FormatSize(itemB.SizeLong) | @itemB.BitRateKbs kbps</div>
                         </div>
                     </div>
                 </div>
@@ -368,15 +384,15 @@ else {
             else {
                 <div class="compare-swipe" style="--swipe-pos: 50%">
                     <div class="compare-swipe-img-a">
-                        <img src="/thumbnail/full?path=@Uri.EscapeDataString(itemA.Path)" alt="A" />
+                        <img src="@FullFrameUrl(itemA, frames.A)" alt="A" />
                     </div>
                     <div class="compare-swipe-img-b">
-                        <img src="/thumbnail/full?path=@Uri.EscapeDataString(itemB.Path)" alt="B" />
+                        <img src="@FullFrameUrl(itemB, frames.B)" alt="B" />
                     </div>
                     <div class="compare-swipe-line"></div>
                     <div class="compare-swipe-handle">&#x2194;</div>
-                    <span class="compare-swipe-label label-a">A</span>
-                    <span class="compare-swipe-label label-b">B</span>
+                    <span class="compare-swipe-label label-a">A@(itemA.IsImage ? "" : " " + FormatPosition(frames.A))</span>
+                    <span class="compare-swipe-label label-b">B@(itemB.IsImage ? "" : " " + FormatPosition(frames.B))</span>
                 </div>
             }
         </div>
@@ -441,6 +457,9 @@ else {
     int _compareB = 1;
     CompareMode _compareMode = CompareMode.SideBySide;
     bool _compareSelectingB;
+    int _compareFrame;
+    ElementReference _compareOverlay;
+    bool _focusCompare;
 
     enum CompareMode { SideBySide, Swipe }
 
@@ -467,6 +486,11 @@ else {
                 }
             }
             await JS.InvokeVoidAsync("vdf.initLazyThumbs");
+            if (_compareVisible && _focusCompare) {
+                // The arrow keys and Esc are handled on the overlay, which only hears them with focus.
+                _focusCompare = false;
+                await _compareOverlay.FocusAsync();
+            }
             if (_compareVisible && _compareMode == CompareMode.Swipe)
                 await JS.InvokeVoidAsync("vdf.initSwipe");
         }
@@ -630,8 +654,37 @@ else {
         _compareA = 0;
         _compareB = Math.Min(1, items.Count - 1);
         _compareSelectingB = false;
+        _compareFrame = FramePositions.MiddleFrame(CompareFrameCount());
         _compareVisible = true;
+        _focusCompare = true;
     }
+
+    int CompareFrameCount() =>
+        _compareItems == null ? 1 : FramePositions.FrameCount(_compareItems[_compareA], _compareItems[_compareB], Scan.Settings);
+
+    void StepCompareFrame(int delta) =>
+        _compareFrame = Math.Clamp(_compareFrame + delta, 0, CompareFrameCount() - 1);
+
+    void OnCompareKeyDown(KeyboardEventArgs e) {
+        switch (e.Key) {
+            case "ArrowLeft": StepCompareFrame(-1); break;
+            case "ArrowRight": StepCompareFrame(1); break;
+            case "Escape": CloseCompare(); break;
+        }
+    }
+
+    // Built in code: Razor does not decode "&amp;" inside an attribute that mixes text and
+    // expressions, so a URL written into the markup asked for "amp;w", "amp;q" and "amp;t",
+    // which the server does not know, and got the defaults instead.
+    string CardThumbUrl(DuplicateItem item) =>
+        "/thumbnail/hq?path=" + Uri.EscapeDataString(item.Path) +
+        "&w=" + WebSettings.ThumbnailWidth + "&q=" + WebSettings.ThumbnailJpegQuality +
+        "&t=" + FramePositions.ToQueryValue(FramePositions.DefaultTimestamp(item, Scan.Settings));
+
+    static string FullFrameUrl(DuplicateItem item, TimeSpan at) =>
+        "/thumbnail/full?path=" + Uri.EscapeDataString(item.Path) + "&t=" + FramePositions.ToQueryValue(at);
+
+    static string FormatPosition(TimeSpan at) => at.ToString(@"hh\:mm\:ss");
 
     void SetCompareMode(CompareMode mode) {
         _compareMode = mode;
@@ -646,6 +699,7 @@ else {
     }
 
     void SelectCompareItem(int idx) {
+        int framesBefore = CompareFrameCount();
         if (_compareSelectingB) {
             _compareB = idx;
         }
@@ -653,6 +707,10 @@ else {
             _compareA = idx;
         }
         _compareSelectingB = !_compareSelectingB;
+        // A partial clip steps through other frames than a plain duplicate: start over in the middle.
+        int framesNow = CompareFrameCount();
+        if (framesNow != framesBefore)
+            _compareFrame = FramePositions.MiddleFrame(framesNow);
     }
 
     // === QoL: Keep Best ===

@@ -86,6 +86,19 @@ public sealed class SettingsPageTests : BunitContext {
 	}
 
 	[Fact]
+	public void SampleCount_IsNamedForWhatItDoes() {
+		// It was "Thumbnail count per file" while the results showed one thumbnail whatever
+		// the count: reported as a bug by someone who had set it to 50.
+		var page = RenderPage();
+
+		var label = page.FindAll("label").Single(l => l.TextContent.Contains("Frames sampled per video"));
+		label.QuerySelector("input")!.Change("7");
+
+		Assert.Equal(7, scan.Settings.ThumbnailCount);
+		Assert.DoesNotContain("Thumbnail count", page.Markup);
+	}
+
+	[Fact]
 	public void ThumbnailWidthInput_ClampsToSupportedRange() {
 		var webSettings = Services.GetRequiredService<WebSettingsService>();
 		var page = RenderPage();

@@ -47,6 +47,7 @@ public sealed class ResultsPageTests : BunitContext {
 	DuplicateItem Seed(string name, Guid group, DuplicateFlags flags = DuplicateFlags.None, float difference = 0.02f) {
 		var item = new DuplicateItem(ScanServiceTests.MakeEntry(name), difference, group, flags) {
 			PartialClipOffset = flags.HasFlag(DuplicateFlags.PartialClip) ? TimeSpan.FromSeconds(42) : TimeSpan.Zero,
+			Duration = TimeSpan.FromSeconds(60), // the stream-less test entry leaves it at zero
 		};
 		scan.Engine.Duplicates.Add(item);
 		return item;
@@ -94,6 +95,142 @@ public sealed class ResultsPageTests : BunitContext {
 		var partialBadge = Assert.Single(page.FindAll(".badge-partial-clip"));
 		Assert.Contains("partial clip", partialBadge.TextContent);
 		Assert.Contains("@ 00:00:42", partialBadge.TextContent);
+	}
+
+	// === Frames: which moment of a file is shown ===
+	// Seeded entries are 60 seconds long.
+
+	static string[] PaneFrames(IRenderedComponent<VDF.Web.Components.Pages.Results> page) =>
+		page.FindAll(".compare-pane-img img").Select(i => i.GetAttribute("src")!).ToArray();
+
+	[Fact]
+	public void Cards_AskForTheMiddleSampledFrame() {
+		// Used to be left to the server, which always answered with 10 percent of the file:
+		// a frame the scan never looked at.
+		scan.Settings.ThumbnailCount = 3;
+		Guid group = Guid.NewGuid();
+		Seed("a.mp4", group);
+		Seed("b.mp4", group);
+
+		var page = RenderPage();
+
+		Assert.All(page.FindAll(".card-thumb img"), img => {
+			string url = img.GetAttribute("data-src")!;
+			Assert.EndsWith("&w=480&q=85&t=30.00", url);
+			// Written into the markup as "&amp;w=", the URL reached the browser undecoded:
+			// the server saw parameters named "amp;w" and "amp;q" and ignored them.
+			Assert.DoesNotContain("amp;", url);
+		});
+	}
+
+	[Fact]
+	public void Compare_StepsThroughTheSampledFrames() {
+		scan.Settings.ThumbnailCount = 3;
+		Guid group = Guid.NewGuid();
+		Seed("a.mp4", group);
+		Seed("b.mp4", group);
+		var page = RenderPage();
+
+		page.Find(".compare-btn").Click();
+
+		// Opens on the middle one of the three sampled frames (25/50/75 percent).
+		Assert.Equal("Frame 2 / 3", page.Find(".compare-frame-count").TextContent);
+		Assert.All(PaneFrames(page), src => Assert.EndsWith("&t=30.00", src));
+		Assert.All(page.FindAll(".compare-frame-time"), t => Assert.Equal("00:00:30", t.TextContent));
+
+		page.Find(".compare-frame-next").Click();
+
+		Assert.Equal("Frame 3 / 3", page.Find(".compare-frame-count").TextContent);
+		Assert.All(PaneFrames(page), src => Assert.EndsWith("&t=45.00", src));
+		Assert.True(page.Find(".compare-frame-next").HasAttribute("disabled"));
+
+		page.Find(".compare-frame-prev").Click();
+		page.Find(".compare-frame-prev").Click();
+
+		Assert.Equal("Frame 1 / 3", page.Find(".compare-frame-count").TextContent);
+		Assert.All(PaneFrames(page), src => Assert.EndsWith("&t=15.00", src));
+		Assert.True(page.Find(".compare-frame-prev").HasAttribute("disabled"));
+	}
+
+	[Fact]
+	public void Compare_ArrowKeysStepAndEscapeCloses() {
+		scan.Settings.ThumbnailCount = 3;
+		Guid group = Guid.NewGuid();
+		Seed("a.mp4", group);
+		Seed("b.mp4", group);
+		var page = RenderPage();
+		page.Find(".compare-btn").Click();
+
+		page.Find("#compare-modal").KeyDown("ArrowRight");
+		Assert.Equal("Frame 3 / 3", page.Find(".compare-frame-count").TextContent);
+
+		// At the end: stays there instead of running out of the list.
+		page.Find("#compare-modal").KeyDown("ArrowRight");
+		Assert.Equal("Frame 3 / 3", page.Find(".compare-frame-count").TextContent);
+
+		page.Find("#compare-modal").KeyDown("ArrowLeft");
+		Assert.Equal("Frame 2 / 3", page.Find(".compare-frame-count").TextContent);
+
+		page.Find("#compare-modal").KeyDown("Escape");
+		Assert.Empty(page.FindAll("#compare-modal"));
+	}
+
+	[Fact]
+	public void Compare_SwipeMode_StepsTheSameFrames() {
+		scan.Settings.ThumbnailCount = 3;
+		Guid group = Guid.NewGuid();
+		Seed("a.mp4", group);
+		Seed("b.mp4", group);
+		var page = RenderPage();
+		page.Find(".compare-btn").Click();
+		page.FindAll(".compare-mode-tabs button").Single(b => b.TextContent == "Swipe").Click();
+
+		page.Find(".compare-frame-next").Click();
+
+		Assert.EndsWith("&t=45.00", page.Find(".compare-swipe-img-a img").GetAttribute("src"));
+		Assert.EndsWith("&t=45.00", page.Find(".compare-swipe-img-b img").GetAttribute("src"));
+		Assert.Equal("A 00:00:45", page.Find(".compare-swipe-label.label-a").TextContent);
+	}
+
+	[Fact]
+	public void Compare_WithOneSampledFrame_HasNothingToStepThrough() {
+		scan.Settings.ThumbnailCount = 1;
+		Guid group = Guid.NewGuid();
+		Seed("a.mp4", group);
+		Seed("b.mp4", group);
+		var page = RenderPage();
+
+		page.Find(".compare-btn").Click();
+
+		Assert.Empty(page.FindAll(".compare-frames"));
+		Assert.All(PaneFrames(page), src => Assert.EndsWith("&t=30.00", src));
+	}
+
+	[Fact]
+	public void Compare_PartialClip_ShowsTheSameMomentOfClipAndSource() {
+		// A 60 second "clip" found 42 seconds into its source. Both files showed their own
+		// 10 percent before, two unrelated moments, so a correct match looked wrong.
+		scan.Settings.ThumbnailCount = 1;
+		Guid group = Guid.NewGuid();
+		var source = Seed("source.mp4", group, difference: 0f);
+		source.Duration = TimeSpan.FromSeconds(600);
+		Seed("clip.mp4", group, DuplicateFlags.PartialClip);
+		var page = RenderPage();
+
+		page.Find(".compare-btn").Click();
+
+		// Sorted by similarity: the source (100 percent) is A, the clip is B.
+		Assert.Equal("Frame 2 / 3", page.Find(".compare-frame-count").TextContent);
+		var frames = PaneFrames(page);
+		Assert.Contains("source.mp4", frames[0]);
+		Assert.EndsWith("&t=72.00", frames[0]); // 42 + 30
+		Assert.EndsWith("&t=30.00", frames[1]);
+
+		page.Find(".compare-frame-next").Click();
+
+		frames = PaneFrames(page);
+		Assert.EndsWith("&t=87.00", frames[0]); // 42 + 45
+		Assert.EndsWith("&t=45.00", frames[1]);
 	}
 
 	[Fact]

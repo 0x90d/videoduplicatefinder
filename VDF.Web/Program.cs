@@ -123,72 +123,12 @@ app.MapPost("/auth/login", async (HttpContext ctx, AuthService auth) => {
 	}
 });
 
-// HQ thumbnail endpoint — extracts a fresh frame using configurable resolution and quality.
-// Used by the card-based results view for crisp thumbnails.
-var webSettings = app.Services.GetRequiredService<WebSettingsService>();
-app.MapGet("/thumbnail/hq", async (HttpContext ctx, ScanService scan) => {
-	string? path = ctx.Request.Query["path"];
-	if (string.IsNullOrEmpty(path)) { ctx.Response.StatusCode = 400; return; }
-
-	path = Path.GetFullPath(path);
-	var item = scan.Duplicates.FirstOrDefault(d => d.Path == path);
-	if (item == null) { ctx.Response.StatusCode = 404; return; }
-
-	// Honor the w/q the page requested (falling back to the current settings) so
-	// cached browser URLs stay consistent with the bytes they were rendered from.
-	int width = int.TryParse(ctx.Request.Query["w"], out int w) ? w : webSettings.ThumbnailWidth;
-	int quality = int.TryParse(ctx.Request.Query["q"], out int q) ? q : webSettings.ThumbnailJpegQuality;
-	width = Math.Clamp(width, 48, 960);
-	quality = Math.Clamp(quality, 10, 95);
-
-	var position = item.ThumbnailTimestamps.Count > 0
-		? item.ThumbnailTimestamps[0]
-		: TimeSpan.FromSeconds(item.Duration.TotalSeconds * 0.1);
-
-	string cacheKey = $"{path}|{position.TotalSeconds:F2}|{width}|{quality}";
-
-	if (!scan.HqThumbCache.TryGetValue(cacheKey, out var jpeg)) {
-		// FFmpeg encodes at the requested quality directly — no re-encode pass needed.
-		jpeg = await Task.Run(() => ScanEngine.ExtractThumbnailJpeg(path, position, width, quality));
-		if (jpeg == null || jpeg.Length == 0) { ctx.Response.StatusCode = 204; return; }
-		if (scan.HqThumbCache.Count >= 4096)
-			scan.HqThumbCache.Clear();
-		scan.HqThumbCache.TryAdd(cacheKey, jpeg);
-	}
-
-	ctx.Response.ContentType = "image/jpeg";
-	ctx.Response.Headers.CacheControl = "public, max-age=3600";
-	await ctx.Response.Body.WriteAsync(jpeg);
-});
-
-// Full-resolution thumbnail endpoint — extracts at original resolution for the comparison modal.
-app.MapGet("/thumbnail/full", async (HttpContext ctx, ScanService scan) => {
-	string? path = ctx.Request.Query["path"];
-	if (string.IsNullOrEmpty(path)) { ctx.Response.StatusCode = 400; return; }
-
-	path = Path.GetFullPath(path);
-	var item = scan.Duplicates.FirstOrDefault(d => d.Path == path);
-	if (item == null) { ctx.Response.StatusCode = 404; return; }
-
-	var position = item.ThumbnailTimestamps.Count > 0
-		? item.ThumbnailTimestamps[0]
-		: TimeSpan.FromSeconds(item.Duration.TotalSeconds * 0.1);
-
-	string cacheKey = $"{path}|{position.TotalSeconds:F2}|full";
-
-	if (!scan.FullThumbCache.TryGetValue(cacheKey, out var jpeg)) {
-		jpeg = await Task.Run(() => ScanEngine.ExtractThumbnailJpeg(path, position, 0));
-		if (jpeg == null || jpeg.Length == 0) { ctx.Response.StatusCode = 204; return; }
-		// Full-resolution frames are megabytes each — keep this cache small.
-		if (scan.FullThumbCache.Count >= 64)
-			scan.FullThumbCache.Clear();
-		scan.FullThumbCache.TryAdd(cacheKey, jpeg);
-	}
-
-	ctx.Response.ContentType = "image/jpeg";
-	ctx.Response.Headers.CacheControl = "public, max-age=3600";
-	await ctx.Response.Body.WriteAsync(jpeg);
-});
+// Frame endpoints of the results page: HQ for the cards, full resolution for the
+// comparison modal. Both take the position to show as "t", see ThumbnailEndpoints.
+app.MapGet("/thumbnail/hq", (HttpContext ctx, ScanService scan, WebSettingsService webSettings) =>
+	ThumbnailEndpoints.Hq(ctx, scan, webSettings));
+app.MapGet("/thumbnail/full", (HttpContext ctx, ScanService scan) =>
+	ThumbnailEndpoints.Full(ctx, scan));
 
 // CSV export of the current results — same column layout as the GUI export,
 // minus the GUI-only Checked column.

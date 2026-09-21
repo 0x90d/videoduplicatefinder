@@ -498,11 +498,23 @@ namespace VDF.Core {
 
 		void BuildPositionList() {
 			positionList.Clear();
+			positionList.AddRange(BuildSamplePositions(Settings.ThumbnailCount));
+		}
+
+		/// <summary>
+		/// Relative positions (between 0 and 1, both exclusive) of the frames sampled per
+		/// video: evenly spaced, never the very first or last frame. The one definition for
+		/// the scan, the thumbnail reload, the pair diagnostic and the frontends that show
+		/// the sampled frames, so that what is shown is what was compared.
+		/// </summary>
+		public static List<float> BuildSamplePositions(int thumbnailCount) {
+			var positions = new List<float>(Math.Max(0, thumbnailCount));
 			float positionCounter = 0f;
-			for (int i = 0; i < Settings.ThumbnailCount; i++) {
-				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
-				positionList.Add(positionCounter);
+			for (int i = 0; i < thumbnailCount; i++) {
+				positionCounter += 1.0F / (thumbnailCount + 1);
+				positions.Add(positionCounter);
 			}
+			return positions;
 		}
 
 		/// <summary>
@@ -2682,11 +2694,7 @@ namespace VDF.Core {
 		/// </summary>
 		internal void EnsureThumbnailPositions() {
 			if (positionList.Count > 0) return;
-			float positionCounter = 0f;
-			for (int i = 0; i < Settings.ThumbnailCount; i++) {
-				positionCounter += 1.0F / (Settings.ThumbnailCount + 1);
-				positionList.Add(positionCounter);
-			}
+			positionList.AddRange(BuildSamplePositions(Settings.ThumbnailCount));
 		}
 
 		public async Task RetrieveThumbnailsForItems(IEnumerable<DuplicateItem> items) {

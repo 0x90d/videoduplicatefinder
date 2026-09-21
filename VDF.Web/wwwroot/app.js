@@ -89,6 +89,10 @@ window.vdf = {
     initSwipe: function () {
         var el = document.querySelector('.compare-swipe');
         if (!el) return;
+        // Called after every render: stepping frames must not wire the handlers up
+        // again or throw the slider back to the middle.
+        if (el._vdfSwipeReady) return;
+        el._vdfSwipeReady = true;
 
         function updatePos(clientX) {
             var rect = el.getBoundingClientRect();
