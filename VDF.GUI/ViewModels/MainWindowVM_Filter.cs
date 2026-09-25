@@ -86,6 +86,43 @@ namespace VDF.GUI.ViewModels {
 			return liveCount.Where(kv => kv.Value <= 1).Select(kv => kv.Key).ToHashSet();
 		}
 
+		bool _FilterOnlyGroupsWithAiMatches;
+		/// <summary>
+		/// Shows only the groups the AI pass contributed to: those holding a file that only
+		/// the AI accepted, which the classic comparison rejected (#927). Not an AI-only scan:
+		/// the rest of such a group stays visible, because the AI-matched file can only be
+		/// judged next to the file it was matched with, and which one that was is not recorded.
+		/// </summary>
+		public bool FilterOnlyGroupsWithAiMatches {
+			get => _FilterOnlyGroupsWithAiMatches;
+			set {
+				if (value == _FilterOnlyGroupsWithAiMatches) return;
+				this.RaiseAndSetIfChanged(ref _FilterOnlyGroupsWithAiMatches, value);
+				RefreshResultsView();
+				this.RaisePropertyChanged(nameof(ResultsShowAiMatchFilter));
+			}
+		}
+
+		HashSet<Guid> _groupsWithAiMatch = new();
+
+		/// <summary>
+		/// The chip only exists when it can do something: the results contain AI matches, or
+		/// it is still switched on (so it can be switched off after a scan without AI).
+		/// </summary>
+		public bool ResultsShowAiMatchFilter => _groupsWithAiMatch.Count > 0 || FilterOnlyGroupsWithAiMatches;
+
+		/// <summary>Recomputed on every list rebuild: removing or deleting files can empty a group of its AI match.</summary>
+		void RebuildGroupsWithAiMatch() {
+			bool had = _groupsWithAiMatch.Count > 0;
+			_groupsWithAiMatch = GroupsWithAiMatches(Duplicates);
+			if (had != _groupsWithAiMatch.Count > 0)
+				this.RaisePropertyChanged(nameof(ResultsShowAiMatchFilter));
+		}
+
+		/// <summary>Groups holding at least one file flagged <see cref="VDF.Core.DuplicateFlags.AiMatched"/>.</summary>
+		internal static HashSet<Guid> GroupsWithAiMatches(IEnumerable<DuplicateItemVM> items) =>
+			items.Where(d => d.ItemInfo.IsAiMatched).Select(d => d.ItemInfo.GroupId).ToHashSet();
+
 		HashSet<Guid> _groupsWithPathHit = new();
 		void RebuildSearchPathIndex() {
 			var needle = FilterByPath;
@@ -166,6 +203,9 @@ namespace VDF.GUI.ViewModels {
 
 			if (ok && FilterHideGroupsWithOneFileLeft)
 				ok = !_groupsWithOneFileLeft.Contains(data.ItemInfo.GroupId);
+
+			if (ok && FilterOnlyGroupsWithAiMatches)
+				ok = _groupsWithAiMatch.Contains(data.ItemInfo.GroupId);
 
 			data.IsVisibleInFilter = ok;
 			return ok;

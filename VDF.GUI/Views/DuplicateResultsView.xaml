@@ -304,6 +304,15 @@
             IsChecked="{Binding FilterHideGroupsWithOneFileLeft}"
             ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.HideGroupsWithOneFileLeftTooltip]}"
             Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.HideGroupsWithOneFileLeft]}" />
+        <!-- #927: named for what it does. It is a filter over a normal scan, not an AI-only
+             scan, and it only appears when the results hold AI matches. -->
+        <ToggleButton
+            Classes="chip"
+            Margin="6,0,0,0"
+            IsVisible="{Binding ResultsShowAiMatchFilter}"
+            IsChecked="{Binding FilterOnlyGroupsWithAiMatches}"
+            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.OnlyGroupsWithAiMatchesTooltip]}"
+            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.OnlyGroupsWithAiMatches]}" />
         <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
         <!-- Auto-select ▾ (stage 7): home of the old Selection menu — grouped by what
              the action ranges over (per group vs. across all results) -->

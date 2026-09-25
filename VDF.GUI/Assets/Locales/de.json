@@ -225,6 +225,8 @@
 	"MainWindow.Filter.GroupsWithCheckedItems": "Nur Gruppen mit ausgewählten Elementen",
 	"MainWindow.Filter.HideGroupsWithOneFileLeft": "Gruppen mit nur einer verbliebenen Datei ausblenden",
 	"MainWindow.Filter.HideGroupsWithOneFileLeftTooltip": "Blendet Gruppen aus, in denen höchstens noch eine Datei existiert, etwa wenn die anderen Kopien gelöscht wurden und nur noch als 'Bereits gelöscht' aufgeführt sind.",
+	"MainWindow.Filter.OnlyGroupsWithAiMatches": "Nur Gruppen mit KI-Treffern",
+	"MainWindow.Filter.OnlyGroupsWithAiMatchesTooltip": "Zeigt nur die Gruppen, in denen der KI-Durchlauf eine Datei gefunden hat, die der klassische Vergleich nicht erkannt hat. Diese Datei trägt das KI-Abzeichen; die übrigen Dateien ihrer Gruppe bleiben sichtbar, damit Sie vergleichen können. Das filtert die Ergebnisse eines normalen Scans mit eingeschaltetem KI-Abgleich. Es ist kein Scan, der nur KI verwendet.",
 	"MainWindow.Filter.Path": "Pfad:",
 	"MainWindow.Filter.PathNote": "Hinweis: Wenn nur ein Element einer Gruppe passt, werden alle Gruppenelemente angezeigt",
 	"MainWindow.Filter.Similarity": "Ähnlichkeit:",

@@ -138,6 +138,7 @@ namespace VDF.GUI.ViewModels {
 			object? focusedRow = ResultsFocusedRowProvider?.Invoke();
 			int focusedIndex = focusedRow == null ? -1 : ResultsRows.IndexOf(focusedRow);
 			RebuildGroupsWithOneFileLeft();
+			RebuildGroupsWithAiMatch();
 			ApplySizePreferenceIfChanged();
 			var result = ResultsListBuilder.Build(new ResultsBuildRequest {
 				Items = Duplicates.ToList(),

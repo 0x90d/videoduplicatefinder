@@ -15,6 +15,7 @@
 //
 
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.VisualTree;
 using VDF.Core.ViewModels;
 using VDF.GUI.ViewModels;
@@ -97,6 +98,88 @@ public sealed class ResultsGroupActionTests : IDisposable {
 		vm.FilterHideGroupsWithOneFileLeft = false;
 		Assert.Equal(2, vm.ResultsRows.OfType<ResultsGroupHeader>().Count());
 	});
+
+	// #927: what the AI pass added beyond the classic comparison, whole groups at a time.
+	[Fact]
+	public Task OnlyGroupsWithAiMatches_ShowsWholeGroupsTheAiContributedTo() => HeadlessUi.Run(() => {
+		var vm = new MainWindowVM();
+		Guid classic = Guid.NewGuid(), ai = Guid.NewGuid(), mixed = Guid.NewGuid();
+		var c1 = Add(vm, classic, "c1.mp4");
+		Add(vm, classic, "c2.mp4");
+		var partner = Add(vm, ai, "original.mp4");
+		var cropped = Add(vm, ai, "cropped.mp4");
+		cropped.ItemInfo.Flags = VDF.Core.DuplicateFlags.AiMatched;
+		Add(vm, mixed, "m1.mp4");
+		Add(vm, mixed, "m2.mp4");
+		var mirrored = Add(vm, mixed, "m3_mirrored.mp4");
+		mirrored.ItemInfo.Flags = VDF.Core.DuplicateFlags.AiMatched;
+		vm.RebuildResultsList();
+		Assert.True(vm.ResultsShowAiMatchFilter);
+		Assert.Equal(3, vm.ResultsRows.OfType<ResultsGroupHeader>().Count());
+
+		c1.Checked = true;
+		vm.FilterOnlyGroupsWithAiMatches = true;
+
+		var shown = vm.ResultsRows.OfType<ResultsGroupHeader>().Select(h => h.GroupId).ToHashSet();
+		Assert.Equal(new HashSet<Guid> { ai, mixed }, shown);
+		// The whole group stays: the AI-matched file is judged next to its partner.
+		Assert.Equal(5, vm.ResultsRows.OfType<ResultsItemRow>().Count());
+		Assert.True(partner.IsVisibleInFilter);
+		// Hidden classic groups are out of reach of the checked-items actions.
+		Assert.False(c1.IsVisibleInFilter);
+
+		vm.FilterOnlyGroupsWithAiMatches = false;
+		Assert.Equal(3, vm.ResultsRows.OfType<ResultsGroupHeader>().Count());
+		Assert.True(c1.IsVisibleInFilter);
+	});
+
+	[Fact]
+	public Task AiMatchChip_OnlyExistsWhenThereIsSomethingToFilter() => HeadlessUi.Run(() => {
+		var vm = new MainWindowVM();
+		Guid group = Guid.NewGuid();
+		Add(vm, group, "a.mp4");
+		var b = Add(vm, group, "b.mp4");
+		vm.RebuildResultsList();
+		var window = HeadlessUi.Show(new VDF.GUI.Views.DuplicateResultsView { DataContext = vm });
+		try {
+			ToggleButton Chip() => window.GetVisualDescendants().OfType<ToggleButton>()
+				.Single(t => (t.Content as string) == "Only groups with AI matches");
+
+			Assert.False(vm.ResultsShowAiMatchFilter); // a scan without AI: nothing to show
+			Assert.False(Chip().IsVisible);
+
+			b.ItemInfo.Flags = VDF.Core.DuplicateFlags.AiMatched;
+			vm.RebuildResultsList();
+			HeadlessUi.Pump();
+			Assert.True(Chip().IsVisible);
+
+			// Switched on, then the AI match leaves the results: the chip stays so it can be
+			// switched off, instead of leaving an empty list with no visible cause.
+			vm.FilterOnlyGroupsWithAiMatches = true;
+			vm.Duplicates.Remove(b);
+			vm.RebuildResultsList();
+			HeadlessUi.Pump();
+			Assert.Empty(vm.ResultsRows.OfType<ResultsGroupHeader>());
+			Assert.True(Chip().IsVisible);
+			vm.FilterOnlyGroupsWithAiMatches = false;
+			HeadlessUi.Pump();
+			Assert.False(Chip().IsVisible);
+		}
+		finally { window.Close(); }
+	});
+
+	[Fact]
+	public void GroupsWithAiMatches_AreThoseHoldingAFlaggedFile() {
+		Guid ai = Guid.NewGuid(), partial = Guid.NewGuid(), plain = Guid.NewGuid();
+		var items = new[] {
+			new DuplicateItemVM(new DuplicateItem { Path = "a", GroupId = ai, Flags = VDF.Core.DuplicateFlags.AiMatched | VDF.Core.DuplicateFlags.Flipped }),
+			new DuplicateItemVM(new DuplicateItem { Path = "b", GroupId = ai }),
+			// The AI partial-clip pass flags its clips the same way.
+			new DuplicateItemVM(new DuplicateItem { Path = "c", GroupId = partial, Flags = VDF.Core.DuplicateFlags.PartialClip | VDF.Core.DuplicateFlags.AiMatched }),
+			new DuplicateItemVM(new DuplicateItem { Path = "d", GroupId = plain, Flags = VDF.Core.DuplicateFlags.PartialClip }),
+		};
+		Assert.Equal(new HashSet<Guid> { ai, partial }, MainWindowVM.GroupsWithAiMatches(items));
+	}
 
 	[Fact]
 	public void OfflineFilesCountAsFilesLeft() {

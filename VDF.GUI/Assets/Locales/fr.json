@@ -225,6 +225,8 @@
 	"MainWindow.Filter.GroupsWithCheckedItems": "Uniquement les groupes avec des éléments sélectionnés",
 	"MainWindow.Filter.HideGroupsWithOneFileLeft": "Masquer les groupes avec un seul fichier restant",
 	"MainWindow.Filter.HideGroupsWithOneFileLeftTooltip": "Masque les groupes dans lesquels il reste au plus un fichier, par exemple quand les autres copies ont été supprimées et n'apparaissent plus que comme 'Déjà supprimé'.",
+	"MainWindow.Filter.OnlyGroupsWithAiMatches": "Uniquement les groupes avec correspondances IA",
+	"MainWindow.Filter.OnlyGroupsWithAiMatchesTooltip": "N'affiche que les groupes dans lesquels la passe IA a trouvé un fichier que la comparaison classique n'a pas reconnu. Ce fichier porte le badge IA ; les autres fichiers de son groupe restent visibles pour pouvoir les comparer. Ce filtre s'applique aux résultats d'une analyse normale avec la correspondance IA activée. Ce n'est pas une analyse qui utilise uniquement l'IA.",
 	"MainWindow.Filter.Path": "Chemin :",
 	"MainWindow.Filter.PathNote": "Note : si un seul élément d'un groupe correspond, tous les éléments du groupe seront affichés",
 	"MainWindow.Filter.Similarity": "Similarité :",

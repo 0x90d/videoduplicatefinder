@@ -225,6 +225,8 @@
 	"MainWindow.Filter.GroupsWithCheckedItems": "仅显示包含已选择项目的组",
 	"MainWindow.Filter.HideGroupsWithOneFileLeft": "隐藏仅剩一个文件的组",
 	"MainWindow.Filter.HideGroupsWithOneFileLeftTooltip": "隐藏最多只剩一个文件的组，例如其他副本已被删除、仅显示为“已删除过”的情况。",
+	"MainWindow.Filter.OnlyGroupsWithAiMatches": "仅显示含 AI 匹配的组",
+	"MainWindow.Filter.OnlyGroupsWithAiMatchesTooltip": "只显示 AI 步骤找到了经典比较未能匹配的文件的组。该文件带有 AI 标记；同组的其他文件仍会显示，方便对比。此筛选作用于开启 AI 匹配的普通扫描结果，并不是只用 AI 的扫描。",
 	"MainWindow.Filter.Path": "路径：",
 	"MainWindow.Filter.PathNote": "注意：如果组中只有一个项目匹配，将显示该组所有项目",
 	"MainWindow.Filter.Similarity": "相似度：",
