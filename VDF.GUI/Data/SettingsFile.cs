@@ -565,6 +565,16 @@ namespace VDF.GUI.Data {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, Math.Clamp(value, 56, 1600));
 		} = 160;
+		/// <summary>
+		/// Show and use the date a file was last modified instead of the date it was created.
+		/// Copying or downloading a file sets its creation date to that moment; the modified
+		/// date usually survives both (#907).
+		/// </summary>
+		[JsonPropertyName("ResultsShowDateModified")]
+		public bool ResultsShowDateModified {
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		}
 		[JsonPropertyName("ResultsCompactRows")]
 		public bool ResultsCompactRows {
 			get;

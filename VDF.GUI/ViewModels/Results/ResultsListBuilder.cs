@@ -16,6 +16,7 @@
 
 using System.Linq;
 using VDF.Core.Utils;
+using VDF.GUI.Data;
 
 namespace VDF.GUI.ViewModels {
 
@@ -243,7 +244,7 @@ namespace VDF.GUI.ViewModels {
 				ResultsSortMode.WastedSpace or ResultsSortMode.TotalSize or ResultsSortMode.LargestFile =>
 					(a, b) => a.ItemInfo.SizeLong.CompareTo(b.ItemInfo.SizeLong),
 				ResultsSortMode.Similarity => (a, b) => a.ItemInfo.Similarity.CompareTo(b.ItemInfo.Similarity),
-				ResultsSortMode.DateCreated => (a, b) => a.ItemInfo.DateCreated.CompareTo(b.ItemInfo.DateCreated),
+				ResultsSortMode.DateCreated => (a, b) => ResultsDates.Of(a.ItemInfo).CompareTo(ResultsDates.Of(b.ItemInfo)),
 				ResultsSortMode.Duration => (a, b) => a.ItemInfo.Duration.CompareTo(b.ItemInfo.Duration),
 				ResultsSortMode.Resolution => (a, b) => a.ItemInfo.FrameSizeInt.CompareTo(b.ItemInfo.FrameSizeInt),
 				ResultsSortMode.FolderPath => (a, b) => string.Compare(a.ItemInfo.Path, b.ItemInfo.Path, StringComparison.OrdinalIgnoreCase),
@@ -302,7 +303,7 @@ namespace VDF.GUI.ViewModels {
 		static DateTime MaxDate(ResultsGroupHeader h) {
 			DateTime max = DateTime.MinValue;
 			foreach (var row in h.Rows)
-				if (row.Item.ItemInfo.DateCreated > max) max = row.Item.ItemInfo.DateCreated;
+				if (ResultsDates.Of(row.Item.ItemInfo) > max) max = ResultsDates.Of(row.Item.ItemInfo);
 			return max;
 		}
 		static TimeSpan MaxDuration(ResultsGroupHeader h) {

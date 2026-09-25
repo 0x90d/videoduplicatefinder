@@ -122,8 +122,8 @@ namespace VDF.GUI.Data {
 					chips.Add(new(item.HdrFormat, Compare(item.HdrFormatRank, other?.HdrFormatRank)));
 			}
 
-			if (item.DateCreated != default)
-				chips.Add(new(item.DateCreated.ToString("d"), ChipState.Neutral));
+			if (ResultsDates.Of(item) is var shownDate && shownDate != default)
+				chips.Add(new(shownDate.ToString("d"), ChipState.Neutral));
 
 			return chips;
 		}

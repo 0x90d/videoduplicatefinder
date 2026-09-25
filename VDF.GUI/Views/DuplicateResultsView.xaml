@@ -832,7 +832,7 @@
                   </TextBlock>
                 </Border>
                 <TextBlock FontSize="11.5" Opacity="{DynamicResource VdfTextDim80Opacity}"
-                           Text="{Binding Item.ItemInfo.DateCreated, Converter={StaticResource ExtraShortDateTimeConverter}}" />
+                           Text="{Binding Item.ShownDate, Converter={StaticResource ExtraShortDateTimeConverter}}" />
               </StackPanel>
               <!-- Duration · Resolution: ONE hover zone for both metrics — two stacked
                    zones flipped the display on tiny vertical mouse moves (#849) -->

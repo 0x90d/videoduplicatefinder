@@ -43,23 +43,18 @@ namespace VDF.Core.ViewModels {
 					for audio, it is the stream with the most channels,
 					In the case where several streams of the same type rate equally, the stream with the lowest index is chosen.
 				*/
-				int[] selVideo = { -1, 0 };
 				int[] selAudio = { -1, 0 };
 				for (int i = file.mediaInfo.Streams.Length - 1; i >= 0; i--) {
-					if (file.mediaInfo.Streams[i].CodecType?.Equals("video", StringComparison.OrdinalIgnoreCase) == true &&
-						file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height >= selVideo[1]) {
-						selVideo[0] = i;
-						selVideo[1] = file.mediaInfo.Streams[i].Width * file.mediaInfo.Streams[i].Height;
-					}
-					else if (file.mediaInfo.Streams[i].CodecType?.Equals("audio", StringComparison.OrdinalIgnoreCase) == true &&
+					if (file.mediaInfo.Streams[i].CodecType?.Equals("audio", StringComparison.OrdinalIgnoreCase) == true &&
 							 file.mediaInfo.Streams[i].Channels >= selAudio[1]) {
 						selAudio[0] = i;
 						selAudio[1] = file.mediaInfo.Streams[i].Channels;
 					}
 				}
 
-				if (selVideo[0] >= 0) {
-					int i = selVideo[0];
+				int selectedVideo = SelectVideoStream(file.mediaInfo.Streams);
+				if (selectedVideo >= 0) {
+					int i = selectedVideo;
 					Format = file.mediaInfo.Streams[i].CodecName ?? "<Unknown>";
 					Fps = file.mediaInfo.Streams[i].FrameRate;
 					BitRateKbs = Math.Round((decimal)file.mediaInfo.Streams[i].BitRate / 1000);
@@ -85,6 +80,7 @@ namespace VDF.Core.ViewModels {
 			}
 			var fi = new FileInfo(Path);
 			DateCreated = file.DateCreated;
+			DateModified = file.DateModified;
 			// A missing file (deleted/offline entry included in the comparison) keeps its
 			// database-recorded size instead of a -1 sentinel that rendered as "-1.0 B".
 			SizeLong = fi.Exists ? fi.Length : file.FileSize;
@@ -93,6 +89,43 @@ namespace VDF.Core.ViewModels {
 			Similarity = (1f - difference) * 100;
 			IsImage = file.IsImage;
 		}
+
+		/// <summary>
+		/// The video stream the metadata columns describe: the one with the highest resolution
+		/// (ties: the lowest index), as FFmpeg picks it, but never embedded cover art while the
+		/// file has a real video stream. FFmpeg skips attached pictures in its own selection;
+		/// VDF did not, so an mp4 with a 1080p cover over 720p video was listed as a 1080p
+		/// mjpeg file (#905). Entries probed before the attached-picture flag existed have it
+		/// false, so a still-image codec next to a moving-picture one counts as a cover too.
+		/// Returns -1 when there is no video stream.
+		/// </summary>
+		internal static int SelectVideoStream(MediaInfo.StreamInfo[] streams) {
+			static bool IsVideo(MediaInfo.StreamInfo s) => s.CodecType?.Equals("video", StringComparison.OrdinalIgnoreCase) == true;
+			bool hasMovingPicture = System.Linq.Enumerable.Any(streams, s => IsVideo(s) && !s.IsAttachedPicture && !IsStillImageCodec(s.CodecName));
+			bool IsCover(MediaInfo.StreamInfo s) => s.IsAttachedPicture || (hasMovingPicture && IsStillImageCodec(s.CodecName));
+
+			int best = -1, bestCover = -1;
+			long bestPixels = -1, bestCoverPixels = -1;
+			for (int i = 0; i < streams.Length; i++) {
+				var s = streams[i];
+				if (!IsVideo(s)) continue;
+				long pixels = (long)s.Width * s.Height;
+				if (IsCover(s)) {
+					if (pixels > bestCoverPixels) { bestCover = i; bestCoverPixels = pixels; }
+				}
+				else if (pixels > bestPixels) { best = i; bestPixels = pixels; }
+			}
+			return best >= 0 ? best : bestCover;
+		}
+
+		/// <summary>Codecs FFmpeg uses for embedded pictures. mjpeg is also real (motion JPEG) video, which is why it only counts next to another video stream.</summary>
+		static bool IsStillImageCodec(string? codec) => codec is not null && (
+			codec.Equals("mjpeg", StringComparison.OrdinalIgnoreCase) ||
+			codec.Equals("png", StringComparison.OrdinalIgnoreCase) ||
+			codec.Equals("bmp", StringComparison.OrdinalIgnoreCase) ||
+			codec.Equals("gif", StringComparison.OrdinalIgnoreCase) ||
+			codec.Equals("webp", StringComparison.OrdinalIgnoreCase) ||
+			codec.Equals("tiff", StringComparison.OrdinalIgnoreCase));
 
 		public Guid GroupId { get; set; }
 		/// <summary>Encoded thumbnails (JPEG bytes; or the shared placeholder bytes when extraction failed).</summary>
@@ -167,6 +200,9 @@ namespace VDF.Core.ViewModels {
 		public bool IsBestFps { get; set; }
 		[JsonInclude]
 		public DateTime DateCreated { get; set; }
+		/// <summary>Last write time. Default for results saved before it was recorded.</summary>
+		[JsonInclude]
+		public DateTime DateModified { get; set; }
 		[JsonInclude]
 		public DuplicateFlags Flags { get; set; }
 

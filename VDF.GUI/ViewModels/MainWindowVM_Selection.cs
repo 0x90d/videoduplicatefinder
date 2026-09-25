@@ -161,7 +161,7 @@ namespace VDF.GUI.ViewModels {
 			using var undoBatch = BeginSelectionUndoBatch();
 			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsButQuality(first), (first, cluster) => {
 				cluster.Add(first);
-				cluster = cluster.OrderByDescending(s => s.ItemInfo.DateCreated).ToList();
+				cluster = cluster.OrderByDescending(s => s.ShownDate).ToList();
 				cluster[0].Checked = false;
 				for (int i = 1; i < cluster.Count; i++)
 					cluster[i].Checked = true;
@@ -172,7 +172,7 @@ namespace VDF.GUI.ViewModels {
 			using var undoBatch = BeginSelectionUndoBatch();
 			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsButQuality(first), (first, cluster) => {
 				cluster.Add(first);
-				cluster = cluster.OrderBy(s => s.ItemInfo.DateCreated).ToList();
+				cluster = cluster.OrderBy(s => s.ShownDate).ToList();
 				cluster[0].Checked = false;
 				for (int i = 1; i < cluster.Count; i++)
 					cluster[i].Checked = true;
@@ -491,10 +491,10 @@ namespace VDF.GUI.ViewModels {
 
 				switch (data.DateTimeSelection) {
 				case 1: // check the newest copies, keep the oldest
-					cluster = cluster.OrderBy(s => s.ItemInfo.DateCreated).ToList();
+					cluster = cluster.OrderBy(s => s.ShownDate).ToList();
 					break;
 				case 2: // check the oldest copies, keep the newest
-					cluster = cluster.OrderByDescending(s => s.ItemInfo.DateCreated).ToList();
+					cluster = cluster.OrderByDescending(s => s.ShownDate).ToList();
 					break;
 				default:
 					if (data.IdenticalSelection == 0 && cluster.Count < visibleGroupSize[groupId]) {

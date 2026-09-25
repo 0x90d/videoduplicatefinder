@@ -90,9 +90,9 @@ namespace VDF.GUI.Data {
 			FormatSampleRate(item.AudioSampleRate, culture),
 			FormatBitrate(item.AudioBitRateKbs, culture));
 
-		/// <summary>"712 MB · 28.04.2024 18:03" (size, creation date).</summary>
+		/// <summary>"712 MB · 28.04.2024 18:03" (size, creation or modification date per the setting).</summary>
 		internal static string BuildFileLine(VDF.Core.ViewModels.DuplicateItem item, CultureInfo culture) =>
-			item.SizeLong.BytesToString() + " · " + item.DateCreated.ToString("g", culture);
+			item.SizeLong.BytesToString() + " · " + ResultsDates.Of(item).ToString("g", culture);
 
 		/// <summary>
 		/// Plain-text summary behind the details panel's Copy button. Joins only the

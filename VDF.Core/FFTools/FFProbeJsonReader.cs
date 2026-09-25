@@ -194,6 +194,9 @@ namespace VDF.Core.FFTools {
 					info.Streams[i].SampleRate = sample_rate;
 				if (streams[i].ContainsKey("index"))
 					info.Streams[i].Index = ((int)streams[i]["index"]).ToString();
+				// "disposition": { "attached_pic": 1 } - the reader flattens nested objects.
+				if (streams[i].TryGetValue("attached_pic", out var attachedPic) && attachedPic is int attached)
+					info.Streams[i].IsAttachedPicture = attached != 0;
 
 				if (streams[i].ContainsKey("r_frame_rate")) {
 					var stringFrameRate = (string)streams[i]["r_frame_rate"];

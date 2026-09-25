@@ -680,6 +680,14 @@
               </views:SettingRow>
 
               <views:SettingRow
+                  Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.DateModified.Title]}"
+                  Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.DateModified.Desc]}"
+                  SearchTags="date modified created time copied downloaded oldest newest">
+                <ToggleSwitch Classes="plain"
+                              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ResultsShowDateModified}" />
+              </views:SettingRow>
+
+              <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPreset]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Settings.AutoApplySelectionPresetTooltip]}"
                   SearchTags="preset selection">

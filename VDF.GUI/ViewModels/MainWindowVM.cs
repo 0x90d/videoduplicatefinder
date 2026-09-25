@@ -448,6 +448,8 @@ namespace VDF.GUI.ViewModels {
 			SettingsFile.Instance.PropertyChanged += (_, e) => {
 				if (e.PropertyName == nameof(SettingsFile.EnablePartialClipDetection))
 					this.RaisePropertyChanged(nameof(ResultsShowClipOffsetColumn));
+				if (e.PropertyName == nameof(SettingsFile.ResultsShowDateModified))
+					RebuildResultsList();
 				// Editing any profile-managed knob re-derives the Setup screen's selection
 				// (switches the card to Custom when values no longer match a bundle).
 				if (e.PropertyName is nameof(SettingsFile.Percent)

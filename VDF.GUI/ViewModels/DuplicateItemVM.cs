@@ -30,6 +30,9 @@ namespace VDF.GUI.ViewModels {
 
 	[DebuggerDisplay("{ItemInfo.Path,nq} - {ItemInfo.GroupId}")]
 	public sealed class DuplicateItemVM : ReactiveObject, IJsonOnDeserialized {
+		/// <summary>The date the results show for this file, created or modified per the setting (#907).</summary>
+		[JsonIgnore]
+		public DateTime ShownDate => ResultsDates.Of(ItemInfo);
 		readonly TimeProvider timeProvider;
 
 		//For JSON deserialization only
