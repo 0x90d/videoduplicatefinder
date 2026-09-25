@@ -71,6 +71,11 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			ffmpeg.avcodec_open2(_pCodecContext, codec, null).ThrowExceptionIfError();
 
 			CodecName = ffmpeg.avcodec_get_name(codec->id);
+			AVCodecParameters* codecpar = _pFormatContext->streams[_streamIndex]->codecpar;
+			AVPacketSideData* matrixSideData = ffmpeg.av_packet_side_data_get(codecpar->coded_side_data, codecpar->nb_coded_side_data,
+				AVPacketSideDataType.AV_PKT_DATA_DISPLAYMATRIX);
+			if (matrixSideData != null && matrixSideData->size >= 9 * sizeof(int))
+				StreamOrientation = FrameOrientation.FromDisplayMatrix(new ReadOnlySpan<int>(matrixSideData->data, 9));
 			// Container-level pixel aspect ratio for anamorphic content; 0/1 when unknown.
 			StreamSampleAspectRatio = _pFormatContext->streams[_streamIndex]->sample_aspect_ratio;
 			FrameSize = new Size(_pCodecContext->width, _pCodecContext->height);
@@ -94,6 +99,19 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		}
 
 		public string CodecName { get; }
+		/// <summary>The stream's display matrix, as far as it says how to turn the picture (#910).</summary>
+		public FrameOrientation StreamOrientation { get; }
+
+		/// <summary>
+		/// How to turn <paramref name="frame"/> upright: its own display matrix when the decoder
+		/// attached one (EXIF orientation of a still, a per-frame matrix), else the stream's.
+		/// </summary>
+		public FrameOrientation GetOrientation(AVFrame frame) {
+			AVFrameSideData* sideData = ffmpeg.av_frame_get_side_data(&frame, AVFrameSideDataType.AV_FRAME_DATA_DISPLAYMATRIX);
+			if (sideData != null && sideData->size >= 9 * sizeof(int))
+				return FrameOrientation.FromDisplayMatrix(new ReadOnlySpan<int>(sideData->data, 9));
+			return StreamOrientation;
+		}
 		public Size FrameSize { get; }
 		public AVPixelFormat PixelFormat { get; }
 		public bool IsHardwareDecode { get; }

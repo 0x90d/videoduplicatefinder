@@ -179,6 +179,35 @@ namespace VDF.Core.FFTools {
 		/// (linesize >= width); the common case is linesize == 32 because we asked for
 		/// align=0 and 32 is already aligned, in which case a single copy is enough.
 		/// </summary>
+		/// <summary>
+		/// A turned copy of a YUV 4:2:0 frame (the JPEG thumbnail format), each plane on its
+		/// own; the caller frees it. Chroma planes are ceil(w/2) x ceil(h/2), which turns into
+		/// exactly the chroma size of the turned frame.
+		/// </summary>
+		static unsafe AVFrame* TurnYuv420Frame(AVFrame source, FrameOrientation orientation) {
+			AVFrame* turned = ffmpeg.av_frame_alloc();
+			if (turned == null)
+				throw new FFInvalidExitCodeException("Failed to allocate AVFrame.");
+			try {
+				var (width, height) = orientation.Apply(source.width, source.height);
+				turned->format = source.format;
+				turned->width = width;
+				turned->height = height;
+				ffmpeg.av_frame_get_buffer(turned, 0).ThrowExceptionIfError();
+				for (uint plane = 0; plane < 3; plane++) {
+					int planeWidth = plane == 0 ? source.width : (source.width + 1) / 2;
+					int planeHeight = plane == 0 ? source.height : (source.height + 1) / 2;
+					orientation.ApplyPlane(source.data[plane], source.linesize[plane], planeWidth, planeHeight, 1,
+						turned->data[plane], turned->linesize[plane]);
+				}
+				return turned;
+			}
+			catch {
+				ffmpeg.av_frame_free(&turned);
+				throw;
+			}
+		}
+
 		static unsafe byte[] ExtractGray32FromFrame(AVFrame convertedFrame) {
 			const int N = 32;
 			int width = convertedFrame.width;
@@ -326,9 +355,12 @@ namespace VDF.Core.FFTools {
 							aiConverter = null;
 						}
 
+						// Square outputs erase the aspect ratio, so turning the small result is the
+						// same as turning the source first (#910).
+						FrameOrientation orientation = vsd.GetOrientation(srcFrame);
 						if (needGray) {
 							AVFrame convertedFrame = converter.Convert(srcFrame);
-							byte[] data = ExtractGray32FromFrame(convertedFrame);
+							byte[] data = orientation.Apply(ExtractGray32FromFrame(convertedFrame), N, N, 1);
 
 							if (!GrayBytesUtils.VerifyGrayScaleValues(data))
 								tooDarkCounter++;
@@ -341,7 +373,8 @@ namespace VDF.Core.FFTools {
 								converterSourceSize, converterSrcFmt,
 								new Size(AI.OnnxEmbedder.InputSide, AI.OnnxEmbedder.InputSide), AVPixelFormat.AV_PIX_FMT_RGB24,
 								VideoFrameConverter.ScaleQuality.Bicubic, bitExact: false);
-							embeddingSink!.SubmitFrame(videoFile, position, ExtractRgb224FromFrame(aiConverter.Convert(srcFrame)));
+							embeddingSink!.SubmitFrame(videoFile, position, orientation.Apply(
+								ExtractRgb224FromFrame(aiConverter.Convert(srcFrame)), AI.OnnxEmbedder.InputSide, AI.OnnxEmbedder.InputSide, 3));
 						}
 
 						onSampleComplete?.Invoke(i + 1);
@@ -428,7 +461,7 @@ namespace VDF.Core.FFTools {
 								converterSrcFmt = srcPixFmt;
 							}
 
-							frames[i] = ExtractGray32FromFrame(converter.Convert(srcFrame));
+							frames[i] = vsd.GetOrientation(srcFrame).Apply(ExtractGray32FromFrame(converter.Convert(srcFrame)), N, N, 1);
 						}
 					}
 					finally {
@@ -510,11 +543,20 @@ namespace VDF.Core.FFTools {
 					// square that erases aspect ratio, so SAR correction only applies to thumbnails.
 					Size displaySize = isRawOutput ? sourceSize : ApplySampleAspectRatio(sourceSize, sar.num, sar.den);
 
+					// The picture the command line would show is the turned one (#910): thumbnails
+					// are sized for it and turned after scaling; square raw outputs just turn.
+					FrameOrientation orientation = vsd.GetOrientation(srcFrame);
+					var (uprightWidth, uprightHeight) = orientation.Apply(displaySize.Width, displaySize.Height);
+					Size uprightSize = new(uprightWidth, uprightHeight);
+
 					Size destinationSize = isRgbFrame ? new Size(AI.OnnxEmbedder.InputSide, AI.OnnxEmbedder.InputSide) :
 						isGrayByte ? new Size(N, N) :
 						settings.Fullsize == 1 ?
-							displaySize :
-							ScaleToMaxWidth(displaySize, settings.MaxWidth > 0 ? settings.MaxWidth : 100);
+							uprightSize :
+							ScaleToMaxWidth(uprightSize, settings.MaxWidth > 0 ? settings.MaxWidth : 100);
+					// Scaled in the source's orientation, turned afterwards.
+					if (!isRawOutput && orientation.Transpose)
+						destinationSize = new Size(destinationSize.Height, destinationSize.Width);
 
 					AVPixelFormat destinationPixelFrmt = isRgbFrame ?
 						AVPixelFormat.AV_PIX_FMT_RGB24 :
@@ -537,7 +579,7 @@ namespace VDF.Core.FFTools {
 
 
 					if (isRgbFrame) {
-						return ExtractRgb224FromFrame(convertedFrame);
+						return orientation.Apply(ExtractRgb224FromFrame(convertedFrame), AI.OnnxEmbedder.InputSide, AI.OnnxEmbedder.InputSide, 3);
 					}
 					else if (isGrayByte) {
 						int width = convertedFrame.width; // should be 32
@@ -558,13 +600,21 @@ namespace VDF.Core.FFTools {
 								Buffer.MemoryCopy(sourcePtr + (y * srcStride), destPtr + (y * width), width, width);
 							}
 						}
-						return outBuf;
+						return orientation.Apply(outBuf, N, N, 1);
 					}
 					else {
 						if (convertedFrame.width <= 0 || convertedFrame.height <= 0)
 							throw new Exception($"Invalid converted frame dimensions {convertedFrame.width}x{convertedFrame.height}.");
-						return JpegFrameEncoder.Encode(convertedFrame,
-							settings.JpegQuality > 0 ? settings.JpegQuality : DefaultJpegQuality);
+						int jpegQuality = settings.JpegQuality > 0 ? settings.JpegQuality : DefaultJpegQuality;
+						if (orientation.IsIdentity)
+							return JpegFrameEncoder.Encode(convertedFrame, jpegQuality);
+						AVFrame* upright = TurnYuv420Frame(convertedFrame, orientation);
+						try {
+							return JpegFrameEncoder.Encode(*upright, jpegQuality);
+						}
+						finally {
+							ffmpeg.av_frame_free(&upright);
+						}
 					}
 				}
 			}
@@ -1336,7 +1386,9 @@ namespace VDF.Core.FFTools {
 					new Size(N, N), AVPixelFormat.AV_PIX_FMT_GRAY8,
 					VideoFrameConverter.ScaleQuality.Bicubic, bitExact: false);
 				AVFrame convertedFrame = converter.Convert(srcFrame);
-				grayBytes = ExtractGray32FromFrame(convertedFrame);
+				// A phone photo stored sideways with an orientation tag hashes upright, as on
+				// the command line (#910). The dimensions stay the stored ones, as ffprobe reports.
+				grayBytes = vsd.GetOrientation(srcFrame).Apply(ExtractGray32FromFrame(convertedFrame), N, N, 1);
 				width = sourceSize.Width;
 				height = sourceSize.Height;
 				return true;
