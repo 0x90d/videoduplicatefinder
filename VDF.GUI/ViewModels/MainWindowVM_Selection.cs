@@ -338,14 +338,17 @@ namespace VDF.GUI.ViewModels {
 			if (selectedItems.Count == 0) return;
 
 			IsBusy = true;
+			BusyProgress = 0;
 			IsBusyOverlayText = string.Format(App.Lang["Busy.Copying"], 0, selectedItems.Count);
 			int errorCounter;
 			var renames = new List<(DuplicateItemVM Item, string NewPath)>();
 			try {
 				errorCounter = await Task.Run(() =>
 					Utils.FileUtils.CopyFile(selectedItems, result[0], true, false, renames,
-						(done, total) => Dispatcher.UIThread.Post(() =>
-							IsBusyOverlayText = string.Format(App.Lang["Busy.Copying"], done, total))));
+						(done, total, fraction) => Dispatcher.UIThread.Post(() => {
+							IsBusyOverlayText = string.Format(App.Lang["Busy.Copying"], done, total);
+							if (IsBusy) BusyProgress = fraction;
+						})));
 			}
 			finally {
 				IsBusy = false;
@@ -382,6 +385,7 @@ namespace VDF.GUI.ViewModels {
 			if (selectedItems.Count == 0) return;
 
 			IsBusy = true;
+			BusyProgress = 0;
 			IsBusyOverlayText = string.Format(App.Lang["Busy.Moving"], 0, selectedItems.Count);
 			int errorCounter;
 			var renames = new List<(DuplicateItemVM Item, string NewPath)>();
@@ -394,8 +398,10 @@ namespace VDF.GUI.ViewModels {
 							dbEntries[item] = dbEntry!;
 					}
 					int errors = Utils.FileUtils.CopyFile(selectedItems, result[0], true, true, renames,
-						(done, total) => Dispatcher.UIThread.Post(() =>
-							IsBusyOverlayText = string.Format(App.Lang["Busy.Moving"], done, total)));
+						(done, total, fraction) => Dispatcher.UIThread.Post(() => {
+							IsBusyOverlayText = string.Format(App.Lang["Busy.Moving"], done, total);
+							if (IsBusy) BusyProgress = fraction;
+						}));
 					foreach (var (item, newPath) in renames)
 						if (dbEntries.TryGetValue(item, out var entry))
 							ScanEngine.UpdateFilePathInDatabase(newPath, entry);

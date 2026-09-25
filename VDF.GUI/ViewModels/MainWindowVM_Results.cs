@@ -129,6 +129,7 @@ namespace VDF.GUI.ViewModels {
 		internal void RebuildResultsList() {
 			ResultsScrollAnchor.Capture? anchor = ResultsAnchorProvider?.Invoke();
 			List<Guid> oldGroupOrder = resultsGroups.ConvertAll(g => g.GroupId);
+			RebuildGroupsWithOneFileLeft();
 			var result = ResultsListBuilder.Build(new ResultsBuildRequest {
 				Items = Duplicates.ToList(),
 				Filter = DuplicatesFilterCore,
@@ -199,6 +200,10 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<ResultsGroupHeader, Unit> KeepBestInGroupHeaderCommand => ReactiveCommand.Create<ResultsGroupHeader>(header => {
 			if (header != null) KeepBestInGroup(header.GroupId);
+		});
+
+		public ReactiveCommand<ResultsGroupHeader, Unit> CheckAllInGroupHeaderCommand => ReactiveCommand.Create<ResultsGroupHeader>(header => {
+			if (header != null) CheckAllInGroup(header.GroupId);
 		});
 
 		public ReactiveCommand<ResultsGroupHeader, Unit> MarkGroupHeaderNotAMatchCommand => ReactiveCommand.CreateFromTask<ResultsGroupHeader>(async header => {

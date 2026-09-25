@@ -280,7 +280,16 @@
                                         BorderBrush="LimeGreen"
                                         BorderThickness="1"
                                         AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Busy.PleaseWait]}"
-                                        IsIndeterminate="{Binding IsBusy}" />
+                                        Minimum="0"
+                                        Maximum="100"
+                                        Value="{Binding BusyProgressPercent}">
+                                        <ProgressBar.IsIndeterminate>
+                                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                <Binding Path="IsBusy" />
+                                                <Binding Path="BusyProgressIsIndeterminate" />
+                                            </MultiBinding>
+                                        </ProgressBar.IsIndeterminate>
+                                    </ProgressBar>
                                     <TextBlock
                                         Margin="0,10,0,0"
                                         HorizontalAlignment="Center"

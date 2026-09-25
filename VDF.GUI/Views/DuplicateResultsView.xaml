@@ -298,6 +298,12 @@
             Margin="10,0,0,0"
             IsChecked="{Binding FilterGroupsWithCheckedItems}"
             Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.GroupsWithCheckedItems]}" />
+        <ToggleButton
+            Classes="chip"
+            Margin="6,0,0,0"
+            IsChecked="{Binding FilterHideGroupsWithOneFileLeft}"
+            ToolTip.Tip="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.HideGroupsWithOneFileLeftTooltip]}"
+            Content="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.Filter.HideGroupsWithOneFileLeft]}" />
         <Border Width="1" Height="20" Margin="10,0" Background="{actipro:ThemeResource Container3BorderBrush}" />
         <!-- Auto-select ▾ (stage 7): home of the old Selection menu — grouped by what
              the action ranges over (per group vs. across all results) -->
@@ -500,6 +506,15 @@
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForGroup]}" />
                 <Separator />
                 <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).KeepBestInGroupHeaderCommand}"
+                    CommandParameter="{Binding}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.KeepBest]}" />
+                <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).CheckAllInGroupHeaderCommand}"
+                    CommandParameter="{Binding}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.CheckAll]}" />
+                <Separator />
+                <MenuItem
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ExpandAllGroupsCommand}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.ExpandAll]}" />
                 <MenuItem
@@ -632,6 +647,10 @@
                     CommandParameter="{Binding Group}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CompareFullsizeThumbnails]}"
                     InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[ShowGroupInThumbnailComparer]}" />
+                <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).CheckAllInGroupHeaderCommand}"
+                    CommandParameter="{Binding Group}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Group.CheckAll]}" />
                 <MenuItem
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).MarkGroupHeaderNotAMatchCommand}"
                     CommandParameter="{Binding Group}"
