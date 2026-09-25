@@ -69,20 +69,64 @@ namespace VDF.GUI.ViewModels {
 			["Bits per pixel"] = new("Bits per pixel", d => BitsPerPixel(d.ItemInfo), videoOnly: true, nearTie: BitrateTies),
 			["Audio Bitrate"] = new("Audio Bitrate", d => d.ItemInfo.AudioBitRateKbs, videoOnly: true, nearTie: BitrateTies),
 			["Size"] = new("Size", d => d.ItemInfo.SizeLong, videoOnly: false, ascending: true),
+			// For archives, where the bigger file is the better one (PNG over JPG, #895).
+			["SizeLarger"] = new("SizeLarger", d => d.ItemInfo.SizeLong, videoOnly: false),
 		};
 
 		// Yields criteria in the user's chosen order, then appends any map entries the
 		// user's saved list doesn't include. This lets newly added criteria (e.g. Size)
 		// take effect as a final tiebreaker for users with pre-existing settings,
 		// without overwriting their explicit ordering.
-		static IEnumerable<QualityRanker.Criterion<DuplicateItemVM>> ResolveCriteria(IEnumerable<string> names) {
+		// Criteria the user switched off are skipped, wherever they stand (#885).
+		internal static IEnumerable<QualityRanker.Criterion<DuplicateItemVM>> ResolveCriteria(IEnumerable<string> names, ICollection<string> disabled) {
 			var seen = new HashSet<string>();
 			foreach (var name in names)
-				if (QualityCriteriaMap.TryGetValue(name, out var c) && seen.Add(name))
+				if (QualityCriteriaMap.TryGetValue(name, out var c) && seen.Add(name) && !disabled.Contains(name))
 					yield return c;
 			foreach (var kv in QualityCriteriaMap)
-				if (!seen.Contains(kv.Key))
+				if (!seen.Contains(kv.Key) && !disabled.Contains(kv.Key))
 					yield return kv.Value;
+		}
+
+		/// <summary>The criteria the quality ranking uses, in order: the user's order minus what they switched off.</summary>
+		IEnumerable<QualityRanker.Criterion<DuplicateItemVM>> ActiveQualityCriteria =>
+			ResolveCriteria(QualityCriteriaOrder, Data.SettingsFile.Instance.QualityCriteriaDisabled);
+
+		/// <summary>
+		/// Whether the larger file counts as the better size: "Size (larger file wins)" is
+		/// switched on and ranks above "Size (smaller file wins)", or the latter is off. With
+		/// neither size criterion in use, the smaller file stays green, as it always was.
+		/// </summary>
+		internal static bool PrefersLargerSize(IEnumerable<string> order, ICollection<string> disabled) {
+			foreach (var criterion in ResolveCriteria(order, disabled)) {
+				if (criterion.Name == "SizeLarger") return true;
+				if (criterion.Name == "Size") return false;
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// Re-marks each group's best size for the size direction in use, so the green size
+		/// is the one the ranking prefers (#895, #915). The scan marks the smallest.
+		/// </summary>
+		bool sizePreferenceApplied;
+		/// <summary>
+		/// Leaves the scan's marks alone for everyone on the default direction; re-marks while
+		/// the larger file is preferred, and once more to put the smaller back after switching.
+		/// </summary>
+		void ApplySizePreferenceIfChanged() {
+			bool preferLarger = PrefersLargerSize(QualityCriteriaOrder, Data.SettingsFile.Instance.QualityCriteriaDisabled);
+			if (!preferLarger && !sizePreferenceApplied) return;
+			ApplySizePreference(Duplicates, preferLarger);
+			sizePreferenceApplied = preferLarger;
+		}
+
+		internal static void ApplySizePreference(IEnumerable<DuplicateItemVM> items, bool preferLarger) {
+			foreach (var group in items.GroupBy(d => d.ItemInfo.GroupId)) {
+				long best = preferLarger ? group.Max(d => d.ItemInfo.SizeLong) : group.Min(d => d.ItemInfo.SizeLong);
+				foreach (var d in group)
+					d.ItemInfo.IsBestSize = d.ItemInfo.SizeLong == best;
+			}
 		}
 	}
 

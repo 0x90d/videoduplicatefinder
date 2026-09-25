@@ -654,7 +654,16 @@ namespace VDF.GUI.Data {
 		public List<string> QualityCriteriaOrder {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);
-		} = ["Duration", "Resolution", "Bitrate", "FPS", "Bits per pixel", "Audio Bitrate", "Size"];
+		} = ["Duration", "Resolution", "Bitrate", "FPS", "Bits per pixel", "Audio Bitrate", "Size", "SizeLarger"];
+		/// <summary>
+		/// Criteria the quality ranking ignores (#885). "Size (larger file wins)" starts
+		/// switched off, so nothing changes until someone turns it on (#895).
+		/// </summary>
+		[JsonPropertyName("QualityCriteriaDisabled")]
+		public List<string> QualityCriteriaDisabled {
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		} = ["SizeLarger"];
 
 		[JsonPropertyName("EnableScheduledScan")]
 		public bool EnableScheduledScan {

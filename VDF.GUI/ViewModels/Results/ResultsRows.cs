@@ -87,6 +87,28 @@ namespace VDF.GUI.ViewModels {
 		/// not part of it: it changes while the row lives, the view adds it.
 		/// </summary>
 		public string AccessibleName { get; internal set; } = string.Empty;
+
+		/// <summary>
+		/// Metrics in which every member of the group has the same value. Those are shown
+		/// neutral: there is nothing to win, and all-green read as "all equally good" next
+		/// to groups where green means better (#888, #915). Set by the builder.
+		/// </summary>
+		public bool SameDuration { get; internal set; }
+		public bool SameFrameSize { get; internal set; }
+		public bool SameSize { get; internal set; }
+		public bool SameBitRate { get; internal set; }
+		public bool SameAudioBitRate { get; internal set; }
+
+		public bool DurationHi => !SameDuration && Item.ItemInfo.IsBestDuration;
+		public bool DurationLo => !SameDuration && !Item.ItemInfo.IsBestDuration;
+		public bool FrameSizeHi => !SameFrameSize && Item.ItemInfo.IsBestFrameSize;
+		public bool FrameSizeLo => !SameFrameSize && !Item.ItemInfo.IsBestFrameSize;
+		public bool SizeHi => !SameSize && Item.ItemInfo.IsBestSize;
+		public bool SizeLo => !SameSize && !Item.ItemInfo.IsBestSize;
+		public bool BitRateHi => !SameBitRate && Item.ItemInfo.IsBestBitRateKbs;
+		public bool BitRateLo => !SameBitRate && !Item.ItemInfo.IsBestBitRateKbs;
+		public bool AudioBitRateHi => !SameAudioBitRate && Item.ItemInfo.IsBestAudioBitRateKbs;
+		public bool AudioBitRateLo => !SameAudioBitRate && !Item.ItemInfo.IsBestAudioBitRateKbs;
 	}
 
 	/// <summary>

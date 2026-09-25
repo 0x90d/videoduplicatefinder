@@ -130,6 +130,7 @@ namespace VDF.GUI.ViewModels {
 			ResultsScrollAnchor.Capture? anchor = ResultsAnchorProvider?.Invoke();
 			List<Guid> oldGroupOrder = resultsGroups.ConvertAll(g => g.GroupId);
 			RebuildGroupsWithOneFileLeft();
+			ApplySizePreferenceIfChanged();
 			var result = ResultsListBuilder.Build(new ResultsBuildRequest {
 				Items = Duplicates.ToList(),
 				Filter = DuplicatesFilterCore,
@@ -140,7 +141,7 @@ namespace VDF.GUI.ViewModels {
 				ExpandedDetails = expandedResultsDetails,
 				PickBest = members => {
 					var (keep, decidedBy) = VDF.Core.Utils.QualityRanker.PickKeeperWithReason(
-						members.ToList(), ResolveCriteria(QualityCriteriaOrder), d => d.ItemInfo.IsImage);
+						members.ToList(), ActiveQualityCriteria, d => d.ItemInfo.IsImage);
 					return (keep, BestBadgeTooltip(decidedBy));
 				},
 				Formats = BuildGroupSummaryFormats(),

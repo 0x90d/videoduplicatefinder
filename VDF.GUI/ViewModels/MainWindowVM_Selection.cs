@@ -181,12 +181,15 @@ namespace VDF.GUI.ViewModels {
 
 		public ReactiveCommand<Unit, Unit> CheckLowestQualityCommand => ReactiveCommand.CreateFromTask(async () => {
 			var dlg = new QualityOrderDialog();
-			var result = await dlg.ShowDialog<List<string>>(ApplicationHelpers.MainWindow);
-			if (result == null || result.Count == 0) return;
-			QualityCriteriaOrder = result;
+			var result = await dlg.ShowDialog<QualityOrderResult?>(ApplicationHelpers.MainWindow);
+			if (result == null || result.Order.Count == 0) return;
+			QualityCriteriaOrder = result.Order;
+			SettingsFile.Instance.QualityCriteriaDisabled = result.Disabled;
+			// The BEST badges and the green size follow the new order at once.
+			RebuildResultsList();
 
 			using var undoBatch = BeginSelectionUndoBatch();
-			var criteria = ResolveCriteria(QualityCriteriaOrder);
+			var criteria = ActiveQualityCriteria.ToList();
 			ForEachGroupCluster(ScopedDuplicates(), (d, first) => d.EqualsButQuality(first), (first, cluster) => {
 				cluster.Insert(0, first);
 

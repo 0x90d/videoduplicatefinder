@@ -121,6 +121,18 @@ namespace VDF.GUI.ViewModels {
 				}
 
 				var rows = members.Select(m => new ResultsItemRow(m)).ToList();
+				bool sameDuration = AllSame(members, m => m.ItemInfo.Duration);
+				bool sameFrameSize = AllSame(members, m => m.ItemInfo.FrameSizeInt);
+				bool sameSize = AllSame(members, m => m.ItemInfo.SizeLong);
+				bool sameBitRate = AllSame(members, m => m.ItemInfo.BitRateKbs);
+				bool sameAudioBitRate = AllSame(members, m => m.ItemInfo.AudioBitRateKbs);
+				foreach (var row in rows) {
+					row.SameDuration = sameDuration;
+					row.SameFrameSize = sameFrameSize;
+					row.SameSize = sameSize;
+					row.SameBitRate = sameBitRate;
+					row.SameAudioBitRate = sameAudioBitRate;
+				}
 				var header = new ResultsGroupHeader {
 					GroupId = gid,
 					Rows = rows,
@@ -292,6 +304,14 @@ namespace VDF.GUI.ViewModels {
 			});
 			for (int i = 0; i < decorated.Count; i++)
 				headers[i] = decorated[i].h;
+		}
+
+		static bool AllSame<T>(List<DuplicateItemVM> members, Func<DuplicateItemVM, T> value) {
+			var first = value(members[0]);
+			for (int i = 1; i < members.Count; i++)
+				if (!EqualityComparer<T>.Default.Equals(value(members[i]), first))
+					return false;
+			return true;
 		}
 
 		static long MaxSize(ResultsGroupHeader h) {

@@ -1907,7 +1907,7 @@ Non-Windows setup:
 			if (list.Count >= 2) {
 				var keeper = VDF.Core.Utils.QualityRanker.PickKeeper(
 					list.Select(l => l.Item).ToList(),
-					ResolveCriteria(QualityCriteriaOrder),
+					ActiveQualityCriteria,
 					d => d.ItemInfo.IsImage);
 				foreach (var entry in list)
 					entry.IsGroupBest = ReferenceEquals(entry.Item, keeper);
@@ -1928,7 +1928,7 @@ Non-Windows setup:
 
 			var keep = VDF.Core.Utils.QualityRanker.PickKeeper(
 				groupItems,
-				ResolveCriteria(QualityCriteriaOrder),
+				ActiveQualityCriteria,
 				d => d.ItemInfo.IsImage);
 
 			using var _ = BeginSelectionUndoBatch();

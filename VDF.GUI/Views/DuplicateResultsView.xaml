@@ -784,8 +784,8 @@
                 <StackPanel>
                 <TextBlock FontSize="12" Classes="metric-diff"
                            IsVisible="{Binding !Item.ItemInfo.IsImage}"
-                           Classes.hi="{Binding Item.ItemInfo.IsBestBitRateKbs}"
-                           Classes.lo="{Binding !Item.ItemInfo.IsBestBitRateKbs}"
+                           Classes.hi="{Binding BitRateHi}"
+                           Classes.lo="{Binding BitRateLo}"
                            Classes.eq="{Binding Item.BitRateDiff, Converter={StaticResource EqualDiffConverter}}"
                            Classes.diffing="{Binding Item.BitRateDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                   <TextBlock.Text>
@@ -797,8 +797,8 @@
                 </TextBlock>
                 <TextBlock FontSize="11.5" Classes="metric-diff"
                            IsVisible="{Binding !Item.ItemInfo.IsImage}"
-                           Classes.hi="{Binding Item.ItemInfo.IsBestAudioBitRateKbs}"
-                           Classes.lo="{Binding !Item.ItemInfo.IsBestAudioBitRateKbs}"
+                           Classes.hi="{Binding AudioBitRateHi}"
+                           Classes.lo="{Binding AudioBitRateLo}"
                            Classes.eq="{Binding Item.AudioBitRateDiff, Converter={StaticResource EqualDiffConverter}}"
                            Classes.diffing="{Binding Item.AudioBitRateDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                   <TextBlock.Text>
@@ -819,8 +819,8 @@
                 <Border Tag="size" Background="Transparent"
                         PointerEntered="OnMetricPointerEntered" PointerExited="OnMetricPointerExited">
                   <TextBlock FontSize="12" Classes="metric-diff"
-                             Classes.hi="{Binding Item.ItemInfo.IsBestSize}"
-                             Classes.lo="{Binding !Item.ItemInfo.IsBestSize}"
+                             Classes.hi="{Binding SizeHi}"
+                             Classes.lo="{Binding SizeLo}"
                              Classes.eq="{Binding Item.SizeDiff, Converter={StaticResource EqualDiffConverter}}"
                              Classes.diffing="{Binding Item.SizeDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock.Text>
@@ -847,8 +847,8 @@
                 <StackPanel>
                 <TextBlock FontSize="12" Classes="metric-diff"
                            IsVisible="{Binding !Item.ItemInfo.IsImage}"
-                           Classes.hi="{Binding Item.ItemInfo.IsBestDuration}"
-                           Classes.lo="{Binding !Item.ItemInfo.IsBestDuration}"
+                           Classes.hi="{Binding DurationHi}"
+                           Classes.lo="{Binding DurationLo}"
                            Classes.eq="{Binding Item.DurationDiff, Converter={StaticResource EqualDiffConverter}}"
                            Classes.diffing="{Binding Item.DurationDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                   <TextBlock.Text>
@@ -860,8 +860,8 @@
                 </TextBlock>
                 <StackPanel Orientation="Horizontal" Spacing="5">
                   <TextBlock FontSize="11.5" Classes="metric-diff"
-                             Classes.hi="{Binding Item.ItemInfo.IsBestFrameSize}"
-                             Classes.lo="{Binding !Item.ItemInfo.IsBestFrameSize}"
+                             Classes.hi="{Binding FrameSizeHi}"
+                             Classes.lo="{Binding FrameSizeLo}"
                              Classes.eq="{Binding Item.FrameSizeDiff, Converter={StaticResource EqualDiffConverter}}"
                              Classes.diffing="{Binding Item.FrameSizeDiff, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock.Text>
