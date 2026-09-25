@@ -212,7 +212,9 @@ jobs:
 
   publish-release:
     needs: build
-    if: github.ref_type == 'tag'
+    # Without a status function the implicit success() also demands every job further up
+    # the chain succeeded, and cleanup is always skipped on a tag push (v4.1.1 stayed a draft).
+    if: ${{ !cancelled() && github.ref_type == 'tag' && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
