@@ -1,0 +1,156 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+        xmlns:vm="clr-namespace:VDF.GUI.ViewModels"
+        xmlns:app="clr-namespace:VDF.GUI;assembly=VDF.GUI"
+        x:Class="VDF.GUI.Views.MetadataCompareWindow"
+        x:DataType="vm:MetadataCompareVM"
+        Width="1100"
+        Height="700"
+        MinWidth="560"
+        MinHeight="360"
+        Icon="/Assets/icon.ico"
+        WindowStartupLocation="CenterOwner"
+        Title="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.Title]}">
+  <Window.Styles>
+    <Style Selector="Border.cell">
+      <Setter Property="Width" Value="280" />
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="Margin" Value="0,1,4,1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <!-- A value most other files don't share: tinted, framed and bold, so it is not
+         carried by color alone. -->
+    <Style Selector="Border.cell.odd">
+      <Setter Property="Background" Value="{DynamicResource VdfWarnSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource VdfWarnBorderBrush}" />
+    </Style>
+    <Style Selector="Border.cell.odd > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource VdfWarnBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.cell.missing > TextBlock">
+      <Setter Property="FontStyle" Value="Italic" />
+    </Style>
+    <Style Selector="Border.cell.missing:not(.odd) > TextBlock">
+      <Setter Property="Opacity" Value="{DynamicResource VdfTextMutedOpacity}" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="16">
+    <TextBlock DockPanel.Dock="Top"
+               Opacity="{DynamicResource VdfTextDim80Opacity}"
+               Text="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.Description]}"
+               TextWrapping="Wrap"
+               Margin="0,0,0,10" />
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,0,0,10">
+      <CheckBox Content="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.OnlyDifferences]}"
+                AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.OnlyDifferences]}"
+                IsChecked="{Binding OnlyDifferences}" />
+      <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding SummaryText}"
+                 IsVisible="{Binding !IsLoading}" />
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+      <Button Content="{Binding Source={x:Static app:App.Lang}, Path=[Dialog.Close]}"
+              MinWidth="90"
+              IsCancel="True"
+              Click="Close_Click" />
+    </StackPanel>
+
+    <Border Padding="4"
+            Background="{actipro:ThemeResource Container1BackgroundBrush}"
+            BorderBrush="{actipro:ThemeResource Container3BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+      <!-- The header row scrolls sideways with the table; the list scrolls down on its own. -->
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,4,0,6">
+            <TextBlock Width="240" VerticalAlignment="Center" FontWeight="SemiBold"
+                       Opacity="{DynamicResource VdfTextSoftOpacity}"
+                       Text="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.Field]}" />
+            <ItemsControl ItemsSource="{Binding Files}"
+                          AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.Files]}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:MetadataFileColumn">
+                  <!-- Ticking the file here checks it in the results list too. -->
+                  <StackPanel Width="280" Margin="0,0,4,0" ToolTip.Tip="{Binding Path}">
+                    <CheckBox IsChecked="{Binding Item.Checked}"
+                              AutomationProperties.Name="{Binding CheckName}">
+                      <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    </CheckBox>
+                    <TextBlock Margin="28,0,0,0" FontSize="11.5" FontStyle="Italic"
+                               Opacity="{DynamicResource VdfTextDim80Opacity}"
+                               IsVisible="{Binding IsUnavailable}"
+                               Text="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.Unavailable]}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <Panel>
+            <ListBox x:Name="RowsList"
+                     AutomationProperties.Name="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.Title]}"
+                     Background="Transparent"
+                     ItemsSource="{Binding Rows}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+              <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                  <Setter Property="Padding" Value="8,1" />
+                  <Setter Property="CornerRadius" Value="6" />
+                  <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName, x:DataType=vm:IMetadataRow}" />
+                </Style>
+              </ListBox.Styles>
+              <ListBox.DataTemplates>
+                <DataTemplate DataType="vm:MetadataSectionRow">
+                  <TextBlock Margin="0,8,0,2" FontWeight="Bold" Text="{Binding Title}" />
+                </DataTemplate>
+                <DataTemplate DataType="vm:MetadataValueRow">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Width="240" Margin="0,0,0,0" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}"
+                               Text="{Binding Name}" />
+                    <ItemsControl ItemsSource="{Binding Cells}" AutomationProperties.Name="{Binding Name}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MetadataCell">
+                          <Border Classes="cell" Classes.odd="{Binding IsOdd}" Classes.missing="{Binding IsMissing}">
+                            <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.DataTemplates>
+            </ListBox>
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                       IsVisible="{Binding IsLoading}"
+                       Text="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.Loading]}" />
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Margin="24"
+                       Opacity="{DynamicResource VdfTextDim80Opacity}"
+                       IsVisible="{Binding HasNoMetadata}"
+                       Text="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.NoMetadata]}" />
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Margin="24"
+                       Opacity="{DynamicResource VdfTextDim80Opacity}"
+                       IsVisible="{Binding AllEqual}"
+                       Text="{Binding Source={x:Static app:App.Lang}, Path=[MetadataCompare.AllEqual]}" />
+          </Panel>
+        </DockPanel>
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</Window>

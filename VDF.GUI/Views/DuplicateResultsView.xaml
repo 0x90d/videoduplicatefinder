@@ -511,6 +511,10 @@
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).LoadThumbnailsForGroupHeaderCommand}"
                     CommandParameter="{Binding}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.LoadThumbnailsForGroup]}" />
+                <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).CompareMetadataOfGroupHeaderCommand}"
+                    CommandParameter="{Binding}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MetadataCompare.Menu]}" />
                 <Separator />
                 <MenuItem
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).KeepBestInGroupHeaderCommand}"
@@ -654,6 +658,10 @@
                     CommandParameter="{Binding Group}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.CompareFullsizeThumbnails]}"
                     InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[ShowGroupInThumbnailComparer]}" />
+                <MenuItem
+                    Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).CompareMetadataOfGroupHeaderCommand}"
+                    CommandParameter="{Binding Group}"
+                    Header="{Binding Source={x:Static local:App.Lang}, Path=[MetadataCompare.Menu]}" />
                 <MenuItem
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).CheckAllInGroupHeaderCommand}"
                     CommandParameter="{Binding Group}"

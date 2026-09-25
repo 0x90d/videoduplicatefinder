@@ -101,6 +101,42 @@ namespace VDF.Core.FFTools {
 		}
 
 		/// <summary>
+		/// The JSON of every container and stream tag of <paramref name="file"/> (with each
+		/// stream's index and type), for the metadata comparison (#926). Null when ffprobe fails.
+		/// </summary>
+		public static byte[]? GetTagsJson(string file) {
+			var psi = new ProcessStartInfo {
+				FileName = FFprobePath,
+				CreateNoWindow = true,
+				RedirectStandardInput = false,
+				WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
+				RedirectStandardOutput = true,
+				RedirectStandardError = false,
+				WindowStyle = ProcessWindowStyle.Hidden
+			};
+
+			psi.ArgumentList.Add("-hide_banner");
+			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("quiet");
+			psi.ArgumentList.Add("-show_entries"); psi.ArgumentList.Add("format_tags:stream=index,codec_type:stream_tags");
+			psi.ArgumentList.Add("-of"); psi.ArgumentList.Add("json");
+			psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
+
+			using var process = new Process { StartInfo = psi };
+			try {
+				process.Start();
+				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
+				using var ms = new MemoryStream();
+				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFprobe", file);
+				return process.ExitCode == 0 ? ms.ToArray() : null;
+			}
+			catch (Exception e) {
+				Logger.Instance.Warn($"Failed reading metadata tags from '{file}': {e.Message}");
+				try { if (!process.HasExited) process.Kill(); } catch { }
+				return null;
+			}
+		}
+
+		/// <summary>
 		/// Reads the container-level <c>creation_time</c> tag from a media file. Used for HEIC/HEIF
 		/// images, whose EXIF date is lost when FFmpeg transcodes them to JPEG for hashing and
 		/// thumbnails. Returns <c>null</c> when the tag is absent, empty or unparseable.

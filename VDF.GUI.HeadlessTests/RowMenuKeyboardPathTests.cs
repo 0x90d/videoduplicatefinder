@@ -70,6 +70,21 @@ public class RowMenuKeyboardPathTests {
 			Assert.Same(row.Item, details.Item);
 		}));
 
+	// #926: the row's menu opens the metadata comparison of its whole group, in list order.
+	[Fact]
+	public Task CompareMetadata_OpensTheRowsGroup() => HeadlessUi.Run(() =>
+		WithOpenRowMenu((vm, row, item) => {
+			MetadataCompareVM? opened = null;
+			vm.ShowMetadataCompare = c => opened = c;
+
+			Choose(item("Compare metadata"));
+
+			Assert.NotNull(opened);
+			var expected = vm.ResultsRows.OfType<ResultsItemRow>().Where(r => r.Group == row.Group).Select(r => r.Item).ToList();
+			Assert.Equal(expected, opened!.Files.Select(f => f.Item));
+			Assert.Contains(row.Item, opened.Files.Select(f => f.Item));
+		}));
+
 	[Fact]
 	public Task CompareWithBest_ShowsTheDifferences_AndSaysThoseOfTheRow() => HeadlessUi.Run(() =>
 		WithOpenRowMenu((vm, row, item) => {

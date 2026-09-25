@@ -89,6 +89,9 @@ public class DialogAccessibleNameTests {
 	}));
 
 	[Fact]
+	public Task MetadataCompare() => HeadlessUi.Run(() => Check(() => MetadataCompareSample.Window()));
+
+	[Fact]
 	public Task LogView() => HeadlessUi.Run(() => {
 		var window = HeadlessUi.Show(new LogView { DataContext = new MainWindowVM() });
 		AccessibleNameTests.AssertEverythingIsNamed(window);

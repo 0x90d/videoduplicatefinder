@@ -49,6 +49,7 @@ public class DialogContrastTests {
 				.ToList();
 			return new ThumbnailComparer(items);
 		},
+		["MetadataCompare"] = () => MetadataCompareSample.Window(),
 	};
 
 	public static TheoryData<string, string> DialogsAndThemes() {

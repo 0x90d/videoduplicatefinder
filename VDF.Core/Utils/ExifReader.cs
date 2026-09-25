@@ -50,6 +50,144 @@ namespace VDF.Core.Utils {
 			}
 		}
 
+		/// <summary>
+		/// Every readable EXIF and GPS tag of <paramref name="path"/> as (isGps, name, value),
+		/// in file order, for the metadata comparison (#926). Pointers, the maker note and
+		/// embedded blobs are left out; unknown tags only when they hold text. Empty when the
+		/// file has no EXIF.
+		/// </summary>
+		internal static List<(bool IsGps, string Name, string Value)> ReadAllTags(string path) {
+			try {
+				using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
+				byte[]? tiff = ExtractTiffBlob(fs);
+				return tiff == null ? new() : ReadAllTags(tiff);
+			}
+			catch {
+				return new();
+			}
+		}
+
+		internal static List<(bool IsGps, string Name, string Value)> ReadAllTags(byte[] tiff) {
+			var tags = new List<(bool, string, string)>();
+			if (tiff.Length < 8) return tags;
+			bool le = tiff[0] == 0x49 && tiff[1] == 0x49;
+			if (!le && !(tiff[0] == 0x4D && tiff[1] == 0x4D)) return tags;
+			if (ReadU16(tiff, 2, le) != 42) return tags;
+
+			uint exifIfd = 0, gpsIfd = 0;
+			void Collect(uint offset, bool gps, Dictionary<ushort, string> names) {
+				foreach (var (tag, type, count, valueOffset) in EnumerateIfd(tiff, offset, le)) {
+					if (!gps && tag == TagExifIfdPointer) { exifIfd = ReadPointer(tiff, type, valueOffset, le); continue; }
+					if (!gps && tag == TagGpsIfdPointer) { gpsIfd = ReadPointer(tiff, type, valueOffset, le); continue; }
+					if (SkippedTags.Contains(tag)) continue;
+					bool known = names.TryGetValue(tag, out string? name);
+					if (!known && type != 2) continue;
+					string? value = FormatValue(tiff, tag, type, count, valueOffset, le);
+					if (!string.IsNullOrEmpty(value))
+						tags.Add((gps, name ?? $"Tag 0x{tag:X4}", value));
+				}
+			}
+			Collect(ReadU32(tiff, 4, le), false, TagNames);
+			if (exifIfd > 0) Collect(exifIfd, false, TagNames);
+			if (gpsIfd > 0) Collect(gpsIfd, true, GpsTagNames);
+			return tags;
+		}
+
+		static uint ReadPointer(byte[] tiff, ushort type, int valueOffset, bool le) =>
+			type == 4 ? ReadU32(tiff, valueOffset, le) : type == 3 ? ReadU16(tiff, valueOffset, le) : 0u;
+
+		const ushort TagGpsIfdPointer = 0x8825;
+
+		// Interop pointer, maker note (vendor binary), thumbnail location, XMP, ICC, PrintIM.
+		static readonly HashSet<ushort> SkippedTags = new() { 0xA005, 0x927C, 0x0201, 0x0202, 0x02BC, 0x8773, 0xC4A5 };
+
+		static readonly Dictionary<ushort, string> TagNames = new() {
+			[0x0100] = "ImageWidth", [0x0101] = "ImageLength", [0x010E] = "ImageDescription", [0x010F] = "Make",
+			[0x0110] = "Model", [0x0112] = "Orientation", [0x011A] = "XResolution", [0x011B] = "YResolution",
+			[0x0128] = "ResolutionUnit", [0x0131] = "Software", [0x0132] = "DateTime", [0x013B] = "Artist",
+			[0x0213] = "YCbCrPositioning", [0x8298] = "Copyright",
+			[0x829A] = "ExposureTime", [0x829D] = "FNumber", [0x8822] = "ExposureProgram", [0x8827] = "ISOSpeedRatings",
+			[0x9000] = "ExifVersion", [0x9003] = "DateTimeOriginal", [0x9004] = "DateTimeDigitized",
+			[0x9010] = "OffsetTime", [0x9011] = "OffsetTimeOriginal", [0x9012] = "OffsetTimeDigitized",
+			[0x9101] = "ComponentsConfiguration", [0x9201] = "ShutterSpeedValue", [0x9202] = "ApertureValue",
+			[0x9203] = "BrightnessValue", [0x9204] = "ExposureBiasValue", [0x9205] = "MaxApertureValue",
+			[0x9206] = "SubjectDistance", [0x9207] = "MeteringMode", [0x9208] = "LightSource", [0x9209] = "Flash",
+			[0x920A] = "FocalLength", [0x9286] = "UserComment", [0x9290] = "SubSecTime", [0x9291] = "SubSecTimeOriginal",
+			[0x9292] = "SubSecTimeDigitized", [0xA000] = "FlashpixVersion", [0xA001] = "ColorSpace",
+			[0xA002] = "PixelXDimension", [0xA003] = "PixelYDimension", [0xA217] = "SensingMethod",
+			[0xA401] = "CustomRendered", [0xA402] = "ExposureMode", [0xA403] = "WhiteBalance", [0xA404] = "DigitalZoomRatio",
+			[0xA405] = "FocalLengthIn35mmFilm", [0xA406] = "SceneCaptureType", [0xA420] = "ImageUniqueID",
+			[0xA430] = "CameraOwnerName", [0xA431] = "BodySerialNumber", [0xA432] = "LensSpecification",
+			[0xA433] = "LensMake", [0xA434] = "LensModel",
+		};
+
+		static readonly Dictionary<ushort, string> GpsTagNames = new() {
+			[0x00] = "GPSVersionID", [0x01] = "GPSLatitudeRef", [0x02] = "GPSLatitude", [0x03] = "GPSLongitudeRef",
+			[0x04] = "GPSLongitude", [0x05] = "GPSAltitudeRef", [0x06] = "GPSAltitude", [0x07] = "GPSTimeStamp",
+			[0x0C] = "GPSSpeedRef", [0x0D] = "GPSSpeed", [0x10] = "GPSImgDirectionRef", [0x11] = "GPSImgDirection",
+			[0x12] = "GPSMapDatum", [0x1B] = "GPSProcessingMethod", [0x1D] = "GPSDateStamp",
+		};
+
+		/// <summary>Human-readable value of one IFD entry, or null when it can't be shown sensibly.</summary>
+		static string? FormatValue(byte[] tiff, ushort tag, ushort type, uint count, int valueFieldOffset, bool le) {
+			int size = type switch { 1 or 2 or 6 or 7 => 1, 3 or 8 => 2, 4 or 9 => 4, 5 or 10 => 8, _ => 0 };
+			if (size == 0 || count == 0 || count > 4096) return null;
+			long total = (long)size * count;
+			int data = total <= 4 ? valueFieldOffset : (int)ReadU32(tiff, valueFieldOffset, le);
+			if (data < 0 || data + total > tiff.Length) return null;
+			var inv = CultureInfo.InvariantCulture;
+			switch (type) {
+			case 2:
+				return Encoding.UTF8.GetString(tiff, data, (int)count).TrimEnd('\0', ' ');
+			case 1:
+			case 6:
+			case 7:
+				// UserComment: 8-byte charset prefix, then the text.
+				if (tag == 0x9286 && count > 8) {
+					string charset = Encoding.ASCII.GetString(tiff, data, 8).TrimEnd('\0', ' ');
+					var text = charset == "UNICODE"
+						? (le ? Encoding.Unicode : Encoding.BigEndianUnicode).GetString(tiff, data + 8, (int)count - 8)
+						: Encoding.UTF8.GetString(tiff, data + 8, (int)count - 8);
+					return text.TrimEnd('\0', ' ');
+				}
+				var bytes = tiff.AsSpan(data, (int)count);
+				bool printable = true;
+				foreach (byte b in bytes) printable &= b >= 0x20 && b < 0x7F;
+				if (printable) return Encoding.ASCII.GetString(bytes); // ExifVersion "0232", ProcessingMethod
+				if (count <= 8) return string.Join(".", bytes.ToArray()); // GPSVersionID 2.3.0.0
+				return $"({count} bytes)";
+			case 3:
+			case 4:
+			case 8:
+			case 9:
+				if (count > 16) return null;
+				var numbers = new string[count];
+				for (int i = 0; i < count; i++) {
+					int o = data + i * size;
+					numbers[i] = type switch {
+						3 => ReadU16(tiff, o, le).ToString(inv),
+						8 => ((short)ReadU16(tiff, o, le)).ToString(inv),
+						4 => ReadU32(tiff, o, le).ToString(inv),
+						_ => ((int)ReadU32(tiff, o, le)).ToString(inv),
+					};
+				}
+				return string.Join(", ", numbers);
+			default: // 5 RATIONAL, 10 SRATIONAL
+				if (count > 16) return null;
+				var parts = new string[count];
+				for (int i = 0; i < count; i++) {
+					int o = data + i * 8;
+					long num = type == 5 ? ReadU32(tiff, o, le) : (int)ReadU32(tiff, o, le);
+					long den = type == 5 ? ReadU32(tiff, o + 4, le) : (int)ReadU32(tiff, o + 4, le);
+					parts[i] = den == 0 ? "0"
+						: den == 1 ? num.ToString(inv)
+						: num == 1 ? $"1/{den}"
+						: ((double)num / den).ToString("0.####", inv);
+				}
+				return string.Join(", ", parts);
+			}
+		}
+
 		/// <summary>EXIF date format is "yyyy:MM:dd HH:mm:ss" (local time, stored as UTC kind to match previous behavior).</summary>
 		internal static bool TryParseExifDateTime(string exifDateTime, out DateTime result) {
 			result = DateTime.MinValue;

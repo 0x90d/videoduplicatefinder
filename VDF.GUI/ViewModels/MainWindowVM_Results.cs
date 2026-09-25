@@ -209,6 +209,25 @@ namespace VDF.GUI.ViewModels {
 			if (header != null) CompareGroup(header.GroupId);
 		});
 
+		/// <summary>Every metadata tag of the group's files side by side (#926), read on demand.</summary>
+		public ReactiveCommand<ResultsGroupHeader, Unit> CompareMetadataOfGroupHeaderCommand => ReactiveCommand.Create<ResultsGroupHeader>(header => {
+			if (header == null) return;
+			var members = MetadataCompareMembers(header.GroupId);
+			if (members.Count == 0) return;
+			var vm = new MetadataCompareVM(members, Views.MetadataCompareWindow.LocalizedTexts());
+			if (ShowMetadataCompare != null) ShowMetadataCompare(vm);
+			else new Views.MetadataCompareWindow(vm).Show();
+		});
+
+		/// <summary>Test seam: receives the comparison instead of a window being opened.</summary>
+		internal Action<MetadataCompareVM>? ShowMetadataCompare;
+
+		/// <summary>The group's files in the order the results list shows them.</summary>
+		internal List<DuplicateItemVM> MetadataCompareMembers(Guid groupId) {
+			var shown = ResultsRows.OfType<ResultsItemRow>().Where(r => r.Item.ItemInfo.GroupId == groupId).Select(r => r.Item).ToList();
+			return shown.Count > 0 ? shown : Duplicates.Where(d => d.ItemInfo.GroupId == groupId).ToList();
+		}
+
 		public ReactiveCommand<ResultsGroupHeader, Unit> KeepBestInGroupHeaderCommand => ReactiveCommand.Create<ResultsGroupHeader>(header => {
 			if (header != null) KeepBestInGroup(header.GroupId);
 		});
