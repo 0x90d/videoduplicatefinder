@@ -44,6 +44,9 @@ namespace VDF.Core {
 		/// cases the Chromaprint pass cannot cover). Runs after the audio pass; videos
 		/// already grouped there (or by the visual duplicate scan) are skipped.
 		/// </summary>
+		/// <summary>What the last dense sampling phase did, for tests and diagnostics.</summary>
+		internal (int Extracted, int Cached, int Failed, int SkippedFailed) LastDenseSamplingCounts { get; private set; }
+
 		internal void ScanForPartialDuplicatesVisual() {
 			// Claim the phase BEFORE the prep work below. Scanning the database for eligible
 			// videos and loading the keyframe sidecar are silent minutes on a large library,
@@ -71,7 +74,7 @@ namespace VDF.Core {
 				Logger.Instance.Info($"AI partial detection: keyframe cache loaded ({store.Count:N0} record(s)).");
 			InitProgress(videos.Count, T("Scan.Stage.AiDenseSampling"));
 			var dense = new DenseEmbeddingStore.DenseRecord?[videos.Count];
-			int extracted = 0, cached = 0, failed = 0;
+			int extracted = 0, cached = 0, failed = 0, skippedFailed = 0;
 			using (var embedder = new OnnxEmbedder(AiComponents.ModelPath)) {
 				object embedLock = new();
 				// Sampling keyframes for a large library runs for hours, and the sidecar used
@@ -95,9 +98,18 @@ namespace VDF.Core {
 						if (!info.Exists)
 							return;
 						if (store.TryGet(entry.Path, info.Length, info.LastWriteTimeUtc.Ticks, out var cachedRecord)) {
-							dense[i] = cachedRecord;
-							Interlocked.Increment(ref cached);
-							return;
+							if (!cachedRecord.IsFailure) {
+								dense[i] = cachedRecord;
+								Interlocked.Increment(ref cached);
+								return;
+							}
+							// Failed on an earlier scan and unchanged since: decoding it again
+							// would fail again, after hours on a large file (#880). Same rule as
+							// failed frame sampling, and the same setting brings it back.
+							if (!Settings.AlwaysRetryFailedSampling) {
+								Interlocked.Increment(ref skippedFailed);
+								return;
+							}
 						}
 						double duration = entry.mediaInfo!.Duration.TotalSeconds;
 						double interval = GetAiPartialIntervalSeconds(duration);
@@ -110,14 +122,21 @@ namespace VDF.Core {
 						var filter = new DenseFrameFilter();
 						var batch = new List<byte[]>(OnnxEmbedder.MaxBatch);
 						var batchSlots = new List<int>(OnnxEmbedder.MaxBatch);
+						bool embedderFailed = false;
 						void FlushBatch() {
 							if (batch.Count == 0)
 								return;
 							byte[][] vectors;
 							// Inference is serial (one session, CPU-bound) while other files
 							// decode; ffmpeg simply blocks on its full stdout pipe meanwhile.
-							lock (embedLock)
-								vectors = embedder.EmbedBatchQuantized(batch);
+							try {
+								lock (embedLock)
+									vectors = embedder.EmbedBatchQuantized(batch);
+							}
+							catch {
+								embedderFailed = true;
+								throw;
+							}
 							for (int k = 0; k < vectors.Length; k++)
 								embedded[batchSlots[k]] = vectors[k];
 							foreach (byte[] frame in batch)
@@ -153,6 +172,10 @@ namespace VDF.Core {
 							// Already logged by the engine; partial embeddings are discarded so
 							// the record stays all-or-nothing like before.
 							Interlocked.Increment(ref failed);
+							// Remembered, unless the fault was the embedder's (an ONNX runtime
+							// problem would otherwise mark every file) or the scan was stopped.
+							if (!embedderFailed && !cancelationTokenSource.IsCancellationRequested)
+								store.Put(entry.Path, DenseEmbeddingStore.DenseRecord.Failure(info.Length, info.LastWriteTimeUtc.Ticks, (float)interval));
 							return;
 						}
 						var record = new DenseEmbeddingStore.DenseRecord(info.Length, info.LastWriteTimeUtc.Ticks, (float)interval, embedded.ToArray());
@@ -221,7 +244,8 @@ namespace VDF.Core {
 			IncrementProgress(string.Empty);
 			if (cancelationTokenSource.IsCancellationRequested)
 				return;
-			Logger.Instance.Info($"AI partial detection: dense embeddings ready for {videos.Count - failed} video(s) ({cached} cached, {extracted} computed, {failed} failed).");
+			LastDenseSamplingCounts = (extracted, cached, failed, skippedFailed);
+			Logger.Instance.Info($"AI partial detection: dense embeddings ready for {videos.Count - failed - skippedFailed} video(s) ({cached} cached, {extracted} computed, {failed} failed, {skippedFailed} skipped after failing on an earlier scan).");
 
 			// ── Phase B: offset-consistent matching ─────────────────────────────
 			float hitThreshold = Settings.AiPartialHitPercent / 100f;

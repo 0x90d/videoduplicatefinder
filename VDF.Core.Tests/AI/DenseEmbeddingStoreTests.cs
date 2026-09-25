@@ -55,6 +55,23 @@ public class DenseEmbeddingStoreTests : IDisposable {
 	}
 
 	[Fact]
+	public void FailureMarker_SurvivesTheSidecar_AndIsForgottenWhenTheFileChanges() {
+		// #880: a file whose keyframes could not be decoded is remembered as a record
+		// without frames, keyed by size and modification time like any other.
+		var store = new DenseEmbeddingStore();
+		store.Put(@"D:\media\broken.mp4", DenseEmbeddingStore.DenseRecord.Failure(5000, 6000, 15f));
+		store.Put(@"D:\media\fine.mp4", Record(7));
+		store.Save(keepOnly: null);
+
+		var loaded = DenseEmbeddingStore.Load();
+		Assert.True(loaded.TryGet(@"D:\media\broken.mp4", 5000, 6000, out var marker));
+		Assert.True(marker.IsFailure);
+		Assert.False(loaded.TryGet(@"D:\media\broken.mp4", 5001, 6000, out _));
+		Assert.True(loaded.TryGet(@"D:\media\fine.mp4", 1007, 2007, out var fine));
+		Assert.False(fine.IsFailure);
+	}
+
+	[Fact]
 	public void TryGet_RejectsChangedFile() {
 		var store = new DenseEmbeddingStore();
 		var record = Record(2);

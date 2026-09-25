@@ -1,4 +1,5 @@
 <Styles xmlns="https://github.com/avaloniaui"
+        xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Tactile press feedback: button depresses 1px on click. The press itself stays for
@@ -29,4 +30,21 @@
     <Style Selector="Button.solid:pressed /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}" />
     </Style>
+
+    <!-- A switch that is on is filled with the accent, its knob in the color the app puts
+         on the accent, as on the Scan button (#906). The theme draws on and off alike, an
+         outlined track with a grey knob, and only the knob's side told them apart: at a
+         glance, and for anyone who does not see position well, a page of settings gave no
+         idea which were on. The border stays the theme's, the strong outline in the high
+         contrast themes. Disabled switches keep the theme's disabled look. -->
+    <Style Selector="ToggleSwitch:checked:not(:disabled) /template/ Border#border">
+        <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    </Style>
+    <Style Selector="ToggleSwitch:checked:not(:disabled):pointerover /template/ Border#border">
+        <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccentPointerOver}" />
+    </Style>
+    <Style Selector="ToggleSwitch:checked:not(:disabled) /template/ ContentPresenter#glyph">
+        <Setter Property="Foreground" Value="{DynamicResource VdfOnAccentBrush}" />
+    </Style>
+
 </Styles>

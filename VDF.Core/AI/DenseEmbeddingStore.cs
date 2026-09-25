@@ -31,7 +31,17 @@ namespace VDF.Core.AI {
 	/// mapping intact.
 	/// </summary>
 	sealed class DenseEmbeddingStore {
-		internal sealed record DenseRecord(long FileSize, long MTimeUtcTicks, float IntervalSeconds, byte[][] Frames);
+		internal sealed record DenseRecord(long FileSize, long MTimeUtcTicks, float IntervalSeconds, byte[][] Frames) {
+			/// <summary>
+			/// A record without frames marks a file whose keyframes could not be decoded, so the
+			/// next scan does not decode it again (#880). A successful sweep always has frames:
+			/// FFmpeg producing none is itself a failure. Keyed by size and modification time
+			/// like every record, so a repaired or replaced file is sampled again.
+			/// </summary>
+			internal bool IsFailure => Frames.Length == 0;
+			internal static DenseRecord Failure(long fileSize, long mtimeUtcTicks, float intervalSeconds) =>
+				new(fileSize, mtimeUtcTicks, intervalSeconds, Array.Empty<byte[]>());
+		}
 
 		// VDFAI003: v2 layout with a per-frame validity flag (VDFAI001 had none and
 		// never shipped; VDFAI002 is the union store's magic).
