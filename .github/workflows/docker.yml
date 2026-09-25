@@ -25,6 +25,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # A version tag (v4.1.1) publishes :4.1.1 and leaves :latest to the branch builds.
+      - name: Choose image tags
+        id: tags
+        shell: bash
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/vdf-web"
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            MOVING="$IMAGE:${GITHUB_REF_NAME#v}"
+          else
+            MOVING="$IMAGE:latest"
+          fi
+          {
+            echo "list<<EOF"
+            echo "$MOVING"
+            echo "$IMAGE:${{ github.sha }}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and push vdf-web
         uses: docker/build-push-action@v7
         with:
@@ -32,8 +50,6 @@ jobs:
           file: VDF.Web/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/vdf-web:latest
-            ghcr.io/${{ github.repository_owner }}/vdf-web:${{ github.sha }}
+          tags: ${{ steps.tags.outputs.list }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

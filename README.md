@@ -68,6 +68,8 @@ CLI: `--ai-matching`, `--ai-percent`, `--ai-partial`, `--ai-partial-hit-percent`
 
 [Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.1.x) — attachments are automatically rebuilt and replaced on every commit.
 
+[Versioned releases](https://github.com/0x90d/videoduplicatefinder/releases) (tags like `v4.1.1`) are published now and then, and their files never change afterwards. Package managers and anyone who needs a fixed download should use those.
+
 > **Prefer the classic interface?** 4.1 introduces a redesigned interface. The final classic-UI build stays available on the [4.0.x release](https://github.com/0x90d/videoduplicatefinder/releases/tag/4.0.x) — databases and settings are compatible both ways.
 
 > **Upgrading from 3.x:** your scan database is migrated automatically on first load. Cached image hashes are recomputed on the next scan (image processing moved from ImageSharp to FFmpeg); video hashes are unaffected. Downgrading back to 3.x after the migration is not recommended. The last 3.x build remains available on the [3.0.x release](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x).
@@ -294,6 +296,8 @@ docker run -d \
   -v /path/to/your/media:/media:ro \
   ghcr.io/0x90d/vdf-web:latest
 ```
+
+`:latest` follows the daily build. To stay on a versioned release, use its number instead, for example `ghcr.io/0x90d/vdf-web:4.1.1`.
 
 Then open **http://localhost:8080** in your browser.
 Check the password with `docker logs vdf-web` and enter it to log in.

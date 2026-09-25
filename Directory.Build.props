@@ -1,10 +1,12 @@
 <Project>
 
   <PropertyGroup>
-    <!-- Base version for all VDF assemblies. Releases publish to the single "4.1.x"
-         GitHub tag and never bump a number, so the git commit baked in below is the
-         real build identifier the About box / diagnostics report show. Must match the
-         tag_name in .github/workflows/releases.yml (enforced by a test). -->
+    <!-- Base version for all VDF assemblies. The rolling "4.1.x" release keeps it as is,
+         so there the git commit baked in below is the real build identifier the About
+         box / diagnostics report show. A versioned release (tag v4.1.1) overrides it
+         with the tag's version in releases.yml, which refuses a tag whose major.minor
+         differs from this. Must match the rolling tag_name in releases.yml (enforced
+         by a test). -->
     <VersionPrefix>4.1.0</VersionPrefix>
   </PropertyGroup>
 

@@ -20,8 +20,9 @@ using System.Reflection;
 
 namespace VDF.GUI.Utils {
 	// Build/version identity for the About box, the window titlebar and the diagnostics
-	// report. Releases all publish to the single "4.1.x" tag, so the git commit baked in
-	// at build time (see Directory.Build.props) is the meaningful build identifier.
+	// report. Versioned releases (tag v4.1.1) carry their own number; the rolling "4.1.x"
+	// release always reports VersionPrefix, so there the git commit baked in at build
+	// time (see Directory.Build.props) is the meaningful build identifier.
 	public static class VersionInfo {
 		static readonly Assembly Asm = Assembly.GetEntryAssembly() ?? typeof(VersionInfo).Assembly;
 

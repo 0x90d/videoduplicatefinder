@@ -1,12 +1,20 @@
 name: Build releases
 
+# Two kinds of release:
+#   - every push to master rebuilds the rolling 4.1.x release, its assets replaced in place;
+#   - pushing a tag like v4.1.1 publishes a release of that commit whose assets are never
+#     replaced, so package managers (winget) can pin them by hash. The tag's version is
+#     stamped into the binaries and must share major.minor with VersionPrefix in
+#     Directory.Build.props.
 
 on:
   push:
     branches: [master]
+    tags: ['v*.*.*']
 
 jobs:
   cleanup:
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -21,8 +29,47 @@ jobs:
             gh release delete-asset 4.1.x "$asset" --yes
           done || true
 
+  prepare-release:
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Check the tag and create a draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' is not of the form vMAJOR.MINOR.PATCH."
+            exit 1
+          fi
+          PREFIX=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+          if [[ "${VERSION%.*}" != "${PREFIX%.*}" ]]; then
+            echo "::error::Tag '$TAG' does not match VersionPrefix $PREFIX in Directory.Build.props (major.minor)."
+            exit 1
+          fi
+          # A versioned release is built once. After a failed run, delete the draft
+          # (and the tag if needed) and push the tag again.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release '$TAG' already exists; versioned releases are never rebuilt."
+            exit 1
+          fi
+          # Stays a draft until every platform has uploaded (publish-release below).
+          NOTES="Built from commit ${GITHUB_SHA::7}. The assets of this release never change; the rolling 4.1.x release has the newest build."
+          PREVIOUS=$(git tag --list 'v*.*.*' --sort=v:refname | awk -v t="$TAG" '$0 == t { print prev; exit } { prev = $0 }')
+          if [[ -n "$PREVIOUS" ]]; then
+            gh release create "$TAG" --draft --verify-tag --title "$VERSION" --notes "$NOTES" --generate-notes --notes-start-tag "$PREVIOUS"
+          else
+            gh release create "$TAG" --draft --verify-tag --title "$VERSION" --notes "$NOTES"
+          fi
+
   build:
-    needs: cleanup
+    needs: [cleanup, prepare-release]
+    # One of the two is always skipped (branch push or tag push); run unless the other failed.
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
 
     strategy:
       # One platform failing (e.g. a runner-image hiccup) must not cancel the
@@ -78,13 +125,20 @@ jobs:
     - name: Build
       shell: bash
       run: |
+          # A versioned release (tag v4.1.1) stamps its version into every binary;
+          # the rolling release keeps VersionPrefix from Directory.Build.props.
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+          fi
           # Build GUI (Native AOT — verified AOT-safe for 4.0: compiled bindings,
           # source-generated JSON, statically-registered MemoryPack formatters)
-          dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputGUI"
+          dotnet publish ./VDF.GUI/VDF.GUI.csproj -c Release -v q -p:PublishAot=true -p:VersionPrefix="$VERSION" -r "${{ matrix.target }}" -o "outputGUI"
           # Build CLI (Native AOT)
-          dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q -p:PublishAot=true -r "${{ matrix.target }}" -o "outputCLI"
+          dotnet publish ./VDF.CLI/VDF.CLI.csproj -c Release -v q -p:PublishAot=true -p:VersionPrefix="$VERSION" -r "${{ matrix.target }}" -o "outputCLI"
           # Build Web (JIT, self-contained — Blazor Server is not supported under Native AOT)
-          dotnet publish ./VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -r "${{ matrix.target }}" -o "outputWeb"
+          dotnet publish ./VDF.Web/VDF.Web.csproj -c Release -v q --self-contained -p:VersionPrefix="$VERSION" -r "${{ matrix.target }}" -o "outputWeb"
           # Pack files
           if [[ "${{ matrix.target }}" == win-* ]]; then
             7z a -tzip "GUI-${{ matrix.target }}.zip" "./outputGUI/*"
@@ -97,6 +151,8 @@ jobs:
             cp -r outputGUI/. "Video Duplicate Finder.app/Contents/MacOS/"
             cp "VDF.GUI/Assets/macOS/icon.icns" "Video Duplicate Finder.app/Contents/Resources/icon.icns"
             cp "VDF.GUI/Assets/macOS/Info.plist" "Video Duplicate Finder.app/Contents/Info.plist"
+            plutil -replace CFBundleShortVersionString -string "$VERSION" "Video Duplicate Finder.app/Contents/Info.plist"
+            plutil -replace CFBundleVersion -string "$VERSION" "Video Duplicate Finder.app/Contents/Info.plist"
             chmod +x "Video Duplicate Finder.app/Contents/MacOS/VDF.GUI"
             # Ad-hoc sign every binary in the bundle. macOS 14+ (and especially Tahoe 26)
             # rejects unsigned dylibs under Library Validation, which previously caused
@@ -128,9 +184,13 @@ jobs:
           rm -rf "outputGUI" "outputCLI" "outputWeb" "Video Duplicate Finder.app"
           
     - name: Publish
+      if: github.ref_type == 'branch'
       uses: softprops/action-gh-release@v3
       with:
           tag_name: 4.1.x
+          # "Latest" belongs to the newest versioned release; the API default (true)
+          # would move it back here on every push.
+          make_latest: false
           files: |
             GUI-*
             CLI-*
@@ -141,5 +201,25 @@ jobs:
             Last build based on ${{ steps.vars.outputs.sha_short }}
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload to the versioned release
+      if: github.ref_type == 'tag'
+      shell: bash
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # No --clobber: an asset of a versioned release is never replaced.
+      run: gh release upload "$GITHUB_REF_NAME" GUI-* CLI-* Web-*
+
+  publish-release:
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Publish the draft
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Only after every platform uploaded: a package manager never sees a partial release.
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false --latest
 
 
