@@ -485,6 +485,17 @@ namespace VDF.Core {
 
 			if (Settings.PartialClipRequireVisualMatch) {
 				bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim);
+				double sourceDuration = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+				double clipDuration = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+				if (sourceDuration > 0 && clipDuration > 0 &&
+					PartialClipVisualSampleTimes(sourceDuration, clipDuration, clip.AudioFingerprint.Length, offsetSec).Count == 0) {
+					// #908: this printed "0.0%" followed by PASS, because the old gate let a pair
+					// through when none of its sample times fell inside the source.
+					sb.AppendLine($"Visual confirmation: not possible — at offset {formatSeconds(offsetSec)} the matched audio has no video of the longer file to compare against.");
+					sb.AppendLine("FAIL — an audio match that no frames can confirm is not reported (visual confirmation).");
+					failures.Add($"The audio matched at offset {formatSeconds(offsetSec)}, where there is no video to confirm it visually.");
+					return false;
+				}
 				sb.AppendLine($"Visual confirmation at the matched offset: {formatSimilarity(visualSim)} — required: at least {(Settings.PartialClipVisualThreshold * 100).ToString("0.#", inv)}%");
 				if (!pass) {
 					sb.AppendLine("FAIL — the audio matches but the frames at the matched offset are not similar enough (visual confirmation).");

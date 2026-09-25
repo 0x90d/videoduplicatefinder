@@ -2083,17 +2083,16 @@ namespace VDF.Core {
 			// A clip is kept with its first (longest) matching source. Sources whose only
 			// candidate clips are already claimed are skipped entirely - adding them would
 			// produce singleton groups in the result list.
-			var assignments = AssignPartialClipGroups(matches);
-
 			// Optional visual gate: drop pairs that match audio but differ visually at the
 			// matched offset (e.g. videos sharing a backing track but otherwise unrelated).
 			// Uses pHash when Settings.UsePHashing is on, else 32x32 grayscale percentage diff.
-			if (Settings.PartialClipRequireVisualMatch && assignments.Count > 0)
-				assignments = RunPartialClipVisualGate(videos, assignments,
+			var assignments = Settings.PartialClipRequireVisualMatch
+				? AssignAndVerifyPartialClips(videos, matches,
 					(source, clip, offsetSec) => {
 						bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim);
 						return (pass, visualSim);
-					});
+					})
+				: AssignPartialClipGroups(matches);
 
 			EmitPartialClipAssignments(videos, assignments, DuplicateFlags.PartialClip,
 				(source, clip, sim, offsetSec) => Logger.Instance.Info(
@@ -2188,6 +2187,48 @@ namespace VDF.Core {
 		}
 
 		/// <summary>
+		/// Assigns every clip to a source and confirms the pair visually, giving a clip whose
+		/// pair the gate drops to its next candidate source. Assigning first and verifying
+		/// afterwards (the old order) lost the clip altogether when its first (longest) source
+		/// failed the visual check, even with a correct source further down its candidate list;
+		/// lowering the audio threshold made that more likely, since more wrong long sources
+		/// come first (#925). Verifying every candidate up front would decode frames for all of
+		/// them (17k candidates in that report, 5 survived), so this only verifies what the
+		/// assignment actually picks and repeats with the rejected pairs removed until every
+		/// assigned pair has passed. Each round rejects at least one pair, so it ends.
+		/// </summary>
+		internal List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> AssignAndVerifyPartialClips(
+			List<FileEntry> videos,
+			IEnumerable<(int sourceIdx, int clipIdx, float sim, int offsetSec)> matches,
+			Func<FileEntry, FileEntry, int, (bool pass, float visualSim)> verify) {
+			var candidates = matches.ToList();
+			var passed = new HashSet<(int, int)>();
+			var rejected = new HashSet<(int, int)>();
+			for (int round = 1; ; round++) {
+				var assignments = AssignPartialClipGroups(candidates.Where(m => !rejected.Contains((m.sourceIdx, m.clipIdx))));
+				var unverified = assignments.Where(a => !passed.Contains((a.sourceIdx, a.clipIdx))).ToList();
+				if (unverified.Count == 0)
+					return assignments;
+				if (round > 1)
+					Logger.Instance.Info($"Partial clip detection: {unverified.Count} clip(s) reassigned to their next candidate source, verifying again (round {round})");
+
+				var kept = RunPartialClipVisualGate(videos, unverified, verify);
+				if (cancelationTokenSource.IsCancellationRequested) {
+					foreach (var a in kept)
+						passed.Add((a.sourceIdx, a.clipIdx));
+					return assignments.Where(a => passed.Contains((a.sourceIdx, a.clipIdx))).ToList();
+				}
+				var keptPairs = kept.Select(a => (a.sourceIdx, a.clipIdx)).ToHashSet();
+				foreach (var a in unverified) {
+					if (keptPairs.Contains((a.sourceIdx, a.clipIdx)))
+						passed.Add((a.sourceIdx, a.clipIdx));
+					else
+						rejected.Add((a.sourceIdx, a.clipIdx));
+				}
+			}
+		}
+
+		/// <summary>
 		/// Runs <paramref name="verify"/> over every candidate assignment and returns the ones that
 		/// pass, ordered deterministically. Its own progress phase: the gate decodes frames off disk
 		/// and can outlast the audio pass that produced the assignments, so leaving it silent left
@@ -2245,33 +2286,50 @@ namespace VDF.Core {
 		}
 
 		/// <summary>
+		/// Clip-local times the visual check of a partial-clip match samples. The audio matched
+		/// clip seconds [0, fingerprint length) against source seconds [offset, offset + that
+		/// length), so the frames are taken inside that window, where the two videos are claimed
+		/// to show the same thing. Sampling across the clip's whole video duration instead put
+		/// every sample past the end of the source when the clip's audio is shorter than its
+		/// video (#908). Avoids the window's very edges so intros/outros (often black or
+		/// text-only) don't dominate the result. Empty when no video overlaps the window.
+		/// </summary>
+		internal static List<double> PartialClipVisualSampleTimes(double sourceSec, double clipSec, int clipFingerprintSeconds, int offsetSec) {
+			double window = Math.Min(clipSec, sourceSec - offsetSec);
+			if (clipFingerprintSeconds > 0)
+				window = Math.Min(window, clipFingerprintSeconds);
+			var times = new List<double>(3);
+			if (window <= 0) return times;
+
+			double[] fractions = window >= 9.0 ? new[] { 0.25, 0.50, 0.75 }
+				: window >= 3.0 ? new[] { 0.33, 0.66 }
+				: new[] { 0.5 };
+			foreach (double f in fractions) {
+				double t = window * f;
+				if (t >= clipSec - 0.1 || offsetSec + t >= sourceSec - 0.1) continue;
+				times.Add(t);
+			}
+			return times;
+		}
+
+		/// <summary>
 		/// On-demand visual check for a partial-clip candidate. Decodes 1-3 frames from the
 		/// clip and the source at the matched audio offset and compares them. Returns true
 		/// when the average similarity meets <see cref="Settings.PartialClipVisualThreshold"/>,
 		/// or when no frames could be sampled (in which case audio alone decides). Uses pHash
 		/// when <see cref="Settings.UsePHashing"/> is enabled, otherwise grayscale percent diff.
 		/// </summary>
-		bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim) {
+		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim) {
 			visualSim = 0f;
 			double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 			double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 			if (sourceSec <= 0 || clipSec <= 0) return true;
 
-			// Sample times in clip-local seconds. Avoid the very edges so intros/outros
-			// (often black or text-only) don't dominate the result.
-			var clipTimes = new List<double>(3);
-			if (clipSec >= 9.0) {
-				clipTimes.Add(clipSec * 0.25);
-				clipTimes.Add(clipSec * 0.50);
-				clipTimes.Add(clipSec * 0.75);
-			}
-			else if (clipSec >= 3.0) {
-				clipTimes.Add(clipSec * 0.33);
-				clipTimes.Add(clipSec * 0.66);
-			}
-			else {
-				clipTimes.Add(clipSec * 0.5);
-			}
+			List<double> clipTimes = PartialClipVisualSampleTimes(sourceSec, clipSec, clip.AudioFingerprint?.Length ?? 0, offsetSec);
+			// No video overlaps the stretch the audio matched: there is nothing that could
+			// confirm the match, so it is not confirmed. This used to fall through to "audio
+			// alone decides" and passed pairs whose frames were never looked at (#908).
+			if (clipTimes.Count == 0) return false;
 
 			bool useP = Settings.UsePHashing;
 			double threshold = Settings.PartialClipVisualThreshold;
@@ -2280,15 +2338,8 @@ namespace VDF.Core {
 
 			// Collect the usable sample times first so each file is decoded in a single
 			// batched session instead of one decoder open per frame.
-			var srcSampleTimes = new List<double>(clipTimes.Count);
-			var clipSampleTimes = new List<double>(clipTimes.Count);
-			foreach (double t in clipTimes) {
-				double srcAt = offsetSec + t;
-				if (srcAt >= sourceSec - 0.1 || t >= clipSec - 0.1) continue;
-				srcSampleTimes.Add(srcAt);
-				clipSampleTimes.Add(t);
-			}
-			if (srcSampleTimes.Count == 0) return true;
+			var srcSampleTimes = clipTimes.Select(t => offsetSec + t).ToList();
+			var clipSampleTimes = clipTimes;
 
 			// Breadcrumbs around each decode: if the decoder takes the process down (#863),
 			// the next scan quarantines the file that was in flight instead of dying on it
