@@ -39,13 +39,17 @@ window.vdf = {
         localStorage.setItem('vdf-compare-mode', mode);
     },
 
-    download: function (url) {
+    // Saves a file the server streamed over the circuit (DotNetStreamReference).
+    downloadStream: async function (fileName, streamRef) {
+        var blob = new Blob([await streamRef.arrayBuffer()]);
+        var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = '';
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         a.remove();
+        URL.revokeObjectURL(url);
     },
 
     scrollToGroup: function (index) {

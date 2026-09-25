@@ -244,4 +244,33 @@ public sealed class ResultsPageTests : BunitContext {
 		Assert.Empty(page.FindAll(".badge-ai-matched"));
 		Assert.Empty(page.FindAll(".badge-partial-clip"));
 	}
+
+	// === CSV export ===
+
+	[Fact]
+	public void ExportCsv_MarksWhatIsSelectedInThisPage() {
+		// The export used to be a stateless endpoint with no way to know the selection,
+		// which lives in the page (one per tab), so the CSV had no Checked column at all.
+		Guid group = Guid.NewGuid();
+		Seed("keep.mp4", group);
+		Seed("drop.mp4", group);
+		string? csv = null;
+		JSInterop.SetupVoid("vdf.downloadStream", inv => {
+			Assert.Equal("vdf-results.csv", inv.Arguments[0]);
+			var stream = ((Microsoft.JSInterop.DotNetStreamReference)inv.Arguments[1]!).Stream;
+			csv = new StreamReader(stream).ReadToEnd();
+			return true;
+		}).SetVoidResult();
+
+		var page = RenderPage();
+		page.FindAll(".dup-card").Single(c => c.TextContent.Contains("drop.mp4"))
+			.QuerySelector(".card-check input")!.Change(true);
+		page.FindAll("button").Single(b => b.TextContent == "Export CSV").Click();
+
+		Assert.NotNull(csv);
+		string[] lines = csv!.TrimEnd().Split(Environment.NewLine);
+		Assert.EndsWith(",IsImage,Checked", lines[0]);
+		Assert.EndsWith(",True", Assert.Single(lines, l => l.Contains("drop.mp4")));
+		Assert.EndsWith(",False", Assert.Single(lines, l => l.Contains("keep.mp4")));
+	}
 }

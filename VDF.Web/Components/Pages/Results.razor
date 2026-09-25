@@ -823,8 +823,15 @@ else {
     }
 
     // === CSV Export ===
+    // Built here rather than by an endpoint: the selection belongs to this circuit, and
+    // ScanService is shared by every open tab.
     async Task ExportCsv() {
-        try { await JS.InvokeVoidAsync("vdf.download", "/export/csv"); }
+        try {
+            byte[] csv = ResultsCsv.Build(Scan.Duplicates.ToList(), _selected);
+            using var stream = new MemoryStream(csv);
+            using var streamRef = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("vdf.downloadStream", ResultsCsv.FileName, streamRef);
+        }
         catch { }
     }
 
