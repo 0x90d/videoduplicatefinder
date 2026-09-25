@@ -191,4 +191,34 @@ public class ResultFormatterTests {
 
 		Assert.Equal("[]", result.Trim());
 	}
+
+	[Fact]
+	public void Format_AllFormats_ShareGroupAndMemberOrder() {
+		// Text and CSV sorted groups by id while JSON kept discovery order; all three
+		// now come from one grouping.
+		var low = new Guid("00000000-0000-0000-0000-000000000001");
+		var high = new Guid("ffffffff-0000-0000-0000-000000000000");
+		var items = new List<DuplicateItem> {
+			MakeItem(high, similarity: 90f, path: "/test/h90.mp4"),
+			MakeItem(low, similarity: 91f, path: "/test/l91.mp4"),
+			MakeItem(high, similarity: 99f, path: "/test/h99.mp4"),
+			MakeItem(low, similarity: 97f, path: "/test/l97.mp4"),
+		};
+		string[] expected = ["/test/l97.mp4", "/test/l91.mp4", "/test/h99.mp4", "/test/h90.mp4"];
+
+		using var json = JsonDocument.Parse(ResultFormatter.Format(items, OutputFormat.Json));
+		var jsonPaths = json.RootElement.EnumerateArray()
+			.SelectMany(g => g.GetProperty("Items").EnumerateArray())
+			.Select(i => i.GetProperty("Path").GetString());
+		var csvPaths = ResultFormatter.Format(items, OutputFormat.Csv)
+			.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(1)
+			.Select(l => l.Split(',')[2]);
+		string text = ResultFormatter.Format(items, OutputFormat.Text);
+		var textPaths = expected.OrderBy(p => text.IndexOf(p, StringComparison.Ordinal));
+
+		Assert.Equal(expected, jsonPaths);
+		Assert.Equal(expected, csvPaths);
+		Assert.Equal(expected, textPaths);
+		Assert.Contains("Found 2 duplicate group(s), 4 total file(s).", text);
+	}
 }
