@@ -145,6 +145,45 @@ namespace VDF.GUI.Views {
 			};
 			vm.ResultsAnchorProvider = CaptureScrollAnchor;
 			vm.ResultsScrollToRow = ScrollRowToViewportOffset;
+			vm.ResultsFocusedRowProvider = CaptureFocusedRow;
+			vm.ResultsFocusRow = FocusRowAfterRebuild;
+		}
+
+		/// <summary>The row whose container (or a control inside it) has keyboard focus, or null.</summary>
+		object? CaptureFocusedRow() {
+			if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not Visual focused) return null;
+			var container = focused as ListBoxItem ?? focused.FindAncestorOfType<ListBoxItem>();
+			if (container == null) return null;
+			int index = ResultsListControl.IndexFromContainer(container);
+			return index < 0 ? null : ResultsListControl.Items[index];
+		}
+
+		/// <summary>
+		/// Gives the rebuilt list's counterpart of the focused row the focus (see
+		/// <see cref="ResultsFocusKeeper"/>). Runs after the scroll anchor restore, which is
+		/// posted first, and leaves focus alone that the user has put somewhere else meanwhile.
+		/// </summary>
+		void FocusRowAfterRebuild(object row) {
+			// Focus nowhere, or still somewhere in the list (a recycled container), is ours to
+			// place; focus the user moved out of the list meanwhile stays where it is.
+			bool FocusIsLost() =>
+				TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not Control { IsEffectivelyVisible: true } current ||
+				current == ResultsListControl || current.FindAncestorOfType<ListBox>() == ResultsListControl;
+			void TryFocus(bool scrollFirst) {
+				int index = ResultsListControl.Items.IndexOf(row);
+				if (index < 0 || !FocusIsLost()) return;
+				if (ResultsListControl.ContainerFromIndex(index) is { } container) {
+					container.Focus(NavigationMethod.Directional);
+					return;
+				}
+				if (!scrollFirst) return;
+				ResultsListControl.ScrollIntoView(index);
+				Avalonia.Threading.Dispatcher.UIThread.Post(() => TryFocus(false), Avalonia.Threading.DispatcherPriority.Loaded);
+			}
+			// Twice deferred: the anchor restore aligns its row in a second Loaded pass.
+			Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+				Avalonia.Threading.Dispatcher.UIThread.Post(() => TryFocus(true), Avalonia.Threading.DispatcherPriority.Loaded),
+				Avalonia.Threading.DispatcherPriority.Loaded);
 		}
 
 		/// <summary>Row whose realized container is topmost in the viewport (partially visible counts), plus its viewport offset.</summary>

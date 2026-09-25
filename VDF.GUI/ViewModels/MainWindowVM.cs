@@ -441,7 +441,10 @@ namespace VDF.GUI.ViewModels {
 			scheduledScanTimer.Start();
 			CheckScheduledScan();
 
+			// Skip the initial (empty) value: it rebuilt the list half a second after start,
+			// replacing results restored from the backup under the user's keyboard focus.
 			this.WhenAnyValue(vm => vm.FilterByPath)
+					.Skip(1)
 					.Throttle(TimeSpan.FromMilliseconds(500), RxSchedulers.MainThreadScheduler)
 						.Subscribe(_ => { RebuildSearchPathIndex(); RefreshResultsView(); });
 

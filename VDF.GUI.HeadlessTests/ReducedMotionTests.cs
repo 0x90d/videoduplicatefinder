@@ -75,19 +75,19 @@ public class ReducedMotionTests {
 		try {
 			Data.SettingsFile.Instance.AlwaysReduceMotion = false;
 			Appearance.SetSystemAnimations(true);
-			Assert.False(window.Classes.Contains("reduce-motion"));
-			Assert.False(dialog.Classes.Contains("reduce-motion"));
+			Assert.DoesNotContain("reduce-motion", window.Classes);
+			Assert.DoesNotContain("reduce-motion", dialog.Classes);
 
 			// The user switches animations off in the system while VDF runs.
 			Appearance.SetSystemAnimations(false);
-			Assert.True(window.Classes.Contains("reduce-motion"));
-			Assert.True(dialog.Classes.Contains("reduce-motion"));
+			Assert.Contains("reduce-motion", window.Classes);
+			Assert.Contains("reduce-motion", dialog.Classes);
 
 			// The system allows them, VDF is told not to move anyway.
 			Appearance.SetSystemAnimations(true);
 			Data.SettingsFile.Instance.AlwaysReduceMotion = true;
-			Assert.True(window.Classes.Contains("reduce-motion"));
-			Assert.True(dialog.Classes.Contains("reduce-motion"));
+			Assert.Contains("reduce-motion", window.Classes);
+			Assert.Contains("reduce-motion", dialog.Classes);
 		}
 		finally {
 			dialog.Hide();

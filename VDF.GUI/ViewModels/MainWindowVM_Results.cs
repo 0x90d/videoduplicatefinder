@@ -53,6 +53,10 @@ namespace VDF.GUI.ViewModels {
 		internal Func<ResultsScrollAnchor.Capture?>? ResultsAnchorProvider;
 		/// <summary>Scrolls the given row of the rebuilt list back to the captured viewport offset (#862).</summary>
 		internal Action<object, double>? ResultsScrollToRow;
+		/// <summary>The row holding keyboard focus before a rebuild, or null (see <see cref="ResultsFocusKeeper"/>).</summary>
+		internal Func<object?>? ResultsFocusedRowProvider;
+		/// <summary>Moves keyboard focus to the given row of the rebuilt list, unless the user put it elsewhere meanwhile.</summary>
+		internal Action<object>? ResultsFocusRow;
 
 		public ResultsSortOption[] ResultsSortOptions { get; } = {
 			new(App.Lang["Results.Sort.WastedSpace"], ResultsSortMode.WastedSpace),
@@ -129,6 +133,8 @@ namespace VDF.GUI.ViewModels {
 		internal void RebuildResultsList() {
 			ResultsScrollAnchor.Capture? anchor = ResultsAnchorProvider?.Invoke();
 			List<Guid> oldGroupOrder = resultsGroups.ConvertAll(g => g.GroupId);
+			object? focusedRow = ResultsFocusedRowProvider?.Invoke();
+			int focusedIndex = focusedRow == null ? -1 : ResultsRows.IndexOf(focusedRow);
 			RebuildGroupsWithOneFileLeft();
 			ApplySizePreferenceIfChanged();
 			var result = ResultsListBuilder.Build(new ResultsBuildRequest {
@@ -158,6 +164,8 @@ namespace VDF.GUI.ViewModels {
 			// offset, not flush to the top, so the viewport appears to stand still (#862).
 			if (anchor is { } a && ResultsScrollAnchor.FindRestoreTarget(a.Row, oldGroupOrder, result.Rows) is { } target)
 				ResultsScrollToRow?.Invoke(target, a.ViewportOffsetY);
+			if (ResultsFocusKeeper.FindFocusTarget(focusedRow, focusedIndex, result.Rows) is { } focusTarget)
+				ResultsFocusRow?.Invoke(focusTarget);
 		}
 
 		/// <summary>Refreshes the results list after filter/sort/list changes.</summary>
