@@ -1229,3 +1229,65 @@ input.input-invalid:focus { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2); }
 	padding: 0.65rem;
 	font-size: 1rem;
 }
+
+/* ===== Metadata comparison (#926) ===== */
+:root {
+	--metadata-odd-bg: #3a2a08;
+	--metadata-odd-border: #a16207;
+	--metadata-odd-text: #fcd34d;
+}
+[data-theme="light"] {
+	--metadata-odd-bg: #fef3c7;
+	--metadata-odd-border: #d97706;
+	--metadata-odd-text: #854d0e;
+}
+.metadata-panel {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	margin: 1rem;
+	padding: 1rem;
+	background: var(--bg-surface);
+	border: 1px solid var(--border-subtle);
+	border-radius: 8px;
+	color: var(--text-primary);
+}
+.metadata-hint { margin: 0 0 0.75rem; color: var(--text-muted); font-size: 13px; }
+.metadata-toolbar { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 0.75rem; font-size: 13px; }
+.metadata-status { margin: 2rem auto; color: var(--text-muted); }
+.metadata-scroll { flex: 1; min-height: 0; overflow: auto; }
+.metadata-table { border-collapse: separate; border-spacing: 4px 2px; font-size: 13px; }
+.metadata-table th, .metadata-table td { text-align: left; vertical-align: top; padding: 4px 8px; }
+.metadata-table thead th {
+	position: sticky;
+	top: 0;
+	background: var(--bg-surface);
+	z-index: 1;
+	min-width: 16rem;
+	max-width: 22rem;
+}
+.metadata-table thead th:first-child, .metadata-table tbody th[scope="row"] { min-width: 14rem; font-weight: normal; color: var(--text-secondary); }
+.metadata-table td { max-width: 22rem; overflow-wrap: anywhere; border: 1px solid transparent; border-radius: 4px; }
+.metadata-section th { padding-top: 0.75rem; font-weight: 700; color: var(--text-primary); }
+.metadata-file { display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer; }
+.metadata-unavailable { font-size: 11.5px; font-style: italic; font-weight: normal; color: var(--text-muted); padding-left: 1.4rem; }
+.metadata-table td.metadata-missing { font-style: italic; color: var(--text-muted); }
+/* A value most other files don't share: tinted, framed and bold, not color alone. */
+.metadata-table td.metadata-odd {
+	background: var(--metadata-odd-bg);
+	border-color: var(--metadata-odd-border);
+	color: var(--metadata-odd-text);
+	font-weight: 600;
+}
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}

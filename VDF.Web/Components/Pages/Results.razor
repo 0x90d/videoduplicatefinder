@@ -162,6 +162,7 @@ else {
                         <option value="name">Name</option>
                     </select>
                     <button class="compare-btn" @onclick="() => OpenCompare(sortedItems)" title="Compare fullsize">Compare</button>
+                    <button class="metadata-btn" @onclick="() => OpenMetadata(sortedItems)" title="Compare every metadata tag of these files">Metadata</button>
                     <button @onclick="() => KeepBest(sortedItems)" title="Select all except best quality">Keep Best</button>
                     <button class="collapse-toggle" @onclick="() => ToggleCollapse(groupId)" title="@(isCollapsed ? "Expand" : "Collapse")">
                         @(isCollapsed ? "\u25B6" : "\u25BC")
@@ -411,6 +412,82 @@ else {
     </div>
 }
 
+@* Metadata comparison modal (#926): every tag of the group's files, the odd value marked *@
+@if (_metadataItems != null) {
+    <div class="compare-overlay active metadata-overlay" id="metadata-modal" tabindex="0" role="dialog" aria-labelledby="metadata-title"
+         @ref="_metadataOverlay" @onkeydown="OnMetadataKeyDown">
+        <div class="compare-header">
+            <h3 id="metadata-title">Compare metadata</h3>
+            <button class="compare-close" @onclick="CloseMetadata" title="Close (Esc)" aria-label="Close">&#x2715;</button>
+        </div>
+        <div class="metadata-panel">
+            <p class="metadata-hint">Every metadata tag of these files side by side: dates, camera, location, encoder and more. A value that most of the other files don't share is highlighted.</p>
+            <div class="metadata-toolbar">
+                <label><input type="checkbox" checked="@_metadataOnlyDiff" @onchange="SetMetadataOnlyDiff" /> Only show differences</label>
+                @if (_metadataRows != null) {
+                    <strong class="metadata-summary">@_metadataRows.Count(r => r.Differs) of @_metadataRows.Count fields differ</strong>
+                }
+            </div>
+            @if (_metadataRows == null) {
+                <p class="metadata-status">Reading metadata...</p>
+            }
+            else if (_metadataRows.Count == 0) {
+                <p class="metadata-status">These files carry no metadata tags.</p>
+            }
+            else {
+                var shown = _metadataRows.Where(r => !_metadataOnlyDiff || r.Differs).ToList();
+                if (shown.Count == 0) {
+                    <p class="metadata-status">Every tag is the same in all files. Untick "Only show differences" to see them.</p>
+                }
+                else {
+                    <div class="metadata-scroll">
+                        <table class="metadata-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Field</th>
+                                    @for (int f = 0; f < _metadataItems.Count; f++) {
+                                        var file = _metadataItems[f];
+                                        bool fileSel = _selected.Contains(file);
+                                        bool unavailable = _metadataUnavailable[f];
+                                        <th scope="col" title="@file.Path">
+                                            <label class="metadata-file">
+                                                <input type="checkbox" checked="@fileSel" @onchange="() => ToggleItem(file)"
+                                                       aria-label="@SelectLabel(file)" />
+                                                @Path.GetFileName(file.Path)
+                                            </label>
+                                            @if (unavailable) {
+                                                <div class="metadata-unavailable">file not available</div>
+                                            }
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ VDF.Core.Utils.MetadataSection? section = null; }
+                                @foreach (var row in shown) {
+                                    if (section != row.Section) {
+                                        section = row.Section;
+                                        <tr class="metadata-section"><th scope="rowgroup" colspan="@(_metadataItems.Count + 1)">@SectionTitle(row.Section)</th></tr>
+                                    }
+                                    <tr>
+                                        <th scope="row">@row.Name</th>
+                                        @for (int f = 0; f < row.Values.Length; f++) {
+                                            <td class="@CellClass(row, f)">
+                                                @CellText(row, f)
+                                                @if (row.IsOdd[f]) { <span class="visually-hidden"> (differs)</span> }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
 @* Context menu overlay + popup *@
 @if (_menuVisible && _menuItem != null) {
     <div class="ctx-overlay" @onclick="HideContextMenu"></div>
@@ -427,6 +504,9 @@ else {
             <button @onclick="() => { ToggleGroup(_menuGroup, !allSel); HideContextMenu(); }">
                 @(allSel ? "Deselect group" : "Select group")
             </button>
+        }
+        @if (_menuGroup != null) {
+            <button @onclick="() => { _ = OpenMetadata(_menuGroup); HideContextMenu(); }">Compare metadata</button>
         }
         <hr />
         <button @onclick="() => { HideItem(_menuItem.Path); HideContextMenu(); }">Hide card</button>
@@ -498,6 +578,11 @@ else {
                 }
             }
             await JS.InvokeVoidAsync("vdf.initLazyThumbs");
+            if (_metadataItems != null && _focusMetadata) {
+                // Esc is handled on the overlay, which only hears it with focus.
+                _focusMetadata = false;
+                await _metadataOverlay.FocusAsync();
+            }
             if (_compareVisible && _focusCompare) {
                 // The arrow keys and Esc are handled on the overlay, which only hears them with focus.
                 _focusCompare = false;
@@ -704,6 +789,58 @@ else {
     }
 
     void CloseCompare() => _compareVisible = false;
+
+    // === Metadata comparison (#926): read when opened, never stored ===
+    List<DuplicateItem>? _metadataItems;
+    List<VDF.Core.Utils.MetadataComparisonRow>? _metadataRows;
+    bool[] _metadataUnavailable = Array.Empty<bool>();
+    bool _metadataOnlyDiff = true;
+    ElementReference _metadataOverlay;
+    bool _focusMetadata;
+    int _metadataRequest;
+
+    async Task OpenMetadata(List<DuplicateItem> items) {
+        var files = items.ToList();
+        int request = ++_metadataRequest;
+        _metadataItems = files;
+        _metadataRows = null;
+        _metadataUnavailable = new bool[files.Count];
+        _metadataOnlyDiff = true;
+        _focusMetadata = true;
+        StateHasChanged();
+        var results = await MetadataLookup.ReadAllAsync(files.Select(i => i.Path).ToList());
+        if (request != _metadataRequest) return; // closed or replaced meanwhile
+        _metadataUnavailable = results.Select(r => r == null).ToArray();
+        _metadataRows = VDF.Core.Utils.MetadataComparison.Build(results);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void CloseMetadata() {
+        _metadataItems = null;
+        _metadataRows = null;
+        _metadataRequest++;
+    }
+
+    void SetMetadataOnlyDiff(ChangeEventArgs e) => _metadataOnlyDiff = e.Value is true;
+
+    void OnMetadataKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Escape") CloseMetadata();
+    }
+
+    static string SelectLabel(DuplicateItem item) => "Select " + Path.GetFileName(item.Path);
+
+    static string CellClass(VDF.Core.Utils.MetadataComparisonRow row, int f) =>
+        (row.IsOdd[f] ? "metadata-odd " : string.Empty) + (row.Values[f] == null ? "metadata-missing" : string.Empty);
+
+    string CellText(VDF.Core.Utils.MetadataComparisonRow row, int f) =>
+        _metadataUnavailable[f] ? "file not available" : row.Values[f] ?? "(not set)";
+
+    static string SectionTitle(VDF.Core.Utils.MetadataSection section) => section.Kind switch {
+        VDF.Core.Utils.MetadataSectionKind.Container => "Container",
+        VDF.Core.Utils.MetadataSectionKind.Stream => "Stream " + section.StreamIndex + ": " + section.StreamType,
+        VDF.Core.Utils.MetadataSectionKind.Exif => "EXIF",
+        _ => "GPS",
+    };
 
     async Task InitSwipeIfNeeded() {
         if (_compareMode == CompareMode.Swipe)
