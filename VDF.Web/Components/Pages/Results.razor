@@ -260,6 +260,18 @@ else {
                                             <span class="meta-label">Format</span>
                                             <span class="meta-value">@(item.Format ?? "?")</span>
                                         </div>
+                                        @if (item.AudioLanguages.Length > 0) {
+                                            <div class="meta-row">
+                                                <span class="meta-label">Audio</span>
+                                                <span class="meta-value">@item.AudioLanguages</span>
+                                            </div>
+                                        }
+                                        @if (item.SubtitleLanguages.Length > 0) {
+                                            <div class="meta-row">
+                                                <span class="meta-label">Subs</span>
+                                                <span class="meta-value">@item.SubtitleLanguages</span>
+                                            </div>
+                                        }
                                     }
                                     else {
                                         <div class="meta-row">

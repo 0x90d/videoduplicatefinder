@@ -122,6 +122,36 @@ public class ResultFormatterTests {
 		Assert.Contains("\"PartialClip, AiMatched\"", lines[1]);
 	}
 
+	// #899: the track languages are the last two CSV columns ("GER, ENG" stays one field),
+	// part of the text output's detail line, and plain properties in the JSON.
+	[Fact]
+	public void TrackLanguages_AppearInEveryFormat() {
+		var item = MakeItem(Group1);
+		item.AudioLanguages = "GER, ENG";
+		item.SubtitleLanguages = "GER";
+		var items = new List<DuplicateItem> { item };
+
+		var csv = ResultFormatter.Format(items, OutputFormat.Csv).Split('\n', StringSplitOptions.RemoveEmptyEntries);
+		Assert.EndsWith(",AudioLanguages,SubtitleLanguages", csv[0].Trim());
+		Assert.Equal(csv[0].Split(',').Length, CountCsvColumns(csv[1].Trim()));
+		Assert.EndsWith(",\"GER, ENG\",GER", csv[1].Trim());
+
+		string text = ResultFormatter.Format(items, OutputFormat.Text);
+		Assert.Contains(", audio GER, ENG, subtitles GER", text);
+
+		using var json = JsonDocument.Parse(ResultFormatter.Format(items, OutputFormat.Json));
+		var row = json.RootElement[0].GetProperty("Items")[0];
+		Assert.Equal("GER, ENG", row.GetProperty("AudioLanguages").GetString());
+		Assert.Equal("GER", row.GetProperty("SubtitleLanguages").GetString());
+	}
+
+	[Fact]
+	public void TrackLanguages_Absent_LeaveTheTextLineAsItWas() {
+		string text = ResultFormatter.Format(new List<DuplicateItem> { MakeItem(Group1) }, OutputFormat.Text);
+		Assert.DoesNotContain("audio", text);
+		Assert.DoesNotContain("subtitles", text);
+	}
+
 	static int CountCsvColumns(string line) {
 		int columns = 1;
 		bool inQuotes = false;

@@ -32,11 +32,15 @@ public sealed class ResultsCsvTests {
 	static string[] Lines(byte[] csv) =>
 		Encoding.UTF8.GetString(csv).TrimEnd().Split(Environment.NewLine);
 
+	/// <summary>A column's value by header name (for lines without quoted commas).</summary>
+	internal static string Field(string header, string line, string column) =>
+		line.Split(',')[Array.IndexOf(header.Split(','), column)];
+
 	[Fact]
 	public void HeaderMatchesTheGuiExport() {
 		string[] lines = Lines(ResultsCsv.Build([], new HashSet<DuplicateItem>()));
 
-		Assert.Equal("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Checked",
+		Assert.Equal("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Checked,AudioLanguages,SubtitleLanguages",
 			Assert.Single(lines).TrimStart('\uFEFF'));
 	}
 
@@ -48,8 +52,21 @@ public sealed class ResultsCsvTests {
 
 		string[] lines = Lines(ResultsCsv.Build([a, b], new HashSet<DuplicateItem> { b }));
 
-		Assert.EndsWith(",False", lines[1]);
-		Assert.EndsWith(",True", lines[2]);
+		Assert.Equal("False", Field(lines[0], lines[1], "Checked"));
+		Assert.Equal("True", Field(lines[0], lines[2], "Checked"));
+	}
+
+	// #899: appended after Checked, so every older column keeps its position.
+	[Fact]
+	public void TrackLanguagesAreTheLastTwoColumns() {
+		var item = Item("a.mkv", Guid.NewGuid());
+		item.AudioLanguages = "GER, ENG";
+		item.SubtitleLanguages = "GER";
+
+		string[] lines = Lines(ResultsCsv.Build([item], new HashSet<DuplicateItem>()));
+
+		Assert.EndsWith(",Checked,AudioLanguages,SubtitleLanguages", lines[0]);
+		Assert.EndsWith(",False,\"GER, ENG\",GER", lines[1]);
 	}
 
 	[Fact]

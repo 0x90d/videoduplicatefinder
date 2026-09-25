@@ -49,7 +49,7 @@ namespace VDF.CLI.Output {
 			// values like "60,000" inject extra CSV columns and shift every field after them.
 			var inv = CultureInfo.InvariantCulture;
 			var sb = new StringBuilder();
-			sb.AppendLine("GroupId,Similarity,Path,Size,Duration,FrameSize,Format,Fps,BitRateKbs,AudioFormat,DateCreated,IsImage,Flags,PartialClipOffset");
+			sb.AppendLine("GroupId,Similarity,Path,Size,Duration,FrameSize,Format,Fps,BitRateKbs,AudioFormat,DateCreated,IsImage,Flags,PartialClipOffset,AudioLanguages,SubtitleLanguages");
 			foreach (var d in groups.SelectMany(g => g.Items)) {
 				sb.AppendLine(string.Join(",",
 					d.GroupId,
@@ -67,7 +67,9 @@ namespace VDF.CLI.Output {
 					// Multi-bit values render as "PartialClip, AiMatched" — the comma must
 					// not become an extra CSV column.
 					CsvEscape(d.Flags.ToString()),
-					d.PartialClipOffset.TotalSeconds.ToString("F0", inv)
+					d.PartialClipOffset.TotalSeconds.ToString("F0", inv),
+					CsvEscape(d.AudioLanguages),
+					CsvEscape(d.SubtitleLanguages)
 				));
 			}
 			return sb.ToString();
@@ -90,6 +92,10 @@ namespace VDF.CLI.Output {
 					sb.AppendLine($"  {item.Similarity,6:F1}%  {item.Path}{best}{partial}{ai}");
 					if (!item.IsImage) {
 						string details = $"         {item.FrameSize ?? "?"}, {item.Format ?? "?"}, {item.Fps:F2} fps, {item.BitRateKbs} kbps, {item.Duration:hh\\:mm\\:ss}";
+						if (item.AudioLanguages.Length > 0)
+							details += $", audio {item.AudioLanguages}";
+						if (item.SubtitleLanguages.Length > 0)
+							details += $", subtitles {item.SubtitleLanguages}";
 						sb.AppendLine(details);
 					}
 					else {

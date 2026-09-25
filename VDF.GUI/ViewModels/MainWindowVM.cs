@@ -980,7 +980,7 @@ namespace VDF.GUI.ViewModels {
 			var inv = System.Globalization.CultureInfo.InvariantCulture;
 			// UTF-8 BOM so Excel detects the encoding.
 			using var writer = new StreamWriter(path, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
-			writer.WriteLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Checked");
+			writer.WriteLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Checked,AudioLanguages,SubtitleLanguages");
 			// Keep group members on adjacent rows regardless of list order.
 			foreach (var group in items.GroupBy(i => i.ItemInfo.GroupId))
 				foreach (var item in group) {
@@ -998,7 +998,9 @@ namespace VDF.GUI.ViewModels {
 						info.Similarity.ToString(inv),
 						info.DateCreated.ToString("yyyy-MM-dd HH:mm:ss", inv),
 						info.IsImage.ToString(),
-						item.Checked.ToString()));
+						item.Checked.ToString(),
+						Escape(info.AudioLanguages),
+						Escape(info.SubtitleLanguages)));
 				}
 		}
 

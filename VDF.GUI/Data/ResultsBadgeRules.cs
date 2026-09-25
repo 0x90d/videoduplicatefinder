@@ -108,6 +108,10 @@ namespace VDF.GUI.Data {
 			var audio = BuildAudioLine(item, culture);
 			if (audio.Length > 0)
 				sb.AppendLine("Audio: " + audio);
+			if (!string.IsNullOrEmpty(item.AudioLanguages))
+				sb.AppendLine("Audio languages: " + item.AudioLanguages);
+			if (!string.IsNullOrEmpty(item.SubtitleLanguages))
+				sb.AppendLine("Subtitles: " + item.SubtitleLanguages);
 			sb.Append("File: ").Append(BuildFileLine(item, culture));
 			return sb.ToString();
 		}

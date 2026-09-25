@@ -411,6 +411,10 @@
               ToggleType="CheckBox"
               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}" />
           <MenuItem
+              Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Languages]}"
+              ToggleType="CheckBox"
+              IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowLanguagesColumn}" />
+          <MenuItem
               Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Match]}"
               ToggleType="CheckBox"
               IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />
@@ -453,6 +457,9 @@
         <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="124"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}" />
+        <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="104"
+                   IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowLanguagesColumn}"
+                   Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Languages]}" />
         <TextBlock DockPanel.Dock="Right" Classes="colheader" Width="78"
                    IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowBitrateColumn}"
                    Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Bitrate]}" />
@@ -770,6 +777,18 @@
                   <TextBlock FontSize="11.5" Opacity="{DynamicResource VdfTextDim80Opacity}" Text="{Binding Item.ItemInfo.AudioChannel, TargetNullValue=''}" />
                 </StackPanel>
               </StackPanel>
+              <!-- Languages: audio tracks over subtitle tracks (#899), the same two-line
+                   convention. Nothing to rank, so no best/worst colors. -->
+              <StackPanel
+                  DockPanel.Dock="Right"
+                  Width="104"
+                  VerticalAlignment="Center"
+                  IsVisible="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowLanguagesColumn}">
+                <TextBlock FontSize="12" TextTrimming="CharacterEllipsis"
+                           Margin="0,0,8,0" Text="{Binding Item.ItemInfo.AudioLanguages}" />
+                <TextBlock FontSize="11.5" TextTrimming="CharacterEllipsis" Opacity="{DynamicResource VdfTextDim80Opacity}"
+                           Margin="0,0,8,0" Text="{Binding Item.ItemInfo.SubtitleLanguages}" />
+              </StackPanel>
               <!-- Bitrate: video over audio, same two-line convention as the other
                    columns. One hover zone for both metrics (this cell previously had
                    no hover-diff at all - the VM's bitrate cases were unreachable). -->
@@ -1006,6 +1025,13 @@
                   <TextBlock Classes="colheader"
                              Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Audio]}" />
                   <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap" Text="{Binding AudioText}" />
+                  <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap"
+                             IsVisible="{Binding HasAudioLanguages}" Text="{Binding AudioLanguagesText}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,26,2" MinWidth="120" IsVisible="{Binding HasSubtitles}">
+                  <TextBlock Classes="colheader"
+                             Text="{Binding Source={x:Static local:App.Lang}, Path=[Results.Details.Subtitles]}" />
+                  <TextBlock FontSize="12" Opacity="{DynamicResource VdfTextDim80Opacity}" TextWrapping="Wrap" Text="{Binding SubtitlesText}" />
                 </StackPanel>
                 <StackPanel Margin="0,0,26,2" MinWidth="160">
                   <TextBlock Classes="colheader"

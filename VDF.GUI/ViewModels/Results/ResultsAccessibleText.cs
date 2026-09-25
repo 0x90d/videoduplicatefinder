@@ -30,6 +30,10 @@ namespace VDF.GUI.ViewModels {
 		public string Offline { get; init; } = "offline";
 		public string AiMatched { get; init; } = "AI match";
 		public string Checked { get; init; } = "checked";
+		/// <summary>Details panel line for the audio track languages; also spoken.</summary>
+		public string LanguagesLine { get; init; } = "Languages: {0}";
+		/// <summary>Spoken form of the details panel's subtitle tracks.</summary>
+		public string SubtitlesLine { get; init; } = "Subtitles: {0}";
 		public static readonly RowSpeechWords Default = new();
 	}
 
@@ -68,7 +72,8 @@ namespace VDF.GUI.ViewModels {
 				.Where(p => !string.IsNullOrWhiteSpace(p)));
 
 		public static string DescribeDetails(ResultsDetailsRow details) =>
-			string.Join(", ", new[] { Path.GetFileName(details.Item.ItemInfo.Path), details.VideoText, details.AudioText, details.FileText }
+			string.Join(", ", new[] { Path.GetFileName(details.Item.ItemInfo.Path), details.VideoText, details.AudioText,
+					details.AudioLanguagesText, details.SubtitlesSpokenText, details.FileText }
 				.Where(p => !string.IsNullOrWhiteSpace(p)));
 
 		/// <summary>

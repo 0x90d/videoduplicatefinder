@@ -97,6 +97,29 @@ public sealed class ResultsPageTests : BunitContext {
 		Assert.Contains("@ 00:00:42", partialBadge.TextContent);
 	}
 
+	// #899: a card lists the audio and subtitle languages, and only when there are any.
+	[Fact]
+	public void VideoCards_ShowTrackLanguages_WhenTheFileHasThem() {
+		Guid group = Guid.NewGuid();
+		var tagged = Seed("tagged.mkv", group);
+		tagged.AudioLanguages = "GER, ENG";
+		tagged.SubtitleLanguages = "GER";
+		Seed("plain.mp4", group);
+
+		var page = RenderPage();
+
+		string LabelsOf(string name) => string.Join("|", page.FindAll(".dup-card")
+			.Single(c => c.TextContent.Contains(name)).QuerySelectorAll(".meta-row")
+			.Select(r => r.TextContent.Trim().Replace("\n", " ")));
+		var taggedCard = page.FindAll(".dup-card").Single(c => c.TextContent.Contains("tagged.mkv"));
+		var rows = taggedCard.QuerySelectorAll(".meta-row")
+			.ToDictionary(r => r.QuerySelector(".meta-label")!.TextContent, r => r.QuerySelector(".meta-value")!.TextContent.Trim());
+		Assert.Equal("GER, ENG", rows["Audio"]);
+		Assert.Equal("GER", rows["Subs"]);
+		Assert.DoesNotContain("Audio", LabelsOf("plain.mp4"));
+		Assert.DoesNotContain("Subs", LabelsOf("plain.mp4"));
+	}
+
 	// === Frames: which moment of a file is shown ===
 	// Seeded entries are 60 seconds long.
 
@@ -269,8 +292,8 @@ public sealed class ResultsPageTests : BunitContext {
 
 		Assert.NotNull(csv);
 		string[] lines = csv!.TrimEnd().Split(Environment.NewLine);
-		Assert.EndsWith(",IsImage,Checked", lines[0]);
-		Assert.EndsWith(",True", Assert.Single(lines, l => l.Contains("drop.mp4")));
-		Assert.EndsWith(",False", Assert.Single(lines, l => l.Contains("keep.mp4")));
+		Assert.EndsWith(",IsImage,Checked,AudioLanguages,SubtitleLanguages", lines[0]);
+		Assert.Equal("True", ResultsCsvTests.Field(lines[0], Assert.Single(lines, l => l.Contains("drop.mp4")), "Checked"));
+		Assert.Equal("False", ResultsCsvTests.Field(lines[0], Assert.Single(lines, l => l.Contains("keep.mp4")), "Checked"));
 	}
 }

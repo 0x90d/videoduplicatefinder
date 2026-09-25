@@ -27,5 +27,6 @@
   "Scan.Stage.AiPrepare": "IA parcial: preparando",
   "Scan.Stage.AiDenseSampling": "IA parcial: muestreando fotogramas clave",
   "Scan.Stage.AiPartialCompare": "IA parcial: comparando clips",
-  "Scan.Stage.AiPersist": "IA parcial: guardando caché de fotogramas clave"
+  "Scan.Stage.AiPersist": "IA parcial: guardando caché de fotogramas clave",
+  "Scan.Stage.TrackLanguages": "leyendo idiomas de las pistas"
 }

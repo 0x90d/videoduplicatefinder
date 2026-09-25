@@ -197,6 +197,11 @@ namespace VDF.Core.FFTools {
 				// "disposition": { "attached_pic": 1 } - the reader flattens nested objects.
 				if (streams[i].TryGetValue("attached_pic", out var attachedPic) && attachedPic is int attached)
 					info.Streams[i].IsAttachedPicture = attached != 0;
+				// "tags": { "language": "ger" }, flattened the same way. Always set, so an
+				// empty value tells "no tag" apart from "probed before languages existed" (null).
+				info.Streams[i].Language = streams[i].TryGetValue("language", out var languageObj) && languageObj is string language
+					? NormalizeLanguageTag(language)
+					: string.Empty;
 
 				if (streams[i].ContainsKey("r_frame_rate")) {
 					var stringFrameRate = (string)streams[i]["r_frame_rate"];
@@ -218,6 +223,11 @@ namespace VDF.Core.FFTools {
 				info.Streams[0].BitRate = formatBitrate;
 
 			return info;
+		}
+		/// <summary>Lower-case tag without padding; "und" (ISO 639 "undetermined") counts as no tag.</summary>
+		internal static string NormalizeLanguageTag(string tag) {
+			tag = tag.Trim().ToLowerInvariant();
+			return tag == "und" ? string.Empty : tag;
 		}
 		static string ComputeHdrFormat(string? colorTransfer, string? sideDataTypes) {
 			if (string.IsNullOrEmpty(colorTransfer)) return string.Empty;

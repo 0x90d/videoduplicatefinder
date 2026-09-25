@@ -526,6 +526,12 @@ namespace VDF.GUI.Data {
 			get;
 			set => this.RaiseAndSetIfChanged(ref field, value);
 		} = true;
+		/// <summary>Audio and subtitle track languages (#899). Off by default: experts opt in to extra columns.</summary>
+		[JsonPropertyName("ShowLanguagesColumn")]
+		public bool ShowLanguagesColumn {
+			get;
+			set => this.RaiseAndSetIfChanged(ref field, value);
+		}
 		// First-results hint: "drag the Preview handle / raise the thumbnail width" (one-shot)
 		[JsonPropertyName("ResultsHintDismissed")]
 		public bool ResultsHintDismissed {

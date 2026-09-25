@@ -199,7 +199,7 @@ namespace VDF.GUI.ViewModels {
 					if (!header.IsCollapsed) {
 						flat.Add(row);
 						if (request.ExpandedDetails?.Contains(row.Item) == true)
-							flat.Add(new ResultsDetailsRow(row));
+							flat.Add(new ResultsDetailsRow(row, request.SpeechWords));
 					}
 				}
 			}

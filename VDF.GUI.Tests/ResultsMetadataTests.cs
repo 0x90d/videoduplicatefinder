@@ -136,5 +136,49 @@ namespace VDF.GUI.Tests {
 			Assert.DoesNotContain("Audio:", imageText);
 			Assert.DoesNotContain("fps", imageText);
 		}
+
+		// #899: the details panel, its spoken text and its Copy text carry the track languages.
+		[Fact]
+		public void DetailsRow_ShowsAndSpeaksTrackLanguages_InTheGivenWords() {
+			Guid g = Guid.NewGuid();
+			var a = Item(g, "a.mkv");
+			a.ItemInfo.AudioFormat = "ac3";
+			a.ItemInfo.AudioLanguages = "GER, ENG";
+			a.ItemInfo.SubtitleLanguages = "GER, ?";
+			var words = RowSpeechWords.Default with { LanguagesLine = "Sprachen: {0}", SubtitlesLine = "Untertitel: {0}" };
+			var result = ResultsListBuilder.Build(Request(a, Item(g, "b.mkv")) with {
+				ExpandedDetails = new HashSet<DuplicateItemVM> { a },
+				SpeechWords = words,
+			});
+
+			var details = result.Rows.OfType<ResultsDetailsRow>().Single();
+			Assert.Equal("Sprachen: GER, ENG", details.AudioLanguagesText);
+			Assert.True(details.HasAudioLanguages);
+			Assert.Equal("GER, ?", details.SubtitlesText);
+			Assert.True(details.HasSubtitles);
+			Assert.Contains("Sprachen: GER, ENG", details.AccessibleName);
+			Assert.Contains("Untertitel: GER, ?", details.AccessibleName);
+
+			string copied = ResultsBadgeRules.BuildDetailsText(a.ItemInfo);
+			Assert.Contains("Audio languages: GER, ENG", copied);
+			Assert.Contains("Subtitles: GER, ?", copied);
+		}
+
+		[Fact]
+		public void DetailsRow_WithoutLanguages_HasNoLanguageLines() {
+			Guid g = Guid.NewGuid();
+			var a = Item(g, "a.mp4");
+			a.ItemInfo.AudioFormat = "aac";
+			var result = ResultsListBuilder.Build(Request(a, Item(g, "b.mp4")) with {
+				ExpandedDetails = new HashSet<DuplicateItemVM> { a },
+			});
+
+			var details = result.Rows.OfType<ResultsDetailsRow>().Single();
+			Assert.False(details.HasAudioLanguages);
+			Assert.False(details.HasSubtitles);
+			Assert.DoesNotContain("Languages", details.AccessibleName);
+			Assert.DoesNotContain("Subtitles", details.AccessibleName);
+			Assert.DoesNotContain("languages", ResultsBadgeRules.BuildDetailsText(a.ItemInfo));
+		}
 	}
 }

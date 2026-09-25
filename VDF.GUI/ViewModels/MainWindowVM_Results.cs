@@ -127,6 +127,8 @@ namespace VDF.GUI.ViewModels {
 			Offline = App.Lang["DupList.Offline"],
 			AiMatched = App.Lang["A11y.Row.AiMatched"],
 			Checked = App.Lang["Comparer.CheckedTag"],
+			LanguagesLine = App.Lang["Results.Details.LanguagesLine"],
+			SubtitlesLine = App.Lang["Results.Details.SubtitlesLine"],
 		};
 
 		/// <summary>Rebuilds the flattened list from the current duplicates, filter and sort.</summary>

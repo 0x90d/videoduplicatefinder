@@ -656,7 +656,7 @@
               <views:SettingRow
                   Title="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Columns.Title]}"
                   Description="{Binding Source={x:Static local:App.Lang}, Path=[Settings.Row.Columns.Desc]}"
-                  SearchTags="columns preview duration resolution size date bitrate format audio match similarity">
+                  SearchTags="columns preview duration resolution size date bitrate format audio languages subtitles match similarity">
                 <UniformGrid Columns="2" ColumnSpacing="14" RowSpacing="2">
                   <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Preview]}"
                             AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Preview]}"
@@ -673,6 +673,9 @@
                   <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}"
                             AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.FormatAudio]}"
                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowFormatColumn}" />
+                  <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Languages]}"
+                            AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Languages]}"
+                            IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowLanguagesColumn}" />
                   <CheckBox Content="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Match]}"
                             AutomationProperties.Name="{Binding Source={x:Static local:App.Lang}, Path=[Results.Header.Match]}"
                             IsChecked="{Binding Source={x:Static Settings:SettingsFile.Instance}, Path=ShowSimilarityColumn}" />

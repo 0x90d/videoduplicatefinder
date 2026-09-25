@@ -415,6 +415,8 @@ namespace VDF.Core {
 				// pass only adds pairs audio could not see (no/replaced audio, music-only).
 				if (!cancelationTokenSource.IsCancellationRequested && Settings.EnableAiPartialDetection)
 					await Task.Run(ScanForPartialDuplicatesVisual, cancelationTokenSource.Token);
+				if (!cancelationTokenSource.IsCancellationRequested)
+					await Task.Run(BackfillTrackLanguages, cancelationTokenSource.Token);
 				if (cancelationTokenSource.IsCancellationRequested) {
 					// The passes swallow their internal OperationCanceledExceptions, so a
 					// Stop pressed during any of them would otherwise fall through to

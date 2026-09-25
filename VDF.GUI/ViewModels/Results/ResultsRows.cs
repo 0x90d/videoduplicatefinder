@@ -117,19 +117,31 @@ namespace VDF.GUI.ViewModels {
 	/// Text lines are precomputed here so the template binds plain strings.
 	/// </summary>
 	public sealed class ResultsDetailsRow {
-		public ResultsDetailsRow(ResultsItemRow row) {
+		public ResultsDetailsRow(ResultsItemRow row, RowSpeechWords? words = null) {
 			Row = row;
+			words ??= RowSpeechWords.Default;
 			var culture = CultureInfo.CurrentCulture;
-			VideoText = Data.ResultsBadgeRules.BuildVideoLine(row.Item.ItemInfo, culture);
-			AudioText = Data.ResultsBadgeRules.BuildAudioLine(row.Item.ItemInfo, culture);
-			FileText = Data.ResultsBadgeRules.BuildFileLine(row.Item.ItemInfo, culture);
+			var info = row.Item.ItemInfo;
+			VideoText = Data.ResultsBadgeRules.BuildVideoLine(info, culture);
+			AudioText = Data.ResultsBadgeRules.BuildAudioLine(info, culture);
+			FileText = Data.ResultsBadgeRules.BuildFileLine(info, culture);
+			AudioLanguagesText = string.IsNullOrEmpty(info.AudioLanguages) ? string.Empty : string.Format(culture, words.LanguagesLine, info.AudioLanguages);
+			SubtitlesText = info.SubtitleLanguages ?? string.Empty;
+			SubtitlesSpokenText = SubtitlesText.Length == 0 ? string.Empty : string.Format(culture, words.SubtitlesLine, SubtitlesText);
 		}
 		public ResultsItemRow Row { get; }
 		public DuplicateItemVM Item => Row.Item;
 		public string VideoText { get; }
 		public string AudioText { get; }
 		public string FileText { get; }
-		public bool HasAudio => AudioText.Length > 0;
+		/// <summary>"Languages: GER, ENG" (#899); empty when no audio track is tagged.</summary>
+		public string AudioLanguagesText { get; }
+		/// <summary>"GER, ?" under the Subtitles heading; empty when the file has none.</summary>
+		public string SubtitlesText { get; }
+		public string SubtitlesSpokenText { get; }
+		public bool HasAudio => AudioText.Length > 0 || AudioLanguagesText.Length > 0;
+		public bool HasAudioLanguages => AudioLanguagesText.Length > 0;
+		public bool HasSubtitles => SubtitlesText.Length > 0;
 		public string AccessibleName => ResultsAccessibleText.DescribeDetails(this);
 		public bool IsImage => Item.ItemInfo.IsImage;
 	}

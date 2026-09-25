@@ -27,5 +27,6 @@
   "Scan.Stage.AiPrepare": "AI 部分检测：准备中",
   "Scan.Stage.AiDenseSampling": "AI 部分检测：采样关键帧",
   "Scan.Stage.AiPartialCompare": "AI 部分检测：匹配片段",
-  "Scan.Stage.AiPersist": "AI 部分检测：保存关键帧缓存"
+  "Scan.Stage.AiPersist": "AI 部分检测：保存关键帧缓存",
+  "Scan.Stage.TrackLanguages": "读取音轨和字幕语言"
 }

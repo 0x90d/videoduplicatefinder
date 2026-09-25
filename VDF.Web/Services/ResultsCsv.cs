@@ -36,7 +36,7 @@ namespace VDF.Web.Services {
 			}
 			var inv = CultureInfo.InvariantCulture;
 			var sb = new StringBuilder();
-			sb.AppendLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Checked");
+			sb.AppendLine("GroupId,Path,SizeBytes,Duration,Resolution,Fps,BitrateKbs,AudioFormat,AudioSampleRate,Similarity,DateCreated,IsImage,Checked,AudioLanguages,SubtitleLanguages");
 			// Keep group members on adjacent rows regardless of list order.
 			foreach (var group in items.GroupBy(i => i.GroupId))
 				foreach (var item in group)
@@ -53,7 +53,9 @@ namespace VDF.Web.Services {
 						item.Similarity.ToString(inv),
 						item.DateCreated.ToString("yyyy-MM-dd HH:mm:ss", inv),
 						item.IsImage.ToString(),
-						selected.Contains(item).ToString()));
+						selected.Contains(item).ToString(),
+						Escape(item.AudioLanguages),
+						Escape(item.SubtitleLanguages)));
 			// UTF-8 BOM so Excel detects the encoding.
 			var utf8 = Encoding.UTF8;
 			return [.. utf8.GetPreamble(), .. utf8.GetBytes(sb.ToString())];

@@ -27,5 +27,6 @@
   "Scan.Stage.AiPrepare": "IA partiel : préparation",
   "Scan.Stage.AiDenseSampling": "IA partiel : échantillonnage des images clés",
   "Scan.Stage.AiPartialCompare": "IA partiel : comparaison des clips",
-  "Scan.Stage.AiPersist": "IA partiel : sauvegarde du cache d'images clés"
+  "Scan.Stage.AiPersist": "IA partiel : sauvegarde du cache d'images clés",
+  "Scan.Stage.TrackLanguages": "lecture des langues des pistes"
 }

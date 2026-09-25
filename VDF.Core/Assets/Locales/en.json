@@ -27,5 +27,6 @@
   "Scan.Stage.AiPrepare": "AI partial: preparing",
   "Scan.Stage.AiDenseSampling": "AI partial: sampling keyframes",
   "Scan.Stage.AiPartialCompare": "AI partial: matching clips",
-  "Scan.Stage.AiPersist": "AI partial: saving keyframe cache"
+  "Scan.Stage.AiPersist": "AI partial: saving keyframe cache",
+  "Scan.Stage.TrackLanguages": "reading track languages"
 }

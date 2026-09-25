@@ -76,6 +76,14 @@ namespace VDF.Core {
 			/// </summary>
 			[MemoryPackOrder(13)]
 			public bool IsAttachedPicture { get; set; }
+			/// <summary>
+			/// The stream's language tag as the container stores it ("ger", "eng"), empty when
+			/// the stream has none or says "und" (#899). Null for entries probed before this
+			/// existed; <see cref="ScanEngine.BackfillTrackLanguages"/> fills those in for the
+			/// files that end up in the results.
+			/// </summary>
+			[MemoryPackOrder(14)]
+			public string? Language { get; set; }
 		}
 	}
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
