@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using ReactiveUI;
 
@@ -56,7 +57,9 @@ namespace VDF.GUI.Data {
 			get => _MaximumFileSize;
 			set => this.RaiseAndSetIfChanged(ref _MaximumFileSize, value);
 		}
+		[JsonObjectCreationHandling(JsonObjectCreationHandling.Populate)]
 		public ObservableCollection<string> PathContains { get; } = new();
+		[JsonObjectCreationHandling(JsonObjectCreationHandling.Populate)]
 		public ObservableCollection<string> PathNotContains { get; } = new();
 		int _SimilarityFrom = 0;
 		public int SimilarityFrom {
