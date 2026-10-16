@@ -43,10 +43,14 @@ namespace VDF.Core.FFTools {
 		/// Returns <c>null</c> when the file has no audio stream or extraction fails.
 		/// Returns an empty array when the file has no usable audio.
 		/// </summary>
-		internal static uint[]? ExtractFingerprint(string filePath, bool extendedLogging, CancellationToken ct = default, Action<double>? onProgress = null) {
+		internal static uint[]? ExtractFingerprint(string filePath, bool extendedLogging, CancellationToken ct = default, Action<double>? onProgress = null) =>
+			ExtractFingerprint(filePath, extendedLogging, out _, ct, onProgress);
+
+		internal static uint[]? ExtractFingerprint(string filePath, bool extendedLogging, out uint[]? frames, CancellationToken ct = default, Action<double>? onProgress = null) {
+			frames = null;
 			if (FfmpegEngine.UseNativeBinding) {
 				try {
-					return ExtractFingerprintNative(filePath, extendedLogging, ct, onProgress);
+					return ExtractFingerprintNative(filePath, extendedLogging, out frames, ct, onProgress);
 				}
 				catch (Exception e) {
 					Logger.Instance.Warn(
@@ -54,11 +58,12 @@ namespace VDF.Core.FFTools {
 						$"falling back to process mode. Exception: {e.Message}");
 				}
 			}
-			return ExtractFingerprintProcess(filePath, extendedLogging, ct);
+			return ExtractFingerprintProcess(filePath, extendedLogging, out frames, ct);
 		}
 
 		/// <summary>Native path: uses FFmpeg.AutoGen bindings — no process spawning.</summary>
-		static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, CancellationToken ct, Action<double>? onProgress) {
+		static uint[]? ExtractFingerprintNative(string filePath, bool extendedLogging, out uint[]? frames, CancellationToken ct, Action<double>? onProgress) {
+			frames = null;
 			var sw = extendedLogging ? Stopwatch.StartNew() : null;
 
 			// Suppress noisy FFmpeg warnings (e.g. AAC "Could not update timestamps
@@ -85,6 +90,7 @@ namespace VDF.Core.FFTools {
 
 				ctx.Finish();
 				var result = ctx.GetRawFingerprint();
+				frames = ctx.GetFrameFingerprint();
 
 				if (extendedLogging)
 					Logger.Instance.Info($"[ChromaprintEngine] {Path.GetFileName(filePath)}: " +
@@ -100,7 +106,8 @@ namespace VDF.Core.FFTools {
 		}
 
 		/// <summary>CLI fallback: spawns an FFmpeg process and streams PCM from stdout.</summary>
-		static uint[]? ExtractFingerprintProcess(string filePath, bool extendedLogging, CancellationToken ct) {
+		static uint[]? ExtractFingerprintProcess(string filePath, bool extendedLogging, out uint[]? frames, CancellationToken ct) {
+			frames = null;
 			var psi = new ProcessStartInfo {
 				FileName = FfmpegEngine.FFmpegPath,
 				CreateNoWindow = true,
@@ -215,6 +222,7 @@ namespace VDF.Core.FFTools {
 
 				ctx.Finish();
 				var result = ctx.GetRawFingerprint();
+				frames = ctx.GetFrameFingerprint();
 
 				if (extendedLogging)
 					Logger.Instance.Info($"[ChromaprintEngine] {Path.GetFileName(filePath)}: " +

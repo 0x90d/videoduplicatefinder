@@ -34,7 +34,7 @@ public class PartialClipVisualGateTests {
 		// The report's geometry: clip video 1656s, source 1898s, audio matched at 1840s.
 		// Only a clip audio track of at most 58s can match there. Sampling at 25/50/75% of
 		// the clip's VIDEO put all three samples past the end of the source.
-		var times = ScanEngine.PartialClipVisualSampleTimes(sourceSec: 1898, clipSec: 1656, clipFingerprintSeconds: 50, offsetSec: 1840);
+		var times = ScanEngine.PartialClipVisualSampleTimes(sourceSec: 1898, clipSec: 1656, clipFingerprintSeconds: 50, offsetSec: 1840d);
 
 		Assert.Equal(3, times.Count);
 		Assert.All(times, t => {
@@ -45,13 +45,13 @@ public class PartialClipVisualGateTests {
 
 	[Fact]
 	public void SampleTimes_AreEmpty_WhenNoVideoOverlapsTheMatch() {
-		Assert.Empty(ScanEngine.PartialClipVisualSampleTimes(sourceSec: 100, clipSec: 50, clipFingerprintSeconds: 0, offsetSec: 100));
-		Assert.Empty(ScanEngine.PartialClipVisualSampleTimes(sourceSec: 100, clipSec: 50, clipFingerprintSeconds: 0, offsetSec: 150));
+		Assert.Empty(ScanEngine.PartialClipVisualSampleTimes(sourceSec: 100, clipSec: 50, clipFingerprintSeconds: 0, offsetSec: 100d));
+		Assert.Empty(ScanEngine.PartialClipVisualSampleTimes(sourceSec: 100, clipSec: 50, clipFingerprintSeconds: 0, offsetSec: 150d));
 	}
 
 	[Fact]
 	public void SampleTimes_UseTheWholeClip_WhenAudioAndVideoAgree() {
-		var times = ScanEngine.PartialClipVisualSampleTimes(sourceSec: 600, clipSec: 120, clipFingerprintSeconds: 120, offsetSec: 60);
+		var times = ScanEngine.PartialClipVisualSampleTimes(sourceSec: 600, clipSec: 120, clipFingerprintSeconds: 120, offsetSec: 60d);
 		Assert.Equal(new[] { 30.0, 60.0, 90.0 }, times);
 	}
 
@@ -62,7 +62,7 @@ public class PartialClipVisualGateTests {
 		var source = Video("source.mp4", 100);
 		var clip = Video("clip.mp4", 50);
 
-		bool pass = engine.VerifyPartialClipVisually(source, clip, offsetSec: 100, out float visualSim);
+		bool pass = engine.VerifyPartialClipVisually(source, clip, offsetSec: 100d, out float visualSim);
 
 		Assert.False(pass);
 		Assert.Equal(0f, visualSim);
@@ -91,8 +91,8 @@ public class PartialClipVisualGateTests {
 	public void ClipRejectedByItsFirstSource_IsGivenToTheNextCandidate() {
 		var engine = new ScanEngine();
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 10),
-			(sourceIdx: 1, clipIdx: 2, sim: 0.92f, offsetSec: 0),
+			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 10d),
+			(sourceIdx: 1, clipIdx: 2, sim: 0.92f, offsetSec: 0d),
 		};
 
 		var assignments = engine.AssignAndVerifyPartialClips(Videos, matches,
@@ -108,9 +108,9 @@ public class PartialClipVisualGateTests {
 	public void EveryPairIsVerifiedAtMostOnce_AndPassingPairsKeepTheirGroup() {
 		var engine = new ScanEngine();
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 10),
-			(sourceIdx: 0, clipIdx: 3, sim: 0.95f, offsetSec: 20),
-			(sourceIdx: 1, clipIdx: 2, sim: 0.92f, offsetSec: 0),
+			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 10d),
+			(sourceIdx: 0, clipIdx: 3, sim: 0.95f, offsetSec: 20d),
+			(sourceIdx: 1, clipIdx: 2, sim: 0.92f, offsetSec: 0d),
 		};
 		var verified = new List<(FileEntry, FileEntry)>();
 
@@ -131,8 +131,8 @@ public class PartialClipVisualGateTests {
 	public void ClipFailingEveryCandidate_IsDropped() {
 		var engine = new ScanEngine();
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 10),
-			(sourceIdx: 1, clipIdx: 2, sim: 0.92f, offsetSec: 0),
+			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 10d),
+			(sourceIdx: 1, clipIdx: 2, sim: 0.92f, offsetSec: 0d),
 		};
 		int calls = 0;
 
@@ -143,5 +143,18 @@ public class PartialClipVisualGateTests {
 
 		Assert.Empty(assignments);
 		Assert.Equal(2, calls);
+	}
+
+	[Fact]
+	public void FractionalOffset_ReachesVisualVerifierAndGroupAssignmentUnchanged() {
+		var engine = new ScanEngine();
+		var matches = new[] { (sourceIdx: 0, clipIdx: 2, sim: .95f, offsetSec: 10.375) };
+		double? received = null;
+		var assignments = engine.AssignAndVerifyPartialClips(Videos, matches, (_, _, offset) => {
+			received = offset;
+			return (true, 1f);
+		});
+		Assert.Equal(10.375, received);
+		Assert.Equal(10.375, Assert.Single(assignments).offsetSec);
 	}
 }

@@ -144,4 +144,11 @@ public class SlidingWindowCompareTests {
 		Assert.True(similarity > 0.99f);
 		Assert.True(similarity < 1.0f);
 	}
+
+	[Fact]
+	public void SlidingWindowCompare_ExactlyAtThreshold_IsNotPruned() {
+		uint[] clip = [0, 0, 0, 0, 0];
+		uint[] source = [0, 0, uint.MaxValue, 0, 0, 0];
+		Assert.Equal(.8f, ScanEngine.SlidingWindowCompare(clip, source, .8f).similarity);
+	}
 }

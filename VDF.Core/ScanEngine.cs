@@ -638,6 +638,8 @@ namespace VDF.Core {
 		/// Crash-quarantined entries (#861) carry AudioFingerprintError with a null
 		/// fingerprint; <paramref name="alwaysRetryFailedSampling"/> re-enables exactly
 		/// those, while completed failures stay blocked by their non-null (empty) fingerprint.
+		/// Legacy nonempty caches are upgraded only while their files are available;
+		/// missing-file/tombstone fingerprints must stay usable for coarse comparison.
 		/// </summary>
 		internal static bool NeedsAudioFingerprint(FileEntry entry, bool partialClipDetectionEnabled, bool alwaysRetryFailedSampling) =>
 			partialClipDetectionEnabled &&
@@ -645,7 +647,8 @@ namespace VDF.Core {
 			!entry.Flags.Has(EntryFlags.NoAudioTrack) &&
 			(!entry.Flags.Has(EntryFlags.AudioFingerprintError) || alwaysRetryFailedSampling) &&
 			!entry.Flags.Has(EntryFlags.SilentAudioTrack) &&
-			entry.AudioFingerprint == null;
+			(entry.AudioFingerprint == null ||
+				(entry.AudioFingerprint.Length > 0 && entry.AudioFingerprintFrames == null && File.Exists(entry.Path)));
 
 		/// <summary>
 		/// Whether the partial-clip visual gate must not decode this pair. ThumbnailError marks
@@ -1251,7 +1254,7 @@ namespace VDF.Core {
 
 
 	internal static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default, Action<double>? onProgress = null) {
-		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, ct, onProgress);
+		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, out uint[]? frames, ct, onProgress);
 		if (fp == null && ct.IsCancellationRequested) {
 			// Stop/cancel mid-file is not a file error. Flagging here poisoned the entry
 			// permanently: both the AudioFingerprintError flag and the non-null empty
@@ -1259,6 +1262,7 @@ namespace VDF.Core {
 			// again. Leave the entry untouched and let the next scan retry it.
 			return;
 		}
+		entry.AudioFingerprintFrames = null;
 		if (fp == null) {
 			// null = extraction failed (error or no audio stream)
 			entry.Flags.Set(EntryFlags.AudioFingerprintError);
@@ -1269,7 +1273,7 @@ namespace VDF.Core {
 			entry.Flags.Set(EntryFlags.NoAudioTrack);
 			entry.AudioFingerprint = Array.Empty<uint>();
 		}
-		else if (IsSilentFingerprint(fp)) {
+		else if (IsSilentFingerprint(frames is { Length: > 0 } ? frames : fp)) {
 			// Silent tracks produce all-zero fingerprints, which Hamming-match any
 			// other silent track at 100% and cause false-positive partial-clip groups.
 			entry.Flags.Set(EntryFlags.SilentAudioTrack);
@@ -1277,6 +1281,7 @@ namespace VDF.Core {
 		}
 		else {
 			entry.AudioFingerprint = fp;
+			entry.AudioFingerprintFrames = frames;
 		}
 	}
 
@@ -2054,7 +2059,7 @@ namespace VDF.Core {
 				.Where(e => !e.invalid && !e.IsImage &&
 						!e.Flags.Has(EntryFlags.SilentAudioTrack) &&
 						e.AudioFingerprint != null && e.AudioFingerprint.Length >= 2 &&
-						!IsSilentFingerprint(e.AudioFingerprint) &&
+						!IsSilentFingerprint(e.AudioFingerprintFrames is { Length: > 0 } fine ? fine : e.AudioFingerprint) &&
 						!alreadyGrouped.Contains(e.Path))
 				.OrderByDescending(e => e.mediaInfo?.Duration ?? TimeSpan.Zero)
 				.ToList();
@@ -2074,10 +2079,11 @@ namespace VDF.Core {
 					if ((videos[j].mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds < 1.0)
 						return false;
 					// Fingerprint block sanity (each block ≈ 1 second)
-					return videos[j].AudioFingerprint!.Length < videos[i].AudioFingerprint!.Length;
+					var (shorter, longer, _) = AudioFingerprintPair(videos[j], videos[i]);
+					return shorter.Length < longer.Length;
 				},
 				tryMatchPair: (i, j) => {
-					var (sim, offsetSec) = SlidingWindowCompare(videos[j].AudioFingerprint!, videos[i].AudioFingerprint!, simThreshold);
+					var (sim, offsetSec) = CompareAudioFingerprints(videos[j], videos[i], simThreshold);
 					return sim >= simThreshold ? (sim, offsetSec) : null;
 				});
 
@@ -2103,6 +2109,84 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Partial clip detection: checked {pairsChecked} pair(s), found {matches.Count} candidate match(es), formed {assignments.Count} clip-source assignment(s).");
 		}
 
+		// Fine features are used only when BOTH entries have enough complete windows.
+		// Very short clips keep the legacy behavior instead of relying on a handful
+		// of highly overlapping votes. Keeping the legacy
+		// one-second cache makes mixed/older databases (including tombstones) safe.
+		static (uint[] Shorter, uint[] Longer, double SecondsPerBlock) AudioFingerprintPair(FileEntry shorter, FileEntry longer) =>
+			shorter.AudioFingerprintFrames is { Length: >= 8 } && longer.AudioFingerprintFrames is { Length: >= 8 }
+				? (shorter.AudioFingerprintFrames, longer.AudioFingerprintFrames, Chromaprint.ChromaContext.FrameDurationSeconds)
+				: (shorter.AudioFingerprint!, longer.AudioFingerprint!, 1d);
+
+		internal static (float similarity, double offsetSec) CompareAudioFingerprints(FileEntry shorter, FileEntry longer, float minSim = 0f) {
+			var (shorterFp, longerFp, secondsPerBlock) = AudioFingerprintPair(shorter, longer);
+			var (similarity, offset) = secondsPerBlock == 1d
+				? SlidingWindowCompare(shorterFp, longerFp, minSim)
+				: CompareFineAudioWindows(shorterFp, longerFp, minSim);
+			return (similarity, offset * secondsPerBlock);
+		}
+
+		/// <summary>
+		/// Compare adjacent seven-frame aggregate windows at every possible source
+		/// phase. This retains subsecond alignment with roughly one compared feature
+		/// per second, rather than multiplying BOTH axes of the pair loop eightfold.
+		/// Short clips retain all overlapping windows for enough independent evidence.
+		/// </summary>
+		internal static (float similarity, int offsetBlocks) CompareFineAudioWindows(uint[] shorter, uint[] longer, float minSim = 0f) {
+			if (shorter.Length < 80)
+				return SlidingWindowCompare(shorter, longer, minSim);
+			int maxOffset = longer.Length - shorter.Length;
+			if (maxOffset < 0) return (0f, 0);
+
+			const int stride = Chromaprint.ChromaContext.FrameWindowSize;
+			int count = (shorter.Length - 1) / stride + 1;
+			bool hasTail = (shorter.Length - 1) % stride != 0;
+			int capacity = (count + (hasTail ? 1 : 0)) * 32;
+			uint[] clipBuffer = System.Buffers.ArrayPool<uint>.Shared.Rent(count);
+			uint[] sourceBuffer = System.Buffers.ArrayPool<uint>.Shared.Rent((longer.Length - 1) / stride + 1);
+			try {
+				for (int i = 0; i < count; i++) clipBuffer[i] = shorter[i * stride];
+				var clip = clipBuffer.AsSpan(0, count);
+				float bestSim = 0;
+				int bestOffset = 0;
+				for (int phase = 0; phase < stride && phase <= maxOffset; phase++) {
+					// The FULL clip must fit, including the last overlapping window.
+					int offsets = (maxOffset - phase) / stride + 1;
+					int sourceCount = count + offsets - 1;
+					for (int i = 0; i < sourceCount; i++) sourceBuffer[i] = longer[phase + i * stride];
+					var source = sourceBuffer.AsSpan(0, sourceCount);
+					for (int offset = 0; offset < offsets; offset++) {
+						int fineOffset = phase + offset * stride;
+						// Round the pruning bound up; the computed float score
+						// decides eligibility, including exact-threshold matches/ties.
+						int budget = (int)Math.Ceiling((1d - Math.Max(bestSim, minSim)) * capacity);
+						// Include the final overlapping window so a partial last group
+						// is never silently omitted by the stride.
+						int tail = hasTail ? BitOperations.PopCount(shorter[^1] ^ longer[fineOffset + shorter.Length - 1]) : 0;
+						if (tail > budget) continue;
+						int distance = tail + HammingDistance(clip, source, offset, count, budget - tail);
+						if (distance > budget) continue;
+						float sim = 1f - (float)distance / capacity;
+						if (sim < minSim) continue;
+						if (sim > bestSim || (sim == bestSim && fineOffset < bestOffset)) {
+							bestSim = sim;
+							bestOffset = fineOffset;
+						}
+					}
+				}
+				return (bestSim, bestOffset);
+			}
+			finally {
+				System.Buffers.ArrayPool<uint>.Shared.Return(clipBuffer);
+				System.Buffers.ArrayPool<uint>.Shared.Return(sourceBuffer);
+			}
+		}
+
+		internal static double AudioFingerprintDurationSeconds(FileEntry entry) =>
+			entry.AudioFingerprintFrames is { Length: > 0 } frames
+				? (frames.Length - 1) * Chromaprint.ChromaContext.FrameDurationSeconds + Chromaprint.ChromaContext.FrameSupportSeconds
+				: entry.AudioFingerprint?.Length ?? 0;
+
 		/// <summary>Paths already covered by earlier passes' duplicate groups.</summary>
 		HashSet<string> BuildAlreadyGroupedPathSet() =>
 			new(Duplicates.Select(d => d.Path),
@@ -2121,12 +2205,12 @@ namespace VDF.Core {
 		/// <paramref name="pairPrefilter"/> runs before a pair counts as checked;
 		/// <paramref name="tryMatchPair"/> returns similarity+offset for a match, null otherwise.
 		/// </summary>
-		(ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)> Matches, long PairsChecked)
+		(ConcurrentBag<(int sourceIdx, int clipIdx, float sim, double offsetSec)> Matches, long PairsChecked)
 			CollectPartialMatchCandidates(
 				List<FileEntry> videos,
 				Func<int, int, bool>? pairPrefilter,
-				Func<int, int, (float sim, int offsetSec)?> tryMatchPair) {
-			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
+				Func<int, int, (float sim, double offsetSec)?> tryMatchPair) {
+			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, double offsetSec)>();
 			long pairsChecked = 0; // long: 162k videos are ~13 billion pairs - an int wrapped negative in the summary log (#865)
 			try {
 				Parallel.For(0, videos.Count - 1,
@@ -2168,9 +2252,9 @@ namespace VDF.Core {
 		/// </summary>
 		void EmitPartialClipAssignments(
 			List<FileEntry> videos,
-			List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> assignments,
+			List<(int sourceIdx, int clipIdx, float sim, double offsetSec, Guid groupId)> assignments,
 			DuplicateFlags clipFlags,
-			Action<FileEntry, FileEntry, float, int> logMatch) {
+			Action<FileEntry, FileEntry, float, double> logMatch) {
 			var addedSources = new HashSet<int>();
 			foreach (var (si, ci, sim, offsetSec, groupId) in assignments) {
 				FileEntry source = videos[si];
@@ -2199,10 +2283,10 @@ namespace VDF.Core {
 		/// assignment actually picks and repeats with the rejected pairs removed until every
 		/// assigned pair has passed. Each round rejects at least one pair, so it ends.
 		/// </summary>
-		internal List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> AssignAndVerifyPartialClips(
+		internal List<(int sourceIdx, int clipIdx, float sim, double offsetSec, Guid groupId)> AssignAndVerifyPartialClips(
 			List<FileEntry> videos,
-			IEnumerable<(int sourceIdx, int clipIdx, float sim, int offsetSec)> matches,
-			Func<FileEntry, FileEntry, int, (bool pass, float visualSim)> verify) {
+			IEnumerable<(int sourceIdx, int clipIdx, float sim, double offsetSec)> matches,
+			Func<FileEntry, FileEntry, double, (bool pass, float visualSim)> verify) {
 			var candidates = matches.ToList();
 			var passed = new HashSet<(int, int)>();
 			var rejected = new HashSet<(int, int)>();
@@ -2237,16 +2321,16 @@ namespace VDF.Core {
 		/// the UI showing that pass's completed counters for minutes on end (#831).
 		/// <paramref name="verify"/> is injected so tests can drive the phase without FFmpeg.
 		/// </summary>
-		internal List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> RunPartialClipVisualGate(
+		internal List<(int sourceIdx, int clipIdx, float sim, double offsetSec, Guid groupId)> RunPartialClipVisualGate(
 			List<FileEntry> videos,
-			List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> assignments,
-			Func<FileEntry, FileEntry, int, (bool pass, float visualSim)> verify) {
+			List<(int sourceIdx, int clipIdx, float sim, double offsetSec, Guid groupId)> assignments,
+			Func<FileEntry, FileEntry, double, (bool pass, float visualSim)> verify) {
 
 			InitProgress(assignments.Count, T("Scan.Stage.PartialVisualVerify"));
 
 			int beforeCount = assignments.Count;
 			int dropped = 0;
-			var verified = new ConcurrentBag<(int, int, float, int, Guid)>();
+			var verified = new ConcurrentBag<(int, int, float, double, Guid)>();
 			try {
 				// Storage-tuned degree, NOT MatchingParallelDegree: unlike the audio
 				// fingerprint pass above (pure CPU over in-memory fingerprints), the visual
@@ -2296,7 +2380,7 @@ namespace VDF.Core {
 		/// video (#908). Avoids the window's very edges so intros/outros (often black or
 		/// text-only) don't dominate the result. Empty when no video overlaps the window.
 		/// </summary>
-		internal static List<double> PartialClipVisualSampleTimes(double sourceSec, double clipSec, int clipFingerprintSeconds, int offsetSec) {
+		internal static List<double> PartialClipVisualSampleTimes(double sourceSec, double clipSec, double clipFingerprintSeconds, double offsetSec) {
 			double window = Math.Min(clipSec, sourceSec - offsetSec);
 			if (clipFingerprintSeconds > 0)
 				window = Math.Min(window, clipFingerprintSeconds);
@@ -2321,13 +2405,13 @@ namespace VDF.Core {
 		/// or when no frames could be sampled (in which case audio alone decides). Uses pHash
 		/// when <see cref="Settings.UsePHashing"/> is enabled, otherwise grayscale percent diff.
 		/// </summary>
-		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim) {
+		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, double offsetSec, out float visualSim) {
 			visualSim = 0f;
 			double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 			double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 			if (sourceSec <= 0 || clipSec <= 0) return true;
 
-			List<double> clipTimes = PartialClipVisualSampleTimes(sourceSec, clipSec, clip.AudioFingerprint?.Length ?? 0, offsetSec);
+			List<double> clipTimes = PartialClipVisualSampleTimes(sourceSec, clipSec, AudioFingerprintDurationSeconds(clip), offsetSec);
 			// No video overlaps the stretch the audio matched: there is nothing that could
 			// confirm the match, so it is not confirmed. This used to fall through to "audio
 			// alone decides" and passed pairs whose frames were never looked at (#908).
@@ -2385,11 +2469,11 @@ namespace VDF.Core {
 		/// dropped, and their would-be source is omitted unless it has unclaimed clips of
 		/// its own. This prevents singleton groups in the output.
 		/// </summary>
-		internal static List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)>
-			AssignPartialClipGroups(IEnumerable<(int sourceIdx, int clipIdx, float sim, int offsetSec)> matches) {
+		internal static List<(int sourceIdx, int clipIdx, float sim, double offsetSec, Guid groupId)>
+			AssignPartialClipGroups(IEnumerable<(int sourceIdx, int clipIdx, float sim, double offsetSec)> matches) {
 			var sourceGroupId = new Dictionary<int, Guid>();
 			var assignedClips = new HashSet<int>();
-			var assignments = new List<(int, int, float, int, Guid)>();
+			var assignments = new List<(int, int, float, double, Guid)>();
 
 			foreach (var (si, ci, sim, offsetSec) in matches.OrderBy(m => m.sourceIdx).ThenBy(m => m.clipIdx)) {
 				if (!assignedClips.Add(ci)) continue;
@@ -2405,13 +2489,13 @@ namespace VDF.Core {
 
 		/// <summary>
 		/// Slides <paramref name="shorter"/> over <paramref name="longer"/> and returns the
-		/// best average Hamming similarity (0–1) and the offset (in seconds / blocks) at which
+		/// best average Hamming similarity (0–1) and the offset (in blocks) at which
 		/// it occurs.  Uses SIMD-accelerated XOR where available and skips offsets early when
 		/// the accumulated Hamming distance already exceeds what could beat the current best.
 		/// </summary>
 		/// <param name="minSim">Minimum similarity the caller cares about (e.g. the user threshold).
 		/// Offsets that cannot reach this value are skipped via early exit.</param>
-		internal static (float similarity, int offsetBlocks) SlidingWindowCompare(uint[] shorter, uint[] longer, float minSim = 0f) {
+		internal static (float similarity, int offsetBlocks) SlidingWindowCompare(ReadOnlySpan<uint> shorter, ReadOnlySpan<uint> longer, float minSim = 0f) {
 			int lenS = shorter.Length;
 			int lenL = longer.Length;
 			int maxOffset = lenL - lenS;
@@ -2423,7 +2507,7 @@ namespace VDF.Core {
 			for (int offset = 0; offset <= maxOffset; offset++) {
 				// The maximum number of differing bits we can tolerate and still
 				// beat the current best (or the caller's minimum threshold).
-				int maxAllowedBits = (int)((1f - Math.Max(bestSim, minSim)) * totalBitsCapacity);
+				int maxAllowedBits = (int)Math.Ceiling((1d - Math.Max(bestSim, minSim)) * totalBitsCapacity);
 
 				int totalBits = HammingDistance(shorter, longer, offset, lenS, maxAllowedBits);
 
@@ -2431,6 +2515,7 @@ namespace VDF.Core {
 					continue; // early exit triggered inside HammingDistance
 
 				float sim = 1f - (float)totalBits / totalBitsCapacity;
+				if (sim < minSim) continue;
 				if (sim > bestSim) {
 					bestSim = sim;
 					bestOffset = offset;
@@ -2448,14 +2533,14 @@ namespace VDF.Core {
 		/// running total exceeds the budget, avoiding unnecessary work on non-matching offsets.
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		static int HammingDistance(uint[] a, uint[] b, int offset, int len, int maxAllowedBits) {
+		static int HammingDistance(ReadOnlySpan<uint> a, ReadOnlySpan<uint> b, int offset, int len, int maxAllowedBits) {
 			int totalBits = 0;
 			int k = 0;
 
 			// --- Vector256 path (8 × uint per iteration) ---
 			if (Vector256.IsHardwareAccelerated && len >= 8) {
-				ref uint aRef = ref MemoryMarshal.GetArrayDataReference(a);
-				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(b), offset);
+				ref uint aRef = ref MemoryMarshal.GetReference(a);
+				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetReference(b), offset);
 
 				for (; k + 8 <= len; k += 8) {
 					var va = Vector256.LoadUnsafe(ref aRef, (nuint)k);
@@ -2474,8 +2559,8 @@ namespace VDF.Core {
 			}
 			// --- Vector128 path (4 × uint per iteration, e.g. ARM NEON) ---
 			else if (Vector128.IsHardwareAccelerated && len >= 4) {
-				ref uint aRef = ref MemoryMarshal.GetArrayDataReference(a);
-				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(b), offset);
+				ref uint aRef = ref MemoryMarshal.GetReference(a);
+				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetReference(b), offset);
 
 				for (; k + 4 <= len; k += 4) {
 					var va = Vector128.LoadUnsafe(ref aRef, (nuint)k);

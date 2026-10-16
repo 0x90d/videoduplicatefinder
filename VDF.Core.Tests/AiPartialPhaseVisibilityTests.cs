@@ -91,7 +91,7 @@ public class AiPartialPhaseVisibilityTests : IDisposable {
 				new() { _Path = @"C:\vdf-gate\source.mp4" },
 				new() { _Path = @"C:\vdf-gate\clip.mp4" },
 			},
-			new List<(int, int, float, int, Guid)> { (0, 1, 0.9f, 0, Guid.NewGuid()) },
+			new List<(int, int, float, double, Guid)> { (0, 1, 0.9f, 0, Guid.NewGuid()) },
 			(_, _, _) => (true, 1f));
 		Add("only-one.mp4", 120);
 

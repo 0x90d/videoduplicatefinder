@@ -133,7 +133,7 @@ public class PartialVerifyDecodeBlockTests {
 		var engine = new ScanEngine();
 		var videos = new List<FileEntry> { Video("source.mp4"), Video("clip0.mp4"), Video("clip1.mp4") };
 		videos[1].Flags.Set(EntryFlags.ThumbnailError); // quarantined after a decoder crash
-		var assignments = new List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> {
+		var assignments = new List<(int sourceIdx, int clipIdx, float sim, double offsetSec, Guid groupId)> {
 			(0, 1, 0.9f, 0, Guid.NewGuid()),
 			(0, 2, 0.9f, 0, Guid.NewGuid()),
 		};
@@ -176,6 +176,7 @@ public class NeedsAudioFingerprintTests {
 	public void CachedFingerprint_NotReExtracted() {
 		var entry = VideoEntry();
 		entry.AudioFingerprint = new uint[] { 1, 2, 3 };
+		entry.AudioFingerprintFrames = new uint[] { 1, 2, 3 };
 		Assert.False(ScanEngine.NeedsAudioFingerprint(entry, true, true));
 	}
 

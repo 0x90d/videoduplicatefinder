@@ -40,7 +40,13 @@ namespace VDF.Core.Chromaprint {
 		// ──────────────────────────────────────────────────────────────────────
 		// Frame / hop parameters  (standard Chromaprint / AcoustID values)
 		// ──────────────────────────────────────────────────────────────────────
-		const int FrameHop = 1365; // samples between consecutive frames
+		internal const int FrameHop = 1365; // samples between consecutive frames
+		internal const double FrameDurationSeconds = (double)FrameHop / Chroma.SampleRate;
+		// Odd window avoids tied majority votes. Adjacent comparison windows use
+		// these seven frames, while source windows start at every hop for alignment.
+		internal const int FrameWindowSize = 7;
+		internal const double FrameSupportSeconds =
+			(double)(Chroma.FrameSize + (ChromaFilter.FilterSize + FrameWindowSize - 2) * FrameHop) / Chroma.SampleRate;
 		// Frames per second = 11025 / 1365 ≈ 8.07
 
 		// ──────────────────────────────────────────────────────────────────────
@@ -59,6 +65,8 @@ namespace VDF.Core.Chromaprint {
 
 		readonly List<uint> _secondFrames = new(16);
 		readonly List<uint> _aggregated = new();
+		readonly List<uint> _frames = new();
+		readonly List<uint> _frameWindow = new(FrameWindowSize);
 		int _frameIndex;
 
 		/// <summary>Reset state and prepare for a new file.</summary>
@@ -68,6 +76,8 @@ namespace VDF.Core.Chromaprint {
 			_frameIndex = 0;
 			_secondFrames.Clear();
 			_aggregated.Clear();
+			_frames.Clear();
+			_frameWindow.Clear();
 			_filter.Reset();
 		}
 
@@ -107,6 +117,14 @@ namespace VDF.Core.Chromaprint {
 		/// </summary>
 		public uint[] GetRawFingerprint() => _aggregated.ToArray();
 
+		/// <summary>
+		/// Rolling seven-frame majority votes for subsecond alignment. The windows
+		/// start every FrameDurationSeconds, rather than once per second. Consecutive
+		/// non-overlapping seven-frame groups can be compared without discarding the
+		/// intervening features. Call after Finish().
+		/// </summary>
+		public uint[] GetFrameFingerprint() => _frames.ToArray();
+
 		// ──────────────────────────────────────────────────────────────────────
 		// Private helpers
 		// ──────────────────────────────────────────────────────────────────────
@@ -128,6 +146,10 @@ namespace VDF.Core.Chromaprint {
 				if (_filter.Feed(_chromaBuf, _filteredBuf)) {
 					ChromaNormalizer.Normalize(_filteredBuf);
 					uint fp = FingerprintCalculator.Compute(_filteredBuf);
+					_frameWindow.Add(fp);
+					if (_frameWindow.Count > FrameWindowSize) _frameWindow.RemoveAt(0);
+					if (_frameWindow.Count == FrameWindowSize)
+						_frames.Add(FingerprintCalculator.AggregateMajorityVote(_frameWindow));
 
 					// Determine which 1-second bucket this frame belongs to
 					double frameSec = (double)_frameIndex * FrameHop / Chroma.SampleRate;
