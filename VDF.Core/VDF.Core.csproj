@@ -26,6 +26,7 @@
     <PackageReference Include="System.Numerics.Tensors" Version="10.0.11" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\Locales\ar.json" />
     <EmbeddedResource Include="Assets\Locales\en.json" />
     <EmbeddedResource Include="Assets\Locales\de.json" />
     <EmbeddedResource Include="Assets\Locales\es.json" />
