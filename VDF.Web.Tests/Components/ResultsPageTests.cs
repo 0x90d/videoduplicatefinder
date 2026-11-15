@@ -129,15 +129,19 @@ public sealed class ResultsPageTests : BunitContext {
 		return new[] { C("creation_time", "2023-08-15T12:34:56Z"), C("com.apple.quicktime.creationdate", date) };
 	};
 
-	IRenderedComponent<VDF.Web.Components.Pages.Results> OpenMetadataOfFirstGroup() {
+	async Task<IRenderedComponent<VDF.Web.Components.Pages.Results>> OpenMetadataOfFirstGroup() {
 		var page = RenderPage();
-		page.Find(".metadata-btn").Click();
-		page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".metadata-table")));
+		// Await the click handler itself, not the first sight of the table: OpenMetadata renders
+		// the table, then Blazor renders once more when the handler's task completes. A test that
+		// finds an input between those two renders and then changes it hits an event handler id
+		// the second render dropped (UnknownEventHandlerIdException, only under CPU load).
+		await page.Find(".metadata-btn").ClickAsync(new());
+		Assert.NotEmpty(page.FindAll(".metadata-table"));
 		return page;
 	}
 
 	[Fact]
-	public void Metadata_MarksTheOneCopyWithTheOtherDate() {
+	public async Task Metadata_MarksTheOneCopyWithTheOtherDate() {
 		MetadataLookup.Reader = FakeTags;
 		try {
 			Guid group = Guid.NewGuid();
@@ -145,7 +149,7 @@ public sealed class ResultsPageTests : BunitContext {
 			Seed("right.mov", group);
 			Seed("wrong2.mov", group);
 
-			var page = OpenMetadataOfFirstGroup();
+			var page = await OpenMetadataOfFirstGroup();
 
 			Assert.Contains("1 of 2 fields differ", page.Find(".metadata-summary").TextContent);
 			var row = Assert.Single(page.FindAll(".metadata-table tbody tr"), r => r.QuerySelector("th[scope=row]") != null);
@@ -164,7 +168,7 @@ public sealed class ResultsPageTests : BunitContext {
 	}
 
 	[Fact]
-	public void Metadata_ColumnCheckbox_SelectsTheFileOnThePage_AndEscCloses() {
+	public async Task Metadata_ColumnCheckbox_SelectsTheFileOnThePage_AndEscCloses() {
 		MetadataLookup.Reader = FakeTags;
 		try {
 			Guid group = Guid.NewGuid();
@@ -172,7 +176,7 @@ public sealed class ResultsPageTests : BunitContext {
 			Seed("right.mov", group);
 			Seed("gone.mov", group);
 
-			var page = OpenMetadataOfFirstGroup();
+			var page = await OpenMetadataOfFirstGroup();
 
 			var gone = page.FindAll(".metadata-table thead th").Single(th => th.TextContent.Contains("gone.mov"));
 			Assert.Contains("file not available", gone.TextContent);
