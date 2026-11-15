@@ -70,6 +70,24 @@ public class CoreLocaleParityTests {
 	}
 
 	/// <summary>
+	/// VDF.Core.csproj lists every locale as an EmbeddedResource by name. A file that is on
+	/// disk but missing there passes the parity tests above, while LanguageService (which opens
+	/// exactly this resource name) silently serves English for that language. #951 shipped
+	/// ru.json that way.
+	/// </summary>
+	[Fact]
+	public void EveryLocaleFile_IsEmbeddedForLanguageService() {
+		var embedded = typeof(LanguageService).Assembly.GetManifestResourceNames().ToHashSet(StringComparer.Ordinal);
+		var notEmbedded = Directory.GetFiles(LocalesFolder(), "*.json")
+			.Select(Path.GetFileNameWithoutExtension)
+			.Where(lang => !embedded.Contains($"VDF.Core.Assets.Locales.{lang}.json"))
+			.OrderBy(lang => lang, StringComparer.Ordinal)
+			.ToList();
+		Assert.True(notEmbedded.Count == 0,
+			$"Add an EmbeddedResource line to VDF.Core.csproj for: [{string.Join(", ", notEmbedded)}]");
+	}
+
+	/// <summary>
 	/// The engine resolves stage labels through LanguageService at runtime; a typo'd key would
 	/// otherwise only show up as raw text in a user's status bar.
 	/// </summary>

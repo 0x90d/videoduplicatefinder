@@ -96,7 +96,11 @@ public class NativeFfmpegNoticeTests {
 	[Fact]
 	public Task EveryLanguage_FormatsBothNotices() => HeadlessUi.Run(() => {
 		try {
-			foreach (string lang in new[] { "en", "de", "es", "fr", "ko", "pt", "zh-Hans" }) {
+			// Every shipped locale, not a fixed list: a fixed list silently skipped each
+			// language added after it was written (ru in #951).
+			var languages = App.Lang.AvailableLanguages;
+			Assert.Contains("zh-Hans", languages); // discovery worked, not the "en" fallback
+			foreach (string lang in languages) {
 				App.Lang.LoadLanguage(lang);
 				foreach (bool canDownload in new[] { true, false }) {
 					string text = MainWindowVM.NativeMismatchText(Folder, "FFmpeg 8", "FFmpeg 9", canDownload);
