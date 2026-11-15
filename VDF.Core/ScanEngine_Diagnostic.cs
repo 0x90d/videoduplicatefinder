@@ -466,14 +466,17 @@ namespace VDF.Core {
 					return false;
 				}
 			}
-			if (clip.AudioFingerprint!.Length >= source.AudioFingerprint!.Length) {
+			var (clipFp, sourceFp, _) = AudioFingerprintPair(clip, source);
+			if (clipFp.Length >= sourceFp.Length) {
 				sb.AppendLine("FAIL — the shorter video's audio fingerprint is not shorter than the longer video's; the sliding-window comparison requires a clearly shorter clip.");
 				failures.Add("The audio fingerprints are too similar in length for partial clip matching.");
 				return false;
 			}
 
 			float simThreshold = (float)Settings.PartialClipSimilarityThreshold;
-			var (similarity, offsetSec) = SlidingWindowCompare(clip.AudioFingerprint, source.AudioFingerprint, simThreshold);
+			// A diagnostic needs the true best score even BELOW the threshold.
+			// minSim pruning returns zero when every offset is rejected (#935).
+			var (similarity, offsetSec) = CompareAudioFingerprints(clip, source);
 			sb.AppendLine($"Best audio match: {formatSimilarity(similarity)} at offset {formatSeconds(offsetSec)} — required: at least {(Settings.PartialClipSimilarityThreshold * 100).ToString("0.#", inv)}%");
 			if (similarity < simThreshold) {
 				sb.AppendLine("FAIL — the audio similarity is below the configured threshold.");
@@ -488,7 +491,7 @@ namespace VDF.Core {
 				double sourceDuration = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 				double clipDuration = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 				if (sourceDuration > 0 && clipDuration > 0 &&
-					PartialClipVisualSampleTimes(sourceDuration, clipDuration, clip.AudioFingerprint.Length, offsetSec).Count == 0) {
+					PartialClipVisualSampleTimes(sourceDuration, clipDuration, AudioFingerprintDurationSeconds(clip), offsetSec).Count == 0) {
 					// #908: this printed "0.0%" followed by PASS, because the old gate let a pair
 					// through when none of its sample times fell inside the source.
 					sb.AppendLine($"Visual confirmation: not possible — at offset {formatSeconds(offsetSec)} the matched audio has no video of the longer file to compare against.");

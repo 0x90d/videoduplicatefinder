@@ -88,6 +88,16 @@ namespace VDF.Core {
 		/// </summary>
 		[MemoryPackOrder(10)]
 		public string? OsHash;
+		// Order 11 belonged to the retired on-entry neural embedding dictionary.
+		// Never reuse it: older databases may still contain that member.
+		/// <summary>
+		/// Rolling seven-frame majority votes, spaced by ChromaContext.FrameDurationSeconds.
+		/// Null identifies a legacy cache with only one-second AudioFingerprint blocks.
+		/// Keep the coarse fingerprint too so legacy/mixed caches remain comparable.
+		/// </summary>
+		[MemoryPackOrder(12)]
+		public uint[]? AudioFingerprintFrames;
+
 		// Neural embeddings deliberately do NOT live on FileEntry: at library scale they
 		// would permanently bloat the main database and resident memory even for users who
 		// never enable AI matching. They are cached in the UnionEmbeddingStore sidecar
@@ -163,6 +173,7 @@ namespace VDF.Core {
 			grayBytes.Clear();
 			PHashes.Clear();
 			AudioFingerprint = null;
+			AudioFingerprintFrames = null;
 			Flags.Set(EntryFlags.ThumbnailError | EntryFlags.MetadataError | EntryFlags.TooDark |
 				EntryFlags.NoAudioTrack | EntryFlags.AudioFingerprintError | EntryFlags.SilentAudioTrack, false);
 			invalid = true;

@@ -24,7 +24,7 @@ namespace VDF.Core.Chromaprint.Pipeline {
 	/// triangular-shaped response that smooths transient noise while preserving pitch.
 	/// </summary>
 	internal sealed class ChromaFilter {
-		const int FilterSize = 5;
+		internal const int FilterSize = 5;
 		const double FilterNorm = 2.50; // sum of coefficients
 
 		static readonly double[] s_coeff = { 0.25, 0.50, 1.00, 0.50, 0.25 };

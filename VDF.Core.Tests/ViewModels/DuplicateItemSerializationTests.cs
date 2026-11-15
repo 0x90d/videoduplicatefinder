@@ -53,7 +53,7 @@ public class DuplicateItemSerializationTests {
 			HdrFormat = "HDR10",
 			Flags = DuplicateFlags.Flipped,
 			ThumbnailTimestamps = new List<TimeSpan> { TimeSpan.FromSeconds(6) },
-			PartialClipOffset = TimeSpan.FromSeconds(3),
+			PartialClipOffset = TimeSpan.FromSeconds(3.375),
 		};
 
 		string json = JsonSerializer.Serialize(item, CrossAssemblyTestContext.Default.DuplicateItem);

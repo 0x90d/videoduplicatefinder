@@ -22,8 +22,8 @@ public class PartialClipGroupingTests {
 		// videos[] is sorted by duration DESC, so source idx 0 is the longest.
 		// Clip 2 is contained in both source 0 and source 1; source 1 has no other clips.
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 5),
-			(sourceIdx: 1, clipIdx: 2, sim: 0.91f, offsetSec: 3),
+			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 5d),
+			(sourceIdx: 1, clipIdx: 2, sim: 0.91f, offsetSec: 3d),
 		};
 
 		var assignments = ScanEngine.AssignPartialClipGroups(matches);
@@ -39,8 +39,8 @@ public class PartialClipGroupingTests {
 	[Fact]
 	public void IndependentMatches_FormSeparateGroups() {
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 0),
-			(sourceIdx: 1, clipIdx: 3, sim: 0.92f, offsetSec: 0),
+			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 0d),
+			(sourceIdx: 1, clipIdx: 3, sim: 0.92f, offsetSec: 0d),
 		};
 
 		var assignments = ScanEngine.AssignPartialClipGroups(matches);
@@ -52,9 +52,9 @@ public class PartialClipGroupingTests {
 	[Fact]
 	public void SourceWithMultipleClips_AllShareOneGroupId() {
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 0),
-			(sourceIdx: 0, clipIdx: 3, sim: 0.93f, offsetSec: 0),
-			(sourceIdx: 0, clipIdx: 4, sim: 0.91f, offsetSec: 0),
+			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 0d),
+			(sourceIdx: 0, clipIdx: 3, sim: 0.93f, offsetSec: 0d),
+			(sourceIdx: 0, clipIdx: 4, sim: 0.91f, offsetSec: 0d),
 		};
 
 		var assignments = ScanEngine.AssignPartialClipGroups(matches);
@@ -68,9 +68,9 @@ public class PartialClipGroupingTests {
 	public void ClipMatchingTwoSources_SecondSourceStillUsable_IfItHasOtherClips() {
 		// Source 1 also matches clip 6, which is unclaimed → source 1's group survives.
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 5, sim: 0.95f, offsetSec: 0),
-			(sourceIdx: 1, clipIdx: 5, sim: 0.92f, offsetSec: 0),
-			(sourceIdx: 1, clipIdx: 6, sim: 0.90f, offsetSec: 0),
+			(sourceIdx: 0, clipIdx: 5, sim: 0.95f, offsetSec: 0d),
+			(sourceIdx: 1, clipIdx: 5, sim: 0.92f, offsetSec: 0d),
+			(sourceIdx: 1, clipIdx: 6, sim: 0.90f, offsetSec: 0d),
 		};
 
 		var assignments = ScanEngine.AssignPartialClipGroups(matches);
@@ -91,8 +91,8 @@ public class PartialClipGroupingTests {
 	public void SourceOrderInInput_DoesNotAffectOutcome() {
 		// Same matches as the first test, but supplied out of order.
 		var matches = new[] {
-			(sourceIdx: 1, clipIdx: 2, sim: 0.91f, offsetSec: 3),
-			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 5),
+			(sourceIdx: 1, clipIdx: 2, sim: 0.91f, offsetSec: 3d),
+			(sourceIdx: 0, clipIdx: 2, sim: 0.95f, offsetSec: 5d),
 		};
 
 		var assignments = ScanEngine.AssignPartialClipGroups(matches);
@@ -105,7 +105,7 @@ public class PartialClipGroupingTests {
 	[Fact]
 	public void EmptyInput_ProducesEmptyOutput() {
 		var assignments = ScanEngine.AssignPartialClipGroups(
-			Array.Empty<(int sourceIdx, int clipIdx, float sim, int offsetSec)>());
+			Array.Empty<(int sourceIdx, int clipIdx, float sim, double offsetSec)>());
 		Assert.Empty(assignments);
 	}
 
@@ -114,12 +114,12 @@ public class PartialClipGroupingTests {
 		// Stress: clip 10 and clip 11 are each contended by sources 0, 1, 2.
 		// Source 2 also has its own clip 12.
 		var matches = new[] {
-			(sourceIdx: 0, clipIdx: 10, sim: 0.95f, offsetSec: 0),
-			(sourceIdx: 0, clipIdx: 11, sim: 0.94f, offsetSec: 0),
-			(sourceIdx: 1, clipIdx: 10, sim: 0.93f, offsetSec: 0),
-			(sourceIdx: 1, clipIdx: 11, sim: 0.92f, offsetSec: 0),
-			(sourceIdx: 2, clipIdx: 10, sim: 0.91f, offsetSec: 0),
-			(sourceIdx: 2, clipIdx: 12, sim: 0.90f, offsetSec: 0),
+			(sourceIdx: 0, clipIdx: 10, sim: 0.95f, offsetSec: 0d),
+			(sourceIdx: 0, clipIdx: 11, sim: 0.94f, offsetSec: 0d),
+			(sourceIdx: 1, clipIdx: 10, sim: 0.93f, offsetSec: 0d),
+			(sourceIdx: 1, clipIdx: 11, sim: 0.92f, offsetSec: 0d),
+			(sourceIdx: 2, clipIdx: 10, sim: 0.91f, offsetSec: 0d),
+			(sourceIdx: 2, clipIdx: 12, sim: 0.90f, offsetSec: 0d),
 		};
 
 		var assignments = ScanEngine.AssignPartialClipGroups(matches);

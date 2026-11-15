@@ -29,8 +29,8 @@ public class PartialClipProgressTests {
 	static FileEntry Video(string name) => new() { _Path = Path.Combine(Path.GetTempPath(), name) };
 
 	/// <summary>index 0 is the source, 1..count are its candidate clips.</summary>
-	static List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> Assignments(int count) {
-		var list = new List<(int, int, float, int, Guid)>();
+	static List<(int sourceIdx, int clipIdx, float sim, double offsetSec, Guid groupId)> Assignments(int count) {
+		var list = new List<(int, int, float, double, Guid)>();
 		for (int i = 0; i < count; i++)
 			list.Add((0, i + 1, 0.9f, 0, Guid.NewGuid()));
 		return list;
