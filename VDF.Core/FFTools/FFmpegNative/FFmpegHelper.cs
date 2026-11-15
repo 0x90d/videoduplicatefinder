@@ -210,27 +210,17 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		/// </summary>
 		internal static string DescribeExpectedLibraries() {
 			var expected = string.Join(", ", GenerateLibraryFileNames());
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-				return $"Expected: {expected}";
-
-			// On Linux, surface nearby mismatched majors (e.g. libavcodec.so.59 present while .62 expected)
-			var found = new List<string>();
-			try {
-				foreach (var libKey in ffmpeg.LibraryVersionMap.Keys) {
-					foreach (var libDir in new[] { "/usr/lib", "/usr/lib/x86_64-linux-gnu", "/usr/lib/aarch64-linux-gnu", "/usr/lib64" }) {
-						if (!Directory.Exists(libDir)) continue;
-						foreach (var file in Directory.EnumerateFiles(libDir, $"lib{libKey}.so.*", SearchOption.TopDirectoryOnly)) {
-							var name = Path.GetFileName(file);
-							if (!found.Contains(name)) found.Add(name);
-						}
-					}
-				}
-			}
-			catch { }
-			return found.Count > 0
-				? $"Expected: {expected}. Found on system: {string.Join(", ", found)}. The installed FFmpeg major version does not match what the bundled FFmpeg.AutoGen binding expects."
-				: $"Expected: {expected}";
+			NativeLibraryMismatch? mismatch = null;
+			try { mismatch = NativeLibraryVersions.FindMismatch(); }
+			catch (Exception e) { Utils.Logger.Instance.Warn($"Failed to look for FFmpeg libraries of other versions: {e.Message}"); }
+			return mismatch == null
+				? $"Expected: {expected}"
+				: $"Expected: {expected}. {DescribeMismatch(mismatch)}";
 		}
+
+		/// <summary>The one sentence every frontend uses to say why the native binding cannot start.</summary>
+		internal static string DescribeMismatch(NativeLibraryMismatch m) =>
+			$"The FFmpeg libraries in '{m.Folder}' are {m.Found}, but the native binding needs {m.Needed}.";
 
 		static bool CheckForFfmpegLibraryFilesInFolder(string path) {
 			foreach (var file in GenerateLibraryFileNames()) {

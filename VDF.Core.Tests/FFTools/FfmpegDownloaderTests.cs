@@ -23,16 +23,28 @@ namespace VDF.Core.Tests.FFTools;
 public class FfmpegDownloaderTests {
 
 	[Theory]
-	[InlineData(62, 62, 62, 8)]
-	[InlineData(61, 61, 61, 7)]
-	[InlineData(60, 60, 60, 6)]
-	[InlineData(59, 59, 59, 5)]
+	[InlineData(63, 63, 61, 9)]
+	[InlineData(62, 62, 60, 8)]
+	[InlineData(61, 61, 59, 7)]
+	[InlineData(60, 60, 58, 6)]
+	[InlineData(59, 59, 57, 5)]
+	[InlineData(58, 58, 56, 4)]
 	[InlineData(0, 0, 0, 0)]
 	[InlineData(59, 62, 60, 8)] // mixed headers: the newest major wins
 	public void MapToFfmpegMajor_MapsLibraryMajorsToFfmpegMajor(int avcodec, int avformat, int avutil, int expected) =>
 		Assert.Equal(expected, FfmpegDownloader.MapToFfmpegMajor(avcodec, avformat, avutil));
 
+	[Fact]
+	public void TheBindingIsFfmpeg9_AndDownloadsAPublishedTag() {
+		// FFmpeg.AutoGen 9 loads avcodec-63 & co.; the downloader must fetch the matching build.
+		int major = FfmpegDownloader.MapToFfmpegMajor(
+			FFmpeg.AutoGen.ffmpeg.LIBAVCODEC_VERSION_MAJOR, FFmpeg.AutoGen.ffmpeg.LIBAVFORMAT_VERSION_MAJOR, FFmpeg.AutoGen.ffmpeg.LIBAVUTIL_VERSION_MAJOR);
+		Assert.Equal(9, major);
+		Assert.Equal("9.0", FfmpegDownloader.VersionTagForMajor(major));
+	}
+
 	[Theory]
+	[InlineData(9, "9.0")]
 	[InlineData(8, "8.1")]
 	[InlineData(7, "7.1")]
 	[InlineData(6, "6.1")]
@@ -44,34 +56,37 @@ public class FfmpegDownloaderTests {
 	static FfmpegDownloader.DownloadOS ParseOs(string os) => Enum.Parse<FfmpegDownloader.DownloadOS>(os);
 
 	[Theory]
-	[InlineData("Windows", Architecture.X64, "win64", "BtbN", "zip")]
-	[InlineData("Windows", Architecture.X86, "win32", "BtbN", "zip")]
-	[InlineData("Windows", Architecture.Arm64, "winarm64", "BtbN", "zip")]
-	[InlineData("Linux", Architecture.X64, "linux64", "BtbN", "tar.xz")]
-	[InlineData("Linux", Architecture.Arm, "linuxarmhf", "BtbN", "tar.xz")]
-	[InlineData("OSX", Architecture.X64, "macos64", "yt-dlp", "zip")]
-	[InlineData("OSX", Architecture.Arm64, "macosarm64", "yt-dlp", "zip")]
-	public void GetDownloadPlans_BuildsTheExpectedReleaseUrl(
-		string os, Architecture arch, string rid, string repoOwner, string ext) {
-		var plans = FfmpegDownloader.GetDownloadPlans(ParseOs(os), arch, "8.1");
+	[InlineData("Windows", Architecture.X64, "win64", "zip")]
+	[InlineData("Windows", Architecture.Arm64, "winarm64", "zip")]
+	[InlineData("Linux", Architecture.X64, "linux64", "tar.xz")]
+	[InlineData("Linux", Architecture.Arm64, "linuxarm64", "tar.xz")]
+	public void GetDownloadPlans_BuildsTheExpectedReleaseUrl(string os, Architecture arch, string rid, string ext) {
+		var plans = FfmpegDownloader.GetDownloadPlans(ParseOs(os), arch, "9.0");
 
 		var plan = Assert.Single(plans);
-		Assert.Equal($"ffmpeg-n8.1-latest-{rid}-gpl-shared-8.1.{ext}", plan.ArchiveFileName);
+		Assert.Equal($"ffmpeg-n9.0-latest-{rid}-gpl-shared-9.0.{ext}", plan.ArchiveFileName);
 		Assert.Equal(ext == "zip" ? ArchiveKind.Zip : ArchiveKind.TarXz, plan.ArchiveKind);
-		Assert.Contains($"github.com/{repoOwner}/FFmpeg-Builds/releases/download/latest/{plan.ArchiveFileName}", plan.DownloadUrl.AbsoluteUri);
-		Assert.Contains("8.1", plan.DisplayName);
+		Assert.Contains($"github.com/BtbN/FFmpeg-Builds/releases/download/latest/{plan.ArchiveFileName}", plan.DownloadUrl.AbsoluteUri);
+		Assert.Contains("9.0", plan.DisplayName);
 	}
 
 	[Theory]
-	[InlineData("OSX", Architecture.X86)] // no 32-bit mac builds
-	[InlineData("Windows", Architecture.Arm)] // no 32-bit ARM Windows builds
-	public void GetDownloadPlans_ReturnsEmptyForUnsupportedCombos(string os, Architecture arch) =>
-		Assert.Empty(FfmpegDownloader.GetDownloadPlans(ParseOs(os), arch, "8.1"));
+	[InlineData("OSX", Architecture.X64)] // nobody publishes shared macOS builds (yt-dlp: "no MacOS builds")
+	[InlineData("OSX", Architecture.Arm64)]
+	[InlineData("Windows", Architecture.X86)] // BtbN dropped the 32-bit builds before 8.1
+	[InlineData("Linux", Architecture.X86)]
+	[InlineData("Linux", Architecture.Arm)] // and armhf
+	[InlineData("Windows", Architecture.Arm)]
+	public void GetDownloadPlans_ReturnsEmptyWhereNoBuildIsPublished(string os, Architecture arch) =>
+		Assert.Empty(FfmpegDownloader.GetDownloadPlans(ParseOs(os), arch, "9.0"));
 
 	[Fact]
-	public void GetDownloadPlans_ForCurrentPlatformIsNonEmptyOnCi() {
-		// Every platform CI runs on (win/linux/mac, x64/arm64) has a published build.
-		Assert.NotEmpty(FfmpegDownloader.GetDownloadPlans());
+	public void GetDownloadPlans_ForCurrentPlatformMatchesWhatIsPublished() {
+		// Windows and Linux on x64/arm64 have a build; macOS has none and points to Homebrew.
+		if (OperatingSystem.IsMacOS())
+			Assert.Empty(FfmpegDownloader.GetDownloadPlans());
+		else
+			Assert.NotEmpty(FfmpegDownloader.GetDownloadPlans());
 	}
 
 	[Fact]

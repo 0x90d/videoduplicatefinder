@@ -39,6 +39,17 @@
         <button @onclick="RetryFfmpegSetup">Retry</button>
     </div>
 }
+@if (FFmpegSetup.NativeMismatchMessage is { } nativeMismatch && FFmpegSetup.State != FFmpegSetupState.Downloading) {
+    <div class="ffmpeg-banner warning native-mismatch">
+        <div>
+            <strong>The native FFmpeg binding cannot start</strong>
+            <p>@nativeMismatch</p>
+        </div>
+        @if (FFmpegSetup.CanDownloadForNativeBinding) {
+            <button @onclick="DownloadForNativeBinding">Download @FFmpegSetup.NativeBindingNeeds</button>
+        }
+    </div>
+}
 
 @if (Scan.State == ScanState.Error) {
     <div class="error-box">
@@ -155,7 +166,11 @@ else {
     protected override void OnInitialized() {
         Scan.StateChanged += OnStateChanged;
         FFmpegSetup.StateChanged += OnStateChanged;
+        // The native binding may have been switched on in Settings since the startup check.
+        FFmpegSetup.CheckNativeBinding();
     }
+
+    Task DownloadForNativeBinding() => FFmpegSetup.DownloadForNativeBindingAsync();
 
     void OnStateChanged() {
         try { _ = InvokeAsync(StateHasChanged); }

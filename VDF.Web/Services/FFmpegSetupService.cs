@@ -17,6 +17,7 @@
 using System.Globalization;
 using VDF.Core;
 using VDF.Core.FFTools;
+using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
 
 namespace VDF.Web.Services;
@@ -39,9 +40,68 @@ public sealed class FFmpegSetupService {
 	public double DownloadProgress { get; private set; }
 	public bool IsReady => State == FFmpegSetupState.Ready;
 
+	/// <summary>
+	/// Native binding on, but the FFmpeg libraries found are another version (typically the
+	/// FFmpeg 8 an older VDF downloaded): why it cannot start and what to do. Shown on the
+	/// scan page until it is fixed or the binding is turned off; null otherwise.
+	/// </summary>
+	public string? NativeMismatchMessage { get; private set; }
+	/// <summary>The FFmpeg the native binding needs, for the download button ("FFmpeg 9").</summary>
+	public string NativeBindingNeeds { get; private set; } = string.Empty;
+	/// <summary>A matching download exists here (not in Docker, not on macOS).</summary>
+	public bool CanDownloadForNativeBinding { get; private set; }
+
 	public event Action? StateChanged;
 
+	readonly Func<bool> nativeBindingOn;
+	readonly Func<NativeLibraryMismatch?> findMismatch;
+	readonly Func<bool> inDocker;
+	NativeLibraryMismatch? loggedMismatch;
+
+	public FFmpegSetupService(ScanService scan)
+		: this(() => scan.Settings.UseNativeFfmpegBinding, NativeLibraryVersions.FindMismatch, IsRunningInDocker) { }
+
+	internal FFmpegSetupService(Func<bool> nativeBindingOn, Func<NativeLibraryMismatch?> findMismatch, Func<bool> inDocker) {
+		this.nativeBindingOn = nativeBindingOn;
+		this.findMismatch = findMismatch;
+		this.inDocker = inDocker;
+	}
+
 	void Notify() => StateChanged?.Invoke();
+
+	/// <summary>
+	/// Compares the native binding with the FFmpeg libraries it would load. Cheap (a few folder
+	/// listings), so the scan page runs it whenever it opens: the setting may have changed.
+	/// </summary>
+	public void CheckNativeBinding() {
+		var mismatch = nativeBindingOn() ? findMismatch() : null;
+		string? message = null;
+		bool canDownload = false;
+		if (mismatch != null) {
+			bool docker = inDocker();
+			canDownload = !docker && FfmpegDownloader.GetDownloadPlans().Count > 0;
+			message = FFmpegHelper.DescribeMismatch(mismatch) + " " + (
+				docker ? $"Use an image with {mismatch.Needed}, or turn off the native FFmpeg binding in Settings."
+				: canDownload ? $"Download {mismatch.Needed} here, or turn off the native FFmpeg binding in Settings."
+				: $"Install the {mismatch.Needed} shared libraries (macOS: brew upgrade ffmpeg), or turn off the native FFmpeg binding in Settings.");
+			if (mismatch != loggedMismatch) {
+				loggedMismatch = mismatch;
+				Logger.Instance.Warn(FFmpegHelper.DescribeMismatch(mismatch));
+			}
+		}
+		if (message == NativeMismatchMessage && canDownload == CanDownloadForNativeBinding)
+			return;
+		NativeMismatchMessage = message;
+		NativeBindingNeeds = mismatch?.Needed ?? string.Empty;
+		CanDownloadForNativeBinding = canDownload;
+		Notify();
+	}
+
+	/// <summary>The download the native-binding notice offers; checks again once it is in place.</summary>
+	public async Task DownloadForNativeBindingAsync() {
+		await DownloadFfmpegAsync();
+		CheckNativeBinding();
+	}
 
 	public async Task CheckAndSetupAsync() {
 		State = FFmpegSetupState.Checking;
@@ -54,6 +114,7 @@ public sealed class FFmpegSetupService {
 			State = FFmpegSetupState.Ready;
 			StatusMessage = "FFmpeg is available.";
 			Notify();
+			CheckNativeBinding();
 			return;
 		}
 
@@ -65,6 +126,7 @@ public sealed class FFmpegSetupService {
 		}
 
 		await DownloadFfmpegAsync();
+		CheckNativeBinding();
 	}
 
 	static bool IsRunningInDocker() {

@@ -16,7 +16,7 @@
     <InternalsVisibleTo Include="VDF.Benchmarks" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
     <PackageReference Include="MemoryPack" Version="1.22.0" />
     <!-- Managed-only wrapper (pure P/Invoke, Native-AOT-safe). The native onnxruntime
          library is NOT bundled: AI.AiComponents downloads the pinned version on demand

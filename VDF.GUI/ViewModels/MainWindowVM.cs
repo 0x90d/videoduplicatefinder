@@ -1621,7 +1621,14 @@ Non-Windows setup:
 				}
 			}
 
-			if ((SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists) ||
+			bool nativeMissing = SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.NativeFFmpegExists;
+			if (nativeMissing && Core.FFTools.FFmpegNative.NativeLibraryVersions.FindMismatch() is { } mismatch) {
+				// FFmpeg of another version is there (an update to a newer FFmpeg binding):
+				// ask, and say why, instead of replacing it behind the user's back.
+				if (!await OfferNativeFfmpegUpdateAsync(mismatch))
+					return;
+			}
+			else if (nativeMissing ||
 				(!SettingsFile.Instance.UseNativeFfmpegBinding && !ScanEngine.FFmpegExists) ||
 				!ScanEngine.FFprobeExists) {
 				await DownloadSharedFfmpegAsync();

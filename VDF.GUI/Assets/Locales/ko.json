@@ -409,6 +409,8 @@
 	"Message.MaxDegreeOfParallelismInvalid": "최대 병렬 처리 수는 0이 될 수 없습니다. 설정에서 변경하세요.",
 	"Message.MoveFailed": "일부 파일 이동에 실패했습니다. 로그를 확인하세요!",
 	"Message.NativeFfmpegAutoNotSupported": "네이티브 FFmpeg 바인딩은 하드웨어 디코더를 자동으로 감지할 수 없으므로 하드웨어 가속 모드 'auto'를 함께 쓸 수 없습니다.\n\n설정에서 시스템에 맞는 모드를 직접 선택하거나(Windows: d3d11va, Linux: vaapi, macOS: videotoolbox) 'none'(CPU 디코딩, 항상 동작)으로 설정하세요.",
+	"Message.NativeFfmpegVersionMismatchDownload": "네이티브 FFmpeg 바인딩이 켜져 있지만 다음 위치의 FFmpeg 라이브러리는 {1}입니다:\n  {0}\n이 VDF 버전에는 {2}이(가) 필요하므로 이 라이브러리를 쓸 수 없습니다.\n\n지금 {2}을(를) 다운로드할까요? VDF 폴더의 FFmpeg를 대체합니다. 아니오를 선택하면 설정에서 \"{3}\"을(를) 꺼서 기존 FFmpeg 실행 파일을 계속 사용하세요.",
+	"Message.NativeFfmpegVersionMismatchManual": "네이티브 FFmpeg 바인딩이 켜져 있지만 다음 위치의 FFmpeg 라이브러리는 {1}입니다:\n  {0}\n이 VDF 버전에는 {2}이(가) 필요하므로 이 라이브러리를 쓸 수 없습니다.\n\n{2} 공유 라이브러리를 설치하거나(macOS의 Homebrew: brew upgrade ffmpeg), 설정에서 \"{3}\"을(를) 꺼서 기존 FFmpeg 실행 파일을 계속 사용하세요.",
 	"Message.NativeFfmpegLibrariesMissing": "네이티브 FFmpeg 바인딩이 켜져 있지만 FFmpeg 공유 라이브러리를 찾을 수 없습니다.\n\nFFmpeg/FFprobe 실행 파일은 찾았지만, 네이티브 바인딩은 그것을 쓸 수 없습니다 — 일치하는 공유 라이브러리 빌드({0}, {1})가 필요합니다:\n  {2}\n\n두 가지 방법이 있습니다:\n  • 설정에서 네이티브 FFmpeg 바인딩을 꺼서 기존 FFmpeg 실행 파일(프로세스 모드)을 사용하세요. 가장 빠른 해결책입니다.\n  • 또는 {0} 공유 라이브러리를 설치해 네이티브 바인딩이 찾을 수 있게 하세요(VDF 실행 파일 옆, 'bin' 하위 폴더, 또는 라이브러리 검색 경로).",
 	"Message.NewScanDiscardPrompt": "현재 결과를 버리고 스캔 설정 화면으로 돌아가시겠습니까?",
 	"Message.NoMatchingDuplicates": "필터(설정된 경우)에 맞고 체크된 중복 항목이 없습니다",

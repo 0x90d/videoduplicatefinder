@@ -52,6 +52,27 @@ namespace VDF.CLI.Commands {
 			Console.Error.WriteLine("[scan] AI components ready.");
 		}
 
+		/// <summary>How the native-binding check looks for FFmpeg of another version; tests swap it.</summary>
+		internal static Func<VDF.Core.FFTools.FFmpegNative.NativeLibraryMismatch?> FindNativeMismatch =
+			VDF.Core.FFTools.FFmpegNative.NativeLibraryVersions.FindMismatch;
+
+		/// <summary>
+		/// --native-ffmpeg, but the FFmpeg libraries found are another version (typically an
+		/// FFmpeg 8 left from before VDF moved to FFmpeg 9): the error to print before the scan,
+		/// with the reason and both ways out. Null when the native binding was not asked for or
+		/// nothing of another version is in the way.
+		/// </summary>
+		internal static string? NativeFfmpegProblem(VDF.Core.Settings settings) {
+			if (!settings.UseNativeFfmpegBinding)
+				return null;
+			var mismatch = FindNativeMismatch();
+			if (mismatch == null)
+				return null;
+			return $"Error: {VDF.Core.FFTools.FFmpegNative.FFmpegHelper.DescribeMismatch(mismatch)}{Environment.NewLine}" +
+				$"Install the {mismatch.Needed} shared libraries next to vdf-cli (Windows and Linux: the gpl-shared build from " +
+				"https://github.com/BtbN/FFmpeg-Builds/releases; macOS: brew upgrade ffmpeg), or run without --native-ffmpeg.";
+		}
+
 		/// <summary>Runs StartSearch() only (enumerate files and build hashes).</summary>
 		internal static async Task RunSearchAsync(ScanEngine engine, CancellationToken ct) {
 			var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -57,6 +57,10 @@ namespace VDF.CLI.Commands {
 					Console.Error.WriteLine("Error: at least one --include path is required.");
 					return 1;
 				}
+				if (ScanRunner.NativeFfmpegProblem(engine.Settings) is { } nativeProblem) {
+					Console.Error.WriteLine(nativeProblem);
+					return 1;
+				}
 
 				ScanRunner.WireProgress(engine);
 

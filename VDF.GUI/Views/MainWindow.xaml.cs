@@ -365,6 +365,7 @@ namespace VDF.GUI.Views {
 		void MainWindow_Startup(object? sender, ControlledApplicationLifetimeStartupEventArgs e) {
 			var vm = ApplicationHelpers.MainWindowDataContext;
 			vm.NotifyStartupSettingsError();
+			vm.NotifyNativeFfmpegMismatch();
 			vm.LoadDatabase();
 			vm.RestoreBackupScanResults();
 		}

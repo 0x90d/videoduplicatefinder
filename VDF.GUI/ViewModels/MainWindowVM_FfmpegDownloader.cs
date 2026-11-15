@@ -20,8 +20,11 @@ using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Threading;
 using ReactiveUI;
+using VDF.Core;
 using VDF.Core.FFTools;
+using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
+using VDF.GUI.Data;
 using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
@@ -37,6 +40,44 @@ namespace VDF.GUI.ViewModels {
 		public ReactiveCommand<Unit, Unit> DownloadSharedFfmpegCommand => ReactiveCommand.CreateFromTask(async () => {
 			await DownloadSharedFfmpegAsync();
 		});
+
+		/// <summary>
+		/// Startup, once per session: native binding on, but the FFmpeg libraries VDF finds are
+		/// another version (typically the FFmpeg 8 an older VDF downloaded). Said right away,
+		/// so nobody wonders later why the native binding does not start.
+		/// </summary>
+		public async void NotifyNativeFfmpegMismatch() {
+			if (!SettingsFile.Instance.UseNativeFfmpegBinding) return;
+			NativeLibraryMismatch? mismatch = await Task.Run(NativeLibraryVersions.FindMismatch);
+			if (mismatch == null) return;
+			Logger.Instance.Warn(FFmpegHelper.DescribeMismatch(mismatch));
+			// Startup fires before the window is shown; a dialog with a non-visible owner throws.
+			while (ApplicationHelpers.MainWindow?.IsVisible != true)
+				await Task.Delay(200);
+			await OfferNativeFfmpegUpdateAsync(mismatch);
+		}
+
+		/// <summary>
+		/// Says why the native binding cannot use the FFmpeg it found and offers the matching
+		/// download (or, where none exists, how to install it). True when the binding can start now.
+		/// </summary>
+		async Task<bool> OfferNativeFfmpegUpdateAsync(NativeLibraryMismatch mismatch) {
+			bool canDownload = FfmpegDownloader.GetDownloadPlans().Count > 0;
+			string text = NativeMismatchText(mismatch.Folder, mismatch.Found, mismatch.Needed, canDownload);
+			if (!canDownload) {
+				await MessageBoxService.Show(text);
+				return false;
+			}
+			if (await MessageBoxService.Show(text, MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
+				return false;
+			await DownloadSharedFfmpegAsync();
+			return ScanEngine.NativeFFmpegExists;
+		}
+
+		internal static string NativeMismatchText(string folder, string found, string needed, bool canDownload) =>
+			string.Format(CultureInfo.CurrentCulture,
+				App.Lang[canDownload ? "Message.NativeFfmpegVersionMismatchDownload" : "Message.NativeFfmpegVersionMismatchManual"],
+				folder, found, needed, App.Lang["MainWindow.Settings.UseNativeFfmpegBinding"]);
 
 		async Task DownloadSharedFfmpegAsync() {
 			if (IsFfmpegDownloadInProgress) return;

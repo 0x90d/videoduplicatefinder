@@ -85,8 +85,8 @@ Available packages per platform:
 
 ### Requirements
 
-FFmpeg and FFprobe are required. On first launch VDF attempts to download them automatically.
-Native FFmpeg binding requires FFmpeg 8.x shared libraries (not the master branch).
+FFmpeg and FFprobe are required. On first launch VDF attempts to download them automatically (Windows and Linux, x64 and ARM64; on macOS install them with Homebrew: `brew install ffmpeg`).
+Native FFmpeg binding requires FFmpeg 9.x shared libraries (not the master branch). If it finds the FFmpeg 8 an older VDF downloaded, it says so and offers the FFmpeg 9 download.
 
 #### Windows
 Download the latest FFmpeg GPL shared package from https://ffmpeg.org/download.html

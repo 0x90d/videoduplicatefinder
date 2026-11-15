@@ -41,7 +41,6 @@ namespace VDF.Core.FFTools {
 		internal enum DownloadOS { Windows, Linux, OSX }
 
 		const string BtbNRepo = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/";
-		const string YtDlpRepo = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/";
 
 		/// <summary>The FFmpeg major version the compiled FFmpeg.AutoGen binding expects, or 0 when unknown.</summary>
 		internal static int MapToFfmpegMajor(int avcodecMajor, int avformatMajor, int avutilMajor) {
@@ -49,10 +48,12 @@ namespace VDF.Core.FFTools {
 			int want = 0;
 			foreach (var m in majors) {
 				int v = m switch {
+					63 => 9,
 					62 => 8,
 					61 => 7,
 					60 => 6,
 					59 => 5,
+					58 => 4,
 					_ => 0
 				};
 				if (v > want) want = v;
@@ -64,6 +65,7 @@ namespace VDF.Core.FFTools {
 			// BtbN/yt-dlp builds publish only the latest minor per major; the n8.0 tag
 			// was retired when 8.1 landed, so a hardcoded "8.0" 404s on every fresh
 			// install. Keep this aligned with whatever minor BtbN currently ships.
+			9 => "9.0",
 			8 => "8.1",
 			7 => "7.1",
 			6 => "6.1",
@@ -85,24 +87,22 @@ namespace VDF.Core.FFTools {
 			return GetDownloadPlans(os.Value, RuntimeInformation.ProcessArchitecture, GetVersionTag());
 		}
 
+		/// <summary>
+		/// What BtbN publishes as shared builds: win64, winarm64, linux64 and linuxarm64 (the
+		/// 32-bit and armhf builds stopped before 8.1). There is no shared macOS build anywhere
+		/// (yt-dlp's FFmpeg-Builds README: "There are currently no MacOS builds"), so macOS gets
+		/// no plan and the frontends point to Homebrew instead.
+		/// </summary>
 		internal static List<FfmpegDownloadPlan> GetDownloadPlans(DownloadOS os, Architecture arch, string versionTag) {
 			(string Rid, ArchiveKind Kind, string Repo, string Display)? pick = os switch {
 				DownloadOS.Windows => arch switch {
 					Architecture.X64 => ("win64", ArchiveKind.Zip, BtbNRepo, "Windows x64"),
-					Architecture.X86 => ("win32", ArchiveKind.Zip, BtbNRepo, "Windows x86"),
 					Architecture.Arm64 => ("winarm64", ArchiveKind.Zip, BtbNRepo, "Windows ARM64"),
 					_ => ((string, ArchiveKind, string, string)?)null
 				},
 				DownloadOS.Linux => arch switch {
 					Architecture.X64 => ("linux64", ArchiveKind.TarXz, BtbNRepo, "Linux x64"),
-					Architecture.X86 => ("linux32", ArchiveKind.TarXz, BtbNRepo, "Linux x86"),
 					Architecture.Arm64 => ("linuxarm64", ArchiveKind.TarXz, BtbNRepo, "Linux ARM64"),
-					Architecture.Arm => ("linuxarmhf", ArchiveKind.TarXz, BtbNRepo, "Linux ARMHF"),
-					_ => ((string, ArchiveKind, string, string)?)null
-				},
-				DownloadOS.OSX => arch switch {
-					Architecture.X64 => ("macos64", ArchiveKind.Zip, YtDlpRepo, "macOS x64"),
-					Architecture.Arm64 => ("macosarm64", ArchiveKind.Zip, YtDlpRepo, "macOS ARM64"),
 					_ => ((string, ArchiveKind, string, string)?)null
 				},
 				_ => null
@@ -170,7 +170,20 @@ namespace VDF.Core.FFTools {
 				: targetFolder;
 			Directory.CreateDirectory(targetLibFolder);
 			CopyFfmpegFiles(extractedFolder, targetFolder, targetLibFolder);
+			RemoveOutdatedLibraries(new[] { targetFolder, targetLibFolder, CoreUtils.CurrentFolder });
 			return targetFolder;
+		}
+
+		/// <summary>
+		/// The new libraries are in place: drop the ones of another FFmpeg version from VDF's own
+		/// folders, typically what an older VDF downloaded. Never touches folders VDF does not own.
+		/// </summary>
+		internal static void RemoveOutdatedLibraries(IEnumerable<string> folders) {
+			foreach (string folder in folders.Distinct(StringComparer.Ordinal)) {
+				var removed = FFmpegNative.NativeLibraryVersions.RemoveOtherMajors(folder, ffmpeg.LibraryVersionMap);
+				if (removed.Count > 0)
+					Logger.Instance.Info($"Removed FFmpeg libraries of another version from {folder}: {string.Join(", ", removed)}");
+			}
 		}
 
 		static void CopyFfmpegFiles(string sourceRoot, string targetFolder, string targetLibFolder) {
