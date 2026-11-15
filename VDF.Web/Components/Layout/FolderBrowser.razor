@@ -68,10 +68,8 @@
         StateHasChanged();
     }
 
-    void Close() {
-        _visible = false;
-        StateHasChanged();
-    }
+    // Only reached from click handlers, which render once they return.
+    void Close() => _visible = false;
 
     void LoadDrives() {
         try {

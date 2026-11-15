@@ -385,4 +385,40 @@ public sealed class ResultsPageTests : BunitContext {
 		Assert.Equal("True", ResultsCsvTests.Field(lines[0], Assert.Single(lines, l => l.Contains("drop.mp4")), "Checked"));
 		Assert.Equal("False", ResultsCsvTests.Field(lines[0], Assert.Single(lines, l => l.Contains("keep.mp4")), "Checked"));
 	}
+
+	// === Script calls the browser may no longer answer ===
+
+	[Fact]
+	public void KeyboardNavigation_SurvivesABrowserThatIsGone() {
+		// Blazor Server: the tab can close or reconnect while a key press is on its way. The
+		// scroll call then throws, and escaping the handler would end the whole circuit.
+		Seed("a1.mp4", Guid.NewGuid());
+		Seed("b1.mp4", Guid.NewGuid());
+		JSInterop.SetupVoid("vdf.scrollToGroup", _ => true)
+			.SetException(new Microsoft.JSInterop.JSDisconnectedException("circuit gone"));
+		var page = RenderPage();
+
+		page.Find(".results-toolbar").KeyDown("j");
+		page.Find(".results-toolbar").KeyDown("j");
+		page.Find(".results-toolbar").KeyDown("k");
+
+		// Down, down, up: back on the first group, and only there.
+		Assert.Single(page.FindAll(".dup-group.focused"));
+		Assert.Contains("focused", page.FindAll(".dup-group")[0].ClassName);
+	}
+
+	[Fact]
+	public void CompareMode_SurvivesAFailingScript() {
+		Guid group = Guid.NewGuid();
+		Seed("a.mp4", group);
+		Seed("b.mp4", group);
+		JSInterop.SetupVoid("vdf.setCompareMode", _ => true)
+			.SetException(new Microsoft.JSInterop.JSException("vdf is not defined"));
+		var page = RenderPage();
+		page.Find(".compare-btn").Click();
+
+		page.FindAll(".compare-mode-tabs button").Single(b => b.TextContent == "Swipe").Click();
+
+		Assert.Contains("active", page.FindAll(".compare-mode-tabs button").Single(b => b.TextContent == "Swipe").ClassName);
+	}
 }

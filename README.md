@@ -375,8 +375,8 @@ The optional AI components are downloaded separately on first use and carry thei
 - [DINOv2](https://github.com/facebookresearch/dinov2) (Meta AI, Apache-2.0) — the image embedding model behind AI matching, used as the int8-quantized ONNX export from [Xenova/dinov2-small](https://huggingface.co/Xenova/dinov2-small) (mirrored on this repo's [ai-models-v1 release](https://github.com/0x90d/videoduplicatefinder/releases/tag/ai-models-v1))
 
 # Building
-- .NET 10.x
-- Visual Studio 2022 or later is recommended
+- .NET 11.x
+- Visual Studio 2026 (18.7) or later is recommended, the .NET 11 SDK needs MSBuild 18.7
 
 # Contributing
 - Create a pull request for each addition or fix — do not merge them into one PR

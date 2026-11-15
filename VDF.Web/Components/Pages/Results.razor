@@ -785,7 +785,7 @@ else {
 
     void SetCompareMode(CompareMode mode) {
         _compareMode = mode;
-        _ = JS.InvokeVoidAsync("vdf.setCompareMode", mode.ToString());
+        _ = JS.TryInvokeVoidAsync("vdf.setCompareMode", mode.ToString());
     }
 
     void CloseCompare() => _compareVisible = false;
@@ -844,7 +844,7 @@ else {
 
     async Task InitSwipeIfNeeded() {
         if (_compareMode == CompareMode.Swipe)
-            await JS.InvokeVoidAsync("vdf.initSwipe");
+            await JS.TryInvokeVoidAsync("vdf.initSwipe");
     }
 
     void SelectCompareItem(int idx) {
@@ -993,11 +993,11 @@ else {
         switch (e.Key) {
             case "j" or "J":
                 _focusedGroup = Math.Min(_focusedGroup + 1, groups.Count - 1);
-                await JS.InvokeVoidAsync("vdf.scrollToGroup", _focusedGroup);
+                await JS.TryInvokeVoidAsync("vdf.scrollToGroup", _focusedGroup);
                 break;
             case "k" or "K":
                 _focusedGroup = Math.Max(_focusedGroup - 1, 0);
-                await JS.InvokeVoidAsync("vdf.scrollToGroup", _focusedGroup);
+                await JS.TryInvokeVoidAsync("vdf.scrollToGroup", _focusedGroup);
                 break;
             case "x" or "X":
                 if (_focusedGroup >= 0 && _focusedGroup < groups.Count) {

@@ -10,13 +10,17 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
-            _theme = await JS.InvokeAsync<string>("vdf.getTheme");
-            StateHasChanged();
+            try {
+                _theme = await JS.InvokeAsync<string>("vdf.getTheme");
+                StateHasChanged();
+            }
+            // Browser gone or script failed: keep the dark default the page starts in.
+            catch (Exception e) when (e is JSDisconnectedException or TaskCanceledException or JSException) { }
         }
     }
 
     async Task Toggle() {
         _theme = _theme == "dark" ? "light" : "dark";
-        await JS.InvokeVoidAsync("vdf.setTheme", _theme);
+        await JS.TryInvokeVoidAsync("vdf.setTheme", _theme);
     }
 }

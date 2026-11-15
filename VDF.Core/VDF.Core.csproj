@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
@@ -22,7 +22,7 @@
          library is NOT bundled: AI.AiComponents downloads the pinned version on demand
          and routes the DllImport to it. Version must equal AiComponents.RuntimeVersion. -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.23.2" />
-    <PackageReference Include="System.Numerics.Tensors" Version="10.0.15" />
+    <PackageReference Include="System.Numerics.Tensors" Version="11.0.0" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\Locales\en.json" />
