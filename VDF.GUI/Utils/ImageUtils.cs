@@ -163,7 +163,7 @@ namespace VDF.GUI.Utils {
 
 		public static byte[] ToByteArray(this Bitmap image) {
 			using MemoryStream ms = new();
-			image.Save(ms);
+			image.Save(ms, PngBitmapEncoderOptions.Default);
 			return ms.ToArray();
 		}
 

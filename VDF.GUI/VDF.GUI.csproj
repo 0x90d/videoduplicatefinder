@@ -44,22 +44,25 @@
     <InternalsVisibleTo Include="VDF.GUI.HeadlessTests" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="26.1.1" />
-    <PackageReference Include="Avalonia" Version="12.0.5" />
-<PackageReference Include="Avalonia.Desktop" Version="12.0.5" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.5" />
+    <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="26.2.0" />
+    <PackageReference Include="Avalonia" Version="12.1.6" />
+<PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
     <PackageReference Include="DynamicExpresso.Core" Version="2.19.6" />
+    <!-- Held at 12.0.3 (ReactiveUI 23) on purpose, it supports Avalonia 12.1. ReactiveUI.Avalonia 12.1.x
+         brings ReactiveUI 26, which replaces System.Reactive and DynamicData with its own primitives:
+         a migration of every ReactiveCommand<Unit, Unit> (356 build errors in 24 files), not an update. -->
     <PackageReference Include="ReactiveUI.Avalonia" Version="12.0.3" />
     <!-- SkiaSharp is pinned ABOVE Avalonia.Skia's transitive 3.119.4 on purpose. 3.x SKStream.Read has no
          GC.KeepAlive, so while Avalonia reads a whole font file for a synthetic bold/oblique face the
          finalizer can destroy the native stream mid-copy (AV in libSkiaSharp, #902 / #830). 4.x keeps the
-         wrapper alive for the duration of every native call. Avalonia.Skia 12.0.5 is binary-compatible
-         with 4.151.1 (all 434 member/type references verified). Keep both lines on the same version. -->
-    <PackageReference Include="SkiaSharp" Version="4.151.1" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.151.1" />
+         wrapper alive for the duration of every native call. Avalonia.Skia 12.1.6 is binary-compatible
+         with 4.156.1 (all 440 member/type references verified). Keep both lines on the same version. -->
+    <PackageReference Include="SkiaSharp" Version="4.156.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.156.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.15" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.15" />
-    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="12.0.5" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="12.1.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VDF.Core\VDF.Core.csproj" />

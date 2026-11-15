@@ -99,7 +99,7 @@ namespace VDF.GUI.Utils {
 		static unsafe float[]? TryExtractViaReencode(Bitmap bmp, int dstWidth, int dstHeight) {
 			try {
 				using var ms = new MemoryStream();
-				bmp.Save(ms);
+				bmp.Save(ms, PngBitmapEncoderOptions.Default);
 				ms.Position = 0;
 				using var decoded = WriteableBitmap.Decode(ms);
 				using var fb = decoded.Lock();
