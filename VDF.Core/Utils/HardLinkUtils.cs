@@ -72,8 +72,93 @@ namespace VDF.Core.Utils {
 					throw new IOException($"Failed to create hard link '{linkPath}' -> '{existingFilePath}' (Win32 error {Marshal.GetLastPInvokeError()}). Note: hard links require both paths to be on the same volume.");
 				return;
 			}
-			if (Mono.Unix.Native.Syscall.link(existingFilePath, linkPath) != 0)
-				throw new IOException($"Failed to create hard link '{linkPath}' -> '{existingFilePath}' (errno {Mono.Unix.Native.Stdlib.GetLastError()}). Note: hard links require both paths to be on the same filesystem.");
+			int result = OperatingSystem.IsMacOS() ? LinkMac(existingFilePath, linkPath) : LinkLinux(existingFilePath, linkPath);
+			if (result != 0) {
+				int errno = Marshal.GetLastPInvokeError();
+				throw new IOException($"Failed to create hard link '{linkPath}' -> '{existingFilePath}' ({Marshal.GetPInvokeErrorMessage(errno)}, errno {errno}). Note: hard links require both paths to be on the same filesystem.");
+			}
+		}
+
+		// POSIX: link(2) makes the hard link, and two paths are one file when device and inode
+		// number match. struct stat differs per OS, architecture and glibc version (glibc before
+		// 2.33 does not even export a "stat" symbol), which is why Mono.Posix went through a native
+		// helper library of its own, one without an arm64 build for macOS. Linux uses statx(2)
+		// instead, whose struct is the same on every architecture (glibc 2.28+, musl 1.2.5+), and
+		// macOS its 64-bit-inode stat, which is the same on x64 and arm64.
+		const string LinuxLibc = "libc";
+		const string MacLibc = "/usr/lib/libc.dylib";
+
+		[LibraryImport(LinuxLibc, EntryPoint = "link", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+		private static partial int LinkLinux(string existingPath, string newPath);
+
+		[LibraryImport(MacLibc, EntryPoint = "link", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+		private static partial int LinkMac(string existingPath, string newPath);
+
+		[LibraryImport(LinuxLibc, EntryPoint = "statx", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+		private static partial int Statx(int dirFd, string path, int flags, uint mask, out StatxBuffer buffer);
+
+		// x64 macOS keeps the old 32-bit-inode struct under the plain name; arm64 only has the 64-bit one.
+		[LibraryImport(MacLibc, EntryPoint = "stat$INODE64", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+		private static partial int StatMacX64(string path, out DarwinStat buffer);
+
+		[LibraryImport(MacLibc, EntryPoint = "stat", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+		private static partial int StatMacArm64(string path, out DarwinStat buffer);
+
+		const int AT_FDCWD = -100;
+		const uint STATX_INO = 0x100;
+
+		/// <summary>struct statx (linux/stat.h): 256 bytes on every architecture; device is always filled.</summary>
+		[StructLayout(LayoutKind.Explicit, Size = 256)]
+		struct StatxBuffer {
+			[FieldOffset(0)] public uint Mask;
+			[FieldOffset(32)] public ulong Ino;
+			[FieldOffset(136)] public uint DevMajor;
+			[FieldOffset(140)] public uint DevMinor;
+		}
+
+		/// <summary>macOS struct stat with 64-bit inodes (sys/stat.h): 144 bytes, sized up as headroom.</summary>
+		[StructLayout(LayoutKind.Explicit, Size = 256)]
+		struct DarwinStat {
+			[FieldOffset(0)] public int Dev;
+			[FieldOffset(8)] public ulong Ino;
+		}
+
+		/// <summary>glibc's makedev, so <see cref="TryGetFileIdPosix"/> reports the st_dev that stat(1) prints.</summary>
+		static ulong MakeDev(uint major, uint minor) =>
+			((ulong)(major & 0xfffff000u) << 32) | ((ulong)(major & 0xfffu) << 8) |
+			((ulong)(minor & 0xffffff00u) << 12) | (minor & 0xffu);
+
+		static bool posixFileIdUnavailableLogged;
+
+		/// <summary>
+		/// The device and inode number of <paramref name="path"/> (following symlinks, like stat), or
+		/// false when the file cannot be read or the C library lacks the call.
+		/// </summary>
+		internal static bool TryGetFileIdPosix(string path, out (ulong Device, ulong Inode) id) {
+			id = default;
+			try {
+				if (OperatingSystem.IsMacOS()) {
+					DarwinStat st;
+					int result = RuntimeInformation.ProcessArchitecture == Architecture.X64
+						? StatMacX64(path, out st)
+						: StatMacArm64(path, out st);
+					if (result != 0)
+						return false;
+					id = ((uint)st.Dev, st.Ino);
+					return true;
+				}
+				if (Statx(AT_FDCWD, path, 0, STATX_INO, out var stx) != 0 || (stx.Mask & STATX_INO) == 0)
+					return false;
+				id = (MakeDev(stx.DevMajor, stx.DevMinor), stx.Ino);
+				return true;
+			}
+			catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException) {
+				if (!posixFileIdUnavailableLogged) {
+					posixFileIdUnavailableLogged = true;
+					Logger.Instance.Warn($"Hard links cannot be recognized on this system, treating them as separate files: {ex.Message}");
+				}
+				return false;
+			}
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
@@ -106,13 +191,10 @@ namespace VDF.Core.Utils {
 			return AreSameFilePosix(filepath, otherFilepath);
 		}
 
-		static bool AreSameFilePosix(string filepath, string otherFilepath) {
-			if (Mono.Unix.Native.Syscall.stat(filepath, out var statA) != 0)
-				return false;
-			if (Mono.Unix.Native.Syscall.stat(otherFilepath, out var statB) != 0)
-				return false;
-			return statA.st_ino == statB.st_ino && statA.st_dev == statB.st_dev;
-		}
+		static bool AreSameFilePosix(string filepath, string otherFilepath) =>
+			TryGetFileIdPosix(filepath, out var fileA) &&
+			TryGetFileIdPosix(otherFilepath, out var fileB) &&
+			fileA == fileB;
 
 		static bool AreSameFileWindows(string filepath, string otherFilepath) {
 			if (!TryGetFileIdWindows(filepath, out var fileA)) {
