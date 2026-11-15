@@ -40,8 +40,10 @@ namespace VDF.Core.Utils {
 				FileName = "tar",
 				CreateNoWindow = true,
 				UseShellExecute = false,
+				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 			};
+			FFTools.FFToolsUtils.DieWithVdf(psi);
 			psi.ArgumentList.Add(kind == ArchiveKind.TarXz ? "-xJf" : "-xzf");
 			psi.ArgumentList.Add(archivePath);
 			psi.ArgumentList.Add("-C");
@@ -51,12 +53,19 @@ namespace VDF.Core.Utils {
 			// aborted extraction on Linux/macOS with "tar: unrecognized option" (issue #788).
 			// tar already strips leading '/'s by default, and the archive is checksum-verified.
 
-			using Process process = Process.Start(psi) ?? throw new IOException("Failed to start tar.");
-			// Drain stderr before waiting, or a chatty tar can fill the pipe and deadlock.
-			string error = process.StandardError.ReadToEnd();
-			process.WaitForExit();
-			if (process.ExitCode != 0)
-				throw new IOException(string.IsNullOrWhiteSpace(error) ? "Failed to extract archive." : error);
+			// Both pipes drained together, so a chatty tar cannot fill one and stall; bounded,
+			// so a tar stuck on a dead target folder ends the download with a reason instead
+			// of keeping it "extracting" forever. The archives here (FFmpeg, ONNX Runtime) are
+			// ~100 MB at most.
+			ProcessTextOutput result;
+			try {
+				result = Process.RunAndCaptureText(psi, TimeSpan.FromMinutes(10));
+			}
+			catch (TimeoutException) {
+				throw new IOException("Extracting the archive did not finish within 10 minutes.");
+			}
+			if (result.ExitStatus.ExitCode != 0)
+				throw new IOException(string.IsNullOrWhiteSpace(result.StandardError) ? "Failed to extract archive." : result.StandardError);
 		}
 	}
 }

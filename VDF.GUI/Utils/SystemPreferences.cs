@@ -127,25 +127,19 @@ static partial class SystemPreferences {
 
 	internal static string? GSettings(string schema, string key) {
 		try {
-			using var process = Process.Start(new ProcessStartInfo("gsettings") {
+			// Output and exit both bounded, and killed past the bound: a hung gsettings must not
+			// hold up startup (#865 is why a plain synchronous read is not enough).
+			var result = Process.RunAndCaptureText(new ProcessStartInfo("gsettings") {
 				ArgumentList = { "get", schema, key },
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 				UseShellExecute = false,
 				CreateNoWindow = true,
-			});
-			if (process == null) return null;
-			// Read without blocking on it: a synchronous read would wait for a hung process
-			// forever and make the timeout below unreachable (#865).
-			var output = process.StandardOutput.ReadToEndAsync();
-			if (!process.WaitForExit(2000)) {
-				try { process.Kill(); } catch { }
-				return null;
-			}
-			return process.ExitCode == 0 && output.Wait(500) ? output.Result : null;
+			}, TimeSpan.FromSeconds(2));
+			return result.ExitStatus is { ExitCode: 0, Canceled: false } ? result.StandardOutput : null;
 		}
 		catch {
-			return null; // no gsettings on this desktop
+			return null; // no gsettings on this desktop, or it did not answer in time
 		}
 	}
 }

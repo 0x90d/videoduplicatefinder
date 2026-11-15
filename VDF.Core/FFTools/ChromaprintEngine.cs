@@ -121,6 +121,7 @@ namespace VDF.Core.FFTools {
 			psi.ArgumentList.Add("-ar"); psi.ArgumentList.Add(TargetSampleRate.ToString());
 			psi.ArgumentList.Add("-f");  psi.ArgumentList.Add("s16le"); // raw 16-bit LE PCM
 			psi.ArgumentList.Add("pipe:1");
+			FFToolsUtils.DieWithVdf(psi);
 
 			using var process = new Process { StartInfo = psi };
 			string errOutput = string.Empty;
@@ -165,7 +166,8 @@ namespace VDF.Core.FFTools {
 					// PCM chunk — but a child that goes silent that long is not coming back.
 					var readTask = stream.ReadAsync(buf, 0, buf.Length, ct);
 					if (!readTask.Wait(StallTimeoutMs, ct)) {
-						KillProcess(process);
+						// Also observes the read left pending, which faults once the pipe breaks.
+						FFToolsUtils.KillAndDrain(process, readTask);
 						Logger.Instance.Warn($"[ChromaprintEngine] {Path.GetFileName(filePath)}: " +
 							$"FFmpeg stopped producing audio for {StallTimeoutMs / 1000}s, giving up on this file.");
 						return null;
@@ -205,7 +207,11 @@ namespace VDF.Core.FFTools {
 					return null;
 				}
 
-				process.WaitForExit(TimeoutMs);
+				// The PCM is complete (stdout at EOF), so the fingerprint stands either way; a child
+				// that does not exit in time is killed rather than left running behind the scan.
+				if (process.SafeHandle.WaitForExitOrKillOnTimeout(TimeSpan.FromMilliseconds(TimeoutMs)).Canceled)
+					Logger.Instance.Warn($"[ChromaprintEngine] {Path.GetFileName(filePath)}: FFmpeg did not exit after its audio ended; stopped it.");
+				process.WaitForExit(); // flush the async stderr handler, see dotnet/runtime#18789
 
 				if (extendedLogging && errOutput.Length > 0)
 					Logger.Instance.Info($"[ChromaprintEngine] {Path.GetFileName(filePath)}: {errOutput}");

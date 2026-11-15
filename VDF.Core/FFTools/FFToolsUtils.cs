@@ -31,37 +31,91 @@ namespace VDF.Core.FFTools {
 		}
 
 		/// <summary>
-		/// Copies the child's stdout into <paramref name="destination"/> and waits for it to
-		/// exit, both bounded by <paramref name="timeoutMs"/>. Kills the child and throws
-		/// <see cref="TimeoutException"/> when it overruns.
+		/// Every ffmpeg/ffprobe child dies with VDF. Without this a crashed or killed VDF (Task
+		/// Manager, a native crash in a decoder) left one ffmpeg per worker running, decoding into
+		/// a pipe nobody reads, until each finished its file. Windows does it with a job object,
+		/// Linux with PR_SET_PDEATHSIG from a thread .NET keeps alive for that; macOS has no
+		/// equivalent, and there the children still end at their own timeout.
+		/// </summary>
+		internal static void DieWithVdf(ProcessStartInfo psi) {
+			if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+				psi.KillOnParentExit = true;
+		}
+
+		/// <summary>What a bounded tool run produced: all of stdout, stderr as text, the exit code.</summary>
+		internal readonly record struct ToolOutput(byte[] Stdout, string Stderr, int ExitCode);
+
+		/// <summary>
+		/// Starts <paramref name="psi"/> at Idle priority, reads all of its stdout and stderr and
+		/// waits for it to exit, each bounded by <paramref name="timeoutMs"/>. Kills the child and
+		/// throws <see cref="TimeoutException"/> naming <paramref name="toolName"/> and
+		/// <paramref name="file"/> when it overruns.
 		/// </summary>
 		/// <remarks>
-		/// The bounded read is the whole point. Reading the pipe synchronously
-		/// (<c>CopyTo</c>/<c>ReadToEnd</c>) returns only once the child closes stdout — which a
-		/// wedged ffmpeg/ffprobe never does (dead network share, sleeping USB drive, stalled
-		/// demuxer, an input seek that turns into an endless linear scan). A
-		/// <c>WaitForExit(timeout)</c> placed after such a read is unreachable code in exactly
-		/// the cases it exists for: the worker thread blocked forever, the scan's progress
-		/// counter froze, nothing was logged, and Stop had nothing it could interrupt because
-		/// the cancellation token is not observed inside a synchronous pipe read either (#865).
+		/// The bounded read is the whole point. Reading a pipe synchronously
+		/// (<c>CopyTo</c>/<c>ReadToEnd</c>) returns only once the child closes it, which a wedged
+		/// ffmpeg/ffprobe never does (dead network share, sleeping USB drive, stalled demuxer, an
+		/// input seek that turns into an endless linear scan). A <c>WaitForExit(timeout)</c> after
+		/// such a read is unreachable in exactly the cases it exists for: the worker blocked
+		/// forever and the scan froze without a word (#865). <see cref="Process.ReadAllBytes"/>
+		/// (.NET 11) reads both pipes together on this thread under one deadline, so neither pipe
+		/// can fill up and stall the child, and no thread-pool copy is left behind to fault after
+		/// the kill, which the async copies before it needed an observer for.
 		/// </remarks>
-		internal static void ReadStdoutBounded(Process process, Stream destination, int timeoutMs,
-				string toolName, string file, CancellationToken cancelToken = default) {
-			Task? readTask = null;
+		internal static ToolOutput RunCaptured(ProcessStartInfo psi, int timeoutMs, string toolName, string file) {
+			psi.UseShellExecute = false;
+			psi.RedirectStandardOutput = true;
+			psi.RedirectStandardError = true;
+			DieWithVdf(psi);
+			TimeSpan timeout = TimeSpan.FromMilliseconds(timeoutMs);
+			using Process process = Process.Start(psi) ?? throw new InvalidOperationException($"{toolName} did not start.");
+			LowerChildPriority(process);
+			byte[] stdout, stderr;
 			try {
-				readTask = process.StandardOutput.BaseStream.CopyToAsync(destination, cancelToken);
-				if (!readTask.Wait(timeoutMs, cancelToken))
-					throw new TimeoutException($"{toolName} timed out on file: {file}");
-				// stdout is at EOF here, so the child is finished writing; anything but a prompt
-				// exit now means it is wedged on teardown.
-				if (!process.WaitForExit(timeoutMs))
-					throw new TimeoutException($"{toolName} did not exit after closing its output: {file}");
-				process.WaitForExit(); // flush async stderr handlers, see dotnet/runtime#18789
+				(stdout, stderr) = process.ReadAllBytes(timeout);
 			}
 			catch (Exception e) {
-				KillAndDrain(process, readTask);
-				// Task.Wait wraps a failed read; callers log e.Message, so hand them the real one.
-				throw e is AggregateException ae && ae.InnerExceptions.Count == 1 ? ae.InnerExceptions[0] : e;
+				try { process.Kill(); } catch { }
+				if (e is TimeoutException)
+					throw new TimeoutException($"{toolName} timed out on file: {file}");
+				throw;
+			}
+			// Both pipes are at EOF, so the child is done writing; anything but a prompt exit now
+			// means it is wedged on teardown.
+			ProcessExitStatus status = process.SafeHandle.WaitForExitOrKillOnTimeout(timeout);
+			if (status.Canceled)
+				throw new TimeoutException($"{toolName} did not exit after closing its output: {file}");
+			return new ToolOutput(stdout, Encoding.UTF8.GetString(stderr), status.ExitCode);
+		}
+
+		/// <summary>
+		/// A tool's stderr the way the log shows it: one line each, each preceded by a line break,
+		/// and a run of identical lines collapsed into one plus a count. A single broken HEVC/H.264
+		/// stream can print the same decoder error tens of thousands of times per file.
+		/// </summary>
+		internal static string FormatStderr(string stderr, Func<string, bool>? keep = null) {
+			var sb = new StringBuilder();
+			string? last = null;
+			int repeats = 0;
+			foreach (string raw in stderr.Split('\n')) {
+				string line = raw.TrimEnd('\r');
+				if (line.Length == 0 || (keep != null && !keep(line)))
+					continue;
+				if (line == last) {
+					repeats++;
+					continue;
+				}
+				AppendRepeats(sb, repeats);
+				repeats = 0;
+				sb.Append(Environment.NewLine).Append(line);
+				last = line;
+			}
+			AppendRepeats(sb, repeats);
+			return sb.ToString();
+
+			static void AppendRepeats(StringBuilder sb, int repeats) {
+				if (repeats > 0)
+					sb.Append($" (repeated {repeats} more time{(repeats == 1 ? string.Empty : "s")})");
 			}
 		}
 
@@ -209,23 +263,16 @@ namespace VDF.Core.FFTools {
 			if (string.IsNullOrEmpty(path) || !File.Exists(path))
 				return $"{tool}: not found";
 			try {
-				using var process = new Process {
-					StartInfo = new ProcessStartInfo {
-						FileName = path,
-						Arguments = "-version",
-						CreateNoWindow = true,
-						RedirectStandardOutput = true,
-						RedirectStandardError = true,
-						UseShellExecute = false,
-						WindowStyle = ProcessWindowStyle.Hidden
-					}
+				var psi = new ProcessStartInfo {
+					FileName = path,
+					Arguments = "-version",
+					CreateNoWindow = true,
+					WindowStyle = ProcessWindowStyle.Hidden
 				};
-				process.Start();
-				// Bounded, see ReadStdoutBounded: this one runs on the UI thread (diagnostics
-				// report), where a synchronous drain of a wedged tool froze the window.
-				using var ms = new MemoryStream();
-				ReadStdoutBounded(process, ms, 5000, tool.ToString(), path);
-				string firstLine = Encoding.UTF8.GetString(ms.ToArray())
+				// Bounded, see RunCaptured: this one runs on the UI thread (diagnostics report),
+				// where a synchronous drain of a wedged tool froze the window.
+				var output = RunCaptured(psi, 5000, tool.ToString(), path);
+				string firstLine = Encoding.UTF8.GetString(output.Stdout)
 					.Split('\n', 2)[0].TrimEnd('\r');
 				return firstLine.Length > 0 ? firstLine : $"{tool}: no version output";
 			}

@@ -22,39 +22,51 @@ using VDF.Core.FFTools;
 namespace VDF.Core.Tests.FFTools;
 
 /// <summary>
-/// Regression tests for #865: every ffmpeg/ffprobe stdout read must be bounded. The child
-/// stands in for a wedged FFmpeg — it holds the inherited stdout handle open and never
-/// finishes, which is what made the old synchronous CopyTo/ReadToEnd (and therefore the
-/// WaitForExit timeout behind it) block a scan worker forever.
+/// Regression tests for #865: every ffmpeg/ffprobe run must be bounded. The child stands in
+/// for a wedged FFmpeg: it holds the inherited stdout handle open and never finishes, which is
+/// what made the old synchronous CopyTo/ReadToEnd (and therefore the WaitForExit timeout behind
+/// it) block a scan worker forever. Since .NET 11, FFToolsUtils.RunCaptured does the bounded
+/// read with Process.ReadAllBytes.
 /// </summary>
-public class BoundedProcessReadTests {
+public class BoundedProcessReadTests : IDisposable {
 
-	static Process StartShell(string windowsCommand, string unixCommand) {
-		bool windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-		var psi = new ProcessStartInfo {
-			FileName = windows ? "cmd.exe" : "/bin/sh",
-			CreateNoWindow = true,
-			UseShellExecute = false,
-			RedirectStandardOutput = true,
-		};
-		psi.ArgumentList.Add(windows ? "/c" : "-c");
-		psi.ArgumentList.Add(windows ? windowsCommand : unixCommand);
-		var process = new Process { StartInfo = psi };
-		process.Start();
-		return process;
+	static readonly bool Windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+	readonly string dir = Path.Combine(Path.GetTempPath(), "vdf-bounded-" + Guid.NewGuid().ToString("N"));
+
+	public BoundedProcessReadTests() => Directory.CreateDirectory(dir);
+
+	public void Dispose() {
+		try { Directory.Delete(dir, recursive: true); }
+		catch (IOException) { }
+		catch (UnauthorizedAccessException) { }
+	}
+
+	static ProcessStartInfo Shell(string windowsCommand, string unixCommand) {
+		var psi = new ProcessStartInfo { FileName = Windows ? "cmd.exe" : "/bin/sh", CreateNoWindow = true };
+		if (Windows) {
+			// cmd parses its own command line; ArgumentList would escape quotes as \" and break paths.
+			psi.Arguments = "/c " + windowsCommand;
+		}
+		else {
+			psi.ArgumentList.Add("-c");
+			psi.ArgumentList.Add(unixCommand);
+		}
+		return psi;
+	}
+
+	ProcessStartInfo MarkerAfterFourSeconds(out string marker) {
+		marker = Path.Combine(dir, "still-running");
+		return Shell($"ping -n 5 127.0.0.1 > nul & echo x > \"{marker}\"", $"sleep 4; touch \"{marker}\"");
 	}
 
 	/// <summary>A child that outlives the timeout without closing stdout (the wedged case).</summary>
-	static Process StartSleeper() => StartShell("ping -n 60 127.0.0.1 > nul", "sleep 60");
+	static ProcessStartInfo Sleeper() => Shell("ping -n 60 127.0.0.1 > nul", "sleep 60");
 
 	[Fact]
 	public void WedgedChild_TimesOutInsteadOfBlockingForever() {
-		using Process process = StartSleeper();
 		var sw = Stopwatch.StartNew();
-		using var ms = new MemoryStream();
 
-		Assert.Throws<TimeoutException>(() =>
-			FFToolsUtils.ReadStdoutBounded(process, ms, 1_000, "FFmpeg", "wedged.mkv"));
+		Assert.Throws<TimeoutException>(() => FFToolsUtils.RunCaptured(Sleeper(), 1_000, "FFmpeg", "wedged.mkv"));
 
 		sw.Stop();
 		// The child sleeps for a minute; the old synchronous read returned only when it did.
@@ -64,22 +76,25 @@ public class BoundedProcessReadTests {
 
 	[Fact]
 	public void WedgedChild_IsKilled_SoItCannotOutliveTheScan() {
-		using Process process = StartSleeper();
-		using var ms = new MemoryStream();
+		// The child would write a marker after 4 s; killed at the 1 s timeout, it never does.
+		var psi = MarkerAfterFourSeconds(out string marker);
 
-		Assert.Throws<TimeoutException>(() =>
-			FFToolsUtils.ReadStdoutBounded(process, ms, 1_000, "FFmpeg", "wedged.mkv"));
+		Assert.Throws<TimeoutException>(() => FFToolsUtils.RunCaptured(psi, 1_000, "FFmpeg", "wedged.mkv"));
 
-		Assert.True(process.WaitForExit(10_000), "the timed-out child was left running");
+		Thread.Sleep(7_000);
+		Assert.False(File.Exists(marker), "the timed-out child was left running");
 	}
 
 	[Fact]
-	public void TimeoutMessage_NamesTheFile() {
-		using Process process = StartSleeper();
-		using var ms = new MemoryStream();
+	public void Control_TheSameChildLeftAlone_WritesItsMarker() {
+		// Without this the test above would pass for a command that never writes anything.
+		FFToolsUtils.RunCaptured(MarkerAfterFourSeconds(out string marker), 30_000, "FFmpeg", "slow.mkv");
+		Assert.True(File.Exists(marker));
+	}
 
-		var ex = Assert.Throws<TimeoutException>(() =>
-			FFToolsUtils.ReadStdoutBounded(process, ms, 1_000, "FFprobe", @"E:\Media\stuck.mkv"));
+	[Fact]
+	public void TimeoutMessage_NamesTheToolAndTheFile() {
+		var ex = Assert.Throws<TimeoutException>(() => FFToolsUtils.RunCaptured(Sleeper(), 1_000, "FFprobe", @"E:\Media\stuck.mkv"));
 
 		// The scan logs e.Message; without the path the report is unactionable.
 		Assert.Contains(@"E:\Media\stuck.mkv", ex.Message);
@@ -87,31 +102,69 @@ public class BoundedProcessReadTests {
 	}
 
 	[Fact]
-	public void WellBehavedChild_OutputIsCopiedAndExitCodeObserved() {
-		using Process process = StartShell("echo vdf-ok", "echo vdf-ok");
-		using var ms = new MemoryStream();
+	public void WellBehavedChild_OutputAndExitCode() {
+		var output = FFToolsUtils.RunCaptured(Shell("echo vdf-ok", "echo vdf-ok"), 15_000, "FFmpeg", "fine.mkv");
 
-		FFToolsUtils.ReadStdoutBounded(process, ms, 15_000, "FFmpeg", "fine.mkv");
-
-		Assert.Contains("vdf-ok", Encoding.UTF8.GetString(ms.ToArray()));
-		Assert.Equal(0, process.ExitCode);
+		Assert.Contains("vdf-ok", Encoding.UTF8.GetString(output.Stdout));
+		Assert.Equal(0, output.ExitCode);
 	}
 
 	[Fact]
-	public void Cancellation_EndsTheReadAndKillsTheChild() {
-		using Process process = StartSleeper();
-		using var ms = new MemoryStream();
-		using var cts = new CancellationTokenSource();
-		cts.CancelAfter(300);
-		var sw = Stopwatch.StartNew();
+	public void FailingChild_ReportsItsExitCodeAndStderr() {
+		// What the frame grabs log on failure: ffmpeg's own words and its exit code.
+		var output = FFToolsUtils.RunCaptured(
+			Shell("echo broken stream 1>&2 & exit /b 3", "echo broken stream >&2; exit 3"), 15_000, "FFmpeg", "bad.mkv");
 
-		// Stop must not have to wait out the full timeout of an in-flight decode.
-		Assert.ThrowsAny<OperationCanceledException>(() =>
-			FFToolsUtils.ReadStdoutBounded(process, ms, 60_000, "FFmpeg", "wedged.mkv", cts.Token));
+		Assert.Equal(3, output.ExitCode);
+		Assert.Contains("broken stream", output.Stderr);
+	}
 
-		sw.Stop();
-		Assert.True(sw.Elapsed < TimeSpan.FromSeconds(20),
-			$"cancellation was not observed (took {sw.Elapsed.TotalSeconds:F1}s)");
-		Assert.True(process.WaitForExit(10_000), "the canceled child was left running");
+	[Fact]
+	public void BothPipesFull_NoDeadlock() {
+		// A corrupt file can make ffmpeg write a lot of stderr before (or while) it writes the
+		// frame. Each pipe holds only a few KB: reading one to the end before the other would
+		// stall the child on the full one and time out a perfectly healthy run.
+		string big = Path.Combine(dir, "big.txt");
+		File.WriteAllText(big, new string('x', 1 << 20)); // text: cmd's type stops at binary bytes
+		var psi = Shell($"type \"{big}\" 1>&2 & type \"{big}\"", $"cat \"{big}\" >&2; cat \"{big}\"");
+
+		var output = FFToolsUtils.RunCaptured(psi, 15_000, "FFmpeg", "noisy.mkv");
+
+		Assert.Equal(1 << 20, output.Stdout.Length);
+		Assert.Equal(0, output.ExitCode);
+	}
+
+	[Fact]
+	public void ChildrenDieWithVdf_WhereTheOsCanDoIt() {
+		var psi = new ProcessStartInfo("ffmpeg");
+		FFToolsUtils.DieWithVdf(psi); // on macOS (no equivalent) it must not throw
+		// Windows: job object; Linux: PR_SET_PDEATHSIG.
+		if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+			Assert.True(psi.KillOnParentExit);
+	}
+
+	[Fact]
+	public void FormatStderr_CollapsesRepeats_OneLinePerMessage() {
+		string raw = "[hevc] Error constructing the frame RPS\r\n" +
+			"[hevc] Error constructing the frame RPS\r\n" +
+			"[hevc] Error constructing the frame RPS\r\n" +
+			"\r\n" +
+			"Invalid data found\n" +
+			"[hevc] Error constructing the frame RPS\n" +
+			"[hevc] Error constructing the frame RPS\n";
+
+		string nl = Environment.NewLine;
+		Assert.Equal(
+			$"{nl}[hevc] Error constructing the frame RPS (repeated 2 more times)" +
+			$"{nl}Invalid data found" +
+			$"{nl}[hevc] Error constructing the frame RPS (repeated 1 more time)",
+			FFToolsUtils.FormatStderr(raw));
+	}
+
+	[Fact]
+	public void FormatStderr_DropsWhatTheCallerFilters_AndNothingIsNothing() {
+		Assert.Equal(string.Empty, FFToolsUtils.FormatStderr(string.Empty));
+		Assert.Equal(Environment.NewLine + "real error",
+			FFToolsUtils.FormatStderr("Referenced QT chapter track not found\nreal error\n", l => !l.Contains("chapter")));
 	}
 }

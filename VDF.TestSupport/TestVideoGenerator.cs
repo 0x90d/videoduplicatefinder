@@ -35,11 +35,10 @@ public static class TestVideoGenerator {
 			WorkingDirectory = Path.GetDirectoryName(ffmpegPath)!,
 		};
 		try {
-			using var p = Process.Start(psi)!;
-			var stderrTask = p.StandardError.ReadToEndAsync();
-			p.StandardOutput.ReadToEnd();
-			p.WaitForExit(timeoutMs);
-			return p.ExitCode == 0;
+			// Bounded for real: the synchronous ReadToEnd before WaitForExit made that timeout
+			// unreachable for an ffmpeg that hangs (the #865 trap, here in the test fixtures).
+			var result = Process.RunAndCaptureText(psi, TimeSpan.FromMilliseconds(timeoutMs));
+			return result.ExitStatus is { ExitCode: 0, Canceled: false };
 		}
 		catch {
 			return false;
@@ -57,11 +56,8 @@ public static class TestVideoGenerator {
 			WorkingDirectory = Path.GetDirectoryName(ffmpegPath)!,
 		};
 		try {
-			using var p = Process.Start(psi)!;
-			var stderrTask = p.StandardError.ReadToEndAsync();
-			string output = p.StandardOutput.ReadToEnd();
-			p.WaitForExit(10_000);
-			return p.ExitCode == 0 && output.Contains(encoderName);
+			var result = Process.RunAndCaptureText(psi, TimeSpan.FromSeconds(10));
+			return result.ExitStatus is { ExitCode: 0, Canceled: false } && result.StandardOutput.Contains(encoderName);
 		}
 		catch {
 			return false;

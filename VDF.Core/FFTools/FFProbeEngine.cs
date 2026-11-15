@@ -33,16 +33,7 @@ namespace VDF.Core.FFTools {
 		const int TimeoutDuration = 15_000; //15 seconds
 
 		public static MediaInfo? GetMediaInfo(string file, bool extendedLogging) {
-			var psi = new ProcessStartInfo {
-				FileName = FFprobePath,
-				CreateNoWindow = true,
-				RedirectStandardInput = false,
-				WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
-				RedirectStandardOutput = true,
-				RedirectStandardError = extendedLogging,
-				WindowStyle = ProcessWindowStyle.Hidden
-			};
-
+			var psi = NewProbe();
 			psi.ArgumentList.Add("-hide_banner");
 			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add((extendedLogging ? "error" : "quiet"));
 			psi.ArgumentList.Add("-print_format"); psi.ArgumentList.Add("json");
@@ -51,48 +42,33 @@ namespace VDF.Core.FFTools {
 			psi.ArgumentList.Add("-show_streams");
 			psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
 
-			using var process = new Process {
-				StartInfo = psi
-			};
 			MediaInfo? mediaInfo = null;
 			string errOut = string.Empty;
 			try {
-				process.EnableRaisingEvents = true;
-				process.Start();
+				// Bounded read + wait of both pipes (#865), see FFToolsUtils.RunCaptured: the
+				// timeout used to sit behind a synchronous CopyTo that a wedged ffprobe (dead
+				// network share, sleeping drive) never let return.
+				var output = FFToolsUtils.RunCaptured(psi, TimeoutDuration, "FFprobe", file);
 				if (extendedLogging) {
-					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-						// "Referenced QT chapter track not found" is a benign QuickTime quirk
-						// emitted by ffprobe at error level. The video stream is fine; the
-						// message just floods the log on otherwise-valid MP4/MOV files.
-						if (e.Data?.Length > 0 && !e.Data.Contains("Referenced QT chapter track not found", StringComparison.Ordinal))
-							errOut += Environment.NewLine + e.Data;
-					});
-					process.BeginErrorReadLine();
+					// "Referenced QT chapter track not found" is a benign QuickTime quirk emitted
+					// by ffprobe at error level. The video stream is fine; the message just floods
+					// the log on otherwise-valid MP4/MOV files.
+					errOut = FFToolsUtils.FormatStderr(output.Stderr,
+						line => !line.Contains("Referenced QT chapter track not found", StringComparison.Ordinal));
 				}
-				using var ms = new MemoryStream();
-				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865):
-				// the timeout used to sit behind a synchronous CopyTo that a wedged ffprobe
-				// (dead network share, sleeping drive) never let return.
-				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFprobe", file);
+				if (output.ExitCode != 0)
+					throw new FFInvalidExitCodeException($"FFprobe exited with: {output.ExitCode}");
 
-				if (process.ExitCode != 0)
-					throw new FFInvalidExitCodeException($"FFprobe exited with: {process.ExitCode}");
-
-				mediaInfo = FFProbeJsonReader.Read(ms.ToArray(), file);
+				mediaInfo = FFProbeJsonReader.Read(output.Stdout, file);
 			}
 			catch (Exception e) {
 				errOut += $"{Environment.NewLine}{e.Message}";
-				try {
-					if (process.HasExited == false)
-						process.Kill();
-				}
-				catch { }
 				mediaInfo = null;
 			}
 			if (mediaInfo == null || errOut.Length > 0) {
 				string message = $"{((mediaInfo == null) ? "Failed to retrieve" : "Problems while retrieving")} media info from: {file}";
 				if (extendedLogging) {
-					var args = string.Join(" ", process.StartInfo.ArgumentList);
+					var args = string.Join(" ", psi.ArgumentList);
 					message += $":{Environment.NewLine}{FFprobePath} {args}";
 				}
 				Logger.Instance.Warn($"{message}{errOut}");
@@ -105,36 +81,30 @@ namespace VDF.Core.FFTools {
 		/// stream's index and type), for the metadata comparison (#926). Null when ffprobe fails.
 		/// </summary>
 		public static byte[]? GetTagsJson(string file) {
-			var psi = new ProcessStartInfo {
-				FileName = FFprobePath,
-				CreateNoWindow = true,
-				RedirectStandardInput = false,
-				WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
-				RedirectStandardOutput = true,
-				RedirectStandardError = false,
-				WindowStyle = ProcessWindowStyle.Hidden
-			};
-
+			var psi = NewProbe();
 			psi.ArgumentList.Add("-hide_banner");
 			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("quiet");
 			psi.ArgumentList.Add("-show_entries"); psi.ArgumentList.Add("format_tags:stream=index,codec_type:stream_tags");
 			psi.ArgumentList.Add("-of"); psi.ArgumentList.Add("json");
 			psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
 
-			using var process = new Process { StartInfo = psi };
 			try {
-				process.Start();
-				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
-				using var ms = new MemoryStream();
-				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFprobe", file);
-				return process.ExitCode == 0 ? ms.ToArray() : null;
+				// Bounded read + wait (#865), see FFToolsUtils.RunCaptured.
+				var output = FFToolsUtils.RunCaptured(psi, TimeoutDuration, "FFprobe", file);
+				return output.ExitCode == 0 ? output.Stdout : null;
 			}
 			catch (Exception e) {
 				Logger.Instance.Warn($"Failed reading metadata tags from '{file}': {e.Message}");
-				try { if (!process.HasExited) process.Kill(); } catch { }
 				return null;
 			}
 		}
+
+		static ProcessStartInfo NewProbe() => new() {
+			FileName = FFprobePath,
+			CreateNoWindow = true,
+			WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
+			WindowStyle = ProcessWindowStyle.Hidden
+		};
 
 		/// <summary>
 		/// Reads the container-level <c>creation_time</c> tag from a media file. Used for HEIC/HEIF
@@ -142,32 +112,20 @@ namespace VDF.Core.FFTools {
 		/// thumbnails. Returns <c>null</c> when the tag is absent, empty or unparseable.
 		/// </summary>
 		public static DateTime? GetCreationTime(string file) {
-			var psi = new ProcessStartInfo {
-				FileName = FFprobePath,
-				CreateNoWindow = true,
-				RedirectStandardInput = false,
-				WorkingDirectory = Path.GetDirectoryName(FFprobePath)!,
-				RedirectStandardOutput = true,
-				RedirectStandardError = false,
-				WindowStyle = ProcessWindowStyle.Hidden
-			};
-
+			var psi = NewProbe();
 			psi.ArgumentList.Add("-hide_banner");
 			psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("quiet");
 			psi.ArgumentList.Add("-show_entries"); psi.ArgumentList.Add("format_tags=creation_time");
 			psi.ArgumentList.Add("-of"); psi.ArgumentList.Add("default=noprint_wrappers=1:nokey=1");
 			psi.ArgumentList.Add(FFToolsUtils.LongPathFix(file));
 
-			using var process = new Process { StartInfo = psi };
 			try {
-				process.Start();
-				// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
-				using var ms = new MemoryStream();
-				FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFprobe", file);
-				if (process.ExitCode != 0)
+				// Bounded read + wait (#865), see FFToolsUtils.RunCaptured.
+				var run = FFToolsUtils.RunCaptured(psi, TimeoutDuration, "FFprobe", file);
+				if (run.ExitCode != 0)
 					return null;
 
-				string output = Encoding.UTF8.GetString(ms.ToArray()).Trim();
+				string output = Encoding.UTF8.GetString(run.Stdout).Trim();
 				if (output.Length == 0)
 					return null;
 
@@ -178,7 +136,6 @@ namespace VDF.Core.FFTools {
 			}
 			catch (Exception e) {
 				Logger.Instance.Warn($"Failed reading creation_time from '{file}': {e.Message}");
-				try { if (!process.HasExited) process.Kill(); } catch { }
 			}
 			return null;
 		}

@@ -56,7 +56,9 @@ static class DesktopNotificationHelper {
 			[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($id).Show([Windows.UI.Notifications.ToastNotification]::new($xml))
 			""";
 		var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
-		Process.Start(new ProcessStartInfo("powershell", $"-NoProfile -WindowStyle Hidden -EncodedCommand {encoded}") {
+		// Fire and forget: nothing is read from it, so nothing of it is kept either (the
+		// Process object of every notification used to linger until the GC got to it).
+		Process.StartAndForget(new ProcessStartInfo("powershell", $"-NoProfile -WindowStyle Hidden -EncodedCommand {encoded}") {
 			CreateNoWindow = true
 		});
 	}
@@ -67,7 +69,7 @@ static class DesktopNotificationHelper {
 		var psi = new ProcessStartInfo("osascript") { CreateNoWindow = true };
 		psi.ArgumentList.Add("-e");
 		psi.ArgumentList.Add($"display notification \"{EscapeAppleScript(message)}\" with title \"{EscapeAppleScript(title)}\"");
-		Process.Start(psi);
+		Process.StartAndForget(psi);
 	}
 
 	static void NotifyLinux(string title, string message) {
@@ -77,7 +79,7 @@ static class DesktopNotificationHelper {
 		var psi = new ProcessStartInfo("notify-send") { CreateNoWindow = true };
 		psi.ArgumentList.Add(title);
 		psi.ArgumentList.Add(message);
-		Process.Start(psi);
+		Process.StartAndForget(psi);
 	}
 
 	static string EscapeXml(string s) => s

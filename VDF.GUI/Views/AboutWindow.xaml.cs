@@ -67,7 +67,7 @@ namespace VDF.GUI.Views {
 
 		static void OpenUrl(string url) {
 			try {
-				Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+				Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true })?.Dispose();
 			}
 			catch { /* opening a browser is best-effort */ }
 		}

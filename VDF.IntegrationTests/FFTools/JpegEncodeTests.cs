@@ -80,6 +80,20 @@ public class JpegEncodeTests {
 		Assert.True(scaled!.Length < full!.Length, "downscaled strip should encode smaller");
 	}
 
+	[SkippableFact]
+	public void EncodeJpegFromBgra_ProcessMode_AFullSizeStrip() {
+		// What the GUI really sends: five 1080p frames side by side, ~41 MB of pixels, hundreds
+		// of times a pipe's buffer. They go in through the stdin pipe while the JPEG comes out,
+		// both under the timeout; writing them all before reading anything would deadlock.
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = false;
+
+		var jpeg = FfmpegEngine.EncodeJpegFromBgra(SolidBgra(5 * 1920, 1080, 30, 60, 200), 5 * 1920, 1080, maxWidth: 1600);
+		AssertIsJpeg(jpeg);
+	}
+
 	[Fact]
 	public void EncodeJpegFromBgra_RejectsInvalidInput() {
 		Assert.Null(FfmpegEngine.EncodeJpegFromBgra(null!, 10, 10));

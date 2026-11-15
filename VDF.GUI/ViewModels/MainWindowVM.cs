@@ -861,7 +861,7 @@ namespace VDF.GUI.ViewModels {
 			Process.Start(new ProcessStartInfo {
 				FileName = CoreUtils.CurrentFolder,
 				UseShellExecute = true,
-			});
+			})?.Dispose();
 		});
 
 		public ReactiveCommand<Unit, Unit> CleanDatabaseCommand => ReactiveCommand.Create(() => {
@@ -1290,18 +1290,20 @@ namespace VDF.GUI.ViewModels {
 
 			if (GetSelectedDuplicateItem() is not DuplicateItemVM currentItem) return;
 			try {
+				// Shell execution may hand the file to an already running app and start nothing,
+				// so it cannot be fire-and-forget; the Process it may return is not needed.
 				if (CoreUtils.IsWindows) {
 					Process.Start(new ProcessStartInfo {
 						FileName = currentItem.ItemInfo.Path,
 						UseShellExecute = true
-					});
+					})?.Dispose();
 				}
 				else {
 					Process.Start(new ProcessStartInfo {
 						FileName = currentItem.ItemInfo.Path,
 						UseShellExecute = true,
 						Verb = "open"
-					});
+					})?.Dispose();
 				}
 			}
 			catch (Exception ex) {
@@ -1332,21 +1334,21 @@ namespace VDF.GUI.ViewModels {
 						// Fallback to explorer.exe if shell API fails (Notepad++/Electron pattern)
 						var psi = new ProcessStartInfo("explorer.exe") { UseShellExecute = false };
 						psi.ArgumentList.Add($"/select,{filePath}");
-						Process.Start(psi);
+						Process.StartAndForget(psi);
 					}
 				}
 				else if (OperatingSystem.IsMacOS()) {
 					var psi = new ProcessStartInfo("open") { UseShellExecute = false };
 					psi.ArgumentList.Add("-R");
 					psi.ArgumentList.Add(filePath);
-					Process.Start(psi);
+					Process.StartAndForget(psi);
 				}
 				else {
 					Process.Start(new ProcessStartInfo {
 						FileName = Path.GetDirectoryName(filePath),
 						UseShellExecute = true,
 						Verb = "open"
-					});
+					})?.Dispose();
 				}
 			}
 			catch (Exception ex) {
@@ -1442,10 +1444,11 @@ namespace VDF.GUI.ViewModels {
 				return false;
 
 			command = cmd[0];
+			// Started and let go. Its stderr used to be redirected into a pipe nobody read, so a
+			// program that wrote enough to it stalled once the pipe was full; now it goes nowhere.
 			var psi = new ProcessStartInfo {
 				FileName = command,
 				UseShellExecute = false,
-				RedirectStandardError = true,
 			};
 
 			if (cmd.Length == 2 && cmd[1].Contains("%f")) {
@@ -1463,7 +1466,7 @@ namespace VDF.GUI.ViewModels {
 			}
 
 			try {
-				Process.Start(psi);
+				Process.StartAndForget(psi);
 			}
 			catch (Exception e) {
 				Logger.Instance.Error(string.Format(App.Lang["Log.CustomCommandFailed"], command,

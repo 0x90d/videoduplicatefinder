@@ -115,7 +115,7 @@ namespace VDF.GUI.ViewModels {
 				Process.Start(new ProcessStartInfo {
 					FileName = "https://trac.ffmpeg.org/wiki/HWAccelIntro#PlatformAPIAvailability",
 					UseShellExecute = true
-				});
+				})?.Dispose();
 			}
 			catch {
 				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);
@@ -126,7 +126,7 @@ namespace VDF.GUI.ViewModels {
 				Process.Start(new ProcessStartInfo {
 					FileName = "https://github.com/0x90d/videoduplicatefinder/wiki/Setup-&-Use",
 					UseShellExecute = true
-				});
+				})?.Dispose();
 			}
 			catch {
 				await MessageBoxService.Show(App.Lang["Message.OpenHwAccelInfoFailed"]);

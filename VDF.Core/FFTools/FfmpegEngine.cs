@@ -22,6 +22,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using FFmpeg.AutoGen;
+using Microsoft.Win32.SafeHandles;
 using VDF.Core.FFTools.FFmpegNative;
 using VDF.Core.Utils;
 
@@ -745,46 +746,16 @@ namespace VDF.Core.FFTools {
 			}
 
 			byte[]? RunGrab(ProcessStartInfo psi, ref string errOut) {
-				using var process = new Process {
-					StartInfo = psi
-				};
 				string localErr = string.Empty;
-				// Collapse consecutive identical stderr lines: a single broken HEVC/H.264
-				// stream can emit the same decoder error tens of thousands of times per
-				// file (e.g. "[hevc] Error constructing the frame RPS"), turning the log
-				// into noise. Track the last line and a repeat count, then flush.
-				string lastErrLine = string.Empty;
-				int repeatCount = 0;
 				byte[]? bytes = null;
 				try {
-					process.EnableRaisingEvents = true;
-					process.Start();
-					FFToolsUtils.LowerChildPriority(process);
-					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-						if (e.Data?.Length > 0) {
-							if (e.Data == lastErrLine) {
-								repeatCount++;
-							}
-							else {
-								if (repeatCount > 0) {
-									localErr += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
-									repeatCount = 0;
-								}
-								localErr += Environment.NewLine + e.Data;
-								lastErrLine = e.Data;
-							}
-						}
-					});
-					process.BeginErrorReadLine();
-					using var ms = new MemoryStream();
-					// Bounded read + wait: a synchronous CopyTo made the timeout below unreachable
-					// and blocked the worker forever on a wedged ffmpeg (#865).
-					FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", settings.File);
+					// Bounded read + wait of both pipes (#865), see FFToolsUtils.RunCaptured.
+					var output = FFToolsUtils.RunCaptured(psi, TimeoutDuration, "FFmpeg", settings.File);
+					localErr = FFToolsUtils.FormatStderr(output.Stderr);
+					if (output.ExitCode != 0)
+						throw new FFInvalidExitCodeException($"FFmpeg exited with: {output.ExitCode}");
 
-					if (process.ExitCode != 0)
-						throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
-
-					bytes = ms.ToArray();
+					bytes = output.Stdout;
 					if (bytes.Length == 0)
 						bytes = null;   // Makes subsequent checks easier
 					else if (isRawOutput && bytes.Length != expectedBytes) {
@@ -794,15 +765,8 @@ namespace VDF.Core.FFTools {
 				}
 				catch (Exception e) {
 					localErr += $"{Environment.NewLine}{e.Message}";
-					try {
-						if (process.HasExited == false)
-							process.Kill();
-					}
-					catch { }
 					bytes = null;
 				}
-				if (repeatCount > 0)
-					localErr += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
 				errOut += localErr;
 				return bytes;
 			}
@@ -924,39 +888,16 @@ namespace VDF.Core.FFTools {
 				if (attempt > 0)
 					errOut += $"{Environment.NewLine}Retrying with input [{inputLabels[attempt]}]:";
 				psiUsed = BuildPsi(inputLabels[attempt]);
-				using var process = new Process { StartInfo = psiUsed };
-				string lastErrLine = string.Empty;
-				int repeatCount = 0;
 				gray = null;
 				rgb = null;
 				try {
-					process.EnableRaisingEvents = true;
-					process.Start();
-					FFToolsUtils.LowerChildPriority(process);
-					process.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => {
-						if (e.Data?.Length > 0) {
-							if (e.Data == lastErrLine) {
-								repeatCount++;
-							}
-							else {
-								if (repeatCount > 0) {
-									errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
-									repeatCount = 0;
-								}
-								errOut += Environment.NewLine + e.Data;
-								lastErrLine = e.Data;
-							}
-						}
-					});
-					process.BeginErrorReadLine();
-					using var ms = new MemoryStream();
-					// Bounded read + wait, see the note in FFToolsUtils.ReadStdoutBounded (#865).
-					FFToolsUtils.ReadStdoutBounded(process, ms, TimeoutDuration, "FFmpeg", file);
+					// Bounded read + wait of both pipes (#865), see FFToolsUtils.RunCaptured.
+					var output = FFToolsUtils.RunCaptured(psiUsed, TimeoutDuration, "FFmpeg", file);
+					errOut += FFToolsUtils.FormatStderr(output.Stderr);
+					if (output.ExitCode != 0)
+						throw new FFInvalidExitCodeException($"FFmpeg exited with: {output.ExitCode}");
 
-					if (process.ExitCode != 0)
-						throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
-
-					gray = ms.ToArray();
+					gray = output.Stdout;
 					if (gray.Length != grayExpectedBytes) {
 						errOut += $"{Environment.NewLine}graybytes length != {grayExpectedBytes} (got {gray.Length})";
 						gray = null;
@@ -971,19 +912,12 @@ namespace VDF.Core.FFTools {
 				}
 				catch (Exception e) {
 					errOut += $"{Environment.NewLine}{e.Message}";
-					try {
-						if (process.HasExited == false)
-							process.Kill();
-					}
-					catch { }
 					gray = null;
 					rgb = null;
 				}
 				finally {
 					try { if (File.Exists(rgbTempPath)) File.Delete(rgbTempPath); } catch { }
 				}
-				if (repeatCount > 0)
-					errOut += $" (repeated {repeatCount} more time{(repeatCount == 1 ? string.Empty : "s")})";
 				if (gray != null)
 					break;
 			}
@@ -1217,6 +1151,7 @@ namespace VDF.Core.FFTools {
 			psi.ArgumentList.Add("-f"); psi.ArgumentList.Add("rawvideo");
 			psi.ArgumentList.Add("-pix_fmt"); psi.ArgumentList.Add("rgb24");
 			psi.ArgumentList.Add("pipe:1");
+			FFToolsUtils.DieWithVdf(psi);
 
 			using var process = new Process { StartInfo = psi };
 			string errOut = string.Empty;
@@ -1266,7 +1201,9 @@ namespace VDF.Core.FFTools {
 					frameCount++;
 					onFrame(frame); // ownership transfers to the callback
 				}
-				if (!process.WaitForExit(30_000))
+				// Also the exit after maxFrames, where ffmpeg may still be decoding: killed if it
+				// does not finish on its own, not left running.
+				if (process.SafeHandle.WaitForExitOrKillOnTimeout(TimeSpan.FromSeconds(30)).Canceled)
 					throw new TimeoutException($"FFmpeg did not exit after closing its output: {filePath}");
 				process.WaitForExit(); // flush async stderr handlers
 
@@ -1447,8 +1384,6 @@ namespace VDF.Core.FFTools {
 			var psi = new ProcessStartInfo {
 				FileName = FFmpegPath,
 				CreateNoWindow = true,
-				RedirectStandardInput = true,
-				RedirectStandardOutput = true,
 				WorkingDirectory = Path.GetDirectoryName(FFmpegPath)!,
 				WindowStyle = ProcessWindowStyle.Hidden
 			};
@@ -1465,32 +1400,35 @@ namespace VDF.Core.FFTools {
 			psi.ArgumentList.Add("-frames:v"); psi.ArgumentList.Add("1");
 			psi.ArgumentList.Add("pipe:1");
 
-			using var process = new Process { StartInfo = psi };
-			Task? readTask = null;
+			// A composed strip is tens of MB at full frame size, many times a pipe's buffer, and
+			// writing it into stdin before any wait began blocked forever on a child that stopped
+			// reading. The pixels go through a pipe the child gets as its stdin handle (.NET 11),
+			// written on the side while RunCaptured holds the deadline.
+			SafeFileHandle.CreateAnonymousPipe(out SafeFileHandle stdinRead, out SafeFileHandle stdinWrite);
+			psi.StandardInputHandle = stdinRead;
+			int length = width * height * 4;
+			Task writer = Task.Run(() => {
+				using var input = new FileStream(stdinWrite, FileAccess.Write, bufferSize: 0);
+				input.Write(bgra, 0, length);
+			});
 			try {
-				process.Start();
-				FFToolsUtils.LowerChildPriority(process);
-				using var ms = new MemoryStream();
-				// Write input and read output concurrently to avoid pipe-buffer deadlocks.
-				readTask = process.StandardOutput.BaseStream.CopyToAsync(ms);
-				process.StandardInput.BaseStream.Write(bgra, 0, width * height * 4);
-				process.StandardInput.BaseStream.Flush();
-				process.StandardInput.Close();
-				if (!readTask.Wait(TimeoutDuration))
-					throw new TimeoutException("FFmpeg timed out encoding JPEG from raw pixels.");
-				if (!process.WaitForExit(TimeoutDuration))
-					throw new TimeoutException("FFmpeg did not exit after encoding JPEG from raw pixels.");
-				if (process.ExitCode != 0)
-					throw new FFInvalidExitCodeException($"FFmpeg exited with: {process.ExitCode}");
-				byte[] jpeg = ms.ToArray();
-				return jpeg.Length > 0 ? jpeg : null;
+				var output = FFToolsUtils.RunCaptured(psi, TimeoutDuration, "FFmpeg", "a JPEG from raw pixels");
+				if (output.ExitCode != 0)
+					throw new FFInvalidExitCodeException($"FFmpeg exited with: {output.ExitCode}");
+				return output.Stdout.Length > 0 ? output.Stdout : null;
 			}
 			catch (Exception e) {
 				Logger.Instance.Warn($"BGRA->JPEG encode via FFmpeg process failed: {e.Message}");
-				// Also drains/observes the pending stdout copy — the disposed MemoryStream
-				// would otherwise fault it after the fact as an unobserved task exception.
-				FFToolsUtils.KillAndDrain(process, readTask);
 				return null;
+			}
+			finally {
+				// The child is gone (done, or killed at the timeout). With VDF's read end closed
+				// too, a write still in flight fails with a broken pipe instead of waiting for a
+				// reader that never comes; its fault is observed, not left to the finalizer.
+				stdinRead.Dispose();
+				try { writer.Wait(2000); } catch { }
+				if (!writer.IsCompleted)
+					FFToolsUtils.ObserveAbandonedRead(writer);
 			}
 		}
 	}
