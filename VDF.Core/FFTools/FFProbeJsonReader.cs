@@ -219,8 +219,32 @@ namespace VDF.Core.FFTools {
 				info.Streams[i].HdrFormat = ComputeHdrFormat(colorTransfer, sideDataTypes);
 			}
 			//Workaround if video stream bitrate is not set but in format
-			if (!foundBitRate && info.Streams.Length > 0 && format.ContainsKey("bit_rate") && long.TryParse((string)format["bit_rate"], out var formatBitrate))
-				info.Streams[0].BitRate = formatBitrate;
+			//An audio track's own bit_rate (e.g. AC3 at 448 kb/s in an MKV whose video stream
+			//has no BPS tag) must not suppress the container fallback for the video stream (#940).
+			//The fallback also belongs on the video stream, not on whatever stream happens to
+			//come first: in an audio-first container that was the audio track.
+			if (info.Streams.Length > 0 && format.ContainsKey("bit_rate") &&
+				long.TryParse((string)format["bit_rate"], out var formatBitrate)) {
+				bool anyVideoStream = false;
+				bool anyVideoBitRate = false;
+				for (int i = 0; i < info.Streams.Length; i++) {
+					if (info.Streams[i].CodecType?.Equals("video", StringComparison.OrdinalIgnoreCase) != true)
+						continue;
+					anyVideoStream = true;
+					if (info.Streams[i].BitRate > 0)
+						anyVideoBitRate = true;
+				}
+				if (anyVideoStream) {
+					if (!anyVideoBitRate)
+						foreach (var stream in info.Streams)
+							if (stream.CodecType?.Equals("video", StringComparison.OrdinalIgnoreCase) == true)
+								stream.BitRate = formatBitrate;
+				}
+				else if (!foundBitRate) {
+					//No video stream: an audio-only file's only stream is the whole file.
+					info.Streams[0].BitRate = formatBitrate;
+				}
+			}
 
 			return info;
 		}
