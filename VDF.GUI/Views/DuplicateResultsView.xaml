@@ -638,6 +638,9 @@
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.MoveToFolderEllipsis]}" />
                 <Separator />
                 <MenuItem
+                        Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).PlayPathsWithGridPlayerCommand}"
+                        Header="{Binding Source={x:Static local:App.Lang}, Path=[MainWindow.ContextMenu.PlayPaths]}" />
+                <MenuItem
                     Command="{Binding $parent[UserControl].((vm:MainWindowVM)DataContext).ToggleCheckboxCommand}"
                     Header="{Binding Source={x:Static local:App.Lang}, Path=[Results.Row.ToggleCheck]}"
                     InputGesture="{Binding Source={x:Static Settings:KeyboardShortcutManager.Instance}, Path=[ToggleCheckbox]}" />
