@@ -2296,6 +2296,43 @@ Non-Windows setup:
 			}
 		});
 
+		public ReactiveCommand<Unit, Unit> PlayPathsWithGridPlayerCommand => ReactiveCommand.CreateFromTask(async () => {
+
+			string[] possiblePaths =
+			{         
+            Path.Combine(AppContext.BaseDirectory, "GridPlayer.exe"),
+
+			Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+				"GridPlayer",
+				"GridPlayer.exe"),
+
+			Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+				"GridPlayer",
+				"GridPlayer.exe")
+		};
+
+			string? gridPlayerPath = possiblePaths.FirstOrDefault(File.Exists);
+
+			if (gridPlayerPath is null) {
+				await MessageBoxService.Show(string.Format(App.Lang["MainWindow.ContextMenu.GridPlayerNotFound"]));
+				//"GridPlayer was not found.\n\n" +
+				//"Expected locations:\n" +
+				//string.Join("\n", possiblePaths));
+				return;
+			}
+
+			// await MessageBoxService.Show(string.Format(App.Lang["Message.DeleteMissingFilesNotice"], missingOnDisk));
+			var psi = new ProcessStartInfo("C:\\Program Files\\GridPlayer\\GridPlayer.exe");
+			foreach (var item in GetSelectedDuplicates()) {
+				if (item is not DuplicateItemVM currentItem)
+					return;
+				psi.ArgumentList.Add(currentItem.ItemInfo.Path);
+			}
+			Process.Start(psi);
+		});
+
 		public ReactiveCommand<Unit, Unit> CopyFilenamesToClipboardCommand => ReactiveCommand.CreateFromTask(async () => {
 			StringBuilder sb = new();
 			foreach (var item in GetSelectedDuplicates()) {
