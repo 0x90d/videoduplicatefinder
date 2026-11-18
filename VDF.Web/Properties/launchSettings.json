@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "VDF.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59837;http://localhost:59838"
+    }
+  }
+}
