@@ -126,7 +126,9 @@ namespace VDF.Web.Services {
 				// continuations queue behind the blocked handler forever).
 				if (_engine.Settings.NeedsAiComponents &&
 					!VDF.Core.AI.AiComponents.IsReady) {
-					VDF.Core.Utils.Logger.Instance.Info("Downloading AI components (ONNX Runtime + model, ~100 MB)...");
+					if (VDF.Core.AI.AiComponents.IsRuntimeMissing)
+						throw new InvalidOperationException(VDF.Core.AI.AiComponents.RuntimeMissingMessage);
+					VDF.Core.Utils.Logger.Instance.Info("Downloading the AI model (~25 MB)...");
 					await VDF.Core.AI.AiComponents.DownloadAsync(null, _cts.Token);
 				}
 				_engine.StartSearch();

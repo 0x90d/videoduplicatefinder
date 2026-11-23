@@ -1665,6 +1665,11 @@ Non-Windows setup:
 			}
 			if (SettingsFile.Instance.NeedsAiComponents &&
 				!VDF.Core.AI.AiComponents.IsReady) {
+				// A missing runtime ships with VDF, so no download fixes it.
+				if (VDF.Core.AI.AiComponents.IsRuntimeMissing) {
+					await MessageBoxService.Show(App.Lang["Settings.AiComponents.RuntimeMissing"]);
+					return;
+				}
 				if (await MessageBoxService.Show(App.Lang["Message.AiComponentsMissingPrompt"], MessageBoxButtons.Yes | MessageBoxButtons.No) != MessageBoxButtons.Yes)
 					return;
 				await DownloadAiComponentsAsync();

@@ -95,7 +95,7 @@
         <input type="checkbox"
                checked="@Scan.Settings.UseAiMatching"
                @onchange="e => Scan.Settings.UseAiMatching = (bool)e.Value!" />
-        AI matching (additional pass; downloads ONNX Runtime + model on first scan, ~100 MB)
+        AI matching (additional pass; downloads the AI model on first scan, ~25 MB)
     </label>
     @if (Scan.Settings.UseAiMatching) {
         <label>

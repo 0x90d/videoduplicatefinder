@@ -26,10 +26,10 @@ using VDF.Core.AI;
 using VDF.GUI.Views;
 
 namespace VDF.GUI.ViewModels {
-	// AI component (ONNX Runtime + embedding model) download flow — the FFmpeg
-	// downloader's little sibling: same busy-overlay pattern, but the URL planning,
-	// extraction and integrity checks live in Core (AiComponents) so the CLI can
-	// download headlessly with the identical logic.
+	// AI model download flow (the ONNX Runtime ships with VDF) — the FFmpeg
+	// downloader's little sibling: same busy-overlay pattern, but the download and
+	// integrity check live in Core (AiComponents) so the CLI can download headlessly
+	// with the identical logic.
 	public partial class MainWindowVM : ReactiveObject {
 		public bool IsAiDownloadInProgress {
 			get;
@@ -47,9 +47,10 @@ namespace VDF.GUI.ViewModels {
 
 		static string BuildAiComponentsStatusText() => AiComponents.GetState() switch {
 			AiComponentsState.Ready => string.Format(CultureInfo.InvariantCulture, App.Lang["Settings.AiComponents.Ready"], AiComponents.RuntimeVersion),
-			AiComponentsState.RuntimeMissing => App.Lang["Settings.AiComponents.RuntimeMissing"],
 			AiComponentsState.ModelMissing => App.Lang["Settings.AiComponents.ModelMissing"],
-			_ => App.Lang["Settings.AiComponents.Missing"],
+			// The runtime ships with VDF, so it missing (with or without the model) is a broken
+			// install that only a reinstall fixes; "not downloaded" sent users to the Download button.
+			_ => App.Lang["Settings.AiComponents.RuntimeMissing"],
 		};
 
 		void RefreshAiComponentsStatus() => AiComponentsStatusText = BuildAiComponentsStatusText();
@@ -70,9 +71,8 @@ namespace VDF.GUI.ViewModels {
 			IsBusyOverlayText = App.Lang["Message.AiDownloadPreparing"];
 			CancellationToken cancelToken = BeginCancelableBusyOperation();
 			try {
-				// The runtime and the model download concurrently; render one line per
-				// step (keyed by step name) instead of flickering between the two.
-				// Progress<T> posts to the UI thread, so the dictionary needs no lock.
+				// One line per step, keyed by step name. Progress<T> posts to the UI
+				// thread, so the dictionary needs no lock.
 				var stepProgress = new Dictionary<string, (long Done, long? Total)>();
 				var progress = new Progress<AiDownloadProgress>(p => {
 					stepProgress[p.Step] = (p.BytesDone, p.BytesTotal);

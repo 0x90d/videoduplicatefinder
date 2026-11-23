@@ -22,22 +22,6 @@ namespace VDF.Core.Tests.AI;
 public class AiComponentsTests {
 
 	[Fact]
-	public void RuntimeDownloadPlan_TargetsPinnedVersionForCurrentPlatform() {
-		(Uri url, string archive) = AiComponents.GetRuntimeDownloadPlan();
-
-		Assert.Contains(AiComponents.RuntimeVersion, archive);
-		Assert.Contains("github.com/microsoft/onnxruntime/releases/download", url.AbsoluteUri);
-		Assert.Contains($"v{AiComponents.RuntimeVersion}", url.AbsoluteUri);
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-			Assert.StartsWith("onnxruntime-win-", archive);
-			Assert.EndsWith(".zip", archive);
-		}
-		else {
-			Assert.EndsWith(".tgz", archive);
-		}
-	}
-
-	[Fact]
 	public void ModelSha256_IsPinned() {
 		// The download verifies against this constant — a typo would brick the feature.
 		Assert.Equal(64, AiComponents.ModelSha256.Length);
@@ -63,70 +47,121 @@ public class AiComponentsTests {
 		Assert.DoesNotContain("NeedsAiComponents", json);
 	}
 
-	[Fact]
-	public async Task RunDownloadsAsync_RunsDownloadsConcurrently() {
-		// Each download only completes once the other has started — sequential
-		// execution would deadlock here and trip the timeout.
-		var aStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-		var bStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-		var downloads = new List<Func<CancellationToken, Task>> {
-			async ct => { aStarted.SetResult(); await bStarted.Task.WaitAsync(ct); },
-			async ct => { bStarted.SetResult(); await aStarted.Task.WaitAsync(ct); },
-		};
-
-		await AiComponents.RunDownloadsAsync(downloads, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
-	}
-
-	[Fact]
-	public async Task RunDownloadsAsync_FailureCancelsSiblingAndSurfacesTheRealError() {
-		var siblingCanceled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-		var downloads = new List<Func<CancellationToken, Task>> {
-			// The sibling: runs "forever" until the failure cancels it. It is FIRST in
-			// the list, so a naive Task.WhenAll await would rethrow its cancellation
-			// instead of the real error below.
-			async ct => {
-				try { await Task.Delay(Timeout.Infinite, ct); }
-				finally { siblingCanceled.TrySetResult(); }
-			},
-			ct => Task.FromException(new IOException("model corrupt")),
-		};
-
-		var ex = await Assert.ThrowsAsync<IOException>(() =>
-			AiComponents.RunDownloadsAsync(downloads, CancellationToken.None));
-		Assert.Equal("model corrupt", ex.Message);
-		await siblingCanceled.Task.WaitAsync(TimeSpan.FromSeconds(10));
-	}
-
-	[Fact]
-	public async Task RunDownloadsAsync_UserCancellationSurfacesAsCancellation() {
-		using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
-		var downloads = new List<Func<CancellationToken, Task>> {
-			ct => Task.Delay(Timeout.Infinite, ct),
-			ct => Task.Delay(Timeout.Infinite, ct),
-		};
-
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-			AiComponents.RunDownloadsAsync(downloads, cts.Token));
-	}
-
 	/// <summary>A folder holding a runtime library file that will not load.</summary>
 	static string BrokenRuntimeFolder() {
 		string folder = Directory.CreateTempSubdirectory("vdf-ai-broken").FullName;
-		string name = OperatingSystem.IsWindows() ? "onnxruntime.dll"
-			: OperatingSystem.IsMacOS() ? $"libonnxruntime.{AiComponents.RuntimeVersion}.dylib"
-			: $"libonnxruntime.so.{AiComponents.RuntimeVersion}";
-		File.WriteAllBytes(Path.Combine(folder, name), new byte[4096]);
+		File.WriteAllBytes(Path.Combine(folder, RuntimeFileName), new byte[4096]);
 		return folder;
 	}
 
+	static string RuntimeFileName => OperatingSystem.IsWindows() ? "onnxruntime.dll"
+		: OperatingSystem.IsMacOS() ? "libonnxruntime.dylib"
+		: "libonnxruntime.so";
+
+	[Fact]
+	public void FindRuntimeLibrary_FindsTheRuntimeShippedWithThisBuild() {
+		// The test project, like the Docker image, is built for any platform, so this is the
+		// runtimes/<rid>/native layout the Microsoft.ML.OnnxRuntime package produces.
+		string? lib = AiComponents.FindRuntimeLibrary();
+
+		Assert.NotNull(lib);
+		Assert.Equal(RuntimeFileName, Path.GetFileName(lib));
+	}
+
+	[Fact]
+	public void FindRuntimeLibrary_PrefersTheCopyNextToTheApp() {
+		string folder = Directory.CreateTempSubdirectory("vdf-ai-runtime").FullName;
+		try {
+			AiComponents.TestRuntimeFolder.Value = folder;
+			Assert.Null(AiComponents.FindRuntimeLibrary());
+
+			string perPlatform = Path.Combine(folder, "runtimes", RuntimeInformation.RuntimeIdentifier, "native", RuntimeFileName);
+			Directory.CreateDirectory(Path.GetDirectoryName(perPlatform)!);
+			File.WriteAllBytes(perPlatform, new byte[16]);
+			Assert.Equal(perPlatform, AiComponents.FindRuntimeLibrary());
+
+			// A publish for one platform (the releases) puts it next to the app.
+			string nextToApp = Path.Combine(folder, RuntimeFileName);
+			File.WriteAllBytes(nextToApp, new byte[16]);
+			Assert.Equal(nextToApp, AiComponents.FindRuntimeLibrary());
+		}
+		finally {
+			AiComponents.TestRuntimeFolder.Value = null;
+			Directory.Delete(folder, true);
+		}
+	}
+
+	[Fact]
+	public async Task MissingRuntime_AsksForAReinstallInsteadOfADownload() {
+		string folder = Directory.CreateTempSubdirectory("vdf-ai-noruntime").FullName;
+		File.WriteAllBytes(Path.Combine(folder, AiComponents.ModelFileName), new byte[16]);
+		try {
+			AiComponents.TestRuntimeFolder.Value = folder;
+			AiComponents.TestAiFolder.Value = folder;
+			Assert.Equal(AiComponentsState.RuntimeMissing, AiComponents.GetState());
+
+			var ex = Assert.Throws<InvalidOperationException>(AiComponents.EnsureReady);
+			Assert.Contains("Reinstall VDF", ex.Message);
+			// The model is present, so nothing is fetched; the download must not report success.
+			var downloadEx = await Assert.ThrowsAsync<InvalidOperationException>(() => AiComponents.DownloadAsync(null, CancellationToken.None));
+			Assert.Contains("Reinstall VDF", downloadEx.Message);
+		}
+		finally {
+			AiComponents.TestRuntimeFolder.Value = null;
+			AiComponents.TestAiFolder.Value = null;
+			Directory.Delete(folder, true);
+		}
+	}
+
+	[Fact]
+	public void RemoveDownloadedRuntime_DeletesTheOldRuntimeAndMarkerButKeepsTheModel() {
+		string folder = Directory.CreateTempSubdirectory("vdf-ai-legacy").FullName;
+		try {
+			string[] legacy = { "onnxruntime.dll", "onnxruntime_providers_shared.dll", "libonnxruntime.so", "libonnxruntime.so.1.23.2", "libonnxruntime.dylib", "runtime.version" };
+			string[] keep = { AiComponents.ModelFileName, "notes.txt" };
+			foreach (string name in legacy.Concat(keep))
+				File.WriteAllBytes(Path.Combine(folder, name), new byte[16]);
+
+			List<string> removed = AiComponents.RemoveDownloadedRuntime(folder);
+
+			Assert.Equal(legacy.Order(), removed.Order());
+			Assert.All(legacy, name => Assert.False(File.Exists(Path.Combine(folder, name))));
+			Assert.All(keep, name => Assert.True(File.Exists(Path.Combine(folder, name))));
+			Assert.Empty(AiComponents.RemoveDownloadedRuntime(Path.Combine(folder, "missing")));
+		}
+		finally {
+			Directory.Delete(folder, true);
+		}
+	}
+
+	[Fact]
+	public async Task MissingRuntimeAndModel_FailsBeforeDownloadingTheModel() {
+		string folder = Directory.CreateTempSubdirectory("vdf-ai-nothing").FullName;
+		string aiFolder = Path.Combine(folder, "ai");
+		try {
+			AiComponents.TestRuntimeFolder.Value = folder;
+			AiComponents.TestAiFolder.Value = aiFolder;
+			Assert.True(AiComponents.IsRuntimeMissing);
+
+			var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => AiComponents.DownloadAsync(null, CancellationToken.None));
+			Assert.Contains("Reinstall VDF", ex.Message);
+			Assert.False(Directory.Exists(aiFolder));
+		}
+		finally {
+			AiComponents.TestRuntimeFolder.Value = null;
+			AiComponents.TestAiFolder.Value = null;
+			Directory.Delete(folder, true);
+		}
+	}
+
 	/// <summary>
-	/// The reported crash: the downloaded runtime would not load (its Visual C++ runtime
+	/// The reported crash: the runtime would not load (its Visual C++ runtime
 	/// was missing), the resolver fell through to default probing, and that bound Windows'
 	/// own older System32\onnxruntime.dll, which then failed with "Unable to find an entry
 	/// point named 'OrtGetApiBase'" (or an access violation on newer Windows builds).
 	/// </summary>
 	[Fact]
-	public void ResolveRuntimeImport_DownloadThatWillNotLoad_FailsInsteadOfFallingBackToAnotherOnnxRuntime() {
+	public void ResolveRuntimeImport_RuntimeThatWillNotLoad_FailsInsteadOfFallingBackToAnotherOnnxRuntime() {
 		string folder = BrokenRuntimeFolder();
 		try {
 			string lib = Directory.GetFiles(folder).Single();
@@ -142,8 +177,7 @@ public class AiComponentsTests {
 	}
 
 	[Fact]
-	public void ResolveRuntimeImport_NothingDownloaded_FallsThroughToDefaultProbing() {
-		// Test runs (and a runtime placed next to the executable) rely on default probing.
+	public void ResolveRuntimeImport_NoRuntime_FallsThroughToDefaultProbing() {
 		Assert.Equal(IntPtr.Zero, AiComponents.ResolveRuntimeImport("onnxruntime", null));
 		Assert.Equal(IntPtr.Zero, AiComponents.ResolveRuntimeImport("kernel32", @"C:\does\not\matter.dll"));
 	}
@@ -151,9 +185,9 @@ public class AiComponentsTests {
 	[Fact]
 	public void EnsureReady_RuntimeThatWillNotLoad_FailsBeforeTheScanStarts() {
 		string folder = BrokenRuntimeFolder();
-		File.WriteAllText(Path.Combine(folder, "runtime.version"), AiComponents.RuntimeVersion);
 		File.WriteAllBytes(Path.Combine(folder, AiComponents.ModelFileName), new byte[16]);
 		try {
+			AiComponents.TestRuntimeFolder.Value = folder;
 			AiComponents.TestAiFolder.Value = folder;
 			// Every file is in place, so the settings page says Ready...
 			Assert.Equal(AiComponentsState.Ready, AiComponents.GetState());
@@ -163,6 +197,7 @@ public class AiComponentsTests {
 			Assert.Contains("could not be loaded", ex.Message);
 		}
 		finally {
+			AiComponents.TestRuntimeFolder.Value = null;
 			AiComponents.TestAiFolder.Value = null;
 			Directory.Delete(folder, true);
 		}

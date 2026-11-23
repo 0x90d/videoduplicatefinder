@@ -28,7 +28,7 @@ namespace VDF.CLI.Commands {
 		}
 
 		/// <summary>
-		/// Headless first-use download of the AI components (ONNX Runtime + model) when an
+		/// Headless first-use download of the AI model (the ONNX Runtime ships with VDF) when an
 		/// AI option is enabled — the CLI counterpart of the GUI's download prompt. Must run
 		/// before StartSearch, whose PrepareSearch fails fast on missing components.
 		/// </summary>
@@ -37,10 +37,10 @@ namespace VDF.CLI.Commands {
 				return;
 			if (VDF.Core.AI.AiComponents.IsReady)
 				return;
-			Console.Error.WriteLine($"[scan] Downloading AI components (ONNX Runtime {VDF.Core.AI.AiComponents.RuntimeVersion} + model, ~100 MB) to '{VDF.Core.AI.AiComponents.AiFolder}'...");
-			// One line per ~5 MB, not per chunk — CI logs stay readable. Buckets are
-			// per step: the runtime and model download concurrently, and a shared
-			// counter would swallow whichever step reaches a bucket second.
+			if (VDF.Core.AI.AiComponents.IsRuntimeMissing)
+				throw new InvalidOperationException(VDF.Core.AI.AiComponents.RuntimeMissingMessage);
+			Console.Error.WriteLine($"[scan] Downloading the AI model (~25 MB) to '{VDF.Core.AI.AiComponents.AiFolder}'...");
+			// One line per ~5 MB, not per chunk — CI logs stay readable.
 			var lastReported = new System.Collections.Concurrent.ConcurrentDictionary<string, long>();
 			var progress = new Progress<VDF.Core.AI.AiDownloadProgress>(p => {
 				long bucket = p.BytesDone / (5 * 1024 * 1024);

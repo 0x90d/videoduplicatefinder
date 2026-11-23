@@ -57,7 +57,7 @@ CLI: `--ai-matching`, `--ai-percent`, `--ai-partial`, `--ai-partial-hit-percent`
 
 ### Components, privacy & footprint
 
-- On first use VDF downloads two components (**~100 MB** once): the ONNX Runtime library from the [official Microsoft release](https://github.com/microsoft/onnxruntime/releases) and the embedding model (integrity-checked against a pinned SHA256). They are stored next to the scan database. The GUI asks before downloading; CLI/Web/Docker download automatically when an AI option is enabled.
+- The ONNX Runtime library ships with VDF (from Microsoft's official [Microsoft.ML.OnnxRuntime](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime) package). On first use VDF downloads the embedding model (**~25 MB** once, integrity-checked against a pinned SHA256) and stores it next to the scan database. The GUI asks before downloading; CLI/Web/Docker download automatically when an AI option is enabled.
 - **Everything runs locally on your CPU.** No cloud services, no accounts, nothing is uploaded — the model analyzes your frames on your machine, full stop.
 - Cost: roughly 50 ms per file during hashing; embeddings are cached in the scan database (~2 KB per file), so rescans stay fast. Visual partial detection keeps its keyframe cache in a separate `DenseEmbeddings.db` sidecar (~25 KB per video) that cleans itself up.
 - Supported on all release platforms (Windows, Linux x64/ARM64, macOS Intel & Apple Silicon).
@@ -361,7 +361,7 @@ docker compose pull && docker compose up -d
 # License
 Video Duplicate Finder is licensed under AGPLv3.
 
-The optional AI components are downloaded separately on first use and carry their own licenses: ONNX Runtime (MIT) and the DINOv2-small embedding model (Apache-2.0). Neither is bundled with or linked into the release binaries.
+The optional AI features use two third-party components with their own licenses. ONNX Runtime (MIT) ships with VDF. The DINOv2-small embedding model (Apache-2.0) is downloaded separately on first use and is not bundled.
 
 # Credits / Third Party
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia)
