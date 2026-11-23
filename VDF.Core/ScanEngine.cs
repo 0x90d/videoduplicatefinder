@@ -524,6 +524,9 @@ namespace VDF.Core {
 		/// include/blacklist entries arrive as typed (CLI flags, Web text fields, JSON settings).
 		/// A relative path or trailing slash made the StartsWith inclusion check silently skip
 		/// every database entry — scans found 0 duplicates with no hint why (issue #790).
+		/// Every scanned file path is built from these, so they also take the spelling on disk:
+		/// on a case- or normalization-insensitive volume a differently spelled include folder
+		/// still resolves, and would otherwise make every file look new on every scan.
 		/// </summary>
 		void NormalizeScanPaths() {
 			static HashSet<string> Normalize(HashSet<string> paths) {
@@ -531,7 +534,7 @@ namespace VDF.Core {
 				foreach (var path in paths) {
 					string normalized = path;
 					try {
-						normalized = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+						normalized = FileUtils.ResolveOnDiskSpelling(Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)));
 					}
 					catch { /* keep the original string if it cannot be resolved */ }
 					result.Add(normalized);
@@ -556,7 +559,7 @@ namespace VDF.Core {
 			DatabaseUtils.Database.Select(e => e.Path).ToHashSet(
 				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
-		void PrepareCompare() {
+		internal void PrepareCompare() {
 			// Fail fast like PrepareSearch: the visual partial pass constructs the ONNX
 			// session at the END of a compare run — without this gate a compare-only run
 			// with missing components dies hours in with a raw DllNotFoundException. The
@@ -572,12 +575,20 @@ namespace VDF.Core {
 				throw new Exception("Number of thumbnails can't be changed between quick rescans! Rescan has been aborted.");
 			}
 			NormalizeScanPaths();
-			if (DatabaseUtils.Database.Count == 0) {
+			bool loadedHere = DatabaseUtils.Database.Count == 0;
+			if (loadedHere) {
 				// Also a compare-only concern: the database is normally loaded by
 				// StartSearch's BuildFileList, which never ran in this process (issue #790).
 				DatabaseUtils.CustomDatabaseFolder = Settings.CustomDatabaseFolder;
 				DatabaseUtils.InvalidateDatabaseFolder();
 				DatabaseUtils.LoadDatabase();
+			}
+			// BuildFileList normally drops these; without it a respelled file is compared with itself.
+			// Also needed when the database was loaded earlier (the GUI loads it at startup): include
+			// folders take their on-disk spelling, so entries stored under another one fall out of scope.
+			PruneStaleSpellings();
+			RespellEntriesUnderIncludeFolders();
+			if (loadedHere) {
 				// The invalid flag is not persisted and defaults to true; it is normally
 				// cleared per entry by StartSearch's hashing pass. Without this pass a
 				// compare-only run sees every imported entry as invalid (0 files compared).
@@ -695,20 +706,14 @@ namespace VDF.Core {
 				Settings.CombineGrayscaleAndPHash = false;
 			}
 
+			int prunedSpellings = PruneStaleSpellings();
+			if (prunedSpellings > 0)
+				Logger.Instance.Info($"Removed {prunedSpellings:N0} stale database entr{(prunedSpellings == 1 ? "y" : "ies")} left by case- or normalization-only renames");
+
 			int oldFileCount = DatabaseUtils.Database.Count;
 
-			// Index existing analysed entries by size so a path-miss below can be checked for being a
-			// MOVE (same content fingerprint, old path now gone) and relinked — reusing its analysis
-			// instead of re-decoding. Only OsHash-bearing entries are relink targets; keyed by size so
-			// we compute the new file's oshash only when a same-size analysed entry exists (zero reads
-			// on a fresh scan, where the DB is empty).
-			var relinkBySize = new Dictionary<long, List<FileEntry>>();
-			foreach (var e in DatabaseUtils.Database)
-				if (e.OsHash != null) {
-					if (!relinkBySize.TryGetValue(e.FileSize, out var lst))
-						relinkBySize[e.FileSize] = lst = new List<FileEntry>();
-					lst.Add(e);
-				}
+			var relinkBySize = BuildRelinkIndex();
+			var folderListings = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
 			int relinkedCount = 0;
 
 			foreach (string path in Settings.IncludeList) {
@@ -737,7 +742,7 @@ namespace VDF.Core {
 					if (!DatabaseUtils.Database.TryGetValue(fEntry, out var dbEntry)) {
 						// Path not in the DB: either a genuinely new file or one moved/renamed from a
 						// path that's now gone. Relink the latter so its analysis survives the move.
-						if (TryRelinkMovedFile(fEntry, relinkBySize))
+						if (TryRelinkMovedFile(fEntry, relinkBySize, folderListings))
 							relinkedCount++;
 						else
 							DatabaseUtils.Database.Add(fEntry);
@@ -759,6 +764,10 @@ namespace VDF.Core {
 		// fingerprint PROVES the bytes unchanged. Anything unverifiable (either hash missing, file
 		// unreadable, or a pre-OsHash entry not yet backfilled) re-analyzes exactly as before.
 		internal static void RefreshExistingEntry(FileEntry fEntry, FileEntry dbEntry) {
+			// Windows matches paths case-insensitively, so a case-only rename lands here with the old
+			// spelling still stored. Take the spelling on disk so results and exports show the real name.
+			if (!dbEntry.Path.Equals(fEntry.Path, StringComparison.Ordinal))
+				DatabaseUtils.UpdateFilePath(fEntry.Path, dbEntry);
 			if (fEntry.FileSize != dbEntry.FileSize) {
 				DatabaseUtils.Database.Remove(dbEntry);
 				DatabaseUtils.Database.Add(fEntry);
@@ -779,19 +788,122 @@ namespace VDF.Core {
 			}
 		}
 
+		// Databases written before case- and normalization-only renames were relinked can hold the
+		// same physical file twice (movie.mp4 and Movie.mp4, or café.mp4 in NFC and NFD). Both
+		// resolve on an insensitive volume, so the file was compared with itself. Drop the spelling
+		// that no longer exists on disk. Windows keys the database case-insensitively, but NFC/NFD
+		// twins can still arise there on a share served from a normalization-insensitive volume.
+		internal static int PruneStaleSpellings() {
+			var stale = new List<FileEntry>();
+			// Normalize() returns the same string when it is already NFC, so ASCII paths cost nothing.
+			foreach (var g in DatabaseUtils.Database.GroupBy(e => FileUtils.NormalizeOrSelf(e.Path), StringComparer.OrdinalIgnoreCase)) {
+				var spellings = g.ToList();
+				if (spellings.Count < 2)
+					continue;
+				var groupStale = spellings.Where(e => spellings.Any(o => !ReferenceEquals(o, e) && FileUtils.IsStaleSpellingOf(e.Path, o.Path))).ToList();
+				// No spelling matches the disk (renamed more than once): keep one so the
+				// scan's relink moves it, and its analysis, to the current name instead of re-decoding.
+				if (groupStale.Count == spellings.Count)
+					groupStale.RemoveAt(0);
+				stale.AddRange(groupStale);
+			}
+			foreach (var e in stale) {
+				DatabaseUtils.Database.Remove(e);
+				Logger.Instance.Info($"Removed stale spelling from database: '{e.Path}'");
+			}
+			return stale.Count;
+		}
+
+		// Include folders take their on-disk spelling, but paths stored before that keep the spelling
+		// that was typed, which IsInIncludeScope no longer matches. A full scan relinks them; a
+		// compare-only run doesn't scan, so respell them here. Only entries that fall under an include
+		// folder when case and normalization are ignored are touched, so out-of-scope (possibly
+		// offline) drives are never read.
+		internal int RespellEntriesUnderIncludeFolders() {
+			var includes = Settings.IncludeList.Select(FileUtils.NormalizeOrSelf).ToList();
+			var respellings = new List<(FileEntry Entry, string Path)>();
+			// Resolving lists every ancestor folder, so do it once per folder rather than per file.
+			// Only the folder decides scope; a file name's own spelling is left to the next scan's relink.
+			var folderSpellings = new Dictionary<string, string>(StringComparer.Ordinal);
+			foreach (var e in DatabaseUtils.Database) {
+				if (IsInIncludeScope(e))
+					continue;
+				string folder = FileUtils.NormalizeOrSelf(e.Folder);
+				if (!includes.Any(f => IsAtOrUnder(folder, f)))
+					continue;
+				if (!folderSpellings.TryGetValue(e.Folder, out var onDiskFolder))
+					folderSpellings[e.Folder] = onDiskFolder = FileUtils.ResolveOnDiskSpelling(e.Folder);
+				string onDisk = Path.Combine(onDiskFolder, Path.GetFileName(e.Path));
+				if (!onDisk.Equals(e.Path, StringComparison.Ordinal))
+					respellings.Add((e, onDisk));
+			}
+			int count = 0;
+			foreach (var (e, onDisk) in respellings) {
+				// Another entry already under the on-disk spelling is the same file; keep that one.
+				if (DatabaseUtils.Database.TryGetValue(new FileEntry { _Path = onDisk }, out var existing) && !ReferenceEquals(existing, e))
+					continue;
+				DatabaseUtils.UpdateFilePath(onDisk, e);
+				count++;
+			}
+			if (count > 0)
+				Logger.Instance.Info($"Respelled {count:N0} database entr{(count == 1 ? "y" : "ies")} to match the include folders on disk");
+			return count;
+		}
+
+		// Case- and normalization-blind version of IsInIncludeScope's prefix test, stopping at a folder
+		// boundary so "Media" doesn't take in "media2".
+		static bool IsAtOrUnder(string folder, string include) =>
+			folder.StartsWith(include, StringComparison.OrdinalIgnoreCase) &&
+			(folder.Length == include.Length || Path.EndsInDirectorySeparator(include) ||
+			 folder[include.Length] == Path.DirectorySeparatorChar || folder[include.Length] == Path.AltDirectorySeparatorChar);
+
+		// Index existing entries by size so a path-miss in BuildFileList can be checked for being a
+		// MOVE (same content fingerprint, old path now gone) or a respelling, and relinked — reusing its
+		// analysis instead of re-decoding. Keyed by size so the new file's oshash is computed only when a
+		// same-size entry exists (zero reads on a fresh scan, where the DB is empty).
+		internal static Dictionary<long, List<FileEntry>> BuildRelinkIndex() {
+			var relinkBySize = new Dictionary<long, List<FileEntry>>();
+			foreach (var e in DatabaseUtils.Database) {
+				if (!relinkBySize.TryGetValue(e.FileSize, out var lst))
+					relinkBySize[e.FileSize] = lst = new List<FileEntry>();
+				lst.Add(e);
+			}
+			return relinkBySize;
+		}
+
 		// Returns true if fEntry is a moved/renamed version of an existing analysed entry — same size
 		// and content fingerprint (oshash), and that entry's recorded path no longer exists — in which
 		// case the existing entry is re-keyed to the new path, preserving grayBytes/mediaInfo/PHashes so
 		// GatherInfos skips re-decoding it. Ambiguous matches (0 or >1 missing candidates with the same
-		// oshash) fall through to "new file" so we never reuse the wrong data.
-		internal bool TryRelinkMovedFile(FileEntry fEntry, Dictionary<long, List<FileEntry>> relinkBySize) {
+		// oshash) fall through to "new file" so we never reuse the wrong data. A respelled file that also
+		// changed returns false even though the database was updated: fEntry has replaced the old
+		// analysis, so adding it again is a no-op.
+		internal bool TryRelinkMovedFile(FileEntry fEntry, Dictionary<long, List<FileEntry>> relinkBySize,
+			Dictionary<string, HashSet<string>>? folderListings = null) {
 			if (!relinkBySize.TryGetValue(fEntry.FileSize, out var sameSize))
 				return false;
+
+			// A case- or normalization-only rename on an insensitive volume leaves the old spelling
+			// resolvable, which proves it is the same physical file — no fingerprint needed, so this also
+			// covers files too small for one and entries not yet backfilled. Re-key it, then let the usual
+			// modified-file check decide whether its analysis still holds.
+			foreach (var c in sameSize)
+				if (FileUtils.IsStaleSpellingOf(c.Path, fEntry.Path, folderListings)) {
+					string oldSpelling = c.Path;
+					DatabaseUtils.UpdateFilePath(fEntry.Path, c);
+					RefreshExistingEntry(fEntry, c);
+					Logger.Instance.Info($"Respelled file relinked: '{oldSpelling}' -> '{fEntry.Path}'");
+					// When the file also changed, RefreshExistingEntry already put fEntry in place of the old
+					// analysis: report false so it isn't counted as reused (the caller's Add is then a no-op).
+					return DatabaseUtils.Database.TryGetValue(fEntry, out var kept) && ReferenceEquals(kept, c);
+				}
+
 			// A move source is an entry whose recorded path is now gone. (A still-present path means it's
-			// a copy, not a move — leave it and treat the new path as a new file.)
+			// a copy, not a move — leave it and treat the new path as a new file.) Only fingerprinted
+			// entries can be matched to a moved file's content.
 			List<FileEntry>? missing = null;
 			foreach (var c in sameSize)
-				if (!File.Exists(c.Path))
+				if (c.OsHash != null && !File.Exists(c.Path))
 					(missing ??= new List<FileEntry>()).Add(c);
 			if (missing == null)
 				return false;
