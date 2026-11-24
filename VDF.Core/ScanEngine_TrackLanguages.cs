@@ -64,9 +64,17 @@ namespace VDF.Core {
 
 		void BackfillTrackLanguages() =>
 			BackfillTrackLanguages(
-				path => DatabaseUtils.Database.TryGetValue(new FileEntry(path), out var entry) ? entry : null,
+				FindDatabaseEntry,
 				path => FFProbeEngine.GetMediaInfo(path, Settings.ExtendedFFToolsLogging),
 				cancelationTokenSource.Token);
+
+		/// <summary>
+		/// The database entry for a result path, matched by path alone. new FileEntry(path) reads the
+		/// file's size, which throws for a result whose file was moved or deleted during the scan,
+		/// and that aborted the whole scan at its very end.
+		/// </summary>
+		internal static FileEntry? FindDatabaseEntry(string path) =>
+			DatabaseUtils.Database.TryGetValue(new FileEntry { _Path = path }, out var entry) ? entry : null;
 
 		/// <summary>
 		/// Re-probes the result videos whose cached media info predates track languages and
