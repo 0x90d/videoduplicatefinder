@@ -98,7 +98,13 @@ namespace VDF.Core {
 		readonly Stopwatch SearchTimer = new();
 		public Stopwatch ElapsedTimer = new();
 		int processedFiles;
-		DateTime startTime = DateTime.Now;
+		// The phase clock reads ElapsedTimer, which Pause stops: a wall-clock start counted paused
+		// time as work and inflated the estimate after every pause.
+		TimeSpan phaseStartElapsed;
+		// Optional cost of the phase's items, for phases whose items differ wildly in cost (see
+		// EstimateRemainingByWork). Zero total means "count items", as before.
+		long progressWorkTotal;
+		long progressWorkDone;
 		readonly ScanProgress progress = new(TimeSpan.FromMilliseconds(300));
 		// Elapsed and Remaining only ever reach a frontend on a Progress event, and a phase can
 		// run for minutes without completing a single file — the partial-clip visual gate decodes
@@ -128,10 +134,12 @@ namespace VDF.Core {
 		string T(string key, params object[] args) =>
 			LanguageService.Instance.Get(Settings.LanguageCode, key, args);
 
-		internal void InitProgress(int count, string stage) {
-			startTime = DateTime.UtcNow;
+		internal void InitProgress(int count, string stage, long workTotal = 0) {
+			phaseStartElapsed = ElapsedTimer.Elapsed;
 			scanProgressMaxValue = count;
 			processedFiles = 0;
+			progressWorkTotal = workTotal;
+			progressWorkDone = 0;
 			lastCheckpointTime = DateTime.UtcNow;
 			driveProgressTracker = null; // compare phases re-init progress; they have no per-drive data
 			// Publish the new phase's zeroed counters at once. A phase whose first item takes minutes
@@ -225,8 +233,25 @@ namespace VDF.Core {
 			return TimeSpan.FromTicks(phaseElapsed.Ticks * remaining / (processed + 1));
 		}
 
-		TimeSpan EstimateRemaining(int processed, int maxPosition) =>
-			EstimateRemaining(DateTime.UtcNow.Subtract(startTime), processed, maxPosition);
+		/// <summary>
+		/// The same extrapolation over the cost of the work instead of the number of items: when a
+		/// few items take minutes and the rest milliseconds, the item count says nothing about the
+		/// time left. Until some cost has been done there is nothing to extrapolate from, so the
+		/// caller falls back to the item count (null).
+		/// </summary>
+		internal static TimeSpan? EstimateRemainingByWork(TimeSpan phaseElapsed, long workDone, long workTotal) {
+			if (workTotal <= 0 || workDone <= 0 || phaseElapsed <= TimeSpan.Zero)
+				return null;
+			if (workDone >= workTotal)
+				return TimeSpan.Zero;
+			return TimeSpan.FromTicks((long)(phaseElapsed.Ticks * ((double)(workTotal - workDone) / workDone)));
+		}
+
+		internal TimeSpan EstimateRemaining(int processed, int maxPosition) {
+			TimeSpan phaseElapsed = ElapsedTimer.Elapsed - phaseStartElapsed;
+			return EstimateRemainingByWork(phaseElapsed, Interlocked.Read(ref progressWorkDone), progressWorkTotal)
+				?? EstimateRemaining(phaseElapsed, processed, maxPosition);
+		}
 
 		/// <summary>
 		/// <see cref="progressHeartbeat"/>'s callback. The worker-thread pushes raise Progress inside
@@ -276,7 +301,10 @@ namespace VDF.Core {
 			TryDatabaseCheckpoint();
 		}
 
-		internal void IncrementProgress(string path) {
+		/// <param name="work">This item's share of the phase's workTotal (see InitProgress); ignored when the phase counts items.</param>
+		internal void IncrementProgress(string path, long work = 0) {
+			if (work > 0)
+				Interlocked.Add(ref progressWorkDone, work);
 			// Atomic: workers of all concurrent drive groups increment this counter, and a
 			// torn increment would lose the processedFiles == scanProgressMaxValue final push.
 			int processed = Interlocked.Increment(ref processedFiles);
@@ -1011,8 +1039,16 @@ namespace VDF.Core {
 
 		async Task GatherInfos() {
 			try {
+				// Cost for the time-remaining estimate: on a rescan almost every file finishes in
+				// microseconds from the cache, and the few that need decoding take the time, so
+				// counting files said nothing. Size stands in for a file's cost because reading it
+				// (the whole audio track, over a network share) dominates.
+				var analysisCost = new Dictionary<FileEntry, long>(ReferenceEqualityComparer.Instance);
+				foreach (FileEntry entry in DatabaseUtils.Database)
+					if (NeedsAnalysis(entry))
+						analysisCost[entry] = Math.Max(1, entry.FileSize >> 20);
 				// per-file analysis reports its own sub-stages
-				InitProgress(DatabaseUtils.Database.Count, "");
+				InitProgress(DatabaseUtils.Database.Count, "", analysisCost.Values.Sum());
 				// Only in-scope entries count toward a drive's done/total — out-of-scope ones
 				// are skipped in microseconds and would otherwise dilute the drive bars.
 				bool CountsTowardDriveProgress(FileEntry entry) =>
@@ -1020,7 +1056,7 @@ namespace VDF.Core {
 				void CompleteEntry(FileEntry entry, DriveProgressTracker.Counter driveCounter) {
 					if (CountsTowardDriveProgress(entry))
 						driveCounter.Complete(entry.FileSize);
-					IncrementProgress(entry.Path);
+					IncrementProgress(entry.Path, analysisCost.GetValueOrDefault(entry));
 				}
 				ValueTask ProcessEntry(FileEntry entry, DriveProgressTracker.Counter driveCounter, CancellationToken token) {
 					if (!pauseTokenSource.TryWaitWhilePaused(token))
@@ -1385,6 +1421,42 @@ namespace VDF.Core {
 		internal static bool HasUsableCachedGray(FileEntry entry, double idx) =>
 			entry.grayBytes.TryGetValue(idx, out byte[]? cached) &&
 			(cached == null || cached.Length == GrayBytesUtils.Side * GrayBytesUtils.Side);
+
+		/// <summary>
+		/// Whether GatherInfos will have to read <paramref name="entry"/>'s file (probe, sample,
+		/// fingerprint or embed), judged from memory only, by the rules its cached shortcut uses.
+		/// Only steers the time-remaining estimate, so near enough is fine.
+		/// </summary>
+		internal bool NeedsAnalysis(FileEntry entry) {
+			// The disk-free exclusions InvalidEntry applies; its File.Exists and stat checks are left out
+			// because this runs from memory over the whole database.
+			if (Settings.IncludeImages == false && entry.IsImage)
+				return false;
+			if (Settings.BlackList.Any(f => IsBlackListed(entry.Folder, f)))
+				return false;
+			if (!Settings.ScanAgainstEntireDatabase && !IsInIncludeScope(entry))
+				return false;
+			if (entry.Flags.Has(EntryFlags.ManuallyExcluded) || entry.Flags.Has(EntryFlags.TooDark))
+				return false;
+			if (!FileUtils.IsPathFFmpegSafe(entry.Path))
+				return false;
+			if (entry.Flags.Has(EntryFlags.ThumbnailError) && !Settings.AlwaysRetryFailedSampling)
+				return false;
+			if (!(entry.grayBytes?.Count > 0) || (!entry.IsImage && entry.mediaInfo == null))
+				return true;
+			if (entry.IsImage) {
+				if (!HasUsableCachedGray(entry, 0) || aiEmbeddingPipeline?.WantsEmbedding(entry, 0) == true)
+					return true;
+			}
+			else {
+				for (int i = 0; i < positionList.Count; i++) {
+					double idx = GetGrayBytesIndex(entry, positionList[i]);
+					if (!HasUsableCachedGray(entry, idx) || aiEmbeddingPipeline?.WantsEmbedding(entry, idx) == true)
+						return true;
+				}
+			}
+			return NeedsAudioFingerprint(entry, Settings.EnablePartialClipDetection, Settings.AlwaysRetryFailedSampling);
+		}
 
 		/// <summary>
 		/// #881: databases migrated from the 16x16 era carry 256-byte gray frames verbatim,
@@ -2069,12 +2141,13 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Partial clip detection: comparing {videos.Count} video(s) (fingerprint blocks: min={videos.Min(e => e.AudioFingerprint!.Length)}, max={videos.Max(e => e.AudioFingerprint!.Length)})...");
 
 			float simThreshold = (float)Settings.PartialClipSimilarityThreshold;
-			InitProgress(videos.Count - 1, T("Scan.Stage.PartialCompare"));
-
 			var cacheKey = new PartialClipCache.SettingsKey(simThreshold, Settings.PartialClipMinRatio, (int)Settings.FolderMatchMode, Settings.SameFolderDepth);
 			var identities = PartialClipCache.BuildIdentities(videos);
 			var cache = PartialClipCache.Load(PartialClipCache.FilePath, cacheKey, identities, out string cacheStatus);
 			long pairsComputed = 0;
+
+			long[] rowWork = EstimatePartialRowWork(videos, Settings.PartialClipMinRatio, cache.IsCovered);
+			InitProgress(videos.Count - 1, T("Scan.Stage.PartialCompare"), rowWork.Sum());
 
 			(var matches, long pairsChecked) = CollectPartialMatchCandidates(videos,
 				pairPrefilter: (i, j) => {
@@ -2089,7 +2162,8 @@ namespace VDF.Core {
 					Interlocked.Increment(ref pairsComputed);
 					var (sim, offsetSec) = SlidingWindowCompare(videos[j].AudioFingerprint!, videos[i].AudioFingerprint!, simThreshold);
 					return sim >= simThreshold ? (sim, offsetSec) : null;
-				});
+				},
+				rowWork: i => rowWork[i]);
 			PartialPairsComputed = pairsComputed;
 
 			// Derived from the computed pairs: a shared counter bumped for every cached pair would
@@ -2128,6 +2202,61 @@ namespace VDF.Core {
 				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
 		/// <summary>
+		/// Each source row's expected cost in the audio partial pass, for the time-remaining
+		/// estimate. Rows are far from equal: sorted longest first, the first sources slide the
+		/// most and longest clips, the last ones almost none, so counting rows made the estimate
+		/// far too high early on. A pair costs about (source blocks − clip blocks + 1) × clip blocks
+		/// (offsets × blocks per offset); the candidates of a row are a contiguous run of the
+		/// duration-sorted list (the duration-ratio window of CollectPartialMatchCandidates), so
+		/// prefix sums give each row's total without visiting its pairs. Pairs the cache answers
+		/// (both videos covered) cost next to nothing and are left out. The folder gate and the
+		/// block-length prefilter are ignored: this only steers an estimate.
+		/// </summary>
+		internal static long[] EstimatePartialRowWork(List<FileEntry> videos, double minRatio, Func<int, bool> isCovered) {
+			int n = videos.Count;
+			var seconds = new double[n];
+			// Prefix sums of L and L² over all videos and over the ones the cache doesn't cover.
+			var sumL = new double[n + 1];
+			var sumL2 = new double[n + 1];
+			var sumLOpen = new double[n + 1];
+			var sumL2Open = new double[n + 1];
+			for (int k = 0; k < n; k++) {
+				seconds[k] = (videos[k].mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
+				double len = videos[k].AudioFingerprint?.Length ?? 0;
+				bool open = !isCovered(k);
+				sumL[k + 1] = sumL[k] + len;
+				sumL2[k + 1] = sumL2[k] + len * len;
+				sumLOpen[k + 1] = sumLOpen[k] + (open ? len : 0);
+				sumL2Open[k + 1] = sumL2Open[k] + (open ? len * len : 0);
+			}
+			// First index after `from` whose duration is below `limit` (durations are sorted descending).
+			int FirstBelow(int from, double limit) {
+				int lo = from, hi = n;
+				while (lo < hi) {
+					int mid = (lo + hi) >>> 1;
+					if (seconds[mid] < limit) hi = mid; else lo = mid + 1;
+				}
+				return lo;
+			}
+			var work = new long[n];
+			for (int i = 0; i < n - 1; i++) {
+				if (seconds[i] < 1.0)
+					continue;
+				int start = FirstBelow(i + 1, 0.95 * seconds[i]);
+				int end = FirstBelow(start, minRatio * seconds[i]);
+				if (end <= start)
+					continue;
+				bool covered = isCovered(i);
+				double l = videos[i].AudioFingerprint?.Length ?? 0;
+				double sL = covered ? sumLOpen[end] - sumLOpen[start] : sumL[end] - sumL[start];
+				double sL2 = covered ? sumL2Open[end] - sumL2Open[start] : sumL2[end] - sumL2[start];
+				// Scaled down: only ratios matter, and unscaled totals of a huge library could overflow a long.
+				work[i] = (long)(Math.Max(0, (l + 1) * sL - sL2) / 1024);
+			}
+			return work;
+		}
+
+		/// <summary>
 		/// The candidate pair loop both partial passes (audio fingerprint and visual/AI)
 		/// share: an upper-triangular parallel sweep over duration-descending videos with
 		/// the common duration prefilters — the clip must be shorter than 95% of the
@@ -2144,7 +2273,8 @@ namespace VDF.Core {
 			CollectPartialMatchCandidates(
 				List<FileEntry> videos,
 				Func<int, int, bool>? pairPrefilter,
-				Func<int, int, (float sim, int offsetSec)?> tryMatchPair) {
+				Func<int, int, (float sim, int offsetSec)?> tryMatchPair,
+				Func<int, long>? rowWork = null) {
 			var matches = new ConcurrentBag<(int sourceIdx, int clipIdx, float sim, int offsetSec)>();
 			long pairsChecked = 0; // long: 162k videos are ~13 billion pairs - an int wrapped negative in the summary log (#865)
 			try {
@@ -2173,7 +2303,7 @@ namespace VDF.Core {
 									matches.Add((i, j, match.sim, match.offsetSec));
 							}
 						}
-						IncrementProgress(Path.GetFileName(videos[i].Path));
+						IncrementProgress(Path.GetFileName(videos[i].Path), rowWork?.Invoke(i) ?? 0);
 					});
 			}
 			catch (OperationCanceledException) { }
