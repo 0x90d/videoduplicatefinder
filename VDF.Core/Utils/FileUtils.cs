@@ -14,6 +14,7 @@
 // */
 //
 
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.IO.Enumeration;
 using System.Linq;
@@ -76,22 +77,12 @@ namespace VDF.Core.Utils {
 		// mark whole libraries +S, and an unconditional System skip hid every one of them (#876).
 		// Hidden alone has been scanned since 2021 (a1c4806).
 		const FileAttributes HiddenSystemFolder = FileAttributes.Hidden | FileAttributes.System;
-		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken) {
-			EnumerationOptions enumerationOptions = new() {
-				IgnoreInaccessible = true,
-				// No attribute skip for files: a video marked +S or +H is still a video.
-				AttributesToSkip = FileAttributes.None
-			};
-
-			if (ignoreReadonly)
-				enumerationOptions.AttributesToSkip |= FileAttributes.ReadOnly;
-			if (ignoreReparsePoints)
-				enumerationOptions.AttributesToSkip |= FileAttributes.ReparsePoint;
-
-			// Subfolders are filtered explicitly (below) instead of via AttributesToSkip, so
-			// skipped folders can be counted and logged; an attribute-skipped folder silently
-			// hides its entire subtree otherwise (#876).
-			EnumerationOptions directoryEnumerationOptions = new() {
+		internal static List<FileInfo> GetFilesRecursive(string initial, bool ignoreReadonly, bool ignoreReparsePoints, bool recursive, bool includeImages, List<string> excludeFolders, CancellationToken cancellationToken, int maxParallelFolders = 1) {
+			// Nothing is skipped by attribute here: a video marked +S or +H is still a video, and
+			// subfolders are filtered explicitly (below) so skipped folders can be counted and
+			// logged; an attribute-skipped folder silently hides its entire subtree otherwise (#876).
+			// The files' ReadOnly/ReparsePoint options are applied in the listing's predicate.
+			EnumerationOptions listingOptions = new() {
 				IgnoreInaccessible = true,
 				AttributesToSkip = FileAttributes.None
 			};
@@ -101,75 +92,151 @@ namespace VDF.Core.Utils {
 			var extensionLookup = (includeImages ? AllExtensionSet : VideoExtensionSet)
 				.GetAlternateLookup<ReadOnlySpan<char>>();
 
-			List<FileInfo> files = new();
-			Queue<DirectoryInfo> subFolders = new();
-			subFolders.Enqueue(new(initial));
 			int skippedHiddenSystem = 0, skippedReadonly = 0, skippedReparse = 0;
 
-			while (subFolders.Count > 0) {
-				if (cancellationToken.IsCancellationRequested)
-					break;
-				DirectoryInfo currentFolder = subFolders.Dequeue();
+			bool IsExcluded(DirectoryInfo d) => excludeFolders.Any(x => {
+				if (x.IndexOfAny(['*', '?']) < 0)
+					return d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase);
+				bool hasSeparator = x.Contains(Path.DirectorySeparatorChar) || x.Contains(Path.AltDirectorySeparatorChar);
+				return hasSeparator
+					? System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(x, d.FullName)
+					: System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(x, d.Name);
+			});
+
+			// One listing per folder yields files and subfolders together: on a network share every
+			// opendir is a round trip, so reading each folder twice doubled the walk time.
+			void ProcessFolder(DirectoryInfo currentFolder, List<FileInfo> found, Action<DirectoryInfo> enqueue) {
+				List<DirectoryInfo> discovered = new();
+				bool listingFailed = false;
 				// File listing and subfolder discovery fail independently: a single
-				// unreadable entry aborting the file enumeration (e.g. filesystem
+				// unreadable entry aborting the enumeration (e.g. filesystem
 				// corruption on an external drive) must not cost the whole subtree —
 				// that turned "Include subfolders" into a no-op with only the root
 				// folder's files partially found and no per-subfolder hint (#876).
 				try {
-					files.AddRange(new FileSystemEnumerable<FileInfo>(currentFolder.FullName,
-						(ref FileSystemEntry entry) => (FileInfo)entry.ToFileSystemInfo(),
-						enumerationOptions) {
-						ShouldIncludePredicate = (ref FileSystemEntry entry) =>
-							!entry.IsDirectory && extensionLookup.Contains(Path.GetExtension(entry.FileName))
-					});
+					foreach (FileSystemInfo entry in new FileSystemEnumerable<FileSystemInfo>(currentFolder.FullName,
+						(ref FileSystemEntry e) => e.ToFileSystemInfo(),
+						listingOptions) {
+						ShouldIncludePredicate = (ref FileSystemEntry e) => {
+							if (e.IsDirectory)
+								return recursive;
+							if (!extensionLookup.Contains(Path.GetExtension(e.FileName)))
+								return false;
+							FileAttributes fileAttributes = e.Attributes;
+							return !((ignoreReadonly && (fileAttributes & FileAttributes.ReadOnly) != 0) ||
+								(ignoreReparsePoints && (fileAttributes & FileAttributes.ReparsePoint) != 0));
+						}
+					}) {
+						if (cancellationToken.IsCancellationRequested)
+							break;
+						if (entry is DirectoryInfo directory)
+							discovered.Add(directory);
+						else
+							found.Add((FileInfo)entry);
+					}
 				}
 				catch (DirectoryNotFoundException) {
-					// Deleted between discovery and enumeration — subfolder discovery
-					// below would fail the same way, and the initial folder's existence
-					// is checked by the caller.
-					continue;
+					// Deleted between discovery and enumeration — the initial folder's
+					// existence is checked by the caller.
+					return;
 				}
 				catch (Exception e) {
-					Logger.Instance.Warn($"Failed to list the files of '{currentFolder.FullName}' (files found before the error are kept, subfolders are still scanned): {e}");
+					listingFailed = true;
+					Logger.Instance.Warn($"Failed to list '{currentFolder.FullName}' (files found before the error are kept, subfolders are still scanned): {e}");
 				}
 
 				if (!recursive)
-					break;
+					return;
+				if (listingFailed) {
+					// The combined pass died partway, so its subfolder list is incomplete:
+					// list them separately, so one unreadable entry cannot hide the whole subtree (#876).
+					discovered.Clear();
+					try {
+						discovered.AddRange(currentFolder.EnumerateDirectories("*", listingOptions));
+					}
+					catch (DirectoryNotFoundException) { }
+					catch (Exception e) {
+						Logger.Instance.Warn($"Failed to list the subfolders of '{currentFolder.FullName}': {e}");
+					}
+				}
+
 				try {
-					foreach (DirectoryInfo subFolder in currentFolder.EnumerateDirectories("*", directoryEnumerationOptions)
-						.Where(d => !excludeFolders.Any(x => {
-							if (x.IndexOfAny(['*', '?']) < 0)
-								return d.FullName.Equals(x, StringComparison.OrdinalIgnoreCase);
-							bool hasSeparator = x.Contains(Path.DirectorySeparatorChar) || x.Contains(Path.AltDirectorySeparatorChar);
-							return hasSeparator
-								? System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(x, d.FullName)
-								: System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(x, d.Name);
-						}))) {
+					foreach (DirectoryInfo subFolder in discovered) {
 						if (cancellationToken.IsCancellationRequested)
 							break;
+						if (IsExcluded(subFolder))
+							continue;
 						// Attributes come prepopulated from the enumeration — no extra syscall.
 						FileAttributes attributes = subFolder.Attributes;
 						// Hidden AND System only (see HiddenSystemFolder); System alone is scanned.
 						if ((attributes & HiddenSystemFolder) == HiddenSystemFolder) {
-							skippedHiddenSystem++;
+							Interlocked.Increment(ref skippedHiddenSystem);
 							continue;
 						}
 						if (ignoreReadonly && (attributes & FileAttributes.ReadOnly) != 0) {
-							skippedReadonly++;
+							Interlocked.Increment(ref skippedReadonly);
 							continue;
 						}
 						if (ignoreReparsePoints && (attributes & FileAttributes.ReparsePoint) != 0) {
-							skippedReparse++;
+							Interlocked.Increment(ref skippedReparse);
 							continue;
 						}
-						subFolders.Enqueue(subFolder);
+						enqueue(subFolder);
 					}
 				}
-				catch (DirectoryNotFoundException) { }
 				catch (Exception e) {
 					Logger.Instance.Warn($"Failed to list the subfolders of '{currentFolder.FullName}': {e}");
 				}
 			}
+
+			List<FileInfo> files = new();
+			DirectoryInfo root = new(initial);
+			if (maxParallelFolders <= 1) {
+				Queue<DirectoryInfo> subFolders = new();
+				subFolders.Enqueue(root);
+				while (subFolders.Count > 0) {
+					if (cancellationToken.IsCancellationRequested)
+						break;
+					ProcessFolder(subFolders.Dequeue(), files, subFolders.Enqueue);
+				}
+			}
+			else {
+				using BlockingCollection<DirectoryInfo> queue = new();
+				// Folders queued or being listed; the last one finishing ends the workers.
+				int pending = 1;
+				queue.Add(root);
+				void Enqueue(DirectoryInfo folder) {
+					Interlocked.Increment(ref pending);
+					queue.Add(folder);
+				}
+				// Dedicated threads: the workers block on network I/O and would starve the thread pool.
+				Task<List<FileInfo>>[] workers = new Task<List<FileInfo>>[maxParallelFolders];
+				for (int i = 0; i < workers.Length; i++) {
+					workers[i] = Task.Factory.StartNew(() => {
+						List<FileInfo> local = new();
+						try {
+							foreach (DirectoryInfo folder in queue.GetConsumingEnumerable(cancellationToken)) {
+								try {
+									ProcessFolder(folder, local, Enqueue);
+								}
+								finally {
+									if (Interlocked.Decrement(ref pending) == 0)
+										queue.CompleteAdding();
+								}
+							}
+						}
+						catch (OperationCanceledException) { }
+						return local;
+					}, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+				}
+				Task.WaitAll(workers);
+				foreach (Task<List<FileInfo>> worker in workers)
+					files.AddRange(worker.Result);
+			}
+
+			// Worker timing must not change the result: relinking moved files later picks the first
+			// match in processing order, so the order has to be deterministic.
+			files.Sort((a, b) => string.CompareOrdinal(a.FullName, b.FullName));
 
 			if (skippedHiddenSystem + skippedReadonly + skippedReparse > 0) {
 				var reasons = new List<string>(3);
