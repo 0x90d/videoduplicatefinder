@@ -22,8 +22,9 @@ namespace VDF.IntegrationTests.FFTools;
 
 /// <summary>
 /// "Always retry failed sampling" re-decodes files whose sampling failed in an earlier scan.
-/// Those retries must not switch the native binding off for the whole scan: a rescan often
-/// analyses little else, so five known-bad files in a row did it within seconds.
+/// Those retries must neither switch the native binding off for the whole scan (a rescan
+/// often analyses little else, so five known-bad files in a row did it within seconds) nor
+/// leave a file that now decodes marked as failed.
 /// </summary>
 [Collection("Ffmpeg")]
 public class RetryFailedSamplingTests {
@@ -65,5 +66,35 @@ public class RetryFailedSamplingTests {
 			Assert.False(FfmpegEngine.GetGrayBytesFromVideo(EntryFor(_fixture.H264_FullyCorrupted!, failedBefore: true), Positions, 0, extendedLogging: false));
 		Assert.False(log.Any(SwitchOffMessage));
 		Assert.False(FfmpegEngine.NativeDisabledForSession);
+	}
+
+	[SkippableFact]
+	public void SuccessfulRetry_ClearsTheFailedMark() {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var guard = NativeSoftwareDecode();
+		var entry = EntryFor(_fixture.H264_8bit!, failedBefore: true);
+
+		Assert.True(FfmpegEngine.GetGrayBytesFromVideo(entry, Positions, 0, extendedLogging: false));
+		Assert.Equal(Positions.Count, entry.grayBytes.Count);
+		Assert.False(entry.Flags.Has(EntryFlags.ThumbnailError));
+	}
+
+	[SkippableFact]
+	public void NothingToDecode_KeepsTheFailedMark() {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var guard = NativeSoftwareDecode();
+		var entry = EntryFor(_fixture.H264_8bit!, failedBefore: false);
+		Assert.True(FfmpegEngine.GetGrayBytesFromVideo(entry, Positions, 0, extendedLogging: false));
+
+		// All frames cached, yet marked failed: what the crash quarantine leaves for a file that
+		// took the process down in the partial-clip visual gate. Nothing was decoded, so nothing
+		// shows the file is safe again.
+		entry.Flags.Set(EntryFlags.ThumbnailError);
+		Assert.True(FfmpegEngine.GetGrayBytesFromVideo(entry, Positions, 0, extendedLogging: false));
+		Assert.True(entry.Flags.Has(EntryFlags.ThumbnailError));
 	}
 }

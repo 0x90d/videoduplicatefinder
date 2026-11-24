@@ -970,6 +970,11 @@ namespace VDF.Core.FFTools {
 			// we actually extracted this run, not the total positions (which may already
 			// be partially cached from a prior scan).
 			int missingPositions = CountMissingGrayBytePositions(videoFile, positions, maxSamplingDurationSeconds);
+			// A retry ("Always retry failed sampling") that decodes every missing frame proves the
+			// file samples fine now; left set, ThumbnailError kept it out of every comparison and
+			// retried it on every scan. Nothing decoded proves nothing: the crash quarantine marks
+			// fully sampled files that took the process down later (#863), and those stay marked.
+			bool decodesFrames = missingPositions > 0;
 			bool missingEmbeddings = false;
 			if (embeddingSink != null) {
 				for (int i = 0; i < positions.Count && !missingEmbeddings; i++)
@@ -993,6 +998,8 @@ namespace VDF.Core.FFTools {
 						Logger.Instance.Warn($"Graybytes too dark of: {videoFile.Path}");
 						return false;
 					}
+					if (decodesFrames)
+						videoFile.Flags.Set(EntryFlags.ThumbnailError, false);
 					return true;
 				}
 				if (ShouldSkipProcessRetryForCorruptFile(nativeFailureCategory, GetConfiguredHardwareDeviceType())) {
@@ -1073,6 +1080,8 @@ namespace VDF.Core.FFTools {
 				Logger.Instance.Warn($"Graybytes too dark of: {videoFile.Path}");
 				return false;
 			}
+			if (decodesFrames)
+				videoFile.Flags.Set(EntryFlags.ThumbnailError, false);
 			return true;
 		}
 
