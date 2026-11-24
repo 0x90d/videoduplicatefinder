@@ -27,6 +27,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
 using System.Text.Json;
 using VDF.Core.FFTools;
 using VDF.Core.Utils;
@@ -2452,8 +2453,29 @@ namespace VDF.Core {
 			int totalBits = 0;
 			int k = 0;
 
+			// --- ARM64 NEON path (32 × uint per iteration) ---
+			// Counts bits per byte in vector registers and reduces once per 32 blocks: moving each
+			// 64-bit lane out to a general register for PopCount made the partial-clip pass about
+			// 3.4x slower on Apple Silicon. Eight byte-wise counts sum to at most 64 per lane, so
+			// nothing overflows. The budget check runs less often, which can't change the result:
+			// the total only grows, and callers only test it against the budget.
+			if (AdvSimd.Arm64.IsSupported && len >= 32) {
+				ref uint aRef = ref MemoryMarshal.GetArrayDataReference(a);
+				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(b), offset);
+
+				for (; k + 32 <= len; k += 32) {
+					var s0 = XorPopCount(ref aRef, ref bRef, (nuint)k) + XorPopCount(ref aRef, ref bRef, (nuint)k + 4)
+						   + XorPopCount(ref aRef, ref bRef, (nuint)k + 8) + XorPopCount(ref aRef, ref bRef, (nuint)k + 12);
+					var s1 = XorPopCount(ref aRef, ref bRef, (nuint)k + 16) + XorPopCount(ref aRef, ref bRef, (nuint)k + 20)
+						   + XorPopCount(ref aRef, ref bRef, (nuint)k + 24) + XorPopCount(ref aRef, ref bRef, (nuint)k + 28);
+					totalBits += AdvSimd.Arm64.AddAcrossWidening(s0 + s1).ToScalar();
+					if (totalBits > maxAllowedBits) return totalBits;
+				}
+				for (; k + 4 <= len; k += 4)
+					totalBits += AdvSimd.Arm64.AddAcross(XorPopCount(ref aRef, ref bRef, (nuint)k)).ToScalar();
+			}
 			// --- Vector256 path (8 × uint per iteration) ---
-			if (Vector256.IsHardwareAccelerated && len >= 8) {
+			else if (Vector256.IsHardwareAccelerated && len >= 8) {
 				ref uint aRef = ref MemoryMarshal.GetArrayDataReference(a);
 				ref uint bRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(b), offset);
 
@@ -2496,6 +2518,10 @@ namespace VDF.Core {
 
 			return totalBits;
 		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		static Vector128<byte> XorPopCount(ref uint a, ref uint b, nuint k) =>
+			AdvSimd.PopCount((Vector128.LoadUnsafe(ref a, k) ^ Vector128.LoadUnsafe(ref b, k)).AsByte());
 
 		/// <summary>
 		/// Ceiling for one group's pairwise similarity matrix in <see cref="SplitDaisyChainGroups"/>;
