@@ -2090,8 +2090,8 @@ namespace VDF.Core {
 			// Uses pHash when Settings.UsePHashing is on, else 32x32 grayscale percentage diff.
 			var assignments = Settings.PartialClipRequireVisualMatch
 				? AssignAndVerifyPartialClips(videos, matches,
-					(source, clip, offsetSec) => {
-						bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim);
+					(source, clip, offsetSec, clipFrames) => {
+						bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim, clipFrames);
 						return (pass, visualSim);
 					})
 				: AssignPartialClipGroups(matches);
@@ -2195,95 +2195,98 @@ namespace VDF.Core {
 		/// failed the visual check, even with a correct source further down its candidate list;
 		/// lowering the audio threshold made that more likely, since more wrong long sources
 		/// come first (#925). Verifying every candidate up front would decode frames for all of
-		/// them (17k candidates in that report, 5 survived), so this only verifies what the
-		/// assignment actually picks and repeats with the rejected pairs removed until every
-		/// assigned pair has passed. Each round rejects at least one pair, so it ends.
+		/// them (17k candidates in that report, 5 survived), so the gate walks each clip's
+		/// candidates in source order and stops at the first that passes. A clip's final source
+		/// depends only on its own candidates, so one pass over the clips gives the same result
+		/// as assigning and re-verifying in rounds, without the long thinly-parallel tail of
+		/// rounds that each had only the previous round's rejects left to do. The assignment and
+		/// group ids are then built once from the pairs that passed.
 		/// </summary>
 		internal List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> AssignAndVerifyPartialClips(
 			List<FileEntry> videos,
 			IEnumerable<(int sourceIdx, int clipIdx, float sim, int offsetSec)> matches,
-			Func<FileEntry, FileEntry, int, (bool pass, float visualSim)> verify) {
-			var candidates = matches.ToList();
-			var passed = new HashSet<(int, int)>();
-			var rejected = new HashSet<(int, int)>();
-			for (int round = 1; ; round++) {
-				var assignments = AssignPartialClipGroups(candidates.Where(m => !rejected.Contains((m.sourceIdx, m.clipIdx))));
-				var unverified = assignments.Where(a => !passed.Contains((a.sourceIdx, a.clipIdx))).ToList();
-				if (unverified.Count == 0)
-					return assignments;
-				if (round > 1)
-					Logger.Instance.Info($"Partial clip detection: {unverified.Count} clip(s) reassigned to their next candidate source, verifying again (round {round})");
+			Func<FileEntry, FileEntry, int, PartialClipFrameCache, (bool pass, float visualSim)> verify) =>
+			AssignPartialClipGroups(RunPartialClipVisualGate(videos, matches.ToList(), verify));
 
-				var kept = RunPartialClipVisualGate(videos, unverified, verify);
-				if (cancelationTokenSource.IsCancellationRequested) {
-					foreach (var a in kept)
-						passed.Add((a.sourceIdx, a.clipIdx));
-					return assignments.Where(a => passed.Contains((a.sourceIdx, a.clipIdx))).ToList();
-				}
-				var keptPairs = kept.Select(a => (a.sourceIdx, a.clipIdx)).ToHashSet();
-				foreach (var a in unverified) {
-					if (keptPairs.Contains((a.sourceIdx, a.clipIdx)))
-						passed.Add((a.sourceIdx, a.clipIdx));
-					else
-						rejected.Add((a.sourceIdx, a.clipIdx));
-				}
-			}
+		/// <summary>
+		/// The clip's decoded gray frames for one sample-time list, reused across the candidate
+		/// sources of a single clip (they usually sample the same times). Used by one worker at
+		/// a time, so it needs no locking.
+		/// </summary>
+		internal sealed class PartialClipFrameCache {
+			internal List<double>? Times;
+			internal byte[]?[]? Frames;
 		}
 
 		/// <summary>
-		/// Runs <paramref name="verify"/> over every candidate assignment and returns the ones that
-		/// pass, ordered deterministically. Its own progress phase: the gate decodes frames off disk
-		/// and can outlast the audio pass that produced the assignments, so leaving it silent left
-		/// the UI showing that pass's completed counters for minutes on end (#831).
+		/// Decodes gray frames; replaceable so tests can count decodes without FFmpeg.
+		/// </summary>
+		internal Func<string, IReadOnlyList<double>, bool, byte[]?[]> DecodeGrayFrames { get; set; } = FfmpegEngine.GetGrayFrames;
+
+		/// <summary>
+		/// For every clip, verifies its candidate sources in ascending source order until one
+		/// passes, and returns the passing pairs ordered deterministically. Its own progress
+		/// phase (counting clips): the gate decodes frames off disk and can outlast the audio
+		/// pass that produced the candidates, so leaving it silent left the UI showing that
+		/// pass's completed counters for minutes on end (#831).
 		/// <paramref name="verify"/> is injected so tests can drive the phase without FFmpeg.
 		/// </summary>
-		internal List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> RunPartialClipVisualGate(
+		internal List<(int sourceIdx, int clipIdx, float sim, int offsetSec)> RunPartialClipVisualGate(
 			List<FileEntry> videos,
-			List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> assignments,
-			Func<FileEntry, FileEntry, int, (bool pass, float visualSim)> verify) {
+			List<(int sourceIdx, int clipIdx, float sim, int offsetSec)> candidates,
+			Func<FileEntry, FileEntry, int, PartialClipFrameCache, (bool pass, float visualSim)> verify) {
 
-			InitProgress(assignments.Count, T("Scan.Stage.PartialVisualVerify"));
+			var byClip = candidates
+				.GroupBy(m => m.clipIdx)
+				.Select(g => g.OrderBy(m => m.sourceIdx).ToList())
+				.ToList();
+			InitProgress(byClip.Count, T("Scan.Stage.PartialVisualVerify"));
 
-			int beforeCount = assignments.Count;
+			int pairsVerified = 0;
 			int dropped = 0;
-			var verified = new ConcurrentBag<(int, int, float, int, Guid)>();
+			var verified = new ConcurrentBag<(int, int, float, int)>();
 			try {
 				// Storage-tuned degree, NOT MatchingParallelDegree: unlike the audio
 				// fingerprint pass above (pure CPU over in-memory fingerprints), the visual
 				// gate decodes frames live off disk via GetGrayFrames, so it must respect the
 				// media-read cap that HDD users lower to avoid seek-thrash.
-				Parallel.ForEach(assignments, new ParallelOptions {
+				Parallel.ForEach(byClip, new ParallelOptions {
 					CancellationToken = cancelationTokenSource.Token,
 					MaxDegreeOfParallelism = ParallelDegree
-				}, a => {
-					if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token))
-						return; // canceled while paused — the loop's token ends the remaining iterations
+				}, clipCandidates => {
+					var clip = videos[clipCandidates[0].clipIdx];
+					var frames = new PartialClipFrameCache();
+					foreach (var a in clipCandidates) {
+						if (!pauseTokenSource.TryWaitWhilePaused(cancelationTokenSource.Token)
+							|| cancelationTokenSource.IsCancellationRequested)
+							return; // canceled: the clip is unfinished, so it contributes no pass
 
-					// Files whose frame decoding previously failed - or took the whole process
-					// down (#863: quarantined via the crash journal) - must not be decoded
-					// again. Keep the assignment: exactly like the no-frames case inside
-					// VerifyPartialClipVisually, the audio match alone decides.
-					if (PartialVerifyDecodeBlocked(videos[a.sourceIdx], videos[a.clipIdx])) {
-						verified.Add(a);
-						IncrementProgress(System.IO.Path.GetFileName(videos[a.clipIdx].Path));
-						return;
-					}
+						var source = videos[a.sourceIdx];
+						// Files whose frame decoding previously failed - or took the whole process
+						// down (#863: quarantined via the crash journal) - must not be decoded
+						// again. Keep the assignment: exactly like the no-frames case inside
+						// VerifyPartialClipVisually, the audio match alone decides.
+						if (PartialVerifyDecodeBlocked(source, clip)) {
+							verified.Add(a);
+							break;
+						}
 
-					var (pass, visualSim) = verify(videos[a.sourceIdx], videos[a.clipIdx], a.offsetSec);
-					if (pass) {
-						verified.Add(a);
-					}
-					else {
+						Interlocked.Increment(ref pairsVerified);
+						var (pass, visualSim) = verify(source, clip, a.offsetSec, frames);
+						if (pass) {
+							verified.Add(a);
+							break;
+						}
 						Interlocked.Increment(ref dropped);
 						if (Settings.ExtendedFFToolsLogging)
-							Logger.Instance.Info($"[Partial] Visual gate dropped {System.IO.Path.GetFileName(videos[a.clipIdx].Path)} in {System.IO.Path.GetFileName(videos[a.sourceIdx].Path)}: visualSim={visualSim:P1} (threshold {Settings.PartialClipVisualThreshold:P0})");
+							Logger.Instance.Info($"[Partial] Visual gate dropped {System.IO.Path.GetFileName(clip.Path)} in {System.IO.Path.GetFileName(source.Path)}: visualSim={visualSim:P1} (threshold {Settings.PartialClipVisualThreshold:P0})");
 					}
-					IncrementProgress(System.IO.Path.GetFileName(videos[a.clipIdx].Path));
+					IncrementProgress(System.IO.Path.GetFileName(clip.Path));
 				});
 			}
 			catch (OperationCanceledException) { }
 			var kept = verified.OrderBy(a => a.Item1).ThenBy(a => a.Item2).ToList();
-			Logger.Instance.Info($"Partial clip detection: visual gate kept {kept.Count}/{beforeCount} assignment(s), dropped {dropped}");
+			Logger.Instance.Info($"Partial clip detection: visual gate checked {byClip.Count} clip(s), verified {pairsVerified} pair(s), kept {kept.Count}, dropped {dropped}");
 			return kept;
 		}
 
@@ -2320,8 +2323,10 @@ namespace VDF.Core {
 		/// when the average similarity meets <see cref="Settings.PartialClipVisualThreshold"/>,
 		/// or when no frames could be sampled (in which case audio alone decides). Uses pHash
 		/// when <see cref="Settings.UsePHashing"/> is enabled, otherwise grayscale percent diff.
+		/// <paramref name="clipFrames"/> lets a caller checking one clip against several sources
+		/// decode the clip's frames once: they are reused while the sample times match.
 		/// </summary>
-		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim) {
+		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim, PartialClipFrameCache? clipFrames = null) {
 			visualSim = 0f;
 			double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 			double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
@@ -2347,15 +2352,24 @@ namespace VDF.Core {
 			// the next scan quarantines the file that was in flight instead of dying on it
 			// again. Same mechanism as the sampling phase (#861).
 			ScanCrashJournal.Begin(ScanCrashJournal.PhasePartialVerify, source.Path);
-			byte[]?[] srcFrames = FfmpegEngine.GetGrayFrames(source.Path, srcSampleTimes, Settings.ExtendedFFToolsLogging);
+			byte[]?[] srcFrames = DecodeGrayFrames(source.Path, srcSampleTimes, Settings.ExtendedFFToolsLogging);
 			ScanCrashJournal.End();
-			ScanCrashJournal.Begin(ScanCrashJournal.PhasePartialVerify, clip.Path);
-			byte[]?[] clipFrames = FfmpegEngine.GetGrayFrames(clip.Path, clipSampleTimes, Settings.ExtendedFFToolsLogging);
-			ScanCrashJournal.End();
+			byte[]?[] clipDecoded;
+			if (clipFrames?.Frames != null && clipFrames.Times!.SequenceEqual(clipSampleTimes))
+				clipDecoded = clipFrames.Frames;
+			else {
+				ScanCrashJournal.Begin(ScanCrashJournal.PhasePartialVerify, clip.Path);
+				clipDecoded = DecodeGrayFrames(clip.Path, clipSampleTimes, Settings.ExtendedFFToolsLogging);
+				ScanCrashJournal.End();
+				if (clipFrames != null) {
+					clipFrames.Times = clipSampleTimes;
+					clipFrames.Frames = clipDecoded;
+				}
+			}
 
 			for (int i = 0; i < srcSampleTimes.Count; i++) {
 				byte[]? srcFrame = srcFrames[i];
-				byte[]? clipFrame = clipFrames[i];
+				byte[]? clipFrame = clipDecoded[i];
 				if (srcFrame == null || clipFrame == null) continue;
 
 				float pairSim;

@@ -29,10 +29,10 @@ public class PartialClipProgressTests {
 	static FileEntry Video(string name) => new() { _Path = Path.Combine(Path.GetTempPath(), name) };
 
 	/// <summary>index 0 is the source, 1..count are its candidate clips.</summary>
-	static List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> Assignments(int count) {
-		var list = new List<(int, int, float, int, Guid)>();
+	static List<(int sourceIdx, int clipIdx, float sim, int offsetSec)> Assignments(int count) {
+		var list = new List<(int, int, float, int)>();
 		for (int i = 0; i < count; i++)
-			list.Add((0, i + 1, 0.9f, 0, Guid.NewGuid()));
+			list.Add((0, i + 1, 0.9f, 0));
 		return list;
 	}
 
@@ -65,7 +65,7 @@ public class PartialClipProgressTests {
 		Assert.Equal(6722, events.Last().MaxPosition);
 
 		engine.RunPartialClipVisualGate(VideosFor(assignmentCount), Assignments(assignmentCount),
-			(_, _, _) => (true, 1f));
+			(_, _, _, _) => (true, 1f));
 
 		var gateEvents = events.Where(e => e.CurrentStage == "verifying partial clips").ToList();
 		Assert.NotEmpty(gateEvents);
@@ -84,7 +84,7 @@ public class PartialClipProgressTests {
 		var verified = new ConcurrentBag<string>();
 
 		var kept = engine.RunPartialClipVisualGate(VideosFor(assignmentCount), Assignments(assignmentCount),
-			(_, clip, _) => {
+			(_, clip, _, _) => {
 				verified.Add(clip.Path);
 				// Drop the odd-numbered clips.
 				return (int.Parse(Path.GetFileNameWithoutExtension(clip.Path)["clip".Length..]) % 2 == 0, 0.5f);
@@ -107,7 +107,7 @@ public class PartialClipProgressTests {
 
 		int verifyCalls = 0;
 		var gate = Task.Run(() => engine.RunPartialClipVisualGate(VideosFor(3), Assignments(3),
-			(_, _, _) => { Interlocked.Increment(ref verifyCalls); return (true, 1f); }));
+			(_, _, _, _) => { Interlocked.Increment(ref verifyCalls); return (true, 1f); }));
 
 		var early = await Task.WhenAny(gate, Task.Delay(TimeSpan.FromMilliseconds(300)));
 		Assert.True(early != gate, "The visual gate ran straight through a paused scan.");

@@ -133,13 +133,13 @@ public class PartialVerifyDecodeBlockTests {
 		var engine = new ScanEngine();
 		var videos = new List<FileEntry> { Video("source.mp4"), Video("clip0.mp4"), Video("clip1.mp4") };
 		videos[1].Flags.Set(EntryFlags.ThumbnailError); // quarantined after a decoder crash
-		var assignments = new List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> {
-			(0, 1, 0.9f, 0, Guid.NewGuid()),
-			(0, 2, 0.9f, 0, Guid.NewGuid()),
+		var assignments = new List<(int sourceIdx, int clipIdx, float sim, int offsetSec)> {
+			(0, 1, 0.9f, 0),
+			(0, 2, 0.9f, 0),
 		};
 
 		var verifiedPaths = new List<string>();
-		var kept = engine.RunPartialClipVisualGate(videos, assignments, (_, clip, _) => {
+		var kept = engine.RunPartialClipVisualGate(videos, assignments, (_, clip, _, _) => {
 			lock (verifiedPaths)
 				verifiedPaths.Add(clip.Path);
 			return (false, 0f); // the verifier drops everything it is actually asked about
