@@ -37,4 +37,18 @@ public class ResultLookupTests {
 			DatabaseUtils.Database.Remove(entry);
 		}
 	}
+
+	[Fact]
+	public void ExcludingAResultWhoseFileIsGone_FlagsItWithoutThrowing() {
+		string gone = Path.Combine(Path.GetTempPath(), $"vdf-gone-{Guid.NewGuid():N}.mp4");
+		var entry = new FileEntry { _Path = gone, Folder = Path.GetDirectoryName(gone)! };
+		DatabaseUtils.Database.Add(entry);
+		try {
+			DatabaseUtils.BlacklistFileEntry(gone);
+			Assert.True(entry.Flags.Has(EntryFlags.ManuallyExcluded));
+		}
+		finally {
+			DatabaseUtils.Database.Remove(entry);
+		}
+	}
 }
