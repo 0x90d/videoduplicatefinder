@@ -46,6 +46,8 @@ public class ScanEngineAbortTests {
 
 			var winner = await Task.WhenAny(aborted.Task, Task.Delay(TimeSpan.FromSeconds(30)));
 			Assert.True(winner == aborted.Task, "ScanAborted was not raised — the failed scan would hang the UI forever.");
+			// The file list finished before the failure; a later compare-only run must check the disk again.
+			Assert.Null(engine.filesFoundThisScan);
 		}
 		finally {
 			VDF.Core.Utils.DatabaseUtils.CustomDatabaseFolder = null;

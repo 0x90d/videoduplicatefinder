@@ -69,4 +69,14 @@ public class MissingFileInclusionTests {
 
 		Assert.False(engine.InvalidEntry(entry, out _, out _));
 	}
+
+	[Fact]
+	public void FileFoundByThisScansWalk_IsNotCheckedAgain() {
+		// The walk has just listed it; asking the disk again costs a round trip per file on a
+		// network share. MissingPath does not exist, so passing proves the check was skipped.
+		var engine = MakeEngine();
+		engine.filesFoundThisScan = new HashSet<string> { MissingPath };
+
+		Assert.False(engine.InvalidEntry(MissingEntry(), out _, out _));
+	}
 }

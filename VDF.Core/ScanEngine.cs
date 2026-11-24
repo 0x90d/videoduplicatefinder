@@ -61,6 +61,10 @@ namespace VDF.Core {
 		// Live only while a scan's hashing phase runs (see StartSearch): receives decoded
 		// 224x224 RGB frames and writes int8 embeddings into the union embedding sidecar.
 		AI.EmbeddingPipeline? aiEmbeddingPipeline;
+		// Paths BuildFileList just enumerated. GatherInfos skips its existence check for these: on a
+		// network share each check is a round trip, repeated for every file on every rescan. Only
+		// valid until gathering ends, so a later compare-only run checks the disk again.
+		internal HashSet<string>? filesFoundThisScan;
 		// The union pass's embedding sidecar. Loaded when an AI-enabled scan starts (or
 		// lazily for a compare-only run), saved after the hashing phase, and released once
 		// the compare snapshots are built — embeddings only occupy memory while needed.
@@ -363,6 +367,7 @@ namespace VDF.Core {
 					}
 				}
 				finally {
+					filesFoundThisScan = null;
 					aiEmbeddingPipeline?.Dispose();
 					aiEmbeddingPipeline = null;
 					// Persist whatever got embedded — also on cancel/error, the work is
@@ -456,6 +461,9 @@ namespace VDF.Core {
 		/// </summary>
 		void AbortScanOnError(Exception ex) {
 			compareIsChainedToSearch = false;
+			// Normally cleared when gathering ends; a file list that died first must not leave
+			// stale "seen on disk" paths for a later compare-only run on this engine.
+			filesFoundThisScan = null;
 			if (ex is OperationCanceledException)
 				Logger.Instance.Info(T("Log.ScanAborted"));
 			else
@@ -710,6 +718,7 @@ namespace VDF.Core {
 					lst.Add(e);
 				}
 			int relinkedCount = 0;
+			filesFoundThisScan = new HashSet<string>(CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
 			foreach (string path in Settings.IncludeList) {
 				if (cancellationToken.IsCancellationRequested)
@@ -744,6 +753,7 @@ namespace VDF.Core {
 					}
 					else
 						RefreshExistingEntry(fEntry, dbEntry);
+					filesFoundThisScan.Add(fEntry.Path);
 				}
 			}
 
@@ -856,7 +866,7 @@ namespace VDF.Core {
 				reason = "file is marked as too dark";
 				return true;
 			}
-			if (!Settings.IncludeMissingFiles && !File.Exists(entry.Path)) {
+			if (!Settings.IncludeMissingFiles && filesFoundThisScan?.Contains(entry.Path) != true && !File.Exists(entry.Path)) {
 				reason = "file does not exist";
 				return true;
 			}
@@ -1063,7 +1073,9 @@ namespace VDF.Core {
 						if (entry.OsHash == null && IsInIncludeScope(entry))
 							entry.OsHash = OsHashUtils.TryCompute(entry.Path);
 
-						if (Settings.IncludeMissingFiles && entry.grayBytes?.Count > 0) {
+						// Fully cached entries finish here without touching the file again. Videos need
+						// mediaInfo for their sample positions; one without it falls through to be probed.
+						if (entry.grayBytes?.Count > 0 && (entry.IsImage || entry.mediaInfo != null)) {
 							bool hasAllInformation = entry.IsImage && HasUsableCachedGray(entry, 0);
 							if (!entry.IsImage) {
 								hasAllInformation = true;
