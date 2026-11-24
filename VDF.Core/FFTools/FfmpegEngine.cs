@@ -51,29 +51,48 @@ namespace VDF.Core.FFTools {
 				_nativeConsecutiveFailures = 0;
 				_nativeFailureLogCount = 0;
 				_nativeDisabledForSession = false;
+				_nativeHasSucceeded = false;
 				_vulkanNativeWarningLogged = false;
 			}
 		}
 
 		// Native-binding health. When the libraries load but native operations keep failing
 		// (e.g. a hardware-decode mismatch — issue #795), fall back to process mode for the
-		// rest of the scan after a few consecutive failures, with one summary message instead
-		// of a per-file stack-trace storm. A native success resets the counter so an isolated
-		// bad file doesn't disable native for the whole library.
+		// rest of the scan after a few failures, with one summary message instead
+		// of a per-file stack-trace storm. Only failures that can mean the binding itself is
+		// broken count (see CountsTowardsSwitchOff), and only until native has decoded a file
+		// this scan: from then on it demonstrably works and a failure is the file's problem.
 		static int _nativeConsecutiveFailures;
 		static bool _nativeDisabledForSession;
+		static volatile bool _nativeHasSucceeded;
 		const int NativeFailureThreshold = 5;
+
+		/// <summary>
+		/// Whether a native failure counts towards switching native off for the scan. Damaged,
+		/// unreadable and unsupported files fail the same way in process mode, so they say
+		/// nothing about the binding. Neither does a file that already failed in an earlier
+		/// scan: with "Always retry failed sampling" a rescan often has little to analyse besides
+		/// such files, and counting them switched native off within seconds.
+		/// </summary>
+		internal static bool CountsTowardsSwitchOff(FfmpegErrorCategory category, bool fileFailedBefore, bool nativeHasSucceeded) =>
+			!nativeHasSucceeded && !fileFailedBefore &&
+			category is FfmpegErrorCategory.Unknown or FfmpegErrorCategory.LibraryLoad or FfmpegErrorCategory.HardwareAcceleration;
+
+		/// <summary>True once native has switched itself off for the rest of the scan.</summary>
+		internal static bool NativeDisabledForSession => _nativeDisabledForSession;
 
 		/// <summary>True when a native FFmpeg operation should be attempted.</summary>
 		static bool ShouldUseNativeBinding =>
 			UseNativeBinding && !_nativeDisabledForSession && FFmpegNative.FFmpegHelper.CanLoadNativeLibraries;
 
-		static void RecordNativeSuccess() => _nativeConsecutiveFailures = 0;
+		static void RecordNativeSuccess() {
+			_nativeHasSucceeded = true;
+		}
 
-		// Per-scan cap on native-failure log output. The consecutive-failure circuit breaker
-		// above never trips on a library where working files keep resetting the counter, so a
-		// scan with many isolated bad files logged a full stack trace per failure — one report
-		// (issue #861) reached an 820 MB log. Total-count tiers instead: full detail for the
+		// Per-scan cap on native-failure log output. The circuit breaker above stops counting
+		// once native has decoded a file, so it never trips on a library where working files
+		// sit among the bad ones, and a scan with many isolated bad files logged a full stack
+		// trace per failure — one report (issue #861) reached an 820 MB log. Total-count tiers instead: full detail for the
 		// first few, a compact line for a while, then only periodic running-count summaries.
 		static int _nativeFailureLogCount;
 		const int NativeFailureFullDetailLimit = 20;
@@ -92,17 +111,19 @@ namespace VDF.Core.FFTools {
 				: NativeFailureLogMode.Suppressed;
 		}
 
-		static void RecordNativeFailure(string file, Exception e) {
+		internal static void RecordNativeFailure(string file, Exception e, FfmpegErrorCategory category, bool fileFailedBefore) {
 			if (_nativeDisabledForSession)
 				return;
-			int n = ++_nativeConsecutiveFailures;
-			if (n >= NativeFailureThreshold) {
-				_nativeDisabledForSession = true;
-				Logger.Instance.Warn(
-					$"Native FFmpeg binding failed on {n} consecutive files; using process mode for the rest of this scan. " +
-					$"Last error on '{file}': {e.GetType().Name}: {e.Message}.{BuildNativeFailureDetail(e)} " +
-					$"If this persists, set hardware acceleration to 'none' or disable 'Use native FFmpeg binding'.");
-				return;
+			if (CountsTowardsSwitchOff(category, fileFailedBefore, _nativeHasSucceeded)) {
+				int n = Interlocked.Increment(ref _nativeConsecutiveFailures);
+				if (n >= NativeFailureThreshold) {
+					_nativeDisabledForSession = true;
+					Logger.Instance.Warn(
+						$"Native FFmpeg binding failed on {n} files before decoding any this scan; using process mode for the rest of this scan. " +
+						$"Last error on '{file}': {e.GetType().Name}: {e.Message}.{BuildNativeFailureDetail(e)} " +
+						$"If this persists, set hardware acceleration to 'none' or disable 'Use native FFmpeg binding'.");
+					return;
+				}
 			}
 			int logged = Interlocked.Increment(ref _nativeFailureLogCount);
 			switch (GetNativeFailureLogMode(logged)) {
@@ -116,6 +137,15 @@ namespace VDF.Core.FFTools {
 					Logger.Instance.Warn($"Native FFmpeg binding has failed on {logged} files this scan (per-file warnings suppressed after the first {NativeFailureCompactLimit}). Last: '{file}': {e.Message}");
 					break;
 			}
+		}
+
+		/// <summary>
+		/// Same diagnostics combination BuildNativeFailureDetail logs, so the category always
+		/// matches the hint the user sees for this failure.
+		/// </summary>
+		static FfmpegErrorCategory ClassifyNativeFailure(Exception e) {
+			string diagnostics = FfmpegLogCapture.GetRecent();
+			return FfmpegErrorClassifier.Categorize(diagnostics.Length > 0 ? $"{diagnostics} {e.Message}" : e.Message);
 		}
 
 		/// <summary>
@@ -389,15 +419,11 @@ namespace VDF.Core.FFTools {
 				return true;
 			}
 			catch (Exception e) {
-				// Same diagnostics combination BuildNativeFailureDetail logs, so the category
-				// always matches the Hint the user sees for this failure.
-				string diagnostics = FfmpegLogCapture.GetRecent();
-				failureCategory = FfmpegErrorClassifier.Categorize(
-					diagnostics.Length > 0 ? $"{diagnostics} {e.Message}" : e.Message);
+				failureCategory = ClassifyNativeFailure(e);
 				// One failure recorded per video file (not per position) so the session
 				// circuit breaker reflects per-file native health (issues #793/#795). The
 				// per-sample fallback below still re-attempts native but does not record.
-				RecordNativeFailure(videoFile.Path, e);
+				RecordNativeFailure(videoFile.Path, e, failureCategory, fileFailedBefore: videoFile.Flags.Has(EntryFlags.ThumbnailError));
 				return false;
 			}
 		}
@@ -472,8 +498,9 @@ namespace VDF.Core.FFTools {
 				}
 				catch (Exception e) {
 					// One failure recorded per video file; the per-frame fallback below still
-					// re-attempts native but does not record (issues #793/#795).
-					RecordNativeFailure(filePath, e);
+					// re-attempts native but does not record (issues #793/#795). The visual gate
+					// never decodes files that failed before (PartialVerifyDecodeBlocked).
+					RecordNativeFailure(filePath, e, ClassifyNativeFailure(e), fileFailedBefore: false);
 				}
 			}
 
