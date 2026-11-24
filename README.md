@@ -33,6 +33,8 @@ In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detectio
 
 > **Note:** Partial clip detection requires audio tracks in both files. Videos without audio are skipped — for those, see the visual variant under **AI Matching** below.
 
+Comparing every pair of a large library is the slowest part of a scan, so the audio comparison results are kept in `PartialClipCache.bin` next to the scan database. A rescan only compares pairs that involve a new or changed video; changing the ratio, the audio similarity or the folder match setting discards the cache once. The file is safe to delete: the next scan just compares everything again.
+
 ---
 
 # AI Matching (optional)
@@ -270,7 +272,7 @@ Web settings and login credentials are saved to:
 - Linux: `~/.config/VDF/` (or `$XDG_CONFIG_HOME/VDF/`)
 - macOS: `~/Library/Preferences/VDF/`
 
-The scan database (`ScannedFiles.db`) is stored next to the executable if that folder is writable; otherwise it falls back to:
+The scan database (`ScannedFiles.db`) and the partial clip cache next to it (`PartialClipCache.bin`) are stored next to the executable if that folder is writable; otherwise they fall back to:
 - Windows: `%LOCALAPPDATA%\VDF\`
 - Linux: `~/.local/state/VDF/` (or `$XDG_STATE_HOME/VDF/`)
 - macOS: `~/Library/Application Support/VDF/`

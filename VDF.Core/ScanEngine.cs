@@ -2042,6 +2042,8 @@ namespace VDF.Core {
 		/// using audio fingerprint sliding-window matching.  Results are added to Duplicates.
 		/// The comparison loop runs in parallel; grouping is applied sequentially afterward.
 		/// </summary>
+		internal long PartialPairsComputed; // pairs SlidingWindowCompare ran for in the last audio partial pass (tests)
+
 		internal void ScanForPartialDuplicates() {
 			Logger.Instance.Info("Partial clip detection: building fingerprint index...");
 
@@ -2069,6 +2071,11 @@ namespace VDF.Core {
 			float simThreshold = (float)Settings.PartialClipSimilarityThreshold;
 			InitProgress(videos.Count - 1, T("Scan.Stage.PartialCompare"));
 
+			var cacheKey = new PartialClipCache.SettingsKey(simThreshold, Settings.PartialClipMinRatio, (int)Settings.FolderMatchMode, Settings.SameFolderDepth);
+			var identities = PartialClipCache.BuildIdentities(videos);
+			var cache = PartialClipCache.Load(PartialClipCache.FilePath, cacheKey, identities, out string cacheStatus);
+			long pairsComputed = 0;
+
 			(var matches, long pairsChecked) = CollectPartialMatchCandidates(videos,
 				pairPrefilter: (i, j) => {
 					if ((videos[j].mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds < 1.0)
@@ -2077,9 +2084,21 @@ namespace VDF.Core {
 					return videos[j].AudioFingerprint!.Length < videos[i].AudioFingerprint!.Length;
 				},
 				tryMatchPair: (i, j) => {
+					if (cache.IsCovered(i) && cache.IsCovered(j))
+						return cache.TryGetMatch(i, j, out var cached) ? cached : null;
+					Interlocked.Increment(ref pairsComputed);
 					var (sim, offsetSec) = SlidingWindowCompare(videos[j].AudioFingerprint!, videos[i].AudioFingerprint!, simThreshold);
 					return sim >= simThreshold ? (sim, offsetSec) : null;
 				});
+			PartialPairsComputed = pairsComputed;
+
+			// Derived from the computed pairs: a shared counter bumped for every cached pair would
+			// contend across threads over billions of pairs.
+			Logger.Instance.Info(cacheStatus == "loaded"
+				? $"Partial clip detection: reused {pairsChecked - pairsComputed} of {pairsChecked} pair result(s) from the cache."
+				: $"Partial clip detection: comparison cache not used ({cacheStatus}).");
+			if (!cancelationTokenSource.IsCancellationRequested)
+				PartialClipCache.Save(PartialClipCache.FilePath, cacheKey, identities, matches);
 
 			// --- Sequential phase: build groups from matches (preserving longest-source-first order) ---
 			// A clip is kept with its first (longest) matching source. Sources whose only
@@ -2425,6 +2444,8 @@ namespace VDF.Core {
 		/// </summary>
 		/// <param name="minSim">Minimum similarity the caller cares about (e.g. the user threshold).
 		/// Offsets that cannot reach this value are skipped via early exit.</param>
+		// Changing this or the pair prefilters in ScanForPartialDuplicates / CollectPartialMatchCandidates
+		// changes the results PartialClipCache stores: bump PartialClipCache.FormatVersion.
 		internal static (float similarity, int offsetBlocks) SlidingWindowCompare(uint[] shorter, uint[] longer, float minSim = 0f) {
 			int lenS = shorter.Length;
 			int lenL = longer.Length;
