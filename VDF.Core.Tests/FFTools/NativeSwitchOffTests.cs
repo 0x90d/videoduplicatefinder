@@ -75,10 +75,31 @@ public class NativeSwitchOffTests : IDisposable {
 	}
 
 	[Fact]
+	public void HardwareThatNeverWorks_IsSwitchedOffAfterFiveRescues() {
+		for (int i = 0; i < 4; i++)
+			FfmpegEngine.RecordHardwareRescue();
+		Assert.False(FfmpegEngine.HardwareDisabledForSession);
+		FfmpegEngine.RecordHardwareRescue();
+		Assert.True(FfmpegEngine.HardwareDisabledForSession);
+	}
+
+	[Fact]
+	public void AfterAHardwareSuccess_RescuesDoNotCount() {
+		FfmpegEngine.RecordHardwareSuccess();
+		for (int i = 0; i < 50; i++)
+			FfmpegEngine.RecordHardwareRescue();
+		Assert.False(FfmpegEngine.HardwareDisabledForSession);
+	}
+
+	[Fact]
 	public void ANewScanStartsAgain() {
 		Fail(5, FfmpegErrorCategory.Unknown);
 		Assert.True(FfmpegEngine.NativeDisabledForSession);
+		for (int i = 0; i < 5; i++)
+			FfmpegEngine.RecordHardwareRescue();
+		Assert.True(FfmpegEngine.HardwareDisabledForSession);
 		FfmpegEngine.UseNativeBinding = true;
 		Assert.False(FfmpegEngine.NativeDisabledForSession);
+		Assert.False(FfmpegEngine.HardwareDisabledForSession);
 	}
 }

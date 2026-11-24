@@ -26,5 +26,8 @@ sealed class LogCollector : IDisposable {
 	public bool Any(string substring) {
 		lock (_messages) return _messages.Any(m => m.Contains(substring, StringComparison.Ordinal));
 	}
+	public int Count(string substring) {
+		lock (_messages) return _messages.Count(m => m.Contains(substring, StringComparison.Ordinal));
+	}
 	public void Dispose() => Logger.Instance.LogEntryAdded -= OnEntry;
 }

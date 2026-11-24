@@ -52,6 +52,10 @@ namespace VDF.Core.FFTools {
 				_nativeFailureLogCount = 0;
 				_nativeDisabledForSession = false;
 				_nativeHasSucceeded = false;
+				_softwareFallbackCount = 0;
+				_hardwareRescueCount = 0;
+				_hardwareHasSucceeded = false;
+				_hardwareDisabledForSession = false;
 				_vulkanNativeWarningLogged = false;
 			}
 		}
@@ -73,6 +77,8 @@ namespace VDF.Core.FFTools {
 		/// nothing about the binding. Neither does a file that already failed in an earlier
 		/// scan: with "Always retry failed sampling" a rescan often has little to analyse besides
 		/// such files, and counting them switched native off within seconds.
+		/// Hardware failures rarely reach this: sampling retries them in software and records
+		/// only that attempt. They still count when they do, as a broken hardware setup would.
 		/// </summary>
 		internal static bool CountsTowardsSwitchOff(FfmpegErrorCategory category, bool fileFailedBefore, bool nativeHasSucceeded) =>
 			!nativeHasSucceeded && !fileFailedBefore &&
@@ -84,6 +90,44 @@ namespace VDF.Core.FFTools {
 		/// <summary>True when a native FFmpeg operation should be attempted.</summary>
 		static bool ShouldUseNativeBinding =>
 			UseNativeBinding && !_nativeDisabledForSession && FFmpegNative.FFmpegHelper.CanLoadNativeLibraries;
+
+		// Per-scan cap on the "decoded in software" log lines: when the hardware decoder fails on
+		// every file, each one would otherwise log its own line.
+		static int _softwareFallbackCount;
+		const int SoftwareFallbackDetailLimit = 20;
+		const int SoftwareFallbackSummaryEvery = 100;
+
+		// A hardware decoder that never works is rescued in software on every file, so each one
+		// pays a failed hardware attempt plus a second open, and the software success keeps native
+		// from ever switching off. Counting stops at the first hardware success, as for native.
+		static int _hardwareRescueCount;
+		static volatile bool _hardwareHasSucceeded;
+		static volatile bool _hardwareDisabledForSession;
+		const int HardwareRescueThreshold = 5;
+
+		/// <summary>True once hardware decoding has been switched off for the rest of the scan.</summary>
+		internal static bool HardwareDisabledForSession => _hardwareDisabledForSession;
+
+		internal static void RecordHardwareSuccess() => _hardwareHasSucceeded = true;
+
+		internal static void RecordHardwareRescue() {
+			if (_hardwareHasSucceeded)
+				return;
+			if (Interlocked.Increment(ref _hardwareRescueCount) == HardwareRescueThreshold) {
+				_hardwareDisabledForSession = true;
+				Logger.Instance.Warn(
+					$"Hardware decoding failed on {HardwareRescueThreshold} files before decoding any this scan; decoding in software for the rest of this scan. " +
+					"If this persists, set hardware acceleration to 'none'.");
+			}
+		}
+
+		static void LogSoftwareFallback(string file, Exception hardwareFailure) {
+			int n = Interlocked.Increment(ref _softwareFallbackCount);
+			if (n <= SoftwareFallbackDetailLimit)
+				Logger.Instance.Info($"Hardware decoding failed on '{file}' ({hardwareFailure.Message}); decoded it in software instead.");
+			else if (n % SoftwareFallbackSummaryEvery == 0)
+				Logger.Instance.Info($"Hardware decoding has failed on {n} files this scan, each decoded in software instead (per-file lines suppressed after the first {SoftwareFallbackDetailLimit}).");
+		}
 
 		static void RecordNativeSuccess() {
 			_nativeHasSucceeded = true;
@@ -329,6 +373,8 @@ namespace VDF.Core.FFTools {
 		/// CLI/native path so partial extraction still succeeds. Already-cached positions are skipped.
 		/// <paramref name="failureCategory"/> reports the classified cause of a failure so the
 		/// caller can decide whether that fallback is worth attempting at all (#867).
+		/// <paramref name="recordFailure"/> is false for an attempt the caller retries in software,
+		/// so a file still records one failure at most.
 		/// </summary>
 		static unsafe bool TryGetGrayBytesFromVideoNativeBatch(
 			FileEntry videoFile,
@@ -336,13 +382,17 @@ namespace VDF.Core.FFTools {
 			double maxSamplingDurationSeconds,
 			ref int tooDarkCounter,
 			Action<int>? onSampleComplete,
+			AVHWDeviceType deviceType,
+			bool recordFailure,
 			out FfmpegErrorCategory failureCategory,
+			out Exception? failure,
 			AI.IEmbeddingFrameSink? embeddingSink = null) {
 			const int N = 32;
 			failureCategory = FfmpegErrorCategory.Unknown;
+			failure = null;
 			try {
 				FfmpegLogCapture.Reset();
-				using var vsd = new VideoStreamDecoder(videoFile.Path, GetConfiguredHardwareDeviceType());
+				using var vsd = new VideoStreamDecoder(videoFile.Path, deviceType);
 				VideoFrameConverter? converter = null;
 				VideoFrameConverter? aiConverter = null;
 				Size converterSourceSize = default;
@@ -420,10 +470,12 @@ namespace VDF.Core.FFTools {
 			}
 			catch (Exception e) {
 				failureCategory = ClassifyNativeFailure(e);
+				failure = e;
 				// One failure recorded per video file (not per position) so the session
 				// circuit breaker reflects per-file native health (issues #793/#795). The
 				// per-sample fallback below still re-attempts native but does not record.
-				RecordNativeFailure(videoFile.Path, e, failureCategory, fileFailedBefore: videoFile.Flags.Has(EntryFlags.ThumbnailError));
+				if (recordFailure)
+					RecordNativeFailure(videoFile.Path, e, failureCategory, fileFailedBefore: videoFile.Flags.Has(EntryFlags.ThumbnailError));
 				return false;
 			}
 		}
@@ -435,7 +487,8 @@ namespace VDF.Core.FFTools {
 		/// so it cannot succeed either — it only grinds through the damaged stream again,
 		/// burning up to a full timeout per attempt and stalling the scan on every corrupt
 		/// file (#867). Under hardware decode a corrupt-looking error can still be a
-		/// GPU/driver quirk, and the process fallback genuinely rescues those.
+		/// GPU/driver quirk; sampling retries those natively in software first and passes the
+		/// software attempt's result here.
 		/// </summary>
 		internal static bool ShouldSkipProcessRetryForCorruptFile(FfmpegErrorCategory failureCategory, AVHWDeviceType hardwareDeviceType) =>
 			failureCategory == FfmpegErrorCategory.CorruptOrTruncated &&
@@ -992,7 +1045,38 @@ namespace VDF.Core.FFTools {
 			// The for-loop fallback below recreates them per position, so on a 4-position scan
 			// this avoids ~3x of the per-file FFmpeg setup cost.
 			if (ShouldUseNativeBinding) {
-				if (TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, onSampleComplete, out FfmpegErrorCategory nativeFailureCategory, embeddingSink)) {
+				AVHWDeviceType deviceType = GetConfiguredHardwareDeviceType();
+				if (_hardwareDisabledForSession)
+					deviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
+				bool hardware = deviceType != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
+				// A software retry walks the positions again; only report progress past the
+				// furthest point reached so the file's progress never goes backwards.
+				int furthestReported = 0;
+				Action<int>? reportProgress = onSampleComplete == null ? null : done => {
+					if (done > furthestReported) {
+						furthestReported = done;
+						onSampleComplete(done);
+					}
+				};
+				bool decoded = TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, reportProgress,
+					deviceType, recordFailure: !hardware, out FfmpegErrorCategory nativeFailureCategory, out Exception? hardwareFailure, embeddingSink);
+				if (decoded && hardware)
+					RecordHardwareSuccess();
+				if (!decoded && hardware) {
+					// Hardware decoders reject individual files (a profile, resolution or stream
+					// quirk) that decode fine in software, and the process fallback would use the
+					// same hardware decoder and fail the same way. Whatever the failure's category:
+					// with hardware decoding on, the diagnostics cannot tell such a file from a
+					// damaged one.
+					deviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
+					decoded = TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, reportProgress,
+						deviceType, recordFailure: true, out nativeFailureCategory, out _, embeddingSink);
+					if (decoded) {
+						RecordHardwareRescue();
+						LogSoftwareFallback(videoFile.Path, hardwareFailure!);
+					}
+				}
+				if (decoded) {
 					if (missingPositions > 0 && tooDarkCounter == missingPositions) {
 						videoFile.Flags.Set(EntryFlags.TooDark);
 						Logger.Instance.Warn($"Graybytes too dark of: {videoFile.Path}");
@@ -1002,7 +1086,7 @@ namespace VDF.Core.FFTools {
 						videoFile.Flags.Set(EntryFlags.ThumbnailError, false);
 					return true;
 				}
-				if (ShouldSkipProcessRetryForCorruptFile(nativeFailureCategory, GetConfiguredHardwareDeviceType())) {
+				if (ShouldSkipProcessRetryForCorruptFile(nativeFailureCategory, deviceType)) {
 					// The gray frames may all be present (cached, or extracted before the
 					// failure) with only AI embedding frames missing — then the file stays
 					// fully comparable and the AI pass simply abstains for it.
