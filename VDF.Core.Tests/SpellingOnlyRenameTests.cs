@@ -212,6 +212,37 @@ public class SpellingOnlyRenameTests : IDisposable {
 	}
 
 	[SkippableFact]
+	public void UnresolvableOldSpelling_WithTheSameContent_IsPruned() {
+		// Some SMB servers stop resolving the old case of a renamed file. A case-sensitive folder
+		// gives the same picture: the old spelling is simply missing.
+		string dir = CaseSensitiveFolder() ?? throw new SkipException("needs a case-sensitive folder");
+		string current = WriteVideo(Path.Combine(dir, "Movie.mp4"));
+		var kept = AnalysedEntry(current);
+		var old = AnalysedEntry(current);
+		old._Path = Path.Combine(dir, "movie.mp4");
+		DatabaseUtils.Database.Add(kept);
+		DatabaseUtils.Database.Add(old);
+
+		Assert.Equal(1, ScanEngine.PruneStaleSpellings());
+		Assert.Same(kept, Assert.Single(DatabaseUtils.Database));
+	}
+
+	[SkippableFact]
+	public void MissingFileDifferingOnlyByCase_WithOtherContent_IsKept() {
+		string dir = CaseSensitiveFolder() ?? throw new SkipException("needs a case-sensitive folder");
+		// A deleted a.mp4 that held something else than A.mp4: its record must survive.
+		string current = WriteVideo(Path.Combine(dir, "A.mp4"));
+		DatabaseUtils.Database.Add(AnalysedEntry(current));
+		var deleted = AnalysedEntry(current);
+		deleted._Path = Path.Combine(dir, "a.mp4");
+		deleted.OsHash = "0000000000000000";
+		DatabaseUtils.Database.Add(deleted);
+
+		Assert.Equal(0, ScanEngine.PruneStaleSpellings());
+		Assert.Equal(2, DatabaseUtils.Database.Count);
+	}
+
+	[SkippableFact]
 	public void NormalizationOnlyRename_IsRelinked() {
 		Skip.IfNot(IgnoresNormalization(), "needs a normalization-insensitive volume");
 		string oldPath = WriteVideo(CafeNfd);

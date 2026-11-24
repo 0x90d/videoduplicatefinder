@@ -800,7 +800,8 @@ namespace VDF.Core {
 				var spellings = g.ToList();
 				if (spellings.Count < 2)
 					continue;
-				var groupStale = spellings.Where(e => spellings.Any(o => !ReferenceEquals(o, e) && FileUtils.IsStaleSpellingOf(e.Path, o.Path))).ToList();
+				var groupStale = spellings.Where(e => spellings.Any(o => !ReferenceEquals(o, e) &&
+					(FileUtils.IsStaleSpellingOf(e.Path, o.Path) || IsUnresolvableSpellingOf(e, o)))).ToList();
 				// No spelling matches the disk (renamed more than once): keep one so the
 				// scan's relink moves it, and its analysis, to the current name instead of re-decoding.
 				if (groupStale.Count == spellings.Count)
@@ -813,6 +814,14 @@ namespace VDF.Core {
 			}
 			return stale.Count;
 		}
+
+		// Some SMB servers match a differently cased name only some of the time, so an old spelling
+		// can stop resolving even on a mount that reports itself case-insensitive. It is then a
+		// missing file, which normally keeps its entry; but the same content still on disk under the
+		// other spelling makes it a rename, and dropping it loses nothing a missing-file record keeps.
+		static bool IsUnresolvableSpellingOf(FileEntry e, FileEntry other) =>
+			e.OsHash != null && e.OsHash == other.OsHash && e.FileSize == other.FileSize &&
+			!File.Exists(e.Path) && File.Exists(other.Path);
 
 		// Include folders take their on-disk spelling, but paths stored before that keep the spelling
 		// that was typed, which IsInIncludeScope no longer matches. A full scan relinks them; a
