@@ -51,6 +51,20 @@ public class VideoStreamDecoderTests {
 	}
 
 	/// <summary>
+	/// libavcodec decodes on a single thread unless told otherwise, which left native decoding
+	/// far slower than the ffmpeg process when few files are read at once.
+	/// </summary>
+	[SkippableFact]
+	public void Decoder_UsesMoreThanOneThread() {
+		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+		Skip.If(Environment.ProcessorCount < 2, "single-core machine");
+
+		using var vsd = new VideoStreamDecoder(_fixture.H264_8bit!);
+		Assert.True(vsd.ThreadCount > 1, $"decoder uses {vsd.ThreadCount} thread(s)");
+	}
+
+	/// <summary>
 	/// Decodes a deliberately corrupted H.264 file. Before the #731 fix, the first
 	/// AVERROR_INVALIDDATA from av_read_frame or avcodec_send_packet bubbled out as
 	/// FFInvalidExitCodeException("Invalid data found when processing input"), which

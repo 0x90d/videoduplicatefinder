@@ -68,6 +68,11 @@ namespace VDF.Core.FFTools.FFmpegNative {
 			if (HWDeviceType != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
 				ffmpeg.av_hwdevice_ctx_create(&_pCodecContext->hw_device_ctx, HWDeviceType, null, null, 0).ThrowExceptionIfError();
 			ffmpeg.avcodec_parameters_to_context(_pCodecContext, _pFormatContext->streams[_streamIndex]->codecpar).ThrowExceptionIfError();
+			// 0 = one decoding thread per core, as the ffmpeg command line uses; libavcodec's own
+			// default is a single thread. A sampled frame needs everything from the keyframe before
+			// it decoded, and on one thread that made native decoding up to 3x slower than process
+			// mode when few files are read at once (a network share or hard disk gets 2 workers).
+			_pCodecContext->thread_count = 0;
 			ffmpeg.avcodec_open2(_pCodecContext, codec, null).ThrowExceptionIfError();
 
 			CodecName = ffmpeg.avcodec_get_name(codec->id);
@@ -99,6 +104,8 @@ namespace VDF.Core.FFTools.FFmpegNative {
 		}
 
 		public string CodecName { get; }
+		/// <summary>Decoding threads libavcodec settled on when it opened the codec.</summary>
+		internal int ThreadCount => _pCodecContext->thread_count;
 		/// <summary>The stream's display matrix, as far as it says how to turn the picture (#910).</summary>
 		public FrameOrientation StreamOrientation { get; }
 
