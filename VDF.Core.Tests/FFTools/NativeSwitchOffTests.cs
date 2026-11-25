@@ -23,8 +23,8 @@ public class NativeSwitchOffCollection { }
 
 /// <summary>
 /// Native FFmpeg switches itself off for the rest of a scan only on evidence that the binding
-/// itself is broken: failures that could be the binding's, from files not already known to
-/// fail, before native has decoded anything.
+/// itself is broken: failures that could be the binding's, on files sampled for the first
+/// time, before native has decoded anything.
 /// </summary>
 [Collection(nameof(NativeSwitchOffTests))] // the switch-off state is static
 public class NativeSwitchOffTests : IDisposable {
@@ -34,9 +34,9 @@ public class NativeSwitchOffTests : IDisposable {
 
 	public void Dispose() => FfmpegEngine.UseNativeBinding = _useNativeBinding;
 
-	static void Fail(int times, FfmpegErrorCategory category, bool fileFailedBefore = false) {
+	static void Fail(int times, FfmpegErrorCategory category, bool isRetry = false) {
 		for (int i = 0; i < times; i++)
-			FfmpegEngine.RecordNativeFailure($"file{i}.mp4", new Exception("decode failed"), category, fileFailedBefore);
+			FfmpegEngine.RecordNativeFailure($"file{i}.mp4", new Exception("decode failed"), category, isRetry);
 	}
 
 	// Categories by name: FfmpegErrorCategory is internal, which public test parameters cannot use.
@@ -63,15 +63,33 @@ public class NativeSwitchOffTests : IDisposable {
 	}
 
 	[Fact]
-	public void FilesThatFailedBefore_DoNotCount() {
-		Fail(50, FfmpegErrorCategory.Unknown, fileFailedBefore: true);
+	public void Retries_DoNotCount() {
+		Fail(50, FfmpegErrorCategory.Unknown, isRetry: true);
 		Assert.False(FfmpegEngine.NativeDisabledForSession);
 	}
 
 	[Fact]
+	public void FileMarkedFailed_IsARetry() {
+		var entry = new FileEntry { _Path = "a.mp4" };
+		entry.Flags.Set(EntryFlags.ThumbnailError);
+		Assert.True(FfmpegEngine.IsRetry(entry, missingGrayPositions: 4));
+	}
+
+	[Fact]
+	public void FullySampledFile_IsARetry() {
+		// Opened again only for its AI frames, as the files that switched native off on every
+		// rescan were: their frames were sampled fine, only the AI frames kept failing.
+		Assert.True(FfmpegEngine.IsRetry(new FileEntry { _Path = "a.mp4" }, missingGrayPositions: 0));
+	}
+
+	[Fact]
+	public void FileBeingSampled_IsNotARetry() =>
+		Assert.False(FfmpegEngine.IsRetry(new FileEntry { _Path = "a.mp4" }, missingGrayPositions: 4));
+
+	[Fact]
 	public void AfterTheFirstSuccess_NothingCounts() {
-		Assert.False(FfmpegEngine.CountsTowardsSwitchOff(FfmpegErrorCategory.Unknown, fileFailedBefore: false, nativeHasSucceeded: true));
-		Assert.True(FfmpegEngine.CountsTowardsSwitchOff(FfmpegErrorCategory.Unknown, fileFailedBefore: false, nativeHasSucceeded: false));
+		Assert.False(FfmpegEngine.CountsTowardsSwitchOff(FfmpegErrorCategory.Unknown, isRetry: false, nativeHasSucceeded: true));
+		Assert.True(FfmpegEngine.CountsTowardsSwitchOff(FfmpegErrorCategory.Unknown, isRetry: false, nativeHasSucceeded: false));
 	}
 
 	[Fact]

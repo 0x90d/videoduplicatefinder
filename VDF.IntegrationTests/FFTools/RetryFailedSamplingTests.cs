@@ -15,8 +15,10 @@
 //
 
 using VDF.Core;
+using VDF.Core.AI;
 using VDF.Core.FFTools;
 using VDF.IntegrationTests.Fixtures;
+using VDF.TestSupport;
 
 namespace VDF.IntegrationTests.FFTools;
 
@@ -31,8 +33,6 @@ public class RetryFailedSamplingTests {
 	readonly FfmpegFixture _fixture;
 
 	public RetryFailedSamplingTests(FfmpegFixture fixture) => _fixture = fixture;
-
-	const string SwitchOffMessage = "consecutive files; using process mode";
 
 	static FileEntry EntryFor(string path, bool failedBefore) {
 		var entry = new FileEntry(path);
@@ -53,19 +53,74 @@ public class RetryFailedSamplingTests {
 		return guard;
 	}
 
+	/// <summary>
+	/// A file with no video stream: native decoding fails with "Stream not found", which the
+	/// classifier cannot place, so it counts towards the switch-off unless the file is a retry.
+	/// </summary>
+	string AudioOnlyFile() {
+		string path = Path.Combine(_fixture.TempDir, "audio_only.mp4");
+		if (!File.Exists(path))
+			Skip.If(!TestVideoGenerator.GenerateAacAdts(FfmpegEngine.FFmpegPath, path, channels: 2, durationSeconds: 10), "audio-only test file not generated");
+		return path;
+	}
+
+	static FileEntry AudioOnlyEntry(string path) =>
+		new() { _Path = path, mediaInfo = new MediaInfo { Duration = TimeSpan.FromSeconds(10) } };
+
+	/// <summary>Wants an AI frame for every position, as the AI pass does for a file without them.</summary>
+	sealed class WantsAiFrames : IEmbeddingFrameSink {
+		public bool WantsEmbedding(FileEntry entry, double positionKey) => true;
+		public void SubmitFrame(FileEntry entry, double positionKey, byte[] rgb224) { }
+	}
+
+	void FailFiveTimes(Func<FileEntry> entry, IEmbeddingFrameSink? sink = null) {
+		for (int i = 0; i < 5; i++)
+			FfmpegEngine.GetGrayBytesFromVideo(entry(), Positions, 0, extendedLogging: false, embeddingSink: sink);
+	}
+
 	[SkippableFact]
-	public void RetriedKnownFailures_DoNotSwitchOffNativeBinding() {
+	public void FilesMarkedFailed_DoNotSwitchOffNativeBinding() {
 		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
 		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
-		Skip.If(_fixture.H264_FullyCorrupted == null, "fully corrupted H264 test video not generated");
-
+		string path = AudioOnlyFile();
 		using var guard = NativeSoftwareDecode();
-		using var log = new LogCollector();
 
-		for (int i = 0; i < 8; i++)
-			Assert.False(FfmpegEngine.GetGrayBytesFromVideo(EntryFor(_fixture.H264_FullyCorrupted!, failedBefore: true), Positions, 0, extendedLogging: false));
-		Assert.False(log.Any(SwitchOffMessage));
+		FailFiveTimes(() => {
+			var entry = AudioOnlyEntry(path);
+			entry.Flags.Set(EntryFlags.ThumbnailError);
+			return entry;
+		});
 		Assert.False(FfmpegEngine.NativeDisabledForSession);
+	}
+
+	[SkippableFact]
+	public void FullySampledFilesOpenedForAiFrames_DoNotSwitchOffNativeBinding() {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		string path = AudioOnlyFile();
+		using var guard = NativeSoftwareDecode();
+
+		// Frames sampled in an earlier scan, AI frames still missing: the files that switched
+		// native off at the start of every rescan.
+		FailFiveTimes(() => {
+			var entry = AudioOnlyEntry(path);
+			foreach (float p in Positions)
+				entry.grayBytes[entry.GetGrayBytesIndex(p, 0)] = new byte[32 * 32];
+			return entry;
+		}, new WantsAiFrames());
+		Assert.False(FfmpegEngine.NativeDisabledForSession);
+	}
+
+	[SkippableFact]
+	public void FilesSampledForTheFirstTime_StillSwitchItOff() {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		string path = AudioOnlyFile();
+		using var guard = NativeSoftwareDecode();
+
+		// The same file and failures as above, so the two tests above can fail.
+		FailFiveTimes(() => AudioOnlyEntry(path));
+		Assert.True(FfmpegEngine.NativeDisabledForSession);
 	}
 
 	[SkippableFact]

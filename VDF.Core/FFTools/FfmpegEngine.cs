@@ -74,15 +74,23 @@ namespace VDF.Core.FFTools {
 		/// <summary>
 		/// Whether a native failure counts towards switching native off for the scan. Damaged,
 		/// unreadable and unsupported files fail the same way in process mode, so they say
-		/// nothing about the binding. Neither does a file that already failed in an earlier
-		/// scan: with "Always retry failed sampling" a rescan often has little to analyse besides
-		/// such files, and counting them switched native off within seconds.
+		/// nothing about the binding. Neither does a retry (see <see cref="IsRetry"/>).
 		/// Hardware failures rarely reach this: sampling retries them in software and records
 		/// only that attempt. They still count when they do, as a broken hardware setup would.
 		/// </summary>
-		internal static bool CountsTowardsSwitchOff(FfmpegErrorCategory category, bool fileFailedBefore, bool nativeHasSucceeded) =>
-			!nativeHasSucceeded && !fileFailedBefore &&
+		internal static bool CountsTowardsSwitchOff(FfmpegErrorCategory category, bool isRetry, bool nativeHasSucceeded) =>
+			!nativeHasSucceeded && !isRetry &&
 			category is FfmpegErrorCategory.Unknown or FfmpegErrorCategory.LibraryLoad or FfmpegErrorCategory.HardwareAcceleration;
+
+		/// <summary>
+		/// Whether sampling revisits a file an earlier scan already handled: one marked as failed
+		/// ("Always retry failed sampling"), or one whose frames are all there and that is opened
+		/// again only for something else, such as AI frames an earlier scan could not extract.
+		/// Their failures come from the file, and a rescan often has little other work, so five
+		/// of them in a row switched native off seconds into the scan.
+		/// </summary>
+		internal static bool IsRetry(FileEntry videoFile, int missingGrayPositions) =>
+			videoFile.Flags.Has(EntryFlags.ThumbnailError) || missingGrayPositions == 0;
 
 		/// <summary>True once native has switched itself off for the rest of the scan.</summary>
 		internal static bool NativeDisabledForSession => _nativeDisabledForSession;
@@ -155,10 +163,10 @@ namespace VDF.Core.FFTools {
 				: NativeFailureLogMode.Suppressed;
 		}
 
-		internal static void RecordNativeFailure(string file, Exception e, FfmpegErrorCategory category, bool fileFailedBefore) {
+		internal static void RecordNativeFailure(string file, Exception e, FfmpegErrorCategory category, bool isRetry) {
 			if (_nativeDisabledForSession)
 				return;
-			if (CountsTowardsSwitchOff(category, fileFailedBefore, _nativeHasSucceeded)) {
+			if (CountsTowardsSwitchOff(category, isRetry, _nativeHasSucceeded)) {
 				int n = Interlocked.Increment(ref _nativeConsecutiveFailures);
 				if (n >= NativeFailureThreshold) {
 					_nativeDisabledForSession = true;
@@ -384,6 +392,7 @@ namespace VDF.Core.FFTools {
 			Action<int>? onSampleComplete,
 			AVHWDeviceType deviceType,
 			bool recordFailure,
+			bool isRetry,
 			out FfmpegErrorCategory failureCategory,
 			out Exception? failure,
 			AI.IEmbeddingFrameSink? embeddingSink = null) {
@@ -475,7 +484,7 @@ namespace VDF.Core.FFTools {
 				// circuit breaker reflects per-file native health (issues #793/#795). The
 				// per-sample fallback below still re-attempts native but does not record.
 				if (recordFailure)
-					RecordNativeFailure(videoFile.Path, e, failureCategory, fileFailedBefore: videoFile.Flags.Has(EntryFlags.ThumbnailError));
+					RecordNativeFailure(videoFile.Path, e, failureCategory, isRetry);
 				return false;
 			}
 		}
@@ -551,9 +560,10 @@ namespace VDF.Core.FFTools {
 				}
 				catch (Exception e) {
 					// One failure recorded per video file; the per-frame fallback below still
-					// re-attempts native but does not record (issues #793/#795). The visual gate
-					// never decodes files that failed before (PartialVerifyDecodeBlocked).
-					RecordNativeFailure(filePath, e, ClassifyNativeFailure(e), fileFailedBefore: false);
+					// re-attempts native but does not record (issues #793/#795). A file the gate
+					// decodes is already fully sampled, so a failure here comes from the file, as
+					// for any other re-open of a fully sampled file (see IsRetry).
+					RecordNativeFailure(filePath, e, ClassifyNativeFailure(e), isRetry: true);
 				}
 			}
 
@@ -1028,6 +1038,7 @@ namespace VDF.Core.FFTools {
 			// retried it on every scan. Nothing decoded proves nothing: the crash quarantine marks
 			// fully sampled files that took the process down later (#863), and those stay marked.
 			bool decodesFrames = missingPositions > 0;
+			bool isRetry = IsRetry(videoFile, missingPositions);
 			bool missingEmbeddings = false;
 			if (embeddingSink != null) {
 				for (int i = 0; i < positions.Count && !missingEmbeddings; i++)
@@ -1059,7 +1070,7 @@ namespace VDF.Core.FFTools {
 					}
 				};
 				bool decoded = TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, reportProgress,
-					deviceType, recordFailure: !hardware, out FfmpegErrorCategory nativeFailureCategory, out Exception? hardwareFailure, embeddingSink);
+					deviceType, recordFailure: !hardware, isRetry, out FfmpegErrorCategory nativeFailureCategory, out Exception? hardwareFailure, embeddingSink);
 				if (decoded && hardware)
 					RecordHardwareSuccess();
 				if (!decoded && hardware) {
@@ -1070,7 +1081,7 @@ namespace VDF.Core.FFTools {
 					// damaged one.
 					deviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 					decoded = TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, reportProgress,
-						deviceType, recordFailure: true, out nativeFailureCategory, out _, embeddingSink);
+						deviceType, recordFailure: true, isRetry, out nativeFailureCategory, out _, embeddingSink);
 					if (decoded) {
 						RecordHardwareRescue();
 						LogSoftwareFallback(videoFile.Path, hardwareFailure!);
