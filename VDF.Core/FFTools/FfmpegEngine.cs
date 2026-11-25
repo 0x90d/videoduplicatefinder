@@ -423,10 +423,17 @@ namespace VDF.Core.FFTools {
 		/// could not produce (or all of them, without the native binding) fall back to the
 		/// per-frame <see cref="GetThumbnail"/> path, which itself falls back to the FFmpeg process.
 		/// </summary>
-		internal static unsafe byte[]?[] GetGrayFrames(string filePath, IReadOnlyList<double> positionsSeconds, bool extendedLogging) {
+		internal static byte[]?[] GetGrayFrames(string filePath, IReadOnlyList<double> positionsSeconds, bool extendedLogging) =>
+			GetGrayFrames(filePath, positionsSeconds, extendedLogging, out _);
+
+		/// <param name="source">How the frames were decoded: native and process output differ
+		/// slightly, so a result computed from them is only reusable on the same path.</param>
+		internal static unsafe byte[]?[] GetGrayFrames(string filePath, IReadOnlyList<double> positionsSeconds, bool extendedLogging, out GrayFrameSource source) {
 			const int N = 32;
 			var frames = new byte[]?[positionsSeconds.Count];
-			if (ShouldUseNativeBinding) {
+			bool native = ShouldUseNativeBinding;
+			bool fellBack = false;
+			if (native) {
 				try {
 					FfmpegLogCapture.Reset();
 					// Always decode in software here (#863): this path serves the partial-clip
@@ -478,14 +485,40 @@ namespace VDF.Core.FFTools {
 			}
 
 			for (int i = 0; i < positionsSeconds.Count; i++) {
-				frames[i] ??= GetThumbnail(new FfmpegSettings {
+				if (frames[i] != null) continue;
+				fellBack = true;
+				frames[i] = GetThumbnail(new FfmpegSettings {
 					File = filePath,
 					Position = TimeSpan.FromSeconds(positionsSeconds[i]),
 					GrayScale = 1,
 					SoftwareDecodeOnly = true
 				}, extendedLogging);
 			}
+			// A per-frame fallback may itself decode natively or through the process; which one
+			// is not reported, so such frames are of unknown origin.
+			source = !native ? GrayFrameSource.Process : fellBack ? GrayFrameSource.Mixed : GrayFrameSource.Native;
 			return frames;
+		}
+
+		internal enum GrayFrameSource : byte { Native, Process, Mixed }
+
+		/// <summary>The path <see cref="GetGrayFrames"/> would decode with right now.</summary>
+		internal static GrayFrameSource CurrentGrayFrameSource => ShouldUseNativeBinding ? GrayFrameSource.Native : GrayFrameSource.Process;
+
+		/// <summary>
+		/// Identifies the FFmpeg build gray frames come from: frames can differ between FFmpeg
+		/// versions (scaling, where a seek lands), and the custom arguments change process output.
+		/// Null when the CLI banner cannot be read: the build is then unknown, not a build of its own.
+		/// </summary>
+		internal static string? GrayFrameDecoderBuild() {
+			string native = FFmpegHelper.CanLoadNativeLibraries
+				? $"{ffmpeg.avcodec_version()}/{ffmpeg.avformat_version()}/{ffmpeg.swscale_version()}"
+				: "none";
+			// Anything but the banner is a diagnostic whose wording varies (a timeout, an error message).
+			string cli = FFToolsUtils.GetToolVersionLine(FFToolsUtils.FFTool.FFmpeg);
+			if (!cli.StartsWith("ffmpeg version", StringComparison.OrdinalIgnoreCase))
+				return null;
+			return $"{cli}|{native}|{CustomFFArguments}";
 		}
 
 		public static unsafe byte[]? GetThumbnail(FfmpegSettings settings, bool extendedLogging) {

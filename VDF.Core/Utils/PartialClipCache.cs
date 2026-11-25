@@ -25,6 +25,9 @@ namespace VDF.Core.Utils {
 	/// A stale file (after a database cleanup or "clear database") is harmless for the same
 	/// reason: every entry is looked up by path + fingerprint hash + length + duration, so an
 	/// entry that changed or vanished is simply not covered and is compared afresh.
+	/// Unlike the visual cache, a save keeps only the files of its own scan: "covered" means
+	/// every pair among the covered files was compared, so carrying over a file that was
+	/// absent from a scan would make its pairs with files added since look compared.
 	/// </summary>
 	internal sealed class PartialClipCache {
 		/// <summary>

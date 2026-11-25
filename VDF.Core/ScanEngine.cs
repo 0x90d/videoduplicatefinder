@@ -2182,11 +2182,7 @@ namespace VDF.Core {
 			// matched offset (e.g. videos sharing a backing track but otherwise unrelated).
 			// Uses pHash when Settings.UsePHashing is on, else 32x32 grayscale percentage diff.
 			var assignments = Settings.PartialClipRequireVisualMatch
-				? AssignAndVerifyPartialClips(videos, matches,
-					(source, clip, offsetSec, clipFrames) => {
-						bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim, clipFrames);
-						return (pass, visualSim);
-					})
+				? AssignAndVerifyPartialClipsCached(videos, identities, matches)
 				: AssignPartialClipGroups(matches);
 
 			EmitPartialClipAssignments(videos, assignments, DuplicateFlags.PartialClip,
@@ -2311,6 +2307,60 @@ namespace VDF.Core {
 		}
 
 		/// <summary>
+		/// The visual check with its results kept between scans (<see cref="PartialClipVisualCache"/>):
+		/// a pair whose similarity is stored for the current decoding path is answered without
+		/// decoding; one that is decoded is stored when the result is reusable.
+		/// </summary>
+		List<(int sourceIdx, int clipIdx, float sim, int offsetSec, Guid groupId)> AssignAndVerifyPartialClipsCached(
+			List<FileEntry> videos, PartialClipCache.Identity[] audioIdentities,
+			IEnumerable<(int sourceIdx, int clipIdx, float sim, int offsetSec)> matches) {
+			if (!matches.Any())
+				return AssignPartialClipGroups(matches); // nothing to check: skip asking FFmpeg for its version
+			string? build = GrayFrameDecoderBuild();
+			if (build == null) {
+				// Keying on a placeholder would not match the stored key, so the final save would
+				// overwrite a good cache with one for "unavailable".
+				Logger.Instance.Info("Partial clip detection: visual check cache not used (FFmpeg's version could not be read), and the cache file is left as it is.");
+				return AssignAndVerifyPartialClips(videos, matches, (source, clip, offsetSec, clipFrames) => {
+					bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim, clipFrames);
+					return (pass, visualSim);
+				});
+			}
+			string file = PartialClipVisualCache.FilePath;
+			var key = new PartialClipVisualCache.SettingsKey(Settings.UsePHashing, build);
+			var identities = PartialClipVisualCache.BuildIdentities(videos, audioIdentities);
+			var indexOf = new Dictionary<FileEntry, int>(videos.Count, ReferenceEqualityComparer.Instance);
+			for (int i = 0; i < videos.Count; i++)
+				indexOf[videos[i]] = i;
+			var cache = PartialClipVisualCache.Load(file, key, out string status);
+			// The visual check can run for an hour on a cold cache; a crash must not lose it (#865).
+			var checkpoint = new PeriodicCheckpoint(TimeSpan.FromMinutes(Settings.DatabaseCheckpointIntervalMinutes));
+			long asked = 0, reused = 0;
+
+			var assignments = AssignAndVerifyPartialClips(videos, matches, (source, clip, offsetSec, clipFrames) => {
+				Interlocked.Increment(ref asked);
+				var pair = new PartialClipVisualCache.PairKey(identities[indexOf[source]], identities[indexOf[clip]], offsetSec, CurrentGrayFrameSource());
+				if (cache.TryGet(pair, out float cachedSim)) {
+					Interlocked.Increment(ref reused);
+					return (cachedSim >= Settings.PartialClipVisualThreshold, cachedSim);
+				}
+				bool pass = VerifyPartialClipVisually(source, clip, offsetSec, out float visualSim, out var decodedBy, clipFrames);
+				if (decodedBy is { } path) {
+					cache.Put(pair with { Decoder = path }, visualSim);
+					checkpoint.TryRun(() => cache.Save(file, key, keepOnly: null));
+				}
+				return (pass, visualSim);
+			});
+
+			// Also after a cancel: every stored result is complete on its own.
+			cache.Save(file, key, AllDatabasePaths());
+			Logger.Instance.Info(status == "loaded"
+				? $"Partial clip detection: visual check reused {reused} of {asked} pair result(s) from its cache, decoded {asked - reused}."
+				: $"Partial clip detection: visual check cache not used ({status}).");
+			return assignments;
+		}
+
+		/// <summary>
 		/// Adds the verified clip→source assignments to <see cref="Duplicates"/>: one
 		/// shared group per source (added once, difference 0) plus each clip flagged
 		/// with <paramref name="clipFlags"/> and its matched offset.
@@ -2365,12 +2415,22 @@ namespace VDF.Core {
 		internal sealed class PartialClipFrameCache {
 			internal List<double>? Times;
 			internal byte[]?[]? Frames;
+			internal FfmpegEngine.GrayFrameSource DecodedBy;
 		}
 
 		/// <summary>
 		/// Decodes gray frames; replaceable so tests can count decodes without FFmpeg.
 		/// </summary>
-		internal Func<string, IReadOnlyList<double>, bool, byte[]?[]> DecodeGrayFrames { get; set; } = FfmpegEngine.GetGrayFrames;
+		internal GrayFrameDecoder DecodeGrayFrames { get; set; } = FfmpegEngine.GetGrayFrames;
+
+		internal delegate byte[]?[] GrayFrameDecoder(string path, IReadOnlyList<double> positionsSeconds, bool extendedLogging, out FfmpegEngine.GrayFrameSource decodedBy);
+
+		/// <summary>
+		/// The decoding path a decode would take now, and the FFmpeg build (null when it cannot be
+		/// identified); replaceable for tests.
+		/// </summary>
+		internal Func<FfmpegEngine.GrayFrameSource> CurrentGrayFrameSource { get; set; } = () => FfmpegEngine.CurrentGrayFrameSource;
+		internal Func<string?> GrayFrameDecoderBuild { get; set; } = FfmpegEngine.GrayFrameDecoderBuild;
 
 		/// <summary>
 		/// For every clip, verifies its candidate sources in ascending source order until one
@@ -2475,8 +2535,16 @@ namespace VDF.Core {
 		/// <paramref name="clipFrames"/> lets a caller checking one clip against several sources
 		/// decode the clip's frames once: they are reused while the sample times match.
 		/// </summary>
-		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim, PartialClipFrameCache? clipFrames = null) {
+		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim, PartialClipFrameCache? clipFrames = null) =>
+			VerifyPartialClipVisually(source, clip, offsetSec, out visualSim, out _, clipFrames);
+
+		/// <param name="decodedBy">Set when <paramref name="visualSim"/> depends on nothing but the
+		/// two files, the offset and the decoding path: every sampled frame was decoded on both
+		/// sides, all on that one path. Null otherwise, and then the result must not be reused.</param>
+		internal bool VerifyPartialClipVisually(FileEntry source, FileEntry clip, int offsetSec, out float visualSim,
+			out FfmpegEngine.GrayFrameSource? decodedBy, PartialClipFrameCache? clipFrames = null) {
 			visualSim = 0f;
+			decodedBy = null;
 			double sourceSec = (source.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 			double clipSec = (clip.mediaInfo?.Duration ?? TimeSpan.Zero).TotalSeconds;
 			if (sourceSec <= 0 || clipSec <= 0) return true;
@@ -2501,18 +2569,22 @@ namespace VDF.Core {
 			// the next scan quarantines the file that was in flight instead of dying on it
 			// again. Same mechanism as the sampling phase (#861).
 			ScanCrashJournal.Begin(ScanCrashJournal.PhasePartialVerify, source.Path);
-			byte[]?[] srcFrames = DecodeGrayFrames(source.Path, srcSampleTimes, Settings.ExtendedFFToolsLogging);
+			byte[]?[] srcFrames = DecodeGrayFrames(source.Path, srcSampleTimes, Settings.ExtendedFFToolsLogging, out var srcDecodedBy);
 			ScanCrashJournal.End();
 			byte[]?[] clipDecoded;
-			if (clipFrames?.Frames != null && clipFrames.Times!.SequenceEqual(clipSampleTimes))
+			FfmpegEngine.GrayFrameSource clipDecodedBy;
+			if (clipFrames?.Frames != null && clipFrames.Times!.SequenceEqual(clipSampleTimes)) {
 				clipDecoded = clipFrames.Frames;
+				clipDecodedBy = clipFrames.DecodedBy;
+			}
 			else {
 				ScanCrashJournal.Begin(ScanCrashJournal.PhasePartialVerify, clip.Path);
-				clipDecoded = DecodeGrayFrames(clip.Path, clipSampleTimes, Settings.ExtendedFFToolsLogging);
+				clipDecoded = DecodeGrayFrames(clip.Path, clipSampleTimes, Settings.ExtendedFFToolsLogging, out clipDecodedBy);
 				ScanCrashJournal.End();
 				if (clipFrames != null) {
 					clipFrames.Times = clipSampleTimes;
 					clipFrames.Frames = clipDecoded;
+					clipFrames.DecodedBy = clipDecodedBy;
 				}
 			}
 
@@ -2537,6 +2609,8 @@ namespace VDF.Core {
 
 			if (comparisons == 0) return true;
 			visualSim = simSum / comparisons;
+			if (comparisons == srcSampleTimes.Count && srcDecodedBy == clipDecodedBy && srcDecodedBy != FfmpegEngine.GrayFrameSource.Mixed)
+				decodedBy = srcDecodedBy;
 			return visualSim >= threshold;
 		}
 

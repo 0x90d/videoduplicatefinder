@@ -18,6 +18,8 @@
 // #925: a clip whose first (longest) candidate source failed the visual gate was lost,
 // although a later candidate source would have passed.
 
+using VDF.Core.FFTools;
+
 namespace VDF.Core.Tests;
 
 public class PartialClipVisualGateTests {
@@ -176,7 +178,8 @@ public class PartialClipVisualGateTests {
 		};
 		var decodes = new List<string>();
 		var engine = new ScanEngine {
-			DecodeGrayFrames = (path, times, _) => {
+			DecodeGrayFrames = (string path, IReadOnlyList<double> times, bool _, out FfmpegEngine.GrayFrameSource decodedBy) => {
+				decodedBy = FfmpegEngine.GrayFrameSource.Native;
 				lock (decodes)
 					decodes.Add(Path.GetFileName(path));
 				// Only the third source looks like the clip.
@@ -210,7 +213,8 @@ public class PartialClipVisualGateTests {
 		int clipDecodes = 0;
 		var engine = new ScanEngine {
 			// Source 0 must fail so source 1 is reached: its frames differ from the clip's.
-			DecodeGrayFrames = (path, times, _) => {
+			DecodeGrayFrames = (string path, IReadOnlyList<double> times, bool _, out FfmpegEngine.GrayFrameSource decodedBy) => {
+				decodedBy = FfmpegEngine.GrayFrameSource.Native;
 				if (path.EndsWith("clip.mp4"))
 					Interlocked.Increment(ref clipDecodes);
 				byte value = path.EndsWith("s0.mp4") ? (byte)255 : (byte)0;
