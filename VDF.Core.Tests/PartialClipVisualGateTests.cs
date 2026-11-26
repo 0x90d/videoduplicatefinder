@@ -22,6 +22,7 @@ using VDF.Core.FFTools;
 
 namespace VDF.Core.Tests;
 
+[Collection("DatabaseUtils")] // decoding writes crash-journal breadcrumbs, which ScanCrashJournalTests reads
 public class PartialClipVisualGateTests {
 	static FileEntry Video(string name, double seconds, int fingerprintSeconds = 0) => new() {
 		_Path = Path.Combine(Path.GetTempPath(), name),
