@@ -25,7 +25,7 @@ namespace VDF.IntegrationTests.FFTools;
 /// <summary>
 /// The audio fingerprint reads a whole file, which off a network share is most of a scan
 /// with new files. With extended FFmpeg logging on, each fingerprint's timing must reach
-/// the log; the scan passed a hard-coded false, so that stretch of a scan logged nothing.
+/// the log, or that stretch of a scan logs nothing.
 /// </summary>
 [Collection("Ffmpeg")]
 public class AudioFingerprintLoggingTests {
@@ -81,6 +81,44 @@ public class AudioFingerprintLoggingTests {
 			DatabaseUtils.InvalidateDatabaseFolder();
 			try { Directory.Delete(scanDir, true); } catch { /* best effort */ }
 			try { Directory.Delete(dbDir, true); } catch { /* best effort */ }
+		}
+	}
+
+	/// <summary>
+	/// Damaged audio makes FFmpeg report an error per packet; the process path must keep
+	/// only the start of that text rather than append all of it into one log entry.
+	/// </summary>
+	[SkippableFact]
+	public void ProcessMode_DamagedAudio_LogsBoundedErrorText() {
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+
+		string dir = Directory.CreateTempSubdirectory("vdf-fp-errtext").FullName;
+		string clean = Path.Combine(dir, "clean.mp4");
+		string fileName = $"fp-errtext-{Guid.NewGuid():N}.mp4";
+		string damaged = Path.Combine(dir, fileName);
+		var messages = new List<string>();
+		void OnEntry(LogEntry entry) { lock (messages) messages.Add(entry.Message); }
+		using var guard = new FfmpegStaticStateGuard();
+		Logger.Instance.LogEntryAdded += OnEntry;
+		try {
+			Skip.If(!TestVideoGenerator.GenerateH264WithAudio(FfmpegEngine.FFmpegPath, clean, durationSeconds: 60),
+				"Could not generate a test video with audio");
+			Skip.If(!TestVideoGenerator.GenerateAudioCorrupted(FfmpegEngine.FFmpegPath, clean, damaged),
+				"Could not corrupt the test video's audio");
+			FfmpegEngine.UseNativeBinding = false;
+
+			ChromaprintEngine.ExtractFingerprint(damaged, extendedLogging: true);
+
+			string errorText;
+			lock (messages)
+				errorText = Assert.Single(messages, m => m.StartsWith($"[ChromaprintEngine] {fileName}:", StringComparison.Ordinal) &&
+					!m.Contains("total=", StringComparison.Ordinal));
+			// Unbounded, 60 s of this damage logs several hundred KB.
+			Assert.InRange(errorText.Length, 1, 16_384);
+		}
+		finally {
+			Logger.Instance.LogEntryAdded -= OnEntry;
+			try { Directory.Delete(dir, true); } catch { /* best effort */ }
 		}
 	}
 }

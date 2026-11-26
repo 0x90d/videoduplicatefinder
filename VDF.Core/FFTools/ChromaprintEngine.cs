@@ -37,6 +37,9 @@ namespace VDF.Core.FFTools {
 		// Read PCM in 32 KB chunks — keeps memory low while giving ChromaContext
 		// enough samples to process multiple frames per iteration.
 		const int ReadBufferSize = 32_768;
+		// A file with damaged audio can make FFmpeg report an error per packet; the first few
+		// thousand characters say what is wrong, and appending all of it costs quadratic time.
+		const int MaxErrOutputChars = 8_192;
 
 		/// <summary>
 		/// Extracts the audio fingerprint for <paramref name="filePath"/>.
@@ -133,7 +136,7 @@ namespace VDF.Core.FFTools {
 
 				if (extendedLogging) {
 					process.ErrorDataReceived += (_, e) => {
-						if (e.Data?.Length > 0)
+						if (e.Data?.Length > 0 && errOutput.Length < MaxErrOutputChars)
 							errOutput += Environment.NewLine + e.Data;
 					};
 					process.BeginErrorReadLine();
