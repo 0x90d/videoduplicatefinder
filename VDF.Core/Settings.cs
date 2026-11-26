@@ -163,7 +163,7 @@ namespace VDF.Core {
 		/// Runtime). A pair that fails the classic gray-bytes/pHash check is still
 		/// reported (flagged <see cref="DuplicateFlags.AiMatched"/>) when the mean
 		/// embedding similarity of its sampled positions reaches <see cref="AiPercent"/>.
-		/// Requires the AI components (ONNX Runtime + model) — see AI.AiComponents.
+		/// Requires the AI components (the shipped ONNX Runtime and the downloaded model) — see AI.AiComponents.
 		/// </summary>
 		public bool UseAiMatching;
 		/// <summary>Similarity threshold (percent = cosine·100) for the AI matching pass.</summary>
@@ -178,7 +178,7 @@ namespace VDF.Core {
 		/// <summary>Per-frame hit threshold (percent) for visual partial detection.</summary>
 		public float AiPartialHitPercent = 89f;
 		/// <summary>
-		/// True when any enabled feature requires the AI components (ONNX Runtime + model)
+		/// True when any enabled feature requires the AI components (the shipped ONNX Runtime and the downloaded model)
 		/// — the single gate every frontend and the engine check before scanning. New
 		/// AI-backed settings must be added here, not at the call sites.
 		/// </summary>

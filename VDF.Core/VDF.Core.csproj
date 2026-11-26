@@ -18,10 +18,11 @@
   <ItemGroup>
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
     <PackageReference Include="MemoryPack" Version="1.22.0" />
-    <!-- Managed-only wrapper (pure P/Invoke, Native-AOT-safe). The native onnxruntime
-         library is NOT bundled: AI.AiComponents downloads the pinned version on demand
-         and routes the DllImport to it. Version must equal AiComponents.RuntimeVersion. -->
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.23.2" />
+    <!-- The full package: the managed wrapper (pure P/Invoke, Native-AOT-safe) plus the native
+         onnxruntime library for each platform, which publish copies next to the app. Microsoft
+         no longer serves the runtime from GitHub, and nuget.org packages are immutable.
+         Version must equal AiComponents.RuntimeVersion. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.2" />
     <PackageReference Include="System.Numerics.Tensors" Version="11.0.0" />
   </ItemGroup>
   <ItemGroup>

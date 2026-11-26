@@ -21,8 +21,8 @@ namespace VDF.Core.Tests.AI;
 
 /// <summary>
 /// Drives the ONNX inference plumbing with the checked-in tiny embedder (same I/O
-/// contract as DINOv2, ~300 KB, deterministic). The native onnxruntime comes from
-/// this test project's full OnnxRuntime package — no downloads.
+/// contract as DINOv2, ~300 KB, deterministic). The native onnxruntime is the one
+/// VDF.Core ships, which this test project gets through it — no downloads.
 /// </summary>
 public class OnnxEmbedderTests {
 

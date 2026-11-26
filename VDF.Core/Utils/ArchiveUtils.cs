@@ -24,7 +24,7 @@ namespace VDF.Core.Utils {
 		TarXz
 	}
 
-	/// <summary>Archive extraction shared by the AI component and FFmpeg downloaders.</summary>
+	/// <summary>Archive extraction for the FFmpeg downloader.</summary>
 	internal static class ArchiveUtils {
 		internal static void Extract(string archivePath, string targetFolder, ArchiveKind kind) {
 			if (kind == ArchiveKind.Zip) {
@@ -55,7 +55,7 @@ namespace VDF.Core.Utils {
 
 			// Both pipes drained together, so a chatty tar cannot fill one and stall; bounded,
 			// so a tar stuck on a dead target folder ends the download with a reason instead
-			// of keeping it "extracting" forever. The archives here (FFmpeg, ONNX Runtime) are
+			// of keeping it "extracting" forever. The FFmpeg archives are
 			// ~100 MB at most.
 			ProcessTextOutput result;
 			try {

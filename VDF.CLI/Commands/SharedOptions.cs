@@ -152,7 +152,7 @@ namespace VDF.CLI.Commands {
 		};
 
 		internal static readonly Option<bool> AiMatching = new("--ai-matching") {
-			Description = "Additional AI matching pass with neural image embeddings: finds cropped, mirrored or heavily edited copies the classic methods miss. Downloads the AI components (ONNX Runtime + model, ~100 MB) on first use."
+			Description = "Additional AI matching pass with neural image embeddings: finds cropped, mirrored or heavily edited copies the classic methods miss. Downloads the AI model (~25 MB) on first use."
 		};
 
 		internal static readonly Option<float> AiPercent = new("--ai-percent") {
@@ -162,7 +162,7 @@ namespace VDF.CLI.Commands {
 		};
 
 		internal static readonly Option<bool> AiPartial = new("--ai-partial") {
-			Description = "Detect partial/time-shifted duplicates visually via dense AI keyframe matching (works without audio, unlike --partial-clip-detection). Downloads the AI components on first use."
+			Description = "Detect partial/time-shifted duplicates visually via dense AI keyframe matching (works without audio, unlike --partial-clip-detection). Downloads the AI model on first use."
 		};
 
 		internal static readonly Option<float> AiPartialHitPercent = new("--ai-partial-hit-percent") {

@@ -27,17 +27,15 @@ namespace VDF.Core.AI {
 	public readonly record struct AiDownloadProgress(string Step, long BytesDone, long? BytesTotal);
 
 	/// <summary>
-	/// Locates and downloads the two native components AI matching needs: the ONNX Runtime
-	/// library (per-RID archive from the official microsoft/onnxruntime GitHub release,
-	/// pinned version) and the DINOv2-small embedding model (SHA256-pinned). Nothing is
-	/// bundled with VDF releases — the FFmpeg pattern: opt-in download on first use into
-	/// <c>{StateFolder}/ai</c>. Under Native AOT the OnnxRuntime *Managed* wrapper is pure
-	/// P/Invoke; a DllImport resolver points its "onnxruntime" import at the downloaded
-	/// library, so no native lib has to sit next to the executable.
+	/// Locates the two components AI matching needs. The ONNX Runtime library ships with VDF:
+	/// the Microsoft.ML.OnnxRuntime package puts the pinned version next to the app on publish.
+	/// The DINOv2-small embedding model (SHA256-pinned) is an opt-in download on first use into
+	/// <c>{StateFolder}/ai</c>. Under Native AOT the OnnxRuntime wrapper is pure P/Invoke; a
+	/// DllImport resolver points its "onnxruntime" import at the shipped library by full path.
 	/// </summary>
 	public static class AiComponents {
 		/// <summary>
-		/// Pinned ONNX Runtime version. Must match the Microsoft.ML.OnnxRuntime.Managed
+		/// Pinned ONNX Runtime version. Must match the Microsoft.ML.OnnxRuntime
 		/// PackageReference. 1.23.2 is the newest release that still ships osx-x86_64
 		/// binaries (1.24+ dropped Intel macs, which VDF releases still target).
 		/// </summary>
@@ -49,7 +47,6 @@ namespace VDF.Core.AI {
 		// Fallback: the upstream HuggingFace export the mirror was taken from.
 		const string ModelPrimaryUrl = "https://github.com/0x90d/videoduplicatefinder/releases/download/ai-models-v1/dinov2-small-int8.onnx";
 		const string ModelFallbackUrl = "https://huggingface.co/Xenova/dinov2-small/resolve/main/onnx/model_quantized.onnx";
-		const string VersionMarkerFileName = "runtime.version";
 
 		public static string AiFolder => TestAiFolder.Value ?? Path.Combine(CoreUtils.StateFolder, "ai");
 		public static string ModelPath => TestOverrideModelPath ?? Path.Combine(AiFolder, ModelFileName);
@@ -57,7 +54,7 @@ namespace VDF.Core.AI {
 		/// <summary>
 		/// Test hook: points ModelPath at the checked-in tiny embedder and makes
 		/// EnsureReady succeed, so suites exercise the AI pipeline without downloads
-		/// (the native runtime comes from the test projects' full OnnxRuntime package).
+		/// (the native runtime is the one VDF.Core ships, which the test projects get through it).
 		/// </summary>
 		internal static string? TestOverrideModelPath;
 
@@ -67,6 +64,9 @@ namespace VDF.Core.AI {
 		/// parallel and must not resolve it from another test's folder.
 		/// </summary>
 		internal static readonly AsyncLocal<string?> TestAiFolder = new();
+
+		/// <summary>Test hook: where to look for the shipped runtime instead of the app folder.</summary>
+		internal static readonly AsyncLocal<string?> TestRuntimeFolder = new();
 
 		static bool resolverInstalled;
 		static readonly object resolverLock = new();
@@ -80,7 +80,7 @@ namespace VDF.Core.AI {
 		static readonly string[] VcRuntimeLibraries = { "VCRUNTIME140.dll", "VCRUNTIME140_1.dll", "MSVCP140.dll", "MSVCP140_1.dll" };
 
 		public static AiComponentsState GetState() {
-			bool runtime = FindRuntimeLibrary() != null && HasCurrentRuntimeVersion();
+			bool runtime = FindRuntimeLibrary() != null;
 			bool model = File.Exists(ModelPath);
 			if (runtime && model) return AiComponentsState.Ready;
 			if (runtime) return AiComponentsState.ModelMissing;
@@ -89,6 +89,9 @@ namespace VDF.Core.AI {
 		}
 
 		public static bool IsReady => GetState() == AiComponentsState.Ready;
+
+		/// <summary>True when the shipped runtime is absent, so a model download cannot make AI matching work.</summary>
+		public static bool IsRuntimeMissing => GetState() is AiComponentsState.Missing or AiComponentsState.RuntimeMissing;
 
 		/// <summary>
 		/// Throws with an actionable message when the components are not present, or when
@@ -99,43 +102,80 @@ namespace VDF.Core.AI {
 			if (TestOverrideModelPath != null)
 				return;
 			AiComponentsState state = GetState();
+			if (state is AiComponentsState.Missing or AiComponentsState.RuntimeMissing)
+				throw new InvalidOperationException(RuntimeMissingMessage);
 			if (state != AiComponentsState.Ready)
 				throw new InvalidOperationException(
-					$"AI matching components are not available ({state}). " +
-					$"Download them in Settings → Matching, or place onnxruntime {RuntimeVersion} and {ModelFileName} into '{AiFolder}'.");
+					$"The AI model is not available. Download it in Settings → Matching, or place {ModelFileName} into '{AiFolder}'.");
 			LoadRuntime();
 		}
 
-		static bool HasCurrentRuntimeVersion() {
-			try {
-				string marker = Path.Combine(AiFolder, VersionMarkerFileName);
-				return File.Exists(marker) && File.ReadAllText(marker).Trim() == RuntimeVersion;
+		public static string RuntimeMissingMessage =>
+			$"The ONNX Runtime {RuntimeVersion} library that ships with VDF was not found in '{TestRuntimeFolder.Value ?? AppContext.BaseDirectory}'. Reinstall VDF.";
+
+		/// <summary>The shipped ONNX Runtime library file, or null when absent.</summary>
+		internal static string? FindRuntimeLibrary() {
+			string name = OperatingSystem.IsWindows() ? "onnxruntime.dll"
+				: OperatingSystem.IsMacOS() ? "libonnxruntime.dylib"
+				: "libonnxruntime.so";
+			string root = TestRuntimeFolder.Value ?? AppContext.BaseDirectory;
+			// A publish for one platform (the releases) puts it next to the app; a build for any
+			// platform (dotnet run, test runs) keeps it per platform.
+			// The package lays the libraries out under portable RIDs (linux-x64, osx-arm64, ...),
+			// but a distro-built .NET reports its own RID (e.g. ubuntu.24.04-x64), so try both.
+			string rid = TestRuntimeIdentifier.Value ?? RuntimeInformation.RuntimeIdentifier;
+			string[] candidates = {
+				Path.Combine(root, name),
+				Path.Combine(root, "runtimes", rid, "native", name),
+				Path.Combine(root, "runtimes", PortableRuntimeIdentifier, "native", name),
+			};
+			string? found = candidates.FirstOrDefault(File.Exists);
+			// Tests that fake a runtime folder must not delete from the developer's real AiFolder.
+			if (found != null && TestRuntimeFolder.Value == null && !legacyRuntimeRemoved) {
+				legacyRuntimeRemoved = true;
+				RemoveDownloadedRuntime(AiFolder);
 			}
-			catch { return false; }
+			return found;
 		}
 
-		/// <summary>The downloaded ONNX Runtime library file, or null when absent.</summary>
-		internal static string? FindRuntimeLibrary() {
-			try {
-				if (!Directory.Exists(AiFolder)) return null;
-				// Windows: onnxruntime.dll — Linux: libonnxruntime.so.<ver> — macOS: libonnxruntime.<ver>.dylib
-				return Directory.EnumerateFiles(AiFolder)
-					.Where(f => {
-						string name = Path.GetFileName(f);
-						return name.Contains("onnxruntime", StringComparison.OrdinalIgnoreCase) &&
-							!name.Contains("providers", StringComparison.OrdinalIgnoreCase) &&
-							(name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
-							 name.Contains(".so", StringComparison.OrdinalIgnoreCase) ||
-							 name.EndsWith(".dylib", StringComparison.OrdinalIgnoreCase));
-					})
-					.OrderByDescending(f => Path.GetFileName(f).Length) // prefer the fully-versioned real file over a bare symlink copy
-					.FirstOrDefault();
+		static bool legacyRuntimeRemoved;
+
+		/// <summary>The RID the Microsoft.ML.OnnxRuntime package uses for this OS and architecture.</summary>
+		internal static string PortableRuntimeIdentifier =>
+			$"{(OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux")}-{RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()}";
+
+		/// <summary>Test hook: stands in for the RID the running .NET reports.</summary>
+		internal static readonly AsyncLocal<string?> TestRuntimeIdentifier = new();
+
+		/// <summary>
+		/// Deletes the runtime that earlier VDF versions downloaded into <paramref name="folder"/>:
+		/// the shipped one replaces it, so those 14-38 MB would otherwise stay for good. Uses the old
+		/// downloader's own purge rule (any name containing "onnxruntime", which also catches the
+		/// Windows import libraries it copied) plus its version marker, never the model; returns what
+		/// it deleted.
+		/// </summary>
+		internal static List<string> RemoveDownloadedRuntime(string folder) {
+			var removed = new List<string>();
+			if (!Directory.Exists(folder))
+				return removed;
+			var files = Directory.EnumerateFiles(folder).Where(file => {
+				string name = Path.GetFileName(file);
+				return name.Contains("onnxruntime", StringComparison.OrdinalIgnoreCase) || name == "runtime.version";
+			});
+			foreach (string file in files.ToList()) {
+				try {
+					File.Delete(file);
+					removed.Add(Path.GetFileName(file));
+				}
+				catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+					Logger.Instance.Warn($"Could not remove the downloaded ONNX Runtime file {file}: {e.Message}");
+				}
 			}
-			catch { return null; }
+			return removed;
 		}
 
 		/// <summary>
-		/// Routes the Managed wrapper's "onnxruntime" DllImport to the downloaded library.
+		/// Routes the wrapper's "onnxruntime" DllImport to the shipped library.
 		/// Must run before the first OnnxRuntime native call (OnnxEmbedder does so).
 		/// SetDllImportResolver may only be called once per assembly, hence the guard.
 		/// </summary>
@@ -150,7 +190,7 @@ namespace VDF.Core.AI {
 		}
 
 		/// <summary>
-		/// Loads the downloaded runtime before anything touches an OnnxRuntime type. A load
+		/// Loads the shipped runtime before anything touches an OnnxRuntime type. A load
 		/// failure inside the wrapper's static constructor would surface as a
 		/// TypeInitializationException that stays cached for the rest of the process, so
 		/// installing the missing piece would not help until VDF is restarted.
@@ -163,17 +203,16 @@ namespace VDF.Core.AI {
 		}
 
 		/// <summary>
-		/// The DllImport resolver. Nothing downloaded falls through to default probing (test
-		/// runs ship the runtime next to their binaries). A download that will not load must
-		/// NOT fall through: Windows has its own onnxruntime.dll in System32 (Windows ML), and
-		/// default probing binds to that one. It is an older version, so the wrapper died with
-		/// "Unable to find an entry point named 'OrtGetApiBase'" on older Windows builds and
-		/// with an access violation on newer ones.
+		/// The DllImport resolver. No runtime found falls through to default probing. A runtime
+		/// that will not load must NOT fall through: Windows has its own onnxruntime.dll in
+		/// System32 (Windows ML), and default probing binds to that one. It is an older version,
+		/// so the wrapper died with "Unable to find an entry point named 'OrtGetApiBase'" on
+		/// older Windows builds and with an access violation on newer ones.
 		/// </summary>
-		internal static IntPtr ResolveRuntimeImport(string libraryName, string? downloadedLibrary) {
-			if (!libraryName.Contains("onnxruntime", StringComparison.OrdinalIgnoreCase) || downloadedLibrary == null)
+		internal static IntPtr ResolveRuntimeImport(string libraryName, string? runtimeLibrary) {
+			if (!libraryName.Contains("onnxruntime", StringComparison.OrdinalIgnoreCase) || runtimeLibrary == null)
 				return IntPtr.Zero;
-			return LoadRuntimeLibrary(downloadedLibrary);
+			return LoadRuntimeLibrary(runtimeLibrary);
 		}
 
 		// Loading an already loaded path just returns the same module, so no caching needed.
@@ -210,127 +249,24 @@ namespace VDF.Core.AI {
 			return missing;
 		}
 
-		internal static (Uri Url, string ArchiveFileName) GetRuntimeDownloadPlan() {
-			string os =
-				RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" :
-				RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" :
-				RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
-				throw new PlatformNotSupportedException("AI matching is not supported on this operating system.");
-			string arch = RuntimeInformation.ProcessArchitecture switch {
-				Architecture.X64 => os == "osx" ? "x86_64" : "x64",
-				Architecture.Arm64 => os == "linux" ? "aarch64" : "arm64",
-				_ => throw new PlatformNotSupportedException($"AI matching is not supported on {RuntimeInformation.ProcessArchitecture}.")
-			};
-			string ext = os == "win" ? "zip" : "tgz";
-			string file = $"onnxruntime-{os}-{arch}-{RuntimeVersion}.{ext}";
-			return (new Uri($"https://github.com/microsoft/onnxruntime/releases/download/v{RuntimeVersion}/{file}"), file);
-		}
-
-		/// <summary>Downloads whatever is missing (runtime and/or model). Safe to call when Ready.</summary>
-		public static async Task DownloadAsync(IProgress<AiDownloadProgress>? progress, CancellationToken token) {
-			Directory.CreateDirectory(AiFolder);
-			using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
-
-			var downloads = new List<Func<CancellationToken, Task>>(2);
-			if (FindRuntimeLibrary() == null || !HasCurrentRuntimeVersion())
-				downloads.Add(ct => DownloadRuntimeAsync(http, progress, ct));
-			if (!File.Exists(ModelPath))
-				downloads.Add(ct => DownloadModelAsync(http, progress, ct));
-			// The two archives come from different hosts (onnxruntime GitHub release vs
-			// the model mirror), so fetching them concurrently roughly halves the
-			// first-use wait. Consumers already key progress off AiDownloadProgress.Step.
-			await RunDownloadsAsync(downloads, token);
-		}
-
 		/// <summary>
-		/// Runs the given downloads concurrently. The first failure cancels the
-		/// remaining downloads (no point finishing a 100 MB sibling once the feature
-		/// cannot become ready) and its exception surfaces — specifically NOT the
-		/// sibling's induced OperationCanceledException, which Task.WhenAll would
-		/// otherwise rethrow when the canceled task comes first in the list.
+		/// Downloads the model if it is missing. Safe to call when Ready. A missing runtime can't
+		/// be downloaded, so it fails up front with the reason instead of fetching a model that
+		/// could not be used.
 		/// </summary>
-		internal static async Task RunDownloadsAsync(IReadOnlyList<Func<CancellationToken, Task>> downloads, CancellationToken token) {
-			if (downloads.Count == 0)
-				return;
-			if (downloads.Count == 1) {
-				await downloads[0](token);
-				return;
-			}
-			using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-			List<Task> tasks = downloads.Select(RunOne).ToList();
-			async Task RunOne(Func<CancellationToken, Task> download) {
-				try {
-					await download(linkedCts.Token);
-				}
-				catch {
-					linkedCts.Cancel();
-					throw;
-				}
-			}
-			try {
-				await Task.WhenAll(tasks);
-			}
-			catch when (!token.IsCancellationRequested) {
-				foreach (Task t in tasks) {
-					Exception? real = t.Exception?.InnerExceptions.FirstOrDefault(e => e is not OperationCanceledException);
-					if (real != null)
-						System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(real).Throw();
-				}
-				throw;
-			}
-		}
-
-		static async Task DownloadRuntimeAsync(HttpClient http, IProgress<AiDownloadProgress>? progress, CancellationToken token) {
-			(Uri url, string archiveName) = GetRuntimeDownloadPlan();
-			// Per-attempt temp dir: a fixed shared path let two VDF processes (GUI + CLI,
-			// or Web + CLI in one container) clobber each other's in-progress download —
-			// FileShare.None collisions, or one process's cleanup deleting the other's files.
-			string tempRoot = Path.Combine(Path.GetTempPath(), $"VDF.AiDownload.{Guid.NewGuid():N}");
-			Directory.CreateDirectory(tempRoot);
-			string archivePath = Path.Combine(tempRoot, archiveName);
-			try {
-				string runtimeStep = $"ONNX Runtime {RuntimeVersion}";
-				await DownloadUtils.DownloadFileAsync(http, url, archivePath, runtimeStep,
-					(done, total) => progress?.Report(new AiDownloadProgress(runtimeStep, done, total)), token);
-
-				string extractDir = Path.Combine(tempRoot, "extracted");
-				Directory.CreateDirectory(extractDir);
-				ArchiveUtils.Extract(archivePath, extractDir,
-					archiveName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ? ArchiveKind.Zip : ArchiveKind.TarGz);
-
-				// Purge any previously installed runtime BEFORE copying: the Linux/macOS
-				// library names carry the version (libonnxruntime.so.1.23.2), so upgraded
-				// installs would otherwise accumulate versions and FindRuntimeLibrary's
-				// tie-break could keep loading the stale one while the marker claims the
-				// new version — with GetState() reporting Ready, only deleting the ai
-				// folder by hand would have recovered.
-				foreach (string old in Directory.EnumerateFiles(AiFolder)) {
-					string oldName = Path.GetFileName(old);
-					if (oldName.Contains("onnxruntime", StringComparison.OrdinalIgnoreCase))
-						try { File.Delete(old); } catch { /* loaded/locked — overwritten below */ }
-				}
-
-				// Archives lay out onnxruntime-<rid>-<ver>/lib/<libraries>; flatten lib/ into AiFolder.
-				string? libDir = Directory.EnumerateDirectories(extractDir, "lib", SearchOption.AllDirectories).FirstOrDefault();
-				if (libDir == null)
-					throw new IOException($"Downloaded ONNX Runtime archive has no lib/ directory ({archiveName}).");
-				foreach (string file in Directory.EnumerateFiles(libDir)) {
-					string name = Path.GetFileName(file);
-					if (name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) continue;
-					File.Copy(file, Path.Combine(AiFolder, name), overwrite: true);
-				}
-				await File.WriteAllTextAsync(Path.Combine(AiFolder, VersionMarkerFileName), RuntimeVersion, token);
-				if (FindRuntimeLibrary() == null)
-					throw new IOException("ONNX Runtime archive extracted but no runtime library was found in it.");
-			}
-			finally {
-				try { Directory.Delete(tempRoot, true); } catch { }
+		public static async Task DownloadAsync(IProgress<AiDownloadProgress>? progress, CancellationToken token) {
+			if (FindRuntimeLibrary() == null)
+				throw new InvalidOperationException(RuntimeMissingMessage);
+			if (!File.Exists(ModelPath)) {
+				Directory.CreateDirectory(AiFolder);
+				using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
+				await DownloadModelAsync(http, progress, token);
 			}
 		}
 
 		static async Task DownloadModelAsync(HttpClient http, IProgress<AiDownloadProgress>? progress, CancellationToken token) {
-			// Unique temp name for the same two-process reason as the runtime download;
-			// the final File.Move is atomic either way.
+			// Unique temp name: a fixed one let two VDF processes (GUI + CLI, or Web + CLI in one
+			// container) clobber each other's in-progress download. The final File.Move is atomic.
 			string tempPath = ModelPath + $".{Guid.NewGuid():N}.download";
 			Action<long, long?> onProgress = (done, total) => progress?.Report(new AiDownloadProgress("AI model", done, total));
 			try {
