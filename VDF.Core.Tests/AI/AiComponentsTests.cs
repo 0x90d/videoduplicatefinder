@@ -69,6 +69,26 @@ public class AiComponentsTests {
 	}
 
 	[Fact]
+	public void FindRuntimeLibrary_FindsThePortableLayout_WhenDotnetReportsADistroRid() {
+		// Distro-built .NET reports a RID like ubuntu.24.04-x64; the package only has portable ones.
+		string folder = Directory.CreateTempSubdirectory("vdf-ai-runtime").FullName;
+		try {
+			AiComponents.TestRuntimeFolder.Value = folder;
+			AiComponents.TestRuntimeIdentifier.Value = "distro.1-" + RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+			string portable = Path.Combine(folder, "runtimes", AiComponents.PortableRuntimeIdentifier, "native", RuntimeFileName);
+			Directory.CreateDirectory(Path.GetDirectoryName(portable)!);
+			File.WriteAllBytes(portable, new byte[16]);
+
+			Assert.Equal(portable, AiComponents.FindRuntimeLibrary());
+		}
+		finally {
+			AiComponents.TestRuntimeFolder.Value = null;
+			AiComponents.TestRuntimeIdentifier.Value = null;
+			Directory.Delete(folder, true);
+		}
+	}
+
+	[Fact]
 	public void FindRuntimeLibrary_PrefersTheCopyNextToTheApp() {
 		string folder = Directory.CreateTempSubdirectory("vdf-ai-runtime").FullName;
 		try {

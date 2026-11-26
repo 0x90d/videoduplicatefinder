@@ -121,9 +121,13 @@ namespace VDF.Core.AI {
 			string root = TestRuntimeFolder.Value ?? AppContext.BaseDirectory;
 			// A publish for one platform (the releases) puts it next to the app; a build for any
 			// platform (the Docker image's base, dotnet run, test runs) keeps it per platform.
+			// The package lays the libraries out under portable RIDs (linux-x64, osx-arm64, ...),
+			// but a distro-built .NET reports its own RID (e.g. ubuntu.24.04-x64), so try both.
+			string rid = TestRuntimeIdentifier.Value ?? RuntimeInformation.RuntimeIdentifier;
 			string[] candidates = {
 				Path.Combine(root, name),
-				Path.Combine(root, "runtimes", RuntimeInformation.RuntimeIdentifier, "native", name),
+				Path.Combine(root, "runtimes", rid, "native", name),
+				Path.Combine(root, "runtimes", PortableRuntimeIdentifier, "native", name),
 			};
 			string? found = candidates.FirstOrDefault(File.Exists);
 			// Tests that fake a runtime folder must not delete from the developer's real AiFolder.
@@ -135,6 +139,13 @@ namespace VDF.Core.AI {
 		}
 
 		static bool legacyRuntimeRemoved;
+
+		/// <summary>The RID the Microsoft.ML.OnnxRuntime package uses for this OS and architecture.</summary>
+		internal static string PortableRuntimeIdentifier =>
+			$"{(OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux")}-{RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()}";
+
+		/// <summary>Test hook: stands in for the RID the running .NET reports.</summary>
+		internal static readonly AsyncLocal<string?> TestRuntimeIdentifier = new();
 
 		/// <summary>
 		/// Deletes the runtime that earlier VDF versions downloaded into <paramref name="folder"/>:
