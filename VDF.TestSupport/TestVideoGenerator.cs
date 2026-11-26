@@ -183,6 +183,15 @@ public static class TestVideoGenerator {
 				durationSeconds, channels, outputPath));
 
 	/// <summary>
+	/// 2s 320x240 H.264 with a 440 Hz AAC tone, for code paths that need an audio track
+	/// (the partial-clip audio fingerprint).
+	/// </summary>
+	public static bool GenerateH264WithAudio(string ffmpegPath, string outputPath) =>
+		RunFfmpeg(ffmpegPath,
+			$"-y -f lavfi -i testsrc2=duration=2:size=320x240:rate=25 -f lavfi -i sine=frequency=440:duration=2 " +
+			$"-c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p -c:a aac -b:a 128k \"{outputPath}\"");
+
+	/// <summary>
 	/// Generic VP9 generator for benchmarks.
 	/// </summary>
 	public static bool GenerateVP9(string ffmpegPath, string outputPath, int width, int height, int durationSeconds, int fps = 25) =>
