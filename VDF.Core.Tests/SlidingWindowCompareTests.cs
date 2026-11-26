@@ -144,4 +144,59 @@ public class SlidingWindowCompareTests {
 		Assert.True(similarity > 0.99f);
 		Assert.True(similarity < 1.0f);
 	}
+
+	/// <summary>
+	/// Every SIMD path (NEON on Apple Silicon, AVX2/SSE on x64) must give the same best
+	/// similarity and offset as a plain bit count, across lengths that hit each path's
+	/// vector step and its remainder, with and without a planted near-match.
+	/// </summary>
+	[Fact]
+	public void SlidingWindowCompare_MatchesAScalarReference() {
+		var rng = new Random(1234);
+		foreach (int lenS in new[] { 1, 3, 4, 7, 31, 32, 33, 63, 64, 95, 300, 1000 }) {
+			foreach (int extra in new[] { 0, 1, 37, 200 }) {
+				foreach (bool plant in new[] { false, true }) {
+					foreach (float minSim in new[] { 0f, 0.8f }) {
+						uint[] shorter = RandomBlocks(rng, lenS);
+						uint[] longer = RandomBlocks(rng, lenS + extra);
+						if (plant) {
+							int at = rng.Next(extra + 1);
+							for (int i = 0; i < lenS; i++)
+								longer[at + i] = shorter[i] ^ (rng.Next(10) == 0 ? 1u << rng.Next(32) : 0u);
+						}
+
+						Assert.Equal(ScalarReference(shorter, longer, minSim), ScanEngine.SlidingWindowCompare(shorter, longer, minSim));
+					}
+				}
+			}
+		}
+	}
+
+	static uint[] RandomBlocks(Random rng, int length) {
+		var blocks = new uint[length];
+		for (int i = 0; i < length; i++)
+			blocks[i] = (uint)rng.NextInt64(0, 1L << 32);
+		return blocks;
+	}
+
+	// The same search as ScanEngine.SlidingWindowCompare, with a full scalar bit count.
+	static (float, int) ScalarReference(uint[] shorter, uint[] longer, float minSim) {
+		int capacity = shorter.Length * 32;
+		float bestSim = 0f;
+		int bestOffset = 0;
+		for (int offset = 0; offset <= longer.Length - shorter.Length; offset++) {
+			int maxAllowedBits = (int)((1f - Math.Max(bestSim, minSim)) * capacity);
+			int bits = 0;
+			for (int k = 0; k < shorter.Length; k++)
+				bits += System.Numerics.BitOperations.PopCount(shorter[k] ^ longer[offset + k]);
+			if (bits > maxAllowedBits)
+				continue;
+			float sim = 1f - (float)bits / capacity;
+			if (sim > bestSim) {
+				bestSim = sim;
+				bestOffset = offset;
+			}
+		}
+		return (bestSim, bestOffset);
+	}
 }
