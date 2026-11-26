@@ -1095,7 +1095,8 @@ namespace VDF.Core {
 									ScanCrashJournal.Begin(ScanCrashJournal.PhaseAudio, cachedAudioPath);
 									try {
 										ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
-											onProgress: p => ReportProgress(cachedAudioPath, audioStageLabel, (int)(p * 100), 100));
+											onProgress: p => ReportProgress(cachedAudioPath, audioStageLabel, (int)(p * 100), 100),
+											extendedLogging: Settings.ExtendedFFToolsLogging);
 									}
 									finally {
 										ScanCrashJournal.End();
@@ -1180,7 +1181,8 @@ namespace VDF.Core {
 							ScanCrashJournal.Begin(ScanCrashJournal.PhaseAudio, audioPath);
 							try {
 								ExtractAudioFingerprint(entry, cancelationTokenSource.Token,
-									onProgress: p => ReportProgress(audioPath, audioLabel, (int)(p * 100), 100));
+									onProgress: p => ReportProgress(audioPath, audioLabel, (int)(p * 100), 100),
+									extendedLogging: Settings.ExtendedFFToolsLogging);
 							}
 							finally {
 								ScanCrashJournal.End();
@@ -1250,8 +1252,8 @@ namespace VDF.Core {
 		}
 
 
-	internal static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default, Action<double>? onProgress = null) {
-		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, false, ct, onProgress);
+	internal static void ExtractAudioFingerprint(FileEntry entry, CancellationToken ct = default, Action<double>? onProgress = null, bool extendedLogging = false) {
+		uint[]? fp = FFTools.ChromaprintEngine.ExtractFingerprint(entry.Path, extendedLogging, ct, onProgress);
 		if (fp == null && ct.IsCancellationRequested) {
 			// Stop/cancel mid-file is not a file error. Flagging here poisoned the entry
 			// permanently: both the AudioFingerprintError flag and the non-null empty

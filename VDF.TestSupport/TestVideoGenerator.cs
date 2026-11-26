@@ -183,6 +183,25 @@ public static class TestVideoGenerator {
 				durationSeconds, channels, outputPath));
 
 	/// <summary>
+	/// 320x240 H.264 with a 440 Hz AAC tone, for code paths that need an audio track
+	/// (the partial-clip audio fingerprint).
+	/// </summary>
+	public static bool GenerateH264WithAudio(string ffmpegPath, string outputPath, int durationSeconds = 2) =>
+		RunFfmpeg(ffmpegPath,
+			string.Format(CultureInfo.InvariantCulture,
+				"-y -f lavfi -i testsrc2=duration={0}:size=320x240:rate=25 -f lavfi -i sine=frequency=440:duration={0} " +
+				"-c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p -c:a aac -b:a 128k \"{1}\"",
+				durationSeconds, outputPath));
+
+	/// <summary>
+	/// The audio stream of <paramref name="cleanInputPath"/> corrupted via the noise BSF, so
+	/// FFmpeg reports a decode error for most audio packets while the video stays intact.
+	/// </summary>
+	public static bool GenerateAudioCorrupted(string ffmpegPath, string cleanInputPath, string outputPath) =>
+		RunFfmpeg(ffmpegPath,
+			$"-y -i \"{cleanInputPath}\" -c copy -bsf:a \"noise=amount=50\" \"{outputPath}\"");
+
+	/// <summary>
 	/// Generic VP9 generator for benchmarks.
 	/// </summary>
 	public static bool GenerateVP9(string ffmpegPath, string outputPath, int width, int height, int durationSeconds, int fps = 25) =>
