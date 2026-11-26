@@ -27,10 +27,21 @@ namespace VDF.Core.Tests;
 public class PartialClipFolderGateTests : IDisposable {
 
 	readonly List<FileEntry> added = new();
+	// The pass saves its comparison cache in the database folder; keep it out of the real one.
+	readonly string dbFolder = Path.Combine(Path.GetTempPath(), "vdf-partial-db-" + Guid.NewGuid().ToString("N"));
+
+	public PartialClipFolderGateTests() {
+		Directory.CreateDirectory(dbFolder);
+		DatabaseUtils.CustomDatabaseFolder = dbFolder;
+		DatabaseUtils.InvalidateDatabaseFolder();
+	}
 
 	public void Dispose() {
 		foreach (var e in added)
 			DatabaseUtils.Database.Remove(e);
+		DatabaseUtils.CustomDatabaseFolder = null;
+		DatabaseUtils.InvalidateDatabaseFolder();
+		try { Directory.Delete(dbFolder, recursive: true); } catch (Exception) { }
 	}
 
 	FileEntry Add(string folder, string name, double durationSeconds, uint[] fingerprint) {

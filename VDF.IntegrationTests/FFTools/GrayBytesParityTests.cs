@@ -36,6 +36,27 @@ public class GrayBytesParityTests {
 		}, extendedLogging: false);
 	}
 
+	/// <summary>
+	/// The partial-clip visual check's cache keeps a result per decoding path, because native
+	/// and process frames differ slightly; GetGrayFrames must say which path it took.
+	/// </summary>
+	[SkippableTheory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void GrayFrames_ReportTheDecodingPath(bool native) {
+		Skip.If(native && !_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = native;
+		var frames = FfmpegEngine.GetGrayFrames(_fixture.H264_8bit!, new[] { 0.5, 1.5 }, extendedLogging: false, out var decodedBy);
+
+		Assert.All(frames, Assert.NotNull);
+		Assert.Equal(native ? FfmpegEngine.GrayFrameSource.Native : FfmpegEngine.GrayFrameSource.Process, decodedBy);
+		Assert.Equal(decodedBy, FfmpegEngine.CurrentGrayFrameSource);
+	}
+
 	[SkippableFact]
 	public void GrayBytes_NativeVsProcess_H264_ProduceSimilarResults() {
 		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");

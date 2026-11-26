@@ -33,6 +33,10 @@ In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detectio
 
 > **Note:** Partial clip detection requires audio tracks in both files. Videos without audio are skipped — for those, see the visual variant under **AI Matching** below.
 
+Comparing every pair of a large library is the slowest part of a scan, so the audio comparison results are kept in `PartialClipCache.bin` next to the scan database. A rescan only compares pairs that involve a new or changed video; changing the ratio, the audio similarity or the folder match setting discards the cache once, and scanning a different set of folders starts the comparison over for the files that are not in that scan. The file is safe to delete: the next scan just compares everything again.
+
+Visual confirmation decodes frames of both videos for every candidate pair, which on a network share can take longer than the audio comparison. Its similarities are kept in `PartialClipVisualCache.bin`, so a rescan only decodes pairs that involve a new or changed video (a changed size or modification date counts). Changing the minimum visual similarity keeps the cache; switching pHash on or off, upgrading FFmpeg or changing the custom FFmpeg arguments discards it once. Results are kept per decoding mode (native library or FFmpeg process), and a pair whose frames could not all be decoded, or needed the per-frame fallback, is checked again next scan. Results of videos outside the current scan (another set of folders, or already grouped) are kept for as long as the videos are in the scan database, and the cache is not used (and not rewritten) when FFmpeg's version cannot be read. This file is safe to delete too.
+
 ---
 
 # AI Matching (optional)
@@ -270,7 +274,7 @@ Web settings and login credentials are saved to:
 - Linux: `~/.config/VDF/` (or `$XDG_CONFIG_HOME/VDF/`)
 - macOS: `~/Library/Preferences/VDF/`
 
-The scan database (`ScannedFiles.db`) is stored next to the executable if that folder is writable; otherwise it falls back to:
+The scan database (`ScannedFiles.db`) and the partial clip caches next to it (`PartialClipCache.bin`, `PartialClipVisualCache.bin`) are stored next to the executable if that folder is writable; otherwise they fall back to:
 - Windows: `%LOCALAPPDATA%\VDF\`
 - Linux: `~/.local/state/VDF/` (or `$XDG_STATE_HOME/VDF/`)
 - macOS: `~/Library/Application Support/VDF/`
