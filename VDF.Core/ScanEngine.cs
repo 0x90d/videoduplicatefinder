@@ -109,6 +109,8 @@ namespace VDF.Core {
 		static readonly TimeSpan progressHeartbeatIntervall = TimeSpan.FromMilliseconds(500);
 		readonly Timer progressHeartbeat;
 		const int maxExcludedLogsPerReason = 5;
+		// On a network share each directory listing is a round trip, so listing several folders at once hides the latency.
+		const int networkFolderWalkParallelism = 8;
 		readonly ConcurrentDictionary<string, int> excludedReasonCounts = new();
 		readonly ConcurrentDictionary<string, int> excludedReasonLoggedCounts = new();
 		// Files whose stored pHash for the comparison position is null. Dedupes the
@@ -722,7 +724,8 @@ namespace VDF.Core {
 				}
 
 				foreach (FileInfo file in FileUtils.GetFilesRecursive(path, Settings.IgnoreReadOnlyFolders, Settings.IgnoreReparsePoints,
-					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList(), cancellationToken)) {
+					Settings.IncludeSubDirectories, Settings.IncludeImages, Settings.BlackList.ToList(), cancellationToken,
+					DriveScanPlanner.IsNetworkRoot(path) ? networkFolderWalkParallelism : 1)) {
 					if (cancellationToken.IsCancellationRequested)
 						return;
 					FileEntry fEntry;

@@ -255,6 +255,36 @@ public class FileUtilsTests {
 	}
 
 	[Fact]
+	public void GetFilesRecursive_SymlinkedSubfolder_SkippedWhenIgnoreReparsePoints_AndLogged() {
+		if (OperatingSystem.IsWindows()) return; // symlinks need admin rights there; the junction test covers Windows
+		string dir = NewTempTree();
+		string target = NewTempTree();
+		var messages = new List<string>();
+		void Handler(LogEntry entry) {
+			lock (messages)
+				if (entry.Message.Contains(dir)) messages.Add(entry.Message);
+		}
+		Logger.Instance.LogEntryAdded += Handler;
+		try {
+			File.WriteAllBytes(Path.Combine(target, "inside.mp4"), new byte[] { 1 });
+			Directory.CreateSymbolicLink(Path.Combine(dir, "link"), target);
+
+			Assert.Single(Scan(dir, ignoreReparsePoints: false));
+			Assert.Empty(Scan(dir, ignoreReparsePoints: true));
+			// Skipped folders must be counted and logged, not silently dropped (#876).
+			string skipped;
+			lock (messages)
+				skipped = Assert.Single(messages);
+			Assert.Contains("Skipped 1 subfolder(s)", skipped);
+		}
+		finally {
+			Logger.Instance.LogEntryAdded -= Handler;
+			Directory.Delete(dir, recursive: true);
+			Directory.Delete(target, recursive: true);
+		}
+	}
+
+	[Fact]
 	public void GetFilesRecursive_JunctionSubfolder_SkippedOnlyWhenIgnoreReparsePoints() {
 		if (!OperatingSystem.IsWindows()) return; // junction creation
 		string dir = NewTempTree();
@@ -281,6 +311,76 @@ public class FileUtilsTests {
 				Directory.Delete(junction, recursive: false);
 			Directory.Delete(dir, recursive: true);
 			DeleteTempTree(target);
+		}
+	}
+
+	[Fact]
+	public void GetFilesRecursive_ParallelWalk_ReturnsSamePathsInSameOrderAsSingleThread() {
+		string dir = NewTempTree();
+		try {
+			string[] extensions = { ".mp4", ".mkv", ".txt", ".jpg" };
+			int n = 0;
+			for (int a = 0; a < 4; a++)
+				for (int b = 0; b < 4; b++)
+					for (int c = 0; c < 3; c++) {
+						string folder = Path.Combine(dir, $"a{a}", $"b{b}", $"c{c}");
+						Directory.CreateDirectory(folder);
+						for (int f = 0; f < 6; f++)
+							File.WriteAllBytes(Path.Combine(folder, $"f{n++}{extensions[n % extensions.Length]}"), new byte[] { 1 });
+					}
+			string excluded = Path.Combine(dir, "a0", "skipme");
+			Directory.CreateDirectory(excluded);
+			File.WriteAllBytes(Path.Combine(excluded, "hidden.mp4"), new byte[] { 1 });
+			string osFolder = Path.Combine(dir, "a1", "System Volume Information");
+			Directory.CreateDirectory(osFolder);
+			File.WriteAllBytes(Path.Combine(osFolder, "os.mp4"), new byte[] { 1 });
+			if (OperatingSystem.IsWindows())
+				File.SetAttributes(osFolder, FileAttributes.Directory | FileAttributes.Hidden | FileAttributes.System);
+
+			List<string> exclude = new() { excluded };
+			List<string> Walk(int parallel) => FileUtils.GetFilesRecursive(dir, ignoreReadonly: false, ignoreReparsePoints: false,
+				recursive: true, includeImages: false, exclude, CancellationToken.None, maxParallelFolders: parallel)
+				.Select(f => f.FullName).ToList();
+
+			List<string> single = Walk(1);
+			List<string> parallel8 = Walk(8);
+			Assert.True(single.Count > 100);
+			Assert.DoesNotContain(single, p => p.Contains("skipme"));
+			Assert.DoesNotContain(single, p => p.EndsWith(".txt") || p.EndsWith(".jpg"));
+			Assert.Equal(single, parallel8);
+			Assert.Equal(single.OrderBy(p => p, StringComparer.Ordinal), single);
+		}
+		finally {
+			DeleteTempTree(dir);
+		}
+	}
+
+	[Fact]
+	public async Task GetFilesRecursive_ParallelWalk_Cancelled_ReturnsPromptly() {
+		string dir = NewTempTree();
+		try {
+			const int folderCount = 4000;
+			for (int i = 0; i < folderCount; i++) {
+				string folder = Path.Combine(dir, $"a{i % 20}", $"b{i}");
+				Directory.CreateDirectory(folder);
+				File.WriteAllBytes(Path.Combine(folder, "f.mp4"), new byte[] { 1 });
+			}
+			using var cts = new CancellationTokenSource();
+			using var started = new ManualResetEventSlim();
+			Task<List<FileInfo>> walk = Task.Run(() => {
+				started.Set();
+				return FileUtils.GetFilesRecursive(dir, false, false, true, false, new List<string>(), cts.Token, maxParallelFolders: 8);
+			});
+			// The walk reports nothing while running, so the cancel can only be timed from its start.
+			// Whether it lands mid-walk depends on the filesystem's speed, so only the return is checked.
+			Assert.True(started.Wait(TimeSpan.FromSeconds(10)));
+			await Task.Delay(2);
+			cts.Cancel();
+			// A deadlock between the workers and the queue fails the test here instead of hanging the run.
+			await walk.WaitAsync(TimeSpan.FromSeconds(10));
+		}
+		finally {
+			DeleteTempTree(dir);
 		}
 	}
 }
