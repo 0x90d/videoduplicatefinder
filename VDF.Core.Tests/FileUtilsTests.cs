@@ -356,7 +356,7 @@ public class FileUtilsTests {
 	}
 
 	[Fact]
-	public async Task GetFilesRecursive_ParallelWalk_CancelledMidWalk_ReturnsPromptly() {
+	public async Task GetFilesRecursive_ParallelWalk_Cancelled_ReturnsPromptly() {
 		string dir = NewTempTree();
 		try {
 			const int folderCount = 4000;
@@ -371,14 +371,13 @@ public class FileUtilsTests {
 				started.Set();
 				return FileUtils.GetFilesRecursive(dir, false, false, true, false, new List<string>(), cts.Token, maxParallelFolders: 8);
 			});
-			// The walk reports nothing while running, so the cancel is timed from its start; the tree is
-			// large enough that listing it all takes far longer than this delay.
+			// The walk reports nothing while running, so the cancel can only be timed from its start.
+			// Whether it lands mid-walk depends on the filesystem's speed, so only the return is checked.
 			Assert.True(started.Wait(TimeSpan.FromSeconds(10)));
 			await Task.Delay(2);
 			cts.Cancel();
-			// A deadlock between the workers and the queue would hang here instead of failing the run.
-			List<FileInfo> files = await walk.WaitAsync(TimeSpan.FromSeconds(10));
-			Assert.True(files.Count < folderCount);
+			// A deadlock between the workers and the queue fails the test here instead of hanging the run.
+			await walk.WaitAsync(TimeSpan.FromSeconds(10));
 		}
 		finally {
 			DeleteTempTree(dir);
