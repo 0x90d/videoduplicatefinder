@@ -321,7 +321,9 @@ namespace VDF.Core.Utils {
 			SaveDatabase();
 		}
 		internal static void BlacklistFileEntry(string filePath) {
-			if (!Database.TryGetValue(new FileEntry(filePath), out FileEntry? actualValue))
+			// Matched by path alone: new FileEntry(path) reads the file's size and threw when
+			// excluding a result whose file had been moved or deleted since the scan.
+			if (!Database.TryGetValue(new FileEntry { _Path = filePath }, out FileEntry? actualValue))
 				return;
 			actualValue.Flags.Set(EntryFlags.ManuallyExcluded);
 		}
