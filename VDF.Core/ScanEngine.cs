@@ -151,10 +151,19 @@ namespace VDF.Core {
 			excludedReasonCounts.Clear();
 			excludedReasonLoggedCounts.Clear();
 		}
-		// ParallelOptions.MaxDegreeOfParallelism rejects 0 but accepts -1 (unlimited).
-		// Only 0 needs correcting — clamping with Math.Max(1, ...) turned the -1 default
-		// into single-threaded execution.
-		int ParallelDegree => Settings.MaxDegreeOfParallelism == 0 ? -1 : Settings.MaxDegreeOfParallelism;
+		/// <summary>
+		/// Worker count for the phases that read media outside the per-drive gathering loop.
+		/// The setting's -1 means "all CPU cores" (its tooltip, and the budget
+		/// <see cref="DriveScanPlanner.AssignParallelism"/> gives gathering). Passed through as is,
+		/// it is ParallelOptions' "unlimited": the partial-clip visual gate's workers block on
+		/// FFmpeg, so the thread pool kept adding workers until hundreds of FFmpeg processes
+		/// read from a network share at once and nearly all of them timed out. ParallelOptions
+		/// rejects 0, which maps the same way.
+		/// </summary>
+		internal static int ResolveMediaReadParallelism(int configured, int processorCount) =>
+			configured <= 0 ? Math.Max(1, processorCount) : configured;
+
+		internal int ParallelDegree => ResolveMediaReadParallelism(Settings.MaxDegreeOfParallelism, Environment.ProcessorCount);
 
 		/// <summary>
 		/// Resolves the worker count for the CPU-bound matching phases, independent of
@@ -2763,7 +2772,7 @@ namespace VDF.Core {
 			Logger.Instance.Info($"Explicit thumbnail retry: starting for {dupList.Count} item(s).");
 			int loaded = 0, placeholders = 0, skippedMissing = 0;
 			try {
-				await Parallel.ForEachAsync(dupList, new ParallelOptions { MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
+				await Parallel.ForEachAsync(dupList, new ParallelOptions { MaxDegreeOfParallelism = ParallelDegree }, (entry, cancellationToken) => {
 					List<byte[]>? list = null;
 					bool needsThumbnails = !Settings.IncludeMissingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
@@ -2846,7 +2855,7 @@ namespace VDF.Core {
 			var totalSw = Stopwatch.StartNew();
 			var sw = Stopwatch.StartNew();
 			try {
-				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = Settings.MaxDegreeOfParallelism }, (entry, cancellationToken) => {
+				await Parallel.ForEachAsync(dupList, new ParallelOptions { CancellationToken = cancelationTokenSource.Token, MaxDegreeOfParallelism = ParallelDegree }, (entry, cancellationToken) => {
 					List<byte[]>? list = null;
 					bool needsThumbnails = !Settings.IncludeMissingFiles || File.Exists(entry.Path);
 					List<TimeSpan>? timeStamps = null;
