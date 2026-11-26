@@ -395,10 +395,12 @@ namespace VDF.Core.FFTools {
 			bool isRetry,
 			out FfmpegErrorCategory failureCategory,
 			out Exception? failure,
+			out bool decodedOnGpu,
 			AI.IEmbeddingFrameSink? embeddingSink = null) {
 			const int N = 32;
 			failureCategory = FfmpegErrorCategory.Unknown;
 			failure = null;
+			decodedOnGpu = false;
 			try {
 				FfmpegLogCapture.Reset();
 				using var vsd = new VideoStreamDecoder(videoFile.Path, deviceType);
@@ -475,6 +477,7 @@ namespace VDF.Core.FFTools {
 					aiConverter?.Dispose();
 				}
 				RecordNativeSuccess();
+				decodedOnGpu = vsd.DecodedOnGpu;
 				return true;
 			}
 			catch (Exception e) {
@@ -1070,8 +1073,9 @@ namespace VDF.Core.FFTools {
 					}
 				};
 				bool decoded = TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, reportProgress,
-					deviceType, recordFailure: !hardware, isRetry, out FfmpegErrorCategory nativeFailureCategory, out Exception? hardwareFailure, embeddingSink);
-				if (decoded && hardware)
+					deviceType, recordFailure: !hardware, isRetry, out FfmpegErrorCategory nativeFailureCategory, out Exception? hardwareFailure, out bool decodedOnGpu, embeddingSink);
+				// A hardware-configured decode that silently ran in software is neither a success nor a rescue.
+				if (decoded && decodedOnGpu)
 					RecordHardwareSuccess();
 				if (!decoded && hardware) {
 					// Hardware decoders reject individual files (a profile, resolution or stream
@@ -1081,7 +1085,7 @@ namespace VDF.Core.FFTools {
 					// damaged one.
 					deviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 					decoded = TryGetGrayBytesFromVideoNativeBatch(videoFile, positions, maxSamplingDurationSeconds, ref tooDarkCounter, reportProgress,
-						deviceType, recordFailure: true, isRetry, out nativeFailureCategory, out _, embeddingSink);
+						deviceType, recordFailure: true, isRetry, out nativeFailureCategory, out _, out _, embeddingSink);
 					if (decoded) {
 						RecordHardwareRescue();
 						LogSoftwareFallback(videoFile.Path, hardwareFailure!);
