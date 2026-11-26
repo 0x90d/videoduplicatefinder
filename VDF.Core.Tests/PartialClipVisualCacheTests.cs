@@ -286,6 +286,22 @@ public class PartialClipVisualCacheTests : IDisposable {
 		Assert.True(again.decodes > 0);
 	}
 
+	int CachedResults() =>
+		PartialClipVisualCache.Load(CacheFile, new PartialClipVisualCache.SettingsKey(false, build!), out _).Count;
+
+	[Fact]
+	public void ChangedVideo_ItsOldResultsAreDropped() {
+		var (_, _, clip) = AddBasicLibrary();
+		Run();
+		int before = CachedResults();
+		Assert.True(before > 0);
+
+		// Re-tagged in place: same path, so only this run can tell its old results are dead.
+		clip.FileSize++;
+		Run();
+		Assert.Equal(before, CachedResults());
+	}
+
 	[Fact]
 	public void RemovedVideo_IsDroppedFromTheCache() {
 		var (_, _, clip) = AddBasicLibrary();

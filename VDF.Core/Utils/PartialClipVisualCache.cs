@@ -30,9 +30,9 @@ namespace VDF.Core.Utils {
 	/// no decoding. Only results with every sampled frame decoded on both sides are stored: a
 	/// missing frame (timeout, read error) makes the result depend on the moment.
 	/// Persistence follows DenseEmbeddingStore: concurrent puts, periodic checkpoints that never
-	/// prune, a final save that drops pairs with a file that left the scan database. Pairs of
-	/// files outside the current scan are kept: they are keyed by both files' identities, so a
-	/// scan of another folder set must not cost the first set its results.
+	/// prune, a final save that drops pairs with a file that left the scan database or that this
+	/// scan saw changed. Pairs of files outside the current scan are kept: they are keyed by both
+	/// files' identities, so a scan of another folder set must not cost the first set its results.
 	/// </summary>
 	internal sealed class PartialClipVisualCache {
 		/// <summary>
@@ -137,15 +137,23 @@ namespace VDF.Core.Utils {
 		/// Writes the cache atomically (temp file, then move over the old one). With
 		/// <paramref name="keepOnly"/> (database paths, compared with the set's own comparer),
 		/// first drops every pair one of whose files is not in it; checkpoints pass null so an
-		/// interrupted run never throws results away.
+		/// interrupted run never throws results away. <paramref name="current"/> (this run's files by
+		/// path) also drops pairs stored for an earlier version of a file this run saw changed: they
+		/// can never match again, and a file that is re-tagged or remuxed in place would keep adding them.
 		/// </summary>
-		internal void Save(string file, SettingsKey key, IReadOnlySet<string>? keepOnly) {
+		internal void Save(string file, SettingsKey key, IReadOnlySet<string>? keepOnly,
+			IReadOnlyDictionary<string, Identity>? current = null) {
 			string temp = file + ".tmp";
 			try {
 				lock (saveLock) {
 					if (keepOnly != null)
 						foreach (var stale in results.Keys.Where(k => !keepOnly.Contains(k.Source.Audio.Path) || !keepOnly.Contains(k.Clip.Audio.Path)).ToList())
 							results.TryRemove(stale, out _);
+					if (current != null) {
+						bool Outdated(Identity id) => current.TryGetValue(id.Audio.Path, out var now) && now != id;
+						foreach (var stale in results.Keys.Where(k => Outdated(k.Source) || Outdated(k.Clip)).ToList())
+							results.TryRemove(stale, out _);
+					}
 					var entries = results.ToArray();
 					var idIndex = new Dictionary<Identity, int>();
 					var ids = new List<Identity>();

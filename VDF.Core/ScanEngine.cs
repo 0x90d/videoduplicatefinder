@@ -2352,8 +2352,12 @@ namespace VDF.Core {
 				return (pass, visualSim);
 			});
 
+			var currentByPath = new Dictionary<string, PartialClipVisualCache.Identity>(
+				CoreUtils.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+			foreach (var id in identities)
+				currentByPath.TryAdd(id.Audio.Path, id);
 			// Also after a cancel: every stored result is complete on its own.
-			cache.Save(file, key, AllDatabasePaths());
+			cache.Save(file, key, AllDatabasePaths(), currentByPath);
 			Logger.Instance.Info(status == "loaded"
 				? $"Partial clip detection: visual check reused {reused} of {asked} pair result(s) from its cache, decoded {asked - reused}."
 				: $"Partial clip detection: visual check cache not used ({status}).");
