@@ -54,7 +54,7 @@ namespace VDF.Core.AI {
 		/// <summary>
 		/// Test hook: points ModelPath at the checked-in tiny embedder and makes
 		/// EnsureReady succeed, so suites exercise the AI pipeline without downloads
-		/// (the native runtime comes from the test projects' full OnnxRuntime package).
+		/// (the native runtime is the one VDF.Core ships, which the test projects get through it).
 		/// </summary>
 		internal static string? TestOverrideModelPath;
 
@@ -120,7 +120,7 @@ namespace VDF.Core.AI {
 				: "libonnxruntime.so";
 			string root = TestRuntimeFolder.Value ?? AppContext.BaseDirectory;
 			// A publish for one platform (the releases) puts it next to the app; a build for any
-			// platform (the Docker image's base, dotnet run, test runs) keeps it per platform.
+			// platform (dotnet run, test runs) keeps it per platform.
 			// The package lays the libraries out under portable RIDs (linux-x64, osx-arm64, ...),
 			// but a distro-built .NET reports its own RID (e.g. ubuntu.24.04-x64), so try both.
 			string rid = TestRuntimeIdentifier.Value ?? RuntimeInformation.RuntimeIdentifier;
@@ -149,15 +149,19 @@ namespace VDF.Core.AI {
 
 		/// <summary>
 		/// Deletes the runtime that earlier VDF versions downloaded into <paramref name="folder"/>:
-		/// the shipped one replaces it, so those 14-38 MB would otherwise stay for good. Touches only
-		/// the runtime library names and its version marker, never the model; returns what it deleted.
+		/// the shipped one replaces it, so those 14-38 MB would otherwise stay for good. Uses the old
+		/// downloader's own purge rule (any name containing "onnxruntime", which also catches the
+		/// Windows import libraries it copied) plus its version marker, never the model; returns what
+		/// it deleted.
 		/// </summary>
 		internal static List<string> RemoveDownloadedRuntime(string folder) {
 			var removed = new List<string>();
 			if (!Directory.Exists(folder))
 				return removed;
-			var files = new[] { "onnxruntime*.dll", "libonnxruntime*.so*", "libonnxruntime*.dylib", "runtime.version" }
-				.SelectMany(pattern => Directory.EnumerateFiles(folder, pattern));
+			var files = Directory.EnumerateFiles(folder).Where(file => {
+				string name = Path.GetFileName(file);
+				return name.Contains("onnxruntime", StringComparison.OrdinalIgnoreCase) || name == "runtime.version";
+			});
 			foreach (string file in files.ToList()) {
 				try {
 					File.Delete(file);

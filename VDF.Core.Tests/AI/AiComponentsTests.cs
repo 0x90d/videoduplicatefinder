@@ -60,7 +60,7 @@ public class AiComponentsTests {
 
 	[Fact]
 	public void FindRuntimeLibrary_FindsTheRuntimeShippedWithThisBuild() {
-		// The test project, like the Docker image, is built for any platform, so this is the
+		// The test project is built for any platform, so this is the
 		// runtimes/<rid>/native layout the Microsoft.ML.OnnxRuntime package produces.
 		string? lib = AiComponents.FindRuntimeLibrary();
 
@@ -137,7 +137,7 @@ public class AiComponentsTests {
 	public void RemoveDownloadedRuntime_DeletesTheOldRuntimeAndMarkerButKeepsTheModel() {
 		string folder = Directory.CreateTempSubdirectory("vdf-ai-legacy").FullName;
 		try {
-			string[] legacy = { "onnxruntime.dll", "onnxruntime_providers_shared.dll", "libonnxruntime.so", "libonnxruntime.so.1.23.2", "libonnxruntime.dylib", "runtime.version" };
+			string[] legacy = { "onnxruntime.dll", "onnxruntime_providers_shared.dll", "onnxruntime.lib", "onnxruntime_providers_shared.lib", "libonnxruntime.so", "libonnxruntime.so.1.23.2", "libonnxruntime.dylib", "runtime.version" };
 			string[] keep = { AiComponents.ModelFileName, "notes.txt" };
 			foreach (string name in legacy.Concat(keep))
 				File.WriteAllBytes(Path.Combine(folder, name), new byte[16]);
