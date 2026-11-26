@@ -63,6 +63,12 @@ namespace VDF.Core.AI {
 
 		internal int Count => records.Count;
 
+		/// <summary>Adopts the database's current spelling of each path (see <see cref="EmbeddingStoreKeys.Rekey{T}"/>).</summary>
+		internal void RekeyToDatabaseSpellings(IReadOnlySet<string> databasePaths) {
+			lock (saveLock)
+				EmbeddingStoreKeys.Rekey(records, databasePaths);
+		}
+
 		internal static DenseEmbeddingStore Load() {
 			var store = new DenseEmbeddingStore();
 			string path = StorePath;
@@ -135,9 +141,11 @@ namespace VDF.Core.AI {
 			string tempPath = path + ".tmp";
 			try {
 				lock (saveLock) {
-					if (keepOnly != null)
+					if (keepOnly != null) {
+						EmbeddingStoreKeys.Rekey(records, keepOnly);
 						foreach (string stale in records.Keys.Where(k => !keepOnly.Contains(k)).ToList())
 							records.TryRemove(stale, out _);
+					}
 					using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16))
 					using (var writer = new BinaryWriter(stream, Encoding.UTF8)) {
 						writer.Write(Magic);

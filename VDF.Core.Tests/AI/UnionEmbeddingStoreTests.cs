@@ -15,6 +15,7 @@
 //
 
 using VDF.Core.AI;
+using VDF.Core.Utils;
 
 namespace VDF.Core.Tests.AI;
 
@@ -32,13 +33,13 @@ public class UnionEmbeddingStoreTests : IDisposable {
 		try { Directory.Delete(tempDir, true); } catch { }
 	}
 
-	static FileEntry Entry(string name, long fileSize = 1000, long mtimeTicks = 700_000_000_000L) {
+	static FileEntry Entry(string name, long fileSize = 1000, long mtimeTicks = 700_000_000_000L, string folder = @"D:\media") {
 		var entry = new FileEntry {
-			Folder = @"D:\media",
+			Folder = folder,
 			FileSize = fileSize,
 			DateModified = new DateTime(mtimeTicks, DateTimeKind.Utc),
 		};
-		entry.Path = $@"D:\media\{name}";
+		entry.Path = $@"{folder}\{name}";
 		return entry;
 	}
 
@@ -104,6 +105,59 @@ public class UnionEmbeddingStoreTests : IDisposable {
 		Assert.Equal(1, loaded.Count);
 		Assert.NotNull(loaded.GetEmbedding(keep, 12.5));
 		Assert.Null(loaded.GetEmbedding(gone, 12.5));
+	}
+
+	[Fact]
+	public void Save_RekeysRecordsToTheDatabaseSpelling_AndStillPrunesUnrelatedKeys() {
+		// The database respelled a folder (include folder typed in another case); the sidecar still has the old key.
+		var oldSpelling = Entry("a.mp4", folder: @"D:\media");
+		var newSpelling = Entry("a.mp4", folder: @"D:\Media");
+		var store = new UnionEmbeddingStore();
+		store.Put(oldSpelling, 12.5, Embedding(1));
+		store.Put(Entry("stale.mp4", folder: @"D:\elsewhere"), 12.5, Embedding(2));
+		store.Save(new HashSet<string>(new[] { newSpelling.Path }, StringComparer.Ordinal));
+
+		var loaded = UnionEmbeddingStore.Load();
+		Assert.Equal(1, loaded.Count);
+		Assert.Equal(Embedding(1), loaded.GetEmbedding(newSpelling, 12.5));
+		// Windows paths ignore case, so there the old spelling still finds the re-keyed record.
+		if (!CoreUtils.IsWindows)
+		Assert.Null(loaded.GetEmbedding(oldSpelling, 12.5));
+	}
+
+	[Fact]
+	public void RekeyToDatabaseSpellings_MakesTheRecordFindableBeforeAnySave() {
+		var oldSpelling = Entry("a.mp4", folder: @"D:\media");
+		var newSpelling = Entry("a.mp4", folder: @"D:\Media");
+		var store = new UnionEmbeddingStore();
+		store.Put(oldSpelling, 12.5, Embedding(1));
+
+		store.RekeyToDatabaseSpellings(new HashSet<string>(new[] { newSpelling.Path }, StringComparer.Ordinal));
+
+		Assert.Equal(Embedding(1), store.GetEmbedding(newSpelling, 12.5));
+	}
+
+	[Fact]
+	public void Rekey_KeepsValidatingBySizeAndModificationTime() {
+		var store = new UnionEmbeddingStore();
+		store.Put(Entry("a.mp4", folder: @"D:\media"), 12.5, Embedding(1));
+		var newSpelling = Entry("a.mp4", fileSize: 2000, folder: @"D:\Media");
+
+		store.RekeyToDatabaseSpellings(new HashSet<string>(new[] { newSpelling.Path }, StringComparer.Ordinal));
+
+		Assert.Null(store.GetEmbedding(newSpelling, 12.5));
+	}
+
+	[Fact]
+	public void Rekey_DropsRecordsWithSeveralMatchingDatabaseSpellings() {
+		var store = new UnionEmbeddingStore();
+		store.Put(Entry("a.mp4", folder: @"D:\media"), 12.5, Embedding(1));
+		var one = Entry("a.mp4", folder: @"D:\Media");
+		var two = Entry("a.mp4", folder: @"D:\MEDIA");
+
+		store.Save(new HashSet<string>(new[] { one.Path, two.Path }, StringComparer.Ordinal));
+
+		Assert.Equal(0, UnionEmbeddingStore.Load().Count);
 	}
 
 	[Fact]

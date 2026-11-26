@@ -366,6 +366,103 @@ namespace VDF.Core.Utils {
 			}
 		}
 
+		/// <summary>
+		/// True when <paramref name="path"/> and <paramref name="other"/> differ only by case and/or
+		/// Unicode normalization form (NFC vs NFD) and <paramref name="path"/> is the stale spelling
+		/// left behind by such a rename of a file or folder. File.Exists can't tell: on case- and
+		/// normalization-insensitive volumes (default APFS, SMB shares) it still resolves the old
+		/// spelling. Only the segments where the two paths differ are checked against the real
+		/// directory entries, so a differently spelled shared prefix (e.g. the include folder typed
+		/// in another case) doesn't count against either path. Normalization never adds or removes
+		/// separators, so both paths have the same segments. A scan checks every new file, so it can
+		/// pass <paramref name="folderListings"/> to list each folder only once.
+		/// </summary>
+		internal static bool IsStaleSpellingOf(string path, string other, Dictionary<string, HashSet<string>>? folderListings = null) {
+			if (path.Equals(other, StringComparison.Ordinal) ||
+				!NormalizeOrSelf(path).Equals(NormalizeOrSelf(other), StringComparison.OrdinalIgnoreCase))
+				return false;
+			// Missing (deleted, or the drive is offline) is not a spelling question.
+			if (!File.Exists(path))
+				return false;
+			// IgnoreInaccessible would turn a folder that can't be listed (permissions, or macOS
+			// withholding network-volume access) into an empty listing, which reads as "renamed".
+			var options = new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false };
+			string? p = path, o = other;
+			while (p != null && o != null && !p.Equals(o, StringComparison.Ordinal)) {
+				string? parent = Path.GetDirectoryName(p);
+				if (parent == null)
+					return false;
+				string name = Path.GetFileName(p);
+				if (!name.Equals(Path.GetFileName(o), StringComparison.Ordinal)) {
+					try {
+						if (folderListings == null || !folderListings.TryGetValue(parent, out var names)) {
+							// Enumerate rather than pass `name` as a search pattern: '*' and '?' are legal
+							// in macOS/Linux file names and would act as wildcards.
+							names = Directory.EnumerateFileSystemEntries(parent, "*", options)
+								.Select(e => Path.GetFileName(e)).ToHashSet(StringComparer.Ordinal);
+							if (folderListings != null)
+								folderListings[parent] = names;
+						}
+						if (!names.Contains(name))
+							return true;
+					}
+					catch {
+						return false;
+					}
+				}
+				p = parent;
+				o = Path.GetDirectoryName(o);
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// <paramref name="path"/> with each segment spelled as its directory listing spells it.
+		/// Segments that don't exist, already match exactly, or match more than one entry are left
+		/// as given; a segment is only respelled when the volume resolves the given spelling to the
+		/// same entry, so a case-sensitive volume never redirects to a different folder.
+		/// </summary>
+		internal static string ResolveOnDiskSpelling(string path) {
+			string? root = Path.GetPathRoot(path);
+			if (string.IsNullOrEmpty(root))
+				return path;
+			var options = new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = true };
+			string current = root;
+			foreach (string segment in path[root.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries)) {
+				string given = Path.Combine(current, segment);
+				string spelled = segment;
+				try {
+					if (Path.Exists(given)) {
+						var names = Directory.EnumerateFileSystemEntries(current, "*", options).Select(e => Path.GetFileName(e)).ToList();
+						if (!names.Contains(segment, StringComparer.Ordinal)) {
+							string key = NormalizeOrSelf(segment);
+							var matches = names.Where(n => NormalizeOrSelf(n).Equals(key, StringComparison.OrdinalIgnoreCase)).ToList();
+							if (matches.Count == 1)
+								spelled = matches[0];
+						}
+					}
+				}
+				catch { /* unreadable: keep the given spelling */ }
+				current = Path.Combine(current, spelled);
+			}
+			return current;
+		}
+
+		/// <summary>
+		/// <paramref name="s"/> in Unicode normalization form C, or unchanged when it holds invalid
+		/// UTF-16 (a lone surrogate from a mangled emoji, see <see cref="IsPathFFmpegSafe"/>), which
+		/// makes string.Normalize throw. Such names are compared as they are, so they are not
+		/// matched across normalization forms.
+		/// </summary>
+		internal static string NormalizeOrSelf(string s) {
+			try {
+				return s.Normalize();
+			}
+			catch (ArgumentException) {
+				return s;
+			}
+		}
+
 		static string GetMountPoint(string fullPath, DriveInfo[] drives) {
 			string bestMatch = "/";
 			foreach (var drive in drives) {
