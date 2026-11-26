@@ -144,8 +144,9 @@ namespace VDF.Core.FFTools {
 		// Per-scan cap on native-failure log output. The circuit breaker above stops counting
 		// once native has decoded a file, so it never trips on a library where working files
 		// sit among the bad ones, and a scan with many isolated bad files logged a full stack
-		// trace per failure — one report (issue #861) reached an 820 MB log. Total-count tiers instead: full detail for the
-		// first few, a compact line for a while, then only periodic running-count summaries.
+		// trace per failure — one report (issue #861) reached an 820 MB log. Total-count tiers
+		// instead: full detail for the first few, a compact line for a while, then only
+		// periodic running-count summaries.
 		static int _nativeFailureLogCount;
 		const int NativeFailureFullDetailLimit = 20;
 		const int NativeFailureCompactLimit = 200;
