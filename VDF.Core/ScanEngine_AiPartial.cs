@@ -70,6 +70,7 @@ namespace VDF.Core {
 
 			// ── Phase A: dense keyframe embeddings (sidecar-cached) ─────────────
 			var store = DenseEmbeddingStore.Load();
+			store.RekeyToDatabaseSpellings(AllDatabasePaths());
 			if (store.Count > 0)
 				Logger.Instance.Info($"AI partial detection: keyframe cache loaded ({store.Count:N0} record(s)).");
 			InitProgress(videos.Count, T("Scan.Stage.AiDenseSampling"));

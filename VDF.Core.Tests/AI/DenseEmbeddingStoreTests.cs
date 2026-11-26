@@ -15,6 +15,7 @@
 //
 
 using VDF.Core.AI;
+using VDF.Core.Utils;
 
 namespace VDF.Core.Tests.AI;
 
@@ -52,6 +53,46 @@ public class DenseEmbeddingStoreTests : IDisposable {
 		Assert.Equal(record.IntervalSeconds, got.IntervalSeconds);
 		Assert.Equal(record.Frames.Length, got.Frames.Length);
 		Assert.Equal(record.Frames[0], got.Frames[0]);
+	}
+
+	[Fact]
+	public void Save_RekeysRecordsToTheDatabaseSpelling_AndStillPrunesUnrelatedKeys() {
+		// The database respelled a folder (include folder typed in another case); the sidecar still has the old key.
+		var record = Record(1);
+		var store = new DenseEmbeddingStore();
+		store.Put(@"D:\media\a.mp4", record);
+		store.Put(@"D:\elsewhere\stale.mp4", Record(2));
+		store.Save(new HashSet<string>(new[] { @"D:\Media\a.mp4" }, StringComparer.Ordinal));
+
+		var loaded = DenseEmbeddingStore.Load();
+		Assert.Equal(1, loaded.Count);
+		Assert.True(loaded.TryGet(@"D:\Media\a.mp4", record.FileSize, record.MTimeUtcTicks, out var got));
+		Assert.Equal(record.Frames[0], got.Frames[0]);
+		// Windows paths ignore case, so there the old spelling still finds the re-keyed record.
+		if (!CoreUtils.IsWindows)
+		Assert.False(loaded.TryGet(@"D:\media\a.mp4", record.FileSize, record.MTimeUtcTicks, out _));
+	}
+
+	[Fact]
+	public void RekeyToDatabaseSpellings_MakesTheRecordFindableBeforeAnySave() {
+		var record = Record(1);
+		var store = new DenseEmbeddingStore();
+		store.Put(@"D:\media\a.mp4", record);
+
+		store.RekeyToDatabaseSpellings(new HashSet<string>(new[] { @"D:\Media\a.mp4" }, StringComparer.Ordinal));
+
+		Assert.True(store.TryGet(@"D:\Media\a.mp4", record.FileSize, record.MTimeUtcTicks, out _));
+		Assert.False(store.TryGet(@"D:\Media\a.mp4", record.FileSize + 1, record.MTimeUtcTicks, out _));
+	}
+
+	[Fact]
+	public void Rekey_DropsRecordsWithSeveralMatchingDatabaseSpellings() {
+		var store = new DenseEmbeddingStore();
+		store.Put(@"D:\media\a.mp4", Record(1));
+
+		store.Save(new HashSet<string>(new[] { @"D:\Media\a.mp4", @"D:\MEDIA\a.mp4" }, StringComparer.Ordinal));
+
+		Assert.Equal(0, DenseEmbeddingStore.Load().Count);
 	}
 
 	[Fact]

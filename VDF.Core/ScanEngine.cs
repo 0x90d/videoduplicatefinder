@@ -348,6 +348,7 @@ namespace VDF.Core {
 				try {
 					if (!cancelationTokenSource.IsCancellationRequested && Settings.UseAiMatching) {
 						unionEmbeddingStore = AI.UnionEmbeddingStore.Load();
+						unionEmbeddingStore.RekeyToDatabaseSpellings(AllDatabasePaths());
 						aiEmbeddingPipeline = new AI.EmbeddingPipeline(AI.AiComponents.ModelPath, unionEmbeddingStore, cancelationTokenSource.Token);
 					}
 					Logger.Instance.Info(T("Log.GatheringMediaInfo"));
@@ -1807,6 +1808,8 @@ namespace VDF.Core {
 					if (unionEmbeddingStore.Count == 0)
 						Logger.Instance.Info("AI matching: no cached embeddings found — the AI pass will abstain. Run a scan to compute them.");
 				}
+				// Also when the scan phase loaded it: PrepareCompare may have respelled entries since.
+				unionEmbeddingStore?.RekeyToDatabaseSpellings(AllDatabasePaths());
 				List<FileEntry> validated = new(ScanList.Count);
 				foreach (FileEntry entry in ScanList) {
 					if (TryBuildCompareSnapshot(entry, usePHashing)) {
