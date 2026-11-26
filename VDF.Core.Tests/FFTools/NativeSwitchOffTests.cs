@@ -14,6 +14,7 @@
 // */
 //
 
+using FFmpeg.AutoGen;
 using VDF.Core.FFTools;
 
 namespace VDF.Core.Tests.FFTools;
@@ -107,6 +108,26 @@ public class NativeSwitchOffTests : IDisposable {
 		for (int i = 0; i < 50; i++)
 			FfmpegEngine.RecordHardwareRescue();
 		Assert.False(FfmpegEngine.HardwareDisabledForSession);
+	}
+
+	[Fact]
+	public void AfterTheHardwareSwitchOff_NoDecodePathUsesHardware() {
+		var mode = FfmpegEngine.HardwareAccelerationMode;
+		try {
+			FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.cuda;
+			Assert.Equal(AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA, FfmpegEngine.GetConfiguredHardwareDeviceType());
+			Assert.True(FfmpegEngine.ShouldUseHwaccelArgument(softwareDecodeOnly: false));
+
+			for (int i = 0; i < 5; i++)
+				FfmpegEngine.RecordHardwareRescue();
+			Assert.True(FfmpegEngine.HardwareDisabledForSession);
+
+			Assert.Equal(AVHWDeviceType.AV_HWDEVICE_TYPE_NONE, FfmpegEngine.GetConfiguredHardwareDeviceType());
+			Assert.False(FfmpegEngine.ShouldUseHwaccelArgument(softwareDecodeOnly: false));
+		}
+		finally {
+			FfmpegEngine.HardwareAccelerationMode = mode;
+		}
 	}
 
 	[Fact]

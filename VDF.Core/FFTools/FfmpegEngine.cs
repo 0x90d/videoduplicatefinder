@@ -229,7 +229,13 @@ namespace VDF.Core.FFTools {
 		// once per scan instead of once per file.
 		static bool _vulkanNativeWarningLogged;
 
+		// -hwaccel honours the session switch-off too, so every decode path stops using hardware.
+		internal static bool ShouldUseHwaccelArgument(bool softwareDecodeOnly) =>
+			HardwareAccelerationMode != FFHardwareAccelerationMode.none && !softwareDecodeOnly && !_hardwareDisabledForSession;
+
 		internal static AVHWDeviceType GetConfiguredHardwareDeviceType() {
+			if (_hardwareDisabledForSession)
+				return AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 			if (HardwareAccelerationMode == FFHardwareAccelerationMode.vulkan) {
 				if (!_vulkanNativeWarningLogged) {
 					_vulkanNativeWarningLogged = true;
@@ -797,7 +803,7 @@ namespace VDF.Core.FFTools {
 
 				psi.ArgumentList.Add("-nostdin");
 
-				if (HardwareAccelerationMode != FFHardwareAccelerationMode.none && !settings.SoftwareDecodeOnly) {
+				if (ShouldUseHwaccelArgument(settings.SoftwareDecodeOnly)) {
 					psi.ArgumentList.Add("-hwaccel");
 					psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
 				}
@@ -945,7 +951,7 @@ namespace VDF.Core.FFTools {
 				psi.ArgumentList.Add("-hide_banner");
 				psi.ArgumentList.Add("-loglevel"); psi.ArgumentList.Add("error");
 				psi.ArgumentList.Add("-nostdin");
-				if (HardwareAccelerationMode != FFHardwareAccelerationMode.none && !softwareDecodeOnly) {
+				if (ShouldUseHwaccelArgument(softwareDecodeOnly)) {
 					psi.ArgumentList.Add("-hwaccel");
 					psi.ArgumentList.Add(HardwareAccelerationMode.ToString());
 				}
@@ -1060,8 +1066,6 @@ namespace VDF.Core.FFTools {
 			// this avoids ~3x of the per-file FFmpeg setup cost.
 			if (ShouldUseNativeBinding) {
 				AVHWDeviceType deviceType = GetConfiguredHardwareDeviceType();
-				if (_hardwareDisabledForSession)
-					deviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 				bool hardware = deviceType != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 				// A software retry walks the positions again; only report progress past the
 				// furthest point reached so the file's progress never goes backwards.
