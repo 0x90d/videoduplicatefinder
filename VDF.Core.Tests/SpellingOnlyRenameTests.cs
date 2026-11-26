@@ -405,6 +405,26 @@ public class SpellingOnlyRenameTests : IDisposable {
 	}
 
 	[SkippableFact]
+	public void CompareOnly_WithoutSubdirectories_LeavesSubfolderEntriesAlone() {
+		Skip.IfNot(IgnoresCase(), "needs a case-insensitive volume");
+		// Left by an earlier recursive scan: out of scope now, and respelling it would list every ancestor on each compare.
+		string real = Path.Combine(_dir, "Media");
+		Directory.CreateDirectory(Path.Combine(real, "sub"));
+		string nested = Path.Combine(_dir, "media", "sub", "clip.mp4");
+		DatabaseUtils.Database.Add(new FileEntry { _Path = nested, Folder = Path.GetDirectoryName(nested)! });
+		var direct = new FileEntry { _Path = Path.Combine(_dir, "media", "top.mp4"), Folder = Path.Combine(_dir, "media") };
+		DatabaseUtils.Database.Add(direct);
+
+		var engine = new ScanEngine();
+		engine.Settings.IncludeSubDirectories = false;
+		engine.Settings.IncludeList.Add(real);
+
+		Assert.Equal(1, engine.RespellEntriesUnderIncludeFolders());
+		Assert.Equal(Path.Combine(real, "top.mp4"), direct.Path);
+		Assert.Contains(DatabaseUtils.Database, e => e.Path == nested);
+	}
+
+	[SkippableFact]
 	public void CompareOnly_LeavesSiblingFoldersSharingAPrefixAlone() {
 		Skip.IfNot(IgnoresCase(), "needs a case-insensitive volume");
 		string real = Path.Combine(_dir, "Media");

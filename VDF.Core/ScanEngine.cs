@@ -838,7 +838,9 @@ namespace VDF.Core {
 				if (IsInIncludeScope(e))
 					continue;
 				string folder = FileUtils.NormalizeOrSelf(e.Folder);
-				if (!includes.Any(f => IsAtOrUnder(folder, f)))
+				// Mirrors IsInIncludeScope: without subdirectories only the include folder itself is in scope,
+				// so subfolder entries would stay out of scope after a respell and cost a listing each compare.
+				if (!includes.Any(f => Settings.IncludeSubDirectories ? IsAtOrUnder(folder, f) : folder.Equals(f, StringComparison.OrdinalIgnoreCase)))
 					continue;
 				if (!folderSpellings.TryGetValue(e.Folder, out var onDiskFolder))
 					folderSpellings[e.Folder] = onDiskFolder = FileUtils.ResolveOnDiskSpelling(e.Folder);
