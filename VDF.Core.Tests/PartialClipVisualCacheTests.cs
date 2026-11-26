@@ -257,10 +257,19 @@ public class PartialClipVisualCacheTests : IDisposable {
 		Assert.Contains("source.mp4", decodes);
 	}
 
+	// An over-long 7-bit length makes BinaryReader.ReadString throw FormatException rather than IOException.
+	static byte[] WithBadFirstPathLength(byte[] good) {
+		using var r = new BinaryReader(new MemoryStream(good));
+		// Skip the header written by Save: magic, version, the settings key fields and the identity count.
+		r.ReadInt32(); r.ReadInt32(); r.ReadBoolean(); r.ReadString(); r.ReadInt32();
+		return good[..(int)r.BaseStream.Position].Concat(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }).ToArray();
+	}
+
 	[Theory]
 	[InlineData("garbage")]
 	[InlineData("truncated")]
 	[InlineData("empty")]
+	[InlineData("badLengthPrefix")]
 	public void DamagedCacheFile_IsIgnored(string kind) {
 		AddBasicLibrary();
 		var expected = Run().result;
@@ -268,6 +277,7 @@ public class PartialClipVisualCacheTests : IDisposable {
 		File.WriteAllBytes(CacheFile, kind switch {
 			"garbage" => Enumerable.Range(0, 200).Select(i => (byte)(i * 37)).ToArray(),
 			"truncated" => good[..(good.Length - 5)],
+			"badLengthPrefix" => WithBadFirstPathLength(good),
 			_ => Array.Empty<byte>(),
 		});
 

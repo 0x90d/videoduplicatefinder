@@ -157,7 +157,7 @@ namespace VDF.Core.Utils {
 				status = "loaded";
 				return new PartialClipCache(covered, matches);
 			}
-			catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or OutOfMemoryException) {
+			catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or OutOfMemoryException or FormatException) {
 				status = "cache file is unreadable";
 				return Empty(current.Length);
 			}
