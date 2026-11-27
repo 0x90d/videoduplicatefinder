@@ -17,7 +17,6 @@
 using VDF.Core;
 using VDF.Core.AI;
 using VDF.Core.FFTools;
-using VDF.Core.Utils;
 using VDF.IntegrationTests.Fixtures;
 
 namespace VDF.IntegrationTests.FFTools;
@@ -43,16 +42,6 @@ public class CorruptFileFastFailTests {
 			!Frames.Any(f => ReferenceEquals(f.entry, entry) && f.key == positionKey);
 		public void SubmitFrame(FileEntry entry, double positionKey, byte[] rgb224) =>
 			Frames.Add((entry, positionKey, rgb224));
-	}
-
-	sealed class LogCollector : IDisposable {
-		readonly List<string> _messages = new();
-		public LogCollector() => Logger.Instance.LogEntryAdded += OnEntry;
-		void OnEntry(LogEntry entry) { lock (_messages) _messages.Add(entry.Message); }
-		public bool Any(string substring) {
-			lock (_messages) return _messages.Any(m => m.Contains(substring, StringComparison.Ordinal));
-		}
-		public void Dispose() => Logger.Instance.LogEntryAdded -= OnEntry;
 	}
 
 	static FileEntry EntryFor(string path) {

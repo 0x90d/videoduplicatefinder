@@ -1,0 +1,144 @@
+// /*
+//     Copyright (C) 2026 0x90d
+//     This file is part of VideoDuplicateFinder
+//     VideoDuplicateFinder is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU Affero General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//     VideoDuplicateFinder is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
+//     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
+// */
+//
+
+using FFmpeg.AutoGen;
+using VDF.Core.FFTools;
+
+namespace VDF.Core.Tests.FFTools;
+
+[CollectionDefinition(nameof(NativeSwitchOffTests), DisableParallelization = true)]
+public class NativeSwitchOffCollection { }
+
+/// <summary>
+/// Native FFmpeg switches itself off for the rest of a scan only on evidence that the binding
+/// itself is broken: failures that could be the binding's, on files sampled for the first
+/// time, before native has decoded anything.
+/// </summary>
+[Collection(nameof(NativeSwitchOffTests))] // the switch-off state is static
+public class NativeSwitchOffTests : IDisposable {
+	readonly bool _useNativeBinding = FfmpegEngine.UseNativeBinding;
+
+	public NativeSwitchOffTests() => FfmpegEngine.UseNativeBinding = true; // resets the scan's state
+
+	public void Dispose() => FfmpegEngine.UseNativeBinding = _useNativeBinding;
+
+	static void Fail(int times, FfmpegErrorCategory category, bool isRetry = false) {
+		for (int i = 0; i < times; i++)
+			FfmpegEngine.RecordNativeFailure($"file{i}.mp4", new Exception("decode failed"), category, isRetry);
+	}
+
+	// Categories by name: FfmpegErrorCategory is internal, which public test parameters cannot use.
+	[Theory]
+	[InlineData("Unknown")]
+	[InlineData("LibraryLoad")]
+	[InlineData("HardwareAcceleration")]
+	public void FailuresThatCanBeTheBindings_SwitchItOff(string categoryName) {
+		var category = Enum.Parse<FfmpegErrorCategory>(categoryName);
+		Fail(4, category);
+		Assert.False(FfmpegEngine.NativeDisabledForSession);
+		Fail(1, category);
+		Assert.True(FfmpegEngine.NativeDisabledForSession);
+	}
+
+	[Theory]
+	[InlineData("CorruptOrTruncated")]
+	[InlineData("FileAccess")]
+	[InlineData("UnsupportedCodec")]
+	public void FailuresOfTheFile_DoNotCount(string categoryName) {
+		var category = Enum.Parse<FfmpegErrorCategory>(categoryName);
+		Fail(50, category);
+		Assert.False(FfmpegEngine.NativeDisabledForSession);
+	}
+
+	[Fact]
+	public void Retries_DoNotCount() {
+		Fail(50, FfmpegErrorCategory.Unknown, isRetry: true);
+		Assert.False(FfmpegEngine.NativeDisabledForSession);
+	}
+
+	[Fact]
+	public void FileMarkedFailed_IsARetry() {
+		var entry = new FileEntry { _Path = "a.mp4" };
+		entry.Flags.Set(EntryFlags.ThumbnailError);
+		Assert.True(FfmpegEngine.IsRetry(entry, missingGrayPositions: 4));
+	}
+
+	[Fact]
+	public void FullySampledFile_IsARetry() {
+		// Opened again only for its AI frames, as the files that switched native off on every
+		// rescan were: their frames were sampled fine, only the AI frames kept failing.
+		Assert.True(FfmpegEngine.IsRetry(new FileEntry { _Path = "a.mp4" }, missingGrayPositions: 0));
+	}
+
+	[Fact]
+	public void FileBeingSampled_IsNotARetry() =>
+		Assert.False(FfmpegEngine.IsRetry(new FileEntry { _Path = "a.mp4" }, missingGrayPositions: 4));
+
+	[Fact]
+	public void AfterTheFirstSuccess_NothingCounts() {
+		Assert.False(FfmpegEngine.CountsTowardsSwitchOff(FfmpegErrorCategory.Unknown, isRetry: false, nativeHasSucceeded: true));
+		Assert.True(FfmpegEngine.CountsTowardsSwitchOff(FfmpegErrorCategory.Unknown, isRetry: false, nativeHasSucceeded: false));
+	}
+
+	[Fact]
+	public void HardwareThatNeverWorks_IsSwitchedOffAfterFiveRescues() {
+		for (int i = 0; i < 4; i++)
+			FfmpegEngine.RecordHardwareRescue();
+		Assert.False(FfmpegEngine.HardwareDisabledForSession);
+		FfmpegEngine.RecordHardwareRescue();
+		Assert.True(FfmpegEngine.HardwareDisabledForSession);
+	}
+
+	[Fact]
+	public void AfterAHardwareSuccess_RescuesDoNotCount() {
+		FfmpegEngine.RecordHardwareSuccess();
+		for (int i = 0; i < 50; i++)
+			FfmpegEngine.RecordHardwareRescue();
+		Assert.False(FfmpegEngine.HardwareDisabledForSession);
+	}
+
+	[Fact]
+	public void AfterTheHardwareSwitchOff_NoDecodePathUsesHardware() {
+		var mode = FfmpegEngine.HardwareAccelerationMode;
+		try {
+			FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.cuda;
+			Assert.Equal(AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA, FfmpegEngine.GetConfiguredHardwareDeviceType());
+			Assert.True(FfmpegEngine.ShouldUseHwaccelArgument(softwareDecodeOnly: false));
+
+			for (int i = 0; i < 5; i++)
+				FfmpegEngine.RecordHardwareRescue();
+			Assert.True(FfmpegEngine.HardwareDisabledForSession);
+
+			Assert.Equal(AVHWDeviceType.AV_HWDEVICE_TYPE_NONE, FfmpegEngine.GetConfiguredHardwareDeviceType());
+			Assert.False(FfmpegEngine.ShouldUseHwaccelArgument(softwareDecodeOnly: false));
+		}
+		finally {
+			FfmpegEngine.HardwareAccelerationMode = mode;
+		}
+	}
+
+	[Fact]
+	public void ANewScanStartsAgain() {
+		Fail(5, FfmpegErrorCategory.Unknown);
+		Assert.True(FfmpegEngine.NativeDisabledForSession);
+		for (int i = 0; i < 5; i++)
+			FfmpegEngine.RecordHardwareRescue();
+		Assert.True(FfmpegEngine.HardwareDisabledForSession);
+		FfmpegEngine.UseNativeBinding = true;
+		Assert.False(FfmpegEngine.NativeDisabledForSession);
+		Assert.False(FfmpegEngine.HardwareDisabledForSession);
+	}
+}
