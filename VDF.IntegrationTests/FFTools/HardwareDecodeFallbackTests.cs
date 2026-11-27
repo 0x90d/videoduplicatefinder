@@ -80,4 +80,24 @@ public class HardwareDecodeFallbackTests {
 		Assert.Equal(1, log.Count("Hardware decoding failed on 5 files"));
 		Assert.False(FfmpegEngine.NativeDisabledForSession);
 	}
+
+	[SkippableFact]
+	public void ThumbnailHardwareDecoderFailure_IsDecodedInSoftware() {
+		Skip.If(!OperatingSystem.IsMacOS(), "needs a hardware decoder that cannot exist here: CUDA on macOS");
+		Skip.If(!_fixture.FfmpegCliAvailable, _fixture.FfmpegNotFoundReason);
+		Skip.If(!_fixture.NativeBindingAvailable, "FFmpeg native libraries not available");
+		Skip.If(_fixture.H264_8bit == null, "H264 test video not generated");
+
+		using var guard = new FfmpegStaticStateGuard();
+		FfmpegEngine.UseNativeBinding = true;
+		FfmpegEngine.HardwareAccelerationMode = FFHardwareAccelerationMode.cuda;
+		FfmpegEngine.CustomFFArguments = string.Empty;
+
+		using var log = new LogCollector();
+		byte[]? jpeg = FfmpegEngine.ExtractThumbnailJpeg(_fixture.H264_8bit!, TimeSpan.FromSeconds(1), maxWidth: 100);
+		Assert.NotNull(jpeg);
+		Assert.NotEmpty(jpeg);
+		Assert.True(log.Any("decoded it in software instead"));
+		Assert.False(log.Any("Failed using native FFmpeg binding")); // the software attempt worked: no failure recorded
+	}
 }

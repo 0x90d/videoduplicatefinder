@@ -598,12 +598,13 @@ namespace VDF.Core.FFTools {
 				? AI.OnnxEmbedder.InputSide * AI.OnnxEmbedder.InputSide * 3
 				: N * N;
 
+			AVHWDeviceType HWDevice = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE;
 			try {
 				if (ShouldUseNativeBinding) {
 
 					FfmpegLogCapture.Reset();
 
-					AVHWDeviceType HWDevice = settings.SoftwareDecodeOnly
+					HWDevice = settings.SoftwareDecodeOnly
 						? AVHWDeviceType.AV_HWDEVICE_TYPE_NONE
 						: GetConfiguredHardwareDeviceType();
 
@@ -718,6 +719,17 @@ namespace VDF.Core.FFTools {
 						}
 					}
 				}
+			}
+			catch (Exception e) when (HWDevice != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE) {
+				// As in sampling: the hardware decoder rejects some files that decode fine in
+				// software, and the process below would pass the same -hwaccel and fail the same
+				// way. Retry the whole extraction in software, native first, then the process.
+				FfmpegSettings software = settings;
+				software.SoftwareDecodeOnly = true;
+				byte[]? result = GetThumbnail(software, extendedLogging);
+				if (result != null)
+					LogSoftwareFallback(settings.File, e);
+				return result;
 			}
 			catch (Exception e) {
 				Logger.Instance.Warn($"Failed using native FFmpeg binding on '{settings.File}', try switching to process mode. Exception: {e}{BuildNativeFailureDetail(e)}");
